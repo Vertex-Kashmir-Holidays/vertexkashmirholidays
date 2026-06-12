@@ -31,7 +31,7 @@ export function AuthLeftPanel({ headline, subheadline }: AuthLeftPanelProps) {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between p-8">
-        <Logo variant="light" width={130} height={40} />
+        <Logo variant="light" />
         <Link
           href="/"
           className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-medium transition-colors"

@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TourCard } from '@/components/ui/TourCard';
+import { formatINR, renderAccents } from '@/lib/accents';
+import type { HomeTourData, SectionHeading } from '@/types/home';
 
-export function PackagesSection() {
-  const pkgs = [
-    { badge: 'BESTSELLER', bc: 'orange', seed: 'pkg-honeymoon', t: 'Kashmir Honeymoon Escape', d: '6N / 7D', places: 'Srinagar, Pahalgam, Gulmarg', r: '4.9', n: '852', old: '₹42,999', p: '₹34,999' },
-    { badge: 'POPULAR', bc: 'blue', seed: 'pkg-family', t: 'Kashmir Family Snow Special', d: '5N / 6D', places: 'Srinagar, Gulmarg, Sonmarg', r: '4.8', n: '624', old: '₹29,999', p: '₹24,999' },
-    { badge: 'TRENDING', bc: 'green', seed: 'pkg-trek', t: 'Kashmir Great Lakes Trek', d: '8N / 9D', places: 'Sonamarg, Nichnai, Gadsar, Vishansar', r: '4.9', n: '412', old: '₹25,999', p: '₹21,999' },
-    { badge: 'LUXURY', bc: 'orange', seed: 'pkg-luxury', t: 'Signature Luxury Kashmir', d: '5N / 6D', places: 'Srinagar, Pahalgam, Gulmarg', r: '4.9', n: '236', old: '₹74,999', p: '₹59,999' },
-  ];
+interface PackagesSectionProps {
+  heading: SectionHeading;
+  tours: HomeTourData[];
+}
 
+const badgeColors = ['orange', 'blue', 'green'] as const;
+
+export function PackagesSection({ heading, tours }: PackagesSectionProps) {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -21,6 +23,8 @@ export function PackagesSection() {
       },
     },
   };
+
+  if (tours.length === 0) return null;
 
   return (
     <section id="packages" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
@@ -33,7 +37,7 @@ export function PackagesSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            BESTSELLERS
+            {heading.kicker}
           </motion.p>
           <motion.h2
             className="rv h-display mt-3 text-4xl font-bold text-white"
@@ -43,29 +47,33 @@ export function PackagesSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Handpicked Kashmir packages
+            {renderAccents(heading.title)}
           </motion.h2>
-          <motion.p
-            className="rv mt-3 max-w-md text-sm text-white/60"
-            style={{ '--rd': '0.14s' } as any}
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            Fine-tuned by locals, loved by 12,000+ travellers.
-          </motion.p>
+          {heading.subtitle && (
+            <motion.p
+              className="rv mt-3 max-w-md text-sm text-white/60"
+              style={{ '--rd': '0.14s' } as any}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              {heading.subtitle}
+            </motion.p>
+          )}
         </div>
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <Link href="#" className="rv inline-flex items-center gap-1.5 text-sm font-bold text-green-glow hover:underline">
-            View All Packages →
-          </Link>
-        </motion.div>
+        {heading.ctaLabel && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <Link href={heading.ctaHref ?? '#'} className="rv inline-flex items-center gap-1.5 text-sm font-bold text-green-glow hover:underline">
+              {heading.ctaLabel}
+            </Link>
+          </motion.div>
+        )}
       </div>
 
       <motion.div
@@ -75,8 +83,27 @@ export function PackagesSection() {
         whileInView="visible"
         viewport={{ once: true }}
       >
-        {pkgs.map((p, i) => (
-          <TourCard key={i} tour={p} index={i} variant="home" />
+        {tours.map((tour, i) => (
+          <TourCard
+            key={tour.id}
+            tour={{
+              badge: tour.badge ?? 'FEATURED',
+              bc: badgeColors.includes(tour.badgeColor as any)
+                ? (tour.badgeColor as 'orange' | 'blue' | 'green')
+                : 'green',
+              image: tour.image ?? undefined,
+              bookHref: `/booking?tour=${tour.slug}`,
+              t: tour.title,
+              d: tour.durationLabel,
+              places: tour.places,
+              r: tour.rating.toFixed(1),
+              n: String(tour.reviewCount),
+              old: tour.priceWas ? formatINR(tour.priceWas) : undefined,
+              p: formatINR(tour.priceFrom),
+            }}
+            index={i}
+            variant="home"
+          />
         ))}
       </motion.div>
     </section>

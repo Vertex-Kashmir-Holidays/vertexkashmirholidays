@@ -1,0 +1,391 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TourCategory {
+  HONEYMOON
+  FAMILY
+  ADVENTURE
+  LUXURY
+}
+
+enum BookingStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  CLOSED
+}
+
+// ─────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  name         String?
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(USER)
+  bookings     Booking[]
+  reviews      Review[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+}
+
+model Destination {
+  id          String            @id @default(cuid())
+  name        String
+  slug        String            @unique
+  description String?
+  excerpt     String?
+  tagline     String?
+  coverImage  String?
+  location    String?
+  isFeatured  Boolean           @default(false)
+  sortOrder   Int               @default(0)
+  tours       TourDestination[]
+  metaTitle   String?
+  metaDesc    String?
+  ogImage     String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([slug])
+}
+
+model Tour {
+  id           String            @id @default(cuid())
+  title        String
+  slug         String            @unique
+  excerpt      String?
+  description  String?
+  category     TourCategory
+  duration     Int
+  coverImage   String?
+  badge        String?
+  badgeColor   String?           @default("green")
+  // JSON strings (SQLite has no native arrays)
+  gallery      String            @default("[]")
+  itinerary    String            @default("[]")
+  inclusions   String            @default("[]")
+  exclusions   String            @default("[]")
+  priceFrom    Float
+  priceWas     Float?
+  discountPct  Int?
+  bestseller   Boolean           @default(false)
+  rating       Float             @default(0)
+  reviewCount  Int               @default(0)
+  published    Boolean           @default(false)
+  destinations TourDestination[]
+  bookings     Booking[]
+  reviews      Review[]
+  metaTitle    String?
+  metaDesc     String?
+  ogImage      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([published])
+  @@index([bestseller])
+}
+
+model TourDestination {
+  id            String      @id @default(cuid())
+  tourId        String
+  destinationId String
+  tour          Tour        @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([tourId, destinationId])
+  @@index([tourId])
+  @@index([destinationId])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  tourId          String
+  userId          String?
+  tour            Tour          @relation(fields: [tourId], references: [id])
+  user            User?         @relation(fields: [userId], references: [id])
+  status          BookingStatus @default(PENDING)
+  razorpayOrderId String        @unique
+  razorpayPayId   String?
+  amount          Float
+  currency        String        @default("INR")
+  travelDate      DateTime
+  travellers      Int           @default(1)
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+  @@index([tourId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Inquiry {
+  id         String        @id @default(cuid())
+  name       String
+  phone      String
+  email      String?
+  travelDate DateTime?
+  travellers Int?
+  message    String?
+  source     String?       @default("website")
+  status     InquiryStatus @default(NEW)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  tourId    String
+  userId    String?
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+  name      String
+  rating    Int
+  body      String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tourId])
+  @@index([approved])
+}
+
+model Blog {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  body        String?
+  coverImage  String?
+  author      String?
+  category    String?
+  readTime    Int?
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  metaTitle   String?
+  metaDesc    String?
+  ogImage     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([published])
+  @@index([publishedAt])
+}
+
+model Gallery {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  caption   String?
+  category  String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+// ─────────────────────────────────────────────
+// Home page content
+// ─────────────────────────────────────────────
+
+// Singleton copy block for the hero + about sections.
+// Title strings support accent markers: *warm gradient* and ~cool gradient~.
+model HomeContent {
+  id                    String   @id @default("singleton")
+  heroBadge             String?
+  heroTitle             String?
+  heroSubtitle          String?
+  heroCtaPrimaryLabel   String?
+  heroCtaPrimaryHref    String?
+  heroCtaSecondaryLabel String?
+  heroCtaSecondaryHref  String?
+  formKicker            String?
+  formTitle             String?
+  formSubtitle          String?
+  formButtonLabel       String?
+  formNote              String?
+  formAvatars           String   @default("[]") // JSON array of avatar URLs
+  aboutPara1            String?
+  aboutPara2            String?
+  aboutImage1           String?
+  aboutImage2           String?
+  aboutCardEmoji        String?
+  aboutCardTitle        String?
+  aboutCardSubtitle     String?
+  aboutRatingTitle      String?
+  aboutRatingSubtitle   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Per-section headings keyed by section slug
+// (videos, packages, why, destinations, about, offers, testimonials, blogs)
+model HomeSection {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  kicker    String?
+  title     String?
+  subtitle  String?
+  ctaLabel  String?
+  ctaHref   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HeroSlide {
+  id        String   @id @default(cuid())
+  image     String
+  alt       String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Counters shown in hero / about ("hero" | "about" section)
+model SiteStat {
+  id        String   @id @default(cuid())
+  section   String
+  label     String
+  value     String
+  suffix    String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([section, sortOrder])
+}
+
+// Marquee items in the updates strip
+model TickerItem {
+  id        String   @id @default(cuid())
+  text      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model VideoReview {
+  id        String   @id @default(cuid())
+  name      String
+  place     String?
+  duration  String?
+  thumbnail String
+  videoUrl  String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model WhyChooseItem {
+  id          String   @id @default(cuid())
+  emoji       String
+  title       String
+  description String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model Offer {
+  id          String    @id @default(cuid())
+  badge       String?
+  title       String
+  description String?
+  image       String?
+  price       Float
+  oldPrice    Float?
+  endsText    String?
+  validUntil  DateTime?
+  ctaHref     String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// General site testimonials (not tied to a tour, unlike Review)
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  avatar    String?
+  quote     String
+  rating    Int      @default(5)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model SiteSettings {
+  id          String   @id @default("singleton")
+  siteName    String   @default("Vertex Kashmir Holidays")
+  siteTagline String?
+  siteEmail   String?
+  sitePhone   String?
+  siteAddress String?
+  whatsapp    String?
+  facebook    String?
+  instagram   String?
+  twitter     String?
+  youtube     String?
+  metaTitle   String?
+  metaDesc    String?
+  ogImage     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

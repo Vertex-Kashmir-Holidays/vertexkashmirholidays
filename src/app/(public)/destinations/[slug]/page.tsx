@@ -7,13 +7,12 @@ import { DestinationDetailOverview } from '@/components/destinations/Destination
 import { DestinationDetailSidebar } from '@/components/destinations/DestinationDetailSidebar';
 import { DestinationDetailTabs } from '@/components/destinations/DestinationDetailTabs';
 import { DestinationDetailThingsToDo } from '@/components/destinations/DestinationDetailThingsToDo';
-import { DestinationDetailTours } from '@/components/destinations/DestinationDetailTours';
+import { DestinationDetailTours, type DestinationTour } from '@/components/destinations/DestinationDetailTours';
 
 export default function DestinationDetailPage() {
   const destinationData = {
     name: 'Gulmarg',
     tagline: 'The Meadow of Flowers',
-    description: 'A breathtaking hill station in Jammu & Kashmir, famous for its snow-capped mountains, Asia\'s highest gondola ride, and endless meadows.',
     region: 'KASHMIR VALLEY',
     image: 'https://picsum.photos/seed/gulmarg-hero/1800/820',
     stats: [
@@ -45,7 +44,7 @@ export default function DestinationDetailPage() {
       { badge: 'POPULAR', bc: 'blue', seed: 'pkg-shikara', t: 'Srinagar Shikara Experience', d: '3N / 4D', places: 'Srinagar, Dal Lake, Mughal Gardens', r: '4.6', n: '215', p: '₹15,999' },
       { badge: 'BESTSELLER', bc: 'orange', seed: 'pkg-gulmarg', t: 'Gulmarg Adventure Getaway', d: '4N / 5D', places: 'Gulmarg, Apharwat, Khilanmarg', r: '4.8', n: '328', p: '₹22,999' },
       { badge: 'TRENDING', bc: 'green', seed: 'pkg-sonmarg', t: 'Sonmarg Autumn Special', d: '3N / 4D', places: 'Sonmarg, Thajiwas Glacier', r: '4.6', n: '156', p: '₹16,999' },
-    ],
+    ] satisfies DestinationTour[],
     gallery: [
       'https://picsum.photos/seed/gl-meadow/400/280',
       'https://picsum.photos/seed/gl-gondola/400/280',

@@ -8,7 +8,10 @@ interface TourCardProps {
   tour: {
     badge: string;
     bc: 'orange' | 'blue' | 'green';
-    seed: string;
+    seed?: string;
+    image?: string;
+    bookHref?: string;
+    whatsappHref?: string;
     t: string;
     d: string;
     places: string;
@@ -62,7 +65,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
           {/* Image Section */}
           <div className="relative h-44 overflow-hidden">
             <motion.img
-              src={`https://picsum.photos/seed/${tour.seed}/520/360`}
+              src={tour.image || `https://picsum.photos/seed/${tour.seed}/520/360`}
               alt={tour.t}
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
@@ -170,7 +173,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
             <div className={`mt-3 py-2 grid grid-cols-2 gap-2 border-t ${isHome ? 'border-white/10' : 'border-brand-line'}`}>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href="#"
+                  href={tour.whatsappHref || '#'}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
                     isHome
                       ? 'border border-green-bright/40 bg-green-bright/10 text-green-glow hover:bg-green-bright hover:text-navy-brand hover:shadow-glow'
@@ -186,7 +189,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
 
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href="#"
+                  href={tour.bookHref || '#'}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
                     isHome
                       ? 'bg-green-bright text-navy-brand hover:brightness-110 hover:shadow-glow'

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Tilt3D } from '@/components/ui/3DTilt';
 
 interface Destination {
@@ -22,24 +22,9 @@ interface DestinationsGridProps {
 
 export function DestinationsGrid({ destinations }: DestinationsGridProps) {
   const [displayed, setDisplayed] = useState(8);
-  const [filteredDestinations, setFilteredDestinations] = useState(destinations);
-
-  const handleFilterChange = (chip: string, search: string) => {
-    const filtered = destinations.filter((x) => {
-      const chipMatch =
-        chip === 'All' ||
-        x.n === chip ||
-        x.g === chip ||
-        (chip === 'Other States' && x.g !== 'Kashmir Valley' && x.g !== 'Ladakh');
-      const searchMatch = !search || x.n.toLowerCase().includes(search) || x.tag.toLowerCase().includes(search);
-      return chipMatch && searchMatch;
-    });
-    setFilteredDestinations(filtered);
-    setDisplayed(8);
-  };
 
   const loadMore = () => {
-    setDisplayed((prev) => Math.min(prev + 4, filteredDestinations.length));
+    setDisplayed((prev) => Math.min(prev + 4, destinations.length));
   };
 
   const containerVariants = {
@@ -52,7 +37,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -69,7 +54,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
         initial="hidden"
         animate="visible"
       >
-        {filteredDestinations.slice(0, displayed).map((dest, i) => (
+        {destinations.slice(0, displayed).map((dest, i) => (
           <motion.div key={i} variants={itemVariants}>
             <Tilt3D intensity={6}>
               <article className="group overflow-hidden rounded-2xl border border-brand-line bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
@@ -119,7 +104,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
         ))}
       </motion.div>
 
-      {displayed < filteredDestinations.length && (
+      {displayed < destinations.length && (
         <div className="mt-10 flex justify-center">
           <motion.button
             onClick={loadMore}

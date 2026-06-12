@@ -72,7 +72,7 @@ function SidebarContent({
     <div className="flex flex-col h-full bg-[#0d1b3e] text-white">
       {/* Logo */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-white/8">
-        <Logo variant="light" width={120} height={36} />
+        <Logo variant="light" />
         {onClose && (
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white">
             <X className="w-5 h-5" />

@@ -2,7 +2,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 
 export function ContactForm() {
   const formTrust = ['No spam. Ever.', 'We reply within 2 hours', '100% free advice'];

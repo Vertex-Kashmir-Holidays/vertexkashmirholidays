@@ -1,7 +1,7 @@
 // src/components/sections/DestinationsThingsToDo.tsx
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 
 export function DestinationsThingsToDo() {
   const things = [
@@ -25,7 +25,7 @@ export function DestinationsThingsToDo() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 10 },
     visible: {
       opacity: 1,

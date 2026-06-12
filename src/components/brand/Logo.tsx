@@ -36,7 +36,7 @@ export function Logo({
       : "text-green-glow dark:text-green-brand";
 
   const logoContent = (
-    <div className="flex items-center gap-2.5">
+    <div className={cn("flex items-center gap-2.5", !href && className)}>
       {/* Icon - same for all variants */}
       <div className="grid h-8 w-8 place-items-center rounded-md bg-white text-white shadow-glow ring-inner">
         <Image
@@ -66,7 +66,7 @@ export function Logo({
     <Link
       href={href}
       aria-label="Vertex Kashmir Holidays"
-      className="inline-flex items-center"
+      className={cn("inline-flex items-center", className)}
     >
       {logoContent}
     </Link>

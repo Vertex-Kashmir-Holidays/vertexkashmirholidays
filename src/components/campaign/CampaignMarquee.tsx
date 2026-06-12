@@ -1,7 +1,6 @@
 // src/components/sections/CampaignMarquee.tsx
 'use client';
 
-import { motion } from 'framer-motion';
 
 interface CampaignMarqueeProps {
   items: string[];

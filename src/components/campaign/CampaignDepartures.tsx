@@ -4,7 +4,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-interface Batch {
+export interface Batch {
   date: string;
   seats: number;
   price: string;

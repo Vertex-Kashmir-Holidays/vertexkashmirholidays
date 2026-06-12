@@ -2,7 +2,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRef } from 'react';
 
 interface CampaignActivitiesProps {
   activities: Array<[string, string]>;

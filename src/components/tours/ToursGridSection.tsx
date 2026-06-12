@@ -2,10 +2,12 @@
 
 import { TourCard } from '@/components/ui/TourCard';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 
-export function ToursGridSection() {
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
+interface ToursGridSectionProps {
+  onFilterToggle?: () => void;
+}
+
+export function ToursGridSection({ onFilterToggle }: ToursGridSectionProps) {
   const tours = [
     { badge: 'BESTSELLER', bc: 'orange', seed: 'pkg-honeymoon', t: 'Kashmir Honeymoon Escape', d: '6N / 7D', places: 'Srinagar, Pahalgam, Gulmarg', r: '4.9', n: '852', old: '₹39,999', p: '₹34,999' },
     { badge: 'POPULAR', bc: 'blue', seed: 'pkg-family', t: 'Kashmir Family Snow Special', d: '5N / 6D', places: 'Srinagar, Gulmarg, Sonmarg', r: '4.8', n: '624', old: '₹28,999', p: '₹24,999' },
@@ -15,7 +17,7 @@ export function ToursGridSection() {
     { badge: 'POPULAR', bc: 'blue', seed: 'pkg-shikara', t: 'Srinagar Shikara Experience', d: '3N / 4D', places: 'Srinagar, Dal Lake, Mughal Gardens', r: '4.6', n: '215', p: '₹15,999' },
     { badge: 'BESTSELLER', bc: 'orange', seed: 'pkg-gulmarg', t: 'Gulmarg Adventure Getaway', d: '4N / 5D', places: 'Gulmarg, Apharwat, Khilanmarg', r: '4.8', n: '328', p: '₹22,999' },
     { badge: 'TRENDING', bc: 'green', seed: 'pkg-sonmarg', t: 'Sonmarg Autumn Special', d: '3N / 4D', places: 'Sonmarg, Thajiwas Glacier', r: '4.6', n: '156', p: '₹16,999' },
-  ];
+  ] as const;
 
   const pagination = ['‹', '1', '2', '3', '4', '…', '8', '›'];
 
@@ -44,7 +46,7 @@ export function ToursGridSection() {
         <div className="flex items-center gap-2.5 text-[13px]">
           {/* Mobile Filter Button */}
           <button
-            onClick={() => setShowMobileFilters(true)}
+            onClick={onFilterToggle}
             className="flex items-center gap-1.5 rounded-lg border border-brand-line bg-white px-3.5 py-2 font-semibold shadow-soft lg:hidden"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

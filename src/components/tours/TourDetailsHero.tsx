@@ -25,7 +25,7 @@ export function TourDetailsHero({
 }: TourDetailsHeroProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout>();
+  const timerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Auto-play carousel
   useEffect(() => {

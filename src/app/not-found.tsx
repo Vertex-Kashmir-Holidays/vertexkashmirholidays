@@ -15,7 +15,7 @@ export default function NotFound() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md">
-        <Logo variant="dark" width={140} height={44} className="mb-10" />
+        <Logo variant="dark" className="mb-10" />
 
         <p className="text-brand-orange font-semibold text-sm uppercase tracking-widest mb-3">
           404 — Page Not Found

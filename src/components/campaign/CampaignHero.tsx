@@ -3,7 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface CampaignHeroProps {
   badge: string;

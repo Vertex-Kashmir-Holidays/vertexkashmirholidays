@@ -12,7 +12,7 @@ import { CampaignFilm } from '@/components/campaign/CampaignFilm';
 import { CampaignActivities } from '@/components/campaign/CampaignActivities';
 import { CampaignItinerary } from '@/components/campaign/CampaignItinerary';
 import { CampaignPricing } from '@/components/campaign/CampaignPricing';
-import { CampaignDepartures } from '@/components/campaign/CampaignDepartures';
+import { CampaignDepartures, type Batch } from '@/components/campaign/CampaignDepartures';
 import { CampaignInclusions } from '@/components/campaign/CampaignInclusions';
 import { CampaignGallery } from '@/components/campaign/CampaignGallery';
 import { CampaignTestimonials } from '@/components/campaign/CampaignTestimonials';
@@ -125,7 +125,7 @@ export default function CampaignPage() {
       { date: 'Feb 7 – 12, 2027', seats: 0, price: '₹30,999', status: 'sold' },
       { date: 'Feb 21 – 26, 2027', seats: 11, price: '₹30,999', status: 'open' },
       { date: 'Mar 7 – 12, 2027', seats: 12, price: '₹27,999', status: 'open' },
-    ],
+    ] satisfies Batch[],
     inclusions: [
       '5 nights heated accommodation in Gulmarg',
       '4-day certified ski school with full gear',

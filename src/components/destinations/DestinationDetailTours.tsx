@@ -4,18 +4,20 @@
 import { motion } from 'framer-motion';
 import { TourCard } from '@/components/ui/TourCard';
 
-interface Tour {
+export interface DestinationTour {
   badge: string;
-  bc: 'orange' | 'blue' | 'green' | 'purple';
-  off?: string;
-  seed: string;
-  title: string;
-  rating: string;
-  reviews: number;
-  duration: string;
-  places?: string;
-  price: string;
-  oldPrice?: string;
+  bc: 'orange' | 'blue' | 'green';
+  seed?: string;
+  image?: string;
+  bookHref?: string;
+  whatsappHref?: string;
+  t: string;
+  d: string;
+  places: string;
+  r: string;
+  n: string;
+  old?: string;
+  p: string;
   inclusions?: {
     transfers?: boolean;
     hotel?: string;
@@ -25,7 +27,7 @@ interface Tour {
 }
 
 interface DestinationDetailToursProps {
-  tours: Tour[];
+  tours: DestinationTour[];
 }
 
 export function DestinationDetailTours({ tours }: DestinationDetailToursProps) {

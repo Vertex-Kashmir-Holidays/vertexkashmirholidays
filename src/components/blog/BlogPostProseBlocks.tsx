@@ -3,7 +3,7 @@
 
 import { motion } from 'framer-motion';
 
-interface ProseBlock {
+export interface ProseBlock {
   id: string;
   title: string;
   type: 'text' | 'list' | 'table' | 'faq';

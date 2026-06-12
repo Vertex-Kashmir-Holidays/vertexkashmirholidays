@@ -2,36 +2,35 @@
 'use client';
 
 import { Tilt3D } from '@/components/ui/3DTilt';
-import { motion, AnimatePresence } from 'framer-motion';
+import { renderAccents } from '@/lib/accents';
+import type { HeroContentData, HeroSlideData, SiteStatData } from '@/types/home';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
-export function HeroSection() {
+interface HeroSectionProps {
+  content: HeroContentData;
+  slides: HeroSlideData[];
+  stats: SiteStatData[];
+}
+
+export function HeroSection({ content, slides, stats }: HeroSectionProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [formPulse, setFormPulse] = useState(false);
   const [progress, setProgress] = useState(0);
   const embersRef = useRef<HTMLDivElement>(null);
   const flakesRef = useRef<HTMLDivElement>(null);
 
-  // Image rotation
-  const backgroundImages = [
-    '/hero/hero.webp',
-    '/hero/gulmarg.webp',
-    '/hero/srinagar.webp',
-    '/hero/pahalgam.webp',
-    '/hero/sonamarg.webp',
-    '/hero/gurez.webp',
-    '/hero/shikara.webp',
-  ];
-
   useEffect(() => {
+    if (slides.length < 2) return;
+
     // Rotate background every 10 seconds
     const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % backgroundImages.length);
+      setCurrentImageIndex((prev) => (prev + 1) % slides.length);
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [backgroundImages.length]);
+  }, [slides.length]);
 
   // Form pulse effect - subtle attention grabber
   useEffect(() => {
@@ -83,7 +82,7 @@ export function HeroSection() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -103,28 +102,31 @@ export function HeroSection() {
     transparent 100%
   )`;
 
+  const currentSlide = slides[currentImageIndex];
 
   return (
     <section className="relative z-[2] min-h-[100svh] overflow-hidden bg-grain">
       {/* Background - Rotating hero images */}
       <div className="absolute inset-0">
         <AnimatePresence mode="wait">
-          <motion.img
-            key={currentImageIndex}
-            src={backgroundImages[currentImageIndex]}
-            alt="Kashmir landscape"
-            className="h-full w-full object-cover"
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-          />
+          {currentSlide && (
+            <motion.img
+              key={currentImageIndex}
+              src={currentSlide.image}
+              alt={currentSlide.alt ?? 'Kashmir landscape'}
+              className="h-full w-full object-cover"
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+            />
+          )}
         </AnimatePresence>
-        
+
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-dark-bg to-transparent"></div>
-        
+
         {/* Particles */}
         <div id="embers" ref={embersRef} className="absolute inset-y-0 left-0 w-1/2"></div>
         <div id="flakes" ref={flakesRef} className="absolute inset-y-0 right-0 w-1/2"></div>
@@ -132,7 +134,7 @@ export function HeroSection() {
 
       {/* Image indicator dots */}
       <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-        {backgroundImages.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentImageIndex(index)}
@@ -153,68 +155,72 @@ export function HeroSection() {
           initial="hidden"
           animate="visible"
         >
-          <motion.p
-            variants={itemVariants}
-            className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[11px] font-bold tracking-[0.22em] text-green-glow"
-          >
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> MONSOON-READY KASHMIR TRIPS · 2026
-          </motion.p>
+          {content.badge && (
+            <motion.p
+              variants={itemVariants}
+              className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[11px] font-bold tracking-[0.22em] text-green-glow"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> {content.badge}
+            </motion.p>
+          )}
 
           <motion.h1
             variants={itemVariants}
             className="h-display text-[46px] font-extrabold text-white sm:text-[64px]"
           >
-            While the plains<br />
-            <span className="grad-text-warm italic">scorch,</span> Kashmir is
-            <span className="grad-text-cool">calling.</span>
+            {renderAccents(content.title)}
           </motion.h1>
 
-          <motion.p
-            variants={itemVariants}
-            className="mt-6 max-w-md text-[15px] leading-relaxed text-white/70"
-          >
-            Curated Kashmir holidays — handcrafted by locals, priced for honest travellers. Step through to 18°C.
-          </motion.p>
+          {content.subtitle && (
+            <motion.p
+              variants={itemVariants}
+              className="mt-6 max-w-md text-[15px] leading-relaxed text-white/70"
+            >
+              {content.subtitle}
+            </motion.p>
+          )}
 
           <motion.div
             variants={itemVariants}
             className="mt-8 flex flex-wrap items-center gap-3"
           >
-            <Link
-              href="#packages"
-              className="inline-flex items-center gap-2 rounded-full bg-green-bright px-7 py-3.5 text-sm font-bold text-navy-brand shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110"
-            >
-              Explore Packages
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </Link>
-            <Link href="#" className="glass inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-white/15">
-              ▶&nbsp; Watch Film
-            </Link>
+            {content.ctaPrimaryLabel && (
+              <Link
+                href={content.ctaPrimaryHref ?? '#'}
+                className="inline-flex items-center gap-2 rounded-full bg-green-bright px-7 py-3.5 text-sm font-bold text-navy-brand shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110"
+              >
+                {content.ctaPrimaryLabel}
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </Link>
+            )}
+            {content.ctaSecondaryLabel && (
+              <Link
+                href={content.ctaSecondaryHref ?? '#'}
+                className="glass inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-white/15"
+              >
+                ▶&nbsp; {content.ctaSecondaryLabel}
+              </Link>
+            )}
           </motion.div>
 
-          <motion.div
-            variants={itemVariants}
-            className="mt-10 grid max-w-md grid-cols-4 divide-x divide-white/10 rounded-2xl glass py-4 text-center"
-          >
-            <div>
-              <p className="text-lg font-extrabold text-white" data-count="12000" data-suffix="+">0</p>
-              <p className="mt-1 text-[10px] text-white/55">Travellers</p>
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-white" data-count="500" data-suffix="+">0</p>
-              <p className="mt-1 text-[10px] text-white/55">Curated Trips</p>
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-white" data-count="15" data-suffix="+">0</p>
-              <p className="mt-1 text-[10px] text-white/55">Years</p>
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-white">4.9★</p>
-              <p className="mt-1 text-[10px] text-white/55">Rating</p>
-            </div>
-          </motion.div>
+          {stats.length > 0 && (
+            <motion.div
+              variants={itemVariants}
+              className="mt-10 grid max-w-md grid-cols-4 divide-x divide-white/10 rounded-2xl glass py-4 text-center"
+            >
+              {stats.map((stat, i) => (
+                <div key={i}>
+                  <p className="text-lg font-extrabold text-white">
+                    {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString('en-IN') : stat.value}
+                    {stat.suffix}
+                  </p>
+                  <p className="mt-1 text-[10px] text-white/55">{stat.label}</p>
+                </div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Form with golden portal border only - everything else stays green */}
@@ -251,7 +257,7 @@ export function HeroSection() {
                   duration: 0.01,
                 }}
               />
-              
+
               {/* Secondary golden glow layer - thicker and brighter */}
               <motion.div
                 className="absolute -inset-1 rounded-3xl pointer-events-none"
@@ -284,16 +290,22 @@ export function HeroSection() {
                 }}
                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
               />
-              
+
               <div className="shine"></div>
               <div className="pop relative z-10">
-                <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-green-glow">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-glow"></span> PLAN YOUR KASHMIR TRIP
-                </p>
-                
-                <h3 className="h-display mt-3 text-[26px] font-bold text-white">Get a quote in 60 seconds</h3>
-                <p className="mt-1 text-[13px] text-white/60">Free, no spam — real human on WhatsApp.</p>
-                
+                {content.formKicker && (
+                  <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-green-glow">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-glow"></span> {content.formKicker}
+                  </p>
+                )}
+
+                {content.formTitle && (
+                  <h3 className="h-display mt-3 text-[26px] font-bold text-white">{content.formTitle}</h3>
+                )}
+                {content.formSubtitle && (
+                  <p className="mt-1 text-[13px] text-white/60">{content.formSubtitle}</p>
+                )}
+
                 <div className="mt-5 space-y-3 text-sm">
                   <input
                     className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
@@ -307,29 +319,30 @@ export function HeroSection() {
                     className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
                     placeholder="Email"
                   />
-                  {/* <div className="grid grid-cols-2 gap-3">
-                    <input
-                      className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
-                      placeholder="Start Date"
-                    />
-                    <input
-                      className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
-                      placeholder="Travellers"
-                    />
-                  </div> */}
                   <button className="sweep w-full rounded-xl bg-green-bright py-3.5 text-sm font-bold text-navy-brand shadow-glow ring-inner transition hover:brightness-110">
-                    Request Free Itinerary →
+                    {content.formButtonLabel ?? 'Request Free Itinerary →'}
                   </button>
                 </div>
-                
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    <img className="h-7 w-7 rounded-full border-2 border-navy-brand object-cover" src="https://picsum.photos/seed/p1/60" alt="" />
-                    <img className="h-7 w-7 rounded-full border-2 border-navy-brand object-cover" src="https://picsum.photos/seed/p2/60" alt="" />
-                    <img className="h-7 w-7 rounded-full border-2 border-navy-brand object-cover" src="https://picsum.photos/seed/p3/60" alt="" />
+
+                {(content.formAvatars.length > 0 || content.formNote) && (
+                  <div className="mt-4 flex items-center gap-3">
+                    {content.formAvatars.length > 0 && (
+                      <div className="flex -space-x-2">
+                        {content.formAvatars.map((avatar, i) => (
+                          <img
+                            key={i}
+                            className="h-7 w-7 rounded-full border-2 border-navy-brand object-cover"
+                            src={avatar}
+                            alt=""
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {content.formNote && (
+                      <p className="text-[11px] text-white/55">{content.formNote}</p>
+                    )}
                   </div>
-                  <p className="text-[11px] text-white/55">12,248+ planned their trip this month</p>
-                </div>
+                )}
               </div>
             </motion.div>
           </Tilt3D>

@@ -5,7 +5,7 @@ import { BlogPostHero } from '@/components/blog/BlogPostHero';
 import { BlogPostHighlights } from '@/components/blog/BlogPostHighlights';
 import { BlogPostIntro } from '@/components/blog/BlogPostIntro';
 import { BlogPostOverview } from '@/components/blog/BlogPostOverview';
-import { BlogPostProseBlocks } from '@/components/blog/BlogPostProseBlocks';
+import { BlogPostProseBlocks, type ProseBlock } from '@/components/blog/BlogPostProseBlocks';
 import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
 import { BlogPostSections } from '@/components/blog/BlogPostSections';
 import { BlogPostSidebar } from '@/components/blog/BlogPostSidebar';
@@ -113,7 +113,7 @@ export default function BlogPostPage() {
           ['Do I need permits as an Indian tourist?', 'No permits are needed for any destination in this plan. Foreign nationals need none either for these areas.'],
         ],
       },
-    ],
+    ] satisfies ProseBlock[],
     relatedTour: {
       label: 'Plan this trip with us',
       seed: 'tour-honeymoon',
