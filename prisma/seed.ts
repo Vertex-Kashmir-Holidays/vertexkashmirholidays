@@ -581,6 +581,11 @@ async function main() {
       ctaLabel: "Read the Blog →",
       ctaHref: "/blog",
     },
+    {
+      key: "toursHero",
+      title: "Kashmir Tour Packages",
+      subtitle: "Handpicked experiences by locals, crafted with love.",
+    },
   ];
   for (const section of homeSections) {
     await prisma.homeSection.upsert({
