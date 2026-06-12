@@ -1,0 +1,77 @@
+// src/components/sections/DestinationDetailThingsToDo.tsx
+'use client';
+
+import { motion } from 'framer-motion';
+
+interface ThingToDo {
+  seed: string;
+  title: string;
+  description: string;
+}
+
+interface DestinationDetailThingsToDoProps {
+  things: ThingToDo[];
+}
+
+export function DestinationDetailThingsToDo({ things }: DestinationDetailThingsToDoProps) {
+  const scroll = (direction: 'prev' | 'next') => {
+    const row = document.getElementById('thingsRow');
+    if (!row) return;
+    const width = (row.firstElementChild as HTMLElement)?.offsetWidth || 160;
+    row.scrollBy({ left: (direction === 'next' ? 1 : -1) * (width + 16) * 2, behavior: 'smooth' });
+  };
+
+  return (
+    <motion.section
+      id="things"
+      className="rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-[21px] font-bold">Things to Do in Gulmarg</h2>
+        <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-brand-green2 hover:underline">
+          View all
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </a>
+      </div>
+      <div className="relative mt-5">
+        <div className="snap-row scrollbar-none flex gap-4 overflow-x-auto pb-1" id="thingsRow">
+          {things.map((thing, i) => (
+            <motion.article
+              key={i}
+              className="w-[160px] shrink-0"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <div className="group h-[150px] overflow-hidden rounded-xl">
+                <img
+                  src={`https://picsum.photos/seed/${thing.seed}/360/340`}
+                  alt={thing.title}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              </div>
+              <h3 className="mt-3 text-[13.5px] font-bold leading-snug">{thing.title}</h3>
+              <p className="mt-1.5 text-[11.5px] leading-relaxed text-brand-mute">{thing.description}</p>
+            </motion.article>
+          ))}
+        </div>
+        <motion.button
+          onClick={() => scroll('next')}
+          aria-label="Next"
+          className="absolute -right-3 top-[72px] grid h-10 w-10 place-items-center rounded-full bg-white text-brand-ink shadow-card transition hover:text-brand-green2"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          ›
+        </motion.button>
+      </div>
+    </motion.section>
+  );
+}

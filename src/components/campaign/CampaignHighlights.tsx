@@ -1,0 +1,75 @@
+// src/components/sections/CampaignHighlights.tsx
+'use client';
+
+import { motion } from 'framer-motion';
+import { Tilt3D } from '@/components/ui/3DTilt';
+
+interface Highlight {
+  seed: string;
+  emoji: string;
+  title: string;
+  description: string;
+}
+
+interface CampaignHighlightsProps {
+  title: string;
+  highlights: Highlight[];
+}
+
+export function CampaignHighlights({ title, highlights }: CampaignHighlightsProps) {
+  return (
+    <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20">
+      <div className="text-center">
+        <motion.p
+          className="text-[11px] font-extrabold tracking-[0.24em] text-accent"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          WHY THIS TRIP
+        </motion.p>
+        <motion.h2
+          className="h-display mt-3 text-4xl font-bold text-white"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          {title}
+        </motion.h2>
+      </div>
+      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {highlights.map((highlight, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08 }}
+          >
+            <Tilt3D intensity={6}>
+              <article className="glass relative overflow-hidden rounded-3xl shadow-card">
+                <div className="shine"></div>
+                <div className="relative h-36 overflow-hidden">
+                  <img
+                    src={`https://picsum.photos/seed/${highlight.seed}/480/300`}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="glass-strong absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-xl text-xl">
+                    {highlight.emoji}
+                  </span>
+                </div>
+                <div className="p-5">
+                  <h3 className="text-[15px] font-bold text-white">{highlight.title}</h3>
+                  <p className="mt-2 text-[12.5px] leading-relaxed text-white/60">{highlight.description}</p>
+                </div>
+              </article>
+            </Tilt3D>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
