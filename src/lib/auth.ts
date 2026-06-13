@@ -12,28 +12,40 @@ const loginSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+
   providers: [
     Credentials({
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+
+        if (!parsed.success) {
+          return null;
+        }
 
         const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
+          where: {
+            email: parsed.data.email,
+          },
         });
-        if (!user) return null;
 
-        const passwordMatch = await bcrypt.compare(
+        if (!user) {
+          return null;
+        }
+
+        const validPassword = await bcrypt.compare(
           parsed.data.password,
-          user.passwordHash,
+          user.passwordHash
         );
-        if (!passwordMatch) return null;
+
+        if (!validPassword) {
+          return null;
+        }
 
         return {
           id: user.id,
           email: user.email,
-          name: user.name ?? undefined,
-          role: user.role as string,
+          name: user.name,
+          role: user.role,
         };
       },
     }),
