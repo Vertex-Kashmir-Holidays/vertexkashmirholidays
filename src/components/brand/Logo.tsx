@@ -22,18 +22,19 @@ export function Logo({
   const isLight = variant === "light";
   const isDark = variant === "dark";
   
-  // For auto mode, we use CSS classes to handle dark/light mode
-  const textColor = isLight 
-    ? "text-white" 
-    : isDark 
-      ? "text-navy-brand" 
-      : "text-white dark:text-navy-brand";
-  
+  // For auto mode, we use CSS classes to handle dark/light mode:
+  // light theme → dark (navy) text, dark theme → white text.
+  const textColor = isLight
+    ? "text-white"
+    : isDark
+      ? "text-navy-brand"
+      : "text-navy-brand dark:text-white";
+
   const subTextColor = isLight
     ? "text-green-glow"
     : isDark
       ? "text-green-brand"
-      : "text-green-glow dark:text-green-brand";
+      : "text-green-brand dark:text-green-glow";
 
   const logoContent = (
     <div className={cn("flex items-center gap-2.5", !href && className)}>

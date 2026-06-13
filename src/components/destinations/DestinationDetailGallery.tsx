@@ -4,22 +4,23 @@
 import { motion } from 'framer-motion';
 
 interface DestinationDetailGalleryProps {
+  name: string;
   images: string[];
 }
 
-export function DestinationDetailGallery({ images }: DestinationDetailGalleryProps) {
+export function DestinationDetailGallery({ name, images }: DestinationDetailGalleryProps) {
   return (
     <motion.section
       id="gallery"
-      className="rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      className="rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[21px] font-bold">Glimpses of Gulmarg</h2>
-        <a href="#" className="flex items-center gap-1 text-[13px] font-bold text-brand-green2 hover:underline">
+        <h2 className="text-[21px] font-bold">Glimpses of {name}</h2>
+        <a href="#" className="flex items-center gap-1 text-[13px] font-bold text-primary hover:underline">
           View full gallery ›
         </a>
       </div>
@@ -36,7 +37,7 @@ export function DestinationDetailGallery({ images }: DestinationDetailGalleryPro
           >
             <img
               src={image}
-              alt="Gulmarg"
+              alt={name}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
             />
           </motion.a>

@@ -11,7 +11,7 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
   return (
     <motion.section
       id="gallery"
-      className="mt-6 rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -38,7 +38,7 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
       <div className="mt-4 flex justify-end">
         <a
           href="#"
-          className="flex items-center gap-1.5 text-[13px] font-bold text-brand-green2 hover:underline"
+          className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline"
         >
           View All Photos
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">

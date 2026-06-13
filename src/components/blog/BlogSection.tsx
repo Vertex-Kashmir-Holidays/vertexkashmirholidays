@@ -13,23 +13,23 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
   if (blogs.length === 0) return null;
 
   return (
-    <section id="blogs" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
+    <section id="blogs" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-green-glow">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-4xl font-bold text-white" style={{ '--rd': '0.08s' } as any}>
+          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
         </div>
         {heading.ctaLabel && (
-          <Link href={heading.ctaHref ?? '#'} className="rv text-sm font-bold text-green-glow hover:underline" style={{ '--rd': '0.16s' } as any}>
+          <Link href={heading.ctaHref ?? '#'} className="rv text-sm font-bold text-primary hover:underline" style={{ '--rd': '0.16s' } as React.CSSProperties}>
             {heading.ctaLabel}
           </Link>
         )}
       </div>
       <div className="mt-9 grid gap-6 md:grid-cols-3">
         {blogs.map((b, i) => (
-          <Link key={b.id} href={`/blog/${b.slug}`} className="rv tilt glass group relative block overflow-hidden rounded-3xl shadow-card" data-tilt style={{ '--rd': `${i * 0.09}s` } as any}>
+          <Link key={b.id} href={`/blog/${b.slug}`} className="rv tilt glass group relative block overflow-hidden rounded-3xl shadow-card" data-tilt style={{ '--rd': `${i * 0.09}s` } as React.CSSProperties}>
             <div className="shine"></div>
             <div className="relative h-44 overflow-hidden">
               {b.coverImage && (
@@ -42,12 +42,12 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
               )}
             </div>
             <div className="pop-sm p-5">
-              <p className="text-[11px] text-white/45">
+              <p className="text-[11px] text-muted-foreground">
                 {[b.dateLabel, b.readTime ? `${b.readTime} min read` : null].filter(Boolean).join(' · ')}
               </p>
-              <h3 className="mt-2 font-bold leading-snug text-white transition group-hover:text-green-glow">{b.title}</h3>
-              {b.excerpt && <p className="mt-2 text-[13px] leading-relaxed text-white/55">{b.excerpt}</p>}
-              <p className="mt-4 text-xs font-bold text-green-glow">Read Article →</p>
+              <h3 className="mt-2 font-bold leading-snug text-foreground transition group-hover:text-primary">{b.title}</h3>
+              {b.excerpt && <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{b.excerpt}</p>}
+              <p className="mt-4 text-xs font-bold text-primary">Read Article →</p>
             </div>
           </Link>
         ))}

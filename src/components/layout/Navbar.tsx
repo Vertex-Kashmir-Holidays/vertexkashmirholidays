@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -50,22 +51,22 @@ export function Navbar() {
             scrolled ? 'glass-deep' : 'glass'
           }`}
         >
-          {/* Logo - light variant for dark glass background */}
-          <Logo variant="light" className="h-8" />
+          {/* Logo - adapts to active theme */}
+          <Logo variant="auto" className="h-8" />
 
           {/* Desktop Navigation */}
-          <ul className="hidden items-center gap-7 text-[13px] font-medium text-white/75 lg:flex">
+          <ul className="hidden items-center gap-7 text-[13px] font-medium text-foreground/75 lg:flex">
             {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className={`relative transition hover:text-white ${
-                    isActive(link.href) ? 'text-white' : 'text-white/75'
+                  className={`relative transition hover:text-foreground ${
+                    isActive(link.href) ? 'text-foreground' : 'text-foreground/75'
                   }`}
                 >
                   {link.label}
                   {isActive(link.href) && (
-                    <span className="absolute -bottom-1.5 left-0 h-[2px] w-full rounded-full bg-green-bright" />
+                    <span className="absolute -bottom-1.5 left-0 h-[2px] w-full rounded-full bg-primary" />
                   )}
                 </Link>
               </li>
@@ -74,9 +75,10 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 lg:flex">
+            <ThemeToggle />
             <Link
               href="/register"
-              className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white hover:text-navy-brand"
+              className="grid h-9 w-9 place-items-center rounded-full border border-foreground/20 text-foreground transition hover:bg-foreground hover:text-background"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -85,7 +87,7 @@ export function Navbar() {
             </Link>
             <Link
               href="#"
-              className="inline-flex items-center gap-2 rounded-full bg-green-bright px-5 py-2.5 text-[13px] font-bold text-navy-brand shadow-glow ring-inner transition hover:brightness-110"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                 <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
@@ -96,9 +98,10 @@ export function Navbar() {
 
           {/* Mobile Actions - Top Bar */}
           <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle />
             <Link
               href="/register"
-              className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white transition hover:bg-white hover:text-navy-brand"
+              className="grid h-9 w-9 place-items-center rounded-full border border-foreground/20 text-foreground transition hover:bg-foreground hover:text-background"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -107,7 +110,7 @@ export function Navbar() {
             </Link>
             <Link
               href="#"
-              className="inline-flex items-center gap-2 rounded-full bg-green-bright px-4 py-1.5 text-[11px] font-bold text-navy-brand shadow-glow ring-inner transition hover:brightness-110"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-[11px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
               <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor">
                 <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
@@ -119,14 +122,14 @@ export function Navbar() {
       </header>
 
       {/* Mobile Bottom Tab Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-navy-brand/95 backdrop-blur-lg lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg lg:hidden">
         <div className="flex items-center justify-around py-2">
           {bottomNavLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
-                isActive(link.href) ? 'text-green-glow' : 'text-white/60 hover:text-white'
+                isActive(link.href) ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
               }`}
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -140,7 +143,7 @@ export function Navbar() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
-              mobileMenuOpen ? 'text-green-glow' : 'text-white/60 hover:text-white'
+              mobileMenuOpen ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
             }`}
             aria-label="Toggle menu"
           >
@@ -162,14 +165,14 @@ export function Navbar() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-navy-brand/95 backdrop-blur-lg lg:hidden">
+        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-lg lg:hidden">
           <div className="flex h-full flex-col items-center justify-center gap-6 pt-10">
             {navLinks.slice(3).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[17px] font-medium transition hover:text-green-glow ${
-                  isActive(link.href) ? 'text-green-glow' : 'text-white/80'
+                className={`text-[17px] font-medium transition hover:text-primary ${
+                  isActive(link.href) ? 'text-primary' : 'text-foreground/80'
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >

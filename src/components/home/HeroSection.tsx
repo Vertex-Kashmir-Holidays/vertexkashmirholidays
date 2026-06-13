@@ -125,7 +125,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
 
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
-        <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-dark-bg to-transparent"></div>
+        <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-background to-transparent"></div>
 
         {/* Particles */}
         <div id="embers" ref={embersRef} className="absolute inset-y-0 left-0 w-1/2"></div>
@@ -150,7 +150,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
       <div className="relative z-[2] mx-auto grid min-h-[100svh] max-w-[1300px] items-center gap-10 px-6 pb-20 pt-32 lg:grid-cols-[1.15fr_.85fr]">
         <motion.div
           data-depth
-          style={{ '--d': '0.7' } as any}
+          style={{ '--d': '0.7' } as React.CSSProperties}
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -166,7 +166,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
 
           <motion.h1
             variants={itemVariants}
-            className="h-display text-[46px] font-extrabold text-white sm:text-[64px]"
+            className="h-display text-[34px] font-extrabold text-white sm:text-[48px] lg:text-[64px]"
           >
             {renderAccents(content.title)}
           </motion.h1>
@@ -187,7 +187,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
             {content.ctaPrimaryLabel && (
               <Link
                 href={content.ctaPrimaryHref ?? '#'}
-                className="inline-flex items-center gap-2 rounded-full bg-green-bright px-7 py-3.5 text-sm font-bold text-navy-brand shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110"
               >
                 {content.ctaPrimaryLabel}
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -212,7 +212,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
             >
               {stats.map((stat, i) => (
                 <div key={i}>
-                  <p className="text-lg font-extrabold text-white">
+                  <p className="text-base sm:text-lg font-extrabold text-white">
                     {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString('en-IN') : stat.value}
                     {stat.suffix}
                   </p>
@@ -294,32 +294,32 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
               <div className="shine"></div>
               <div className="pop relative z-10">
                 {content.formKicker && (
-                  <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-green-glow">
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-glow"></span> {content.formKicker}
+                  <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-primary">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary"></span> {content.formKicker}
                   </p>
                 )}
 
                 {content.formTitle && (
-                  <h3 className="h-display mt-3 text-[26px] font-bold text-white">{content.formTitle}</h3>
+                  <h3 className="h-display mt-3 text-[26px] font-bold text-foreground">{content.formTitle}</h3>
                 )}
                 {content.formSubtitle && (
-                  <p className="mt-1 text-[13px] text-white/60">{content.formSubtitle}</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">{content.formSubtitle}</p>
                 )}
 
                 <div className="mt-5 space-y-3 text-sm">
                   <input
-                    className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
+                    className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
                     placeholder="Full Name *"
                   />
                   <input
-                    className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
+                    className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
                     placeholder="Phone *"
                   />
                   <input
-                    className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-white placeholder-white/45 outline-none ring-green-bright/60 transition focus:bg-white/10 focus:ring-2"
+                    className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
                     placeholder="Email"
                   />
-                  <button className="sweep w-full rounded-xl bg-green-bright py-3.5 text-sm font-bold text-navy-brand shadow-glow ring-inner transition hover:brightness-110">
+                  <button className="sweep w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110">
                     {content.formButtonLabel ?? 'Request Free Itinerary →'}
                   </button>
                 </div>
@@ -331,7 +331,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
                         {content.formAvatars.map((avatar, i) => (
                           <img
                             key={i}
-                            className="h-7 w-7 rounded-full border-2 border-navy-brand object-cover"
+                            className="h-7 w-7 rounded-full border-2 border-card object-cover"
                             src={avatar}
                             alt=""
                           />
@@ -339,7 +339,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
                       </div>
                     )}
                     {content.formNote && (
-                      <p className="text-[11px] text-white/55">{content.formNote}</p>
+                      <p className="text-[11px] text-muted-foreground">{content.formNote}</p>
                     )}
                   </div>
                 )}

@@ -62,8 +62,8 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
         <article
           className={`group flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
             isHome
-              ? 'bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-sm border border-white/10 rounded-3xl shadow-card hover:shadow-green-glow/20'
-              : 'border border-brand-line bg-white shadow-soft hover:shadow-brand-green/10'
+              ? 'bg-gradient-to-br from-foreground/[0.05] to-transparent backdrop-blur-sm border border-border rounded-3xl shadow-card hover:shadow-green-glow/20'
+              : 'border border-border bg-card shadow-soft hover:shadow-primary/10'
           }`}
         >
           {/* Image Section */}
@@ -87,7 +87,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
               aria-label="Save to wishlist"
               className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full backdrop-blur transition-all duration-300 hover:scale-110 ${
                 isHome
-                  ? 'glass text-white hover:bg-white/30'
+                  ? 'glass text-foreground hover:bg-foreground/20'
                   : 'bg-white/25 text-white hover:bg-white hover:text-rose-500'
               }`}
               whileHover={{ scale: 1.1 }}
@@ -102,90 +102,90 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
           {/* Content Section */}
           <div className="flex flex-1 flex-col p-5">
             {/* Title */}
-            <h3 className={`text-[16px] font-bold leading-snug ${isHome ? 'text-white' : 'text-brand-ink'}`}>
-              <Link href={detailHref} className="transition-colors hover:text-brand-green2">
+            <h3 className={`text-[16px] font-bold leading-snug ${isHome ? 'text-foreground' : 'text-foreground'}`}>
+              <Link href={detailHref} className="transition-colors hover:text-primary">
                 {tour.t}
               </Link>
             </h3>
             
             {/* Duration & Destinations */}
-            <p className={`mt-1.5 text-[12px] leading-relaxed ${isHome ? 'text-white/60' : 'text-brand-mute'}`}>
+            <p className={`mt-1.5 text-[12px] leading-relaxed ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
               <span className="font-semibold">{tour.d}</span>
               <span className="mx-2 opacity-40">·</span>
               {tour.places}
             </p>
 
             {/* Inclusions Grid */}
-            <div className={`mt-3 grid grid-cols-4 gap-2 py-2 border-t border-b ${isHome ? 'border-white/10' : 'border-brand-line'}`}>
+            <div className={`mt-3 grid grid-cols-4 gap-2 py-2 border-t border-b ${isHome ? 'border-border' : 'border-border'}`}>
               {/* Transfers */}
               <div className="flex flex-col items-center gap-1">
-                <svg className={`h-5 w-5 ${isHome ? 'text-green-glow' : 'text-brand-green2'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <svg className={`h-5 w-5 ${isHome ? 'text-primary' : 'text-primary'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path d="M7 16a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-6 0" />
                   <path d="M10 6v6" />
                   <path d="M14 6v6" />
                 </svg>
-                <span className={`text-[9px] font-medium ${isHome ? 'text-white/60' : 'text-brand-mute'}`}>Transfers</span>
+                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Transfers</span>
               </div>
 
               {/* Hotel */}
               <div className="flex flex-col items-center gap-1">
-                <svg className={`h-5 w-5 ${isHome ? 'text-green-glow' : 'text-brand-green2'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <svg className={`h-5 w-5 ${isHome ? 'text-primary' : 'text-primary'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v9" />
                 </svg>
-                <span className={`text-[9px] font-medium ${isHome ? 'text-white/60' : 'text-brand-mute'}`}>{inclusions.hotel || '3★'}</span>
+                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{inclusions.hotel || '3★'}</span>
               </div>
 
               {/* Meals */}
               <div className="flex flex-col items-center gap-1">
-                <svg className={`h-5 w-5 ${isHome ? 'text-green-glow' : 'text-brand-green2'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <svg className={`h-5 w-5 ${isHome ? 'text-primary' : 'text-primary'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" />
                   <path d="M7 9h10" />
                   <path d="M7 13h10" />
                   <path d="M7 17h10" />
                 </svg>
-                <span className={`text-[9px] font-medium ${isHome ? 'text-white/60' : 'text-brand-mute'}`}>Meals</span>
+                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Meals</span>
               </div>
 
               {/* Shikara */}
               <div className="flex flex-col items-center gap-1">
-                <svg className={`h-5 w-5 ${isHome ? 'text-green-glow' : 'text-brand-green2'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <svg className={`h-5 w-5 ${isHome ? 'text-primary' : 'text-primary'}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                   <path d="M4 12h16" />
                   <path d="M8 12v8" />
                   <path d="M16 12v8" />
                   <path d="M12 12v8" />
                   <path d="M2 20h20" />
                 </svg>
-                <span className={`text-[9px] font-medium ${isHome ? 'text-white/60' : 'text-brand-mute'}`}>Shikara</span>
+                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Shikara</span>
               </div>
             </div>
 
             {/* Price Section */}
             <div className="mt-3 flex items-end justify-between">
                 {tour.old ? (
-                  <span className={`text-[11px] ${isHome ? 'text-white/40' : 'text-brand-mute'} line-through`}>{tour.old}</span>
+                  <span className={`text-[11px] ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'} line-through`}>{tour.old}</span>
                 ) : (
                   <span className="text-[11px]">&nbsp;</span>
                 )}
-                <p className={`text-[22px] font-extrabold leading-tight ${isHome ? 'text-green-glow' : 'text-brand-ink'}`}>
+                <p className={`text-[22px] font-extrabold leading-tight ${isHome ? 'text-primary' : 'text-foreground'}`}>
                   {tour.p}
                 </p>
-                <p className={`text-[9px] ${isHome ? 'text-white/45' : 'text-brand-mute'}`}>per person</p>
+                <p className={`text-[9px] ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>per person</p>
             </div>
 
             {/* Customization Text */}
-            <p className={`mt-3 py-1 text-[10px] italic  border-t  ${isHome ? 'text-white/40 border-white/10' : 'text-brand-mute border-brand-line'}`}>
+            <p className={`mt-3 py-1 text-[10px] italic  border-t  ${isHome ? 'text-muted-foreground border-border' : 'text-muted-foreground border-border'}`}>
               ✦ Tour can be customized as per requirements
             </p>
 
             {/* CTA Buttons */}
-            <div className={`mt-3 py-2 grid grid-cols-2 gap-2 border-t ${isHome ? 'border-white/10' : 'border-brand-line'}`}>
+            <div className={`mt-3 py-2 grid grid-cols-2 gap-2 border-t ${isHome ? 'border-border' : 'border-border'}`}>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href={tour.whatsappHref || '#'}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
                     isHome
-                      ? 'border border-green-bright/40 bg-green-bright/10 text-green-glow hover:bg-green-bright hover:text-navy-brand hover:shadow-glow'
-                      : 'border border-brand-green2/30 bg-brand-green2/10 text-brand-green2 hover:bg-brand-green2 hover:text-white hover:shadow-md'
+                      ? 'border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-glow'
+                      : 'border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md'
                   }`}
                 >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
@@ -200,8 +200,8 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
                   href={detailHref}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
                     isHome
-                      ? 'bg-green-bright text-navy-brand hover:brightness-110 hover:shadow-glow'
-                      : 'bg-brand-green text-white hover:brightness-110 hover:shadow-md'
+                      ? 'bg-primary text-primary-foreground hover:brightness-110 hover:shadow-glow'
+                      : 'bg-primary text-primary-foreground hover:brightness-110 hover:shadow-md'
                   }`}
                 >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

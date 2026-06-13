@@ -21,7 +21,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
   return (
     <motion.section
       id="itinerary"
-      className="mt-6 rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -29,11 +29,11 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
     >
       <div className="flex items-center justify-between">
         <h2 className="text-[17px] font-bold">
-          Itinerary <span className="text-[13px] font-semibold text-brand-mute">(Day by Day)</span>
+          Itinerary <span className="text-[13px] font-semibold text-muted-foreground">(Day by Day)</span>
         </h2>
         <button
           onClick={() => setOpenDay(0)}
-          className="text-[12px] font-semibold text-brand-green2 hover:underline"
+          className="text-[12px] font-semibold text-primary hover:underline"
         >
           Collapse All
         </button>
@@ -48,8 +48,8 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
               key={day.day}
               className={`overflow-hidden rounded-xl ${
                 isOpen
-                  ? 'border-l-[3px] border-brand-bright bg-brand-page'
-                  : 'border border-brand-line'
+                  ? 'border-l-[3px] border-primary bg-muted'
+                  : 'border border-border'
               }`}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -62,7 +62,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
               >
                 <span
                   className={`text-[13px] font-extrabold ${
-                    isOpen ? 'text-brand-green2' : ''
+                    isOpen ? 'text-primary' : ''
                   }`}
                 >
                   Day {day.day}
@@ -72,7 +72,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                 </span>
                 <motion.svg
                   viewBox="0 0 24 24"
-                  className={`h-4 w-4 shrink-0 text-brand-mute transition-transform duration-300 ${
+                  className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${
                     isOpen ? 'rotate-180' : ''
                   }`}
                   fill="none"
@@ -93,7 +93,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-brand-ink/70">
+                    <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-foreground/70">
                       {day.body}
                     </p>
                     {day.image && (

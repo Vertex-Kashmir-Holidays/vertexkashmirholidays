@@ -16,16 +16,16 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
   if (destinations.length === 0) return null;
 
   return (
-    <section id="destinations" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
+    <section id="destinations" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-green-glow">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-4xl font-bold text-white" style={{ '--rd': '0.08s' } as any}>
+          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
         </div>
         {heading.ctaLabel && (
-          <Link href={heading.ctaHref ?? '#'} className="rv text-sm font-bold text-green-glow hover:underline" style={{ '--rd': '0.16s' } as any}>
+          <Link href={heading.ctaHref ?? '#'} className="rv text-sm font-bold text-primary hover:underline" style={{ '--rd': '0.16s' } as React.CSSProperties}>
             {heading.ctaLabel}
           </Link>
         )}
@@ -35,8 +35,8 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
           <Link
             key={d.id}
             href={`/destinations/${d.slug}`}
-            className={`rv group relative block overflow-hidden rounded-3xl border border-white/10 ${cellClasses[Math.min(i, 1)]}`}
-            style={{ '--rd': `${i * 0.07}s` } as any}
+            className={`rv group relative block overflow-hidden rounded-3xl border border-border ${cellClasses[Math.min(i, 1)]}`}
+            style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}
           >
             {d.coverImage && (
               <img

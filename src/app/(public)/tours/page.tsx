@@ -57,7 +57,7 @@ export default async function ToursPage() {
   );
 
   return (
-    <div className="bg-light-bg text-light-text">
+    <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       {tours.length > 0 && <JsonLd data={toursJsonLd} />}
       <ToursHeroSection

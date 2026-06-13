@@ -19,29 +19,29 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
   if (videos.length === 0) return null;
 
   return (
-    <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
+    <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-green-glow">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-4xl font-bold text-white" style={{ '--rd': '0.08s' } as any}>
+          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
           {heading.subtitle && (
-            <p className="rv mt-3 max-w-md text-sm text-white/60" style={{ '--rd': '0.14s' } as any}>
+            <p className="rv mt-3 max-w-md text-sm text-muted-foreground" style={{ '--rd': '0.14s' } as React.CSSProperties}>
               {heading.subtitle}
             </p>
           )}
         </div>
-        <div className="rv flex gap-2" style={{ '--rd': '0.2s' } as any}>
+        <div className="rv flex gap-2" style={{ '--rd': '0.2s' } as React.CSSProperties}>
           <button
             onClick={() => scroll('prev')}
-            className="glass grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15"
+            className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
             ←
           </button>
           <button
             onClick={() => scroll('next')}
-            className="glass grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15"
+            className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
             →
           </button>
@@ -51,8 +51,8 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
         {videos.map((v, i) => (
           <article
             key={v.id}
-            className="rv group relative h-[420px] w-[240px] shrink-0 overflow-hidden rounded-3xl border border-white/12 shadow-card"
-            style={{ '--rd': `${i * 0.07}s` } as any}
+            className="rv group relative h-[420px] w-[240px] shrink-0 overflow-hidden rounded-3xl border border-border shadow-card"
+            style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}
           >
             <img
               src={v.thumbnail}
@@ -67,7 +67,7 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
             )}
             <button
               aria-label="Play video"
-              className="glass-strong absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-xl text-white transition duration-300 group-hover:scale-110 group-hover:bg-green-bright group-hover:text-navy-brand"
+              className="glass-strong absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-xl text-white transition duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground"
             >
               ▶
             </button>

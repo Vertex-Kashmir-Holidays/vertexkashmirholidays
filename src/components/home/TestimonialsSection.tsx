@@ -19,24 +19,24 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
   if (testimonials.length === 0) return null;
 
   return (
-    <section id="testimonials" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
+    <section id="testimonials" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-green-glow">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-4xl font-bold text-white" style={{ '--rd': '0.08s' } as any}>
+          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
         </div>
-        <div className="rv flex gap-2" style={{ '--rd': '0.16s' } as any}>
+        <div className="rv flex gap-2" style={{ '--rd': '0.16s' } as React.CSSProperties}>
           <button
             onClick={() => scroll('prev')}
-            className="glass grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15"
+            className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
             ←
           </button>
           <button
             onClick={() => scroll('next')}
-            className="glass grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15"
+            className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
             →
           </button>
@@ -44,16 +44,16 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
       </div>
       <div id="trow" className="snap-row mt-9 flex gap-5 overflow-x-auto pb-4">
         {testimonials.map((t, i) => (
-          <article key={t.id} className="rv glass relative w-[340px] shrink-0 rounded-3xl p-6 shadow-card" style={{ '--rd': `${i * 0.07}s` } as any}>
-            <p className="font-display text-5xl leading-none text-green-glow/60">"</p>
-            <p className="mt-2 text-[14px] leading-relaxed text-white/75">{t.quote}</p>
-            <div className="mt-5 flex items-center gap-3 border-t border-white/10 pt-4">
+          <article key={t.id} className="rv glass relative w-[300px] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card" style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}>
+            <p className="font-display text-5xl leading-none text-primary/50">"</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{t.quote}</p>
+            <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
-                <img src={t.avatar} alt="" className="h-10 w-10 rounded-full border border-white/20 object-cover" />
+                <img src={t.avatar} alt="" className="h-10 w-10 rounded-full border border-border object-cover" />
               )}
               <div>
-                <p className="text-sm font-bold text-white">{t.name}</p>
-                {t.location && <p className="text-[11px] text-white/50">{t.location}</p>}
+                <p className="text-sm font-bold text-foreground">{t.name}</p>
+                {t.location && <p className="text-[11px] text-muted-foreground">{t.location}</p>}
               </div>
               <span className="ml-auto text-amber-300">{'★'.repeat(Math.max(1, Math.min(5, t.rating)))}</span>
             </div>

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion, type Variants } from 'framer-motion';
 import { Tilt3D } from '@/components/ui/3DTilt';
 
@@ -54,10 +55,13 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
         initial="hidden"
         animate="visible"
       >
-        {destinations.slice(0, displayed).map((dest, i) => (
+        {destinations.slice(0, displayed).map((dest, i) => {
+          const slug = dest.n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          return (
           <motion.div key={i} variants={itemVariants}>
             <Tilt3D intensity={6}>
-              <article className="group overflow-hidden rounded-2xl border border-brand-line bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
+              <Link href={`/destinations/${slug}`} aria-label={`View ${dest.n}`} className="block">
+              <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
                 <div className="relative h-44 overflow-hidden">
                   <motion.img
                     src={`https://picsum.photos/seed/${dest.seed}/520/380`}
@@ -69,6 +73,10 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
                   </span>
                   <motion.button
                     aria-label={`Save ${dest.n}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                     className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/25 text-white backdrop-blur transition hover:bg-white hover:text-rose-500"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -80,17 +88,17 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
                 </div>
                 <div className="p-4">
                   <h3 className="text-[17px] font-bold">{dest.n}</h3>
-                  <p className="mt-0.5 text-[12px] font-medium text-brand-mute">{dest.tag}</p>
-                  <p className="mt-2 min-h-[40px] text-[12.5px] leading-relaxed text-brand-ink/70">{dest.d}</p>
-                  <div className="mt-3.5 flex items-center justify-between border-t border-brand-line pt-3 text-[11.5px] font-semibold text-brand-ink/75">
+                  <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">{dest.tag}</p>
+                  <p className="mt-2 min-h-[40px] text-[12.5px] leading-relaxed text-foreground/70">{dest.d}</p>
+                  <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[11.5px] font-semibold text-foreground/75">
                     <span className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
                         <path d="m8 21 4-14 4 14M5 21h14M10 13h4" />
                       </svg>
                       {dest.alt}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" />
                         <path d="M16 2v4M8 2v4M3 10h18" />
                       </svg>
@@ -99,16 +107,18 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
                   </div>
                 </div>
               </article>
+              </Link>
             </Tilt3D>
           </motion.div>
-        ))}
+          );
+        })}
       </motion.div>
 
       {displayed < destinations.length && (
         <div className="mt-10 flex justify-center">
           <motion.button
             onClick={loadMore}
-            className="flex items-center gap-2 rounded-full border border-brand-line bg-white px-7 py-3 text-[13.5px] font-semibold shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
+            className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-[13.5px] font-semibold shadow-soft transition hover:border-primary hover:text-primary"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >

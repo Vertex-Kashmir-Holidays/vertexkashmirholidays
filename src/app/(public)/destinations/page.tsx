@@ -37,7 +37,7 @@ export default function DestinationsPage() {
   };
 
   return (
-    <div className="bg-white text-brand-ink">
+    <div className="bg-background text-foreground">
       <DestinationsHero />
       <DestinationsFilterBar onFilterChange={handleFilterChange} />
       <DestinationsGrid destinations={filteredDestinations} />

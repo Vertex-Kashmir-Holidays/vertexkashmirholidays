@@ -27,11 +27,11 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
   if (tours.length === 0) return null;
 
   return (
-    <section id="packages" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
+    <section id="packages" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
-            className="rv text-[11px] font-bold tracking-[0.22em] text-green-glow"
+            className="rv text-[11px] font-bold tracking-[0.22em] text-primary"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -40,8 +40,8 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             {heading.kicker}
           </motion.p>
           <motion.h2
-            className="rv h-display mt-3 text-4xl font-bold text-white"
-            style={{ '--rd': '0.08s' } as any}
+            className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground"
+            style={{ '--rd': '0.08s' } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -51,8 +51,8 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
           </motion.h2>
           {heading.subtitle && (
             <motion.p
-              className="rv mt-3 max-w-md text-sm text-white/60"
-              style={{ '--rd': '0.14s' } as any}
+              className="rv mt-3 max-w-md text-sm text-muted-foreground"
+              style={{ '--rd': '0.14s' } as React.CSSProperties}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -69,7 +69,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link href={heading.ctaHref ?? '#'} className="rv inline-flex items-center gap-1.5 text-sm font-bold text-green-glow hover:underline">
+            <Link href={heading.ctaHref ?? '#'} className="rv inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
               {heading.ctaLabel}
             </Link>
           </motion.div>
@@ -88,7 +88,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             key={tour.id}
             tour={{
               badge: tour.badge ?? 'FEATURED',
-              bc: badgeColors.includes(tour.badgeColor as any)
+              bc: (badgeColors as readonly string[]).includes(tour.badgeColor ?? '')
                 ? (tour.badgeColor as 'orange' | 'blue' | 'green')
                 : 'green',
               image: tour.image ?? undefined,
