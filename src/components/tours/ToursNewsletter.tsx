@@ -1,8 +1,39 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function ToursNewsletter() {
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const subscribe = async () => {
+    if (!email.trim()) {
+      toast.error('Please enter your email address.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? 'Subscription failed. Please try again.');
+        return;
+      }
+      toast.success("You're subscribed! Watch your inbox for deals.");
+      setEmail('');
+    } catch {
+      toast.error('Subscription failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section className="relative overflow-hidden">
       <motion.img
@@ -35,15 +66,21 @@ export function ToursNewsletter() {
         >
           <div className="flex overflow-hidden rounded-lg bg-white p-1 shadow-card">
             <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && subscribe()}
               className="w-full px-4 text-[13px] outline-none placeholder:text-brand-mute"
               placeholder="Enter your email address"
             />
             <motion.button
-              className="shrink-0 rounded-md bg-brand-bright px-5 py-3 text-[13px] font-bold text-white transition hover:brightness-110"
+              onClick={subscribe}
+              disabled={submitting}
+              className="shrink-0 rounded-md bg-brand-bright px-5 py-3 text-[13px] font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              Subscribe Now
+              {submitting ? 'Subscribing…' : 'Subscribe Now'}
             </motion.button>
           </div>
           <p className="mt-2.5 text-[11px] text-white/70">No spam. Unsubscribe anytime.</p>

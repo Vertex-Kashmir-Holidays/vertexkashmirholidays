@@ -2,59 +2,50 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { formatINR } from '@/lib/accents';
+import type { CategoryOption, DurationOption } from '@/types/tours';
 
 interface ToursFiltersSidebarProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  categories: CategoryOption[];
+  selectedCategories: string[];
+  onToggleCategory: (id: string) => void;
+  durations: DurationOption[];
+  selectedDurations: string[];
+  onToggleDuration: (id: string) => void;
+  priceMin: number;
+  priceMax: number;
+  onClear: () => void;
   isMobileOpen?: boolean;
   onClose?: () => void;
 }
 
-export function ToursFiltersSidebar({ isMobileOpen = false, onClose }: ToursFiltersSidebarProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Check if mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const categories = [
-    { e: '❤️', t: 'Honeymoon', n: 12, on: true },
-    { e: '👨‍👩‍👧', t: 'Family', n: 15 },
-    { e: '🏔️', t: 'Adventure', n: 11 },
-    { e: '👑', t: 'Luxury', n: 10 },
-  ];
-
-  const durations = [
-    ['1 – 3 Days', 6],
-    ['4 – 6 Days', 18],
-    ['7 – 10 Days', 16],
-    ['10+ Days', 8],
-  ];
-
-  const difficulties = [
-    ['Easy', 20],
-    ['Moderate', 18],
-    ['Tough', 10],
-  ];
-
-  const moreFilters = ['Best Time', 'Group Size', 'Start City', 'Destinations'];
-
-  // Desktop sidebar
-  const DesktopSidebar = () => (
-    <motion.aside
-      className="h-fit rounded-2xl border border-brand-line bg-white p-5 shadow-soft"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
+// Shared between the desktop sidebar and the mobile drawer. Defined at module
+// level so controlled inputs keep focus across parent re-renders; idPrefix
+// keeps checkbox ids unique per variant.
+function FilterContent({
+  idPrefix,
+  search,
+  onSearchChange,
+  categories,
+  selectedCategories,
+  onToggleCategory,
+  durations,
+  selectedDurations,
+  onToggleDuration,
+  priceMin,
+  priceMax,
+  onClear,
+}: ToursFiltersSidebarProps & { idPrefix: string }) {
+  return (
+    <>
       {/* Search */}
       <p className="text-[15px] font-bold">Search</p>
       <label className="mt-3 flex items-center gap-2 rounded-lg bg-brand-page px-3.5 py-2.5">
         <input
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
           className="w-full bg-transparent text-[13px] outline-none placeholder:text-brand-mute"
           placeholder="Search tours..."
         />
@@ -70,18 +61,24 @@ export function ToursFiltersSidebar({ isMobileOpen = false, onClose }: ToursFilt
         <ul className="mt-3.5 space-y-3 text-[13px]">
           {categories.map((c, i) => (
             <motion.li
-              key={i}
+              key={c.id}
               className="flex items-center gap-2.5"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <input type="checkbox" className="cbx" defaultChecked={c.on} id={`cat-${c.t}`} />
-              <label htmlFor={`cat-${c.t}`} className="flex w-full cursor-pointer items-center gap-2 text-brand-ink/85">
-                <span className="text-[13px]">{c.e}</span>
-                {c.t}
+              <input
+                type="checkbox"
+                className="cbx"
+                checked={selectedCategories.includes(c.id)}
+                onChange={() => onToggleCategory(c.id)}
+                id={`${idPrefix}-cat-${c.id}`}
+              />
+              <label htmlFor={`${idPrefix}-cat-${c.id}`} className="flex w-full cursor-pointer items-center gap-2 text-brand-ink/85">
+                <span className="text-[13px]">{c.emoji}</span>
+                {c.label}
               </label>
-              <span className="text-[12px] text-brand-mute">{c.n}</span>
+              <span className="text-[12px] text-brand-mute">{c.count}</span>
             </motion.li>
           ))}
         </ul>
@@ -91,19 +88,25 @@ export function ToursFiltersSidebar({ isMobileOpen = false, onClose }: ToursFilt
       <div className="mt-7 border-t border-brand-line pt-6">
         <p className="text-[15px] font-bold">Duration (Days)</p>
         <ul className="mt-3.5 space-y-3 text-[13px]">
-          {durations.map(([t, n], i) => (
+          {durations.map((d, i) => (
             <motion.li
-              key={i}
+              key={d.id}
               className="flex items-center gap-2.5"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 + 0.2 }}
             >
-              <input type="checkbox" className="cbx" id={`dur-${i}`} />
-              <label htmlFor={`dur-${i}`} className="w-full cursor-pointer text-brand-ink/85">
-                {t}
+              <input
+                type="checkbox"
+                className="cbx"
+                checked={selectedDurations.includes(d.id)}
+                onChange={() => onToggleDuration(d.id)}
+                id={`${idPrefix}-dur-${d.id}`}
+              />
+              <label htmlFor={`${idPrefix}-dur-${d.id}`} className="w-full cursor-pointer text-brand-ink/85">
+                {d.label}
               </label>
-              <span className="text-[12px] text-brand-mute">{n}</span>
+              <span className="text-[12px] text-brand-mute">{d.count}</span>
             </motion.li>
           ))}
         </ul>
@@ -116,77 +119,57 @@ export function ToursFiltersSidebar({ isMobileOpen = false, onClose }: ToursFilt
         </p>
         <div className="range-track mt-5">
           <div className="range-fill"></div>
-          <motion.span
-            className="thumb"
-            style={{ left: '2%' }}
-            whileHover={{ scale: 1.2 }}
-          ></motion.span>
-          <motion.span
-            className="thumb"
-            style={{ left: '98%' }}
-            whileHover={{ scale: 1.2 }}
-          ></motion.span>
+          <motion.span className="thumb" style={{ left: '2%' }} whileHover={{ scale: 1.2 }}></motion.span>
+          <motion.span className="thumb" style={{ left: '98%' }} whileHover={{ scale: 1.2 }}></motion.span>
         </div>
         <div className="mt-3 flex justify-between text-[12px] font-semibold text-brand-ink/80">
-          <span>₹5,000</span>
-          <span>₹1,00,000+</span>
+          <span>{formatINR(priceMin)}</span>
+          <span>{formatINR(priceMax)}</span>
         </div>
-      </div>
-
-      {/* Difficulty */}
-      <div className="mt-7 border-t border-brand-line pt-6">
-        <p className="text-[15px] font-bold">Difficulty Level</p>
-        <ul className="mt-3.5 space-y-3 text-[13px]">
-          {difficulties.map(([t, n], i) => (
-            <motion.li
-              key={i}
-              className="flex items-center gap-2.5"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 + 0.4 }}
-            >
-              <input type="checkbox" className="cbx" id={`diff-${i}`} />
-              <label htmlFor={`diff-${i}`} className="w-full cursor-pointer text-brand-ink/85">
-                {t}
-              </label>
-              <span className="text-[12px] text-brand-mute">{n}</span>
-            </motion.li>
-          ))}
-        </ul>
-      </div>
-
-      {/* More Filters */}
-      <div className="mt-7 border-t border-brand-line pt-6">
-        <p className="text-[15px] font-bold">More Filters</p>
-        <ul className="mt-2 divide-y divide-brand-line text-[13px] font-medium text-brand-ink/85">
-          {moreFilters.map((t, i) => (
-            <motion.li key={i} whileHover={{ x: 5 }}>
-              <button className="flex w-full items-center justify-between py-3 transition hover:text-brand-green2">
-                {t}
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-            </motion.li>
-          ))}
-        </ul>
       </div>
 
       <motion.button
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-[1.5px] border-brand-green2 py-2.5 text-[13px] font-semibold text-brand-green2 transition hover:bg-brand-green2 hover:text-white"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
+        onClick={onClear}
       >
         Clear Filters
         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />
         </svg>
       </motion.button>
-    </motion.aside>
+    </>
   );
+}
 
-  // Mobile drawer
-  const MobileDrawer = () => (
+export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
+  const { isMobileOpen = false, onClose } = props;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (!isMobile) {
+    return (
+      <motion.aside
+        className="h-fit rounded-2xl border border-brand-line bg-white p-5 shadow-soft"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <FilterContent {...props} idPrefix="desktop" />
+      </motion.aside>
+    );
+  }
+
+  return (
     <AnimatePresence>
       {isMobileOpen && (
         <>
@@ -198,7 +181,7 @@ export function ToursFiltersSidebar({ isMobileOpen = false, onClose }: ToursFilt
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          
+
           {/* Drawer */}
           <motion.div
             className="fixed inset-y-0 left-0 z-50 w-full max-w-[320px] overflow-y-auto bg-white shadow-2xl lg:hidden"
@@ -222,144 +205,11 @@ export function ToursFiltersSidebar({ isMobileOpen = false, onClose }: ToursFilt
 
             {/* Drawer Content */}
             <div className="p-5">
-              {/* Search */}
-              <p className="text-[15px] font-bold">Search</p>
-              <label className="mt-3 flex items-center gap-2 rounded-lg bg-brand-page px-3.5 py-2.5">
-                <input
-                  className="w-full bg-transparent text-[13px] outline-none placeholder:text-brand-mute"
-                  placeholder="Search tours..."
-                />
-                <svg viewBox="0 0 24 24" className="h-4 w-4 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m21 21-4-4" />
-                </svg>
-              </label>
-
-              {/* Categories */}
-              <div className="mt-7">
-                <p className="text-[15px] font-bold">Categories</p>
-                <ul className="mt-3.5 space-y-3 text-[13px]">
-                  {categories.map((c, i) => (
-                    <motion.li
-                      key={i}
-                      className="flex items-center gap-2.5"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <input type="checkbox" className="cbx" defaultChecked={c.on} id={`cat-${c.t}`} />
-                      <label htmlFor={`cat-${c.t}`} className="flex w-full cursor-pointer items-center gap-2 text-brand-ink/85">
-                        <span className="text-[13px]">{c.e}</span>
-                        {c.t}
-                      </label>
-                      <span className="text-[12px] text-brand-mute">{c.n}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Duration */}
-              <div className="mt-7 border-t border-brand-line pt-6">
-                <p className="text-[15px] font-bold">Duration (Days)</p>
-                <ul className="mt-3.5 space-y-3 text-[13px]">
-                  {durations.map(([t, n], i) => (
-                    <motion.li
-                      key={i}
-                      className="flex items-center gap-2.5"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 + 0.2 }}
-                    >
-                      <input type="checkbox" className="cbx" id={`dur-${i}`} />
-                      <label htmlFor={`dur-${i}`} className="w-full cursor-pointer text-brand-ink/85">
-                        {t}
-                      </label>
-                      <span className="text-[12px] text-brand-mute">{n}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Price */}
-              <div className="mt-7 border-t border-brand-line pt-6">
-                <p className="text-[15px] font-bold">
-                  Price Range <span className="text-[11px] font-medium text-brand-mute">(per person)</span>
-                </p>
-                <div className="range-track mt-5">
-                  <div className="range-fill"></div>
-                  <motion.span
-                    className="thumb"
-                    style={{ left: '2%' }}
-                    whileHover={{ scale: 1.2 }}
-                  ></motion.span>
-                  <motion.span
-                    className="thumb"
-                    style={{ left: '98%' }}
-                    whileHover={{ scale: 1.2 }}
-                  ></motion.span>
-                </div>
-                <div className="mt-3 flex justify-between text-[12px] font-semibold text-brand-ink/80">
-                  <span>₹5,000</span>
-                  <span>₹1,00,000+</span>
-                </div>
-              </div>
-
-              {/* Difficulty */}
-              <div className="mt-7 border-t border-brand-line pt-6">
-                <p className="text-[15px] font-bold">Difficulty Level</p>
-                <ul className="mt-3.5 space-y-3 text-[13px]">
-                  {difficulties.map(([t, n], i) => (
-                    <motion.li
-                      key={i}
-                      className="flex items-center gap-2.5"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 + 0.4 }}
-                    >
-                      <input type="checkbox" className="cbx" id={`diff-${i}`} />
-                      <label htmlFor={`diff-${i}`} className="w-full cursor-pointer text-brand-ink/85">
-                        {t}
-                      </label>
-                      <span className="text-[12px] text-brand-mute">{n}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* More Filters */}
-              <div className="mt-7 border-t border-brand-line pt-6">
-                <p className="text-[15px] font-bold">More Filters</p>
-                <ul className="mt-2 divide-y divide-brand-line text-[13px] font-medium text-brand-ink/85">
-                  {moreFilters.map((t, i) => (
-                    <motion.li key={i} whileHover={{ x: 5 }}>
-                      <button className="flex w-full items-center justify-between py-3 transition hover:text-brand-green2">
-                        {t}
-                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
-                      </button>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-
-              <motion.button
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-[1.5px] border-brand-green2 py-2.5 text-[13px] font-semibold text-brand-green2 transition hover:bg-brand-green2 hover:text-white"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onClose}
-              >
-                Clear Filters
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />
-                </svg>
-              </motion.button>
+              <FilterContent {...props} idPrefix="mobile" />
             </div>
           </motion.div>
         </>
       )}
     </AnimatePresence>
   );
-
-  return isMobile ? <MobileDrawer /> : <DesktopSidebar />;
 }
