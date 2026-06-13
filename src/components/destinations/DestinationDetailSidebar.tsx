@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 
 interface DestinationDetailSidebarProps {
+  name: string;
   quickInfo: {
     label: string;
     value: string;
@@ -18,12 +19,12 @@ interface DestinationDetailSidebarProps {
   };
 }
 
-export function DestinationDetailSidebar({ quickInfo, weather }: DestinationDetailSidebarProps) {
+export function DestinationDetailSidebar({ name, quickInfo, weather }: DestinationDetailSidebarProps) {
   return (
     <aside className="space-y-6 lg:sticky lg:top-6">
       {/* Quick Info */}
       <motion.div
-        className="rounded-2xl border border-brand-line bg-white p-5 shadow-soft"
+        className="rounded-2xl border border-border bg-card p-5 shadow-soft"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -38,14 +39,14 @@ export function DestinationDetailSidebar({ quickInfo, weather }: DestinationDeta
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-50 text-brand-green2">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d={info.icon} />
                 </svg>
               </span>
               <div className="leading-snug">
                 <p className="text-[12.5px] font-bold">{info.label}</p>
-                <p className="mt-0.5 text-[11.5px] text-brand-mute">{info.value}</p>
+                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{info.value}</p>
               </div>
             </motion.li>
           ))}
@@ -54,14 +55,14 @@ export function DestinationDetailSidebar({ quickInfo, weather }: DestinationDeta
 
       {/* Weather */}
       <motion.div
-        className="rounded-2xl border border-brand-line bg-white p-5 shadow-soft"
+        className="rounded-2xl border border-border bg-card p-5 shadow-soft"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <div className="flex items-center justify-between">
           <p className="text-[14px] font-bold">Today's Weather</p>
-          <p className="text-[12px] font-semibold text-brand-mute">Gulmarg</p>
+          <p className="text-[12px] font-semibold text-muted-foreground">{name}</p>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <div>
@@ -72,7 +73,7 @@ export function DestinationDetailSidebar({ quickInfo, weather }: DestinationDeta
               </svg>
               {weather.temperature}°C
             </p>
-            <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-brand-mute">
+            <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-cyan-500" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.3A7 7 0 1 0 4 16.4" />
               </svg>
@@ -91,17 +92,17 @@ export function DestinationDetailSidebar({ quickInfo, weather }: DestinationDeta
             </svg>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-3 divide-x divide-brand-line border-t border-brand-line pt-4 text-center">
+        <div className="mt-4 grid grid-cols-3 divide-x divide-border border-t border-border pt-4 text-center">
           <div>
-            <p className="text-[11px] text-brand-mute">Humidity</p>
+            <p className="text-[11px] text-muted-foreground">Humidity</p>
             <p className="mt-1 text-[13.5px] font-bold">{weather.humidity}%</p>
           </div>
           <div>
-            <p className="text-[11px] text-brand-mute">Wind</p>
+            <p className="text-[11px] text-muted-foreground">Wind</p>
             <p className="mt-1 text-[13.5px] font-bold">{weather.wind} km/h</p>
           </div>
           <div>
-            <p className="text-[11px] text-brand-mute">Feels Like</p>
+            <p className="text-[11px] text-muted-foreground">Feels Like</p>
             <p className="mt-1 text-[13.5px] font-bold">{weather.feelsLike}°C</p>
           </div>
         </div>

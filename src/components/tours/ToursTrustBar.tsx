@@ -60,7 +60,7 @@ export function ToursTrustBar() {
 
   return (
     <motion.section
-      className="bg-[hsl(150,18%,95%)]"
+      className="bg-muted"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
@@ -74,7 +74,7 @@ export function ToursTrustBar() {
         {trustItems.map((x, i) => (
           <motion.div key={i} variants={itemVariants} className="flex items-center gap-3.5">
             <motion.span
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-brand-green2 shadow-soft"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-card text-primary shadow-soft"
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
@@ -85,7 +85,7 @@ export function ToursTrustBar() {
             </motion.span>
             <div>
               <p className="text-[13.5px] font-bold">{x.t}</p>
-              <p className="text-[12px] text-brand-mute">{x.s}</p>
+              <p className="text-[12px] text-muted-foreground">{x.s}</p>
             </div>
           </motion.div>
         ))}

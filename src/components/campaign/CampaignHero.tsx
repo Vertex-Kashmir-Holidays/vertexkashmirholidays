@@ -192,17 +192,19 @@ export function CampaignHero({
                 <div className="grid grid-cols-2 gap-3">
                   <select
                     name="batch"
+                    defaultValue=""
                     className="w-full appearance-none rounded-xl border border-white/12 bg-white/[.06] px-3 py-3 text-[12.5px] text-white/60 outline-none transition focus:bg-white/10 focus:ring-2"
                     style={{ '--tw-ring-color': 'var(--accent)' } as any}
                   >
-                    <option value="" selected className="text-navy-brand">Preferred batch</option>
+                    <option value="" className="text-navy-brand">Preferred batch</option>
                   </select>
                   <select
                     name="travellers"
+                    defaultValue=""
                     className="w-full appearance-none rounded-xl border border-white/12 bg-white/[.06] px-3 py-3 text-[12.5px] text-white/60 outline-none transition focus:bg-white/10 focus:ring-2"
                     style={{ '--tw-ring-color': 'var(--accent)' } as any}
                   >
-                    <option value="" selected className="text-navy-brand">Travellers</option>
+                    <option value="" className="text-navy-brand">Travellers</option>
                     <option className="text-navy-brand">1</option>
                     <option className="text-navy-brand">2</option>
                     <option className="text-navy-brand">3</option>

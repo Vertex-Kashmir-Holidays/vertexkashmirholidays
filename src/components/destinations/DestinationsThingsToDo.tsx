@@ -37,7 +37,7 @@ export function DestinationsThingsToDo() {
   return (
     <div className="mx-auto max-w-[1300px] px-6 py-12">
       <motion.h2
-        className="text-[22px] font-bold text-brand-green"
+        className="text-[22px] font-bold text-primary"
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -57,22 +57,22 @@ export function DestinationsThingsToDo() {
             key={i}
             href="#"
             variants={itemVariants}
-            className="flex items-center gap-2.5 rounded-xl border border-brand-line bg-white px-3 py-3 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-green2 hover:shadow-card"
+            className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-3 shadow-soft transition hover:-translate-y-0.5 hover:border-primary hover:shadow-card"
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-brand-green2">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 <path d={thing.icon} />
               </svg>
             </span>
             <span className="leading-tight">
               <span className="block text-[12px] font-bold">{thing.t}</span>
-              <span className="block text-[10.5px] text-brand-mute">{thing.s}</span>
+              <span className="block text-[10.5px] text-muted-foreground">{thing.s}</span>
             </span>
           </motion.a>
         ))}
       </motion.div>
       <div className="mt-4 flex justify-end">
-        <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-brand-green2 hover:underline">
+        <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
           View all experiences
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M13 6l6 6-6 6" />

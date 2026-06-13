@@ -27,10 +27,11 @@ export interface DestinationTour {
 }
 
 interface DestinationDetailToursProps {
+  name: string;
   tours: DestinationTour[];
 }
 
-export function DestinationDetailTours({ tours }: DestinationDetailToursProps) {
+export function DestinationDetailTours({ name, tours }: DestinationDetailToursProps) {
   const scroll = (direction: 'prev' | 'next') => {
     const row = document.getElementById('tourRow');
     if (!row) return;
@@ -41,20 +42,20 @@ export function DestinationDetailTours({ tours }: DestinationDetailToursProps) {
   return (
     <motion.section
       id="tours"
-      className="rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      className="rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[21px] font-bold">Featured Tours in Gulmarg</h2>
+        <h2 className="text-[21px] font-bold">Featured Tours in {name}</h2>
         <div className="flex items-center gap-3">
-          <a href="#" className="text-[13px] font-bold text-brand-green2 hover:underline">View full tours</a>
+          <a href="#" className="text-[13px] font-bold text-primary hover:underline">View full tours</a>
           <motion.button
             onClick={() => scroll('prev')}
             aria-label="Previous tours"
-            className="grid h-9 w-9 place-items-center rounded-full border border-brand-line text-brand-mute shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -63,7 +64,7 @@ export function DestinationDetailTours({ tours }: DestinationDetailToursProps) {
           <motion.button
             onClick={() => scroll('next')}
             aria-label="Next tours"
-            className="grid h-9 w-9 place-items-center rounded-full border border-brand-line text-brand-mute shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

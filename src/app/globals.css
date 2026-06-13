@@ -4,8 +4,62 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Semantic theme tokens. Values are bare HSL triplets so Tailwind's
+   `hsl(var(--token) / <alpha-value>)` mapping can apply opacity. Light is the
+   default (:root); `.dark` (toggled by next-themes) overrides for dark mode.
+   ────────────────────────────────────────────────────────────────────────── */
 :root {
+  color-scheme: light;
+
+  --background: 150 20% 98%;
+  --foreground: 200 25% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 200 25% 12%;
+  --muted: 150 20% 94%;
+  --muted-foreground: 206 12% 45%;
+  --border: 150 12% 88%;
+  --input: 150 12% 88%;
+  --ring: 152 56% 40%;
+  --primary: 152 56% 40%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 22 92% 56%;
+  --accent-foreground: 0 0% 100%;
+
+  /* Glass surface tint (adapts per theme) */
+  --glass-1: 200 25% 12% / 0.05;
+  --glass-2: 200 25% 12% / 0.02;
+  --glass-strong-1: 200 25% 12% / 0.07;
+  --glass-strong-2: 200 25% 12% / 0.03;
+  --glass-deep-1: 0 0% 100% / 0.85;
+  --glass-deep-2: 0 0% 100% / 0.7;
+  --glass-border: 200 25% 12% / 0.1;
+}
+
+.dark {
   color-scheme: dark;
+
+  --background: 200 50% 6%;
+  --foreground: 0 0% 100%;
+  --card: 200 50% 8%;
+  --card-foreground: 0 0% 100%;
+  --muted: 204 40% 12%;
+  --muted-foreground: 0 0% 72%;
+  --border: 200 30% 22%;
+  --input: 200 30% 22%;
+  --ring: 150 65% 46%;
+  --primary: 150 65% 46%;
+  --primary-foreground: 200 50% 6%;
+  --accent: 22 92% 56%;
+  --accent-foreground: 0 0% 100%;
+
+  --glass-1: 0 0% 100% / 0.1;
+  --glass-2: 0 0% 100% / 0.035;
+  --glass-strong-1: 0 0% 100% / 0.14;
+  --glass-strong-2: 0 0% 100% / 0.05;
+  --glass-deep-1: 8 26% 20% / 0.72;
+  --glass-deep-2: 6 18% 15% / 0.58;
+  --glass-border: 0 0% 100% / 0.12;
 }
 
 html {
@@ -15,8 +69,8 @@ html {
 body {
   margin: 0;
   font-family: Inter, system-ui, sans-serif;
-  background: hsl(200 50% 6%);
-  color: white;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 * {
@@ -29,9 +83,9 @@ body {
   .grad-text-warm { background-image:linear-gradient(110deg,hsl(35 95% 65%),hsl(15 90% 55%)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .grad-text-cool { background-image:linear-gradient(110deg,hsl(160 75% 58%),hsl(190 85% 60%)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .h-display { font-family:'Playfair Display',serif; letter-spacing:-0.022em; line-height:1.04; }
-  .glass { background:linear-gradient(155deg,rgba(255,255,255,.10),rgba(255,255,255,.035)); backdrop-filter:blur(18px) saturate(1.3); -webkit-backdrop-filter:blur(18px) saturate(1.3); border:1px solid rgba(255,255,255,.14); }
-  .glass-strong { background:linear-gradient(155deg,rgba(255,255,255,.14),rgba(255,255,255,.05)); backdrop-filter:blur(26px) saturate(1.4); -webkit-backdrop-filter:blur(26px) saturate(1.4); border:1px solid rgba(255,255,255,.18); }
-  .glass-deep { background:linear-gradient(165deg,rgba(8,26,20,.72),rgba(6,18,15,.58)); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid rgba(255,255,255,.12); }
+  .glass { background:linear-gradient(155deg,hsl(var(--glass-1)),hsl(var(--glass-2))); backdrop-filter:blur(18px) saturate(1.3); -webkit-backdrop-filter:blur(18px) saturate(1.3); border:1px solid hsl(var(--glass-border)); }
+  .glass-strong { background:linear-gradient(155deg,hsl(var(--glass-strong-1)),hsl(var(--glass-strong-2))); backdrop-filter:blur(26px) saturate(1.4); -webkit-backdrop-filter:blur(26px) saturate(1.4); border:1px solid hsl(var(--glass-border)); }
+  .glass-deep { background:linear-gradient(165deg,hsl(var(--glass-deep-1)),hsl(var(--glass-deep-2))); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid hsl(var(--glass-border)); }
   .ring-inner { box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(0,0,0,.25); }
   .bg-brand-cream { background-color: hsl(35 45% 96% / var(--tw-bg-opacity, 1)) }
 }

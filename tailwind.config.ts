@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -13,6 +14,28 @@ const config: Config = {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // ── Semantic theme tokens (flip between light/dark via CSS vars) ──
+        // Defined in globals.css under :root and .dark. Use these for any
+        // surface that should adapt to the active theme.
+        background: 'hsl(var(--background) / <alpha-value>)',
+        foreground: 'hsl(var(--foreground) / <alpha-value>)',
+        card: 'hsl(var(--card) / <alpha-value>)',
+        'card-foreground': 'hsl(var(--card-foreground) / <alpha-value>)',
+        muted: {
+          DEFAULT: 'hsl(var(--muted) / <alpha-value>)',
+          foreground: 'hsl(var(--muted-foreground) / <alpha-value>)',
+        },
+        border: 'hsl(var(--border) / <alpha-value>)',
+        input: 'hsl(var(--input) / <alpha-value>)',
+        ring: 'hsl(var(--ring) / <alpha-value>)',
+        primary: {
+          DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
+          foreground: 'hsl(var(--primary-foreground) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent) / <alpha-value>)',
+          foreground: 'hsl(var(--accent-foreground) / <alpha-value>)',
+        },
         // Home page - Dark mode
         dark: {
           bg: 'hsl(200 50% 6%)',

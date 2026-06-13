@@ -173,7 +173,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
   });
 
   return (
-    <div className="bg-brand-page text-brand-ink">
+    <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={productJsonLd} />
       {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}

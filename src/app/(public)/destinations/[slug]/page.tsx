@@ -1,110 +1,276 @@
 // src/app/(public)/destinations/[slug]/page.tsx
-'use client';
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import {
+  JsonLd,
+  buildBreadcrumbList,
+  buildTouristDestination,
+} from "@/components/seo/JsonLd";
+import { formatINR } from "@/lib/accents";
+import { DestinationDetailGallery } from "@/components/destinations/DestinationDetailGallery";
+import { DestinationDetailHero } from "@/components/destinations/DestinationDetailHero";
+import { DestinationDetailOverview } from "@/components/destinations/DestinationDetailOverview";
+import { DestinationDetailSidebar } from "@/components/destinations/DestinationDetailSidebar";
+import { DestinationDetailTabs } from "@/components/destinations/DestinationDetailTabs";
+import { DestinationDetailThingsToDo } from "@/components/destinations/DestinationDetailThingsToDo";
+import {
+  DestinationDetailTours,
+  type DestinationTour,
+} from "@/components/destinations/DestinationDetailTours";
 
-import { DestinationDetailGallery } from '@/components/destinations/DestinationDetailGallery';
-import { DestinationDetailHero } from '@/components/destinations/DestinationDetailHero';
-import { DestinationDetailOverview } from '@/components/destinations/DestinationDetailOverview';
-import { DestinationDetailSidebar } from '@/components/destinations/DestinationDetailSidebar';
-import { DestinationDetailTabs } from '@/components/destinations/DestinationDetailTabs';
-import { DestinationDetailThingsToDo } from '@/components/destinations/DestinationDetailThingsToDo';
-import { DestinationDetailTours, type DestinationTour } from '@/components/destinations/DestinationDetailTours';
+export const dynamic = "force-dynamic";
 
-export default function DestinationDetailPage() {
-  const destinationData = {
-    name: 'Gulmarg',
-    tagline: 'The Meadow of Flowers',
-    region: 'KASHMIR VALLEY',
-    image: 'https://picsum.photos/seed/gulmarg-hero/1800/820',
-    stats: [
-      { value: '2,650 m', label: 'Altitude', icon: 'm8 21 4-14 4 14M5 21h14M10 13h4' },
-      { value: '18°C', label: 'Avg. Summer', icon: 'M14 4v10.5a4 4 0 1 1-4-4 M14 4a2 2 0 1 1 4 0v6' },
-      { value: 'Apr – Oct', label: 'Best Time', icon: 'M3 4h18v18H3zM16 2v4M8 2v4M3 10h18' },
-      { value: '4.9/5', label: '2,134 reviews', icon: 'm12 3 2.7 5.6 6.3.9-4.5 4.4 1 6.1L12 17l-5.5 3 1-6.1L3 9.5l6.3-.9Z' },
-    ],
-    description: 'Gulmarg is a picturesque hill station located in the Baramulla district of Jammu & Kashmir. Known for its lush green meadows, pristine landscapes, and world-class skiing, Gulmarg is a paradise for nature lovers and adventure seekers alike.',
-    features: [
-      { title: 'Gondola Ride', description: "World's highest cable car (Apharwat Peak)", icon: 'M12 3v4 M2 5l20-2 M7 7v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7', color: 'text-sky-600 bg-sky-50' },
-      { title: 'Skiing Paradise', description: 'Perfect slopes for beginners & pros', icon: 'm4 20 16-6 M17 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4 M8 9l4 3-1 5 M12 12l4 1 2-3', color: 'text-blue-600 bg-blue-50' },
-      { title: 'Flower Meadows', description: 'Blooming valleys in spring & summer', icon: 'M12 8a3 3 0 1 0-3-3 M12 8a3 3 0 1 1 3-3 M12 8v9 M8 21h8 M7 13c2 0 3 1 3 1m7-1c-2 0-3 1-3 1', color: 'text-emerald-600 bg-emerald-50' },
-      { title: 'Scenic Beauty', description: 'Breathtaking views in every season', icon: 'M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4 M12 13a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z', color: 'text-teal-600 bg-emerald-50' },
-    ],
-    things: [
-      { seed: 'g-gondola', title: 'Gondola Ride', description: 'Ride the Gulmarg Gondola to Apharwat Peak (4,200m) for stunning views.' },
-      { seed: 'g-ski', title: 'Skiing & Snowboarding', description: 'World-class slopes and ski courses for all experience levels.' },
-      { seed: 'g-trek', title: 'Trekking & Hiking', description: 'Explore Alpather Lake, Apharwat Peak & other scenic trails.' },
-      { seed: 'g-golf', title: 'Golfing', description: 'One of the highest 18-hole golf courses in the world.' },
-      { seed: 'g-horse', title: 'Horse Riding', description: 'Enjoy a peaceful ride through the meadows and pine forests.' },
-    ],
-    tours : [
-      { badge: 'BESTSELLER', bc: 'orange', seed: 'pkg-honeymoon', t: 'Kashmir Honeymoon Escape', d: '6N / 7D', places: 'Srinagar, Pahalgam, Gulmarg', r: '4.9', n: '852', old: '₹39,999', p: '₹34,999' },
-      { badge: 'POPULAR', bc: 'blue', seed: 'pkg-family', t: 'Kashmir Family Snow Special', d: '5N / 6D', places: 'Srinagar, Gulmarg, Sonmarg', r: '4.8', n: '624', old: '₹28,999', p: '₹24,999' },
-      { badge: 'TRENDING', bc: 'green', seed: 'pkg-trek', t: 'Kashmir Great Lakes Trek', d: '8N / 9D', places: 'Sonamarg, Nichnai, Gadsar, Vishansar', r: '4.9', n: '412', old: '₹24,999', p: '₹21,999' },
-      { badge: '10% OFF', bc: 'orange', seed: 'pkg-luxury', t: 'Signature Luxury Kashmir', d: '5N / 6D', places: 'Srinagar, Pahalgam, Gulmarg', r: '4.9', n: '236', old: '₹66,999', p: '₹59,999' },
-      { badge: 'NEW', bc: 'green', seed: 'pkg-pahalgam', t: 'Pahalgam Valley Retreat', d: '4N / 5D', places: 'Pahalgam, Aru, Betaab Valley', r: '4.7', n: '189', p: '₹18,999' },
-      { badge: 'POPULAR', bc: 'blue', seed: 'pkg-shikara', t: 'Srinagar Shikara Experience', d: '3N / 4D', places: 'Srinagar, Dal Lake, Mughal Gardens', r: '4.6', n: '215', p: '₹15,999' },
-      { badge: 'BESTSELLER', bc: 'orange', seed: 'pkg-gulmarg', t: 'Gulmarg Adventure Getaway', d: '4N / 5D', places: 'Gulmarg, Apharwat, Khilanmarg', r: '4.8', n: '328', p: '₹22,999' },
-      { badge: 'TRENDING', bc: 'green', seed: 'pkg-sonmarg', t: 'Sonmarg Autumn Special', d: '3N / 4D', places: 'Sonmarg, Thajiwas Glacier', r: '4.6', n: '156', p: '₹16,999' },
-    ] satisfies DestinationTour[],
-    gallery: [
-      'https://picsum.photos/seed/gl-meadow/400/280',
-      'https://picsum.photos/seed/gl-gondola/400/280',
-      'https://picsum.photos/seed/gl-ski/400/280',
-      'https://picsum.photos/seed/gl-sunset/400/280',
-      'https://picsum.photos/seed/gl-lake/400/280',
-    ],
-    quickInfo: [
-      { label: 'Location', value: 'Baramulla District, Jammu & Kashmir', icon: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6' },
-      { label: 'Altitude', value: '2,650 m (8,694 ft)', icon: 'm8 21 4-14 4 14M5 21h14M10 13h4' },
-      { label: 'Best Time to Visit', value: 'April to October, December to March', icon: 'M3 4h18v18H3zM16 2v4M8 2v4M3 10h18' },
-      { label: 'Famous For', value: 'Skiing, Gondola Ride, Meadows', icon: 'M3 3h18v18H3zM9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4M21 15l-3.8-3.8a2 2 0 0 0-2.8 0L6 20' },
-      { label: 'Nearest Airport', value: 'Srinagar (55 km)', icon: 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z' },
-      { label: 'Ideal For', value: 'Family, Honeymoon, Adventure', icon: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z' },
-    ],
-    weather: {
-      temperature: 18,
-      condition: 'Partly Cloudy',
-      humidity: 56,
-      wind: 12,
-      feelsLike: 16,
+type PageProps = { params: Promise<{ slug: string }> };
+
+const BADGE_COLORS = ["orange", "blue", "green"] as const;
+
+// ── Decorative SVG icon paths (not stored in the DB) ────────────────────────
+const ICON = {
+  altitude: "m8 21 4-14 4 14M5 21h14M10 13h4",
+  calendar: "M3 4h18v18H3zM16 2v4M8 2v4M3 10h18",
+  star: "m12 3 2.7 5.6 6.3.9-4.5 4.4 1 6.1L12 17l-5.5 3 1-6.1L3 9.5l6.3-.9Z",
+  package: "M3 11h18l-2 8H5ZM8 11V7a4 4 0 0 1 8 0v4",
+  pin: "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
+  camera:
+    "M3 3h18v18H3zM9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4M21 15l-3.8-3.8a2 2 0 0 0-2.8 0L6 20",
+  overview: "M12 12a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8v4l2.5 2.5",
+  bolt: "m13 2-2 9h4l-4 11 1-8H8l5-12Z",
+};
+
+const TABS = [
+  { id: "overview", label: "Overview", icon: ICON.overview },
+  { id: "things", label: "Things to Do", icon: ICON.bolt },
+  { id: "tours", label: "Tours", icon: ICON.package },
+  { id: "gallery", label: "Gallery", icon: ICON.camera },
+];
+
+// Generic, destination-agnostic highlights (no DB backing yet).
+const FEATURES = [
+  {
+    title: "Scenic Beauty",
+    description: "Breathtaking landscapes in every season",
+    icon: "M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4 M12 13a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z",
+    color: "text-sky-600 bg-sky-50",
+  },
+  {
+    title: "Adventure",
+    description: "Trekking, skiing and outdoor thrills",
+    icon: "m4 20 16-6 M17 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4 M8 9l4 3-1 5 M12 12l4 1 2-3",
+    color: "text-blue-600 bg-blue-50",
+  },
+  {
+    title: "Flower Meadows",
+    description: "Blooming valleys in spring & summer",
+    icon: "M12 8a3 3 0 1 0-3-3 M12 8a3 3 0 1 1 3-3 M12 8v9 M8 21h8 M7 13c2 0 3 1 3 1m7-1c-2 0-3 1-3 1",
+    color: "text-emerald-600 bg-emerald-50",
+  },
+  {
+    title: "Local Culture",
+    description: "Warm hospitality and rich heritage",
+    icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20",
+    color: "text-teal-600 bg-emerald-50",
+  },
+];
+
+async function getDestination(slug: string) {
+  return prisma.destination.findUnique({
+    where: { slug },
+    include: {
+      tours: {
+        where: { tour: { published: true } },
+        include: {
+          tour: {
+            include: {
+              destinations: {
+                include: { destination: { select: { name: true } } },
+              },
+            },
+          },
+        },
+      },
     },
-  };
+  });
+}
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'M12 12a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8v4l2.5 2.5' },
-    { id: 'things', label: 'Things to Do', icon: 'm13 2-2 9h4l-4 11 1-8H8l5-12Z' },
-    { id: 'tours', label: 'Tours', icon: 'M3 11h18l-2 8H5ZM8 11V7a4 4 0 0 1 8 0v4' },
-    { id: 'gallery', label: 'Gallery', icon: 'M3 3h18v18H3zM9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4M21 15l-3.8-3.8a2 2 0 0 0-2.8 0L6 20' },
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const dest = await prisma.destination.findUnique({
+    where: { slug },
+    select: {
+      name: true,
+      tagline: true,
+      excerpt: true,
+      description: true,
+      coverImage: true,
+      metaTitle: true,
+      metaDesc: true,
+      ogImage: true,
+    },
+  });
+
+  if (!dest) {
+    return buildMetadata({
+      title: "Destination Not Found",
+      description: "The Kashmir destination you are looking for could not be found.",
+      canonical: `${SITE_URL}/destinations/${slug}`,
+      noindex: true,
+    });
+  }
+
+  return buildMetadata({
+    title: dest.metaTitle ?? dest.name,
+    description:
+      dest.metaDesc ??
+      dest.excerpt ??
+      dest.description ??
+      `${dest.name} — a curated Kashmir destination by Vertex Kashmir Holidays.`,
+    canonical: `${SITE_URL}/destinations/${slug}`,
+    ogImage: dest.ogImage ?? dest.coverImage ?? null,
+  });
+}
+
+export default async function DestinationDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+  const dest = await getDestination(slug);
+
+  if (!dest) notFound();
+
+  // ── Derived values from real DB fields ────────────────────────────────────
+  const region = /ladakh/i.test(dest.location ?? "") ? "Ladakh" : "Kashmir Valley";
+  const altMatch = dest.location?.match(/([\d,]+)\s*m\b/i);
+  const altitude = altMatch ? `${altMatch[1]} m` : "High Altitude";
+
+  const tours = dest.tours.map((td) => td.tour);
+  const totalReviews = tours.reduce((sum, t) => sum + t.reviewCount, 0);
+  const avgRating = tours.length
+    ? tours.reduce((sum, t) => sum + t.rating, 0) / tours.length
+    : 4.8;
+
+  const heroImage = dest.coverImage ?? `https://picsum.photos/seed/${slug}-hero/1800/820`;
+
+  const stats = [
+    { value: altitude, label: "Altitude", icon: ICON.altitude },
+    { value: "Apr – Oct", label: "Best Season", icon: ICON.calendar },
+    {
+      value: String(tours.length),
+      label: tours.length === 1 ? "Tour Package" : "Tour Packages",
+      icon: ICON.package,
+    },
+    {
+      value: `${avgRating.toFixed(1)}/5`,
+      label: `${totalReviews.toLocaleString()} reviews`,
+      icon: ICON.star,
+    },
   ];
 
+  const destinationTours: DestinationTour[] = tours.map((t) => ({
+    badge: t.badge ?? "FEATURED",
+    bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
+      ? (t.badgeColor as (typeof BADGE_COLORS)[number])
+      : "green",
+    seed: t.id,
+    image: t.coverImage ?? undefined,
+    bookHref: `/tours/${t.slug}`,
+    whatsappHref: "#",
+    t: t.title,
+    d: `${t.duration - 1}N / ${t.duration}D`,
+    places: t.destinations.map((d) => d.destination.name).join(", "),
+    r: t.rating.toFixed(1),
+    n: String(t.reviewCount),
+    old: t.priceWas ? formatINR(t.priceWas) : undefined,
+    p: formatINR(t.priceFrom),
+  }));
+
+  const things = [
+    { seed: `${slug}-1`, title: "Sightseeing", description: `Explore the most scenic viewpoints and landmarks of ${dest.name}.` },
+    { seed: `${slug}-2`, title: "Nature Walks", description: "Wander through meadows, pine forests and riverside trails." },
+    { seed: `${slug}-3`, title: "Photography", description: "Capture postcard-worthy Himalayan landscapes." },
+    { seed: `${slug}-4`, title: "Local Cuisine", description: "Savour authentic Kashmiri Wazwan and street food." },
+    { seed: `${slug}-5`, title: "Adventure", description: "Trekking, pony rides and seasonal snow activities." },
+  ];
+
+  const gallery = [
+    dest.coverImage,
+    `https://picsum.photos/seed/${slug}-1/400/280`,
+    `https://picsum.photos/seed/${slug}-2/400/280`,
+    `https://picsum.photos/seed/${slug}-3/400/280`,
+    `https://picsum.photos/seed/${slug}-4/400/280`,
+  ].filter((img): img is string => Boolean(img));
+
+  const quickInfo = [
+    { label: "Location", value: dest.location ?? "Jammu & Kashmir", icon: ICON.pin },
+    { label: "Altitude", value: altitude, icon: ICON.altitude },
+    { label: "Best Time to Visit", value: "April to October", icon: ICON.calendar },
+    { label: "Famous For", value: dest.tagline ?? "Scenic beauty", icon: ICON.star },
+    { label: "Region", value: region, icon: ICON.pin },
+    {
+      label: "Tour Packages",
+      value: `${tours.length} available`,
+      icon: ICON.package,
+    },
+  ];
+
+  const weather = {
+    temperature: 18,
+    condition: "Partly Cloudy",
+    humidity: 56,
+    wind: 12,
+    feelsLike: 16,
+  };
+
+  // ── Structured data (JSON-LD) ─────────────────────────────────────────────
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: "Home", url: SITE_URL },
+    { name: "Destinations", url: `${SITE_URL}/destinations` },
+    { name: dest.name, url: `${SITE_URL}/destinations/${dest.slug}` },
+  ]);
+
+  const destinationJsonLd = buildTouristDestination({
+    name: dest.name,
+    slug: dest.slug,
+    description: dest.description ?? dest.excerpt,
+    coverImage: dest.coverImage,
+    location: dest.location,
+  });
+
   return (
-    <div className="bg-brand-page text-brand-ink">
+    <div className="bg-background text-foreground">
+      <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={destinationJsonLd} />
+
       <DestinationDetailHero
-        name={destinationData.name}
-        tagline={destinationData.tagline}
-        description={destinationData.description}
-        region={destinationData.region}
-        image={destinationData.image}
-        stats={destinationData.stats}
+        name={dest.name}
+        tagline={dest.tagline ?? ""}
+        description={dest.description ?? dest.excerpt ?? ""}
+        region={region}
+        image={heroImage}
+        stats={stats}
       />
 
-      <DestinationDetailTabs sections={tabs} />
+      <DestinationDetailTabs sections={TABS} />
 
-      <main className="relative z-10 bg-white pb-16">
+      <main className="relative z-10 bg-background pb-16">
         <div className="mx-auto max-w-[1300px] px-6 pt-8">
           <div className="grid items-start gap-7 lg:grid-cols-[1fr_300px]">
             <div className="min-w-0 space-y-7">
               <DestinationDetailOverview
-                description={destinationData.description}
-                features={destinationData.features}
+                name={dest.name}
+                description={dest.description ?? dest.excerpt ?? ""}
+                features={FEATURES}
               />
-              <DestinationDetailThingsToDo things={destinationData.things} />
-              <DestinationDetailTours tours={destinationData.tours} />
-              <DestinationDetailGallery images={destinationData.gallery} />
+              <DestinationDetailThingsToDo name={dest.name} things={things} />
+              {destinationTours.length > 0 && (
+                <DestinationDetailTours name={dest.name} tours={destinationTours} />
+              )}
+              <DestinationDetailGallery name={dest.name} images={gallery} />
             </div>
 
             <DestinationDetailSidebar
-              quickInfo={destinationData.quickInfo}
-              weather={destinationData.weather}
+              name={dest.name}
+              quickInfo={quickInfo}
+              weather={weather}
             />
           </div>
         </div>

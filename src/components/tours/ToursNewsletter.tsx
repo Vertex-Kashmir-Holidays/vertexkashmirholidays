@@ -64,13 +64,13 @@ export function ToursNewsletter() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="flex overflow-hidden rounded-lg bg-white p-1 shadow-card">
+          <div className="flex overflow-hidden rounded-lg bg-card p-1 shadow-card">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && subscribe()}
-              className="w-full px-4 text-[13px] outline-none placeholder:text-brand-mute"
+              className="w-full bg-transparent px-4 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
               placeholder="Enter your email address"
             />
             <motion.button

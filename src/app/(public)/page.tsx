@@ -130,7 +130,7 @@ export default async function HomePage() {
   );
 
   return (
-    <div className="bg-dark-bg text-white">
+    <div className="bg-background text-foreground">
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={webSiteJsonLd} />
       {tours.length > 0 && <JsonLd data={packagesJsonLd} />}

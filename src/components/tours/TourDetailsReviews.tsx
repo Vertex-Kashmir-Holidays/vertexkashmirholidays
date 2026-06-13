@@ -30,20 +30,20 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
   return (
     <motion.section
       id="reviews"
-      className="mt-6 rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
       <h2 className="text-[17px] font-bold">
-        Reviews <span className="text-[13px] font-semibold text-brand-mute">({totalReviews.toLocaleString()})</span>
+        Reviews <span className="text-[13px] font-semibold text-muted-foreground">({totalReviews.toLocaleString()})</span>
       </h2>
 
       <div className="mt-5 flex items-center gap-4">
         <motion.button
           onClick={prevReview}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand-line text-brand-mute shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -70,11 +70,11 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
                   <p className="text-[14px] font-bold">{reviews[currentReview].name}</p>
                   <span className="text-amber-400">★★★★★</span>
                 </div>
-                <p className="text-[11.5px] text-brand-mute">{reviews[currentReview].meta}</p>
-                <p className="mt-2.5 text-[13px] leading-relaxed text-brand-ink/75">
+                <p className="text-[11.5px] text-muted-foreground">{reviews[currentReview].meta}</p>
+                <p className="mt-2.5 text-[13px] leading-relaxed text-foreground/75">
                   {reviews[currentReview].quote}
                 </p>
-                <a href="#" className="mt-2 inline-block text-[12px] font-bold text-brand-green2 hover:underline">
+                <a href="#" className="mt-2 inline-block text-[12px] font-bold text-primary hover:underline">
                   View Full Review
                 </a>
               </div>
@@ -84,7 +84,7 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
 
         <motion.button
           onClick={nextReview}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand-line text-brand-mute shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -97,7 +97,7 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
           <span
             key={i}
             className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === currentReview ? 'w-4 bg-brand-green2' : 'w-1.5 bg-brand-line'
+              i === currentReview ? 'w-4 bg-primary' : 'w-1.5 bg-border'
             }`}
           />
         ))}

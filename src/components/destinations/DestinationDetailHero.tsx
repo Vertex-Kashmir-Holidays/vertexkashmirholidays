@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 interface DestinationDetailHeroProps {
   name: string;
@@ -39,9 +40,9 @@ export function DestinationDetailHero({
 
       <div className="relative z-10 mx-auto max-w-[1300px] px-6 pb-24 pt-28">
         <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
-          <a href="/" className="transition hover:text-white">Home</a>
+          <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
-          <a href="/destinations" className="transition hover:text-white">Destinations</a>
+          <Link href="/destinations" className="transition hover:text-white">Destinations</Link>
           <span>›</span>
           <span className="font-semibold text-white">{name}</span>
         </nav>
@@ -88,13 +89,13 @@ export function DestinationDetailHero({
               transition={{ duration: 0.6, delay: 0.4 }}
             >
               {stats.map((stat, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-card">
-                  <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <div key={i} className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-card">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d={stat.icon} />
                   </svg>
                   <div className="leading-tight">
                     <p className="text-[14px] font-extrabold">{stat.value}</p>
-                    <p className="text-[10.5px] text-brand-mute">{stat.label}</p>
+                    <p className="text-[10.5px] text-muted-foreground">{stat.label}</p>
                   </div>
                 </div>
               ))}
@@ -108,38 +109,38 @@ export function DestinationDetailHero({
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="rounded-2xl bg-white p-5 shadow-card lg:absolute lg:inset-x-0 lg:top-0">
+            <div className="rounded-2xl bg-card p-5 shadow-card lg:absolute lg:inset-x-0 lg:top-0">
               <h2 className="text-[19px] font-bold">Planning {name}?</h2>
-              <p className="mt-1 text-[12.5px] text-brand-mute">Get expert help from our local team.</p>
+              <p className="mt-1 text-[12.5px] text-muted-foreground">Get expert help from our local team.</p>
               <form className="mt-4 space-y-3" id="planForm">
                 <input type="hidden" name="destination_id" value={name.toLowerCase()} />
                 <input type="hidden" name="destination_name" value={name} />
                 <input
                   name="name"
                   required
-                  className="w-full rounded-lg border border-brand-line px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-brand-mute/80 focus:border-brand-green2 focus:ring-2 focus:ring-brand-green2/20"
+                  className="w-full rounded-lg border border-border px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-muted-foreground/80 focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Your Name"
                 />
-                <div className="flex items-center overflow-hidden rounded-lg border border-brand-line transition focus-within:border-brand-green2 focus-within:ring-2 focus-within:ring-brand-green2/20">
+                <div className="flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                   <input
                     name="phone"
                     type="tel"
                     required
-                    className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-brand-mute/80"
+                    className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/80"
                     placeholder="Phone Number"
                   />
-                  <svg viewBox="0 0 24 24" className="mr-3 h-4 w-4 shrink-0 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
                   </svg>
                 </div>
-                <div className="flex items-center overflow-hidden rounded-lg border border-brand-line transition focus-within:border-brand-green2 focus-within:ring-2 focus-within:ring-brand-green2/20">
+                <div className="flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                   <input
                     name="travel_date"
-                    className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-brand-mute/80"
+                    className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/80"
                     placeholder="Travel Date"
                     onFocus={(e) => (e.target.type = 'date')}
                   />
-                  <svg viewBox="0 0 24 24" className="mr-3 h-4 w-4 shrink-0 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" />
                     <path d="M16 2v4M8 2v4M3 10h18" />
                   </svg>
@@ -147,9 +148,10 @@ export function DestinationDetailHero({
                 <div className="relative">
                   <select
                     name="travellers"
-                    className="w-full appearance-none rounded-lg border border-brand-line bg-white px-3.5 py-2.5 text-[13px] text-brand-mute outline-none transition focus:border-brand-green2 focus:ring-2 focus:ring-brand-green2/20"
+                    defaultValue=""
+                    className="w-full appearance-none rounded-lg border border-border bg-card px-3.5 py-2.5 text-[13px] text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="" selected>No. of Travellers</option>
+                    <option value="">No. of Travellers</option>
                     <option>1</option>
                     <option>2</option>
                     <option>3</option>
@@ -157,13 +159,13 @@ export function DestinationDetailHero({
                     <option>5</option>
                     <option>6+</option>
                   </select>
-                  <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                     <path d="m6 9 6 6 6-6" />
                   </svg>
                 </div>
                 <motion.button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-card transition hover:brightness-110"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -174,7 +176,7 @@ export function DestinationDetailHero({
                   Get a Free Itinerary ⚡
                 </motion.button>
               </form>
-              <a href="#" className="mt-3.5 flex items-center justify-center gap-2 text-[13px] font-bold text-brand-green2 transition hover:underline">
+              <a href="#" className="mt-3.5 flex items-center justify-center gap-2 text-[13px] font-bold text-primary transition hover:underline">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                   <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
                 </svg>

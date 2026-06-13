@@ -34,7 +34,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
   if (offers.length === 0) return null;
 
   return (
-    <section id="offers" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-24">
+    <section id="offers" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
@@ -47,8 +47,8 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
             {heading.kicker}
           </motion.p>
           <motion.h2
-            className="rv h-display mt-3 text-4xl font-bold text-white"
-            style={{ '--rd': '0.08s' } as any}
+            className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground"
+            style={{ '--rd': '0.08s' } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -59,8 +59,8 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
         </div>
         {heading.subtitle && (
           <motion.p
-            className="rv text-sm text-white/55"
-            style={{ '--rd': '0.16s' } as any}
+            className="rv text-sm text-muted-foreground"
+            style={{ '--rd': '0.16s' } as React.CSSProperties}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -82,8 +82,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
           <motion.div key={o.id} variants={itemVariants}>
             <Tilt3D intensity={6}>
               <article
-                className="group relative overflow-hidden rounded-3xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-orange-brand/20"
-                style={{ background: 'linear-gradient(160deg,rgba(255,140,50,.12),rgba(8,26,20,.7))' }}
+                className="group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-orange-brand/10 to-card shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-orange-brand/20"
               >
                 <div className="shine absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -108,24 +107,24 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                 </div>
 
                 <div className="pop-sm relative p-6">
-                  <h3 className="h-display text-xl font-bold text-white">{o.title}</h3>
+                  <h3 className="h-display text-xl font-bold text-foreground">{o.title}</h3>
                   {o.description && (
-                    <p className="mt-2 text-[13px] leading-relaxed text-white/60">{o.description}</p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{o.description}</p>
                   )}
 
                   <div className="mt-5 flex items-end justify-between">
                     <p>
                       {o.oldPrice && (
                         <>
-                          <span className="text-[11px] text-white/40 line-through">{formatINR(o.oldPrice)}</span>
+                          <span className="text-[11px] text-muted-foreground line-through">{formatINR(o.oldPrice)}</span>
                           <br />
                         </>
                       )}
                       <span className="text-2xl font-extrabold text-orange-brand">{formatINR(o.price)}</span>
-                      <span className="text-[10px] text-white/45"> /person</span>
+                      <span className="text-[10px] text-muted-foreground"> /person</span>
                     </p>
                     {o.endsText && (
-                      <span className="glass rounded-full px-3 py-1.5 text-[10px] font-bold text-orange-200">
+                      <span className="glass rounded-full px-3 py-1.5 text-[10px] font-bold text-orange-brand">
                         ⏳ {o.endsText}
                       </span>
                     )}

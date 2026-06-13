@@ -19,14 +19,14 @@ export function TourDetailsFAQs({ faqs }: TourDetailsFAQsProps) {
   return (
     <motion.section
       id="faqs"
-      className="mt-6 rounded-2xl border border-brand-line bg-white p-6 shadow-soft"
+      className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
       <h2 className="text-[17px] font-bold">FAQs</h2>
-      <div className="mt-4 divide-y divide-brand-line">
+      <div className="mt-4 divide-y divide-border">
         {faqs.map((faq, i) => {
           const isOpen = openIndex === i;
 
@@ -39,7 +39,7 @@ export function TourDetailsFAQs({ faqs }: TourDetailsFAQsProps) {
                 {faq.question}
                 <motion.svg
                   viewBox="0 0 24 24"
-                  className={`h-4 w-4 shrink-0 text-brand-mute transition-transform duration-300 ${
+                  className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${
                     isOpen ? 'rotate-180' : ''
                   }`}
                   fill="none"
@@ -54,7 +54,7 @@ export function TourDetailsFAQs({ faqs }: TourDetailsFAQsProps) {
               <AnimatePresence>
                 {isOpen && (
                   <motion.p
-                    className="mt-2.5 text-[13px] leading-relaxed text-brand-ink/70"
+                    className="mt-2.5 text-[13px] leading-relaxed text-foreground/70"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
