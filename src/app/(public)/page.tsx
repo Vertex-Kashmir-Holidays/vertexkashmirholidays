@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import {
+  JsonLd,
+  buildTravelAgency,
+  buildWebSite,
+  buildItemList,
+} from "@/components/seo/JsonLd";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { AboutSection } from "@/components/about/AboutSection";
 import { BlogSection } from "@/components/blog/BlogSection";
 import { DestinationsSection } from "@/components/destinations/DestinationsSection";
@@ -12,6 +20,25 @@ import { WhyChooseSection } from "@/components/home/WhyChooseSection";
 import type { SectionHeading } from "@/types/home";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: "singleton" },
+  });
+
+  return buildMetadata({
+    // No brand suffix here — the root layout title template appends
+    // "| Vertex Kashmir Holidays" automatically.
+    title:
+      settings?.metaTitle ??
+      "Premium Kashmir Tour Packages — Honeymoon, Family & Adventure Holidays",
+    description:
+      settings?.metaDesc ??
+      "Discover Kashmir with Vertex Kashmir Holidays — curated honeymoon, family, adventure and luxury tour packages. Dal Lake houseboats, Gulmarg Gondola and glacier treks, booked online with local experts.",
+    canonical: SITE_URL,
+    ogImage: settings?.ogImage ?? null,
+  });
+}
 
 export default async function HomePage() {
   const [
@@ -27,6 +54,7 @@ export default async function HomePage() {
     offers,
     testimonials,
     blogs,
+    settings,
   ] = await Promise.all([
     prisma.homeContent.findUnique({ where: { id: "singleton" } }),
     prisma.homeSection.findMany(),
@@ -55,6 +83,7 @@ export default async function HomePage() {
       orderBy: { publishedAt: "desc" },
       take: 3,
     }),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
   ]);
 
   const heading = (key: string): SectionHeading => {
@@ -75,8 +104,36 @@ export default async function HomePage() {
     formAvatars = [];
   }
 
+  // ── Structured data (JSON-LD) ────────────────────────────────────────────
+  const sameAs = [
+    settings?.facebook,
+    settings?.instagram,
+    settings?.twitter,
+    settings?.youtube,
+  ].filter((u): u is string => Boolean(u && u.startsWith("http")));
+
+  const organizationJsonLd = buildTravelAgency({
+    telephone: settings?.sitePhone,
+    email: settings?.siteEmail,
+    streetAddress: settings?.siteAddress,
+    sameAs,
+  });
+
+  const webSiteJsonLd = buildWebSite();
+
+  const packagesJsonLd = buildItemList(
+    tours.map((t) => ({
+      name: t.title,
+      url: `${SITE_URL}/tours/${t.slug}`,
+    })),
+    "Featured Kashmir Tour Packages",
+  );
+
   return (
     <div className="bg-dark-bg text-white">
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={webSiteJsonLd} />
+      {tours.length > 0 && <JsonLd data={packagesJsonLd} />}
       <HeroSection
         content={{
           badge: content?.heroBadge ?? null,

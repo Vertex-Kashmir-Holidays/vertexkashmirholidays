@@ -92,6 +92,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
                 ? (tour.badgeColor as 'orange' | 'blue' | 'green')
                 : 'green',
               image: tour.image ?? undefined,
+              detailHref: `/tours/${tour.slug}`,
               bookHref: `/booking?tour=${tour.slug}`,
               t: tour.title,
               d: tour.durationLabel,

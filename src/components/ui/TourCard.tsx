@@ -10,6 +10,7 @@ interface TourCardProps {
     bc: 'orange' | 'blue' | 'green';
     seed?: string;
     image?: string;
+    detailHref?: string;
     bookHref?: string;
     whatsappHref?: string;
     t: string;
@@ -47,6 +48,9 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
     shikara: true,
   };
 
+  // Clicking the card (image, title or primary CTA) opens the tour detail page.
+  const detailHref = tour.detailHref || tour.bookHref || '#';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -64,11 +68,13 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
         >
           {/* Image Section */}
           <div className="relative h-44 overflow-hidden">
-            <motion.img
-              src={tour.image || `https://picsum.photos/seed/${tour.seed}/520/360`}
-              alt={tour.t}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-            />
+            <Link href={detailHref} aria-label={tour.t} className="block h-full w-full">
+              <motion.img
+                src={tour.image || `https://picsum.photos/seed/${tour.seed}/520/360`}
+                alt={tour.t}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+            </Link>
             <motion.span
               className={`absolute left-3 top-3 rounded-md ${badgeCls[tour.bc]} px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg`}
               initial={{ x: -20 }}
@@ -97,7 +103,9 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
           <div className="flex flex-1 flex-col p-5">
             {/* Title */}
             <h3 className={`text-[16px] font-bold leading-snug ${isHome ? 'text-white' : 'text-brand-ink'}`}>
-              {tour.t}
+              <Link href={detailHref} className="transition-colors hover:text-brand-green2">
+                {tour.t}
+              </Link>
             </h3>
             
             {/* Duration & Destinations */}
@@ -189,7 +197,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
 
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href={tour.bookHref || '#'}
+                  href={detailHref}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
                     isHome
                       ? 'bg-green-bright text-navy-brand hover:brightness-110 hover:shadow-glow'

@@ -124,10 +124,34 @@ async function main() {
   console.log("✓ Destinations");
 
   // ── Tours ───────────────────────────────────────────────────────────────────
+  const tour1Details = {
+    tagline: "A romantic escape through the paradise on earth ❤️",
+    highlights: JSON.stringify([
+      "❤️ Romantic Houseboat",
+      "🛶 Sunset Shikara Ride",
+      "🚠 Gulmarg Gondola",
+      "🌸 Betaab Valley",
+      "🍽️ Candlelight Dinner",
+    ]),
+    faqs: JSON.stringify([
+      { question: "Is this package customisable?", answer: "Yes — every itinerary is handcrafted. Add days, upgrade hotels, or swap activities and your quote updates transparently." },
+      { question: "What is the advance payment?", answer: "Just 20% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay." },
+      { question: "Is the Gulmarg Gondola included?", answer: "Yes — both Phase 1 (Kongdori) and Phase 2 (Apharwat Peak) Gondola tickets are included in this package." },
+      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 20% advance is held as credit for 12 months." },
+    ]),
+    startCity: "Srinagar",
+    transport: "Private Cab",
+    difficulty: "Easy",
+    bestTime: "Apr – Oct",
+    tourType: "Private Tour",
+    pickupDrop: "Srinagar Airport",
+    happyCount: 12000,
+  };
   const tour1 = await prisma.tour.upsert({
     where: { slug: "honeymoon-in-heaven" },
-    update: { badge: "BESTSELLER", badgeColor: "orange" },
+    update: { badge: "BESTSELLER", badgeColor: "orange", ...tour1Details },
     create: {
+      ...tour1Details,
       title: "Honeymoon in Heaven",
       slug: "honeymoon-in-heaven",
       badge: "BESTSELLER",
@@ -183,10 +207,34 @@ async function main() {
     },
   });
 
+  const tour2Details = {
+    tagline: "A wholesome Kashmir adventure for the whole family 👨‍👩‍👧",
+    highlights: JSON.stringify([
+      "🛶 Floating Market Shikara",
+      "❄️ Sonmarg Glacier",
+      "🚠 Gulmarg Gondola",
+      "🐴 Pony Rides",
+      "🏡 Houseboat Stay",
+    ]),
+    faqs: JSON.stringify([
+      { question: "Is this package suitable for young children?", answer: "Absolutely — the itinerary is gently paced with family suites, and our drivers carry child-friendly extras. We tailor activities to your kids' ages." },
+      { question: "What is the advance payment?", answer: "Just 20% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay." },
+      { question: "Is the Gondola included?", answer: "Gondola Phase 1 (Kongdori) tickets are included for every family member. Phase 2 to Apharwat is an optional add-on." },
+      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 20% advance is held as credit for 12 months." },
+    ]),
+    startCity: "Srinagar",
+    transport: "Spacious SUV",
+    difficulty: "Easy",
+    bestTime: "Mar – Oct",
+    tourType: "Private Tour",
+    pickupDrop: "Srinagar Airport",
+    happyCount: 8000,
+  };
   const tour2 = await prisma.tour.upsert({
     where: { slug: "family-kashmir-explorer" },
-    update: { badge: "POPULAR", badgeColor: "blue" },
+    update: { badge: "POPULAR", badgeColor: "blue", ...tour2Details },
     create: {
+      ...tour2Details,
       title: "Family Kashmir Explorer",
       slug: "family-kashmir-explorer",
       badge: "POPULAR",
@@ -240,10 +288,34 @@ async function main() {
     },
   });
 
+  const tour3Details = {
+    tagline: "Kashmir's ultimate Himalayan adventure circuit 🏔️",
+    highlights: JSON.stringify([
+      "🏔️ Alpine Lake Treks",
+      "⛺ Wilderness Camping",
+      "🚠 Apharwat Summit",
+      "🚵 Mountain Biking",
+      "🧗 Certified Guides",
+    ]),
+    faqs: JSON.stringify([
+      { question: "How fit do I need to be?", answer: "You should be comfortable walking 5–6 hours a day at altitude. We share a preparation guide on booking and our guides set a steady, safe pace." },
+      { question: "Is camping equipment provided?", answer: "Yes — tents, sleeping bags and mats are included on all trek days. You only bring personal trekking gear and clothing." },
+      { question: "Are the treks guided?", answer: "Every trekking day is led by a certified local mountain guide, with a first-aid kit and emergency support throughout." },
+      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 20% advance is held as credit for 12 months." },
+    ]),
+    startCity: "Srinagar",
+    transport: "Private Vehicle",
+    difficulty: "Challenging",
+    bestTime: "Jun – Sep",
+    tourType: "Guided Trek",
+    pickupDrop: "Srinagar Airport",
+    happyCount: 3500,
+  };
   const tour3 = await prisma.tour.upsert({
     where: { slug: "high-altitude-adventure" },
-    update: { badge: "TRENDING", badgeColor: "green" },
+    update: { badge: "TRENDING", badgeColor: "green", ...tour3Details },
     create: {
+      ...tour3Details,
       title: "High Altitude Adventure",
       slug: "high-altitude-adventure",
       badge: "TRENDING",
@@ -301,10 +373,34 @@ async function main() {
     },
   });
 
+  const tour4Details = {
+    tagline: "Experience Kashmir through the eyes of royalty 👑",
+    highlights: JSON.stringify([
+      "👑 Heritage Houseboat",
+      "🤵 Personal Butler",
+      "🚠 Private Gondola Cabin",
+      "🍽️ Wazwan Tasting Menu",
+      "🧣 Bespoke Pashmina",
+    ]),
+    faqs: JSON.stringify([
+      { question: "What makes this a luxury package?", answer: "A restored Maharaja-era cedar houseboat, a personal butler, private shikara on call 24/7, private Gondola cabin, and a bespoke Pashmina — every detail is arranged before you arrive." },
+      { question: "What is the advance payment?", answer: "Just 20% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay." },
+      { question: "Is the experience private?", answer: "Entirely. All transfers, dining and excursions are private to your party, hosted by a dedicated personal host." },
+      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 20% advance is held as credit for 12 months." },
+    ]),
+    startCity: "Srinagar",
+    transport: "Luxury Vehicle",
+    difficulty: "Easy",
+    bestTime: "Apr – Oct",
+    tourType: "Private Luxury",
+    pickupDrop: "Srinagar Airport",
+    happyCount: 1500,
+  };
   const tour4 = await prisma.tour.upsert({
     where: { slug: "royal-kashmir-luxury" },
-    update: { badge: "LUXURY", badgeColor: "orange" },
+    update: { badge: "LUXURY", badgeColor: "orange", ...tour4Details },
     create: {
+      ...tour4Details,
       title: "Royal Kashmir — Luxury Houseboat Retreat",
       slug: "royal-kashmir-luxury",
       badge: "LUXURY",

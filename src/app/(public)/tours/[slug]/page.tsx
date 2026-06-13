@@ -1,148 +1,261 @@
 // src/app/(public)/tours/[slug]/page.tsx
-'use client';
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import {
+  JsonLd,
+  buildProduct,
+  buildBreadcrumbList,
+  buildFAQPage,
+} from "@/components/seo/JsonLd";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
+import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
+import { TourDetailsHero } from "@/components/tours/TourDetailsHero";
+import { TourDetailsInclusions } from "@/components/tours/TourDetailsInclusions";
+import { TourDetailsItinerary } from "@/components/tours/TourDetailsItinerary";
+import { TourDetailsOverview } from "@/components/tours/TourDetailsOverview";
+import { TourDetailsReviews } from "@/components/tours/TourDetailsReviews";
+import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
+import { TourDetailsTabs } from "@/components/tours/TourDetailsTabs";
 
-import { TourDetailsFAQs } from '@/components/tours/TourDetailsFAQs';
-import { TourDetailsGallery } from '@/components/tours/TourDetailsGallery';
-import { TourDetailsHero } from '@/components/tours/TourDetailsHero';
-import { TourDetailsInclusions } from '@/components/tours/TourDetailsInclusions';
-import { TourDetailsItinerary } from '@/components/tours/TourDetailsItinerary';
-import { TourDetailsOverview } from '@/components/tours/TourDetailsOverview';
-import { TourDetailsReviews } from '@/components/tours/TourDetailsReviews';
-import { TourDetailsSidebar } from '@/components/tours/TourDetailsSidebar';
-import { TourDetailsTabs } from '@/components/tours/TourDetailsTabs';
+export const dynamic = "force-dynamic";
 
-export default function TourDetailsPage() {
-  const tourData = {
-    name: 'Kashmir Honeymoon Escape',
-    duration: '6N / 7D',
-    badge: 'BESTSELLER',
-    rating: 4.9,
-    reviews: 652,
-    couples: 12000,
-    images: [
-      'https://picsum.photos/seed/detail-hero/1800/760',
-      'https://picsum.photos/seed/th-snow/1800/760',
-      'https://picsum.photos/seed/th-lake/1800/760',
-      'https://picsum.photos/seed/th-boat/1800/760',
-      'https://picsum.photos/seed/th-valley/1800/760',
-      'https://picsum.photos/seed/th-house/1800/760',
-      'https://picsum.photos/seed/th-shikara/1800/760',
-      'https://picsum.photos/seed/th-gondola/1800/760',
-    ],
-    description: 'Experience the perfect romantic getaway with your loved one in the breathtaking valleys of Kashmir. From the serene Dal Lake to the snow-covered peaks of Gulmarg, every moment of this journey is crafted for love.',
-    chips: ['❤️ Romantic Decor', '🛶 Shikara Ride', '🕯️ Candle Light Dinner', '📷 Photographer Included'],
-    itinerary: [
-      { day: 1, title: 'Arrival in Srinagar', body: 'Arrive at Srinagar Airport. Our representative will welcome you and transfer to houseboat. Enjoy a romantic shikara ride in Dal Lake during sunset.', image: 'itn-day1' },
-      { day: 2, title: 'Srinagar Local Sightseeing', body: 'Visit Mughal Gardens — Nishat, Shalimar and Chashme Shahi — followed by Shankaracharya Temple and old city walks.', image: 'itn-day2' },
-      { day: 3, title: 'Gulmarg – The Meadow of Flowers', body: 'Day excursion to Gulmarg. Gondola Phase 1 ride included; optional Phase 2 to Apharwat Peak for snow activities.', image: 'itn-day3' },
-      { day: 4, title: 'Pahalgam – The Valley of Shepherds', body: 'Drive through saffron fields to Pahalgam. Visit Betaab Valley and Aru Valley; riverside walk along the Lidder.', image: 'itn-day4' },
-      { day: 5, title: 'Sonmarg Excursion', body: 'Full-day trip to Sonmarg, the Meadow of Gold. Optional pony ride to Thajiwas Glacier.', image: 'itn-day5' },
-      { day: 6, title: 'Srinagar Leisure Day', body: 'Free day for shopping in Lal Chowk and Polo View Market. Candle light dinner on the houseboat tonight.', image: 'itn-day6' },
-      { day: 7, title: 'Departure', body: 'After breakfast, transfer to Srinagar Airport with a box of Kashmiri kahwa and memories for life.', image: 'itn-day7' },
-    ],
-    inclusions: [
-      'Accommodation (5★ Deluxe Hotels / Houseboat)',
-      'Daily Breakfast & Dinner',
-      'Private Cab for Sightseeing',
-      'Shikara Ride in Dal Lake',
-      'Gulmarg Gondola Phase 1 Tickets',
-      'All Tax & Parking',
-      '24x7 On-ground Support',
-    ],
-    exclusions: [
-      'Airfare / Train Tickets',
-      'Lunch',
-      'Personal Expenses',
-      'Adventure Activities',
-      'Gondola Phase 2 (Optional)',
-      'Anything not mentioned in inclusions',
-    ],
-    gallery: ['gal-shikara', 'gal-room', 'gal-gondola', 'gal-tulip'],
-    reviewData: [
-      { seed: 'rv1', name: 'Riya & Arjun', meta: 'May 2024 · Verified Booking', quote: 'The most beautiful trip of our life! Everything was perfectly planned. The houseboat experience and the candle light dinner were truly magical.' },
-      { seed: 'rv2', name: 'Sandeep & Nisha', meta: 'Apr 2024 · Verified Booking', quote: 'Gondola tickets were pre-booked so we skipped the queue entirely. Driver Bashir bhai was punctual every single day.' },
-      { seed: 'rv3', name: 'Karan & Simran', meta: 'Mar 2024 · Verified Booking', quote: 'They surprised us with flower decor on the houseboat for our anniversary. The photographer add-on was 100% worth it.' },
-      { seed: 'rv4', name: 'Aman & Priya', meta: 'Jan 2024 · Verified Booking', quote: 'Snow everywhere in Gulmarg and the team adjusted our plan around the weather without any extra charge.' },
-    ],
-    faqs: [
-      { question: 'Is this package customisable?', answer: 'Yes — every itinerary is handcrafted. Add days, upgrade hotels, or swap activities; your quote updates transparently.' },
-      { question: 'What is the advance payment?', answer: 'Just 20% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay.' },
-      { question: 'Is Gondola Phase 2 included?', answer: 'Phase 1 is included. Phase 2 to Apharwat Peak is optional and can be added during booking or on the spot.' },
-      { question: 'What is the cancellation policy?', answer: 'Free cancellation up to 15 days before departure. Between 7–15 days, the 20% advance is held as credit for 12 months.' },
-    ],
-    price: 34999,
-    oldPrice: 38999,
-    tourId: 'kashmir-honeymoon-escape-6n7d',
-  };
+type PageProps = { params: Promise<{ slug: string }> };
 
+const CATEGORY_LABEL: Record<string, string> = {
+  HONEYMOON: "Honeymoon",
+  FAMILY: "Family",
+  ADVENTURE: "Adventure",
+  LUXURY: "Luxury",
+};
+
+function parseJson<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function getTour(slug: string) {
+  return prisma.tour.findFirst({
+    where: { slug, published: true },
+    include: {
+      destinations: { include: { destination: { select: { name: true } } } },
+      reviews: {
+        where: { approved: true },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+      },
+    },
+  });
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const tour = await prisma.tour.findFirst({
+    where: { slug, published: true },
+    select: {
+      title: true,
+      excerpt: true,
+      description: true,
+      coverImage: true,
+      metaTitle: true,
+      metaDesc: true,
+      ogImage: true,
+    },
+  });
+
+  if (!tour) {
+    return buildMetadata({
+      title: "Tour Not Found",
+      description: "The Kashmir tour package you are looking for could not be found.",
+      canonical: `${SITE_URL}/tours/${slug}`,
+      noindex: true,
+    });
+  }
+
+  return buildMetadata({
+    title: tour.metaTitle ?? tour.title,
+    description:
+      tour.metaDesc ??
+      tour.excerpt ??
+      tour.description ??
+      `${tour.title} — a curated Kashmir tour package by Vertex Kashmir Holidays.`,
+    canonical: `${SITE_URL}/tours/${slug}`,
+    ogImage: tour.ogImage ?? tour.coverImage ?? null,
+  });
+}
+
+export default async function TourDetailsPage({ params }: PageProps) {
+  const { slug } = await params;
+  const [tour, settings] = await Promise.all([
+    getTour(slug),
+    prisma.siteSettings.findUnique({
+      where: { id: "singleton" },
+      select: { sitePhone: true },
+    }),
+  ]);
+
+  if (!tour) notFound();
+
+  // ── Parse JSON fields ──────────────────────────────────────────────────────
+  const gallery = parseJson<string[]>(tour.gallery, []);
+  const inclusions = parseJson<string[]>(tour.inclusions, []);
+  const exclusions = parseJson<string[]>(tour.exclusions, []);
+  const highlights = parseJson<string[]>(tour.highlights, []);
+  const faqs = parseJson<{ question: string; answer: string }[]>(tour.faqs, []);
+  const rawItinerary = parseJson<
+    { day: number; title: string; description?: string; image?: string }[]
+  >(tour.itinerary, []);
+
+  const itinerary = rawItinerary.map((d) => ({
+    day: d.day,
+    title: d.title,
+    body: d.description ?? "",
+    image: d.image,
+  }));
+
+  // ── Derived display values ─────────────────────────────────────────────────
+  const categoryLabel = CATEGORY_LABEL[tour.category] ?? "Tour";
+  const nights = Math.max(tour.duration - 1, 0);
+  const durationLabel = `${nights}N / ${tour.duration}D`;
+  const heroImages = [tour.coverImage, ...gallery].filter(
+    (img): img is string => Boolean(img),
+  );
+
+  const happyLabel =
+    tour.happyCount && tour.happyCount > 0
+      ? `${tour.happyCount.toLocaleString()}+ Happy ${
+          tour.category === "HONEYMOON" ? "Couples" : "Travellers"
+        }`
+      : "";
+
+  const reviews = tour.reviews.map((r) => ({
+    seed: r.id,
+    name: r.name,
+    meta: `${r.createdAt.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    })} · Verified Booking`,
+    quote: r.body,
+  }));
+
+  // ── Tabs (only for sections that have content) ─────────────────────────────
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'itinerary', label: 'Itinerary' },
-    { id: 'inclusions', label: 'Inclusions' },
-    { id: 'gallery', label: 'Gallery' },
-    { id: 'reviews', label: 'Reviews' },
-    { id: 'faqs', label: 'FAQs' },
+    { id: "overview", label: "Overview" },
+    ...(itinerary.length ? [{ id: "itinerary", label: "Itinerary" }] : []),
+    ...(inclusions.length || exclusions.length
+      ? [{ id: "inclusions", label: "Inclusions" }]
+      : []),
+    ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
+    ...(reviews.length ? [{ id: "reviews", label: "Reviews" }] : []),
+    ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
   ];
+
+  // ── Structured data (JSON-LD) ──────────────────────────────────────────────
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: "Home", url: SITE_URL },
+    { name: "Tour Packages", url: `${SITE_URL}/tours` },
+    { name: tour.title, url: `${SITE_URL}/tours/${tour.slug}` },
+  ]);
+
+  const productJsonLd = buildProduct({
+    title: tour.title,
+    slug: tour.slug,
+    description: tour.excerpt ?? tour.description,
+    coverImage: tour.coverImage,
+    priceFrom: tour.priceFrom,
+    rating: tour.rating,
+    reviewCount: tour.reviewCount,
+  });
 
   return (
     <div className="bg-brand-page text-brand-ink">
+      <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={productJsonLd} />
+      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
+
       <TourDetailsHero
-        tourName={tourData.name}
-        duration={tourData.duration}
-        badge={tourData.badge}
-        rating={tourData.rating}
-        reviews={tourData.reviews}
-        couples={tourData.couples}
-        images={tourData.images}
+        tourName={tour.title}
+        duration={durationLabel}
+        nights={nights}
+        days={tour.duration}
+        category={categoryLabel}
+        transport={tour.transport ?? "Private Cab"}
+        startCity={tour.startCity ?? "Srinagar"}
+        difficulty={tour.difficulty ?? "Easy"}
+        tagline={tour.tagline ?? tour.excerpt ?? ""}
+        badge={tour.badge ?? categoryLabel}
+        rating={tour.rating}
+        reviews={tour.reviewCount}
+        happyLabel={happyLabel}
+        images={heroImages}
       />
 
       <main className="mx-auto max-w-[1300px] px-6 py-6">
-        {/* Tabs - normal scrolling, no sticky */}
         <TourDetailsTabs sections={tabs} />
 
         <div className="grid items-start gap-7 lg:grid-cols-[1fr_320px] mt-6">
           <div className="min-w-0">
             <section id="overview">
               <TourDetailsOverview
-                description={tourData.description}
-                chips={tourData.chips}
+                description={tour.description ?? tour.excerpt ?? ""}
+                chips={highlights}
               />
             </section>
 
-            <section id="itinerary" className="scroll-mt-16">
-              <TourDetailsItinerary itinerary={tourData.itinerary} />
-            </section>
+            {itinerary.length > 0 && (
+              <section id="itinerary" className="scroll-mt-16">
+                <TourDetailsItinerary itinerary={itinerary} />
+              </section>
+            )}
 
-            <section id="inclusions" className="scroll-mt-16">
-              <TourDetailsInclusions
-                inclusions={tourData.inclusions}
-                exclusions={tourData.exclusions}
-              />
-            </section>
+            {(inclusions.length > 0 || exclusions.length > 0) && (
+              <section id="inclusions" className="scroll-mt-16">
+                <TourDetailsInclusions
+                  inclusions={inclusions}
+                  exclusions={exclusions}
+                />
+              </section>
+            )}
 
-            <section id="gallery" className="scroll-mt-16">
-              <TourDetailsGallery images={tourData.gallery.map(s => `https://picsum.photos/seed/${s}/420/320`)} />
-            </section>
+            {gallery.length > 0 && (
+              <section id="gallery" className="scroll-mt-16">
+                <TourDetailsGallery images={gallery} />
+              </section>
+            )}
 
-            <section id="reviews" className="scroll-mt-16">
-              <TourDetailsReviews
-                reviews={tourData.reviewData}
-                totalReviews={tourData.reviews}
-              />
-            </section>
+            {reviews.length > 0 && (
+              <section id="reviews" className="scroll-mt-16">
+                <TourDetailsReviews
+                  reviews={reviews}
+                  totalReviews={tour.reviewCount}
+                />
+              </section>
+            )}
 
-            <section id="faqs" className="scroll-mt-16">
-              <TourDetailsFAQs faqs={tourData.faqs} />
-            </section>
+            {faqs.length > 0 && (
+              <section id="faqs" className="scroll-mt-16">
+                <TourDetailsFAQs faqs={faqs} />
+              </section>
+            )}
           </div>
 
           <TourDetailsSidebar
-            price={tourData.price}
-            oldPrice={tourData.oldPrice}
-            rating={tourData.rating}
-            reviews={tourData.reviews}
-            tourId={tourData.tourId}
-            tourName={tourData.name}
+            price={tour.priceFrom}
+            oldPrice={tour.priceWas ?? undefined}
+            discountPct={tour.discountPct ?? undefined}
+            rating={tour.rating}
+            reviews={tour.reviewCount}
+            tourId={tour.id}
+            tourName={tour.title}
+            bestTime={tour.bestTime ?? "Apr – Oct"}
+            tourType={tour.tourType ?? "Private Tour"}
+            pickupDrop={tour.pickupDrop ?? `${tour.startCity ?? "Srinagar"} Airport`}
+            helpPhone={settings?.sitePhone ?? "+91 94190 00000"}
           />
         </div>
       </main>

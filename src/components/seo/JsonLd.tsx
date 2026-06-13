@@ -17,31 +17,70 @@ export function JsonLd({ data }: JsonLdProps) {
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://vertexkashmirholidays.com";
 
-export function buildTravelAgency() {
+export function buildTravelAgency(opts?: {
+  telephone?: string | null;
+  email?: string | null;
+  streetAddress?: string | null;
+  sameAs?: string[];
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "TravelAgency",
+    "@id": `${siteUrl}/#organization`,
     name: "Vertex Kashmir Holidays",
     description:
       "Premium Kashmir tourism and booking platform — curated honeymoon, family, adventure and luxury packages.",
     url: siteUrl,
     logo: `${siteUrl}/brand/icon.png`,
+    image: `${siteUrl}/brand/icon.png`,
+    ...(opts?.email ? { email: opts.email } : {}),
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+91-94190-00000",
+      telephone: opts?.telephone ?? "+91-94190-00000",
       contactType: "customer service",
       areaServed: "IN",
       availableLanguage: ["English", "Hindi"],
     },
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Residency Road",
+      streetAddress: opts?.streetAddress ?? "Residency Road",
       addressLocality: "Srinagar",
       addressRegion: "Jammu & Kashmir",
       postalCode: "190001",
       addressCountry: "IN",
     },
-    sameAs: [],
+    sameAs: opts?.sameAs ?? [],
+  };
+}
+
+export function buildWebSite() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
+    name: "Vertex Kashmir Holidays",
+    url: siteUrl,
+    description:
+      "Curated Kashmir tour packages — honeymoon, family, adventure and luxury holidays booked online with local experts.",
+    publisher: { "@id": `${siteUrl}/#organization` },
+    inLanguage: "en-IN",
+  };
+}
+
+export function buildItemList(
+  items: { name: string; url: string }[],
+  name?: string,
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    ...(name ? { name } : {}),
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: item.url,
+    })),
   };
 }
 
