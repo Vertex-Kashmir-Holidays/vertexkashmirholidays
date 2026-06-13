@@ -7,20 +7,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TourDetailsHeroProps {
   tourName: string;
   duration: string;
+  nights: number;
+  days: number;
+  category: string;
+  transport: string;
+  startCity: string;
+  difficulty: string;
+  tagline: string;
   badge: string;
   rating: number;
   reviews: number;
-  couples: number;
+  happyLabel: string;
   images: string[];
 }
 
 export function TourDetailsHero({
   tourName,
   duration,
+  nights,
+  days,
+  category,
+  transport,
+  startCity,
+  difficulty,
+  tagline,
   badge,
   rating,
   reviews,
-  couples,
+  happyLabel,
   images = [],
 }: TourDetailsHeroProps) {
   const [currentImage, setCurrentImage] = useState(0);
@@ -46,11 +60,11 @@ export function TourDetailsHero({
   };
 
   const quickFacts = [
-    { t: '6 Nights', s: '7 Days', icon: 'M3 4h18v18H3z' },
-    { t: 'Honeymoon', s: 'Category', icon: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z' },
-    { t: 'Private Cab', s: 'Transportation', icon: 'M5 17h14l1-5-2-5H6L4 12Z' },
-    { t: 'Srinagar', s: 'Start City', icon: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z' },
-    { t: 'Easy', s: 'Difficulty', icon: 'm13 2-2 9h4l-4 11 1-8H8l5-12Z' },
+    { t: `${nights} Nights`, s: `${days} Days`, icon: 'M3 4h18v18H3z' },
+    { t: category, s: 'Category', icon: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z' },
+    { t: transport, s: 'Transportation', icon: 'M5 17h14l1-5-2-5H6L4 12Z' },
+    { t: startCity, s: 'Start City', icon: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z' },
+    { t: difficulty, s: 'Difficulty', icon: 'm13 2-2 9h4l-4 11 1-8H8l5-12Z' },
   ];
 
   return (
@@ -171,14 +185,16 @@ export function TourDetailsHero({
             <br />
             {duration}
           </motion.h1>
-          <motion.p
-            className="mt-4 text-[15px] font-medium text-white/90"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Romantic escape through the paradise on earth ❤️
-          </motion.p>
+          {tagline && (
+            <motion.p
+              className="mt-4 text-[15px] font-medium text-white/90"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              {tagline}
+            </motion.p>
+          )}
           <motion.p
             className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] font-semibold text-white"
             initial={{ opacity: 0 }}
@@ -191,8 +207,12 @@ export function TourDetailsHero({
               </svg>
               {rating} ({reviews.toLocaleString()} reviews)
             </span>
-            <span className="text-white/40">|</span>
-            <span>{couples.toLocaleString()}+ Happy Couples</span>
+            {happyLabel && (
+              <>
+                <span className="text-white/40">|</span>
+                <span>{happyLabel}</span>
+              </>
+            )}
           </motion.p>
         </div>
 

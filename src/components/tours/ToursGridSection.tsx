@@ -123,6 +123,7 @@ export function ToursGridSection({
                   ? (tour.badgeColor as (typeof badgeColors)[number])
                   : 'green',
                 image: tour.image ?? undefined,
+                detailHref: `/tours/${tour.slug}`,
                 bookHref: `/booking?tour=${tour.slug}`,
                 t: tour.title,
                 d: tour.durationLabel,

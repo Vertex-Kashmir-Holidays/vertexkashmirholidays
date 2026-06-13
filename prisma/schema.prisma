@@ -88,11 +88,22 @@ model Tour {
   coverImage   String?
   badge        String?
   badgeColor   String?           @default("green")
-  // JSON strings (SQLite has no native arrays)
+  tagline      String?
+  // JSON strings (Postgres column kept as text for portability)
   gallery      String            @default("[]")
   itinerary    String            @default("[]")
   inclusions   String            @default("[]")
   exclusions   String            @default("[]")
+  highlights   String            @default("[]") // JSON string[] — overview chips
+  faqs         String            @default("[]") // JSON [{ question, answer }]
+  // Quick-fact / info-card details surfaced on the tour detail page
+  startCity    String?
+  transport    String?
+  difficulty   String?
+  bestTime     String?
+  tourType     String?
+  pickupDrop   String?
+  happyCount   Int?
   priceFrom    Float
   priceWas     Float?
   discountPct  Int?

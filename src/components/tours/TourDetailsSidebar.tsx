@@ -7,19 +7,29 @@ import { motion } from 'framer-motion';
 interface TourDetailsSidebarProps {
   price: number;
   oldPrice?: number;
+  discountPct?: number;
   rating: number;
   reviews: number;
   tourId: string;
   tourName: string;
+  bestTime: string;
+  tourType: string;
+  pickupDrop: string;
+  helpPhone: string;
 }
 
 export function TourDetailsSidebar({
   price,
   oldPrice,
+  discountPct,
   rating,
   reviews,
   tourId,
   tourName,
+  bestTime,
+  tourType,
+  pickupDrop,
+  helpPhone,
 }: TourDetailsSidebarProps) {
   const [activeTab, setActiveTab] = useState<'inquiry' | 'book'>('inquiry');
 
@@ -30,9 +40,9 @@ export function TourDetailsSidebar({
   ];
 
   const infoCards = [
-    { t: 'Best Time to Visit', s: 'Apr – Oct', icon: 'M3 4h18v18H3zM16 2v4M8 2v4M3 10h18' },
-    { t: 'Tour Type', s: 'Private Tour', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9' },
-    { t: 'Pickup/Drop', s: 'Srinagar Airport', icon: 'M5 17h14l1-5-2-5H6L4 12Z' },
+    { t: 'Best Time to Visit', s: bestTime, icon: 'M3 4h18v18H3zM16 2v4M8 2v4M3 10h18' },
+    { t: 'Tour Type', s: tourType, icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9' },
+    { t: 'Pickup/Drop', s: pickupDrop, icon: 'M5 17h14l1-5-2-5H6L4 12Z' },
   ];
 
   return (
@@ -44,9 +54,11 @@ export function TourDetailsSidebar({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <span className="rounded-md bg-badge-red px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white">
-          10% OFF
-        </span>
+        {discountPct ? (
+          <span className="rounded-md bg-badge-red px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white">
+            {discountPct}% OFF
+          </span>
+        ) : null}
         <p className="mt-3 flex items-baseline gap-2">
           <span className="text-[30px] font-extrabold leading-none">₹{price.toLocaleString()}</span>
           <span className="text-[12px] font-medium text-brand-mute">per person</span>
@@ -324,7 +336,7 @@ export function TourDetailsSidebar({
         <span>
           <span className="block text-[14px] font-bold text-emerald-900">Need Help?</span>
           <span className="block text-[12px] text-emerald-800/80">Chat with our travel expert</span>
-          <span className="mt-0.5 block text-[12.5px] font-bold text-emerald-900">+91 99999 99999</span>
+          <span className="mt-0.5 block text-[12.5px] font-bold text-emerald-900">{helpPhone}</span>
         </span>
       </motion.a>
 
