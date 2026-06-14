@@ -28,6 +28,26 @@ export function renderAccents(text: string | null): ReactNode {
   ));
 }
 
+// Renders About-page headings: *text* → mint highlight, \n → line break.
+export function renderMint(text: string | null): ReactNode {
+  if (!text) return null;
+  return text.split('\n').map((line, li) => (
+    <Fragment key={li}>
+      {li > 0 && <br />}
+      {line.split(/(\*[^*]+\*)/g).map((part, pi) => {
+        if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) {
+          return (
+            <span key={pi} className="text-brand-mint">
+              {part.slice(1, -1)}
+            </span>
+          );
+        }
+        return <Fragment key={pi}>{part}</Fragment>;
+      })}
+    </Fragment>
+  ));
+}
+
 export function formatINR(amount: number): string {
   return `₹${Math.round(amount).toLocaleString('en-IN')}`;
 }

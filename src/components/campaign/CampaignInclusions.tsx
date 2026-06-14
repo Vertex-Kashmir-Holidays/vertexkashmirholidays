@@ -1,4 +1,4 @@
-// src/components/sections/CampaignInclusions.tsx
+// src/components/campaign/CampaignInclusions.tsx
 'use client';
 
 import { motion } from 'framer-motion';
@@ -19,8 +19,8 @@ export function CampaignInclusions({ inclusions, exclusions }: CampaignInclusion
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-[17px] font-bold text-white">What's Included</h2>
-          <ul className="mt-5 space-y-3 text-[13px] text-white/75">
+          <h2 className="text-[17px] font-bold text-foreground">What&apos;s Included</h2>
+          <ul className="mt-5 space-y-3 text-[13px] text-foreground/75">
             {inclusions.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5">
                 <span className="mt-0.5 text-green-glow">✓</span>
@@ -36,11 +36,11 @@ export function CampaignInclusions({ inclusions, exclusions }: CampaignInclusion
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <h2 className="text-[17px] font-bold text-white">Not Included</h2>
-          <ul className="mt-5 space-y-3 text-[13px] text-white/75">
+          <h2 className="text-[17px] font-bold text-foreground">Not Included</h2>
+          <ul className="mt-5 space-y-3 text-[13px] text-foreground/75">
             {exclusions.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5">
-                <span className="mt-0.5 text-rose-400">✕</span>
+                <span className="mt-0.5 text-rose-500 dark:text-rose-400">✕</span>
                 {item}
               </li>
             ))}

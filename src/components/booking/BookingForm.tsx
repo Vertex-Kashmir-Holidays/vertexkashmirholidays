@@ -65,6 +65,7 @@ export interface BookingFormProps {
   coverImage: string | null;
   initialDate: string;
   initialTravellers: number;
+  whatsappNumber?: string;
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ export function BookingForm({
   coverImage,
   initialDate,
   initialTravellers,
+  whatsappNumber = "919419000000",
 }: BookingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("idle");
@@ -202,6 +204,9 @@ export function BookingForm({
         ? "Confirming payment…"
         : `Pay ₹${total.toLocaleString("en-IN")}`;
 
+  const inputClass =
+    "w-full pl-9 pr-3 py-2.5 text-sm bg-card text-foreground border border-border rounded-xl outline-none transition placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/30 focus:border-primary";
+
   return (
     <>
       {/* Load Razorpay SDK */}
@@ -211,7 +216,7 @@ export function BookingForm({
         {/* ── Left: Order summary ─────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tour card */}
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+          <div className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border">
             <div className="relative aspect-video">
               <Image
                 src={coverImage ?? PLACEHOLDER}
@@ -226,19 +231,19 @@ export function BookingForm({
               </span>
             </div>
             <div className="p-5">
-              <h3 className="font-display font-bold text-brand-navy text-base leading-snug mb-3">
+              <h3 className="font-display font-bold text-foreground text-base leading-snug mb-3">
                 {tourTitle}
               </h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Duration</dt>
-                  <dd className="font-medium text-brand-navy">
+                  <dt className="text-muted-foreground">Duration</dt>
+                  <dd className="font-medium text-foreground">
                     {duration}D · {nights}N
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Travel Date</dt>
-                  <dd className="font-medium text-brand-navy">
+                  <dt className="text-muted-foreground">Travel Date</dt>
+                  <dd className="font-medium text-foreground">
                     {date
                       ? new Date(date).toLocaleDateString("en-IN", {
                           day: "numeric",
@@ -249,32 +254,32 @@ export function BookingForm({
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Travellers</dt>
-                  <dd className="font-medium text-brand-navy">{count}</dd>
+                  <dt className="text-muted-foreground">Travellers</dt>
+                  <dd className="font-medium text-foreground">{count}</dd>
                 </div>
-                <div className="border-t border-gray-100 pt-2 mt-2 flex justify-between">
-                  <dt className="text-gray-500">Per person</dt>
-                  <dd className="font-medium text-brand-navy">
+                <div className="border-t border-border pt-2 mt-2 flex justify-between">
+                  <dt className="text-muted-foreground">Per person</dt>
+                  <dd className="font-medium text-foreground">
                     ₹{priceFrom.toLocaleString("en-IN")}
                   </dd>
                 </div>
                 <div className="flex justify-between text-base font-bold">
-                  <dt className="text-brand-navy">Total</dt>
-                  <dd className="text-brand-green">₹{total.toLocaleString("en-IN")}</dd>
+                  <dt className="text-foreground">Total</dt>
+                  <dd className="text-primary">₹{total.toLocaleString("en-IN")}</dd>
                 </div>
               </dl>
             </div>
           </div>
 
           {/* Trust signals */}
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
+          <div className="bg-muted rounded-xl p-4 space-y-2.5">
             {[
               { Icon: ShieldCheck, text: "100% secure payment via Razorpay" },
               { Icon: BadgeCheck, text: "Best price guarantee — we match any lower rate" },
               { Icon: Lock, text: "Your data is encrypted and never shared" },
             ].map(({ Icon, text }) => (
-              <div key={text} className="flex items-center gap-2 text-xs text-gray-600">
-                <Icon className="w-3.5 h-3.5 text-brand-green shrink-0" />
+              <div key={text} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
                 {text}
               </div>
             ))}
@@ -283,8 +288,8 @@ export function BookingForm({
 
         {/* ── Right: Guest form ───────────────────────────────────────────── */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-            <h2 className="font-display font-bold text-brand-navy text-xl mb-6">
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8">
+            <h2 className="font-display font-bold text-foreground text-xl mb-6">
               Your Details
             </h2>
 
@@ -293,22 +298,22 @@ export function BookingForm({
               <div>
                 <label
                   htmlFor="bf-name"
-                  className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
                 >
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     id="bf-name"
                     type="text"
                     {...register("name")}
                     placeholder="e.g. Priya Sharma"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green transition"
+                    className={inputClass}
                   />
                 </div>
                 {errors.name && (
-                  <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>
+                  <p className="text-xs text-rose-500 mt-1">{errors.name.message}</p>
                 )}
               </div>
 
@@ -316,22 +321,22 @@ export function BookingForm({
               <div>
                 <label
                   htmlFor="bf-email"
-                  className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
                 >
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     id="bf-email"
                     type="email"
                     {...register("email")}
                     placeholder="you@example.com"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green transition"
+                    className={inputClass}
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+                  <p className="text-xs text-rose-500 mt-1">{errors.email.message}</p>
                 )}
               </div>
 
@@ -339,22 +344,22 @@ export function BookingForm({
               <div>
                 <label
                   htmlFor="bf-phone"
-                  className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
                 >
                   Phone / WhatsApp
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
                     id="bf-phone"
                     type="tel"
                     {...register("phone")}
                     placeholder="+91 98000 00000"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green transition"
+                    className={inputClass}
                   />
                 </div>
                 {errors.phone && (
-                  <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>
+                  <p className="text-xs text-rose-500 mt-1">{errors.phone.message}</p>
                 )}
               </div>
 
@@ -363,36 +368,36 @@ export function BookingForm({
                 <div>
                   <label
                     htmlFor="bf-date"
-                    className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                    className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
                   >
                     Travel Date
                   </label>
                   <div className="relative">
-                    <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     <input
                       id="bf-date"
                       type="date"
                       value={date}
                       min={today}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full pl-9 pr-2 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green transition [color-scheme:light]"
+                      className={`${inputClass} pr-2 [color-scheme:light] dark:[color-scheme:dark]`}
                     />
                   </div>
                 </div>
                 <div>
                   <label
                     htmlFor="bf-travellers"
-                    className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                    className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
                   >
                     Travellers
                   </label>
                   <div className="relative">
-                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     <select
                       id="bf-travellers"
                       value={travellers}
                       onChange={(e) => setTravellers(e.target.value)}
-                      className="w-full pl-9 pr-2 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green transition appearance-none bg-white"
+                      className={`${inputClass} pr-2 appearance-none`}
                     >
                       {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
                         <option key={n} value={n}>
@@ -405,13 +410,13 @@ export function BookingForm({
               </div>
 
               {/* Total + CTA */}
-              <div className="border-t border-gray-100 pt-5 space-y-4">
+              <div className="border-t border-border pt-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     ₹{priceFrom.toLocaleString("en-IN")} × {count} person
                     {count !== 1 ? "s" : ""}
                   </span>
-                  <span className="font-display font-bold text-brand-navy text-xl">
+                  <span className="font-display font-bold text-foreground text-xl">
                     ₹{total.toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -420,7 +425,7 @@ export function BookingForm({
                   type="submit"
                   disabled={isPending}
                   size="lg"
-                  className="w-full bg-brand-green hover:bg-brand-green/90 text-white font-bold text-base shadow-lg shadow-brand-green/25 hover:scale-[1.02] active:scale-100 transition-all"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-100 transition-all"
                 >
                   {(step === "creating" || step === "redirecting") && (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -428,7 +433,7 @@ export function BookingForm({
                   {buttonLabel}
                 </Button>
 
-                <p className="text-xs text-center text-gray-400">
+                <p className="text-xs text-center text-muted-foreground">
                   <Lock className="w-3 h-3 inline mr-1" />
                   Secured by Razorpay · UPI · Cards · Net Banking
                 </p>
@@ -437,13 +442,13 @@ export function BookingForm({
           </div>
 
           {/* Help */}
-          <p className="text-center text-sm text-gray-500 mt-4">
+          <p className="text-center text-sm text-muted-foreground mt-4">
             Need help?{" "}
             <a
-              href={`https://wa.me/919419000000?text=${encodeURIComponent("Hi! I need help with my booking for " + tourTitle)}`}
+              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi! I need help with my booking for " + tourTitle)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-green font-semibold hover:underline"
+              className="text-primary font-semibold hover:underline"
             >
               WhatsApp us
             </a>

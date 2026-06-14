@@ -205,8 +205,13 @@ model Blog {
   body        String?
   coverImage  String?
   author      String?
+  authorImage String?
+  authorRole  String?
+  authorBio   String?
   category    String?
   readTime    Int?
+  featured    Boolean   @default(false)
+  trending    Boolean   @default(false)
   published   Boolean   @default(false)
   publishedAt DateTime?
   metaTitle   String?
@@ -218,6 +223,41 @@ model Blog {
   @@index([slug])
   @@index([published])
   @@index([publishedAt])
+  @@index([featured])
+  @@index([trending])
+  @@index([category])
+}
+
+// Singleton copy block for the blog listing page (hero + sidebar widgets).
+model BlogContent {
+  id                    String   @id @default("singleton")
+  heroKicker            String?
+  heroTitle             String?
+  heroSubtitle          String?
+  heroImage             String?
+  heroSearchPlaceholder String?
+  aboutTitle            String?
+  aboutText             String?
+  aboutCtaLabel         String?
+  aboutCtaHref          String?
+  newsletterTitle       String?
+  newsletterText        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Blog filter chips + sidebar "Popular Categories" (counts derived from Blog).
+model BlogCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  icon      String   @default("") // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
 }
 
 model Gallery {
@@ -380,6 +420,326 @@ model Testimonial {
   updatedAt DateTime @updatedAt
 
   @@index([isActive, sortOrder])
+}
+
+// ─────────────────────────────────────────────
+// About page content
+// ─────────────────────────────────────────────
+
+// Singleton copy block for every About page section.
+// Title strings support mint accent markers (*text*) and \n line breaks.
+model AboutContent {
+  id                    String   @id @default("singleton")
+  // Hero
+  heroBreadcrumb        String?
+  heroTitle             String?
+  heroSubtitle          String?
+  heroImage             String?
+  heroCtaPrimaryLabel   String?
+  heroCtaPrimaryHref    String?
+  heroCtaSecondaryLabel String?
+  heroCtaSecondaryHref  String?
+  // Story
+  storyKicker           String?
+  storyTitle            String?
+  storyBody             String?
+  storyImage            String?
+  // Stats strip background
+  statsImage            String?
+  // Values
+  valuesKicker          String?
+  valuesTitle           String?
+  valuesSubtitle        String?
+  // Team
+  teamKicker            String?
+  teamTitle             String?
+  teamCtaLabel          String?
+  teamCtaHref           String?
+  // Journey
+  journeyKicker         String?
+  journeyTitle          String?
+  // Press
+  pressLabel            String?
+  // Final CTA
+  ctaTitle              String?
+  ctaSubtitle           String?
+  ctaImage              String?
+  ctaWhatsappLabel      String?
+  ctaWhatsappHref       String?
+  ctaCallLabel          String?
+  ctaCallHref           String?
+  ctaEmailLabel         String?
+  ctaEmailHref          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Four feature chips in the Story section (title + subtitle + SVG path).
+model AboutStoryFeature {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  icon      String // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Counter cards in the About stats strip (value + label + SVG path).
+model AboutStat {
+  id        String   @id @default(cuid())
+  value     String
+  label     String
+  icon      String // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Value cards in the "Promises We Keep" section.
+model AboutValue {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  icon      String // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Team member cards.
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  bio       String
+  image     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Timeline milestones in the Journey section.
+model JourneyMilestone {
+  id        String   @id @default(cuid())
+  year      String
+  detail    String
+  icon      String // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// "As featured in" press logos (stored as inline HTML snippets).
+model PressLogo {
+  id        String   @id @default(cuid())
+  html      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// ─────────────────────────────────────────────
+// Contact page content
+// ─────────────────────────────────────────────
+
+// Singleton copy block for the contact page. Real contact details (phone,
+// email, address, whatsapp, socials) come from SiteSettings.
+model ContactContent {
+  id                 String   @id @default("singleton")
+  // Hero
+  heroBreadcrumb     String?
+  heroTitle          String?
+  heroSubtitle       String?
+  heroImage          String?
+  // Reach section
+  reachKicker        String?
+  reachTitle         String?
+  // Promise section
+  promiseKicker      String?
+  promiseTitle       String?
+  // Office / map section
+  officeKicker       String?
+  officeTitle        String?
+  officeSubtitle     String?
+  officeName         String?
+  officeAddress      String?
+  officeHours        String?
+  officeMapLabel     String?
+  officeMapSubLabel  String?
+  directionsUrl      String?
+  // FAQs
+  faqsKicker         String?
+  faqsTitle          String?
+  faqsCtaLabel       String?
+  faqsCtaHref        String?
+  // Testimonials
+  testimonialsKicker String?
+  testimonialsTitle  String?
+  // Social
+  socialKicker       String?
+  socialTitle        String?
+  socialText         String?
+  socialCtaLabel     String?
+  socialCtaHref      String?
+  // Form
+  formKicker         String?
+  formTitle          String?
+  formNote           String?
+  // Floating WhatsApp button
+  whatsappFloatText  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ContactHeroFeature {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  icon      String // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model ContactPromiseItem {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  icon      String // SVG path `d`
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model ContactFaq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model ContactOffice {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  hours     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// ─────────────────────────────────────────────
+// Campaign landing pages (/campaign/[slug])
+// ─────────────────────────────────────────────
+
+// A self-contained marketing landing page. Structured sections are stored as
+// JSON strings (same convention as Tour) and parsed in the page.
+model Campaign {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  published      Boolean  @default(false)
+  // Theming
+  accent         String   @default("hsl(196 90% 52%)")
+  accent2        String   @default("hsl(170 80% 50%)")
+  particles      String   @default("snow") // "snow" | "embers"
+  // Hero
+  name           String
+  badge          String?
+  titleHtml      String?
+  sub            String?
+  heroImage      String?
+  finalImage     String?
+  facts          String   @default("[]") // JSON string[]
+  heroCta        String?
+  proofCount     String?
+  // Urgency bar
+  offerText      String?
+  offerDeadline  DateTime?
+  offerSeats     String?
+  // Nav / contact
+  navCta         String?
+  phone          String?
+  whatsappHref   String?
+  // Marquee
+  strip          String   @default("[]") // JSON string[]
+  // Stats — JSON [[value, suffix, label]]
+  stats          String   @default("[]")
+  // Film
+  filmTitle      String?
+  filmDuration   String?
+  filmPoster     String?
+  filmSrc        String?
+  // Highlights — JSON [{ image, emoji, title, description }]
+  highlightsTitle String?
+  highlights     String   @default("[]")
+  // Activities — JSON [{ image, title }]
+  activitiesTitle String?
+  activities     String   @default("[]")
+  // Itinerary — JSON [{ title, description, image }]
+  itineraryTitle String?
+  itinerary      String   @default("[]")
+  // Pricing — JSON [{ name, price, old, tag, desc, feats[] }]
+  tiers          String   @default("[]")
+  // Departures — JSON [{ date, seats, price, status }]
+  batches        String   @default("[]")
+  // Inclusions / exclusions — JSON string[]
+  inclusions     String   @default("[]")
+  exclusions     String   @default("[]")
+  // Gallery — JSON string[] (image urls)
+  galleryTitle   String?
+  gallery        String   @default("[]")
+  // Testimonials — JSON [{ image, name, location, quote }]
+  testimonials   String   @default("[]")
+  // FAQs — JSON [{ question, answer }]
+  faqsTitle      String?
+  faqs           String   @default("[]")
+  // Final CTA
+  finalTitle     String?
+  finalSub       String?
+  finalCta       String?
+  finalNote      String?
+  // SEO
+  metaTitle      String?
+  metaDesc       String?
+  ogImage        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([slug])
+  @@index([published])
 }
 
 model SiteSettings {

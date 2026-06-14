@@ -26,14 +26,15 @@
   --accent: 22 92% 56%;
   --accent-foreground: 0 0% 100%;
 
-  /* Glass surface tint (adapts per theme) */
-  --glass-1: 200 25% 12% / 0.05;
-  --glass-2: 200 25% 12% / 0.02;
-  --glass-strong-1: 200 25% 12% / 0.07;
-  --glass-strong-2: 200 25% 12% / 0.03;
-  --glass-deep-1: 0 0% 100% / 0.85;
-  --glass-deep-2: 0 0% 100% / 0.7;
-  --glass-border: 200 25% 12% / 0.1;
+  /* Glass surface tint (adapts per theme). Light mode uses a translucent
+     white frost so panels stay visible over the near-white background. */
+  --glass-1: 0 0% 100% / 0.6;
+  --glass-2: 0 0% 100% / 0.4;
+  --glass-strong-1: 0 0% 100% / 0.78;
+  --glass-strong-2: 0 0% 100% / 0.58;
+  --glass-deep-1: 0 0% 100% / 0.9;
+  --glass-deep-2: 0 0% 100% / 0.78;
+  --glass-border: 200 25% 12% / 0.12;
 }
 
 .dark {
@@ -132,6 +133,19 @@ body {
 .sweep { position:relative; overflow:hidden; }
 .sweep::after { content:""; position:absolute; top:0; bottom:0; left:-40%; width:35%; transform:skewX(-18deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); animation:sweep 4.5s ease-in-out infinite; }
 @keyframes sweep { 0%,55%{left:-40%} 85%,100%{left:130%} }
+
+/* Campaign accent — driven by per-campaign --camp-accent / --camp-accent2
+   (set inline on the campaign wrapper), with sensible cyan/teal fallbacks. */
+.bg-accent-grad { background-image:linear-gradient(120deg, var(--camp-accent, hsl(196 90% 52%)), var(--camp-accent2, hsl(170 80% 50%))); }
+.grad-accent-text { background-image:linear-gradient(120deg, var(--camp-accent, hsl(196 90% 52%)), var(--camp-accent2, hsl(170 80% 50%))); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.text-camp-accent { color: var(--camp-accent, hsl(196 90% 52%)); }
+.tl-line { background-image:linear-gradient(to bottom, var(--camp-accent, hsl(196 90% 52%)), var(--camp-accent2, hsl(170 80% 50%))); }
+
+/* Campaign marquee tracks (gallery + strip) */
+.mq-track { display:flex; gap:3.5rem; width:max-content; animation:marq 28s linear infinite; }
+.mq-imgs { display:flex; gap:1rem; width:max-content; animation:marq 42s linear infinite; }
+.mq-rev { animation-direction:reverse; }
+.marquee:hover .mq-track, .marquee:hover .mq-imgs { animation-play-state:paused; }
 
 /* Grain overlay */
 .bg-grain::before { content:""; position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.04; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }

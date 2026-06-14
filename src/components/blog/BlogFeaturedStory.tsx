@@ -1,24 +1,19 @@
-// src/components/sections/BlogFeaturedStory.tsx
+// src/components/blog/BlogFeaturedStory.tsx
 'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import type { BlogFeaturedData } from '@/types/blog';
 
 interface BlogFeaturedStoryProps {
-  story: {
-    title: string;
-    excerpt: string;
-    image: string;
-    author: {
-      name: string;
-      image: string;
-    };
-    date: string;
-    readTime: string;
-  };
+  story: BlogFeaturedData;
 }
 
 export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
+  const meta = [story.dateLabel, story.readTime ? `${story.readTime} min read` : null]
+    .filter(Boolean)
+    .join('  ·  ');
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,31 +22,33 @@ export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
       transition={{ duration: 0.5 }}
     >
       <h2 className="text-[20px] font-bold">Featured Story</h2>
-      <article className="mt-4 grid overflow-hidden rounded-2xl border border-brand-line bg-white shadow-soft md:grid-cols-[1fr_1.1fr]">
+      <article className="mt-4 grid overflow-hidden rounded-2xl border border-border bg-card shadow-soft md:grid-cols-[1fr_1.1fr]">
         <div className="flex flex-col p-6 lg:p-7">
-          <span className="w-fit rounded-md bg-brand-bright px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white">
+          <span className="w-fit rounded-md bg-primary px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-primary-foreground">
             FEATURED
           </span>
           <h3 className="mt-4 text-[24px] font-bold leading-snug">{story.title}</h3>
-          <p className="mt-3 text-[13px] leading-relaxed text-brand-mute">{story.excerpt}</p>
+          {story.excerpt && <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{story.excerpt}</p>}
           <div className="mt-4 flex items-center gap-3">
-            <img
-              src={story.author.image}
-              alt={story.author.name}
-              className="h-9 w-9 rounded-full object-cover"
-            />
+            {story.authorImage && (
+              <img
+                src={story.authorImage}
+                alt={story.authorName ?? ''}
+                className="h-9 w-9 rounded-full object-cover"
+              />
+            )}
             <div className="leading-tight">
-              <p className="text-[12.5px] font-semibold">
-                By <strong>{story.author.name}</strong>
-              </p>
-              <p className="text-[11.5px] text-brand-mute">
-                {story.date} &nbsp;·&nbsp; {story.readTime} read
-              </p>
+              {story.authorName && (
+                <p className="text-[12.5px] font-semibold">
+                  By <strong>{story.authorName}</strong>
+                </p>
+              )}
+              {meta && <p className="text-[11.5px] text-muted-foreground">{meta}</p>}
             </div>
           </div>
           <Link
-            href="#"
-            className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-brand-green px-5 py-2.5 text-[12.5px] font-bold text-white shadow-soft transition hover:brightness-110"
+            href={`/blog/${story.slug}`}
+            className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-[12.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
           >
             Read Full Story
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -60,11 +57,13 @@ export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
           </Link>
         </div>
         <div className="min-h-[220px]">
-          <img
-            src={story.image}
-            alt={story.title}
-            className="h-full w-full object-cover"
-          />
+          {story.image && (
+            <img
+              src={story.image}
+              alt={story.title}
+              className="h-full w-full object-cover"
+            />
+          )}
         </div>
       </article>
     </motion.div>

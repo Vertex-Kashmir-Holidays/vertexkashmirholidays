@@ -1,6 +1,5 @@
-// src/components/sections/CampaignMarquee.tsx
+// src/components/campaign/CampaignMarquee.tsx
 'use client';
-
 
 interface CampaignMarqueeProps {
   items: string[];
@@ -8,9 +7,9 @@ interface CampaignMarqueeProps {
 
 export function CampaignMarquee({ items }: CampaignMarqueeProps) {
   return (
-    <section className="relative z-[2] border-y border-white/10 bg-white/[.03] py-4 backdrop-blur">
+    <section className="relative z-[2] border-y border-border bg-foreground/[.03] py-4 backdrop-blur">
       <div className="marquee">
-        <div className="mq-track text-[13px] font-semibold tracking-wide text-white/70">
+        <div className="mq-track text-[13px] font-semibold tracking-wide text-muted-foreground">
           {[...items, ...items].map((item, i) => (
             <span key={i} className="flex items-center whitespace-nowrap">
               {item}

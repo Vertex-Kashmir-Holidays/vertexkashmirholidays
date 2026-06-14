@@ -1,17 +1,12 @@
-// src/components/sections/CampaignItinerary.tsx
+// src/components/campaign/CampaignItinerary.tsx
 'use client';
 
 import { motion } from 'framer-motion';
-
-interface ItineraryItem {
-  title: string;
-  description: string;
-  image: string;
-}
+import type { CampaignItineraryItem } from '@/types/campaign';
 
 interface CampaignItineraryProps {
-  title: string;
-  itinerary: ItineraryItem[];
+  title: string | null;
+  itinerary: CampaignItineraryItem[];
 }
 
 export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) {
@@ -19,7 +14,7 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
     <section className="relative z-[2] mx-auto max-w-[980px] px-6 pt-20" id="itinerary">
       <div className="text-center">
         <motion.p
-          className="text-[11px] font-extrabold tracking-[0.24em] text-accent"
+          className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -28,7 +23,7 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
           THE PLAN
         </motion.p>
         <motion.h2
-          className="h-display mt-3 text-4xl font-bold text-white"
+          className="h-display mt-3 text-4xl font-bold text-foreground"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -38,7 +33,7 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
         </motion.h2>
       </div>
       <div className="relative mt-12">
-        <span className="tl-line absolute left-[22px] top-2 bottom-2 w-[3px] rounded-full opacity-60 lg:left-1/2 lg:-translate-x-1/2"></span>
+        <span className="tl-line absolute left-[22px] bottom-2 top-2 w-[3px] rounded-full opacity-60 lg:left-1/2 lg:-translate-x-1/2"></span>
         <div className="space-y-10">
           {itinerary.map((item, i) => (
             <motion.div
@@ -53,16 +48,18 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
                 {i + 1}
               </span>
               <div className={`${i % 2 ? 'lg:order-2 lg:pl-14' : 'lg:pr-14 lg:text-right'}`}>
-                <h3 className="text-[17px] font-bold text-white">{item.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/60">{item.description}</p>
+                <h3 className="text-[17px] font-bold text-foreground">{item.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{item.description}</p>
               </div>
               <div className={`${i % 2 ? 'lg:order-1 lg:pr-14' : 'lg:pl-14'}`}>
-                <div className="group overflow-hidden rounded-2xl border border-white/12 shadow-card">
-                  <img
-                    src={`https://picsum.photos/seed/${item.image}/640/400`}
-                    alt=""
-                    className="h-[150px] w-full object-cover transition duration-700 group-hover:scale-110 lg:h-[170px]"
-                  />
+                <div className="group overflow-hidden rounded-2xl border border-border shadow-card">
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt=""
+                      className="h-[150px] w-full object-cover transition duration-700 group-hover:scale-110 lg:h-[170px]"
+                    />
+                  )}
                 </div>
               </div>
             </motion.div>

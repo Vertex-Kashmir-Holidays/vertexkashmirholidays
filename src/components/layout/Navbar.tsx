@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -96,27 +97,9 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Actions - Top Bar */}
+          {/* Mobile Top Bar - Only Theme Toggle */}
           <div className="flex items-center gap-2 lg:hidden">
             <ThemeToggle />
-            <Link
-              href="/register"
-              className="grid h-9 w-9 place-items-center rounded-full border border-foreground/20 text-foreground transition hover:bg-foreground hover:text-background"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </Link>
-            <Link
-              href="#"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-[11px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
-            >
-              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="currentColor">
-                <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
-              </svg>
-              <span>Plan Trip</span>
-            </Link>
           </div>
         </nav>
       </header>
@@ -138,6 +121,20 @@ export function Navbar() {
               <span className="text-[9px] font-medium">{link.label}</span>
             </Link>
           ))}
+          
+          {/* User Icon - Added before burger menu */}
+          <Link
+            href="/register"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
+              pathname === '/register' ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span className="text-[9px] font-medium">Profile</span>
+          </Link>
           
           {/* Burger Menu - Opens overlay */}
           <button
@@ -163,28 +160,110 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-lg lg:hidden">
-          <div className="flex h-full flex-col items-center justify-center gap-6 pt-10">
-            {navLinks.slice(3).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-[17px] font-medium transition hover:text-primary ${
-                  isActive(link.href) ? 'text-primary' : 'text-foreground/80'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Floating Action Button - Plan Trip (Mobile - Always Visible) */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 260, 
+          damping: 20,
+          delay: 0.5
+        }}
+        className="fixed bottom-20 right-4 z-50 lg:hidden"
+      >
+        <motion.div
+          animate={{ 
+            y: [0, -8, 0],
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut"
+          }}
+        >
+          <Link
+            href="#"
+            className="flex items-center gap-2 rounded-full bg-primary px-5 py-3 shadow-xl ring-inner transition hover:brightness-110"
+            style={{
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1) inset'
+            }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ 
+                duration: 8,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+                <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
+              </svg>
+            </motion.div>
+            <span className="text-sm font-bold text-primary-foreground">Plan My Trip</span>
+            
+            {/* Pulse ring animation */}
+            <motion.span
+              className="absolute inset-0 rounded-full"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.6, 0, 0.6],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              style={{
+                border: '2px solid hsl(var(--primary))',
+                borderRadius: '9999px',
+              }}
+            />
+          </Link>
+        </motion.div>
+      </motion.div>
 
-      {/* Spacer for mobile bottom bar */}
-      <div className="h-16 lg:hidden" />
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-background/95 backdrop-blur-lg lg:hidden"
+          >
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="flex h-full flex-col items-center justify-center gap-6 pt-10"
+            >
+              {navLinks.map((link, index) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Link
+                    href={link.href}
+                    className={`text-[17px] font-medium transition hover:text-primary ${
+                      isActive(link.href) ? 'text-primary' : 'text-foreground/80'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
