@@ -66,7 +66,7 @@ export function ToursTrustBar() {
       transition={{ duration: 0.6 }}
     >
       <motion.div
-        className="mx-auto grid max-w-[1180px] gap-7 px-6 py-9 sm:grid-cols-2 lg:grid-cols-4"
+        className="mx-auto grid max-w-[1180px] gap-7 px-4 py-9 sm:grid-cols-2 sm:px-6 lg:grid-cols-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

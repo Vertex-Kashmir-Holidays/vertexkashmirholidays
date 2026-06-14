@@ -51,7 +51,7 @@ export function ToursHeroSection({ heading, stats }: ToursHeroSectionProps) {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/50 to-transparent"></div>
 
-      <div className="relative mx-auto max-w-[1300px] px-6 py-16 lg:pb-20 lg:pt-28">
+      <div className="relative mx-auto max-w-[1300px] px-4 py-12 sm:px-6 sm:py-16 lg:pb-20 lg:pt-28">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>
@@ -62,7 +62,7 @@ export function ToursHeroSection({ heading, stats }: ToursHeroSectionProps) {
         {/* Title Block */}
         <div className="mt-6">
           <motion.h1
-            className="h-display text-4xl font-bold text-white lg:text-[44px]"
+            className="h-display text-3xl font-bold text-white sm:text-4xl lg:text-[44px]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
