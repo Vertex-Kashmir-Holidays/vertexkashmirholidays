@@ -45,7 +45,7 @@ export function ToursNewsletter() {
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
       />
       <div className="absolute inset-0 bg-brand-green/90"></div>
-      <div className="relative mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-6 px-6 py-12">
+      <div className="relative mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-6 px-4 py-10 sm:px-6 sm:py-12">
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}

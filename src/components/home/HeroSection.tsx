@@ -147,7 +147,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
       </div>
 
       {/* Main content */}
-      <div className="relative z-[2] mx-auto grid min-h-[100svh] max-w-[1300px] items-center gap-10 px-6 pb-20 pt-32 lg:grid-cols-[1.15fr_.85fr]">
+      <div className="relative z-[2] mx-auto grid min-h-[100svh] max-w-[1300px] items-center gap-10 px-4 pb-20 pt-32 sm:px-6 lg:grid-cols-[1.15fr_.85fr]">
         <motion.div
           data-depth
           style={{ '--d': '0.7' } as React.CSSProperties}

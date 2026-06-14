@@ -128,17 +128,17 @@ export function TourDetailsHero({
         </div>
       )}
 
-      <div className="relative mx-auto max-w-[1300px] px-6 pb-24 pt-28">
+      <div className="relative mx-auto max-w-[1300px] px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-28">
         {/* Breadcrumb + Actions */}
-        <div className="flex items-center justify-between">
-          <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
-            <a href="/" className="transition hover:text-white">Home</a>
-            <span>›</span>
-            <a href="/tours" className="transition hover:text-white">Tours</a>
-            <span>›</span>
-            <span className="text-white">{tourName}</span>
+        <div className="flex items-center justify-between gap-3">
+          <nav className="flex min-w-0 items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+            <a href="/" className="shrink-0 transition hover:text-white">Home</a>
+            <span className="shrink-0">›</span>
+            <a href="/tours" className="shrink-0 transition hover:text-white">Tours</a>
+            <span className="shrink-0">›</span>
+            <span className="truncate text-white">{tourName}</span>
           </nav>
-          <div className="flex items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-2.5">
             <motion.button
               aria-label="Save to wishlist"
               className="grid h-10 w-10 place-items-center rounded-full border border-white/40 text-white backdrop-blur transition hover:bg-white hover:text-rose-500"
@@ -166,7 +166,7 @@ export function TourDetailsHero({
         </div>
 
         {/* Title Block */}
-        <div className="mt-12 max-w-2xl">
+        <div className="mt-8 max-w-2xl sm:mt-12">
           <motion.span
             className="rounded-md bg-badge-green px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white shadow"
             initial={{ x: -20, opacity: 0 }}
@@ -176,7 +176,7 @@ export function TourDetailsHero({
             {badge}
           </motion.span>
           <motion.h1
-            className="h-display mt-4 text-4xl font-bold leading-tight text-white lg:text-[44px]"
+            className="h-display mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[44px]"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
