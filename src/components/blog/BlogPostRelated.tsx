@@ -1,22 +1,26 @@
-// src/components/sections/BlogPostRelated.tsx
+// src/components/blog/BlogPostRelated.tsx
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-
-interface RelatedPost {
-  seed: string;
-  category: string;
-  color: string;
-  title: string;
-  date: string;
-  readTime: string;
-}
+import type { BlogArticleData } from '@/types/blog';
 
 interface BlogPostRelatedProps {
-  posts: RelatedPost[];
+  posts: BlogArticleData[];
 }
+
+// Saturated category badges read well on both themes; the brand category
+// uses the theme primary.
+const badgeColor: Record<string, string> = {
+  Kashmir: 'bg-primary',
+  'Travel Tips': 'bg-sky-600',
+  Honeymoon: 'bg-rose-500',
+  Adventure: 'bg-emerald-700',
+  Food: 'bg-amber-600',
+  Culture: 'bg-indigo-500',
+  News: 'bg-teal-600',
+};
 
 export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -38,14 +42,16 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  if (posts.length === 0) return null;
+
   const nextSlide = () => {
-    setCurrentIndex((prev) => 
+    setCurrentIndex((prev) =>
       prev + itemsPerView >= posts.length ? 0 : prev + itemsPerView
     );
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => 
+    setCurrentIndex((prev) =>
       prev - itemsPerView < 0 ? Math.max(0, posts.length - itemsPerView) : prev - itemsPerView
     );
   };
@@ -63,26 +69,28 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
     >
       <div className="flex items-center justify-between">
         <h2 className="text-[20px] font-bold">Keep Reading</h2>
-        <div className="flex gap-2">
-          <motion.button
-            onClick={prevSlide}
-            aria-label="Previous"
-            className="grid h-9 w-9 place-items-center rounded-full border border-brand-line text-brand-mute shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            ‹
-          </motion.button>
-          <motion.button
-            onClick={nextSlide}
-            aria-label="Next"
-            className="grid h-9 w-9 place-items-center rounded-full border border-brand-line text-brand-mute shadow-soft transition hover:border-brand-green2 hover:text-brand-green2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            ›
-          </motion.button>
-        </div>
+        {posts.length > itemsPerView && (
+          <div className="flex gap-2">
+            <motion.button
+              onClick={prevSlide}
+              aria-label="Previous"
+              className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ‹
+            </motion.button>
+            <motion.button
+              onClick={nextSlide}
+              aria-label="Next"
+              className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ›
+            </motion.button>
+          </div>
+        )}
       </div>
 
       <div className="relative mt-5 overflow-hidden">
@@ -97,29 +105,35 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
           >
             {visiblePosts.map((post, i) => (
               <motion.article
-                key={i}
-                className="group overflow-hidden rounded-xl border border-brand-line bg-white shadow-soft transition hover:-translate-y-1 hover:shadow-card"
+                key={post.id}
+                className="group overflow-hidden rounded-xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-card"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Link href="#" className="block">
+                <Link href={`/blog/${post.slug}`} className="block">
                   <div className="relative h-[150px] overflow-hidden">
-                    <img
-                      src={`https://picsum.photos/seed/${post.seed}/480/340`}
-                      alt=""
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                    <span className={`absolute bottom-2 left-2 rounded ${post.color} px-2 py-0.5 text-[8.5px] font-extrabold tracking-wide text-white`}>
-                      {post.category}
-                    </span>
+                    {post.coverImage && (
+                      <img
+                        src={post.coverImage}
+                        alt=""
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    )}
+                    {post.category && (
+                      <span className={`absolute bottom-2 left-2 rounded ${badgeColor[post.category] ?? 'bg-primary'} px-2 py-0.5 text-[8.5px] font-extrabold tracking-wide text-white`}>
+                        {post.category.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div className="p-4">
-                    <h3 className="min-h-[42px] text-[13px] font-bold leading-snug transition group-hover:text-brand-green2">
+                    <h3 className="min-h-[42px] text-[13px] font-bold leading-snug transition group-hover:text-primary">
                       {post.title}
                     </h3>
-                    <p className="mt-2 text-[11px] text-brand-mute">
-                      {post.date} &nbsp;·&nbsp; {post.readTime}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {[post.dateLabel, post.readTime ? `${post.readTime} min read` : null]
+                        .filter(Boolean)
+                        .join('  ·  ')}
                     </p>
                   </div>
                 </Link>
@@ -129,20 +143,22 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
         </AnimatePresence>
 
         {/* Dots indicator */}
-        <div className="mt-6 flex justify-center gap-1.5">
-          {Array.from({ length: Math.ceil(posts.length / itemsPerView) }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentIndex(i * itemsPerView)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === Math.floor(currentIndex / itemsPerView) 
-                  ? 'w-4 bg-brand-green2' 
-                  : 'w-1.5 bg-brand-line'
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
-        </div>
+        {posts.length > itemsPerView && (
+          <div className="mt-6 flex justify-center gap-1.5">
+            {Array.from({ length: Math.ceil(posts.length / itemsPerView) }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i * itemsPerView)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === Math.floor(currentIndex / itemsPerView)
+                    ? 'w-4 bg-primary'
+                    : 'w-1.5 bg-border'
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </motion.section>
   );

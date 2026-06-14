@@ -25,7 +25,7 @@ export function CampaignFilmModal({ isOpen, onClose, src, poster }: CampaignFilm
             <div className="relative w-full max-w-4xl mx-auto">
               <button
                 onClick={onClose}
-                className="absolute -top-12 right-0 grid h-10 w-10 place-items-center rounded-full glass text-white transition hover:bg-white/20"
+                className="absolute -top-12 right-0 grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-xl transition hover:bg-white/20"
                 aria-label="Close"
               >
                 ✕

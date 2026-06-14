@@ -37,43 +37,73 @@ export default async function BookingFailedPage({
 }) {
   const { bookingId } = await searchParams;
 
-  const booking = bookingId
-    ? await prisma.booking.findUnique({
-        where: { id: bookingId },
-        include: {
-          tour: {
-            select: { title: true, slug: true, duration: true },
+  const [booking, settings] = await Promise.all([
+    bookingId
+      ? prisma.booking.findUnique({
+          where: { id: bookingId },
+          include: {
+            tour: {
+              select: { title: true, slug: true, duration: true },
+            },
           },
-        },
-      })
-    : null;
+        })
+      : null,
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+  ]);
 
   const ref = booking ? formatRef(booking.id) : null;
   const nights = booking ? booking.tour.duration - 1 : 0;
   const retryHref = booking
     ? `/booking?tour=${booking.tour.slug}&date=${booking.travelDate.toISOString().split("T")[0]}&travellers=${booking.travellers}`
     : "/tours";
+  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
   const waText = encodeURIComponent(
     `Hi! My payment failed for "${booking?.tour.title ?? "a Kashmir tour"}". Booking ref: ${ref ?? "N/A"}. Can you help?`,
   );
 
+  const OPTIONS = [
+    {
+      Icon: RefreshCcw,
+      label: "Try Again",
+      sub: "Retry with the same details",
+      href: retryHref,
+      primary: true,
+      external: false,
+    },
+    {
+      Icon: CreditCard,
+      label: "Try Another Method",
+      sub: "Switch UPI / Card / Net Banking",
+      href: retryHref,
+      primary: false,
+      external: false,
+    },
+    {
+      Icon: Headphones,
+      label: "Need Assistance?",
+      sub: "WhatsApp our booking team",
+      href: `https://wa.me/${whatsappNumber}?text=${waText}`,
+      primary: false,
+      external: true,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-background text-foreground pt-20">
       {/* ── Failed banner ─────────────────────────────────────────────── */}
-      <div className="bg-red-50 border-b border-red-100 py-14">
+      <div className="border-b border-rose-500/20 bg-rose-500/10 py-14">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <XCircle className="w-16 h-16 text-red-500" strokeWidth={1.5} />
+            <XCircle className="w-16 h-16 text-rose-500" strokeWidth={1.5} />
           </div>
-          <h1 className="font-display font-extrabold text-red-700 text-4xl sm:text-5xl mb-3">
+          <h1 className="font-display font-extrabold text-rose-600 dark:text-rose-400 text-4xl sm:text-5xl mb-3">
             Oops! Payment Failed
           </h1>
-          <p className="text-red-600/80 text-lg">
-            Don&apos;t worry — your booking details are saved. You can retry
-            anytime or contact us for help.
+          <p className="text-rose-600/80 dark:text-rose-300/80 text-lg">
+            Don&apos;t worry — your booking details are saved. You can retry anytime or contact us for help.
           </p>
           {ref && (
-            <div className="mt-4 inline-block bg-red-100 border border-red-200 text-red-700 text-sm font-mono font-bold px-5 py-2.5 rounded-full">
+            <div className="mt-4 inline-block bg-rose-500/15 border border-rose-500/25 text-rose-600 dark:text-rose-300 text-sm font-mono font-bold px-5 py-2.5 rounded-full">
               Reference #{ref}
             </div>
           )}
@@ -83,24 +113,24 @@ export default async function BookingFailedPage({
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* ── Booking details ───────────────────────────────────────────── */}
         {booking && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 className="font-display font-semibold text-brand-navy text-lg mb-4">
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
+            <h2 className="font-display font-semibold text-foreground text-lg mb-4">
               Booking Details
             </h2>
             <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <div>
-                <dt className="text-gray-400 text-xs">Tour</dt>
-                <dd className="font-semibold text-brand-navy">{booking.tour.title}</dd>
+                <dt className="text-muted-foreground text-xs">Tour</dt>
+                <dd className="font-semibold text-foreground">{booking.tour.title}</dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs">Duration</dt>
-                <dd className="font-semibold text-brand-navy">
+                <dt className="text-muted-foreground text-xs">Duration</dt>
+                <dd className="font-semibold text-foreground">
                   {booking.tour.duration}D · {nights}N
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs">Travel Date</dt>
-                <dd className="font-semibold text-brand-navy">
+                <dt className="text-muted-foreground text-xs">Travel Date</dt>
+                <dd className="font-semibold text-foreground">
                   {booking.travelDate.toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "long",
@@ -109,18 +139,18 @@ export default async function BookingFailedPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs">Travellers</dt>
-                <dd className="font-semibold text-brand-navy">{booking.travellers}</dd>
+                <dt className="text-muted-foreground text-xs">Travellers</dt>
+                <dd className="font-semibold text-foreground">{booking.travellers}</dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs">Amount</dt>
-                <dd className="font-bold text-brand-navy text-base">
+                <dt className="text-muted-foreground text-xs">Amount</dt>
+                <dd className="font-bold text-foreground text-base">
                   ₹{booking.amount.toLocaleString("en-IN")}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs">Status</dt>
-                <dd className="font-semibold text-red-500">Payment Failed</dd>
+                <dt className="text-muted-foreground text-xs">Status</dt>
+                <dd className="font-semibold text-rose-500">Payment Failed</dd>
               </div>
             </dl>
           </div>
@@ -128,30 +158,7 @@ export default async function BookingFailedPage({
 
         {/* ── Option cards ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              Icon: RefreshCcw,
-              label: "Try Again",
-              sub: "Retry with the same details",
-              href: retryHref,
-              primary: true,
-            },
-            {
-              Icon: CreditCard,
-              label: "Try Another Method",
-              sub: "Switch UPI / Card / Net Banking",
-              href: retryHref,
-              primary: false,
-            },
-            {
-              Icon: Headphones,
-              label: "Need Assistance?",
-              sub: "WhatsApp our booking team",
-              href: `https://wa.me/919419000000?text=${waText}`,
-              primary: false,
-              external: true,
-            },
-          ].map(({ Icon, label, sub, href, primary, external }) => (
+          {OPTIONS.map(({ Icon, label, sub, href, primary, external }) => (
             <Link
               key={label}
               href={href}
@@ -159,28 +166,22 @@ export default async function BookingFailedPage({
               rel={external ? "noopener noreferrer" : undefined}
               className={`rounded-2xl border p-5 flex flex-col items-center text-center gap-3 transition-all hover:shadow-md ${
                 primary
-                  ? "bg-brand-green border-brand-green text-white hover:bg-brand-green/90"
-                  : "bg-white border-gray-100 hover:border-brand-navy/20"
+                  ? "bg-primary border-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-card border-border hover:border-foreground/20"
               }`}
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  primary ? "bg-white/20" : "bg-brand-navy/5"
+                  primary ? "bg-primary-foreground/20" : "bg-muted"
                 }`}
               >
-                <Icon className={`w-5 h-5 ${primary ? "text-white" : "text-brand-navy"}`} />
+                <Icon className={`w-5 h-5 ${primary ? "text-primary-foreground" : "text-foreground"}`} />
               </div>
               <div>
-                <p
-                  className={`text-sm font-bold ${primary ? "text-white" : "text-brand-navy"}`}
-                >
+                <p className={`text-sm font-bold ${primary ? "text-primary-foreground" : "text-foreground"}`}>
                   {label}
                 </p>
-                <p
-                  className={`text-xs mt-0.5 ${
-                    primary ? "text-white/70" : "text-gray-500"
-                  }`}
-                >
+                <p className={`text-xs mt-0.5 ${primary ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                   {sub}
                 </p>
               </div>
@@ -189,35 +190,35 @@ export default async function BookingFailedPage({
         </div>
 
         {/* ── FAQ ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
-          <h3 className="font-display font-bold text-brand-navy text-lg mb-5 flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-brand-cyan" />
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
+          <h3 className="font-display font-bold text-foreground text-lg mb-5 flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-primary" />
             Frequently Asked Questions
           </h3>
           <div className="space-y-5">
             {FAQS.map((faq) => (
               <div key={faq.q}>
-                <p className="font-semibold text-brand-navy text-sm mb-1">{faq.q}</p>
-                <p className="text-xs text-gray-500 leading-relaxed">{faq.a}</p>
+                <p className="font-semibold text-foreground text-sm mb-1">{faq.q}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Still planning CTA ───────────────────────────────────────── */}
-        <div className="bg-brand-navy rounded-2xl p-8 text-center">
-          <p className="text-brand-green text-xs font-semibold uppercase tracking-wider mb-2">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center">
+          <p className="text-primary text-xs font-semibold uppercase tracking-wider mb-2">
             ● Still planning your trip?
           </p>
-          <h3 className="font-display font-bold text-white text-xl mb-3">
+          <h3 className="font-display font-bold text-foreground text-xl mb-3">
             Explore all Kashmir packages
           </h3>
-          <p className="text-white/55 text-sm mb-6">
+          <p className="text-muted-foreground text-sm mb-6">
             Browse our full collection of honeymoon, family, adventure &amp; luxury tours.
           </p>
           <Button
             asChild
-            className="bg-brand-green hover:bg-brand-green/90 text-white font-bold shadow-lg shadow-brand-green/25"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25"
           >
             <Link href="/tours">
               Browse Packages

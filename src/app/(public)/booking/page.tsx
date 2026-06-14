@@ -21,34 +21,38 @@ export default async function BookingPage({
 
   if (!tourSlug) redirect("/tours");
 
-  const tour = await prisma.tour.findFirst({
-    where: { slug: tourSlug, published: true },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      category: true,
-      priceFrom: true,
-      duration: true,
-      coverImage: true,
-    },
-  });
+  const [tour, settings] = await Promise.all([
+    prisma.tour.findFirst({
+      where: { slug: tourSlug, published: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        category: true,
+        priceFrom: true,
+        duration: true,
+        coverImage: true,
+      },
+    }),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+  ]);
 
   if (!tour) redirect("/tours");
 
   const initialDate = date ?? "";
   const initialTravellers = parseInt(travellers ?? "2", 10) || 2;
+  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* ── Header strip ─────────────────────────────────────────────────── */}
-      <div className="bg-brand-navy pt-20 pb-10">
+      <div className="border-b border-border bg-muted pt-20 pb-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb */}
           <nav aria-label="breadcrumb" className="mb-4">
-            <ol className="flex items-center gap-1.5 text-xs text-white/50">
+            <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <li>
-                <Link href="/" className="hover:text-white/80 transition-colors">
+                <Link href="/" className="hover:text-foreground transition-colors">
                   Home
                 </Link>
               </li>
@@ -56,7 +60,7 @@ export default async function BookingPage({
                 <ChevronRight className="w-3 h-3" />
               </li>
               <li>
-                <Link href="/tours" className="hover:text-white/80 transition-colors">
+                <Link href="/tours" className="hover:text-foreground transition-colors">
                   Tours
                 </Link>
               </li>
@@ -66,7 +70,7 @@ export default async function BookingPage({
               <li>
                 <Link
                   href={`/tours/${tour.slug}`}
-                  className="hover:text-white/80 transition-colors truncate max-w-[160px] inline-block"
+                  className="hover:text-foreground transition-colors truncate max-w-[160px] inline-block"
                 >
                   {tour.title}
                 </Link>
@@ -74,14 +78,14 @@ export default async function BookingPage({
               <li aria-hidden>
                 <ChevronRight className="w-3 h-3" />
               </li>
-              <li className="text-white/70 font-medium">Booking</li>
+              <li className="text-foreground font-medium">Booking</li>
             </ol>
           </nav>
 
-          <h1 className="font-display font-extrabold text-white text-3xl sm:text-4xl">
+          <h1 className="font-display font-extrabold text-foreground text-3xl sm:text-4xl">
             Complete Your Booking
           </h1>
-          <p className="text-white/55 text-sm mt-2">
+          <p className="text-muted-foreground text-sm mt-2">
             Secure checkout · Takes less than 2 minutes
           </p>
         </div>
@@ -99,6 +103,7 @@ export default async function BookingPage({
           coverImage={tour.coverImage}
           initialDate={initialDate}
           initialTravellers={initialTravellers}
+          whatsappNumber={whatsappNumber}
         />
       </div>
     </div>

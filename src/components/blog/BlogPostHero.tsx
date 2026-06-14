@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 interface BlogPostHeroProps {
-  category: string;
+  category: string | null;
   title: string;
-  excerpt: string;
+  excerpt: string | null;
   image: string;
   author: {
     name: string;
-    role: string;
+    role: string | null;
     avatar: string;
   };
-  readTime: string;
-  date: string;
+  readTime: string | null;
+  date: string | null;
   crumbs: Array<{ label: string; href: string }>;
 }
 
@@ -58,14 +58,16 @@ export function BlogPostHero({
           ))}
         </nav>
 
-        <motion.span
-          className="mt-6 inline-block rounded-md bg-brand-bright/90 px-3 py-1.5 text-[10.5px] font-extrabold tracking-[0.12em] text-white"
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          {category}
-        </motion.span>
+        {category && (
+          <motion.span
+            className="mt-6 inline-block rounded-md bg-brand-bright/90 px-3 py-1.5 text-[10.5px] font-extrabold tracking-[0.12em] text-white"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {category.toUpperCase()}
+          </motion.span>
+        )}
 
         <motion.h1
           className="mt-4 max-w-2xl font-display text-[38px] font-bold leading-[1.15] text-white lg:text-[46px]"
@@ -76,14 +78,16 @@ export function BlogPostHero({
           {title}
         </motion.h1>
 
-        <motion.p
-          className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-white/90"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          {excerpt}
-        </motion.p>
+        {excerpt && (
+          <motion.p
+            className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-white/90"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            {excerpt}
+          </motion.p>
+        )}
 
         <motion.div
           className="mt-8 flex flex-wrap items-center justify-between gap-5"
@@ -102,23 +106,27 @@ export function BlogPostHero({
                 <p className="text-[13px] font-bold">
                   By <span>{author.name}</span>
                 </p>
-                <p className="text-[11.5px] text-white/70">{author.role}</p>
+                {author.role && <p className="text-[11.5px] text-white/70">{author.role}</p>}
               </div>
             </div>
-            <span className="flex items-center gap-1.5 text-[12.5px]">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 3" />
-              </svg>
-              {readTime}
-            </span>
-            <span className="flex items-center gap-1.5 text-[12.5px]">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-              {date}
-            </span>
+            {readTime && (
+              <span className="flex items-center gap-1.5 text-[12.5px]">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 3" />
+                </svg>
+                {readTime}
+              </span>
+            )}
+            {date && (
+              <span className="flex items-center gap-1.5 text-[12.5px]">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                {date}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2.5">

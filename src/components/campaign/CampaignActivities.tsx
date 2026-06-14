@@ -1,13 +1,15 @@
-// src/components/sections/CampaignActivities.tsx
+// src/components/campaign/CampaignActivities.tsx
 'use client';
 
 import { motion } from 'framer-motion';
+import type { CampaignActivity } from '@/types/campaign';
 
 interface CampaignActivitiesProps {
-  activities: Array<[string, string]>;
+  title: string | null;
+  activities: CampaignActivity[];
 }
 
-export function CampaignActivities({ activities }: CampaignActivitiesProps) {
+export function CampaignActivities({ title, activities }: CampaignActivitiesProps) {
   const scroll = (direction: 'prev' | 'next') => {
     const row = document.getElementById('actRow');
     if (!row) return;
@@ -20,7 +22,7 @@ export function CampaignActivities({ activities }: CampaignActivitiesProps) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
-            className="text-[11px] font-extrabold tracking-[0.24em] text-accent"
+            className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -29,54 +31,51 @@ export function CampaignActivities({ activities }: CampaignActivitiesProps) {
             INCLUDED EXPERIENCES
           </motion.p>
           <motion.h2
-            className="h-display mt-3 text-4xl font-bold text-white"
+            className="h-display mt-3 text-4xl font-bold text-foreground"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Activities you'll <span className="grad-accent-text italic">actually do</span>
+            {title}
           </motion.h2>
         </div>
         <div className="flex gap-2">
-          <motion.button
-            onClick={() => scroll('prev')}
-            className="glass grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            ←
-          </motion.button>
-          <motion.button
-            onClick={() => scroll('next')}
-            className="glass grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            →
-          </motion.button>
+          {(['prev', 'next'] as const).map((dir) => (
+            <motion.button
+              key={dir}
+              onClick={() => scroll(dir)}
+              className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {dir === 'prev' ? '←' : '→'}
+            </motion.button>
+          ))}
         </div>
       </div>
       <div id="actRow" className="scrollbar-none mt-9 flex gap-5 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
-        {activities.map(([seed, title], i) => (
+        {activities.map((activity, i) => (
           <motion.article
             key={i}
-            className="group relative h-[300px] w-[230px] shrink-0 overflow-hidden rounded-3xl border border-white/12 shadow-card"
+            className="group relative h-[300px] w-[230px] shrink-0 overflow-hidden rounded-3xl border border-border shadow-card"
             style={{ scrollSnapAlign: 'start' }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.06 }}
           >
-            <img
-              src={`https://picsum.photos/seed/${seed}/520/700`}
-              alt={title}
-              className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
-            />
+            {activity.image && (
+              <img
+                src={activity.image}
+                alt={activity.title}
+                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
-            <span className="glass absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full text-white opacity-0 transition duration-300 group-hover:opacity-100">→</span>
+            <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/10 text-white opacity-0 backdrop-blur-xl transition duration-300 group-hover:opacity-100">→</span>
             <p className="absolute inset-x-0 bottom-0 p-5 text-[15px] font-bold text-white transition duration-300 group-hover:-translate-y-1">
-              {title}
+              {activity.title}
             </p>
           </motion.article>
         ))}

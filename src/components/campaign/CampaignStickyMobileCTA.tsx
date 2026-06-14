@@ -1,4 +1,4 @@
-// src/components/sections/CampaignStickyMobileCTA.tsx
+// src/components/campaign/CampaignStickyMobileCTA.tsx
 'use client';
 
 import Link from 'next/link';
@@ -10,10 +10,10 @@ interface CampaignStickyMobileCTAProps {
 
 export function CampaignStickyMobileCTA({ price, cta }: CampaignStickyMobileCTAProps) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between gap-4 border-t border-white/10 bg-navy-soft/95 px-5 py-3 backdrop-blur lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between gap-4 border-t border-border bg-background/95 px-5 py-3 backdrop-blur lg:hidden">
       <div className="leading-tight">
-        <p className="text-[10.5px] text-white/55">From</p>
-        <p className="text-[17px] font-extrabold text-white">{price} /person</p>
+        <p className="text-[10.5px] text-muted-foreground">From</p>
+        <p className="text-[17px] font-extrabold text-foreground">{price} /person</p>
       </div>
       <Link
         href="#reserve"

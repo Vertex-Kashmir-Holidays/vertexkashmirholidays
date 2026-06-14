@@ -1,16 +1,16 @@
-// src/components/sections/ContactOfficeMap.tsx
+// src/components/contact/ContactOfficeMap.tsx
 'use client';
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import type { ContactOfficeContent, ContactOfficeData } from '@/types/contact';
 
-export function ContactOfficeMap() {
-  const offices = [
-    ['Gulmarg Outpost (Seasonal)', 'Near Gondola Phase I, Gulmarg, Jammu & Kashmir – 193403', 'Dec – Mar & Apr – Jun'],
-    ['Delhi Liaison Office', 'Karol Bagh, New Delhi – 110005', 'Mon – Sat: 10 AM – 6 PM'],
-    ['Mumbai Liaison', 'Andheri West, Mumbai – 400053', 'Mon – Sat: 10 AM – 6 PM'],
-  ];
+interface ContactOfficeMapProps {
+  content: ContactOfficeContent;
+  offices: ContactOfficeData[];
+}
 
+export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
   return (
     <section className="mt-14 grid items-start gap-7 lg:grid-cols-[250px_1fr_240px]">
       {/* Office info */}
@@ -20,51 +20,53 @@ export function ContactOfficeMap() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-[11.5px] font-bold tracking-[0.22em] text-brand-green2">VISIT OUR OFFICE</p>
-        <h2 className="h-display mt-2 font-display text-[26px] font-bold">Come Say Hello 👋</h2>
-        <p className="mt-2 text-[12.5px] text-brand-mute">We'd love to meet you in our hometown.</p>
+        <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
+        <h2 className="h-display mt-2 font-display text-[26px] font-bold">{content.title}</h2>
+        {content.subtitle && <p className="mt-2 text-[12.5px] text-muted-foreground">{content.subtitle}</p>}
 
         <ul className="mt-6 space-y-4 text-[12.5px]">
           <li className="flex items-start gap-2.5">
-            <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
             <span>
-              <strong className="text-[13px]">Head Office – Srinagar</strong>
-              <br />
-              <span className="text-brand-mute">Boulevard Road, Near Dal Lake, Srinagar – 190001, Jammu &amp; Kashmir, India</span>
+              {content.name && <strong className="text-[13px]">{content.name}</strong>}
+              {content.name && <br />}
+              {content.address && <span className="text-muted-foreground">{content.address}</span>}
             </span>
           </li>
-          <li className="flex items-center gap-2.5">
-            <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
-            </svg>
-            +91 99 9999 9999
-          </li>
-          <li className="flex items-center gap-2.5">
-            <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="m22 7-10 6L2 7" />
-            </svg>
-            <a href="mailto:hello@vertexkashmir.com" className="font-semibold text-brand-green2 hover:underline">hello@vertexkashmir.com</a>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 3" />
-            </svg>
-            <span>
-              Mon – Sat: <strong>10:00 AM – 6:00 PM IST</strong>
-              <br />
-              Sunday: <strong>10:00 AM – 2:00 PM IST</strong>
-            </span>
-          </li>
+          {content.phone && (
+            <li className="flex items-center gap-2.5">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
+              </svg>
+              <a href={`tel:${content.phone.replace(/\s/g, '')}`} className="hover:text-primary">{content.phone}</a>
+            </li>
+          )}
+          {content.email && (
+            <li className="flex items-center gap-2.5">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-10 6L2 7" />
+              </svg>
+              <a href={`mailto:${content.email}`} className="font-semibold text-primary hover:underline">{content.email}</a>
+            </li>
+          )}
+          {content.hours && (
+            <li className="flex items-start gap-2.5">
+              <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 3" />
+              </svg>
+              <span className="whitespace-pre-line">{content.hours}</span>
+            </li>
+          )}
         </ul>
 
         <Link
-          href="#"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand-green px-5 py-3 text-[12.5px] font-bold text-white shadow-card transition hover:brightness-110"
+          href={content.directionsUrl ?? '#'}
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-[12.5px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
         >
           Get Directions on Google Maps
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -73,15 +75,15 @@ export function ContactOfficeMap() {
         </Link>
       </motion.div>
 
-      {/* Map */}
+      {/* Map (decorative illustration) */}
       <motion.div
-        className="relative h-[330px] overflow-hidden rounded-2xl border border-brand-line shadow-soft lg:h-[360px]"
+        className="relative h-[330px] overflow-hidden rounded-2xl border border-border shadow-soft lg:h-[360px]"
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
       >
-        <svg viewBox="0 0 700 400" className="h-full w-full" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of Srinagar showing the Vertex Kashmir Holidays office near Dal Lake">
+        <svg viewBox="0 0 700 400" className="h-full w-full" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map showing the Vertex Kashmir Holidays head office">
           <rect width="700" height="400" fill="hsl(40 25% 95%)" />
           <ellipse cx="640" cy="120" rx="90" ry="70" fill="hsl(120 25% 86%)" />
           <ellipse cx="80" cy="330" rx="100" ry="60" fill="hsl(120 25% 88%)" />
@@ -117,38 +119,42 @@ export function ContactOfficeMap() {
             <circle cx="0" cy="3" r="6" fill="#fff" />
           </g>
         </svg>
-        <div className="absolute left-[26%] top-[18%] rounded-xl bg-white px-4 py-3 shadow-card">
-          <p className="text-[12.5px] font-bold">Vertex Kashmir Holidays</p>
-          <p className="text-[11px] text-brand-mute">Boulevard Road, Srinagar</p>
-          <span className="absolute -bottom-1.5 left-8 h-3 w-3 rotate-45 bg-white" />
-        </div>
+        {content.mapLabel && (
+          <div className="absolute left-[26%] top-[18%] rounded-xl bg-card px-4 py-3 shadow-card">
+            <p className="text-[12.5px] font-bold">{content.mapLabel}</p>
+            {content.mapSubLabel && <p className="text-[11px] text-muted-foreground">{content.mapSubLabel}</p>}
+            <span className="absolute -bottom-1.5 left-8 h-3 w-3 rotate-45 bg-card" />
+          </div>
+        )}
       </motion.div>
 
       {/* Other offices */}
-      <motion.div
-        className="rounded-2xl border border-brand-line bg-brand-page p-5"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <p className="text-[11.5px] font-bold tracking-[0.18em] text-brand-ink/80">OTHER OFFICES</p>
-        <ul className="mt-4 space-y-5 text-[12px]">
-          {offices.map((office, i) => (
-            <li key={i} className="flex items-start gap-2.5">
-              <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <div className="leading-snug">
-                <p className="text-[12.5px] font-bold">{office[0]}</p>
-                <p className="mt-0.5 text-brand-mute">{office[1]}</p>
-                <p className="mt-0.5 text-brand-mute">{office[2]}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </motion.div>
+      {offices.length > 0 && (
+        <motion.div
+          className="rounded-2xl border border-border bg-muted p-5"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <p className="text-[11.5px] font-bold tracking-[0.18em] text-foreground/80">OTHER OFFICES</p>
+          <ul className="mt-4 space-y-5 text-[12px]">
+            {offices.map((office) => (
+              <li key={office.id} className="flex items-start gap-2.5">
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <div className="leading-snug">
+                  <p className="text-[12.5px] font-bold">{office.name}</p>
+                  <p className="mt-0.5 text-muted-foreground">{office.address}</p>
+                  <p className="mt-0.5 text-muted-foreground">{office.hours}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
     </section>
   );
 }
