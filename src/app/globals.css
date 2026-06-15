@@ -91,6 +91,36 @@ body {
   .bg-brand-cream { background-color: hsl(35 45% 96% / var(--tw-bg-opacity, 1)) }
 }
 
+/* Auth form inputs — theme-aware (used on the /login page) */
+.input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--card));
+  border-radius: 0.75rem;
+  transition: border-color .15s, box-shadow .15s;
+}
+.input-wrap:focus-within {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.25);
+}
+.input-wrap input {
+  flex: 1 1 0%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.625rem 0.875rem;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+}
+.input-wrap input::placeholder { color: hsl(var(--muted-foreground)); }
+.cbx {
+  width: 1rem;
+  height: 1rem;
+  accent-color: hsl(var(--primary));
+}
+
 /* Portal animation */
 .portal-wrap { perspective:900px; }
 .portal {
