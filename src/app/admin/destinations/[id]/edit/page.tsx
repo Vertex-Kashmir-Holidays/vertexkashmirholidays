@@ -21,18 +21,18 @@ export default async function EditDestinationPage({ params }: Props) {
   return (
     <div className="space-y-5">
       <nav>
-        <ol className="flex items-center gap-1.5 text-xs text-gray-400">
-          <li><Link href="/admin/destinations" className="hover:text-brand-green transition-colors">Destinations</Link></li>
+        <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <li><Link href="/admin/destinations" className="hover:text-primary transition-colors">Destinations</Link></li>
           <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
-          <li className="text-brand-navy font-medium truncate max-w-[200px]">{dest.name}</li>
+          <li className="text-foreground font-medium truncate max-w-[200px]">{dest.name}</li>
         </ol>
       </nav>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-brand-navy text-xl">Edit Destination</h2>
-          <p className="text-gray-400 text-xs mt-0.5">{dest.name}</p>
+          <h2 className="font-display font-extrabold text-foreground text-xl">Edit Destination</h2>
+          <p className="text-muted-foreground text-xs mt-0.5">{dest.name}</p>
         </div>
-        <a href={`/destinations/${dest.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-green font-semibold hover:underline shrink-0">
+        <a href={`/destinations/${dest.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-semibold hover:underline shrink-0">
           View Live ↗
         </a>
       </div>

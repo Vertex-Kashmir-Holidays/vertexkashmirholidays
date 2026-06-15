@@ -36,9 +36,9 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-3 py-2 text-xs">
-      <p className="text-gray-400 mb-0.5">{label}</p>
-      <p className="font-bold text-brand-navy">
+    <div className="bg-card border border-border rounded-xl shadow-lg px-3 py-2 text-xs">
+      <p className="text-muted-foreground mb-0.5">{label}</p>
+      <p className="font-bold text-foreground">
         ₹{(payload[0]?.value ?? 0).toLocaleString("en-IN")}
       </p>
     </div>
@@ -55,7 +55,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             <stop offset="95%" stopColor="hsl(158 64% 28%)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" vertical={false} />
         <XAxis
           dataKey="month"
           tick={{ fontSize: 11, fill: "#9ca3af" }}

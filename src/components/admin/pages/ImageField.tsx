@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Upload, Loader2 } from "lucide-react";
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25";
+  "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
 export function ImageField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [uploading, setUploading] = useState(false);
@@ -31,7 +31,7 @@ export function ImageField({ value, onChange }: { value: string; onChange: (v: s
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Image URL" className={inputCls} />
-        <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+        <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted">
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           Upload
           <input
@@ -43,7 +43,7 @@ export function ImageField({ value, onChange }: { value: string; onChange: (v: s
         </label>
       </div>
       {value && (
-        <Image src={value} alt="" width={120} height={72} className="h-16 w-auto rounded-lg border border-gray-100 object-cover" unoptimized />
+        <Image src={value} alt="" width={120} height={72} className="h-16 w-auto rounded-lg border border-border object-cover" unoptimized />
       )}
     </div>
   );

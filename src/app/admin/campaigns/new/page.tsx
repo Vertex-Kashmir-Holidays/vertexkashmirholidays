@@ -17,10 +17,10 @@ export default async function NewCampaignPage() {
   return (
     <div className="space-y-5">
       <div>
-        <Link href="/admin/campaigns" className="mb-1 flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-brand-green">
+        <Link href="/admin/campaigns" className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-3 w-3" /> All Campaigns
         </Link>
-        <h2 className="font-display text-xl font-extrabold text-brand-navy">New Campaign</h2>
+        <h2 className="font-display text-xl font-extrabold text-foreground">New Campaign</h2>
       </div>
       <CampaignForm initial={null} canEdit />
     </div>

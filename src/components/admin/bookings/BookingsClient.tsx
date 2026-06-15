@@ -30,11 +30,11 @@ interface Props {
 }
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  PAID: "bg-green-100 text-green-700",
-  FAILED: "bg-red-100 text-red-700",
-  CANCELLED: "bg-gray-100 text-gray-500",
-  REFUNDED: "bg-purple-100 text-purple-700",
+  PENDING: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
+  PAID: "bg-green-500/15 text-green-700 dark:text-green-300",
+  FAILED: "bg-red-500/15 text-red-700 dark:text-red-300",
+  CANCELLED: "bg-muted text-muted-foreground",
+  REFUNDED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
 };
 
 const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
@@ -89,29 +89,29 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-brand-navy text-xl">Bookings</h2>
-          <p className="text-gray-400 text-xs mt-0.5">{totalCount} total bookings</p>
+          <h2 className="font-display font-extrabold text-foreground text-xl">Bookings</h2>
+          <p className="text-muted-foreground text-xs mt-0.5">{totalCount} total bookings</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border shadow-sm">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 p-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, email, order ID..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition bg-gray-50/50"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
             />
           </div>
           <div className="relative">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-4 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition bg-gray-50/50 appearance-none"
+              className="pl-4 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none"
             >
               <option value="ALL">All Status</option>
               <option value="PENDING">Pending</option>
@@ -120,25 +120,25 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
               <option value="CANCELLED">Cancelled</option>
               <option value="REFUNDED">Refunded</option>
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           </div>
-          <p className="text-xs text-gray-400 self-center shrink-0">{filtered.length} results</p>
+          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-t border-b border-gray-100">
+              <tr className="bg-muted border-t border-b border-border">
                 {["Guest", "Tour", "Travel Date", "Pax", "Amount", "Status", "Booked", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No bookings found.
                   </td>
                 </tr>
@@ -149,33 +149,33 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
                     <tr
                       key={b.id}
                       onClick={() => setSelected(selected?.id === b.id ? null : b)}
-                      className={cn("hover:bg-gray-50/50 transition-colors cursor-pointer", selected?.id === b.id && "bg-brand-green/5 border-l-2 border-l-brand-green")}
+                      className={cn("hover:bg-muted/50 transition-colors cursor-pointer", selected?.id === b.id && "bg-primary/5 border-l-2 border-l-primary")}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-brand-navy/10 flex items-center justify-center shrink-0">
-                            <User className="w-3 h-3 text-brand-navy" />
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <User className="w-3 h-3 text-foreground" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-brand-navy text-xs truncate max-w-[120px]">{b.guestName}</p>
-                            <p className="text-[10px] text-gray-400 truncate max-w-[120px]">{b.guestEmail}</p>
+                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">{b.guestName}</p>
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">{b.guestEmail}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-xs font-medium text-brand-navy truncate max-w-[140px]">{b.tour.title}</p>
+                        <p className="text-xs font-medium text-foreground truncate max-w-[140px]">{b.tour.title}</p>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.travelDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{b.travellers}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-brand-navy whitespace-nowrap">{fmtINR(b.amount)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{b.travellers}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">{fmtINR(b.amount)}</td>
                       <td className="px-4 py-3">
                         <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
                           {b.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </td>
                       <td className="px-4 py-3">
@@ -188,7 +188,7 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
                                 disabled={isPending}
                                 className={cn(
                                   "text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-colors",
-                                  s === "REFUNDED" ? "border-purple-200 text-purple-600 hover:bg-purple-50" : "border-gray-200 text-gray-500 hover:bg-gray-100"
+                                  s === "REFUNDED" ? "border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10" : "border-border text-muted-foreground hover:bg-muted"
                                 )}
                               >
                                 {s}
@@ -196,7 +196,7 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-gray-300">—</span>
+                          <span className="text-[10px] text-muted-foreground/60">—</span>
                         )}
                       </td>
                     </tr>
@@ -210,25 +210,25 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
 
       {/* Detail panel */}
       {selected && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="font-bold text-brand-navy text-sm">Booking Detail</h3>
-              <p className="text-[10px] text-gray-400 font-mono mt-0.5">{selected.razorpayOrderId}</p>
+              <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
+              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId}</p>
             </div>
-            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-xs">✕ Close</button>
+            <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-muted-foreground text-xs">✕ Close</button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-            <div><p className="text-gray-400 mb-0.5">Guest</p><p className="font-semibold text-brand-navy">{selected.guestName}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Email</p><p className="font-semibold text-brand-navy">{selected.guestEmail}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Phone</p><p className="font-semibold text-brand-navy">{selected.guestPhone}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Tour</p><p className="font-semibold text-brand-navy">{selected.tour.title}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Travel Date</p><p className="font-semibold text-brand-navy">{new Date(selected.travelDate).toLocaleDateString("en-IN")}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Travellers</p><p className="font-semibold text-brand-navy">{selected.travellers}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Amount</p><p className="font-bold text-brand-navy">{fmtINR(selected.amount)}</p></div>
-            <div><p className="text-gray-400 mb-0.5">Payment ID</p><p className="font-mono text-brand-navy text-[10px]">{selected.razorpayPayId ?? "—"}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Guest</p><p className="font-semibold text-foreground">{selected.guestName}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Email</p><p className="font-semibold text-foreground">{selected.guestEmail}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Phone</p><p className="font-semibold text-foreground">{selected.guestPhone}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Tour</p><p className="font-semibold text-foreground">{selected.tour.title}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Travel Date</p><p className="font-semibold text-foreground">{new Date(selected.travelDate).toLocaleDateString("en-IN")}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Travellers</p><p className="font-semibold text-foreground">{selected.travellers}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[10px]">{selected.razorpayPayId ?? "—"}</p></div>
             <div>
-              <p className="text-gray-400 mb-0.5">Status</p>
+              <p className="text-muted-foreground mb-0.5">Status</p>
               <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
             </div>
           </div>

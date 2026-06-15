@@ -82,7 +82,7 @@ const GROUPS: Group[] = [
 const ALL_FIELDS = GROUPS.flatMap((g) => g.fields);
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25";
+  "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
 type CampaignRecord = Record<string, unknown> & { id?: string };
 
@@ -154,20 +154,20 @@ export function CampaignForm({ initial, canEdit }: { initial: CampaignRecord | n
 
   return (
     <div className="space-y-5">
-      <label className="flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700">
-        <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} className="h-4 w-4 accent-brand-green" disabled={!canEdit} />
+      <label className="flex w-fit items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground">
+        <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} className="h-4 w-4 accent-primary" disabled={!canEdit} />
         Published (visible on the public site)
       </label>
 
       {GROUPS.map((group) => (
-        <div key={group.title} className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="border-b border-gray-50 px-5 py-3.5">
-            <h3 className="text-sm font-bold text-brand-navy">{group.title}</h3>
+        <div key={group.title} className="rounded-2xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-3.5">
+            <h3 className="text-sm font-bold text-foreground">{group.title}</h3>
           </div>
           <div className="grid gap-4 p-5 sm:grid-cols-2">
             {group.fields.map((f) => (
               <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">{f.label}</label>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">{f.label}</label>
                 {f.type === "image" ? (
                   <ImageField value={form[f.key] ?? ""} onChange={(v) => set(f.key, v)} />
                 ) : f.type === "textarea" ? (
@@ -181,15 +181,15 @@ export function CampaignForm({ initial, canEdit }: { initial: CampaignRecord | n
         </div>
       ))}
 
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="border-b border-gray-50 px-5 py-3.5">
-          <h3 className="text-sm font-bold text-brand-navy">Sections (advanced)</h3>
-          <p className="text-xs text-gray-400">Each must be a valid JSON array. See the public campaign page for the expected shape.</p>
+      <div className="rounded-2xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-3.5">
+          <h3 className="text-sm font-bold text-foreground">Sections (advanced)</h3>
+          <p className="text-xs text-muted-foreground">Each must be a valid JSON array. See the public campaign page for the expected shape.</p>
         </div>
         <div className="grid gap-4 p-5 sm:grid-cols-2">
           {CAMPAIGN_JSON_FIELDS.map((k) => (
             <div key={k}>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">{k}</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">{k}</label>
               <textarea rows={4} value={form[k] ?? "[]"} disabled={!canEdit} onChange={(e) => set(k, e.target.value)} className={`${inputCls} font-mono text-xs`} />
             </div>
           ))}
@@ -198,7 +198,7 @@ export function CampaignForm({ initial, canEdit }: { initial: CampaignRecord | n
 
       {canEdit && (
         <div className="sticky bottom-4 flex justify-end">
-          <button onClick={save} disabled={busy} className="flex items-center gap-2 rounded-xl bg-brand-green px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:brightness-110 disabled:opacity-60">
+          <button onClick={save} disabled={busy} className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:brightness-110 disabled:opacity-60">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isNew ? "Create campaign" : "Save changes"}
           </button>

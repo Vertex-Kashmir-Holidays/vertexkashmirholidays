@@ -121,46 +121,46 @@ export function BlogForm({ defaults }: Props) {
       {/* Main form */}
       <form onSubmit={handleSubmit(onSubmit)} className="flex-1 min-w-0 space-y-5">
         {/* Basic Info */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h3 className="font-bold text-brand-navy text-sm">Post Details</h3>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <h3 className="font-bold text-foreground text-sm">Post Details</h3>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Title *</label>
-            <input {...register("title")} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition" placeholder="e.g. Why 7 Days in Kashmir is Perfect" />
-            {errors.title && <p className="text-[10px] text-red-500 mt-1">{errors.title.message}</p>}
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Title *</label>
+            <input {...register("title")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Why 7 Days in Kashmir is Perfect" />
+            {errors.title && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.title.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Slug *</label>
-              <input {...register("slug")} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition font-mono" />
-              {errors.slug && <p className="text-[10px] text-red-500 mt-1">{errors.slug.message}</p>}
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Slug *</label>
+              <input {...register("slug")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" />
+              {errors.slug && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.slug.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Author</label>
-              <input {...register("author")} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition" placeholder="e.g. Wani Owais" />
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Author</label>
+              <input {...register("author")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Wani Owais" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Excerpt</label>
-            <textarea {...register("excerpt")} rows={2} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition resize-none" placeholder="Short description for cards and meta..." />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Excerpt</label>
+            <textarea {...register("excerpt")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="Short description for cards and meta..." />
           </div>
         </div>
 
         {/* Cover Image */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h3 className="font-bold text-brand-navy text-sm">Cover Image</h3>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <h3 className="font-bold text-foreground text-sm">Cover Image</h3>
           <div className="flex gap-3">
-            <input {...register("coverImage")} className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition" placeholder="https://... or /uploads/..." />
-            <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-gray-200 cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-brand-green hover:text-brand-green"}`}>
+            <input {...register("coverImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
+            <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
               Upload
               <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")} />
             </label>
           </div>
           {coverImage && (
-            <div className="relative h-40 rounded-xl overflow-hidden bg-gray-100">
+            <div className="relative h-40 rounded-xl overflow-hidden bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
             </div>
@@ -168,13 +168,13 @@ export function BlogForm({ defaults }: Props) {
         </div>
 
         {/* Body */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-brand-navy text-sm">Body Content (HTML)</h3>
+            <h3 className="font-bold text-foreground text-sm">Body Content (HTML)</h3>
             <button
               type="button"
               onClick={() => setPreviewBody((p) => !p)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-brand-navy transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               <Eye className="w-3.5 h-3.5" />
               {previewBody ? "Edit" : "Preview"}
@@ -183,36 +183,36 @@ export function BlogForm({ defaults }: Props) {
 
           {previewBody ? (
             <div
-              className="prose prose-sm max-w-none min-h-[300px] p-4 border border-gray-200 rounded-xl bg-gray-50/50 text-sm text-gray-700"
+              className="prose prose-sm max-w-none min-h-[300px] p-4 border border-border rounded-xl bg-muted/50 text-sm text-foreground"
               dangerouslySetInnerHTML={{ __html: bodyVal ?? "" }}
             />
           ) : (
             <textarea
               {...register("body")}
               rows={18}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition resize-y font-mono"
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-y font-mono"
               placeholder="<p>Your blog content here. HTML is supported.</p>"
             />
           )}
-          <p className="text-[10px] text-gray-400">HTML is rendered as-is on the public blog page.</p>
+          <p className="text-[10px] text-muted-foreground">HTML is rendered as-is on the public blog page.</p>
         </div>
 
         {/* SEO */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h3 className="font-bold text-brand-navy text-sm">SEO</h3>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <h3 className="font-bold text-foreground text-sm">SEO</h3>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Meta Title</label>
-            <input {...register("metaTitle")} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Meta Title</label>
+            <input {...register("metaTitle")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Meta Description</label>
-            <textarea {...register("metaDesc")} rows={2} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition resize-none" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Meta Description</label>
+            <textarea {...register("metaDesc")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">OG Image URL</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Image URL</label>
             <div className="flex gap-3">
-              <input {...register("ogImage")} className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition" />
-              <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-gray-200 cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-brand-green hover:text-brand-green"}`}>
+              <input {...register("ogImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+              <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
                 <Upload className="w-3.5 h-3.5" />
                 Upload
                 <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "ogImage")} />
@@ -224,21 +224,21 @@ export function BlogForm({ defaults }: Props) {
 
       {/* Right sidebar */}
       <div className="w-64 shrink-0 space-y-4 sticky top-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-          <h3 className="font-bold text-brand-navy text-sm">Publish</h3>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
+          <h3 className="font-bold text-foreground text-sm">Publish</h3>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-600 font-medium">Status</span>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+            <span className="text-xs text-muted-foreground font-medium">Status</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
               {publishedVal ? "Published" : "Draft"}
             </span>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-gray-100">
+          <div className="space-y-2 pt-2 border-t border-border">
             <button
               type="button"
               onClick={() => handleSave(true)}
               disabled={isPending || uploading}
-              className="w-full flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green/90 disabled:opacity-60 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
             >
               {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               {publishedVal ? "Update Post" : "Publish"}
@@ -247,14 +247,14 @@ export function BlogForm({ defaults }: Props) {
               type="button"
               onClick={() => handleSave(false)}
               disabled={isPending || uploading}
-              className="w-full text-sm font-semibold text-gray-600 hover:text-brand-navy px-4 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors disabled:opacity-60"
+              className="w-full text-sm font-semibold text-muted-foreground hover:text-foreground px-4 py-2 rounded-xl border border-border hover:border-border transition-colors disabled:opacity-60"
             >
               Save Draft
             </button>
             <button
               type="button"
               onClick={() => router.push("/admin/blogs")}
-              className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
+              className="w-full text-xs text-muted-foreground hover:text-muted-foreground py-1 transition-colors"
             >
               Cancel
             </button>

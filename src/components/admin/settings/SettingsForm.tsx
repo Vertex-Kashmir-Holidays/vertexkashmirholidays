@@ -54,10 +54,10 @@ function Field({ label, name, register, textarea, placeholder, type = "text" }: 
   placeholder?: string;
   type?: string;
 }) {
-  const cls = "w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition";
+  const cls = "w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition";
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-semibold text-muted-foreground mb-1">{label}</label>
       {textarea
         ? <textarea {...register(name)} rows={3} placeholder={placeholder} className={cls + " resize-none"} />
         : <input type={type} {...register(name)} placeholder={placeholder} className={cls} />
@@ -107,12 +107,12 @@ export function SettingsForm({ settings }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 max-w-3xl">
       {/* General */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-        <h3 className="font-bold text-brand-navy text-sm">General</h3>
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <h3 className="font-bold text-foreground text-sm">General</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Field label="Site Name *" name="siteName" register={register} placeholder="Vertex Kashmir Holidays" />
-            {errors.siteName && <p className="text-[10px] text-red-500 mt-1">{errors.siteName.message}</p>}
+            {errors.siteName && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.siteName.message}</p>}
           </div>
           <Field label="Tagline" name="siteTagline" register={register} placeholder="Discover the Paradise" />
         </div>
@@ -124,8 +124,8 @@ export function SettingsForm({ settings }: Props) {
       </div>
 
       {/* Social */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-        <h3 className="font-bold text-brand-navy text-sm">Social Media & Contacts</h3>
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <h3 className="font-bold text-foreground text-sm">Social Media & Contacts</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="WhatsApp Number" name="whatsapp" register={register} placeholder="+919400000000" />
           <Field label="Facebook URL" name="facebook" register={register} placeholder="https://facebook.com/..." />
@@ -136,8 +136,8 @@ export function SettingsForm({ settings }: Props) {
       </div>
 
       {/* Default SEO */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-        <h3 className="font-bold text-brand-navy text-sm">Default SEO (used when pages have no meta)</h3>
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <h3 className="font-bold text-foreground text-sm">Default SEO (used when pages have no meta)</h3>
         <Field label="Default Meta Title" name="metaTitle" register={register} placeholder="Vertex Kashmir Holidays — Premium Kashmir Tours" />
         <Field label="Default Meta Description" name="metaDesc" register={register} textarea placeholder="Discover the paradise of Kashmir..." />
         <Field label="Default OG Image URL" name="ogImage" register={register} placeholder="https://..." />
@@ -146,7 +146,7 @@ export function SettingsForm({ settings }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="flex items-center gap-2 bg-brand-green hover:bg-brand-green/90 disabled:opacity-60 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm"
+        className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm"
       >
         {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
         Save Settings

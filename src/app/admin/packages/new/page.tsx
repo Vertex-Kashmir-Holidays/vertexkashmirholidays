@@ -10,16 +10,16 @@ export default function NewPackagePage() {
     <div className="space-y-5">
       {/* Breadcrumb */}
       <nav>
-        <ol className="flex items-center gap-1.5 text-xs text-gray-400">
-          <li><Link href="/admin/packages" className="hover:text-brand-green transition-colors">Packages</Link></li>
+        <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <li><Link href="/admin/packages" className="hover:text-primary transition-colors">Packages</Link></li>
           <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
-          <li className="text-brand-navy font-medium">Add New Package</li>
+          <li className="text-foreground font-medium">Add New Package</li>
         </ol>
       </nav>
 
       <div>
-        <h2 className="font-display font-extrabold text-brand-navy text-xl">Add New Package</h2>
-        <p className="text-gray-400 text-xs mt-0.5">
+        <h2 className="font-display font-extrabold text-foreground text-xl">Add New Package</h2>
+        <p className="text-muted-foreground text-xs mt-0.5">
           Create a new tour package with pricing, itinerary and media.
         </p>
       </div>

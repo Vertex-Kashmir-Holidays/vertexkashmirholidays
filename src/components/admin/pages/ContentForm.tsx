@@ -26,7 +26,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25 disabled:bg-gray-50 disabled:text-gray-400";
+  "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:bg-muted disabled:text-muted-foreground";
 
 export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
   const router = useRouter();
@@ -65,14 +65,14 @@ export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
   return (
     <div className="space-y-5">
       {groups.map((group) => (
-        <div key={group.title} className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="border-b border-gray-50 px-5 py-3.5">
-            <h3 className="text-sm font-bold text-brand-navy">{group.title}</h3>
+        <div key={group.title} className="rounded-2xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-3.5">
+            <h3 className="text-sm font-bold text-foreground">{group.title}</h3>
           </div>
           <div className="grid gap-4 p-5 sm:grid-cols-2">
             {group.fields.map((f) => (
               <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">{f.label}</label>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">{f.label}</label>
                 {f.type === "image" ? (
                   <ImageField value={form[f.key] ?? ""} onChange={(v) => set(f.key, v)} />
                 ) : f.type === "textarea" ? (
@@ -104,7 +104,7 @@ export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
           <button
             onClick={save}
             disabled={busy}
-            className="flex items-center gap-2 rounded-xl bg-brand-green px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:brightness-110 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:brightness-110 disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save changes

@@ -48,27 +48,27 @@ function fmtDate(d: Date) {
 }
 
 const STATUS_STYLES: Record<string, { label: string; className: string; Icon: typeof CheckCircle2 }> = {
-  PAID: { label: "Paid", className: "bg-green-100 text-green-700", Icon: CheckCircle2 },
-  PENDING: { label: "Pending", className: "bg-yellow-100 text-yellow-700", Icon: Clock },
-  FAILED: { label: "Failed", className: "bg-red-100 text-red-700", Icon: XCircle },
-  CANCELLED: { label: "Cancelled", className: "bg-gray-100 text-gray-500", Icon: XCircle },
-  REFUNDED: { label: "Refunded", className: "bg-blue-100 text-blue-700", Icon: AlertCircle },
+  PAID: { label: "Paid", className: "bg-green-500/15 text-green-700 dark:text-green-300", Icon: CheckCircle2 },
+  PENDING: { label: "Pending", className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300", Icon: Clock },
+  FAILED: { label: "Failed", className: "bg-red-500/15 text-red-700 dark:text-red-300", Icon: XCircle },
+  CANCELLED: { label: "Cancelled", className: "bg-muted text-muted-foreground", Icon: XCircle },
+  REFUNDED: { label: "Refunded", className: "bg-blue-500/15 text-blue-700 dark:text-blue-300", Icon: AlertCircle },
 };
 
 const INQUIRY_STATUS_STYLES: Record<string, string> = {
   NEW: "bg-brand-cyan/10 text-brand-cyan",
-  CONTACTED: "bg-purple-100 text-purple-700",
-  CONVERTED: "bg-green-100 text-green-700",
-  CLOSED: "bg-gray-100 text-gray-500",
+  CONTACTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
+  CLOSED: "bg-muted text-muted-foreground",
 };
 
 const QUICK_ACTIONS = [
-  { label: "New Package", Icon: Plus, href: "/admin/packages/new", color: "bg-brand-green/10 text-brand-green" },
+  { label: "New Package", Icon: Plus, href: "/admin/packages/new", color: "bg-primary/10 text-primary" },
   { label: "Add Destination", Icon: MapPin, href: "/admin/destinations/new", color: "bg-brand-cyan/10 text-brand-cyan" },
-  { label: "Add Blog Post", Icon: FileText, href: "/admin/blogs/new", color: "bg-purple-100 text-purple-600" },
-  { label: "View Bookings", Icon: CalendarDays, href: "/admin/bookings", color: "bg-brand-orange/10 text-brand-orange" },
-  { label: "Export Report", Icon: Download, href: "#", color: "bg-gray-100 text-gray-600" },
-  { label: "Site Settings", Icon: Settings, href: "/admin/settings", color: "bg-brand-navy/10 text-brand-navy" },
+  { label: "Add Blog Post", Icon: FileText, href: "/admin/blogs/new", color: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
+  { label: "View Bookings", Icon: CalendarDays, href: "/admin/bookings", color: "bg-accent/10 text-accent" },
+  { label: "Export Report", Icon: Download, href: "#", color: "bg-muted text-muted-foreground" },
+  { label: "Site Settings", Icon: Settings, href: "/admin/settings", color: "bg-primary/10 text-foreground" },
 ];
 
 export default async function AdminDashboard() {
@@ -177,8 +177,8 @@ export default async function AdminDashboard() {
       change: pctChange(thisMonthRev, lastMonthRev),
       sub: "vs last month",
       Icon: IndianRupee,
-      color: "text-brand-green",
-      bg: "bg-brand-green/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "Total Bookings",
@@ -195,8 +195,8 @@ export default async function AdminDashboard() {
       change: pctChange(thisMonthInquiries, lastMonthInquiries),
       sub: "vs last month",
       Icon: MessageSquare,
-      color: "text-brand-orange",
-      bg: "bg-brand-orange/10",
+      color: "text-accent",
+      bg: "bg-accent/10",
     },
     {
       label: "Conversion Rate",
@@ -204,8 +204,8 @@ export default async function AdminDashboard() {
       change: null,
       sub: "inquiries → bookings",
       Icon: BarChart3,
-      color: "text-purple-600",
-      bg: "bg-purple-100",
+      color: "text-purple-600 dark:text-purple-400",
+      bg: "bg-purple-500/15",
     },
     {
       label: "Avg Booking",
@@ -213,8 +213,8 @@ export default async function AdminDashboard() {
       change: null,
       sub: "per paid booking",
       Icon: CreditCard,
-      color: "text-brand-navy",
-      bg: "bg-brand-navy/10",
+      color: "text-foreground",
+      bg: "bg-primary/10",
     },
   ];
 
@@ -223,17 +223,17 @@ export default async function AdminDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display font-extrabold text-brand-navy text-xl">
+          <h2 className="font-display font-extrabold text-foreground text-xl">
             Welcome back, {" "}
-            <span className="text-brand-green">Admin</span> 👋
+            <span className="text-primary">Admin</span> 👋
           </h2>
-          <p className="text-gray-400 text-xs mt-0.5">
+          <p className="text-muted-foreground text-xs mt-0.5">
             {now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
         <Link
           href="/admin/packages/new"
-          className="flex items-center gap-2 bg-brand-green hover:bg-brand-green/90 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-brand-green/25"
+          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-primary/25"
         >
           <Plus className="w-3.5 h-3.5" />
           New Package
@@ -243,14 +243,14 @@ export default async function AdminDashboard() {
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {KPI.map(({ label, value, change, sub, Icon, color, bg }) => (
-          <div key={label} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div key={label} className="bg-card rounded-2xl border border-border p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-gray-400">{label}</p>
+              <p className="text-xs font-medium text-muted-foreground">{label}</p>
               <div className={`w-8 h-8 rounded-xl ${bg} flex items-center justify-center`}>
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
             </div>
-            <p className="font-display font-extrabold text-brand-navy text-xl leading-none mb-1.5">
+            <p className="font-display font-extrabold text-foreground text-xl leading-none mb-1.5">
               {value}
             </p>
             <div className="flex items-center gap-1">
@@ -264,10 +264,10 @@ export default async function AdminDashboard() {
                   <span className={`text-[10px] font-semibold ${change >= 0 ? "text-green-500" : "text-red-400"}`}>
                     {change >= 0 ? "+" : ""}{change}%
                   </span>
-                  <span className="text-[10px] text-gray-400">{sub}</span>
+                  <span className="text-[10px] text-muted-foreground">{sub}</span>
                 </>
               ) : (
-                <span className="text-[10px] text-gray-400">{sub}</span>
+                <span className="text-[10px] text-muted-foreground">{sub}</span>
               )}
             </div>
           </div>
@@ -277,17 +277,17 @@ export default async function AdminDashboard() {
       {/* ── Revenue chart + Recent Bookings ───────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
         {/* Chart */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <p className="text-xs font-bold text-brand-green uppercase tracking-wider mb-0.5">
+              <p className="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">
                 ● Revenue Overview
               </p>
-              <p className="font-display font-bold text-brand-navy text-base">
+              <p className="font-display font-bold text-foreground text-base">
                 Last 6 Months
               </p>
             </div>
-            <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1 rounded-lg">
+            <span className="text-xs text-muted-foreground bg-muted border border-border px-3 py-1 rounded-lg">
               {fmtINR(totalRevenue)} total
             </span>
           </div>
@@ -295,16 +295,16 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Recent Bookings */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-display font-bold text-brand-navy text-sm">Recent Bookings</p>
-            <Link href="/admin/bookings" className="text-brand-green text-xs font-semibold hover:underline flex items-center gap-1">
+            <p className="font-display font-bold text-foreground text-sm">Recent Bookings</p>
+            <Link href="/admin/bookings" className="text-primary text-xs font-semibold hover:underline flex items-center gap-1">
               View all <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-3">
             {recentBookings.length === 0 ? (
-              <p className="text-gray-400 text-xs py-8 text-center">No bookings yet.</p>
+              <p className="text-muted-foreground text-xs py-8 text-center">No bookings yet.</p>
             ) : (
               recentBookings.map((b) => {
                 const s = STATUS_STYLES[b.status] ?? STATUS_STYLES.PENDING!;
@@ -320,13 +320,13 @@ export default async function AdminDashboard() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-brand-navy truncate leading-tight">
+                      <p className="text-xs font-semibold text-foreground truncate leading-tight">
                         {b.tour.title}
                       </p>
-                      <p className="text-[10px] text-gray-400">{fmtDate(b.createdAt)}</p>
+                      <p className="text-[10px] text-muted-foreground">{fmtDate(b.createdAt)}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-brand-navy">{fmtINR(b.amount)}</p>
+                      <p className="text-xs font-bold text-foreground">{fmtINR(b.amount)}</p>
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${s.className}`}>
                         {s.label}
                       </span>
@@ -340,51 +340,51 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Recent Inquiries ──────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <p className="font-display font-bold text-brand-navy text-sm">Recent Inquiries</p>
-          <Link href="/admin/inquiries" className="text-xs font-semibold text-brand-green hover:underline">
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <p className="font-display font-bold text-foreground text-sm">Recent Inquiries</p>
+          <Link href="/admin/inquiries" className="text-xs font-semibold text-primary hover:underline">
             View all ({totalInquiries})
           </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+              <tr className="bg-muted border-b border-border">
                 {["Name", "Phone", "Source", "Travel Date", "Status", "Action"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-400 uppercase tracking-wide text-[10px]">
+                  <th key={h} className="text-left px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wide text-[10px]">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {recentInquiries.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     No inquiries yet.
                   </td>
                 </tr>
               ) : (
                 recentInquiries.map((inq) => (
-                  <tr key={inq.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-brand-navy">{inq.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{inq.phone}</td>
+                  <tr key={inq.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-foreground">{inq.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{inq.phone}</td>
                     <td className="px-4 py-3">
-                      <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md capitalize">
+                      <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-md capitalize">
                         {inq.source ?? "website"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {inq.travelDate ? fmtDate(inq.travelDate) : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${INQUIRY_STATUS_STYLES[inq.status] ?? "bg-gray-100 text-gray-500"}`}>
+                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground"}`}>
                         {inq.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button className="text-brand-green font-semibold hover:underline">
+                      <button className="text-primary font-semibold hover:underline">
                         Reply
                       </button>
                     </td>
@@ -399,20 +399,20 @@ export default async function AdminDashboard() {
       {/* ── Top Tours + Pending Reviews ───────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Top Performing Tours */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-display font-bold text-brand-navy text-sm">Top Performing Tours</p>
-            <Link href="/admin/packages" className="text-brand-green text-xs font-semibold hover:underline">
+            <p className="font-display font-bold text-foreground text-sm">Top Performing Tours</p>
+            <Link href="/admin/packages" className="text-primary text-xs font-semibold hover:underline">
               Manage
             </Link>
           </div>
           <div className="space-y-3">
             {topTours.length === 0 ? (
-              <p className="text-gray-400 text-xs py-6 text-center">No tour data yet.</p>
+              <p className="text-muted-foreground text-xs py-6 text-center">No tour data yet.</p>
             ) : (
               topTours.map((tour, i) => (
                 <div key={tour.id} className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-300 w-4 shrink-0">
+                  <span className="text-xs font-bold text-muted-foreground/60 w-4 shrink-0">
                     {i + 1}
                   </span>
                   <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0">
@@ -425,11 +425,11 @@ export default async function AdminDashboard() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-brand-navy truncate leading-tight">
+                    <p className="text-xs font-semibold text-foreground truncate leading-tight">
                       {tour.title}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-muted-foreground">
                         {tour.bookingCount} booking{tour.bookingCount !== 1 ? "s" : ""}
                       </span>
                       {(tour.rating ?? 0) > 0 && (
@@ -440,7 +440,7 @@ export default async function AdminDashboard() {
                       )}
                     </div>
                   </div>
-                  <p className="text-xs font-bold text-brand-navy shrink-0">
+                  <p className="text-xs font-bold text-foreground shrink-0">
                     {fmtINR(tour.revenue)}
                   </p>
                 </div>
@@ -450,17 +450,17 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Reviews Awaiting Approval */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <p className="font-display font-bold text-brand-navy text-sm">Reviews Awaiting Approval</p>
+              <p className="font-display font-bold text-foreground text-sm">Reviews Awaiting Approval</p>
               {pendingReviews.length > 0 && (
-                <span className="bg-brand-orange text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="bg-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {pendingReviews.length}
                 </span>
               )}
             </div>
-            <Link href="/admin/reviews" className="text-brand-green text-xs font-semibold hover:underline">
+            <Link href="/admin/reviews" className="text-primary text-xs font-semibold hover:underline">
               Manage
             </Link>
           </div>
@@ -468,25 +468,25 @@ export default async function AdminDashboard() {
             {pendingReviews.length === 0 ? (
               <div className="text-center py-6">
                 <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <p className="text-gray-400 text-xs">All caught up! No reviews pending.</p>
+                <p className="text-muted-foreground text-xs">All caught up! No reviews pending.</p>
               </div>
             ) : (
               pendingReviews.map((review) => (
-                <div key={review.id} className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                <div key={review.id} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
                     {review.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-brand-navy">{review.name}</p>
+                      <p className="text-xs font-semibold text-foreground">{review.name}</p>
                       <div className="flex items-center gap-0.5">
                         {[...Array(review.rating)].map((_, i) => (
                           <Star key={i} className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
                         ))}
                       </div>
                     </div>
-                    <p className="text-[10px] text-gray-400 mb-1 truncate">{review.tour.title}</p>
-                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{review.body}</p>
+                    <p className="text-[10px] text-muted-foreground mb-1 truncate">{review.tour.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{review.body}</p>
                   </div>
                 </div>
               ))
@@ -496,19 +496,19 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Quick Actions ─────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-        <p className="font-display font-bold text-brand-navy text-sm mb-4">Quick Actions</p>
+      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <p className="font-display font-bold text-foreground text-sm mb-4">Quick Actions</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {QUICK_ACTIONS.map(({ label, Icon, href, color }) => (
             <Link
               key={label}
               href={href}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center"
             >
               <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center`}>
                 <Icon className="w-5 h-5" />
               </div>
-              <span className="text-xs font-semibold text-brand-navy leading-tight">{label}</span>
+              <span className="text-xs font-semibold text-foreground leading-tight">{label}</span>
             </Link>
           ))}
         </div>

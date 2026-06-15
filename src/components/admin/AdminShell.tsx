@@ -30,6 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
 
@@ -84,12 +85,12 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   return (
-    <div className="flex flex-col h-full bg-[#0d1b3e] text-white">
+    <div className="flex flex-col h-full bg-card text-foreground border-r border-border">
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-white/8">
-        <Logo variant="light" />
+      <div className="flex items-center justify-between px-5 py-5 border-b border-border">
+        <Logo variant="auto" />
         {onClose && (
-          <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white">
+          <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -107,11 +108,11 @@ function SidebarContent({
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
-                  ? "bg-brand-green text-white shadow-sm shadow-brand-green/30"
-                  : "text-white/55 hover:text-white hover:bg-white/7",
+                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
-              <Icon className={cn("w-4.5 h-4.5 shrink-0", isActive ? "text-white" : "text-white/50")} />
+              <Icon className={cn("w-4.5 h-4.5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
               {label}
             </Link>
           );
@@ -138,17 +139,17 @@ function SidebarContent({
       </div> */}
 
       {/* User info + sign out */}
-      <div className="border-t border-white/8 px-4 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-brand-green flex items-center justify-center text-white text-xs font-bold shrink-0">
+      <div className="border-t border-border px-4 py-3 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
           {userName.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-white text-xs font-semibold truncate">{userName}</p>
-          <p className="text-white/40 text-[10px] truncate">{userEmail}</p>
+          <p className="text-foreground text-xs font-semibold truncate">{userName}</p>
+          <p className="text-muted-foreground text-[10px] truncate">{userEmail}</p>
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-white/40 hover:text-red-400 transition-colors"
+          className="text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition-colors"
           aria-label="Sign out"
         >
           <LogOut className="w-4 h-4" />
@@ -171,7 +172,7 @@ export function AdminShell({ children, userName, userEmail, permissions }: Admin
   }));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0">
         <SidebarContent pathname={pathname} nav={nav} userName={userName} userEmail={userEmail} />
@@ -199,31 +200,32 @@ export function AdminShell({ children, userName, userEmail, permissions }: Admin
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Topbar */}
-        <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-5 shrink-0 shadow-sm">
+        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-5 shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-500 hover:text-gray-700"
+              className="lg:hidden text-muted-foreground hover:text-foreground"
               aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="font-display font-bold text-brand-navy text-base">{pageTitle}</h1>
+            <h1 className="font-display font-bold text-foreground text-base">{pageTitle}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/"
               target="_blank"
-              className="text-xs text-gray-400 hover:text-brand-green transition-colors hidden sm:inline"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:inline"
             >
               View Site
             </Link>
-            <button className="relative text-gray-400 hover:text-gray-600 transition-colors">
+            <ThemeToggle />
+            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-brand-orange rounded-full" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-accent rounded-full" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-brand-green flex items-center justify-center text-white text-xs font-bold">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
               {userName.charAt(0).toUpperCase()}
             </div>
           </div>

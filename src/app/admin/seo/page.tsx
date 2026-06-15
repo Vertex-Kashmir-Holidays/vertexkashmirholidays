@@ -10,35 +10,35 @@ const SEO_SECTIONS = [
     description: "Edit meta title, description, and OG image for each tour package.",
     href: "/admin/packages",
     Icon: Package,
-    color: "bg-blue-50 text-blue-600",
+    color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   },
   {
     title: "Destinations",
     description: "Manage SEO fields for destination pages.",
     href: "/admin/destinations",
     Icon: MapPin,
-    color: "bg-green-50 text-green-600",
+    color: "bg-green-500/10 text-green-600 dark:text-green-400",
   },
   {
     title: "Blog Posts",
     description: "Edit meta and OG data for blog articles.",
     href: "/admin/blogs",
     Icon: FileText,
-    color: "bg-purple-50 text-purple-600",
+    color: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
   },
   {
     title: "Campaign Pages",
     description: "Edit meta title, description and OG image for landing-page campaigns.",
     href: "/admin/campaigns",
     Icon: Megaphone,
-    color: "bg-emerald-50 text-brand-green",
+    color: "bg-emerald-500/10 text-primary",
   },
   {
     title: "Site Settings",
     description: "Set default site-wide meta title, description, and OG image.",
     href: "/admin/settings",
     Icon: Globe,
-    color: "bg-orange-50 text-orange-600",
+    color: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
   },
 ];
 
@@ -46,8 +46,8 @@ export default function AdminSeoPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-display font-extrabold text-brand-navy text-xl">SEO & Pages</h2>
-        <p className="text-gray-400 text-xs mt-0.5">
+        <h2 className="font-display font-extrabold text-foreground text-xl">SEO & Pages</h2>
+        <p className="text-muted-foreground text-xs mt-0.5">
           Meta titles, descriptions, and OG images are managed per entity in their respective sections.
         </p>
       </div>
@@ -57,28 +57,28 @@ export default function AdminSeoPage() {
           <Link
             key={href}
             href={href}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md hover:border-brand-green/30 transition-all group"
+            className="bg-card rounded-2xl border border-border shadow-sm p-6 hover:shadow-md hover:border-primary/30 transition-all group"
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
                 <Icon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-brand-navy text-sm group-hover:text-brand-green transition-colors">{title}</h3>
-                <p className="text-xs text-gray-400 mt-1 leading-relaxed">{description}</p>
+                <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">{title}</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</p>
               </div>
             </div>
           </Link>
         ))}
       </div>
 
-      <div className="bg-brand-navy/5 rounded-2xl p-5 border border-brand-navy/10">
-        <h3 className="font-bold text-brand-navy text-sm mb-2">How SEO works in this app</h3>
-        <ul className="space-y-1.5 text-xs text-gray-600">
-          <li className="flex items-start gap-2"><span className="text-brand-green mt-0.5">✓</span> Each tour, destination, and blog post has its own <code className="bg-white px-1 py-0.5 rounded text-brand-navy">metaTitle</code>, <code className="bg-white px-1 py-0.5 rounded text-brand-navy">metaDesc</code>, and <code className="bg-white px-1 py-0.5 rounded text-brand-navy">ogImage</code> field.</li>
-          <li className="flex items-start gap-2"><span className="text-brand-green mt-0.5">✓</span> If those are empty, the page falls back to generated metadata from the entity&apos;s title and excerpt.</li>
-          <li className="flex items-start gap-2"><span className="text-brand-green mt-0.5">✓</span> Structured data (JSON-LD) is auto-generated for tours, destinations, and blog posts.</li>
-          <li className="flex items-start gap-2"><span className="text-brand-green mt-0.5">✓</span> Sitemap is auto-generated at <code className="bg-white px-1 py-0.5 rounded text-brand-navy">/sitemap.xml</code> from published content.</li>
+      <div className="bg-primary/5 rounded-2xl p-5 border border-primary/10">
+        <h3 className="font-bold text-foreground text-sm mb-2">How SEO works in this app</h3>
+        <ul className="space-y-1.5 text-xs text-muted-foreground">
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Each tour, destination, and blog post has its own <code className="bg-card px-1 py-0.5 rounded text-foreground">metaTitle</code>, <code className="bg-card px-1 py-0.5 rounded text-foreground">metaDesc</code>, and <code className="bg-card px-1 py-0.5 rounded text-foreground">ogImage</code> field.</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> If those are empty, the page falls back to generated metadata from the entity&apos;s title and excerpt.</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Structured data (JSON-LD) is auto-generated for tours, destinations, and blog posts.</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Sitemap is auto-generated at <code className="bg-card px-1 py-0.5 rounded text-foreground">/sitemap.xml</code> from published content.</li>
         </ul>
       </div>
     </div>
