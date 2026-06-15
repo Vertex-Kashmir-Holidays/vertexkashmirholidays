@@ -20,6 +20,7 @@ import { CampaignFinalCTA } from '@/components/campaign/CampaignFinalCTA';
 import { CampaignStickyMobileCTA } from '@/components/campaign/CampaignStickyMobileCTA';
 import { CampaignWhatsAppFloat } from '@/components/campaign/CampaignWhatsAppFloat';
 import { CampaignFilmModal } from '@/components/campaign/CampaignFilmModal';
+import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import type { CampaignData } from '@/types/campaign';
 
 interface CampaignPageClientProps {
@@ -28,6 +29,19 @@ interface CampaignPageClientProps {
 
 export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
   const [filmOpen, setFilmOpen] = useState(false);
+
+  // Phone shown in the nav / hero / final CTA: this campaign's own number if
+  // set, otherwise the site number from Settings.
+  const { sitePhone } = useSiteSettings();
+  const phone = campaign.phone || sitePhone || null;
+
+  // WhatsApp CTA: use this campaign's own link if set, otherwise the site
+  // number — with a campaign-specific prefilled message.
+  const wa = useWhatsAppLink();
+  const whatsappHref =
+    campaign.whatsappHref && campaign.whatsappHref !== '#'
+      ? campaign.whatsappHref
+      : wa(`Hi! I'm interested in the "${campaign.name}" Kashmir offer. Please share details, pricing and availability.`);
 
   return (
     <div
@@ -46,7 +60,7 @@ export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
           seats={campaign.offerSeats}
         />
       )}
-      <CampaignNav ctaText={campaign.navCta ?? 'Reserve a Seat'} phone={campaign.phone} />
+      <CampaignNav ctaText={campaign.navCta ?? 'Reserve a Seat'} phone={phone} />
       <CampaignHero
         badge={campaign.badge}
         titleHTML={campaign.titleHtml}
@@ -58,7 +72,7 @@ export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
         heroImage={campaign.heroImage}
         heroImageMobile={campaign.heroImageMobile}
         particles={campaign.particles}
-        phone={campaign.phone}
+        phone={phone}
         onFilmClick={() => setFilmOpen(true)}
       />
       {campaign.strip.length > 0 && <CampaignMarquee items={campaign.strip} />}
@@ -98,12 +112,12 @@ export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
         cta={campaign.finalCta ?? 'Reserve My Seat'}
         note={campaign.finalNote}
         image={campaign.finalImage}
-        phone={campaign.phone}
+        phone={phone}
       />
       {campaign.tiers[0] && (
         <CampaignStickyMobileCTA price={campaign.tiers[0].price} cta={campaign.heroCta ?? 'Reserve'} />
       )}
-      <CampaignWhatsAppFloat href={campaign.whatsappHref ?? '#'} />
+      <CampaignWhatsAppFloat href={whatsappHref} />
 
       {campaign.filmSrc && campaign.filmPoster && (
         <CampaignFilmModal

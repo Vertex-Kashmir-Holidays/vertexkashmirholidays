@@ -3,7 +3,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Logo } from '@/components/brand/Logo';
 
 interface AuthImagePanelProps {
   view: 'login' | 'register';
@@ -39,16 +39,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
 
       <div className="relative flex h-full flex-col p-9">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <svg viewBox="0 0 40 40" className="h-9 w-9 text-emerald-400" fill="currentColor">
-            <path d="m6 28 8-14 5 8 4-6 11 12Z" />
-            <path d="m10 28 5-8 4 6 3-4 6 6Z" opacity=".55" />
-          </svg>
-          <span className="leading-none">
-            <span className="block font-display text-[18px] font-bold text-white">Vertex Kashmir</span>
-            <span className="block text-[9px] font-bold tracking-[0.42em] text-white/70">HOLIDAYS</span>
-          </span>
-        </Link>
+        <Logo variant="light" href="/" />
 
         {/* Headline */}
         <div className="mt-16 max-w-xs">

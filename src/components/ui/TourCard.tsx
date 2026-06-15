@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Tilt3D } from './3DTilt';
+import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 
 interface TourCardProps {
   tour: {
@@ -50,6 +51,15 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
 
   // Clicking the card (image, title or primary CTA) opens the tour detail page.
   const detailHref = tour.detailHref || tour.bookHref || '#';
+
+  // WhatsApp CTA → site number with a package-specific prefilled message.
+  // A real provided href wins; placeholder "#" / empty falls back to the site number.
+  const { siteName } = useSiteSettings();
+  const wa = useWhatsAppLink();
+  const explicitWa = tour.whatsappHref && tour.whatsappHref !== '#' ? tour.whatsappHref : null;
+  const whatsappHref =
+    explicitWa ||
+    wa(`Hi ${siteName}! I'm interested in the "${tour.t}" Kashmir package. Could you share details and availability?`);
 
   return (
     <motion.div
@@ -181,7 +191,10 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
             <div className={`mt-3 py-2 grid grid-cols-2 gap-2 border-t ${isHome ? 'border-border' : 'border-border'}`}>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href={tour.whatsappHref || '#'}
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
                     isHome
                       ? 'border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-glow'

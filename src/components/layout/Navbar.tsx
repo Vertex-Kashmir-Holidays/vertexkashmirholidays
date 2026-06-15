@@ -6,9 +6,13 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function Navbar() {
+  const { siteName } = useSiteSettings();
+  const wa = useWhatsAppLink();
+  const planTripHref = wa(`Hi ${siteName}! I'd like to plan my Kashmir trip. Please help me build a custom itinerary.`);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -87,7 +91,9 @@ export function Navbar() {
               </svg>
             </Link>
             <Link
-              href="#"
+              href={planTripHref}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
@@ -184,7 +190,9 @@ export function Navbar() {
           }}
         >
           <Link
-            href="#"
+            href={planTripHref}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full bg-primary px-5 py-3 shadow-xl ring-inner transition hover:brightness-110"
             style={{
               boxShadow: '0 4px 20px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1) inset'

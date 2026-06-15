@@ -117,9 +117,9 @@ export function BlogForm({ defaults }: Props) {
   }
 
   return (
-    <div className="flex gap-6 items-start">
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* Main form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 min-w-0 space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex-1 min-w-0 w-full space-y-5">
         {/* Basic Info */}
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <h3 className="font-bold text-foreground text-sm">Post Details</h3>
@@ -223,7 +223,7 @@ export function BlogForm({ defaults }: Props) {
       </form>
 
       {/* Right sidebar */}
-      <div className="w-64 shrink-0 space-y-4 sticky top-4">
+      <div className="w-full lg:w-64 shrink-0 space-y-4 lg:sticky lg:top-4">
         <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
           <h3 className="font-bold text-foreground text-sm">Publish</h3>
           <div className="flex items-center justify-between">

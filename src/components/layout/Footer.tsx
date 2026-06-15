@@ -2,7 +2,39 @@
 
 import Link from 'next/link';
 
-export function Footer() {
+export interface FooterSettings {
+  siteName: string;
+  siteTagline: string | null;
+  siteEmail: string | null;
+  sitePhone: string | null;
+  siteAddress: string | null;
+  whatsapp: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  twitter: string | null;
+  youtube: string | null;
+}
+
+export function Footer({ settings }: { settings?: FooterSettings | null }) {
+  const siteName = settings?.siteName ?? 'Vertex Kashmir Holidays';
+  const tagline =
+    settings?.siteTagline ??
+    'Locally based in Srinagar. Handcrafted Kashmir holidays with zero middlemen, transparent pricing and 24/7 on-ground support.';
+  const phone = settings?.sitePhone ?? '+91 99999 00000';
+  const email = settings?.siteEmail ?? 'hello@vertexkashmir.com';
+  const address = settings?.siteAddress ?? 'Boulevard Road, Dal Gate, Srinagar 190001';
+
+  // Build a WhatsApp click-to-chat link from the settings number (whatsapp →
+  // phone fallback), with a context-appropriate prefilled message.
+  const waDigits = (settings?.whatsapp || settings?.sitePhone || '').replace(/[^0-9]/g, '');
+  const wa = (message: string) =>
+    waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(message)}` : '/contact';
+
+  const planTripHref = wa(
+    `Hi ${siteName}! I'd like to plan my Kashmir trip. Please share a handcrafted itinerary.`,
+  );
+  const whatsappChatHref = wa(`Hi ${siteName}! I have a question about your Kashmir tours.`);
+
   return (
     <footer className="relative z-[2] mt-28">
       <div className="mx-auto max-w-[1300px] px-6">
@@ -15,14 +47,16 @@ export function Footer() {
             Tell us your dates — get a handcrafted itinerary on WhatsApp within the hour.
           </p>
           <div className="rv mt-7 flex flex-wrap justify-center gap-3" style={{ '--rd': '0.16s' } as React.CSSProperties}>
-            <Link
-              href="#"
+            <a
+              href={planTripHref}
+              target="_blank"
+              rel="noopener noreferrer"
               className="rounded-full bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03]"
             >
               Plan My Trip Free →
-            </Link>
+            </a>
             <Link
-              href="#packages"
+              href="/tours"
               className="glass rounded-full px-8 py-3.5 text-sm font-semibold text-foreground transition hover:bg-foreground/10"
             >
               Browse Packages
@@ -41,34 +75,37 @@ export function Footer() {
                 </svg>
               </span>
               <span className="leading-none">
-                <span className="block font-display text-lg font-extrabold text-foreground">Vertex Kashmir</span>
+                <span className="block font-display text-lg font-extrabold text-foreground">{siteName}</span>
                 <span className="block text-[9px] font-bold tracking-[0.4em] text-primary">HOLIDAYS</span>
               </span>
             </div>
-            <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-              Locally based in Srinagar. Handcrafted Kashmir holidays with zero middlemen, transparent pricing and 24/7
-              on-ground support.
-            </p>
+            <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">{tagline}</p>
             <div className="mt-5 flex gap-2.5">
-              <Link href="#" aria-label="Instagram" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                ◎
-              </Link>
-              <Link href="#" aria-label="Facebook" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                f
-              </Link>
-              <Link href="#" aria-label="YouTube" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                ▶
-              </Link>
-              <Link href="#" aria-label="WhatsApp" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
+              {settings?.instagram && (
+                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
+                  ◎
+                </a>
+              )}
+              {settings?.facebook && (
+                <a href={settings.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
+                  f
+                </a>
+              )}
+              {settings?.youtube && (
+                <a href={settings.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
+                  ▶
+                </a>
+              )}
+              <a href={whatsappChatHref} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
                 ✆
-              </Link>
+              </a>
             </div>
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">Explore</p>
             <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
               <li>
-                <Link href="/packages" className="transition hover:text-primary">Tour Packages</Link>
+                <Link href="/tours" className="transition hover:text-primary">Tour Packages</Link>
               </li>
               <li>
                 <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
@@ -117,14 +154,17 @@ export function Footer() {
               </button>
             </div>
             <p className="mt-5 text-[12px] leading-relaxed text-muted-foreground">
-              📍 Boulevard Road, Dal Gate, Srinagar 190001<br />
-              ✆ +91 99999 00000 · hello@vertexkashmir.com
+              📍 {address}
+              <br />
+              ✆ <a href={`tel:${phone.replace(/\s+/g, '')}`} className="transition hover:text-primary">{phone}</a>
+              {' · '}
+              <a href={`mailto:${email}`} className="transition hover:text-primary">{email}</a>
             </p>
           </div>
         </div>
         <div className="border-t border-border py-5">
           <p className="mx-auto max-w-[1300px] px-6 text-center text-[12px] text-muted-foreground">
-            © 2026 Vertex Kashmir Holidays · J&amp;K Tourism Licensed · Razorpay Secured Payments
+            © {new Date().getFullYear()} {siteName} · J&amp;K Tourism Licensed · Razorpay Secured Payments
           </p>
         </div>
       </div>
