@@ -60,15 +60,15 @@ export function ProfileForm({ initialName, email }: Props) {
   }
 
   const inputClass =
-    "mt-1.5 w-full rounded-xl border border-brand-line bg-white px-3.5 py-2.5 text-sm focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25";
+    "mt-1.5 w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-6">
-      <div className="rounded-2xl border border-brand-line bg-white p-5">
-        <h2 className="font-display font-bold text-brand-navy">Personal details</h2>
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display font-bold text-foreground">Personal details</h2>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-brand-ink" htmlFor="pf-name">Full name</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-name">Full name</label>
             <input
               id="pf-name"
               value={name}
@@ -78,19 +78,19 @@ export function ProfileForm({ initialName, email }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-brand-ink" htmlFor="pf-email">Email</label>
-            <input id="pf-email" value={email} disabled className={`${inputClass} cursor-not-allowed bg-brand-page text-brand-mute`} />
-            <p className="mt-1 text-[11px] text-brand-mute">Email can&apos;t be changed.</p>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-email">Email</label>
+            <input id="pf-email" value={email} disabled className={`${inputClass} cursor-not-allowed bg-muted text-muted-foreground`} />
+            <p className="mt-1 text-[11px] text-muted-foreground">Email can&apos;t be changed.</p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-brand-line bg-white p-5">
-        <h2 className="font-display font-bold text-brand-navy">Change password</h2>
-        <p className="text-xs text-brand-mute">Leave blank to keep your current password.</p>
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display font-bold text-foreground">Change password</h2>
+        <p className="text-xs text-muted-foreground">Leave blank to keep your current password.</p>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-brand-ink" htmlFor="pf-current">Current password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-current">Current password</label>
             <input
               id="pf-current"
               type="password"
@@ -101,7 +101,7 @@ export function ProfileForm({ initialName, email }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-brand-ink" htmlFor="pf-new">New password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-new">New password</label>
             <input
               id="pf-new"
               type="password"
@@ -112,7 +112,7 @@ export function ProfileForm({ initialName, email }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-brand-ink" htmlFor="pf-confirm">Confirm new password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-confirm">Confirm new password</label>
             <input
               id="pf-confirm"
               type="password"
@@ -128,7 +128,7 @@ export function ProfileForm({ initialName, email }: Props) {
       <button
         type="submit"
         disabled={saving}
-        className="rounded-xl bg-brand-green px-5 py-2.5 text-sm font-bold text-white shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {saving ? "Saving…" : "Save changes"}
       </button>
