@@ -343,7 +343,9 @@ export default async function AdminDashboard() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
           <p className="font-display font-bold text-brand-navy text-sm">Recent Inquiries</p>
-          <span className="text-xs text-gray-400">{totalInquiries} total</span>
+          <Link href="/admin/inquiries" className="text-xs font-semibold text-brand-green hover:underline">
+            View all ({totalInquiries})
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">

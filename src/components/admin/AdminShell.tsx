@@ -15,55 +15,70 @@ import {
   Star,
   Globe,
   Settings,
+  ShieldCheck,
+  Inbox,
+  Home,
+  Info,
+  Phone,
+  Megaphone,
   LogOut,
   Bell,
   Menu,
   X,
   ChevronRight,
   Headphones,
+  type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
+import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
 
-const NAV = [
-  { href: "/admin/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { href: "/admin/packages", label: "Packages", Icon: Package },
-  { href: "/admin/destinations", label: "Destinations", Icon: MapPin },
-  { href: "/admin/bookings", label: "Bookings", Icon: CalendarDays },
-  { href: "/admin/users", label: "Users", Icon: Users },
-  { href: "/admin/galleries", label: "Galleries", Icon: Images },
-  { href: "/admin/blogs", label: "Blogs", Icon: FileText },
-  { href: "/admin/reviews", label: "Reviews", Icon: Star },
-  { href: "/admin/seo", label: "SEO & Pages", Icon: Globe },
-  { href: "/admin/settings", label: "Settings", Icon: Settings },
-];
-
-const PAGE_TITLES: Record<string, string> = {
-  "/admin/dashboard": "Dashboard",
-  "/admin/packages": "Packages",
-  "/admin/destinations": "Destinations",
-  "/admin/bookings": "Bookings",
-  "/admin/users": "Users",
-  "/admin/galleries": "Galleries",
-  "/admin/blogs": "Blogs",
-  "/admin/reviews": "Reviews",
-  "/admin/seo": "SEO & Pages",
-  "/admin/settings": "Settings",
+const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  packages: Package,
+  destinations: MapPin,
+  bookings: CalendarDays,
+  inquiries: Inbox,
+  users: Users,
+  galleries: Images,
+  blogs: FileText,
+  home: Home,
+  about: Info,
+  contact: Phone,
+  campaigns: Megaphone,
+  reviews: Star,
+  seo: Globe,
+  settings: Settings,
+  roles: ShieldCheck,
 };
+
+const PAGE_TITLES: Record<string, string> = Object.fromEntries(
+  MODULES.map((m) => [m.href, m.label]),
+);
 
 interface AdminShellProps {
   children: React.ReactNode;
   userName: string;
   userEmail: string;
+  role: Role;
+  permissions: PermissionMap;
+}
+
+interface NavItem {
+  href: string;
+  label: string;
+  Icon: LucideIcon;
 }
 
 function SidebarContent({
   pathname,
+  nav,
   userName,
   userEmail,
   onClose,
 }: {
   pathname: string;
+  nav: NavItem[];
   userName: string;
   userEmail: string;
   onClose?: () => void;
@@ -82,7 +97,7 @@ function SidebarContent({
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ href, label, Icon }) => {
+        {nav.map(({ href, label, Icon }) => {
           const isActive = pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
           return (
             <Link
@@ -104,7 +119,7 @@ function SidebarContent({
       </nav>
 
       {/* Need Help card */}
-      <div className="px-4 pb-4">
+      {/* <div className="px-4 pb-4">
         <div className="bg-brand-green/15 border border-brand-green/30 rounded-2xl p-4">
           <div className="w-8 h-8 rounded-full bg-brand-green/20 flex items-center justify-center mb-2">
             <Headphones className="w-4 h-4 text-brand-green" />
@@ -120,7 +135,7 @@ function SidebarContent({
             Get Support <ChevronRight className="w-3 h-3" />
           </a>
         </div>
-      </div>
+      </div> */}
 
       {/* User info + sign out */}
       <div className="border-t border-white/8 px-4 py-3 flex items-center gap-3">
@@ -143,16 +158,23 @@ function SidebarContent({
   );
 }
 
-export function AdminShell({ children, userName, userEmail }: AdminShellProps) {
+export function AdminShell({ children, userName, userEmail, permissions }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const pageTitle = PAGE_TITLES[pathname] ?? "Admin";
+
+  // Only show modules the current role may view.
+  const nav: NavItem[] = MODULES.filter((m) => permissions[m.key]?.view).map((m) => ({
+    href: m.href,
+    label: m.label,
+    Icon: MODULE_ICONS[m.key],
+  }));
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0">
-        <SidebarContent pathname={pathname} userName={userName} userEmail={userEmail} />
+        <SidebarContent pathname={pathname} nav={nav} userName={userName} userEmail={userEmail} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -165,6 +187,7 @@ export function AdminShell({ children, userName, userEmail }: AdminShellProps) {
           <aside className="relative z-10 w-56 flex flex-col">
             <SidebarContent
               pathname={pathname}
+              nav={nav}
               userName={userName}
               userEmail={userEmail}
               onClose={() => setSidebarOpen(false)}

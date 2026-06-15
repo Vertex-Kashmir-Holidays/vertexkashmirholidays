@@ -78,7 +78,7 @@ export function Navbar() {
           <div className="hidden items-center gap-3 lg:flex">
             <ThemeToggle />
             <Link
-              href="/register"
+              href="/login"
               className="grid h-9 w-9 place-items-center rounded-full border border-foreground/20 text-foreground transition hover:bg-foreground hover:text-background"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -124,9 +124,9 @@ export function Navbar() {
           
           {/* User Icon - Added before burger menu */}
           <Link
-            href="/register"
+            href="/login"
             className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
-              pathname === '/register' ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
+              pathname === '/login' ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
             }`}
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

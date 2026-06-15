@@ -1,59 +1,36 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// ─────────────────────────────────────────────
-// Enums
-// ─────────────────────────────────────────────
-
-enum Role {
-  USER
-  ADMIN
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
-
-enum TourCategory {
-  HONEYMOON
-  FAMILY
-  ADVENTURE
-  LUXURY
-}
-
-enum BookingStatus {
-  PENDING
-  PAID
-  FAILED
-  CANCELLED
-  REFUNDED
-}
-
-enum InquiryStatus {
-  NEW
-  CONTACTED
-  CONVERTED
-  CLOSED
-}
-
-// ─────────────────────────────────────────────
-// Models
-// ─────────────────────────────────────────────
 
 model User {
   id           String    @id @default(cuid())
   name         String?
   email        String    @unique
   passwordHash String
-  role         Role      @default(USER)
-  bookings     Booking[]
-  reviews      Review[]
+  role         Role      @default(CUSTOMER)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  bookings     Booking[]
+  reviews      Review[]
 
   @@index([email])
+}
+
+model RolePermission {
+  id        String  @id @default(cuid())
+  role      Role
+  module    String
+  canView   Boolean @default(false)
+  canCreate Boolean @default(false)
+  canEdit   Boolean @default(false)
+  canDelete Boolean @default(false)
+
+  @@unique([role, module])
 }
 
 model Destination {
@@ -67,12 +44,12 @@ model Destination {
   location    String?
   isFeatured  Boolean           @default(false)
   sortOrder   Int               @default(0)
-  tours       TourDestination[]
   metaTitle   String?
   metaDesc    String?
   ogImage     String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  tours       TourDestination[]
 
   @@index([slug])
 }
@@ -88,22 +65,10 @@ model Tour {
   coverImage   String?
   badge        String?
   badgeColor   String?           @default("green")
-  tagline      String?
-  // JSON strings (Postgres column kept as text for portability)
   gallery      String            @default("[]")
   itinerary    String            @default("[]")
   inclusions   String            @default("[]")
   exclusions   String            @default("[]")
-  highlights   String            @default("[]") // JSON string[] — overview chips
-  faqs         String            @default("[]") // JSON [{ question, answer }]
-  // Quick-fact / info-card details surfaced on the tour detail page
-  startCity    String?
-  transport    String?
-  difficulty   String?
-  bestTime     String?
-  tourType     String?
-  pickupDrop   String?
-  happyCount   Int?
   priceFrom    Float
   priceWas     Float?
   discountPct  Int?
@@ -111,14 +76,24 @@ model Tour {
   rating       Float             @default(0)
   reviewCount  Int               @default(0)
   published    Boolean           @default(false)
-  destinations TourDestination[]
-  bookings     Booking[]
-  reviews      Review[]
   metaTitle    String?
   metaDesc     String?
   ogImage      String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  bestTime     String?
+  difficulty   String?
+  faqs         String            @default("[]")
+  happyCount   Int?
+  highlights   String            @default("[]")
+  pickupDrop   String?
+  startCity    String?
+  tagline      String?
+  tourType     String?
+  transport    String?
+  bookings     Booking[]
+  reviews      Review[]
+  destinations TourDestination[]
 
   @@index([slug])
   @@index([category])
@@ -130,8 +105,8 @@ model TourDestination {
   id            String      @id @default(cuid())
   tourId        String
   destinationId String
-  tour          Tour        @relation(fields: [tourId], references: [id], onDelete: Cascade)
   destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  tour          Tour        @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
   @@unique([tourId, destinationId])
   @@index([tourId])
@@ -142,8 +117,6 @@ model Booking {
   id              String        @id @default(cuid())
   tourId          String
   userId          String?
-  tour            Tour          @relation(fields: [tourId], references: [id])
-  user            User?         @relation(fields: [userId], references: [id])
   status          BookingStatus @default(PENDING)
   razorpayOrderId String        @unique
   razorpayPayId   String?
@@ -156,6 +129,8 @@ model Booking {
   guestPhone      String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  tour            Tour          @relation(fields: [tourId], references: [id])
+  user            User?         @relation(fields: [userId], references: [id])
 
   @@index([status])
   @@index([tourId])
@@ -184,14 +159,14 @@ model Review {
   id        String   @id @default(cuid())
   tourId    String
   userId    String?
-  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id])
   name      String
   rating    Int
   body      String
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([tourId])
   @@index([approved])
@@ -205,13 +180,8 @@ model Blog {
   body        String?
   coverImage  String?
   author      String?
-  authorImage String?
-  authorRole  String?
-  authorBio   String?
   category    String?
   readTime    Int?
-  featured    Boolean   @default(false)
-  trending    Boolean   @default(false)
   published   Boolean   @default(false)
   publishedAt DateTime?
   metaTitle   String?
@@ -219,6 +189,11 @@ model Blog {
   ogImage     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  authorImage String?
+  featured    Boolean   @default(false)
+  trending    Boolean   @default(false)
+  authorBio   String?
+  authorRole  String?
 
   @@index([slug])
   @@index([published])
@@ -228,14 +203,12 @@ model Blog {
   @@index([category])
 }
 
-// Singleton copy block for the blog listing page (hero + sidebar widgets).
 model BlogContent {
   id                    String   @id @default("singleton")
   heroKicker            String?
   heroTitle             String?
   heroSubtitle          String?
   heroImage             String?
-  heroImageMobile       String?
   heroSearchPlaceholder String?
   aboutTitle            String?
   aboutText             String?
@@ -245,14 +218,14 @@ model BlogContent {
   newsletterText        String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  heroImageMobile       String?
 }
 
-// Blog filter chips + sidebar "Popular Categories" (counts derived from Blog).
 model BlogCategory {
   id        String   @id @default(cuid())
   name      String   @unique
   slug      String   @unique
-  icon      String   @default("") // SVG path `d`
+  icon      String   @default("")
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -274,12 +247,6 @@ model Gallery {
   @@index([category])
 }
 
-// ─────────────────────────────────────────────
-// Home page content
-// ─────────────────────────────────────────────
-
-// Singleton copy block for the hero + about sections.
-// Title strings support accent markers: *warm gradient* and ~cool gradient~.
 model HomeContent {
   id                    String   @id @default("singleton")
   heroBadge             String?
@@ -294,7 +261,7 @@ model HomeContent {
   formSubtitle          String?
   formButtonLabel       String?
   formNote              String?
-  formAvatars           String   @default("[]") // JSON array of avatar URLs
+  formAvatars           String   @default("[]")
   aboutPara1            String?
   aboutPara2            String?
   aboutImage1           String?
@@ -308,8 +275,6 @@ model HomeContent {
   updatedAt             DateTime @updatedAt
 }
 
-// Per-section headings keyed by section slug
-// (videos, packages, why, destinations, about, offers, testimonials, blogs)
 model HomeSection {
   id        String   @id @default(cuid())
   key       String   @unique
@@ -324,18 +289,17 @@ model HomeSection {
 
 model HeroSlide {
   id          String   @id @default(cuid())
-  image       String // desktop / large image (e.g. /hero/hero-lg.webp)
-  imageMobile String? // optional mobile image (e.g. /hero/hero.webp); falls back to `image`
+  image       String
   alt         String?
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  imageMobile String?
 
   @@index([isActive, sortOrder])
 }
 
-// Counters shown in hero / about ("hero" | "about" section)
 model SiteStat {
   id        String   @id @default(cuid())
   section   String
@@ -349,7 +313,6 @@ model SiteStat {
   @@index([section, sortOrder])
 }
 
-// Marquee items in the updates strip
 model TickerItem {
   id        String   @id @default(cuid())
   text      String
@@ -408,7 +371,6 @@ model Offer {
   @@index([isActive, sortOrder])
 }
 
-// General site testimonials (not tied to a tour, unlike Review)
 model Testimonial {
   id        String   @id @default(cuid())
   name      String
@@ -424,46 +386,31 @@ model Testimonial {
   @@index([isActive, sortOrder])
 }
 
-// ─────────────────────────────────────────────
-// About page content
-// ─────────────────────────────────────────────
-
-// Singleton copy block for every About page section.
-// Title strings support mint accent markers (*text*) and \n line breaks.
 model AboutContent {
   id                    String   @id @default("singleton")
-  // Hero
   heroBreadcrumb        String?
   heroTitle             String?
   heroSubtitle          String?
   heroImage             String?
-  heroImageMobile       String?
   heroCtaPrimaryLabel   String?
   heroCtaPrimaryHref    String?
   heroCtaSecondaryLabel String?
   heroCtaSecondaryHref  String?
-  // Story
   storyKicker           String?
   storyTitle            String?
   storyBody             String?
   storyImage            String?
-  // Stats strip background
   statsImage            String?
-  // Values
   valuesKicker          String?
   valuesTitle           String?
   valuesSubtitle        String?
-  // Team
   teamKicker            String?
   teamTitle             String?
   teamCtaLabel          String?
   teamCtaHref           String?
-  // Journey
   journeyKicker         String?
   journeyTitle          String?
-  // Press
   pressLabel            String?
-  // Final CTA
   ctaTitle              String?
   ctaSubtitle           String?
   ctaImage              String?
@@ -475,14 +422,14 @@ model AboutContent {
   ctaEmailHref          String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  heroImageMobile       String?
 }
 
-// Four feature chips in the Story section (title + subtitle + SVG path).
 model AboutStoryFeature {
   id        String   @id @default(cuid())
   title     String
   subtitle  String
-  icon      String // SVG path `d`
+  icon      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -491,12 +438,11 @@ model AboutStoryFeature {
   @@index([isActive, sortOrder])
 }
 
-// Counter cards in the About stats strip (value + label + SVG path).
 model AboutStat {
   id        String   @id @default(cuid())
   value     String
   label     String
-  icon      String // SVG path `d`
+  icon      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -505,12 +451,11 @@ model AboutStat {
   @@index([isActive, sortOrder])
 }
 
-// Value cards in the "Promises We Keep" section.
 model AboutValue {
   id        String   @id @default(cuid())
   title     String
   subtitle  String
-  icon      String // SVG path `d`
+  icon      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -519,7 +464,6 @@ model AboutValue {
   @@index([isActive, sortOrder])
 }
 
-// Team member cards.
 model TeamMember {
   id        String   @id @default(cuid())
   name      String
@@ -534,12 +478,11 @@ model TeamMember {
   @@index([isActive, sortOrder])
 }
 
-// Timeline milestones in the Journey section.
 model JourneyMilestone {
   id        String   @id @default(cuid())
   year      String
   detail    String
-  icon      String // SVG path `d`
+  icon      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -548,7 +491,6 @@ model JourneyMilestone {
   @@index([isActive, sortOrder])
 }
 
-// "As featured in" press logos (stored as inline HTML snippets).
 model PressLogo {
   id        String   @id @default(cuid())
   html      String
@@ -560,27 +502,16 @@ model PressLogo {
   @@index([isActive, sortOrder])
 }
 
-// ─────────────────────────────────────────────
-// Contact page content
-// ─────────────────────────────────────────────
-
-// Singleton copy block for the contact page. Real contact details (phone,
-// email, address, whatsapp, socials) come from SiteSettings.
 model ContactContent {
   id                 String   @id @default("singleton")
-  // Hero
   heroBreadcrumb     String?
   heroTitle          String?
   heroSubtitle       String?
   heroImage          String?
-  heroImageMobile    String?
-  // Reach section
   reachKicker        String?
   reachTitle         String?
-  // Promise section
   promiseKicker      String?
   promiseTitle       String?
-  // Office / map section
   officeKicker       String?
   officeTitle        String?
   officeSubtitle     String?
@@ -590,35 +521,31 @@ model ContactContent {
   officeMapLabel     String?
   officeMapSubLabel  String?
   directionsUrl      String?
-  // FAQs
   faqsKicker         String?
   faqsTitle          String?
   faqsCtaLabel       String?
   faqsCtaHref        String?
-  // Testimonials
   testimonialsKicker String?
   testimonialsTitle  String?
-  // Social
   socialKicker       String?
   socialTitle        String?
   socialText         String?
   socialCtaLabel     String?
   socialCtaHref      String?
-  // Form
   formKicker         String?
   formTitle          String?
   formNote           String?
-  // Floating WhatsApp button
   whatsappFloatText  String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  heroImageMobile    String?
 }
 
 model ContactHeroFeature {
   id        String   @id @default(cuid())
   title     String
   subtitle  String
-  icon      String // SVG path `d`
+  icon      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -631,7 +558,7 @@ model ContactPromiseItem {
   id        String   @id @default(cuid())
   title     String
   subtitle  String
-  icon      String // SVG path `d`
+  icon      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -665,83 +592,59 @@ model ContactOffice {
   @@index([isActive, sortOrder])
 }
 
-// ─────────────────────────────────────────────
-// Campaign landing pages (/campaign/[slug])
-// ─────────────────────────────────────────────
-
-// A self-contained marketing landing page. Structured sections are stored as
-// JSON strings (same convention as Tour) and parsed in the page.
 model Campaign {
   id              String    @id @default(cuid())
   slug            String    @unique
   published       Boolean   @default(false)
-  // Theming
   accent          String    @default("hsl(196 90% 52%)")
   accent2         String    @default("hsl(170 80% 50%)")
-  particles       String    @default("snow") // "snow" | "embers"
-  // Hero
+  particles       String    @default("snow")
   name            String
   badge           String?
   titleHtml       String?
   sub             String?
   heroImage       String?
-  heroImageMobile String?
   finalImage      String?
-  facts           String    @default("[]") // JSON string[]
+  facts           String    @default("[]")
   heroCta         String?
   proofCount      String?
-  // Urgency bar
   offerText       String?
   offerDeadline   DateTime?
   offerSeats      String?
-  // Nav / contact
   navCta          String?
   phone           String?
   whatsappHref    String?
-  // Marquee
-  strip           String    @default("[]") // JSON string[]
-  // Stats — JSON [[value, suffix, label]]
+  strip           String    @default("[]")
   stats           String    @default("[]")
-  // Film
   filmTitle       String?
   filmDuration    String?
   filmPoster      String?
   filmSrc         String?
-  // Highlights — JSON [{ image, emoji, title, description }]
   highlightsTitle String?
   highlights      String    @default("[]")
-  // Activities — JSON [{ image, title }]
   activitiesTitle String?
   activities      String    @default("[]")
-  // Itinerary — JSON [{ title, description, image }]
   itineraryTitle  String?
   itinerary       String    @default("[]")
-  // Pricing — JSON [{ name, price, old, tag, desc, feats[] }]
   tiers           String    @default("[]")
-  // Departures — JSON [{ date, seats, price, status }]
   batches         String    @default("[]")
-  // Inclusions / exclusions — JSON string[]
   inclusions      String    @default("[]")
   exclusions      String    @default("[]")
-  // Gallery — JSON string[] (image urls)
   galleryTitle    String?
   gallery         String    @default("[]")
-  // Testimonials — JSON [{ image, name, location, quote }]
   testimonials    String    @default("[]")
-  // FAQs — JSON [{ question, answer }]
   faqsTitle       String?
   faqs            String    @default("[]")
-  // Final CTA
   finalTitle      String?
   finalSub        String?
   finalCta        String?
   finalNote       String?
-  // SEO
   metaTitle       String?
   metaDesc        String?
   ogImage         String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  heroImageMobile String?
 
   @@index([slug])
   @@index([published])
@@ -764,4 +667,34 @@ model SiteSettings {
   ogImage     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  SALES
+  EDITOR
+  CUSTOMER
+}
+
+enum TourCategory {
+  HONEYMOON
+  FAMILY
+  ADVENTURE
+  LUXURY
+}
+
+enum BookingStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  CLOSED
 }
