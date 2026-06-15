@@ -10,7 +10,7 @@ export default async function AccountProfilePage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-2xl font-bold text-brand-navy">Profile</h1>
+      <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">Profile</h1>
       <ProfileForm
         initialName={session!.user.name ?? ""}
         email={session!.user.email ?? ""}

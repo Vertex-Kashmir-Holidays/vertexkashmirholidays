@@ -40,51 +40,51 @@ export default async function AccountOverviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-brand-navy">
+        <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
           Welcome back, {session!.user.name ?? "Traveller"} 👋
         </h1>
-        <p className="text-sm text-brand-mute">Here&apos;s a quick look at your trips with us.</p>
+        <p className="text-sm text-muted-foreground">Here&apos;s a quick look at your trips with us.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {stats.map(({ label, value, Icon }) => (
-          <div key={label} className="rounded-2xl border border-brand-line bg-white p-5">
-            <div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-emerald-100 text-brand-green">
+          <div key={label} className="rounded-2xl border border-border bg-card p-5">
+            <div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
               <Icon className="h-5 w-5" />
             </div>
-            <p className="text-2xl font-bold text-brand-navy">{value}</p>
-            <p className="text-xs text-brand-mute">{label}</p>
+            <p className="text-2xl font-bold text-foreground">{value}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-brand-line bg-white">
-        <div className="flex items-center justify-between border-b border-brand-line px-5 py-4">
-          <h2 className="font-display font-bold text-brand-navy">Recent Bookings</h2>
-          <Link href="/account/bookings" className="flex items-center gap-1 text-xs font-semibold text-brand-green2 hover:underline">
+      <div className="rounded-2xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="font-display font-bold text-foreground">Recent Bookings</h2>
+          <Link href="/account/bookings" className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
             View all <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
         {bookings.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-brand-mute">
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
             You have no bookings yet.{" "}
-            <Link href="/tours" className="font-semibold text-brand-green2 hover:underline">
+            <Link href="/tours" className="font-semibold text-primary hover:underline">
               Browse packages
             </Link>
           </div>
         ) : (
-          <ul className="divide-y divide-brand-line">
+          <ul className="divide-y divide-border">
             {bookings.map((b) => (
-              <li key={b.id} className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="text-sm font-semibold text-brand-navy">{b.tour.title}</p>
-                  <p className="text-xs text-brand-mute">
+              <li key={b.id} className="flex items-center justify-between gap-3 px-5 py-4">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">{b.tour.title}</p>
+                  <p className="text-xs text-muted-foreground">
                     {b.travelDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     {" · "}
                     {b.travellers} traveller{b.travellers > 1 ? "s" : ""}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-brand-navy">{inr.format(b.amount)}</span>
+                <span className="shrink-0 text-sm font-bold text-foreground">{inr.format(b.amount)}</span>
               </li>
             ))}
           </ul>

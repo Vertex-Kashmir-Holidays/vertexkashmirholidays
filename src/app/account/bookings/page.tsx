@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 const STATUS_STYLES: Record<string, string> = {
-  PAID: "bg-emerald-100 text-emerald-700",
-  PENDING: "bg-amber-100 text-amber-700",
-  FAILED: "bg-red-100 text-red-700",
-  CANCELLED: "bg-gray-100 text-gray-500",
-  REFUNDED: "bg-blue-100 text-blue-700",
+  PAID: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  FAILED: "bg-red-500/15 text-red-700 dark:text-red-300",
+  CANCELLED: "bg-muted text-muted-foreground",
+  REFUNDED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
 };
 
 export default async function AccountBookingsPage() {
@@ -27,12 +27,12 @@ export default async function AccountBookingsPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-2xl font-bold text-brand-navy">My Bookings</h1>
+      <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">My Bookings</h1>
 
       {bookings.length === 0 ? (
-        <div className="rounded-2xl border border-brand-line bg-white px-5 py-12 text-center text-sm text-brand-mute">
+        <div className="rounded-2xl border border-border bg-card px-5 py-12 text-center text-sm text-muted-foreground">
           You haven&apos;t booked any trips yet.{" "}
-          <Link href="/tours" className="font-semibold text-brand-green2 hover:underline">
+          <Link href="/tours" className="font-semibold text-primary hover:underline">
             Explore packages
           </Link>
         </div>
@@ -41,18 +41,18 @@ export default async function AccountBookingsPage() {
           {bookings.map((b) => (
             <div
               key={b.id}
-              className="flex flex-col gap-3 rounded-2xl border border-brand-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link href={`/tours/${b.tour.slug}`} className="text-sm font-bold text-brand-navy hover:underline">
+                  <Link href={`/tours/${b.tour.slug}`} className="truncate text-sm font-bold text-foreground hover:underline">
                     {b.tour.title}
                   </Link>
-                  <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[b.status])}>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[b.status])}>
                     {b.status}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-brand-mute">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Travel date:{" "}
                   {b.travelDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   {" · "}
@@ -60,10 +60,10 @@ export default async function AccountBookingsPage() {
                   {" · "}
                   Booked {b.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
-                <p className="mt-0.5 text-[11px] text-brand-mute">Ref: {b.razorpayOrderId}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Ref: {b.razorpayOrderId}</p>
               </div>
               <div className="text-right">
-                <p className="text-base font-bold text-brand-navy">{inr.format(b.amount)}</p>
+                <p className="text-base font-bold text-foreground">{inr.format(b.amount)}</p>
               </div>
             </div>
           ))}
