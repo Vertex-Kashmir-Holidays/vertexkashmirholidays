@@ -1,25 +1,39 @@
-'use client';
+import { prisma } from "@/lib/prisma";
+import { PublicChrome } from "@/components/layout/PublicChrome";
+import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
+import type { FooterSettings } from "@/components/layout/Footer";
 
-import { Footer } from "@/components/layout/Footer";
-import { Navbar } from "@/components/layout/Navbar";
-import { AuroraBackground } from "@/components/ui/AuroraBackground";
-import { PageTransition } from "@/components/layout/PageTransition";
-
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const s = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
+
+  const settings: FooterSettings | null = s
+    ? {
+        siteName: s.siteName,
+        siteTagline: s.siteTagline,
+        siteEmail: s.siteEmail,
+        sitePhone: s.sitePhone,
+        siteAddress: s.siteAddress,
+        whatsapp: s.whatsapp,
+        facebook: s.facebook,
+        instagram: s.instagram,
+        twitter: s.twitter,
+        youtube: s.youtube,
+      }
+    : null;
+
   return (
-    <>
-      <AuroraBackground />
-      <Navbar />
-      <main className="min-h-screen bg-background text-foreground">
-        <PageTransition>
-          {children}
-        </PageTransition>
-      </main>
-      <Footer />
-    </>
+    <SiteSettingsProvider
+      value={{
+        siteName: s?.siteName ?? "Vertex Kashmir Holidays",
+        whatsapp: s?.whatsapp ?? null,
+        sitePhone: s?.sitePhone ?? null,
+      }}
+    >
+      <PublicChrome settings={settings}>{children}</PublicChrome>
+    </SiteSettingsProvider>
   );
 }

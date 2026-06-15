@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 
 interface TourDetailsSidebarProps {
   price: number;
@@ -32,6 +33,8 @@ export function TourDetailsSidebar({
   helpPhone,
 }: TourDetailsSidebarProps) {
   const [activeTab, setActiveTab] = useState<'inquiry' | 'book'>('inquiry');
+  const wa = useWhatsAppLink();
+  const helpHref = wa(`Hi! I'd like help with the "${tourName}" Kashmir tour. Please assist.`);
 
   const trustItems = [
     { t: 'Lowest Price Guarantee', icon: 'M20.6 13.4 12 22l-8.6-8.6A5 5 0 0 1 12 6.5a5 5 0 0 1 8.6 6.9Z' },
@@ -322,7 +325,9 @@ export function TourDetailsSidebar({
 
       {/* Need Help */}
       <motion.a
-        href="#"
+        href={helpHref}
+        target="_blank"
+        rel="noopener noreferrer"
         className="flex items-center gap-3.5 rounded-2xl bg-primary/10 p-5 transition hover:bg-primary/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
