@@ -5,6 +5,7 @@ export interface ContactHeroData {
   title: string | null;
   subtitle: string | null;
   image: string | null;
+  imageMobile: string | null;
 }
 
 export interface ContactHeroFeatureData {

@@ -44,6 +44,7 @@ export default async function BlogPage() {
         heroTitle: content?.heroTitle ?? null,
         heroSubtitle: content?.heroSubtitle ?? null,
         heroImage: content?.heroImage ?? null,
+        heroImageMobile: content?.heroImageMobile ?? null,
         heroSearchPlaceholder: content?.heroSearchPlaceholder ?? null,
         aboutTitle: content?.aboutTitle ?? null,
         aboutText: content?.aboutText ?? null,

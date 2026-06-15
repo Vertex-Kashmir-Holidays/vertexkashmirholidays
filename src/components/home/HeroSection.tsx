@@ -110,16 +110,29 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
       <div className="absolute inset-0">
         <AnimatePresence mode="wait">
           {currentSlide && (
-            <motion.img
+            <motion.div
               key={currentImageIndex}
-              src={currentSlide.image}
-              alt={currentSlide.alt ?? 'Kashmir landscape'}
-              className="h-full w-full object-cover"
+              className="absolute inset-0"
               initial={{ opacity: 0, scale: 1.05 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-            />
+            >
+              <picture className="block h-full w-full">
+                {currentSlide.imageMobile && (
+                  <source
+                    media="(max-width: 640px)"
+                    srcSet={currentSlide.imageMobile}
+                  />
+                )}
+                <img
+                  src={currentSlide.image}
+                  alt={currentSlide.alt ?? 'Kashmir landscape'}
+                  className="h-full w-full object-cover"
+                  fetchPriority={currentImageIndex === 0 ? 'high' : 'auto'}
+                />
+              </picture>
+            </motion.div>
           )}
         </AnimatePresence>
 

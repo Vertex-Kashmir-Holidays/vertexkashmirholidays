@@ -12,11 +12,14 @@ export function DestinationsHero() {
 
   return (
     <section className="relative overflow-hidden bg-brand-dark pb-10">
-      <img
-        src="https://picsum.photos/seed/dest-hero/1800/640"
-        alt="Dal Lake, Kashmir"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      <picture className="absolute inset-0 block h-full w-full">
+        <source media="(max-width: 640px)" srcSet="/hero/srinagar.webp" />
+        <img
+          src="/hero/srinagar-lg.webp"
+          alt="Dal Lake, Kashmir"
+          className="h-full w-full object-cover"
+        />
+      </picture>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/80 via-brand-dark/40 to-transparent"></div>
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent"></div>
 

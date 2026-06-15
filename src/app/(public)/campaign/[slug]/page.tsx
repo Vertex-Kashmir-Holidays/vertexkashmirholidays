@@ -66,6 +66,7 @@ export default async function CampaignPage({ params }: PageProps) {
     titleHtml: c.titleHtml,
     sub: c.sub,
     heroImage: c.heroImage,
+    heroImageMobile: c.heroImageMobile,
     finalImage: c.finalImage,
     facts: parse<string[]>(c.facts, []),
     heroCta: c.heroCta,

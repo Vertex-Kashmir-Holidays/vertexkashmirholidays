@@ -56,6 +56,7 @@ export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
         proofCount={campaign.proofCount}
         filmDur={campaign.filmDuration}
         heroImage={campaign.heroImage}
+        heroImageMobile={campaign.heroImageMobile}
         particles={campaign.particles}
         phone={campaign.phone}
         onFilmClick={() => setFilmOpen(true)}

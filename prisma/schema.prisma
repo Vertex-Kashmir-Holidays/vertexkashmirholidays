@@ -235,6 +235,7 @@ model BlogContent {
   heroTitle             String?
   heroSubtitle          String?
   heroImage             String?
+  heroImageMobile       String?
   heroSearchPlaceholder String?
   aboutTitle            String?
   aboutText             String?
@@ -322,13 +323,14 @@ model HomeSection {
 }
 
 model HeroSlide {
-  id        String   @id @default(cuid())
-  image     String
-  alt       String?
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  image       String // desktop / large image (e.g. /hero/hero-lg.webp)
+  imageMobile String? // optional mobile image (e.g. /hero/hero.webp); falls back to `image`
+  alt         String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([isActive, sortOrder])
 }
@@ -435,6 +437,7 @@ model AboutContent {
   heroTitle             String?
   heroSubtitle          String?
   heroImage             String?
+  heroImageMobile       String?
   heroCtaPrimaryLabel   String?
   heroCtaPrimaryHref    String?
   heroCtaSecondaryLabel String?
@@ -570,6 +573,7 @@ model ContactContent {
   heroTitle          String?
   heroSubtitle       String?
   heroImage          String?
+  heroImageMobile    String?
   // Reach section
   reachKicker        String?
   reachTitle         String?
@@ -668,75 +672,76 @@ model ContactOffice {
 // A self-contained marketing landing page. Structured sections are stored as
 // JSON strings (same convention as Tour) and parsed in the page.
 model Campaign {
-  id             String   @id @default(cuid())
-  slug           String   @unique
-  published      Boolean  @default(false)
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  published       Boolean   @default(false)
   // Theming
-  accent         String   @default("hsl(196 90% 52%)")
-  accent2        String   @default("hsl(170 80% 50%)")
-  particles      String   @default("snow") // "snow" | "embers"
+  accent          String    @default("hsl(196 90% 52%)")
+  accent2         String    @default("hsl(170 80% 50%)")
+  particles       String    @default("snow") // "snow" | "embers"
   // Hero
-  name           String
-  badge          String?
-  titleHtml      String?
-  sub            String?
-  heroImage      String?
-  finalImage     String?
-  facts          String   @default("[]") // JSON string[]
-  heroCta        String?
-  proofCount     String?
+  name            String
+  badge           String?
+  titleHtml       String?
+  sub             String?
+  heroImage       String?
+  heroImageMobile String?
+  finalImage      String?
+  facts           String    @default("[]") // JSON string[]
+  heroCta         String?
+  proofCount      String?
   // Urgency bar
-  offerText      String?
-  offerDeadline  DateTime?
-  offerSeats     String?
+  offerText       String?
+  offerDeadline   DateTime?
+  offerSeats      String?
   // Nav / contact
-  navCta         String?
-  phone          String?
-  whatsappHref   String?
+  navCta          String?
+  phone           String?
+  whatsappHref    String?
   // Marquee
-  strip          String   @default("[]") // JSON string[]
+  strip           String    @default("[]") // JSON string[]
   // Stats — JSON [[value, suffix, label]]
-  stats          String   @default("[]")
+  stats           String    @default("[]")
   // Film
-  filmTitle      String?
-  filmDuration   String?
-  filmPoster     String?
-  filmSrc        String?
+  filmTitle       String?
+  filmDuration    String?
+  filmPoster      String?
+  filmSrc         String?
   // Highlights — JSON [{ image, emoji, title, description }]
   highlightsTitle String?
-  highlights     String   @default("[]")
+  highlights      String    @default("[]")
   // Activities — JSON [{ image, title }]
   activitiesTitle String?
-  activities     String   @default("[]")
+  activities      String    @default("[]")
   // Itinerary — JSON [{ title, description, image }]
-  itineraryTitle String?
-  itinerary      String   @default("[]")
+  itineraryTitle  String?
+  itinerary       String    @default("[]")
   // Pricing — JSON [{ name, price, old, tag, desc, feats[] }]
-  tiers          String   @default("[]")
+  tiers           String    @default("[]")
   // Departures — JSON [{ date, seats, price, status }]
-  batches        String   @default("[]")
+  batches         String    @default("[]")
   // Inclusions / exclusions — JSON string[]
-  inclusions     String   @default("[]")
-  exclusions     String   @default("[]")
+  inclusions      String    @default("[]")
+  exclusions      String    @default("[]")
   // Gallery — JSON string[] (image urls)
-  galleryTitle   String?
-  gallery        String   @default("[]")
+  galleryTitle    String?
+  gallery         String    @default("[]")
   // Testimonials — JSON [{ image, name, location, quote }]
-  testimonials   String   @default("[]")
+  testimonials    String    @default("[]")
   // FAQs — JSON [{ question, answer }]
-  faqsTitle      String?
-  faqs           String   @default("[]")
+  faqsTitle       String?
+  faqs            String    @default("[]")
   // Final CTA
-  finalTitle     String?
-  finalSub       String?
-  finalCta       String?
-  finalNote      String?
+  finalTitle      String?
+  finalSub        String?
+  finalCta        String?
+  finalNote       String?
   // SEO
-  metaTitle      String?
-  metaDesc       String?
-  ogImage        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  metaTitle       String?
+  metaDesc        String?
+  ogImage         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([slug])
   @@index([published])

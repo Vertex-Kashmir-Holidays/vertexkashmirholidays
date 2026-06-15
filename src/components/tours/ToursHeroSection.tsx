@@ -41,14 +41,21 @@ export function ToursHeroSection({ heading, stats }: ToursHeroSectionProps) {
 
   return (
     <section className="relative overflow-hidden">
-      <motion.img
-        src="https://picsum.photos/seed/tours-hero/1800/600"
-        alt="Kashmir valley"
-        className="absolute inset-0 h-full w-full object-cover"
+      <motion.div
+        className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+      >
+        <picture className="block h-full w-full">
+          <source media="(max-width: 640px)" srcSet="/hero/gulmarg.webp" />
+          <img
+            src="/hero/gulmarg-lg.webp"
+            alt="Kashmir valley"
+            className="h-full w-full object-cover"
+          />
+        </picture>
+      </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/50 to-transparent"></div>
 
       <div className="relative mx-auto max-w-[1300px] px-4 py-12 sm:px-6 sm:py-16 lg:pb-20 lg:pt-28">

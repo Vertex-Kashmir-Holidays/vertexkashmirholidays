@@ -12,7 +12,7 @@ export function WhyChooseSection({ heading, items }: WhyChooseSectionProps) {
   if (items.length === 0) return null;
 
   return (
-    <section id="why" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
+    <section id="why" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="text-center">
         <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
         <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>

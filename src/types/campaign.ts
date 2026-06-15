@@ -57,6 +57,7 @@ export interface CampaignData {
   titleHtml: string | null;
   sub: string | null;
   heroImage: string | null;
+  heroImageMobile: string | null;
   finalImage: string | null;
   facts: string[];
   heroCta: string | null;
