@@ -1,28 +1,17 @@
-// src/app/(auth)/auth/page.tsx
-'use client';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { isStaff } from '@/lib/rbac';
+import { AuthScreen } from '@/components/auth/AuthScreen';
 
-import { useState } from 'react';
-import { AuthImagePanel } from '@/components/auth/AuthImagePanel';
-import { AuthFormPanel } from '@/components/auth/AuthFormPanel';
-import { AuthTrustStrip } from '@/components/auth/AuthTrustStrip';
-import { AuthExplore } from '@/components/auth/AuthExplore';
+export const dynamic = 'force-dynamic';
 
-export default function AuthPage() {
-  const [view, setView] = useState<'login' | 'register'>('login');
+export default async function LoginPage() {
+  // Already signed in? Don't show the login form again — send them to where
+  // they belong (staff → admin, customers → their account).
+  const session = await auth();
+  if (session?.user) {
+    redirect(isStaff(session.user.role) ? '/admin/dashboard' : '/account');
+  }
 
-  return (
-    <div className="bg-brand-page font-sans text-brand-ink antialiased">
-      <div className="mx-auto max-w-[1300px] px-4 py-6 lg:px-8">
-        <div className="grid overflow-hidden rounded-3xl bg-white shadow-card lg:grid-cols-[1fr_1.05fr]">
-          <AuthImagePanel view={view} />
-          <AuthFormPanel view={view} onViewChange={setView} />
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.75fr_1fr]">
-          <AuthTrustStrip />
-          <AuthExplore />
-        </div>
-      </div>
-    </div>
-  );
+  return <AuthScreen />;
 }

@@ -29,7 +29,7 @@ export function AuthTrustStrip() {
 
   return (
     <motion.div
-      className="grid gap-7 rounded-3xl bg-white p-7 shadow-soft sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-brand-line"
+      className="grid gap-7 rounded-3xl bg-card p-7 shadow-soft sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -40,12 +40,12 @@ export function AuthTrustStrip() {
           key={i}
           className="flex items-start gap-3.5 lg:px-5 lg:first:pl-0 lg:last:pr-0"
         >
-          <svg viewBox="0 0 24 24" className="h-9 w-9 shrink-0 text-brand-green" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" className="h-9 w-9 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d={item.icon} />
           </svg>
           <div>
             <p className="text-[13.5px] font-bold">{item.t}</p>
-            <p className="mt-1 text-[11.5px] leading-relaxed text-brand-mute">{item.s}</p>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">{item.s}</p>
           </div>
         </div>
       ))}

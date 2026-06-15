@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface AuthFormPanelProps {
   view: 'login' | 'register';
@@ -119,7 +120,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
     <div className="space-y-3">
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-3 rounded-xl border border-brand-line bg-white py-2.5 text-[13px] font-semibold transition hover:bg-brand-page"
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-2.5 text-[13px] font-semibold transition hover:bg-muted"
         onClick={() => alert('Google sign-in — wire to Auth.js provider')}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -132,7 +133,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
       </button>
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-3 rounded-xl border border-brand-line bg-white py-2.5 text-[13px] font-semibold transition hover:bg-brand-page"
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-2.5 text-[13px] font-semibold transition hover:bg-muted"
         onClick={() => alert('Apple sign-in — wire to Auth.js provider')}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -145,10 +146,11 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
 
   return (
     <section className="flex flex-col p-6 lg:p-9">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <ThemeToggle />
         <Link
           href="/"
-          className="flex items-center gap-2 text-[13px] font-semibold text-brand-ink/75 transition hover:text-brand-green2"
+          className="flex items-center gap-2 text-[13px] font-semibold text-foreground/75 transition hover:text-primary"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M11 18l-6-6 6-6" />
@@ -168,20 +170,20 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="rounded-2xl border border-brand-line bg-white p-6 shadow-soft lg:p-7">
-                <h2 className="flex items-center gap-2.5 font-display text-[26px] font-bold text-brand-green">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:p-7">
+                <h2 className="flex items-center gap-2.5 font-display text-[26px] font-bold text-primary">
                   Welcome back
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-brand-green" fill="currentColor">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="currentColor">
                     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
                   </svg>
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-brand-mute">
+                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                   Log in to your account to manage your bookings, view itineraries and more.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleLogin}>
                   {view === 'login' && error && (
-                    <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-[12px] font-semibold text-red-600">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
@@ -197,7 +199,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />
                         <path d="m22 7-10 6L2 7" />
                       </svg>
@@ -219,7 +221,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label="Show password"
-                        className="mr-3.5 shrink-0 text-brand-mute/70 transition hover:text-brand-ink"
+                        className="mr-3.5 shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                       >
                         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
                           {showPassword ? (
@@ -241,16 +243,16 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                       </button>
                     </div>
                     <div className="mt-2 flex justify-end">
-                      <a href="#" className="text-[12px] font-semibold text-brand-green2 hover:underline">Forgot password?</a>
+                      <a href="#" className="text-[12px] font-semibold text-primary hover:underline">Forgot password?</a>
                     </div>
                   </div>
-                  <label className="flex items-center gap-2.5 text-[12.5px] font-medium text-brand-ink/80">
+                  <label className="flex items-center gap-2.5 text-[12.5px] font-medium text-foreground/80">
                     <input type="checkbox" className="cbx" /> Remember me
                   </label>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Logging in…' : 'Log In'}
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -260,29 +262,29 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                 </form>
 
                 <div className="mt-6 flex items-center gap-4">
-                  <span className="h-px flex-1 bg-brand-line"></span>
-                  <span className="text-[11px] font-medium text-brand-mute">or continue with</span>
-                  <span className="h-px flex-1 bg-brand-line"></span>
+                  <span className="h-px flex-1 bg-border"></span>
+                  <span className="text-[11px] font-medium text-muted-foreground">or continue with</span>
+                  <span className="h-px flex-1 bg-border"></span>
                 </div>
 
                 <div className="mt-5">{oauthButtons}</div>
 
-                <p className="mt-6 text-center text-[12.5px] text-brand-mute">
+                <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
                   Don't have an account?{' '}
-                  <button onClick={() => onViewChange('register')} className="font-bold text-brand-green2 hover:underline">
+                  <button onClick={() => onViewChange('register')} className="font-bold text-primary hover:underline">
                     Create one
                   </button>
                 </p>
 
-                <div className="mt-5 flex items-start gap-3 rounded-xl bg-emerald-50 p-4">
-                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
+                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
                     <path d="m9 12 2 2 4-4" />
                   </svg>
                   <p className="text-[12px] leading-snug">
                     <strong className="text-[12.5px]">Your data is safe with us</strong>
                     <br />
-                    <span className="text-brand-mute">We never share your information with anyone.</span>
+                    <span className="text-muted-foreground">We never share your information with anyone.</span>
                   </p>
                 </div>
               </div>
@@ -298,20 +300,20 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="rounded-2xl border border-brand-line bg-white p-6 shadow-soft lg:p-7">
-                <h2 className="flex items-center gap-2.5 font-display text-[26px] font-bold text-brand-green">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:p-7">
+                <h2 className="flex items-center gap-2.5 font-display text-[26px] font-bold text-primary">
                   Create your account
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-brand-green" fill="currentColor">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="currentColor">
                     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
                   </svg>
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-brand-mute">
+                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                   Join thousands of happy travellers.<br/>It only takes a minute.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleRegister}>
                   {view === 'register' && error && (
-                    <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-[12px] font-semibold text-red-600">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
@@ -326,7 +328,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         value={regName}
                         onChange={(e) => setRegName(e.target.value)}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4 21a8 8 0 0 1 16 0" />
                       </svg>
@@ -344,7 +346,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />
                         <path d="m22 7-10 6L2 7" />
                       </svg>
@@ -353,13 +355,13 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgPhone">Phone number</label>
                     <div className="input-wrap mt-1.5">
-                      <button type="button" className="ml-3.5 flex shrink-0 items-center gap-1.5 border-r border-brand-line pr-3 text-[12.5px] font-semibold">
+                      <button type="button" className="ml-3.5 flex shrink-0 items-center gap-1.5 border-r border-border pr-3 text-[12.5px] font-semibold">
                         <span className="inline-block h-3.5 w-5 overflow-hidden rounded-[2px]" aria-hidden="true">
                           <span className="block h-1/3 bg-orange-500"></span>
                           <span className="block h-1/3 bg-white"></span>
                           <span className="block h-1/3 bg-green-700"></span>
                         </span>
-                        <svg viewBox="0 0 24 24" className="h-3 w-3 text-brand-mute" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                        <svg viewBox="0 0 24 24" className="h-3 w-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                           <path d="m6 9 6 6 6-6" />
                         </svg>
                         +91
@@ -373,7 +375,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         value={regPhone}
                         onChange={(e) => setRegPhone(e.target.value)}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
                       </svg>
                     </div>
@@ -394,7 +396,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label="Show password"
-                        className="mr-3.5 shrink-0 text-brand-mute/70 transition hover:text-brand-ink"
+                        className="mr-3.5 shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                       >
                         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
                           {showPassword ? (
@@ -431,7 +433,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         aria-label="Show password"
-                        className="mr-3.5 shrink-0 text-brand-mute/70 transition hover:text-brand-ink"
+                        className="mr-3.5 shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                       >
                         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
                           {showConfirmPassword ? (
@@ -452,18 +454,18 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                       </button>
                     </div>
                   </div>
-                  <label className="flex items-start gap-2.5 text-[12px] leading-snug text-brand-ink/80">
+                  <label className="flex items-start gap-2.5 text-[12px] leading-snug text-foreground/80">
                     <input type="checkbox" required className="cbx mt-0.5" />
                     <span>
                       I agree to the{' '}
-                      <a href="#" className="font-bold text-brand-green2 hover:underline">Terms &amp; Conditions</a> and{' '}
-                      <a href="#" className="font-bold text-brand-green2 hover:underline">Privacy Policy</a>
+                      <a href="#" className="font-bold text-primary hover:underline">Terms &amp; Conditions</a> and{' '}
+                      <a href="#" className="font-bold text-primary hover:underline">Privacy Policy</a>
                     </span>
                   </label>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Creating account…' : 'Create Account'}
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -473,29 +475,29 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                 </form>
 
                 <div className="mt-6 flex items-center gap-4">
-                  <span className="h-px flex-1 bg-brand-line"></span>
-                  <span className="text-[11px] font-medium text-brand-mute">or continue with</span>
-                  <span className="h-px flex-1 bg-brand-line"></span>
+                  <span className="h-px flex-1 bg-border"></span>
+                  <span className="text-[11px] font-medium text-muted-foreground">or continue with</span>
+                  <span className="h-px flex-1 bg-border"></span>
                 </div>
 
                 <div className="mt-5">{oauthButtons}</div>
 
-                <p className="mt-6 text-center text-[12.5px] text-brand-mute">
+                <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
                   Already have an account?{' '}
-                  <button onClick={() => onViewChange('login')} className="font-bold text-brand-green2 hover:underline">
+                  <button onClick={() => onViewChange('login')} className="font-bold text-primary hover:underline">
                     Log in
                   </button>
                 </p>
 
-                <div className="mt-5 flex items-start gap-3 rounded-xl bg-emerald-50 p-4">
-                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
+                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
                     <path d="m9 12 2 2 4-4" />
                   </svg>
                   <p className="text-[12px] leading-snug">
                     <strong className="text-[12.5px]">Your data is safe with us</strong>
                     <br />
-                    <span className="text-brand-mute">We never share your information with anyone.</span>
+                    <span className="text-muted-foreground">We never share your information with anyone.</span>
                   </p>
                 </div>
               </div>
@@ -504,8 +506,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
         </AnimatePresence>
 
         {/* Demo Admin Access */}
-        <div className="mt-5 flex items-center gap-4 rounded-2xl border border-brand-line bg-brand-page p-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-brand-green2">
+        <div className="mt-5 flex items-center gap-4 rounded-2xl border border-border bg-muted p-4">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-primary">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
               <circle cx="12" cy="8" r="4" />
               <path d="M4 21a8 8 0 0 1 16 0" />
@@ -514,10 +516,10 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
           <div className="text-[12px] leading-relaxed">
             <p className="text-[13px] font-bold">Demo Admin Access</p>
             <p>
-              Email: <strong className="text-brand-green2">admin@vertex.com</strong>
+              Email: <strong className="text-primary">admin@vertex.com</strong>
             </p>
             <p>
-              Password: <strong className="text-brand-green2">admin123</strong>
+              Password: <strong className="text-primary">admin123</strong>
             </p>
           </div>
         </div>
