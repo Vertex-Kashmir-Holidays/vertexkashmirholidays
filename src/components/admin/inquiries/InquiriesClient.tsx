@@ -10,10 +10,10 @@ type InquiryStatus = "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED";
 const STATUSES: InquiryStatus[] = ["NEW", "CONTACTED", "CONVERTED", "CLOSED"];
 
 const STATUS_STYLES: Record<InquiryStatus, string> = {
-  NEW: "bg-blue-100 text-blue-700",
-  CONTACTED: "bg-amber-100 text-amber-700",
-  CONVERTED: "bg-emerald-100 text-emerald-700",
-  CLOSED: "bg-gray-100 text-gray-500",
+  NEW: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  CONTACTED: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  CONVERTED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  CLOSED: "bg-muted text-muted-foreground",
 };
 
 interface InquiryRow {
@@ -91,26 +91,26 @@ export function InquiriesClient({ initialItems, totalCount, sources, canEdit, ca
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-display text-xl font-extrabold text-brand-navy">Inquiries</h2>
-        <p className="mt-0.5 text-xs text-gray-400">{totalCount} total leads &amp; submissions</p>
+        <h2 className="font-display text-xl font-extrabold text-foreground">Inquiries</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">{totalCount} total leads &amp; submissions</p>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex flex-col gap-3 p-4 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name, phone or email..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 pl-9 pr-4 text-sm transition focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25"
+              className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
             />
           </div>
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-gray-50/50 py-2 pl-4 pr-8 text-sm transition focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25"
+            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             <option value="ALL">All Sources</option>
             {sources.map((s) => (
@@ -120,38 +120,38 @@ export function InquiriesClient({ initialItems, totalCount, sources, canEdit, ca
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-gray-50/50 py-2 pl-4 pr-8 text-sm transition focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25"
+            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             <option value="ALL">All Statuses</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          <p className="shrink-0 self-center text-xs text-gray-400">{filtered.length} results</p>
+          <p className="shrink-0 self-center text-xs text-muted-foreground">{filtered.length} results</p>
         </div>
 
-        <div className="divide-y divide-gray-50 border-t border-gray-100">
+        <div className="divide-y divide-border border-t border-border">
           {filtered.length === 0 ? (
-            <p className="px-4 py-12 text-center text-sm text-gray-400">No inquiries found.</p>
+            <p className="px-4 py-12 text-center text-sm text-muted-foreground">No inquiries found.</p>
           ) : (
             filtered.map((item) => (
               <div key={item.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold text-brand-navy">{item.name}</p>
+                    <p className="text-sm font-bold text-foreground">{item.name}</p>
                     <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[item.status])}>
                       {item.status}
                     </span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                       {item.source ?? "website"}
                     </span>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                    <a href={`tel:${item.phone}`} className="flex items-center gap-1 hover:text-brand-green">
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <a href={`tel:${item.phone}`} className="flex items-center gap-1 hover:text-primary">
                       <Phone className="h-3 w-3" /> {item.phone}
                     </a>
                     {item.email && (
-                      <a href={`mailto:${item.email}`} className="flex items-center gap-1 hover:text-brand-green">
+                      <a href={`mailto:${item.email}`} className="flex items-center gap-1 hover:text-primary">
                         <Mail className="h-3 w-3" /> {item.email}
                       </a>
                     )}
@@ -167,8 +167,8 @@ export function InquiriesClient({ initialItems, totalCount, sources, canEdit, ca
                       </span>
                     )}
                   </div>
-                  {item.message && <p className="mt-1.5 text-xs text-gray-600">{item.message}</p>}
-                  <p className="mt-1 text-[10px] text-gray-400">
+                  {item.message && <p className="mt-1.5 text-xs text-muted-foreground">{item.message}</p>}
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     {new Date(item.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -178,7 +178,7 @@ export function InquiriesClient({ initialItems, totalCount, sources, canEdit, ca
                     value={item.status}
                     onChange={(e) => updateStatus(item, e.target.value as InquiryStatus)}
                     disabled={!canEdit || isPending}
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-brand-navy focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25 disabled:opacity-50"
+                    className="rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:opacity-50"
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>{s}</option>
@@ -196,7 +196,7 @@ export function InquiriesClient({ initialItems, totalCount, sources, canEdit, ca
                         </button>
                         <button
                           onClick={() => setConfirmDelete(null)}
-                          className="rounded-lg border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-500"
+                          className="rounded-lg border border-border px-2 py-1 text-[11px] font-semibold text-muted-foreground"
                         >
                           Cancel
                         </button>
@@ -204,7 +204,7 @@ export function InquiriesClient({ initialItems, totalCount, sources, canEdit, ca
                     ) : (
                       <button
                         onClick={() => setConfirmDelete(item.id)}
-                        className="text-gray-400 transition hover:text-red-500"
+                        className="text-muted-foreground transition hover:text-red-500 dark:text-red-400"
                         aria-label="Delete inquiry"
                       >
                         <Trash2 className="h-4 w-4" />

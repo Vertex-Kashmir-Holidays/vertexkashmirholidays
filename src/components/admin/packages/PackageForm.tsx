@@ -86,9 +86,9 @@ export interface PackageFormDefaults {
 
 const CATEGORIES = [
   { value: "HONEYMOON", label: "Honeymoon", color: "bg-pink-100 text-pink-700" },
-  { value: "FAMILY", label: "Family", color: "bg-blue-100 text-blue-700" },
-  { value: "ADVENTURE", label: "Adventure", color: "bg-orange-100 text-orange-700" },
-  { value: "LUXURY", label: "Luxury", color: "bg-yellow-100 text-yellow-700" },
+  { value: "FAMILY", label: "Family", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+  { value: "ADVENTURE", label: "Adventure", color: "bg-orange-500/15 text-orange-700 dark:text-orange-300" },
+  { value: "LUXURY", label: "Luxury", color: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300" },
 ];
 
 const SECTIONS = [
@@ -102,9 +102,9 @@ const SECTIONS = [
 
 function SectionCard({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <div id={id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
-        <h3 className="font-display font-bold text-brand-navy text-sm">{title}</h3>
+    <div id={id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-border bg-muted/50">
+        <h3 className="font-display font-bold text-foreground text-sm">{title}</h3>
       </div>
       <div className="p-6 space-y-5">{children}</div>
     </div>
@@ -113,16 +113,16 @@ function SectionCard({ id, title, children }: { id: string; title: string; child
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-xs font-semibold text-brand-navy mb-1.5">
+    <label className="block text-xs font-semibold text-foreground mb-1.5">
       {children}
-      {required && <span className="text-brand-orange ml-0.5">*</span>}
+      {required && <span className="text-accent ml-0.5">*</span>}
     </label>
   );
 }
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="text-red-500 text-xs mt-1">{message}</p>;
+  return <p className="text-red-500 dark:text-red-400 text-xs mt-1">{message}</p>;
 }
 
 function TextInput({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -130,7 +130,7 @@ function TextInput({ className, ...props }: React.InputHTMLAttributes<HTMLInputE
     <input
       {...props}
       className={cn(
-        "w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition placeholder:text-gray-400",
+        "w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition placeholder:text-muted-foreground",
         className,
       )}
     />
@@ -142,7 +142,7 @@ function TextArea({ className, ...props }: React.TextareaHTMLAttributes<HTMLText
     <textarea
       {...props}
       className={cn(
-        "w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition placeholder:text-gray-400 resize-none",
+        "w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition placeholder:text-muted-foreground resize-none",
         className,
       )}
     />
@@ -183,7 +183,7 @@ function ImageUploadField({
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      {hint && <p className="text-[10px] text-gray-400 mb-2">{hint}</p>}
+      {hint && <p className="text-[10px] text-muted-foreground mb-2">{hint}</p>}
       <div className="flex gap-2 mb-2">
         <TextInput
           type="url"
@@ -196,7 +196,7 @@ function ImageUploadField({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-1.5 px-3 py-2.5 border border-dashed border-gray-300 rounded-xl text-xs font-medium text-gray-500 hover:border-brand-green hover:text-brand-green transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-2.5 border border-dashed border-border rounded-xl text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
         >
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
           Upload
@@ -210,7 +210,7 @@ function ImageUploadField({
         />
       </div>
       {value && (
-        <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-100">
+        <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="Preview" className="w-full h-full object-cover" />
           <button
@@ -367,13 +367,13 @@ export function PackageForm({ defaults }: PackageFormProps) {
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors",
                 activeSection === s.id
-                  ? "bg-brand-green/10 text-brand-green"
-                  : "text-gray-400 hover:text-brand-navy hover:bg-gray-50",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
               <span className={cn(
                 "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                activeSection === s.id ? "bg-brand-green text-white" : "bg-gray-100 text-gray-500",
+                activeSection === s.id ? "bg-primary text-white" : "bg-muted text-muted-foreground",
               )}>
                 {s.num}
               </span>
@@ -403,7 +403,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
               <FieldLabel required>Category</FieldLabel>
               <select
                 {...register("category")}
-                className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition"
+                className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -425,7 +425,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
 
           <div>
             <FieldLabel>Full Description</FieldLabel>
-            <p className="text-[10px] text-gray-400 mb-1.5">HTML is accepted (bold, links, lists etc.)</p>
+            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted (bold, links, lists etc.)</p>
             <TextArea {...register("description")} rows={6} placeholder="Detailed description of the package..." />
           </div>
 
@@ -460,12 +460,12 @@ export function PackageForm({ defaults }: PackageFormProps) {
               onClick={() => setValue("bestseller", !bestseller)}
               className={cn(
                 "w-10 h-5.5 rounded-full transition-colors relative cursor-pointer",
-                bestseller ? "bg-brand-orange" : "bg-gray-200",
+                bestseller ? "bg-accent" : "bg-muted",
               )}
             >
-              <div className={cn("absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-transform", bestseller ? "translate-x-4.5" : "translate-x-0.5")} />
+              <div className={cn("absolute top-0.5 w-4.5 h-4.5 rounded-full bg-card shadow-sm transition-transform", bestseller ? "translate-x-4.5" : "translate-x-0.5")} />
             </div>
-            <span className="text-sm font-medium text-brand-navy">Mark as Bestseller</span>
+            <span className="text-sm font-medium text-foreground">Mark as Bestseller</span>
           </label>
         </SectionCard>
 
@@ -478,23 +478,23 @@ export function PackageForm({ defaults }: PackageFormProps) {
               <button
                 type="button"
                 onClick={() => addDay({ day: itineraryFields.length + 1, title: "", description: "" })}
-                className="flex items-center gap-1 text-xs font-semibold text-brand-green hover:text-brand-green/80 transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Day
               </button>
             </div>
 
             {itineraryFields.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-xs">
+              <div className="text-center py-8 border-2 border-dashed border-border rounded-xl text-muted-foreground text-xs">
                 No days yet — click &ldquo;Add Day&rdquo; to build the itinerary
               </div>
             ) : (
               <div className="space-y-3">
                 {itineraryFields.map((field, i) => (
-                  <div key={field.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
+                  <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50">
                     <div className="flex items-center gap-3 mb-3">
-                      <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
-                      <span className="w-8 h-8 rounded-full bg-brand-green text-white text-xs font-bold flex items-center justify-center shrink-0">
+                      <GripVertical className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                      <span className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0">
                         {i + 1}
                       </span>
                       <TextInput
@@ -505,7 +505,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
                       <button
                         type="button"
                         onClick={() => removeDay(i)}
-                        className="text-gray-300 hover:text-red-400 transition-colors shrink-0"
+                        className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -531,7 +531,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
               <button
                 type="button"
                 onClick={() => addInclusion({ value: "" })}
-                className="flex items-center gap-1 text-xs font-semibold text-brand-green hover:text-brand-green/80 transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Item
               </button>
@@ -539,15 +539,15 @@ export function PackageForm({ defaults }: PackageFormProps) {
             <div className="space-y-2">
               {inclusionFields.map((field, i) => (
                 <div key={field.id} className="flex gap-2 items-center">
-                  <CheckCircle2 className="w-4 h-4 text-brand-green shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                   <TextInput {...register(`inclusions.${i}.value`)} placeholder="e.g. Airport transfers" className="flex-1" />
-                  <button type="button" onClick={() => removeInclusion(i)} className="text-gray-300 hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => removeInclusion(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
               {inclusionFields.length === 0 && (
-                <p className="text-xs text-gray-400 py-2">No inclusions added yet.</p>
+                <p className="text-xs text-muted-foreground py-2">No inclusions added yet.</p>
               )}
             </div>
           </div>
@@ -559,7 +559,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
               <button
                 type="button"
                 onClick={() => addExclusion({ value: "" })}
-                className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-500 transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-500 dark:text-red-400 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Item
               </button>
@@ -569,13 +569,13 @@ export function PackageForm({ defaults }: PackageFormProps) {
                 <div key={field.id} className="flex gap-2 items-center">
                   <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                   <TextInput {...register(`exclusions.${i}.value`)} placeholder="e.g. International flights" className="flex-1" />
-                  <button type="button" onClick={() => removeExclusion(i)} className="text-gray-300 hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => removeExclusion(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
               {exclusionFields.length === 0 && (
-                <p className="text-xs text-gray-400 py-2">No exclusions added yet.</p>
+                <p className="text-xs text-muted-foreground py-2">No exclusions added yet.</p>
               )}
             </div>
           </div>
@@ -587,29 +587,29 @@ export function PackageForm({ defaults }: PackageFormProps) {
               <button
                 type="button"
                 onClick={() => addGalleryItem({ url: "" })}
-                className="flex items-center gap-1 text-xs font-semibold text-brand-green hover:text-brand-green/80 transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Image
               </button>
             </div>
             {galleryFields.length === 0 ? (
-              <p className="text-xs text-gray-400 py-2">No gallery images added yet.</p>
+              <p className="text-xs text-muted-foreground py-2">No gallery images added yet.</p>
             ) : (
               <div className="space-y-2">
                 {galleryFields.map((field, i) => {
                   const url = watch(`gallery.${i}.url`);
                   return (
                     <div key={field.id} className="flex gap-2 items-center">
-                      <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                      <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-muted shrink-0">
                         {url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <ImageIcon className="w-4 h-4 text-gray-300 absolute inset-0 m-auto" />
+                          <ImageIcon className="w-4 h-4 text-muted-foreground/60 absolute inset-0 m-auto" />
                         )}
                       </div>
                       <TextInput {...register(`gallery.${i}.url`)} type="url" placeholder="https://..." className="flex-1" />
-                      <button type="button" onClick={() => removeGalleryItem(i)} className="text-gray-300 hover:text-red-400 transition-colors">
+                      <button type="button" onClick={() => removeGalleryItem(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -625,7 +625,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
           <div>
             <FieldLabel>Meta Title</FieldLabel>
             <TextInput {...register("metaTitle")} placeholder="SEO page title (60 chars ideal)" />
-            <p className="text-[10px] text-gray-400 mt-1">Leave blank to auto-generate from tour title.</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Leave blank to auto-generate from tour title.</p>
           </div>
           <div>
             <FieldLabel>Meta Description</FieldLabel>
@@ -643,13 +643,13 @@ export function PackageForm({ defaults }: PackageFormProps) {
       {/* ── Right sidebar ─────────────────────────────────────────────────── */}
       <div className="hidden lg:flex flex-col w-64 shrink-0 gap-4 sticky top-6 self-start">
         {/* Preview card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="relative h-36 bg-gray-100">
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="relative h-36 bg-muted">
             {coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={coverImage} alt="" className="w-full h-full object-cover" />
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-300">
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60">
                 <ImageIcon className="w-8 h-8 mb-1" />
                 <p className="text-xs">No cover image</p>
               </div>
@@ -661,12 +661,12 @@ export function PackageForm({ defaults }: PackageFormProps) {
             )}
           </div>
           <div className="p-3">
-            <p className="font-display font-bold text-brand-navy text-sm leading-tight line-clamp-2 mb-1">
+            <p className="font-display font-bold text-foreground text-sm leading-tight line-clamp-2 mb-1">
               {title || "Package title will appear here"}
             </p>
-            <div className="flex items-center justify-between text-xs text-gray-400">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{duration} days</span>
-              <span className="font-bold text-brand-navy">
+              <span className="font-bold text-foreground">
                 {priceFrom ? `₹${Number(priceFrom).toLocaleString("en-IN")}` : "₹0"}
               </span>
             </div>
@@ -674,25 +674,25 @@ export function PackageForm({ defaults }: PackageFormProps) {
         </div>
 
         {/* Status */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-          <p className="text-xs font-bold text-brand-navy uppercase tracking-wider">Status</p>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-4 space-y-3">
+          <p className="text-xs font-bold text-foreground uppercase tracking-wider">Status</p>
 
           <label className="flex items-center justify-between cursor-pointer select-none">
-            <span className="text-sm text-gray-600">Published</span>
+            <span className="text-sm text-muted-foreground">Published</span>
             <div
               onClick={() => setValue("published", !published)}
               className={cn(
                 "w-9 h-5 rounded-full transition-colors relative cursor-pointer",
-                published ? "bg-brand-green" : "bg-gray-200",
+                published ? "bg-primary" : "bg-muted",
               )}
             >
-              <div className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform", published ? "translate-x-4" : "translate-x-0.5")} />
+              <div className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-card shadow-sm transition-transform", published ? "translate-x-4" : "translate-x-0.5")} />
             </div>
           </label>
 
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">Visibility</span>
-            <span className={cn("font-semibold", published ? "text-brand-green" : "text-gray-400")}>
+            <span className="text-muted-foreground">Visibility</span>
+            <span className={cn("font-semibold", published ? "text-primary" : "text-muted-foreground")}>
               {published ? "● Live" : "○ Draft"}
             </span>
           </div>
@@ -705,7 +705,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
             onClick={() => handleSave(false)}
             disabled={isSubmitting}
             variant="outline"
-            className="w-full border-gray-200 text-brand-navy font-semibold"
+            className="w-full border-border text-foreground font-semibold"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Save Draft
@@ -714,7 +714,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
             type="button"
             onClick={() => handleSave(true)}
             disabled={isSubmitting}
-            className="w-full bg-brand-green hover:bg-brand-green/90 text-white font-bold shadow-sm shadow-brand-green/25"
+            className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-sm shadow-primary/25"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
             Publish Package
@@ -722,7 +722,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
           <button
             type="button"
             onClick={() => router.push("/admin/packages")}
-            className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+            className="w-full text-xs text-muted-foreground hover:text-muted-foreground transition-colors py-1"
           >
             Cancel
           </button>
@@ -730,13 +730,13 @@ export function PackageForm({ defaults }: PackageFormProps) {
       </div>
 
       {/* Mobile bottom actions */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 flex gap-3 z-40">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex gap-3 z-40">
         <Button
           type="button"
           onClick={() => handleSave(false)}
           disabled={isSubmitting}
           variant="outline"
-          className="flex-1 border-gray-200 font-semibold"
+          className="flex-1 border-border font-semibold"
         >
           Save Draft
         </Button>
@@ -744,7 +744,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
           type="button"
           onClick={() => handleSave(true)}
           disabled={isSubmitting}
-          className="flex-1 bg-brand-green text-white font-bold"
+          className="flex-1 bg-primary text-white font-bold"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
           Publish

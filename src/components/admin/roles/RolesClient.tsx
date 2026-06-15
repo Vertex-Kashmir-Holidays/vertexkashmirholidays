@@ -74,14 +74,14 @@ export function RolesClient({ roles, initialMatrix, canEdit }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-brand-green">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15 text-primary">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="font-display text-lg font-bold text-brand-navy">Roles &amp; Permissions</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="font-display text-lg font-bold text-foreground">Roles &amp; Permissions</h2>
+          <p className="text-sm text-muted-foreground">
             Control which modules each role can view and what actions they can perform.
-            <span className="ml-1 inline-flex items-center gap-1 text-gray-400">
+            <span className="ml-1 inline-flex items-center gap-1 text-muted-foreground">
               <Lock className="h-3 w-3" /> Super Admin always has full access.
             </span>
           </p>
@@ -97,8 +97,8 @@ export function RolesClient({ roles, initialMatrix, canEdit }: Props) {
             className={cn(
               "rounded-xl border px-4 py-2 text-sm font-semibold transition",
               activeRole === r
-                ? "border-brand-green bg-brand-green text-white shadow-sm"
-                : "border-gray-200 bg-white text-gray-600 hover:border-brand-green/40",
+                ? "border-primary bg-primary text-white shadow-sm"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40",
             )}
           >
             {r}
@@ -106,13 +106,13 @@ export function RolesClient({ roles, initialMatrix, canEdit }: Props) {
         ))}
       </div>
 
-      <p className="text-sm text-gray-500">{ROLE_BLURB[activeRole]}</p>
+      <p className="text-sm text-muted-foreground">{ROLE_BLURB[activeRole]}</p>
 
       {/* Permissions matrix */}
-      <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
+            <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
               <th className="px-4 py-3 font-semibold">Module</th>
               {ACTIONS.map((a) => (
                 <th key={a} className="px-4 py-3 text-center font-semibold capitalize">
@@ -123,13 +123,13 @@ export function RolesClient({ roles, initialMatrix, canEdit }: Props) {
           </thead>
           <tbody>
             {MODULES.map((m) => (
-              <tr key={m.key} className="border-b border-gray-50 last:border-0">
-                <td className="px-4 py-3 font-medium text-gray-700">{m.label}</td>
+              <tr key={m.key} className="border-b border-border last:border-0">
+                <td className="px-4 py-3 font-medium text-foreground">{m.label}</td>
                 {ACTIONS.map((a) => (
                   <td key={a} className="px-4 py-3 text-center">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 cursor-pointer accent-brand-green disabled:cursor-not-allowed"
+                      className="h-4 w-4 cursor-pointer accent-primary disabled:cursor-not-allowed"
                       checked={matrix[activeRole][m.key][a]}
                       disabled={!canEdit || isPending}
                       onChange={() => toggle(m.key, a)}
@@ -143,7 +143,7 @@ export function RolesClient({ roles, initialMatrix, canEdit }: Props) {
       </div>
 
       {!canEdit && (
-        <p className="text-xs text-gray-400">You have read-only access to this page.</p>
+        <p className="text-xs text-muted-foreground">You have read-only access to this page.</p>
       )}
     </div>
   );

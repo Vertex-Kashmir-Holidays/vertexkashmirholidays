@@ -28,9 +28,9 @@ interface Tour {
 
 const CATEGORY_STYLES: Record<string, string> = {
   HONEYMOON: "bg-pink-100 text-pink-700",
-  FAMILY: "bg-blue-100 text-blue-700",
-  ADVENTURE: "bg-orange-100 text-orange-700",
-  LUXURY: "bg-yellow-100 text-yellow-700",
+  FAMILY: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  ADVENTURE: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  LUXURY: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -83,14 +83,14 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-brand-navy text-xl">Packages (Tours)</h2>
-          <p className="text-gray-400 text-xs mt-0.5">
+          <h2 className="font-display font-extrabold text-foreground text-xl">Packages (Tours)</h2>
+          <p className="text-muted-foreground text-xs mt-0.5">
             Manage all packages, itineraries and pricing
           </p>
         </div>
         <Link
           href="/admin/packages/new"
-          className="flex items-center gap-2 bg-brand-green hover:bg-brand-green/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-brand-green/25 shrink-0"
+          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
         >
           <Plus className="w-4 h-4" />
           New Package
@@ -98,27 +98,27 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-card rounded-2xl border border-border shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3 p-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search packages..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition bg-gray-50/50"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
             />
           </div>
 
           {/* Category filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/25 focus:border-brand-green transition bg-gray-50/50 appearance-none"
+              className="pl-9 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none"
             >
               <option value="ALL">All Categories</option>
               <option value="HONEYMOON">Honeymoon</option>
@@ -126,10 +126,10 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
               <option value="ADVENTURE">Adventure</option>
               <option value="LUXURY">Luxury</option>
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           </div>
 
-          <p className="text-xs text-gray-400 self-center shrink-0">
+          <p className="text-xs text-muted-foreground self-center shrink-0">
             Showing {filtered.length} of {initialTours.length}
           </p>
         </div>
@@ -138,18 +138,18 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-t border-b border-gray-100">
+              <tr className="bg-muted border-t border-b border-border">
                 {["Tour", "Category", "Duration", "Price", "Rating", "Status", "Date", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     {search || categoryFilter !== "ALL"
                       ? "No packages match your filters."
                       : "No packages yet. Create your first one!"}
@@ -157,7 +157,7 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                 </tr>
               ) : (
                 filtered.map((tour) => (
-                  <tr key={tour.id} className={cn("hover:bg-gray-50/50 transition-colors", confirmDelete === tour.id && "bg-red-50/30")}>
+                  <tr key={tour.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === tour.id && "bg-red-500/10/30")}>
                     {/* Tour */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 max-w-xs">
@@ -171,28 +171,28 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                           />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-brand-navy text-xs leading-tight truncate max-w-[160px]">
+                          <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">
                             {tour.title}
                           </p>
-                          <p className="text-[10px] text-gray-400 truncate">/tours/{tour.slug}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">/tours/{tour.slug}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* Category */}
                     <td className="px-4 py-3">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", CATEGORY_STYLES[tour.category] ?? "bg-gray-100 text-gray-500")}>
+                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", CATEGORY_STYLES[tour.category] ?? "bg-muted text-muted-foreground")}>
                         {CATEGORY_LABELS[tour.category] ?? tour.category}
                       </span>
                     </td>
 
                     {/* Duration */}
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {tour.duration}D
                     </td>
 
                     {/* Price */}
-                    <td className="px-4 py-3 text-xs font-bold text-brand-navy whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
                       ₹{tour.priceFrom.toLocaleString("en-IN")}
                     </td>
 
@@ -200,11 +200,11 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 shrink-0" />
-                        <span className="text-xs font-semibold text-brand-navy">
+                        <span className="text-xs font-semibold text-foreground">
                           {tour.rating > 0 ? tour.rating.toFixed(1) : "—"}
                         </span>
                         {tour.reviewCount > 0 && (
-                          <span className="text-[10px] text-gray-400">({tour.reviewCount})</span>
+                          <span className="text-[10px] text-muted-foreground">({tour.reviewCount})</span>
                         )}
                       </div>
                     </td>
@@ -212,18 +212,18 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                     {/* Status */}
                     <td className="px-4 py-3">
                       {tour.published ? (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full w-fit">
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full w-fit">
                           <CheckCircle2 className="w-3 h-3" /> Published
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full w-fit">
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full w-fit">
                           <Clock className="w-3 h-3" /> Draft
                         </span>
                       )}
                     </td>
 
                     {/* Date */}
-                    <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(tour.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
                     </td>
 
@@ -240,7 +240,7 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                           </button>
                           <button
                             onClick={() => setConfirmDelete(null)}
-                            className="text-[10px] font-bold text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg border border-gray-200 transition-colors"
+                            className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
                           >
                             Cancel
                           </button>
@@ -249,14 +249,14 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                         <div className="flex items-center gap-1">
                           <Link
                             href={`/admin/packages/${tour.id}/edit`}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-brand-green hover:bg-brand-green/10 transition-colors"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             title="Edit"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </Link>
                           <button
                             onClick={() => setConfirmDelete(tour.id)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

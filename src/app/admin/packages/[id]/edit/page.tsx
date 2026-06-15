@@ -49,23 +49,23 @@ export default async function EditPackagePage({ params }: Props) {
     <div className="space-y-5">
       {/* Breadcrumb */}
       <nav>
-        <ol className="flex items-center gap-1.5 text-xs text-gray-400">
-          <li><Link href="/admin/packages" className="hover:text-brand-green transition-colors">Packages</Link></li>
+        <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <li><Link href="/admin/packages" className="hover:text-primary transition-colors">Packages</Link></li>
           <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
-          <li className="text-brand-navy font-medium line-clamp-1 max-w-[200px]">{tour.title}</li>
+          <li className="text-foreground font-medium line-clamp-1 max-w-[200px]">{tour.title}</li>
         </ol>
       </nav>
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-brand-navy text-xl">Edit Package</h2>
-          <p className="text-gray-400 text-xs mt-0.5">{tour.title}</p>
+          <h2 className="font-display font-extrabold text-foreground text-xl">Edit Package</h2>
+          <p className="text-muted-foreground text-xs mt-0.5">{tour.title}</p>
         </div>
         <a
           href={`/tours/${tour.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-brand-green font-semibold hover:underline shrink-0"
+          className="text-xs text-primary font-semibold hover:underline shrink-0"
         >
           View Live ↗
         </a>

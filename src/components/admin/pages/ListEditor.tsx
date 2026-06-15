@@ -22,7 +22,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/25";
+  "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
 function toInput(value: unknown, type: FieldDef["type"]): string {
   if (value == null) return "";
@@ -128,49 +128,49 @@ export function ListEditor({ title, description, resource, fields, items, canCre
   }
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-gray-50 px-5 py-3.5">
+    <div className="rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <div>
-          <h3 className="text-sm font-bold text-brand-navy">{title}</h3>
-          {description && <p className="text-xs text-gray-400">{description}</p>}
+          <h3 className="text-sm font-bold text-foreground">{title}</h3>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
         {canCreate && (
           <button
             onClick={openNew}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-green px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-110"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-110"
           >
             <Plus className="h-3.5 w-3.5" /> Add
           </button>
         )}
       </div>
 
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-border">
         {items.length === 0 ? (
-          <p className="px-5 py-6 text-center text-xs text-gray-400">No items yet.</p>
+          <p className="px-5 py-6 text-center text-xs text-muted-foreground">No items yet.</p>
         ) : (
           items.map((item) => (
             <div key={item.id} className="flex items-center gap-3 px-5 py-3">
               {meta.sortable && (
-                <span className="w-6 shrink-0 text-[11px] font-medium text-gray-300">{item.sortOrder ?? 0}</span>
+                <span className="w-6 shrink-0 text-[11px] font-medium text-muted-foreground/60">{item.sortOrder ?? 0}</span>
               )}
               <div className="min-w-0 flex-1">
-                <p className={cn("truncate text-sm font-medium", item.isActive === false ? "text-gray-400" : "text-brand-navy")}>
+                <p className={cn("truncate text-sm font-medium", item.isActive === false ? "text-muted-foreground" : "text-foreground")}>
                   {String(item[primaryKey] ?? "—")}
                 </p>
                 {fields[1] && (
-                  <p className="truncate text-xs text-gray-400">{String(item[fields[1].key] ?? "")}</p>
+                  <p className="truncate text-xs text-muted-foreground">{String(item[fields[1].key] ?? "")}</p>
                 )}
               </div>
               {meta.activatable && item.isActive === false && (
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-400">Hidden</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Hidden</span>
               )}
               {meta.activatable && canEdit && (
-                <button onClick={() => toggleActive(item)} className="text-gray-400 hover:text-brand-green" aria-label="Toggle visibility">
+                <button onClick={() => toggleActive(item)} className="text-muted-foreground hover:text-primary" aria-label="Toggle visibility">
                   {item.isActive === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               )}
               {canEdit && (
-                <button onClick={() => openEdit(item)} className="text-gray-400 hover:text-brand-navy" aria-label="Edit">
+                <button onClick={() => openEdit(item)} className="text-muted-foreground hover:text-foreground" aria-label="Edit">
                   <Pencil className="h-4 w-4" />
                 </button>
               )}
@@ -180,10 +180,10 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                     <button onClick={() => remove(item.id)} disabled={busy} className="rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
                       Delete
                     </button>
-                    <button onClick={() => setConfirmDelete(null)} className="text-[11px] text-gray-400">Cancel</button>
+                    <button onClick={() => setConfirmDelete(null)} className="text-[11px] text-muted-foreground">Cancel</button>
                   </span>
                 ) : (
-                  <button onClick={() => setConfirmDelete(item.id)} className="text-gray-400 hover:text-red-500" aria-label="Delete">
+                  <button onClick={() => setConfirmDelete(item.id)} className="text-muted-foreground hover:text-red-500 dark:text-red-400" aria-label="Delete">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 ))}
@@ -196,18 +196,18 @@ export function ListEditor({ title, description, resource, fields, items, canCre
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={close} />
-          <div className="relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+          <div className="relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-card p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h4 className="font-display text-base font-bold text-brand-navy">
+              <h4 className="font-display text-base font-bold text-foreground">
                 {editing === "new" ? `Add to ${title}` : `Edit ${title}`}
               </h4>
-              <button onClick={close} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <button onClick={close} className="text-muted-foreground hover:text-muted-foreground"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="space-y-3.5">
               {fields.map((f) => (
                 <div key={f.key}>
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">
+                  <label className="mb-1 block text-xs font-semibold text-muted-foreground">
                     {f.label}{f.required && <span className="text-red-400"> *</span>}
                   </label>
                   {f.type === "image" ? (
@@ -236,13 +236,13 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                 <div className="flex items-center gap-4">
                   {meta.sortable && (
                     <div className="w-28">
-                      <label className="mb-1 block text-xs font-semibold text-gray-600">Sort order</label>
+                      <label className="mb-1 block text-xs font-semibold text-muted-foreground">Sort order</label>
                       <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className={inputCls} />
                     </div>
                   )}
                   {meta.activatable && (
-                    <label className="mt-5 flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-brand-green" />
+                    <label className="mt-5 flex items-center gap-2 text-sm font-medium text-foreground">
+                      <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-primary" />
                       Visible on site
                     </label>
                   )}
@@ -251,11 +251,11 @@ export function ListEditor({ title, description, resource, fields, items, canCre
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={close} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600">Cancel</button>
+              <button onClick={close} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">Cancel</button>
               <button
                 onClick={save}
                 disabled={busy}
-                className="flex items-center gap-2 rounded-xl bg-brand-green px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 Save
