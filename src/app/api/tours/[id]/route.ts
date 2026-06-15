@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { z } from "zod";
 import { TourCategory } from "@prisma/client";
 
@@ -28,15 +28,9 @@ const patchSchema = z.object({
   ogImage: z.string().optional().nullable(),
 });
 
-async function requireAdmin() {
-  const session = await auth();
-  if (!session || session.user?.role !== "ADMIN") return null;
-  return session;
-}
-
 export async function GET(_req: NextRequest, { params }: Params) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("packages", "view");
+  if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
   const tour = await prisma.tour.findUnique({ where: { id } });
@@ -45,8 +39,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("packages", "edit");
+  if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
   const existing = await prisma.tour.findUnique({ where: { id } });
@@ -82,8 +76,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("packages", "delete");
+  if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
   const existing = await prisma.tour.findUnique({ where: { id } });

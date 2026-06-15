@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { BookingStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -8,10 +8,8 @@ export const dynamic = "force-dynamic";
 const VALID_STATUSES = ["PENDING", "PAID", "FAILED", "CANCELLED", "REFUNDED"] as const;
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("bookings", "view");
+  if (guard instanceof NextResponse) return guard;
 
   const { searchParams } = new URL(req.url);
   const rawStatus = searchParams.get("status") ?? "";

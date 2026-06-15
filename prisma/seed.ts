@@ -4,18 +4,97 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  // ── Admin user ──────────────────────────────────────────────────────────────
+  // ── Super admin user ─────────────────────────────────────────────────────────
   await prisma.user.upsert({
     where: { email: "admin@vertex.com" },
-    update: {},
+    update: { role: Role.SUPERADMIN },
     create: {
       email: "admin@vertex.com",
       name: "Admin",
       passwordHash: await bcrypt.hash("admin123", 12),
-      role: Role.ADMIN,
+      role: Role.SUPERADMIN,
     },
   });
-  console.log("✓ Admin user");
+  console.log("✓ Super admin user");
+
+  // ── Default role permissions ─────────────────────────────────────────────────
+  // SUPERADMIN is handled in code (full-access bypass), so no rows are needed for it.
+  // Action tuple order: [view, create, edit, delete].
+  const ALL: [boolean, boolean, boolean, boolean] = [true, true, true, true];
+  const VIEW: [boolean, boolean, boolean, boolean] = [true, false, false, false];
+  const VIEW_EDIT: [boolean, boolean, boolean, boolean] = [true, false, true, false];
+  const NONE: [boolean, boolean, boolean, boolean] = [false, false, false, false];
+
+  const PERMISSION_DEFAULTS: Record<
+    "ADMIN" | "SALES" | "EDITOR",
+    Record<string, [boolean, boolean, boolean, boolean]>
+  > = {
+    ADMIN: {
+      dashboard: VIEW,
+      packages: ALL,
+      destinations: ALL,
+      bookings: ALL,
+      inquiries: ALL,
+      users: ALL,
+      galleries: ALL,
+      blogs: ALL,
+      home: ALL,
+      about: ALL,
+      contact: ALL,
+      campaigns: ALL,
+      reviews: ALL,
+      seo: ALL,
+      settings: ALL,
+      roles: ALL,
+    },
+    SALES: {
+      dashboard: VIEW,
+      packages: VIEW,
+      destinations: VIEW,
+      bookings: ALL,
+      inquiries: VIEW_EDIT,
+      users: VIEW_EDIT,
+      galleries: NONE,
+      blogs: NONE,
+      home: NONE,
+      about: NONE,
+      contact: NONE,
+      campaigns: NONE,
+      reviews: VIEW_EDIT,
+      seo: NONE,
+      settings: NONE,
+      roles: NONE,
+    },
+    EDITOR: {
+      dashboard: VIEW,
+      packages: ALL,
+      destinations: ALL,
+      bookings: VIEW,
+      inquiries: VIEW,
+      users: NONE,
+      galleries: ALL,
+      blogs: ALL,
+      home: ALL,
+      about: ALL,
+      contact: ALL,
+      campaigns: ALL,
+      reviews: VIEW_EDIT,
+      seo: ALL,
+      settings: NONE,
+      roles: NONE,
+    },
+  };
+
+  for (const [role, modules] of Object.entries(PERMISSION_DEFAULTS)) {
+    for (const [module, [canView, canCreate, canEdit, canDelete]] of Object.entries(modules)) {
+      await prisma.rolePermission.upsert({
+        where: { role_module: { role: role as Role, module } },
+        update: {},
+        create: { role: role as Role, module, canView, canCreate, canEdit, canDelete },
+      });
+    }
+  }
+  console.log("✓ Default role permissions");
 
   // ── Destinations ────────────────────────────────────────────────────────────
   const gulmarg = await prisma.destination.upsert({

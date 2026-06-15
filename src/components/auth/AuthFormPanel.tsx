@@ -3,6 +3,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 
 interface AuthFormPanelProps {
@@ -11,8 +13,107 @@ interface AuthFormPanelProps {
 }
 
 export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Login fields
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  // Register fields
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirm, setRegConfirm] = useState('');
+
+  // After a successful sign-in, send the user to the page they came from
+  // (?callbackUrl=…), or to the role-aware landing endpoint which routes staff
+  // vs customers. Only same-origin relative paths are honoured.
+  function destination() {
+    const cb = new URLSearchParams(window.location.search).get('callbackUrl');
+    if (cb) {
+      try {
+        const path = new URL(cb, window.location.origin).pathname;
+        if (path.startsWith('/') && !path.startsWith('/login')) return path;
+      } catch {
+        /* ignore malformed callbackUrl */
+      }
+    }
+    return '/auth/redirect';
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
+    const result = await signIn('credentials', {
+      email: loginEmail,
+      password: loginPassword,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError('Invalid email or password.');
+      setSubmitting(false);
+      return;
+    }
+
+    router.push(destination());
+    router.refresh();
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (regPassword !== regConfirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Registration failed. Please try again.');
+      setSubmitting(false);
+      return;
+    }
+
+    const result = await signIn('credentials', {
+      email: regEmail,
+      password: regPassword,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError('Account created, but sign-in failed. Please log in.');
+      setSubmitting(false);
+      onViewChange('login');
+      return;
+    }
+
+    router.push(destination());
+    router.refresh();
+  }
 
   const oauthButtons = (
     <div className="space-y-3">
@@ -78,11 +179,24 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   Log in to your account to manage your bookings, view itineraries and more.
                 </p>
 
-                <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+                  {view === 'login' && error && (
+                    <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-[12px] font-semibold text-red-600">
+                      {error}
+                    </p>
+                  )}
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="liEmail">Email address</label>
                     <div className="input-wrap mt-1.5">
-                      <input id="liEmail" type="email" required placeholder="Enter your email" autoComplete="email" />
+                      <input
+                        id="liEmail"
+                        type="email"
+                        required
+                        placeholder="Enter your email"
+                        autoComplete="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                      />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />
                         <path d="m22 7-10 6L2 7" />
@@ -98,6 +212,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         required
                         placeholder="Enter your password"
                         autoComplete="current-password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
                       />
                       <button
                         type="button"
@@ -133,9 +249,10 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   </label>
                   <button
                     type="submit"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-soft transition hover:brightness-110"
+                    disabled={submitting}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Log In
+                    {submitting ? 'Logging in…' : 'Log In'}
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14M13 6l6 6-6 6" />
                     </svg>
@@ -192,11 +309,23 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   Join thousands of happy travellers.<br/>It only takes a minute.
                 </p>
 
-                <form className="mt-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="mt-6 space-y-4" onSubmit={handleRegister}>
+                  {view === 'register' && error && (
+                    <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-[12px] font-semibold text-red-600">
+                      {error}
+                    </p>
+                  )}
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgName">Full name</label>
                     <div className="input-wrap mt-1.5">
-                      <input id="rgName" required placeholder="Enter your full name" autoComplete="name" />
+                      <input
+                        id="rgName"
+                        required
+                        placeholder="Enter your full name"
+                        autoComplete="name"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                      />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4 21a8 8 0 0 1 16 0" />
@@ -206,7 +335,15 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgEmail">Email address</label>
                     <div className="input-wrap mt-1.5">
-                      <input id="rgEmail" type="email" required placeholder="Enter your email" autoComplete="email" />
+                      <input
+                        id="rgEmail"
+                        type="email"
+                        required
+                        placeholder="Enter your email"
+                        autoComplete="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                      />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />
                         <path d="m22 7-10 6L2 7" />
@@ -227,7 +364,15 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         </svg>
                         +91
                       </button>
-                      <input id="rgPhone" type="tel" required placeholder="Enter your phone number" autoComplete="tel" />
+                      <input
+                        id="rgPhone"
+                        type="tel"
+                        required
+                        placeholder="Enter your phone number"
+                        autoComplete="tel"
+                        value={regPhone}
+                        onChange={(e) => setRegPhone(e.target.value)}
+                      />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-brand-mute/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
                       </svg>
@@ -242,6 +387,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         required
                         placeholder="Create a password"
                         autoComplete="new-password"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
                       />
                       <button
                         type="button"
@@ -277,6 +424,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         required
                         placeholder="Confirm your password"
                         autoComplete="new-password"
+                        value={regConfirm}
+                        onChange={(e) => setRegConfirm(e.target.value)}
                       />
                       <button
                         type="button"
@@ -313,9 +462,10 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   </label>
                   <button
                     type="submit"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-soft transition hover:brightness-110"
+                    disabled={submitting}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3 text-[13.5px] font-bold text-white shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Create Account
+                    {submitting ? 'Creating account…' : 'Create Account'}
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14M13 6l6 6-6 6" />
                     </svg>

@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/permissions";
 import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
-
-async function requireAdmin() {
-  const session = await auth();
-  if (!session || session.user?.role !== "ADMIN") return null;
-  return session;
-}
 
 const patchSchema = z.object({
   approved: z.boolean(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("reviews", "edit");
+  if (guard instanceof NextResponse) return guard;
   const { id } = await params;
   const existing = await prisma.review.findUnique({ where: { id }, include: { tour: { select: { id: true } } } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -48,8 +42,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("reviews", "delete");
+  if (guard instanceof NextResponse) return guard;
   const { id } = await params;
   const existing = await prisma.review.findUnique({ where: { id }, include: { tour: { select: { id: true } } } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
