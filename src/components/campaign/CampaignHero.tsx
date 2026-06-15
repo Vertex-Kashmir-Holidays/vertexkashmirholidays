@@ -15,6 +15,7 @@ interface CampaignHeroProps {
   proofCount: string | null;
   filmDur: string | null;
   heroImage: string | null;
+  heroImageMobile: string | null;
   particles: 'snow' | 'embers';
   phone: string | null;
   onFilmClick: () => void;
@@ -32,6 +33,7 @@ export function CampaignHero({
   proofCount,
   filmDur,
   heroImage,
+  heroImageMobile,
   particles,
   phone,
   onFilmClick,
@@ -95,14 +97,23 @@ export function CampaignHero({
     <section className="relative z-[2] -mt-[76px] min-h-[100svh] overflow-hidden">
       <div className="absolute inset-0">
         {heroImage && (
-          <motion.img
-            src={heroImage}
-            alt="Campaign hero"
-            className="kb absolute inset-0 h-full w-full object-cover"
+          <motion.div
+            className="absolute inset-0"
             initial={{ scale: 1 }}
             animate={{ scale: 1.14 }}
             transition={{ duration: 16, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-          />
+          >
+            <picture className="block h-full w-full">
+              {heroImageMobile && (
+                <source media="(max-width: 640px)" srcSet={heroImageMobile} />
+              )}
+              <img
+                src={heroImage}
+                alt="Campaign hero"
+                className="kb h-full w-full object-cover"
+              />
+            </picture>
+          </motion.div>
         )}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(100deg,hsl(202 50% 5% / .92) 8%,hsl(202 50% 5% / .55) 45%,hsl(202 50% 5% / .25) 75%)' }}></div>
         <div className="absolute inset-x-0 bottom-0 h-48" style={{ background: 'linear-gradient(transparent,hsl(202 50% 5%))' }}></div>

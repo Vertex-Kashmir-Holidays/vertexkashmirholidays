@@ -13,14 +13,23 @@ export function ContactHero({ data, features }: ContactHeroProps) {
   return (
     <section className="relative overflow-hidden bg-brand-dark">
       {data.image && (
-        <motion.img
-          src={data.image}
-          alt="Houseboats on Dal Lake at dusk"
-          className="absolute inset-0 h-full w-full object-cover"
+        <motion.div
+          className="absolute inset-0"
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        />
+        >
+          <picture className="block h-full w-full">
+            {data.imageMobile && (
+              <source media="(max-width: 640px)" srcSet={data.imageMobile} />
+            )}
+            <img
+              src={data.image}
+              alt="Houseboats on Dal Lake at dusk"
+              className="h-full w-full object-cover"
+            />
+          </picture>
+        </motion.div>
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/40 to-transparent"></div>
 

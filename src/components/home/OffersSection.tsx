@@ -34,7 +34,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
   if (offers.length === 0) return null;
 
   return (
-    <section id="offers" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
+    <section id="offers" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
@@ -72,7 +72,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
       </div>
 
       <motion.div
-        className="mt-9 grid gap-6 lg:grid-cols-3"
+        className="mt-9 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"

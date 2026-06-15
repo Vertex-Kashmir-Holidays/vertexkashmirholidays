@@ -10,6 +10,7 @@ export interface SectionHeading {
 
 export interface HeroSlideData {
   image: string;
+  imageMobile: string | null;
   alt: string | null;
 }
 

@@ -606,7 +606,8 @@ async function main() {
       heroKicker: "TRAVEL BLOG",
       heroTitle: "Kashmir Stories & Travel Guide",
       heroSubtitle: "Real stories, local tips, and travel inspiration from the heart of Kashmir.",
-      heroImage: "https://picsum.photos/seed/blog-hero/1800/520",
+      heroImage: "/hero/doodhpathri-lg.webp",
+      heroImageMobile: "/hero/doodhpathri.webp",
       heroSearchPlaceholder: "Search articles, guides, destinations...",
       aboutTitle: "About Our Blog",
       aboutText:
@@ -819,13 +820,13 @@ async function main() {
   await prisma.heroSlide.deleteMany();
   await prisma.heroSlide.createMany({
     data: [
-      { image: "/hero/hero.webp", alt: "Kashmir valley panorama", sortOrder: 0 },
-      { image: "/hero/gulmarg.webp", alt: "Gulmarg meadows", sortOrder: 1 },
-      { image: "/hero/srinagar.webp", alt: "Srinagar and Dal Lake", sortOrder: 2 },
-      { image: "/hero/pahalgam.webp", alt: "Pahalgam valley", sortOrder: 3 },
-      { image: "/hero/sonamarg.webp", alt: "Sonamarg meadows", sortOrder: 4 },
-      { image: "/hero/gurez.webp", alt: "Gurez valley", sortOrder: 5 },
-      { image: "/hero/shikara.webp", alt: "Shikara on Dal Lake", sortOrder: 6 },
+      { image: "/hero/hero-lg.webp", imageMobile: "/hero/hero.webp", alt: "Kashmir valley panorama", sortOrder: 0 },
+      { image: "/hero/gulmarg-lg.webp", imageMobile: "/hero/gulmarg.webp", alt: "Gulmarg meadows", sortOrder: 1 },
+      { image: "/hero/srinagar-lg.webp", imageMobile: "/hero/srinagar.webp", alt: "Srinagar and Dal Lake", sortOrder: 2 },
+      { image: "/hero/pahalgam-lg.webp", imageMobile: "/hero/pahalgam.webp", alt: "Pahalgam valley", sortOrder: 3 },
+      { image: "/hero/sonamarg-lg.webp", imageMobile: "/hero/sonamarg.webp", alt: "Sonamarg meadows", sortOrder: 4 },
+      { image: "/hero/gurez-lg.webp", imageMobile: "/hero/gurez.webp", alt: "Gurez valley", sortOrder: 5 },
+      { image: "/hero/shikara-lg.webp", imageMobile: "/hero/shikara.webp", alt: "Shikara on Dal Lake", sortOrder: 6 },
     ],
   });
   console.log("✓ HeroSlides");
@@ -947,7 +948,8 @@ async function main() {
       heroTitle: "We're Here When You Need Us",
       heroSubtitle:
         "Questions, custom trip requests, or just want local advice? Our team in Srinagar is ready to help you 24×7.",
-      heroImage: "https://picsum.photos/seed/contact-hero/1800/600",
+      heroImage: "/hero/lidder-reiver-lg.webp",
+      heroImageMobile: "/hero/lidder-river.webp",
       reachKicker: "GET IN TOUCH",
       reachTitle: "Many Ways to Reach Us",
       promiseKicker: "WE CARE ABOUT YOUR TIME",
@@ -1042,7 +1044,8 @@ async function main() {
       titleHtml:
         'Learn to ski on Asia\'s <span class="grad-accent-text italic">best powder</span> — in 6 days',
       sub: "Certified instructors, all gear included, and the Gulmarg Gondola at your doorstep. Built for absolute beginners and rusty intermediates.",
-      heroImage: img("camp-ski-hero", 1800, 980),
+      heroImage: "/hero/gulmarg-winter-lg.webp",
+      heroImageMobile: "/hero/gulmarg-winter.webp",
       finalImage: img("camp-ski-final", 1800, 700),
       facts: JSON.stringify(["6D / 5N", "Gulmarg", "Beginner-friendly", "Max 12 / batch", "Jan – Mar"]),
       heroCta: "Reserve My Ski Week",
@@ -1169,7 +1172,8 @@ async function main() {
       heroTitle: "Born in *Kashmir.*\nBuilt on *Trust.*",
       heroSubtitle:
         "We are locals, not just planners. We live here, we explore every day, and we design journeys we would take with our own families. Honest pricing, real experiences, unforgettable memories.",
-      heroImage: "https://picsum.photos/seed/about-hero/1800/640",
+      heroImage: "/hero/pahalgam2-lg.webp",
+      heroImageMobile: "/hero/pahalgam2.webp",
       heroCtaPrimaryLabel: "Our Story",
       heroCtaPrimaryHref: "#story",
       heroCtaSecondaryLabel: "Meet the Team",

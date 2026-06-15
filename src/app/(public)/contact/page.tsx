@@ -118,6 +118,7 @@ export default async function ContactPage() {
           title: content?.heroTitle ?? null,
           subtitle: content?.heroSubtitle ?? null,
           image: content?.heroImage ?? null,
+          imageMobile: content?.heroImageMobile ?? null,
         }}
         features={heroFeatures.map((f) => ({
           id: f.id,

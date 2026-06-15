@@ -19,7 +19,7 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
   if (testimonials.length === 0) return null;
 
   return (
-    <section id="testimonials" className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-16 sm:pt-24">
+    <section id="testimonials" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>

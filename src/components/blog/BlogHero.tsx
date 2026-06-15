@@ -13,14 +13,23 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
   return (
     <section className="relative overflow-hidden bg-brand-dark">
       {content.heroImage && (
-        <motion.img
-          src={content.heroImage}
-          alt="Houseboats on a Kashmir lake"
-          className="absolute inset-0 h-full w-full object-cover"
+        <motion.div
+          className="absolute inset-0"
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        />
+        >
+          <picture className="block h-full w-full">
+            {content.heroImageMobile && (
+              <source media="(max-width: 640px)" srcSet={content.heroImageMobile} />
+            )}
+            <img
+              src={content.heroImage}
+              alt="Houseboats on a Kashmir lake"
+              className="h-full w-full object-cover"
+            />
+          </picture>
+        </motion.div>
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/80 via-brand-dark/40 to-brand-dark/20"></div>
 

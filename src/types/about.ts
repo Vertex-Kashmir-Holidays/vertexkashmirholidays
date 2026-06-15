@@ -5,6 +5,7 @@ export interface AboutHeroData {
   title: string | null;
   subtitle: string | null;
   image: string | null;
+  imageMobile: string | null;
   ctaPrimaryLabel: string | null;
   ctaPrimaryHref: string | null;
   ctaSecondaryLabel: string | null;

@@ -150,7 +150,7 @@ export default async function HomePage() {
           formNote: content?.formNote ?? null,
           formAvatars,
         }}
-        slides={slides.map((s) => ({ image: s.image, alt: s.alt }))}
+        slides={slides.map((s) => ({ image: s.image, imageMobile: s.imageMobile, alt: s.alt }))}
         stats={stats
           .filter((s) => s.section === "hero")
           .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}

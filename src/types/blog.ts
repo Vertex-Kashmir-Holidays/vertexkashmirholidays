@@ -5,6 +5,7 @@ export interface BlogPageContent {
   heroTitle: string | null;
   heroSubtitle: string | null;
   heroImage: string | null;
+  heroImageMobile: string | null;
   heroSearchPlaceholder: string | null;
   aboutTitle: string | null;
   aboutText: string | null;

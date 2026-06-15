@@ -32,6 +32,7 @@ export default async function AboutPage() {
           title: content?.heroTitle ?? null,
           subtitle: content?.heroSubtitle ?? null,
           image: content?.heroImage ?? null,
+          imageMobile: content?.heroImageMobile ?? null,
           ctaPrimaryLabel: content?.heroCtaPrimaryLabel ?? null,
           ctaPrimaryHref: content?.heroCtaPrimaryHref ?? null,
           ctaSecondaryLabel: content?.heroCtaSecondaryLabel ?? null,
