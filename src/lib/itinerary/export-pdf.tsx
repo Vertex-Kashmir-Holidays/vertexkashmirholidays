@@ -1,12 +1,28 @@
 "use client";
 
 import { pdf } from "@react-pdf/renderer";
-import { ItineraryPdf } from "@/components/admin/itinerary/ItineraryPdf";
+import { ItineraryPdf, LOGO_SRC } from "@/components/admin/itinerary/ItineraryPdf";
 import { compressMany } from "@/lib/itinerary/compress-image";
 import type { ItineraryData } from "@/types/itinerary";
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "itinerary";
+}
+
+/**
+ * Fetch a static asset and return it as a data URL. Used for the brand logo so
+ * it embeds losslessly (preserving PNG transparency) rather than going through
+ * the JPEG compression path used for photos.
+ */
+async function fetchAsDataUrl(url: string): Promise<string> {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 export interface ExportResult {
@@ -26,11 +42,12 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   ].filter(Boolean);
 
   // The cover wants a larger, fuller-bleed image; day thumbnails stay tiny.
-  const [coverImages, smallImages] = await Promise.all([
+  const [coverImages, smallImages, logo] = await Promise.all([
     compressMany([data.coverImage].filter(Boolean), { maxWidth: 900, maxHeight: 1300, quality: 0.6 }),
     compressMany(srcs.filter((s) => s !== data.coverImage), { maxWidth: 640, maxHeight: 480, quality: 0.7 }),
+    fetchAsDataUrl(LOGO_SRC).catch(() => ""),
   ]);
-  const images = { ...smallImages, ...coverImages };
+  const images = { ...smallImages, ...coverImages, ...(logo ? { [LOGO_SRC]: logo } : {}) };
 
   const blob = await pdf(<ItineraryPdf data={data} images={images} />).toBlob();
 

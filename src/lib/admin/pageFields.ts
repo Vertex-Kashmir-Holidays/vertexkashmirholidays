@@ -3,7 +3,7 @@
 // API (server). All list models share `sortOrder` + `isActive`, appended below.
 import { z } from "zod";
 
-export type FieldType = "text" | "textarea" | "number" | "date" | "image" | "boolean";
+export type FieldType = "text" | "textarea" | "number" | "date" | "image" | "video" | "boolean";
 
 export interface FieldDef {
   key: string;
@@ -21,7 +21,7 @@ function fieldSchema(f: FieldDef): z.ZodTypeAny {
       return z.coerce.date().nullish();
     case "boolean":
       return z.boolean().optional();
-    default: // text | textarea | image are all strings
+    default: // text | textarea | image | video are all strings
       return f.required
         ? z.string().min(1, `${f.label} is required`)
         : z.string().nullish();
@@ -95,7 +95,7 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "place", label: "Place", type: "text" },
     { key: "duration", label: "Duration", type: "text", placeholder: "2:30" },
     { key: "thumbnail", label: "Thumbnail", type: "image", required: true },
-    { key: "videoUrl", label: "Video URL", type: "text" },
+    { key: "videoUrl", label: "Video URL", type: "video" },
   ],
   homeSections: [
     { key: "key", label: "Section key", type: "text", required: true, placeholder: "packages / destinations" },

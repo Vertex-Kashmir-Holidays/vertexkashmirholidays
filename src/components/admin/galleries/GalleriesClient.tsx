@@ -3,12 +3,15 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, Tag, X } from "lucide-react";
+import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type MediaType = "IMAGE" | "VIDEO";
 
 interface GalleryItem {
   id: string;
   url: string;
+  type: string; // "IMAGE" | "VIDEO" — stored as a plain string column
   alt: string | null;
   caption: string | null;
   category: string | null;
@@ -31,10 +34,14 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
   const [newCategory, setNewCategory] = useState("");
   const [newAlt, setNewAlt] = useState("");
   const [editItem, setEditItem] = useState<GalleryItem | null>(null);
+  const [typeFilter, setTypeFilter] = useState<"ALL" | MediaType>("ALL");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const filtered = categoryFilter === "ALL"
-    ? initialItems
-    : initialItems.filter((i) => i.category === categoryFilter);
+  const filtered = initialItems.filter(
+    (i) =>
+      (categoryFilter === "ALL" || i.category === categoryFilter) &&
+      (typeFilter === "ALL" || i.type === typeFilter)
+  );
 
   async function handleUpload(files: FileList) {
     setUploading(true);
@@ -44,21 +51,41 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/uploads", { method: "POST", body: fd });
-        if (!res.ok) continue;
-        const { url } = await res.json() as { url: string };
+        if (!res.ok) {
+          const { error } = await res.json().catch(() => ({ error: "" }));
+          if (error) toast.error(error);
+          continue;
+        }
+        const { url, type } = await res.json() as { url: string; type: MediaType };
         await fetch("/api/galleries", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, category: newCategory || undefined, alt: newAlt || undefined }),
+          body: JSON.stringify({ url, type, category: newCategory || undefined, alt: newAlt || undefined }),
         });
         uploaded++;
       }
-      toast.success(`${uploaded} image${uploaded !== 1 ? "s" : ""} uploaded.`);
+      if (uploaded > 0) toast.success(`${uploaded} file${uploaded !== 1 ? "s" : ""} uploaded.`);
       router.refresh();
     } catch {
       toast.error("Upload failed.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleCopyUrl(item: GalleryItem) {
+    // Absolute URL so it can be pasted straight into blogs, the video review
+    // section, or anywhere else on the site.
+    const absolute = item.url.startsWith("http")
+      ? item.url
+      : `${window.location.origin}${item.url}`;
+    try {
+      await navigator.clipboard.writeText(absolute);
+      setCopiedId(item.id);
+      toast.success("URL copied to clipboard.");
+      setTimeout(() => setCopiedId((c) => (c === item.id ? null : c)), 1500);
+    } catch {
+      toast.error("Couldn't copy URL.");
     }
   }
 
@@ -100,13 +127,30 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Gallery</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">{totalCount} images across {categories.length} categories</p>
+          <p className="text-muted-foreground text-xs mt-0.5">{totalCount} items across {categories.length} categories</p>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_280px] gap-5">
         {/* Grid */}
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          {/* Type filter strip */}
+          <div className="flex items-center gap-2 p-4 pb-0 overflow-x-auto">
+            {([
+              { key: "ALL", label: "All media" },
+              { key: "IMAGE", label: "Images" },
+              { key: "VIDEO", label: "Videos" },
+            ] as const).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setTypeFilter(key)}
+                className={cn("text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors", typeFilter === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Category filter strip */}
           <div className="flex items-center gap-2 p-4 border-b border-border overflow-x-auto">
             <button
@@ -128,14 +172,25 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
 
           {/* Image grid */}
           {filtered.length === 0 ? (
-            <div className="py-20 text-center text-muted-foreground text-sm">No images yet. Upload some!</div>
+            <div className="py-20 text-center text-muted-foreground text-sm">No media yet. Upload some!</div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-4">
               {filtered.map((item) => (
                 <div key={item.id} className="relative group aspect-square rounded-xl overflow-hidden bg-muted">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.url} alt={item.alt ?? ""} className="w-full h-full object-cover" />
+                  {item.type === "VIDEO" ? (
+                    <video src={item.url} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.url} alt={item.alt ?? ""} className="w-full h-full object-cover" />
+                  )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                    <button
+                      onClick={() => handleCopyUrl(item)}
+                      className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
+                      title="Copy URL"
+                    >
+                      {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
                     <button
                       onClick={() => setEditItem({ ...item })}
                       className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
@@ -162,6 +217,11 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
                       </button>
                     )}
                   </div>
+                  {item.type === "VIDEO" && (
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md pointer-events-none">
+                      <Film className="w-2.5 h-2.5" /> VIDEO
+                    </span>
+                  )}
                   {item.category && (
                     <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md">
                       {item.category}
@@ -177,7 +237,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
         <div className="space-y-4">
           {/* Upload */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
-            <h3 className="font-bold text-foreground text-sm">Upload Images</h3>
+            <h3 className="font-bold text-foreground text-sm">Upload Media</h3>
 
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">Default Category</label>
@@ -202,11 +262,11 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
 
             <label className={cn("flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border rounded-xl cursor-pointer transition-colors hover:border-primary hover:bg-primary/5", uploading && "opacity-50 pointer-events-none")}>
               {uploading ? <Loader2 className="w-6 h-6 text-primary animate-spin" /> : <Upload className="w-6 h-6 text-muted-foreground" />}
-              <p className="text-xs font-semibold text-muted-foreground">{uploading ? "Uploading..." : "Click to select images"}</p>
-              <p className="text-[10px] text-muted-foreground">PNG, JPG, WebP • Max 5MB each</p>
+              <p className="text-xs font-semibold text-muted-foreground">{uploading ? "Uploading..." : "Click to select images or videos"}</p>
+              <p className="text-[10px] text-muted-foreground">Images (max 5MB) • Videos (max 50MB)</p>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 className="hidden"
                 disabled={uploading}
@@ -223,9 +283,20 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
                 <button onClick={() => setEditItem(null)} className="text-muted-foreground hover:text-muted-foreground"><X className="w-4 h-4" /></button>
               </div>
               <div className="aspect-video rounded-xl overflow-hidden bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={editItem.url} alt="" className="w-full h-full object-cover" />
+                {editItem.type === "VIDEO" ? (
+                  <video src={editItem.url} controls playsInline className="w-full h-full object-cover" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={editItem.url} alt="" className="w-full h-full object-cover" />
+                )}
               </div>
+              <button
+                onClick={() => handleCopyUrl(editItem)}
+                className="w-full flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+              >
+                {copiedId === editItem.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                Copy URL
+              </button>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">Alt Text</label>
                 <input

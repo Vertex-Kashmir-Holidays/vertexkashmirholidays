@@ -14,6 +14,10 @@ import {
 } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
 
+// Brand mark used on the cover and Thank-You pages. The data URL is supplied
+// through the `images` map (keyed by this path), matching the sidebar logo.
+export const LOGO_SRC = "/brand/icon.png";
+
 const C = {
   green: "#1d5c43",
   greenDark: "#10261b",
@@ -27,33 +31,61 @@ const C = {
   white: "#ffffff",
 };
 
-const s = StyleSheet.create({
-  page: { paddingVertical: 36, paddingHorizontal: 40, fontSize: 10, color: C.ink, fontFamily: "Helvetica", lineHeight: 1.45 },
-  footer: { position: "absolute", bottom: 18, left: 40, right: 40, textAlign: "center", fontSize: 7, color: C.muted, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 6 },
+// Single source of truth for company contact details, reused by the page
+// footer and the closing Thank-You page.
+const CONTACT = {
+  company: "Vertex Kashmir Tour & Travel",
+  reg: "J&K Tourism Registration number - JKTA0004560",
+  phone: "+91-7889577789 / +91-9682648388",
+  phonePrimary: "+91-7889577789", // single number for the compact page footer
+  address: "Tangmarg, Gulmarg, India - 193402",
+  email: "support@vertexkashmirholidays.com",
+};
 
-  // Cover
+const s = StyleSheet.create({
+  // NOTE: no page-level `lineHeight`. A unitless lineHeight here is inherited and
+  // resolved against the 10pt base size, squashing every line box to ~14.5pt —
+  // which makes large display text (titles, price) overlap the next element.
+  // Multi-line body styles set their own lineHeight where readable spacing matters.
+  page: { paddingVertical: 36, paddingHorizontal: 40, fontSize: 10, color: C.ink, fontFamily: "Helvetica" },
+  footer: { position: "absolute", bottom: 14, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1.5, borderTopColor: C.green, paddingTop: 7 },
+  footerLeft: { flexDirection: "row", alignItems: "center", gap: 5, width: "30%" },
+  footerDotMark: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.mint },
+  footerBrand: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.green, letterSpacing: 0.4 },
+  footerContact: { flex: 1, textAlign: "center", fontSize: 7, color: C.muted },
+  footerDot: { color: C.mint, fontFamily: "Helvetica-Bold" },
+  footerPage: { width: "30%", textAlign: "right", fontSize: 7.5, color: C.green, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
+
+  // Cover — every block is absolutely positioned over the full-bleed image so
+  // the cover has zero in-flow height and can never overflow onto a 2nd page.
   cover: { padding: 0 },
   coverImg: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" },
-  coverOverlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(12,28,22,0.55)" },
-  coverInner: { padding: 44, height: "100%", display: "flex", flexDirection: "column", color: C.white },
+  coverOverlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(12,28,22,0.58)" },
+  coverBrand: { position: "absolute", top: 44, left: 44, right: 44, flexDirection: "row", alignItems: "center", gap: 8 },
+  coverTitleBlock: { position: "absolute", top: 210, left: 44, right: 44 },
+  coverBottom: { position: "absolute", bottom: 44, left: 44, right: 44 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logoBox: { width: 34, height: 34, borderRadius: 6, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  logoImg: { width: 28, height: 28, objectFit: "contain" },
   brandName: { fontSize: 20, fontFamily: "Helvetica-Bold", color: C.white },
   brandSub: { fontSize: 8, letterSpacing: 2, color: "rgba(255,255,255,0.85)" },
-  coverTitle: { fontSize: 64, fontFamily: "Helvetica-Bold", color: C.white, letterSpacing: 2 },
-  coverScript: { fontSize: 40, color: C.mint, marginTop: -6 },
-  durationRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
+  coverTitle: { fontSize: 58, fontFamily: "Helvetica-Bold", color: C.white, letterSpacing: 2 },
+  coverScript: { fontSize: 34, color: C.mint, marginTop: 2 },
+  durationRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 },
   durationText: { fontSize: 11, letterSpacing: 3, color: C.white, fontFamily: "Helvetica-Bold" },
   preparedLabel: { fontSize: 9, letterSpacing: 4, textAlign: "center", color: "rgba(255,255,255,0.7)" },
   preparedName: { fontSize: 28, fontFamily: "Helvetica-Bold", textAlign: "center", color: C.white, marginTop: 4 },
-  coverGrid: { flexDirection: "row", marginTop: 24, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.25)", paddingTop: 16 },
-  coverGridCol: { flex: 1, paddingRight: 10 },
-  coverGridValue: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.white },
-  coverGridLabel: { fontSize: 8, letterSpacing: 1, color: "rgba(255,255,255,0.65)", marginTop: 2 },
-  costBox: { marginTop: 20, backgroundColor: "rgba(16,38,27,0.85)", borderRadius: 10, paddingVertical: 16, textAlign: "center" },
-  costValue: { fontSize: 24, fontFamily: "Helvetica-Bold", color: C.white },
-  costLabel: { fontSize: 9, letterSpacing: 3, color: "rgba(255,255,255,0.7)", marginTop: 2 },
+  coverGrid: { flexDirection: "row", marginTop: 22, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.25)", paddingTop: 16 },
+  coverGridCol: { flex: 1, paddingRight: 10, alignItems: "center" },
+  coverGridValue: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
+  coverGridLabel: { fontSize: 8, letterSpacing: 1, color: "rgba(255,255,255,0.65)", marginTop: 3, textAlign: "center" },
+  costBox: { marginTop: 18, backgroundColor: "rgba(16,38,27,0.88)", borderRadius: 10, paddingVertical: 16, paddingHorizontal: 12, alignItems: "center" },
+  costValue: { fontSize: 24, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
+  costLabel: { fontSize: 9, letterSpacing: 3, color: "rgba(255,255,255,0.7)", marginTop: 4, textAlign: "center" },
 
   // Section headings
+  section: { marginBottom: 8 },
+  sectionGap: { marginTop: 26 },
   secHeadRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
   secHead: { fontSize: 18, fontFamily: "Helvetica-Bold", color: C.green },
   secLine: { flex: 1, height: 1, backgroundColor: C.border },
@@ -75,11 +107,11 @@ const s = StyleSheet.create({
   dayBadgeNum: { fontSize: 13, color: C.white, fontFamily: "Helvetica-Bold" },
   dayBody: { flex: 1 },
   dayTitle: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink },
-  dayText: { fontSize: 9.5, color: "#555", marginTop: 3 },
+  dayText: { fontSize: 9.5, color: "#555", marginTop: 3, lineHeight: 1.45 },
   metaWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
   metaItem: { width: "33%", marginBottom: 4, paddingRight: 6 },
   metaLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green },
-  metaValue: { fontSize: 8, color: C.muted },
+  metaValue: { fontSize: 8, color: C.muted, lineHeight: 1.4 },
   dayImg: { width: 120, height: 80, borderRadius: 8, objectFit: "cover" },
 
   // Table
@@ -87,7 +119,7 @@ const s = StyleSheet.create({
   tHead: { flexDirection: "row", backgroundColor: C.lightGreen },
   th: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green, padding: 7 },
   tRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border },
-  td: { fontSize: 9, padding: 7, color: C.ink },
+  td: { fontSize: 9, padding: 7, color: C.ink, lineHeight: 1.4 },
   colDest: { width: "26%" },
   colHotel: { width: "44%" },
   colNights: { width: "13%" },
@@ -113,28 +145,50 @@ const s = StyleSheet.create({
   listRow: { flexDirection: "row", gap: 6, marginBottom: 4 },
   bulletInc: { width: 8, fontSize: 9, color: C.green, fontFamily: "Helvetica-Bold" },
   bulletExc: { width: 8, fontSize: 9, color: C.rose, fontFamily: "Helvetica-Bold" },
-  listText: { flex: 1, fontSize: 9.5, color: "#444" },
+  listText: { flex: 1, fontSize: 9.5, color: "#444", lineHeight: 1.4 },
 
   policyCard: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
   policyHead: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 8 },
 
-  // Thank you
-  tyWrap: { flexDirection: "row", height: "100%" },
-  tyLeft: { flex: 1.5, padding: 36 },
-  tyRight: { flex: 1, backgroundColor: C.greenDark, padding: 30, alignItems: "center", justifyContent: "center" },
-  tyScript: { fontSize: 36, color: C.mint },
-  tyMsg: { fontSize: 11, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 12 },
-  tyContactRow: { marginTop: 8 },
-  tyContact: { fontSize: 10, color: C.ink, marginBottom: 6 },
+  // Thank you — full-bleed dark page, everything centred.
+  tyPage: { backgroundColor: C.greenDark, alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 50 },
+  tyBrandName: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.white },
+  tyBrandSub: { fontSize: 8, letterSpacing: 2, color: C.mint },
+  tyScript: { fontSize: 46, color: C.mint, marginTop: 30, textAlign: "center" },
+  tyMsg: { fontSize: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 14, lineHeight: 1.5 },
+  tyDivider: { width: 64, height: 2, backgroundColor: C.mint, marginTop: 30, marginBottom: 28 },
+  tyCompany: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
+  tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", textAlign: "center", marginTop: 4 },
+  tyInfo: { fontSize: 10.5, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 7 },
 });
 
 function Footer() {
-  return <Text style={s.footer} fixed>Vertex Kashmir Holidays · Kashmir Escape Itinerary</Text>;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <View style={s.footer} fixed>
+      <View style={s.footerLeft}>
+        <View style={s.footerDotMark} />
+        <Text style={s.footerBrand}>Vertex Kashmir Holidays</Text>
+      </View>
+      <Text style={s.footerContact}>
+        {CONTACT.phonePrimary}
+        <Text style={s.footerDot}>{"   ·   "}</Text>
+        {CONTACT.email}
+      </Text>
+      <Text
+        style={s.footerPage}
+        render={({ pageNumber, totalPages }) => `${pad(pageNumber)} / ${pad(totalPages)}`}
+      />
+    </View>
+  );
 }
 
 function SectionHead({ title }: { title: string }) {
+  // wrap={false} keeps the heading and its underline together; minPresenceAhead
+  // pulls the whole heading to the next page if too little room remains below,
+  // so a heading never strands at the bottom of a sheet.
   return (
-    <View style={s.secHeadRow}>
+    <View style={s.secHeadRow} wrap={false} minPresenceAhead={90}>
       <Text style={s.secHead}>{title}</Text>
       <View style={s.secLine} />
     </View>
@@ -152,53 +206,60 @@ export function ItineraryPdf({ data, images }: Props) {
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
-      {/* COVER */}
+      {/* COVER — full-bleed image with absolutely-positioned overlay content.
+          The image + overlay are `fixed` (out of flow) so a page-tall image
+          can't trigger a page break that would push the text onto a 2nd sheet. */}
       <Page size="A4" style={[s.page, s.cover]}>
-        {img(data.coverImage) ? <Image src={img(data.coverImage)} style={s.coverImg} /> : null}
-        <View style={s.coverOverlay} />
-        <View style={s.coverInner}>
-          <View style={s.brandRow}>
-            <Text style={s.brandName}>Vertex</Text>
-            <Text style={s.brandSub}>KASHMIR HOLIDAYS</Text>
+        {img(data.coverImage) ? <Image src={img(data.coverImage)} style={s.coverImg} fixed /> : null}
+        <View style={s.coverOverlay} fixed />
+
+        <View style={s.coverBrand}>
+          {img(LOGO_SRC) ? (
+            <View style={s.logoBox}>
+              <Image src={img(LOGO_SRC)} style={s.logoImg} />
+            </View>
+          ) : null}
+          <Text style={s.brandName}>Vertex</Text>
+          <Text style={s.brandSub}>KASHMIR HOLIDAYS</Text>
+        </View>
+
+        <View style={s.coverTitleBlock}>
+          <Text style={s.coverTitle}>{data.coverTitle}</Text>
+          <Text style={s.coverScript}>{data.subtitle}</Text>
+          <View style={s.durationRow}>
+            <View style={{ width: 30, height: 1, backgroundColor: "rgba(255,255,255,0.6)" }} />
+            <Text style={s.durationText}>{data.duration}</Text>
+          </View>
+        </View>
+
+        <View style={s.coverBottom}>
+          <Text style={s.preparedLabel}>PREPARED FOR</Text>
+          <Text style={s.preparedName}>{data.preparedFor}</Text>
+
+          <View style={s.coverGrid}>
+            <View style={s.coverGridCol}>
+              <Text style={s.coverGridValue}>{data.travelDates}</Text>
+              <Text style={s.coverGridLabel}>TRAVEL DATES</Text>
+            </View>
+            <View style={s.coverGridCol}>
+              <Text style={s.coverGridValue}>{data.travelers}</Text>
+              <Text style={s.coverGridLabel}>TRAVELLERS</Text>
+            </View>
+            <View style={s.coverGridCol}>
+              <Text style={s.coverGridValue}>{data.packageType}</Text>
+              <Text style={s.coverGridLabel}>PACKAGE TYPE</Text>
+            </View>
           </View>
 
-          <View style={{ marginTop: 70 }}>
-            <Text style={s.coverTitle}>{data.coverTitle}</Text>
-            <Text style={s.coverScript}>{data.subtitle}</Text>
-            <View style={s.durationRow}>
-              <View style={{ width: 30, height: 1, backgroundColor: "rgba(255,255,255,0.6)" }} />
-              <Text style={s.durationText}>{data.duration}</Text>
-            </View>
-          </View>
-
-          <View style={{ marginTop: "auto" }}>
-            <Text style={s.preparedLabel}>PREPARED FOR</Text>
-            <Text style={s.preparedName}>{data.preparedFor}</Text>
-
-            <View style={s.coverGrid}>
-              <View style={s.coverGridCol}>
-                <Text style={s.coverGridValue}>{data.travelDates}</Text>
-                <Text style={s.coverGridLabel}>TRAVEL DATES</Text>
-              </View>
-              <View style={s.coverGridCol}>
-                <Text style={s.coverGridValue}>{data.travelers}</Text>
-                <Text style={s.coverGridLabel}>TRAVELLERS</Text>
-              </View>
-              <View style={s.coverGridCol}>
-                <Text style={s.coverGridValue}>{data.packageType}</Text>
-                <Text style={s.coverGridLabel}>PACKAGE TYPE</Text>
-              </View>
-            </View>
-
-            <View style={s.costBox}>
-              <Text style={s.costValue}>{data.totalCost}</Text>
-              <Text style={s.costLabel}>TOTAL PACKAGE COST</Text>
-            </View>
+          <View style={s.costBox}>
+            <Text style={s.costValue}>{data.totalCost}</Text>
+            <Text style={s.costLabel}>TOTAL PACKAGE COST</Text>
           </View>
         </View>
       </Page>
 
-      {/* DESTINATIONS + DAILY ITINERARY */}
+      {/* BODY — one continuous page so content flows and fills each sheet
+          instead of leaving a near-empty page after every section. */}
       <Page size="A4" style={s.page}>
         <View style={s.centerHead}>
           <Text style={s.destLabel}>Destinations</Text>
@@ -236,14 +297,13 @@ export function ItineraryPdf({ data, images }: Props) {
             {img(day.image) ? <Image src={img(day.image)} style={s.dayImg} /> : null}
           </View>
         ))}
-        <Footer />
-      </Page>
 
-      {/* ACCOMMODATION */}
-      <Page size="A4" style={s.page}>
-        <SectionHead title="Accommodation Info" />
+        {/* ACCOMMODATION */}
+        <View style={s.sectionGap}>
+          <SectionHead title="Accommodation Info" />
+        </View>
         <View style={s.table}>
-          <View style={s.tHead}>
+          <View style={s.tHead} wrap={false}>
             <Text style={[s.th, s.colDest]}>Destination</Text>
             <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
             <Text style={[s.th, s.colNights]}>Nights</Text>
@@ -260,7 +320,7 @@ export function ItineraryPdf({ data, images }: Props) {
         </View>
         <Text style={s.note}>*All accommodations are subject to availability at the time of confirmation.</Text>
 
-        <View style={s.trust}>
+        <View style={s.trust} wrap={false}>
           {data.trust.map((t) => (
             <View key={t.id} style={s.trustCell}>
               <Text style={s.trustTitle}>{t.title}</Text>
@@ -268,13 +328,12 @@ export function ItineraryPdf({ data, images }: Props) {
             </View>
           ))}
         </View>
-        <Footer />
-      </Page>
 
-      {/* TRANSPORT + INCLUSIONS/EXCLUSIONS */}
-      <Page size="A4" style={s.page}>
-        <SectionHead title="Transportation Info" />
-        <View style={s.transportRow}>
+        {/* TRANSPORT + INCLUSIONS/EXCLUSIONS */}
+        <View style={s.sectionGap}>
+          <SectionHead title="Transportation Info" />
+        </View>
+        <View style={s.transportRow} wrap={false}>
           <View style={{ flex: 1 }}>
             <Text style={s.transportType}>{data.transportType}</Text>
             <Text style={s.transportDesc}>{data.transportDesc}</Text>
@@ -302,14 +361,13 @@ export function ItineraryPdf({ data, images }: Props) {
             ))}
           </View>
         </View>
-        <Footer />
-      </Page>
 
-      {/* TERMS & POLICIES */}
-      <Page size="A4" style={s.page}>
-        <SectionHead title="Terms & Policies" />
+        {/* TERMS & POLICIES */}
+        <View style={s.sectionGap}>
+          <SectionHead title="Terms & Policies" />
+        </View>
         <View style={s.twoCol}>
-          <View style={s.policyCard}>
+          <View style={s.policyCard} wrap={false}>
             <Text style={s.policyHead}>Payment Policy</Text>
             {data.pay.map((item, i) => (
               <View key={i} style={s.listRow} wrap={false}>
@@ -318,7 +376,7 @@ export function ItineraryPdf({ data, images }: Props) {
               </View>
             ))}
           </View>
-          <View style={s.policyCard}>
+          <View style={s.policyCard} wrap={false}>
             <Text style={s.policyHead}>Cancellation Policy</Text>
             {data.cancel.map((item, i) => (
               <View key={i} style={s.listRow} wrap={false}>
@@ -328,34 +386,32 @@ export function ItineraryPdf({ data, images }: Props) {
             ))}
           </View>
         </View>
+
         <Footer />
       </Page>
 
-      {/* THANK YOU */}
-      <Page size="A4" style={s.cover}>
-        <View style={s.tyWrap}>
-          <View style={s.tyLeft}>
-            <View style={s.brandRow}>
-              <Text style={[s.brandName, { color: C.ink }]}>Vertex</Text>
-              <Text style={[s.brandSub, { color: C.green }]}>KASHMIR HOLIDAYS</Text>
+      {/* THANK YOU — centred on a full dark page. */}
+      <Page size="A4" style={[s.page, s.tyPage]}>
+        <View style={s.brandRow}>
+          {img(LOGO_SRC) ? (
+            <View style={s.logoBox}>
+              <Image src={img(LOGO_SRC)} style={s.logoImg} />
             </View>
-            <Text style={{ fontSize: 14, fontFamily: "Helvetica-Bold", color: C.green, marginTop: 14 }}>
-              Vertex Kashmir Tour & Travel
-            </Text>
-            <Text style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>
-              J&amp;K Tourism Registration number - JKTA0004560
-            </Text>
-            <View style={s.tyContactRow}>
-              <Text style={[s.tyContact, { marginTop: 16 }]}>+91-7889577789 / +91-9682648388</Text>
-              <Text style={s.tyContact}>Tangmarg, Gulmarg, India - 193402</Text>
-              <Text style={s.tyContact}>support@vertexkashmirholidays.com</Text>
-            </View>
-          </View>
-          <View style={s.tyRight}>
-            <Text style={s.tyScript}>Thank You!</Text>
-            <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
-          </View>
+          ) : null}
+          <Text style={s.tyBrandName}>Vertex</Text>
+          <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
         </View>
+
+        <Text style={s.tyScript}>Thank You!</Text>
+        <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
+
+        <View style={s.tyDivider} />
+
+        <Text style={s.tyCompany}>{CONTACT.company}</Text>
+        <Text style={s.tyReg}>{CONTACT.reg}</Text>
+        <Text style={s.tyInfo}>{CONTACT.phone}</Text>
+        <Text style={s.tyInfo}>{CONTACT.address}</Text>
+        <Text style={s.tyInfo}>{CONTACT.email}</Text>
       </Page>
     </Document>
   );

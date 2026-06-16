@@ -253,6 +253,7 @@ model BlogCategory {
 model Gallery {
   id        String   @id @default(cuid())
   url       String
+  type      String   @default("IMAGE") // IMAGE | VIDEO
   alt       String?
   caption   String?
   category  String?
@@ -261,6 +262,7 @@ model Gallery {
   updatedAt DateTime @updatedAt
 
   @@index([category])
+  @@index([type])
 }
 
 model HomeContent {
