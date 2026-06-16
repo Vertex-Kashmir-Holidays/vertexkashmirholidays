@@ -27,6 +27,7 @@ import {
   X,
   ChevronRight,
   Headphones,
+  Map,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -40,6 +41,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   destinations: MapPin,
   bookings: CalendarDays,
   inquiries: Inbox,
+  itinerary: Map,
   users: Users,
   galleries: Images,
   blogs: FileText,
