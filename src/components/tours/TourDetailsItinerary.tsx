@@ -2,6 +2,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import { useState } from 'react';
 
 interface ItineraryDay {
@@ -97,9 +98,11 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                       {day.body}
                     </p>
                     {day.image && (
-                      <img
+                      <Image
                         src={`https://picsum.photos/seed/${day.image}/300/200`}
                         alt=""
+                        width={140}
+                        height={88}
                         className="h-[88px] w-[140px] shrink-0 rounded-lg object-cover"
                       />
                     )}

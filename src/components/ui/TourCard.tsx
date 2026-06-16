@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Tilt3D } from './3DTilt';
 import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
@@ -78,11 +79,13 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
         >
           {/* Image Section */}
           <div className="relative h-44 overflow-hidden">
-            <Link href={detailHref} aria-label={tour.t} className="block h-full w-full">
-              <motion.img
-                src={tour.image || `https://picsum.photos/seed/${tour.seed}/520/360`}
+            <Link href={detailHref} aria-label={tour.t} className="relative block h-full w-full">
+              <Image
+                src={tour.image || '/hero/hero.webp'}
                 alt={tour.t}
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
             </Link>
             <motion.span

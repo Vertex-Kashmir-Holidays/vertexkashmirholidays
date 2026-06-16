@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface BlogPostSidebarProps {
   toc: Array<{ label: string; href: string }>;
@@ -69,11 +70,15 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
         >
           <h2 className="text-[15.5px] font-bold">{relatedTour.label}</h2>
           {relatedTour.image && (
-            <img
-              src={relatedTour.image}
-              alt={relatedTour.name}
-              className="mt-4 h-[140px] w-full rounded-xl object-cover"
-            />
+            <div className="relative mt-4 h-[140px] w-full overflow-hidden rounded-xl">
+              <Image
+                src={relatedTour.image}
+                alt={relatedTour.name}
+                fill
+                sizes="(max-width: 1024px) 100vw, 280px"
+                className="object-cover"
+              />
+            </div>
           )}
           <h3 className="mt-4 text-[16px] font-bold leading-snug">{relatedTour.name}</h3>
           <p className="text-[13px] font-semibold text-muted-foreground">{relatedTour.duration}</p>
@@ -174,9 +179,11 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
       >
         <h2 className="text-[15.5px] font-bold">About the Author</h2>
         <div className="mt-4 flex items-start gap-3.5">
-          <img
+          <Image
             src={author.avatar}
             alt={author.name}
+            width={56}
+            height={56}
             className="h-14 w-14 shrink-0 rounded-full object-cover"
           />
           <div>

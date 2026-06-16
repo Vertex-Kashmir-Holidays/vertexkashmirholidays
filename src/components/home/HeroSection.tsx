@@ -1,6 +1,7 @@
 // src/components/sections/HeroSection.tsx
 'use client';
 
+import Image from 'next/image';
 import { Tilt3D } from '@/components/ui/3DTilt';
 import { renderAccents } from '@/lib/accents';
 import type { HeroContentData, HeroSlideData, SiteStatData } from '@/types/home';
@@ -17,7 +18,6 @@ interface HeroSectionProps {
 export function HeroSection({ content, slides, stats }: HeroSectionProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [formPulse, setFormPulse] = useState(false);
-  const [progress, setProgress] = useState(0);
   const embersRef = useRef<HTMLDivElement>(null);
   const flakesRef = useRef<HTMLDivElement>(null);
 
@@ -40,15 +40,6 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
     }, 8000);
 
     return () => clearInterval(pulseInterval);
-  }, []);
-
-  // Slower clockwise animation - starts from right side
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev + 1) % 100);
-    }, 180); // ~18 seconds for full rotation
-
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -90,17 +81,6 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
       transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
     },
   };
-
-  const gradientValue = `conic-gradient(
-    from 270deg at 50% 50%,
-    transparent 0%,
-    transparent ${progress}%,
-    hsl(150 90% 60%) ${progress}%,
-    hsl(160 90% 60%) ${progress + 15}%,
-    hsl(170 90% 55%) ${progress + 30}%,
-    transparent ${progress + 35}%,
-    transparent 100%
-  )`;
 
   const currentSlide = slides[currentImageIndex];
 
@@ -250,34 +230,26 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
                 borderRadius: '24px',
               }}
             >
-              {/* Primary golden portal border */}
-              <motion.div
-                className="absolute inset-0 rounded-3xl pointer-events-none"
+              {/* Primary golden portal border (CSS-animated, no re-render) */}
+              <div
+                className="portal-border absolute inset-0 rounded-3xl pointer-events-none"
                 style={{
                   border: '6px solid transparent',
                   borderRadius: '24px',
-                  backgroundImage: gradientValue,
                   backgroundOrigin: 'border-box',
                   backgroundClip: 'padding-box, border-box',
                   WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
                   WebkitMaskComposite: 'xor',
                   maskComposite: 'exclude',
                 }}
-                animate={{
-                  backgroundImage: gradientValue,
-                }}
-                transition={{
-                  duration: 0.01,
-                }}
               />
 
               {/* Secondary golden glow layer - thicker and brighter */}
-              <motion.div
-                className="absolute -inset-1 rounded-3xl pointer-events-none"
+              <div
+                className="portal-border absolute -inset-1 rounded-3xl pointer-events-none"
                 style={{
                   border: '10px solid transparent',
                   borderRadius: '28px',
-                  backgroundImage: gradientValue,
                   backgroundOrigin: 'border-box',
                   backgroundClip: 'padding-box, border-box',
                   WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
@@ -285,12 +257,6 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
                   maskComposite: 'exclude',
                   filter: 'blur(6px)',
                   opacity: 0.7,
-                }}
-                animate={{
-                  backgroundImage: gradientValue,
-                }}
-                transition={{
-                  duration: 0.01,
                 }}
               />
 
@@ -321,14 +287,22 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
 
                 <div className="mt-5 space-y-3 text-sm">
                   <input
+                    aria-label="Full Name"
+                    autoComplete="name"
                     className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
                     placeholder="Full Name *"
                   />
                   <input
+                    aria-label="Phone"
+                    type="tel"
+                    autoComplete="tel"
                     className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
                     placeholder="Phone *"
                   />
                   <input
+                    aria-label="Email"
+                    type="email"
+                    autoComplete="email"
                     className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
                     placeholder="Email"
                   />
@@ -342,8 +316,10 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
                     {content.formAvatars.length > 0 && (
                       <div className="flex -space-x-2">
                         {content.formAvatars.map((avatar, i) => (
-                          <img
+                          <Image
                             key={i}
+                            width={28}
+                            height={28}
                             className="h-7 w-7 rounded-full border-2 border-card object-cover"
                             src={avatar}
                             alt=""

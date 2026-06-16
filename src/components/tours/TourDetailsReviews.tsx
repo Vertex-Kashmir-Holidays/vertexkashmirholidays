@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Review {
@@ -60,9 +61,11 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <img
+              <Image
                 src={`https://picsum.photos/seed/${reviews[currentReview].seed}/80`}
                 alt=""
+                width={44}
+                height={44}
                 className="h-11 w-11 shrink-0 rounded-full object-cover"
               />
               <div className="min-w-0">

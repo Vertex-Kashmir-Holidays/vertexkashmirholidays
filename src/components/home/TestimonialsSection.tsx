@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { renderAccents } from '@/lib/accents';
 import type { SectionHeading, TestimonialData } from '@/types/home';
 
@@ -49,7 +50,7 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
             <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{t.quote}</p>
             <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
-                <img src={t.avatar} alt="" className="h-10 w-10 rounded-full border border-border object-cover" />
+                <Image src={t.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" />
               )}
               <div>
                 <p className="text-sm font-bold text-foreground">{t.name}</p>

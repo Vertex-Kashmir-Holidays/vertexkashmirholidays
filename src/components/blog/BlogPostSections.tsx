@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface Section {
   title: string;
@@ -69,11 +70,15 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
                   <p className="mt-2 text-[13px] leading-relaxed text-brand-ink/75">{section.body}</p>
                 </div>
                 {section.image && (
-                  <img
-                    src={`https://picsum.photos/seed/${section.image}/360/240`}
-                    alt=""
-                    className="h-[88px] w-full shrink-0 rounded-lg object-cover md:w-[150px]"
-                  />
+                  <div className="relative h-[88px] w-full shrink-0 overflow-hidden rounded-lg md:w-[150px]">
+                    <Image
+                      src={`https://picsum.photos/seed/${section.image}/360/240`}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 100vw, 150px"
+                      className="object-cover"
+                    />
+                  </div>
                 )}
               </div>
             </motion.section>

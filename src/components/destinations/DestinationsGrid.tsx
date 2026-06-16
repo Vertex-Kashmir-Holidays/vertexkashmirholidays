@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, type Variants } from 'framer-motion';
 import { Tilt3D } from '@/components/ui/3DTilt';
 
@@ -63,10 +64,12 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
               <Link href={`/destinations/${slug}`} aria-label={`View ${dest.n}`} className="block">
               <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
                 <div className="relative h-44 overflow-hidden">
-                  <motion.img
+                  <Image
                     src={`https://picsum.photos/seed/${dest.seed}/520/380`}
                     alt={dest.n}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[10.5px] font-bold text-white backdrop-blur">
                     {dest.tours} Tours

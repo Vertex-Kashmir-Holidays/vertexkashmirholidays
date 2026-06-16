@@ -17,7 +17,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-4 text-white">
+    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4 text-foreground">
       <div
         aria-hidden
         className="absolute inset-0 overflow-hidden pointer-events-none"
@@ -26,7 +26,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md">
-        <Logo variant="dark" className="mb-10" />
+        <Logo variant="auto" className="mb-10" />
 
         <p className="text-brand-orange font-semibold text-sm uppercase tracking-widest mb-3">
           Something went wrong
@@ -34,16 +34,16 @@ export default function GlobalError({ error, reset }: ErrorProps) {
 
         <h1 className="h-display text-5xl font-bold mb-4">
           Unexpected{" "}
-          <span className="grad-orange">detour.</span>
+          <span className="grad-text-warm">detour.</span>
         </h1>
 
-        <p className="text-white/55 text-lg mb-10 leading-relaxed">
+        <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
           An error occurred while loading this page. Our team has been
           notified. Please try again.
         </p>
 
         {process.env.NODE_ENV === "development" && error.message && (
-          <pre className="text-xs text-red-400 bg-white/5 rounded-lg p-3 mb-8 w-full text-left overflow-auto max-h-32">
+          <pre className="text-xs text-red-600 dark:text-red-400 bg-muted rounded-lg p-3 mb-8 w-full text-left overflow-auto max-h-32">
             {error.message}
           </pre>
         )}
@@ -56,11 +56,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
             <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
           </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="border-white/20 text-white hover:bg-white/10 hover:text-white bg-transparent px-6"
-          >
+          <Button asChild variant="outline" className="px-6">
             <Link href="/">
               <Home className="mr-2 h-4 w-4" />
               Back to Home

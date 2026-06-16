@@ -37,8 +37,8 @@ export function Toolbar({
 
   return (
     <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 no-print">
-      <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-between gap-3 px-5 py-3">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
+        <div className="flex min-w-0 flex-1 basis-[180px] items-center gap-3">
           <Link href="/admin/itinerary" className="text-muted-foreground transition hover:text-foreground" aria-label="Back to list">
             <ArrowLeft className="h-5 w-5" />
           </Link>

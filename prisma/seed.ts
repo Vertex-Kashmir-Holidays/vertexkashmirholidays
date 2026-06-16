@@ -1,5 +1,6 @@
 import { PrismaClient, Role, TourCategory } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { LEGAL_PAGES } from "../src/lib/legal/content";
 
 const prisma = new PrismaClient();
 
@@ -42,6 +43,7 @@ async function main() {
       home: ALL,
       about: ALL,
       contact: ALL,
+      legal: ALL,
       campaigns: ALL,
       reviews: ALL,
       seo: ALL,
@@ -61,6 +63,7 @@ async function main() {
       home: NONE,
       about: NONE,
       contact: NONE,
+      legal: NONE,
       campaigns: NONE,
       reviews: VIEW_EDIT,
       seo: NONE,
@@ -80,6 +83,7 @@ async function main() {
       home: ALL,
       about: ALL,
       contact: ALL,
+      legal: ALL,
       campaigns: ALL,
       reviews: VIEW_EDIT,
       seo: ALL,
@@ -98,6 +102,17 @@ async function main() {
     }
   }
   console.log("✓ Default role permissions");
+
+  // ── Legal / policy pages ─────────────────────────────────────────────────────
+  // Seed defaults only when a page doesn't exist yet (never overwrite admin edits).
+  for (const p of LEGAL_PAGES) {
+    await prisma.legalPage.upsert({
+      where: { slug: p.slug },
+      update: {},
+      create: { slug: p.slug, title: p.title, content: p.content },
+    });
+  }
+  console.log("✓ Legal pages");
 
   // ── Destinations ────────────────────────────────────────────────────────────
   const gulmarg = await prisma.destination.upsert({

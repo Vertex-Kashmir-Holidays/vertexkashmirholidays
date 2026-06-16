@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { renderAccents } from '@/lib/accents';
 import type { DestinationCardData, SectionHeading } from '@/types/home';
 
@@ -39,10 +40,12 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
             style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}
           >
             {d.coverImage && (
-              <img
+              <Image
                 src={d.coverImage}
                 alt={d.name}
-                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                fill
+                sizes="(max-width: 768px) 50vw, 25vw"
+                className="object-cover transition duration-700 group-hover:scale-110"
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>

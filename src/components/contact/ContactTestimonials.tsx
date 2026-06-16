@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ContactSectionHeading, ContactTestimonialData } from '@/types/contact';
 
@@ -45,9 +46,11 @@ export function ContactTestimonials({ heading, testimonials }: ContactTestimonia
             transition={{ duration: 0.3 }}
           >
             {t.avatar && (
-              <img
+              <Image
                 src={t.avatar}
                 alt={t.name}
+                width={48}
+                height={48}
                 className="h-12 w-12 shrink-0 rounded-full object-cover"
               />
             )}

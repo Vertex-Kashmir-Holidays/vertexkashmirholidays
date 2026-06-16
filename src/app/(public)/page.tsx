@@ -19,7 +19,9 @@ import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 import { WhyChooseSection } from "@/components/home/WhyChooseSection";
 import type { SectionHeading } from "@/types/home";
 
-export const dynamic = "force-dynamic";
+// ISR: serve cached HTML and refresh in the background (admin edits appear
+// within the window). Replaces force-dynamic, which hit the DB every request.
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await prisma.siteSettings.findUnique({

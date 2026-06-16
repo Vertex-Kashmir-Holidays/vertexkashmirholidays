@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export function DestinationsCTABand() {
   const features = [
@@ -19,11 +20,15 @@ export function DestinationsCTABand() {
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
       >
-        <img
-          src="https://picsum.photos/seed/cta-lake/1100/420"
-          alt=""
-          className="absolute inset-y-0 right-0 h-full w-[55%] object-cover"
-        />
+        <div className="absolute inset-y-0 right-0 w-[55%]">
+          <Image
+            src="https://picsum.photos/seed/cta-lake/1100/420"
+            alt=""
+            fill
+            sizes="(max-width: 1024px) 100vw, 55vw"
+            className="object-cover"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-r from-brand-green via-brand-green/95 to-brand-green/20"></div>
         <div className="relative grid items-center gap-8 p-9 lg:grid-cols-[1.1fr_1.3fr] lg:p-11">
           <div>

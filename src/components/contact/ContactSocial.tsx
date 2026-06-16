@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { ContactSocialContent, ContactSocialLink } from '@/types/contact';
 
 interface ContactSocialProps {
@@ -84,11 +85,13 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
       {content.text && <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">{content.text}</p>}
       <div className="mt-4 grid grid-cols-4 gap-2">
         {igImages.map((s, i) => (
-          <a key={i} href={content.ctaHref ?? '#'} className="group block aspect-square overflow-hidden rounded-lg">
-            <img
+          <a key={i} href={content.ctaHref ?? '#'} className="group relative block aspect-square overflow-hidden rounded-lg">
+            <Image
               src={`https://picsum.photos/seed/${s}/200`}
               alt=""
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+              fill
+              sizes="(max-width: 768px) 25vw, 80px"
+              className="object-cover transition duration-500 group-hover:scale-110"
             />
           </a>
         ))}

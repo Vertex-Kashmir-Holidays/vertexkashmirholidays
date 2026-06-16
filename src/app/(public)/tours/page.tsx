@@ -12,7 +12,7 @@ import { ToursNewsletter } from "@/components/tours/ToursNewsletter";
 import { ToursPageClient } from "@/components/tours/ToursPageClient";
 import { ToursTrustBar } from "@/components/tours/ToursTrustBar";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const section = await prisma.homeSection.findUnique({

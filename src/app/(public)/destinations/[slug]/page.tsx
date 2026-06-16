@@ -20,7 +20,7 @@ import {
   type DestinationTour,
 } from "@/components/destinations/DestinationDetailTours";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type PageProps = { params: Promise<{ slug: string }> };
 

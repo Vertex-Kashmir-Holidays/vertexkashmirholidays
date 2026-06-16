@@ -11,7 +11,7 @@ import { BlogPostHero } from '@/components/blog/BlogPostHero';
 import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
 import { BlogPostSidebar } from '@/components/blog/BlogPostSidebar';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 type PageProps = { params: Promise<{ slug: string }> };
 

@@ -17,7 +17,7 @@ interface ItineraryCoverProps {
 
 export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCoverProps) {
   return (
-    <article className="page cover relative min-h-[1160px] overflow-hidden rounded-xl bg-gradient-to-br from-[#0f261b] via-[#1a3a2a] to-[#0f261b]">
+    <article className="page cover relative min-h-[640px] overflow-hidden rounded-xl bg-gradient-to-br from-[#0f261b] via-[#1a3a2a] to-[#0f261b] sm:min-h-[880px] md:min-h-[1160px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={data.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div
@@ -30,7 +30,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCover
 
       <ImagePicker value={data.coverImage} onChange={onImageChange} className="absolute right-4 top-4 z-20" label="Cover image" />
 
-      <div className="relative flex min-h-[1160px] flex-col p-12 text-white">
+      <div className="relative flex min-h-[640px] flex-col p-6 text-white sm:min-h-[880px] sm:p-9 md:min-h-[1160px] md:p-12">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -44,16 +44,16 @@ export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCover
           </span>
         </div>
 
-        <div className="mt-24">
+        <div className="mt-12 sm:mt-20 md:mt-24">
           <EditableField
             value={data.coverTitle}
             onValueChange={(v) => onUpdate("coverTitle", v)}
-            className="font-serif text-[78px] font-semibold leading-[0.95] tracking-[0.06em] text-white"
+            className="font-serif text-[40px] font-semibold leading-[0.95] tracking-[0.06em] text-white sm:text-[58px] md:text-[78px]"
           />
           <EditableField
             value={data.subtitle}
             onValueChange={(v) => onUpdate("subtitle", v)}
-            className="-mt-3 font-script text-[58px] leading-none text-[hsl(146_35%_55%)]"
+            className="-mt-2 font-script text-[32px] leading-none text-[hsl(146_35%_55%)] sm:-mt-3 sm:text-[46px] md:text-[58px]"
           />
           <div className="mt-6 flex items-center gap-4">
             <span className="h-px w-12 bg-white/60" />
@@ -71,10 +71,10 @@ export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCover
           <EditableField
             value={data.preparedFor}
             onValueChange={(v) => onUpdate("preparedFor", v)}
-            className="font-serif mt-1.5 text-center text-4xl font-semibold text-white"
+            className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl"
           />
 
-          <div className="mt-9 grid grid-cols-3 gap-4 border-t border-white/20 pt-6">
+          <div className="mt-7 grid grid-cols-1 gap-4 border-t border-white/20 pt-6 sm:mt-9 sm:grid-cols-3">
             <div className="flex items-start gap-3">
               <ItineraryIcon icon="calendar" className="mt-0.5 h-6 w-6 shrink-0 text-[hsl(146_35%_55%)]" />
               <div className="min-w-0">
@@ -99,7 +99,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCover
           </div>
 
           <div className="mt-7 rounded-xl bg-[hsl(158_46%_14%)]/85 py-5 text-center ring-1 ring-white/10 backdrop-blur">
-            <EditableField value={data.totalCost} onValueChange={(v) => onUpdate("totalCost", v)} className="font-serif text-center text-3xl font-bold text-white" />
+            <EditableField value={data.totalCost} onValueChange={(v) => onUpdate("totalCost", v)} className="font-serif text-center text-2xl font-bold text-white sm:text-3xl" />
             <p className="text-[11px] font-semibold tracking-[0.28em] text-white/70">TOTAL PACKAGE COST</p>
           </div>
         </div>

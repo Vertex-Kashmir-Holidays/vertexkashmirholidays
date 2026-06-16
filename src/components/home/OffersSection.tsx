@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, type Variants } from 'framer-motion';
 import { Tilt3D } from '@/components/ui/3DTilt';
 import { formatINR, renderAccents } from '@/lib/accents';
@@ -88,10 +89,12 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
 
                 <div className="relative h-40 overflow-hidden">
                   {o.image && (
-                    <motion.img
+                    <Image
                       src={o.image}
                       alt={o.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                   )}
                   {o.badge && (

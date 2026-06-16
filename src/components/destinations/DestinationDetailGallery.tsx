@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface DestinationDetailGalleryProps {
   name: string;
@@ -29,16 +30,18 @@ export function DestinationDetailGallery({ name, images }: DestinationDetailGall
           <motion.a
             key={i}
             href="#"
-            className="group block h-[120px] w-[176px] shrink-0 overflow-hidden rounded-xl"
+            className="group relative block h-[120px] w-[176px] shrink-0 overflow-hidden rounded-xl"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.05 }}
           >
-            <img
+            <Image
               src={image}
               alt={name}
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              fill
+              sizes="176px"
+              className="object-cover transition duration-500 group-hover:scale-105"
             />
           </motion.a>
         ))}

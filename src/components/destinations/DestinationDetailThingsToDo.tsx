@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface ThingToDo {
   seed: string;
@@ -51,11 +52,13 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <div className="group h-[150px] overflow-hidden rounded-xl">
-                <img
+              <div className="group relative h-[150px] overflow-hidden rounded-xl">
+                <Image
                   src={`https://picsum.photos/seed/${thing.seed}/360/340`}
                   alt={thing.title}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  fill
+                  sizes="160px"
+                  className="object-cover transition duration-500 group-hover:scale-105"
                 />
               </div>
               <h3 className="mt-3 text-[13.5px] font-bold leading-snug">{thing.title}</h3>

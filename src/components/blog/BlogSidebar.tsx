@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { BlogCategoryData, BlogPageContent, BlogTrendingData } from '@/types/blog';
 
 interface BlogSidebarProps {
@@ -109,9 +110,11 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
               >
                 <Link href={`/blog/${item.slug}`} className="group flex items-start gap-3">
                   {item.image && (
-                    <img
+                    <Image
                       src={item.image}
                       alt=""
+                      width={68}
+                      height={52}
                       className="h-[52px] w-[68px] shrink-0 rounded-lg object-cover"
                     />
                   )}

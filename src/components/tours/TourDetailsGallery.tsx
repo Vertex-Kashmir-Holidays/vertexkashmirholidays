@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface TourDetailsGalleryProps {
   images: string[];
@@ -23,14 +24,16 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
           <motion.a
             key={i}
             href="#"
-            className="group block overflow-hidden rounded-xl"
+            className="group relative block h-32 overflow-hidden rounded-xl"
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.3 }}
           >
-            <img
+            <Image
               src={img}
               alt=""
-              className="h-32 w-full object-cover transition duration-500 group-hover:scale-105"
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover transition duration-500 group-hover:scale-105"
             />
           </motion.a>
         ))}

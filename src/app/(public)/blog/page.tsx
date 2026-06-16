@@ -1,9 +1,20 @@
 // src/app/(public)/blog/page.tsx
 
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
+import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { BlogPageClient } from '@/components/blog/BlogPageClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: 'Kashmir Travel Blog — Guides, Tips & Itineraries',
+    description:
+      'Expert Kashmir travel guides from Vertex Kashmir Holidays — best time to visit, Gulmarg & Pahalgam tips, houseboat stays, budgets and sample itineraries.',
+    canonical: `${SITE_URL}/blog`,
+  });
+}
 
 const dateLabel = (d: Date | null) =>
   d

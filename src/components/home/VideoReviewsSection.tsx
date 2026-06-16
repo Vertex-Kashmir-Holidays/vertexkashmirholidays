@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { renderAccents } from '@/lib/accents';
 import type { SectionHeading, VideoReviewData } from '@/types/home';
 
@@ -101,11 +102,12 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
                 </>
               ) : (
                 <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={v.thumbnail}
                     alt={`${v.name} video review`}
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                    fill
+                    sizes="240px"
+                    className="object-cover transition duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/30"></div>
                   {v.duration && (
