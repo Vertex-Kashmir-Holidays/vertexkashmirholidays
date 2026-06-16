@@ -5,7 +5,7 @@ import { Home, Compass } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-4 text-white">
+    <div className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4 text-foreground">
       {/* Background decoration */}
       <div
         aria-hidden
@@ -15,7 +15,7 @@ export default function NotFound() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md">
-        <Logo variant="dark" className="mb-10" />
+        <Logo variant="auto" className="mb-10" />
 
         <p className="text-brand-orange font-semibold text-sm uppercase tracking-widest mb-3">
           404 — Page Not Found
@@ -23,10 +23,10 @@ export default function NotFound() {
 
         <h1 className="h-display text-5xl sm:text-6xl font-bold mb-4 leading-tight">
           Lost in the{" "}
-          <span className="grad-cyan">mountains?</span>
+          <span className="grad-text-cool">mountains?</span>
         </h1>
 
-        <p className="text-white/55 text-lg mb-10 leading-relaxed">
+        <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
           The page you&apos;re looking for has wandered off the trail. Let&apos;s
           get you back to base camp.
         </p>
@@ -41,11 +41,7 @@ export default function NotFound() {
               Back to Home
             </Link>
           </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="border-white/20 text-white hover:bg-white/10 hover:text-white bg-transparent px-6"
-          >
+          <Button asChild variant="outline" className="px-6">
             <Link href="/tours">
               <Compass className="mr-2 h-4 w-4" />
               Explore Tours

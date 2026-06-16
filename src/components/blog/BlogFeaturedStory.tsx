@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { BlogFeaturedData } from '@/types/blog';
 
 interface BlogFeaturedStoryProps {
@@ -31,9 +32,11 @@ export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
           {story.excerpt && <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{story.excerpt}</p>}
           <div className="mt-4 flex items-center gap-3">
             {story.authorImage && (
-              <img
+              <Image
                 src={story.authorImage}
                 alt={story.authorName ?? ''}
+                width={36}
+                height={36}
                 className="h-9 w-9 rounded-full object-cover"
               />
             )}
@@ -56,12 +59,14 @@ export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
             </svg>
           </Link>
         </div>
-        <div className="min-h-[220px]">
+        <div className="relative min-h-[220px]">
           {story.image && (
-            <img
+            <Image
               src={story.image}
               alt={story.title}
-              className="h-full w-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
             />
           )}
         </div>

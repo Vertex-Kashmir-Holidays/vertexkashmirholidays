@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -36,14 +37,20 @@ export function ToursNewsletter() {
 
   return (
     <section className="relative overflow-hidden">
-      <motion.img
-        src="https://picsum.photos/seed/news-mtn/1800/420"
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover"
+      <motion.div
+        className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+      >
+        <Image
+          src="https://picsum.photos/seed/news-mtn/1800/420"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+      </motion.div>
       <div className="absolute inset-0 bg-brand-green/90"></div>
       <div className="relative mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-6 px-4 py-10 sm:px-6 sm:py-12">
         <motion.div

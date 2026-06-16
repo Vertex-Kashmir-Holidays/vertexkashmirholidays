@@ -3,6 +3,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import type { BlogArticleData } from '@/types/blog';
 
@@ -114,10 +115,12 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
                 <Link href={`/blog/${post.slug}`} className="block">
                   <div className="relative h-[150px] overflow-hidden">
                     {post.coverImage && (
-                      <img
+                      <Image
                         src={post.coverImage}
                         alt=""
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition duration-500 group-hover:scale-105"
                       />
                     )}
                     {post.category && (

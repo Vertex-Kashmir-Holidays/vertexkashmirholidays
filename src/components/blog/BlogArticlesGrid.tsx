@@ -3,6 +3,7 @@
 
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { BlogArticleData } from '@/types/blog';
 
 interface BlogArticlesGridProps {
@@ -73,10 +74,12 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
               <Link href={`/blog/${article.slug}`} className="block">
                 <div className="relative h-[150px] overflow-hidden">
                   {article.coverImage && (
-                    <img
+                    <Image
                       src={article.coverImage}
                       alt=""
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
                     />
                   )}
                   {article.category && (

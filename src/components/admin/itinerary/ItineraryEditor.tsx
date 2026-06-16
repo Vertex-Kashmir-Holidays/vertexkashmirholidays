@@ -154,7 +154,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
   }
 
   const greenHead = "font-serif text-2xl font-bold text-[hsl(156_40%_21%)] dark:text-primary";
-  const pageCard = "page rounded-xl border border-[hsl(40_14%_87%)] bg-white p-12 shadow-page dark:border-mute/20 dark:bg-card";
+  const pageCard = "page rounded-xl border border-[hsl(40_14%_87%)] bg-white p-5 shadow-page dark:border-mute/20 dark:bg-card sm:p-8 md:p-12";
   const addBtn = "addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-3 py-1.5 text-xs font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print";
 
   return (
@@ -172,7 +172,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
         canSave={canSave}
       />
 
-      <div className="py-7">
+      <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[820px] space-y-8">
           {/* Cover */}
           <ItineraryCover
@@ -266,8 +266,8 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
               <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
             </div>
 
-            <div className="acc-wrap mt-6 overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] dark:border-mute/20">
-              <table className="w-full text-left text-sm">
+            <div className="acc-wrap mt-6 overflow-x-auto rounded-xl border border-[hsl(40_14%_87%)] dark:border-mute/20">
+              <table className="w-full min-w-[520px] text-left text-sm">
                 <thead className="bg-[hsl(150_28%_92%)] text-xs font-bold text-[hsl(156_40%_21%)] dark:bg-muted/30 dark:text-primary">
                   <tr>
                     <th className="px-5 py-3.5">Destination</th>
@@ -377,7 +377,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
           {/* Thank you */}
           <article className="page overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] bg-white shadow-page dark:border-mute/20 dark:bg-card">
             <div className="grid sm:grid-cols-[1.6fr_1fr]">
-              <div className="p-10">
+              <div className="p-6 sm:p-10">
                 <div className="flex items-center gap-3">
                   <svg viewBox="0 0 44 44" className="h-12 w-12">
                     <path d="M6 9 19 35 22 17Z" fill="#16407f" />
@@ -396,8 +396,8 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                   <p className="flex items-center gap-3"><ItineraryIcon icon="calendar" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">support@vertexkashmirholidays.com</span></p>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-10 text-center text-white dark:bg-primary/20">
-                <p className="font-script text-5xl leading-none text-[hsl(146_35%_55%)]">Thank You!</p>
+              <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white dark:bg-primary/20 sm:p-10">
+                <p className="font-script text-4xl leading-none text-[hsl(146_35%_55%)] sm:text-5xl">Thank You!</p>
                 <p className="mt-4 max-w-[220px] text-sm leading-relaxed text-white/85">We look forward to hosting you in the paradise on earth.</p>
               </div>
             </div>

@@ -19,7 +19,7 @@ import { TourDetailsReviews } from "@/components/tours/TourDetailsReviews";
 import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
 import { TourDetailsTabs } from "@/components/tours/TourDetailsTabs";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type PageProps = { params: Promise<{ slug: string }> };
 

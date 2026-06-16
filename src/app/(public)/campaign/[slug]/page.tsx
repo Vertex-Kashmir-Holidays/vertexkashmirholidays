@@ -16,7 +16,7 @@ import type {
   CampaignTier,
 } from '@/types/campaign';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 type PageProps = { params: Promise<{ slug: string }> };
 

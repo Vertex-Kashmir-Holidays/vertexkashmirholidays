@@ -128,16 +128,16 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
                 <Link href="/contact" className="transition hover:text-primary">Contact Us</Link>
               </li>
               <li>
-                <Link href="#" className="transition hover:text-primary">FAQs</Link>
+                <Link href="/contact#faqs" className="transition hover:text-primary">FAQs</Link>
               </li>
               <li>
-                <Link href="#" className="transition hover:text-primary">Cancellation Policy</Link>
+                <Link href="/refund-and-cancellation" className="transition hover:text-primary">Refund &amp; Cancellation</Link>
               </li>
               <li>
-                <Link href="#" className="transition hover:text-primary">Terms &amp; Conditions</Link>
+                <Link href="/terms-and-conditions" className="transition hover:text-primary">Terms &amp; Conditions</Link>
               </li>
               <li>
-                <Link href="#" className="transition hover:text-primary">Privacy Policy</Link>
+                <Link href="/privacy-policy" className="transition hover:text-primary">Privacy Policy</Link>
               </li>
             </ul>
           </div>
@@ -146,6 +146,9 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
             <p className="mt-3 text-[13px] text-muted-foreground">Snow alerts, new treks &amp; flash deals. One email a month.</p>
             <div className="mt-4 flex overflow-hidden rounded-full border border-border bg-foreground/[.04] p-1">
               <input
+                type="email"
+                aria-label="Email address for newsletter"
+                autoComplete="email"
                 className="w-full bg-transparent px-4 text-sm text-foreground placeholder-foreground/40 outline-none"
                 placeholder="Email address"
               />

@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import type { AboutStatData } from '@/types/about';
 
 interface AboutStatsProps {
@@ -22,10 +23,12 @@ export function AboutStats({ stats, image }: AboutStatsProps) {
         transition={{ duration: 0.6 }}
       >
         {image && (
-          <img
+          <Image
             src={image}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-25"
+            fill
+            sizes="100vw"
+            className="object-cover opacity-25"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/60 via-transparent to-brand-dark/60"></div>

@@ -31,6 +31,7 @@ export const MODULES = [
   { key: "home", label: "Home Page", href: "/admin/home" },
   { key: "about", label: "About Page", href: "/admin/about" },
   { key: "contact", label: "Contact Page", href: "/admin/contact" },
+  { key: "legal", label: "Legal Pages", href: "/admin/legal" },
   { key: "campaigns", label: "Campaigns", href: "/admin/campaigns" },
   { key: "reviews", label: "Reviews", href: "/admin/reviews" },
   { key: "seo", label: "SEO & Pages", href: "/admin/seo" },

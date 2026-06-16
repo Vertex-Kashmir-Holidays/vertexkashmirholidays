@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface BlogPostHeroProps {
   category: string | null;
@@ -31,14 +32,14 @@ export function BlogPostHero({
 }: BlogPostHeroProps) {
   return (
     <section className="relative overflow-hidden bg-brand-dark">
-      <motion.img
-        src={image}
-        alt={title}
-        className="absolute inset-0 h-full w-full object-cover"
+      <motion.div
+        className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+      >
+        <Image src={image} alt={title} fill priority sizes="100vw" className="object-cover" />
+      </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/45 to-brand-dark/15"></div>
 
       <div className="relative mx-auto max-w-[1300px] px-6 pb-9 pt-28">
@@ -97,9 +98,11 @@ export function BlogPostHero({
         >
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-white">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src={author.avatar}
                 alt={author.name}
+                width={44}
+                height={44}
                 className="h-11 w-11 rounded-full border-2 border-white/40 object-cover"
               />
               <div className="leading-tight">

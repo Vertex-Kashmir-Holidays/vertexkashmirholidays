@@ -1,6 +1,8 @@
 // src/app/(public)/about/page.tsx
 
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
+import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { AboutCTA } from '@/components/about/AboutCTA';
 import { AboutHero } from '@/components/about/AboutHero';
 import { AboutJourney } from '@/components/about/AboutJourney';
@@ -10,7 +12,16 @@ import { AboutStory } from '@/components/about/AboutStory';
 import { AboutTeam } from '@/components/about/AboutTeam';
 import { AboutValues } from '@/components/about/AboutValues';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: 'About Us — Local Kashmir Travel Experts',
+    description:
+      'Meet Vertex Kashmir Holidays — a Srinagar-based team crafting honest, handpicked Kashmir tours with zero middlemen, transparent pricing and 24/7 on-ground support.',
+    canonical: `${SITE_URL}/about`,
+  });
+}
 
 export default async function AboutPage() {
   const [content, storyFeatures, stats, values, team, journey, press] =

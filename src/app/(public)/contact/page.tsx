@@ -15,7 +15,7 @@ import { ContactTestimonials } from '@/components/contact/ContactTestimonials';
 import { ContactWhatsAppFloat } from '@/components/contact/ContactWhatsAppFloat';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });

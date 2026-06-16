@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { renderAccents } from '@/lib/accents';
 import type { BlogCardData, SectionHeading } from '@/types/home';
 
@@ -33,7 +34,7 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
             <div className="shine"></div>
             <div className="relative h-44 overflow-hidden">
               {b.coverImage && (
-                <img src={b.coverImage} alt={b.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
+                <Image src={b.coverImage} alt={b.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-110" />
               )}
               {b.category && (
                 <span className="glass pop-sm absolute left-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold text-white">

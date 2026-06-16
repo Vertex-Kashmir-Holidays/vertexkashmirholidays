@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { renderMint } from '@/lib/accents';
 import type { AboutTeamHeading, TeamMemberData } from '@/types/about';
 
@@ -30,11 +31,15 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <img
-                src={m.image}
-                alt={m.name}
-                className="h-[120px] w-full object-cover"
-              />
+              <div className="relative h-[120px] w-full overflow-hidden">
+                <Image
+                  src={m.image}
+                  alt={m.name}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  className="object-cover"
+                />
+              </div>
               <div className="p-3.5">
                 <p className="text-[13.5px] font-bold leading-snug">{m.name}</p>
                 <p className="mt-0.5 text-[11px] font-semibold text-primary">{m.role}</p>

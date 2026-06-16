@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { renderMint } from '@/lib/accents';
 import type { AboutStoryData, AboutStoryFeatureData } from '@/types/about';
 
@@ -15,17 +16,19 @@ export function AboutStory({ data, features }: AboutStoryProps) {
     <section id="story" className="mx-auto max-w-[1300px] px-6 py-14">
       <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.15fr]">
         <motion.div
-          className="overflow-hidden rounded-2xl shadow-card"
+          className="group relative aspect-[4/3] overflow-hidden rounded-2xl shadow-card"
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
           {data.image && (
-            <img
+            <Image
               src={data.image}
               alt="Houseboat and shikara on Dal Lake"
-              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+              fill
+              sizes="(max-width: 1024px) 100vw, 45vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
           )}
         </motion.div>

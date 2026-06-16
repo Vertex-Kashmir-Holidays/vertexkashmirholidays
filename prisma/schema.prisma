@@ -265,6 +265,17 @@ model Gallery {
   @@index([type])
 }
 
+// Long-form legal/policy pages (Terms, Privacy, Refund & Cancellation).
+// Keyed by slug; content is admin-editable HTML. The app ships professional
+// defaults so a page always renders even before a row exists.
+model LegalPage {
+  slug      String   @id // terms-and-conditions | privacy-policy | refund-and-cancellation
+  title     String
+  content   String // HTML
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
 model HomeContent {
   id                    String   @id @default("singleton")
   heroBadge             String?

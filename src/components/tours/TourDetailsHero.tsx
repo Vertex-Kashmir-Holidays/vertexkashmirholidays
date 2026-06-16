@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TourDetailsHeroProps {
@@ -72,16 +73,23 @@ export function TourDetailsHero({
       {/* Carousel Images */}
       <div className="absolute inset-0">
         <AnimatePresence mode="wait">
-          <motion.img
+          <motion.div
             key={currentImage}
-            src={images[currentImage] || `https://picsum.photos/seed/detail-hero/1800/760`}
-            alt={tourName}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0"
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7 }}
-          />
+          >
+            <Image
+              src={images[currentImage] || `https://picsum.photos/seed/detail-hero/1800/760`}
+              alt={tourName}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          </motion.div>
         </AnimatePresence>
       </div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/75 via-brand-dark/30 to-brand-dark/20"></div>
@@ -247,7 +255,7 @@ export function TourDetailsHero({
               onClick={() => setCurrentImage(i)}
               whileHover={{ scale: 1.05 }}
             >
-              <img src={img} alt="" className="h-full w-full object-cover" />
+              <Image src={img} alt="" fill sizes="104px" className="object-cover" />
               {i === currentImage && (
                 <span className="absolute inset-0 grid place-items-center bg-black/30">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[11px] text-brand-ink">▶</span>
