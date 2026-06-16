@@ -8,11 +8,15 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category") ?? "";
+  const type = searchParams.get("type") ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const take = 24;
   const skip = (page - 1) * take;
 
-  const where = category ? { category } : {};
+  const where = {
+    ...(category ? { category } : {}),
+    ...(type === "IMAGE" || type === "VIDEO" ? { type } : {}),
+  };
   const [items, total] = await Promise.all([
     prisma.gallery.findMany({
       where,
@@ -28,6 +32,7 @@ export async function GET(req: NextRequest) {
 
 const createSchema = z.object({
   url: z.string().min(1),
+  type: z.enum(["IMAGE", "VIDEO"]).optional(),
   alt: z.string().optional(),
   caption: z.string().optional(),
   category: z.string().optional(),

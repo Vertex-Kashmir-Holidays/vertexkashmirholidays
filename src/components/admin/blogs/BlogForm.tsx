@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload, Eye } from "lucide-react";
+import { Loader2, Upload, Eye, Images } from "lucide-react";
+import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 
 const schema = z.object({
   title: z.string().min(3, "Title is required"),
@@ -36,6 +37,9 @@ export function BlogForm({ defaults }: Props) {
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [previewBody, setPreviewBody] = useState(false);
+  // Which field the gallery picker is currently feeding ("body" inserts an
+  // <img> tag into the HTML content).
+  const [picker, setPicker] = useState<null | "coverImage" | "ogImage" | "body">(null);
   const isEdit = !!defaults?.id;
 
   const {
@@ -83,6 +87,15 @@ export function BlogForm({ defaults }: Props) {
       toast.error("Upload failed.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  function handlePickerSelect(url: string) {
+    if (picker === "body") {
+      const current = watch("body") ?? "";
+      setValue("body", `${current}${current ? "\n" : ""}<img src="${url}" alt="" />`);
+    } else if (picker) {
+      setValue(picker, url);
     }
   }
 
@@ -153,6 +166,10 @@ export function BlogForm({ defaults }: Props) {
           <h3 className="font-bold text-foreground text-sm">Cover Image</h3>
           <div className="flex gap-3">
             <input {...register("coverImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
+            <button type="button" onClick={() => setPicker("coverImage")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+              <Images className="w-3.5 h-3.5" />
+              Gallery
+            </button>
             <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
               Upload
@@ -171,14 +188,24 @@ export function BlogForm({ defaults }: Props) {
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-foreground text-sm">Body Content (HTML)</h3>
-            <button
-              type="button"
-              onClick={() => setPreviewBody((p) => !p)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              {previewBody ? "Edit" : "Preview"}
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setPicker("body")}
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Images className="w-3.5 h-3.5" />
+                Insert image
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewBody((p) => !p)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                {previewBody ? "Edit" : "Preview"}
+              </button>
+            </div>
           </div>
 
           {previewBody ? (
@@ -212,6 +239,10 @@ export function BlogForm({ defaults }: Props) {
             <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Image URL</label>
             <div className="flex gap-3">
               <input {...register("ogImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+              <button type="button" onClick={() => setPicker("ogImage")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+                <Images className="w-3.5 h-3.5" />
+                Gallery
+              </button>
               <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
                 <Upload className="w-3.5 h-3.5" />
                 Upload
@@ -261,6 +292,14 @@ export function BlogForm({ defaults }: Props) {
           </div>
         </div>
       </div>
+
+      <GalleryPicker
+        open={picker !== null}
+        type="IMAGE"
+        title={picker === "body" ? "Insert image into body" : "Choose an image from gallery"}
+        onSelect={handlePickerSelect}
+        onClose={() => setPicker(null)}
+      />
     </div>
   );
 }

@@ -14,8 +14,8 @@ export function AuthExplore() {
       transition={{ duration: 0.5, delay: 0.1 }}
     >
       <img
-        src="https://picsum.photos/seed/auth-meadow/600/500"
-        alt=""
+        src="/hero/gulmarg-lg.webp"
+        alt="Meadows of Gulmarg, Kashmir"
         className="absolute inset-y-0 left-0 hidden h-full w-[42%] rounded-r-[40%] object-cover sm:block"
       />
       <div className="relative ml-0 sm:ml-[44%]">

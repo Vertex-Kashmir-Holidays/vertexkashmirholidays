@@ -3,7 +3,8 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { requireStaff } from "@/lib/permissions";
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50 MB
 
 export async function POST(req: NextRequest) {
   const guard = await requireStaff();
@@ -18,8 +19,19 @@ export async function POST(req: NextRequest) {
 
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
-  if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
-  if (file.size > MAX_SIZE) return NextResponse.json({ error: "File too large (max 5 MB)" }, { status: 400 });
+
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+  if (!isImage && !isVideo) {
+    return NextResponse.json({ error: "Only image or video files are allowed" }, { status: 400 });
+  }
+  const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+  if (file.size > maxSize) {
+    return NextResponse.json(
+      { error: `File too large (max ${isVideo ? "50" : "5"} MB)` },
+      { status: 400 }
+    );
+  }
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
@@ -31,5 +43,8 @@ export async function POST(req: NextRequest) {
   await mkdir(uploadsDir, { recursive: true });
   await writeFile(path.join(uploadsDir, filename), buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 });
+  return NextResponse.json(
+    { url: `/uploads/${filename}`, type: isVideo ? "VIDEO" : "IMAGE" },
+    { status: 201 }
+  );
 }

@@ -504,25 +504,6 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Demo Admin Access */}
-        <div className="mt-5 flex items-center gap-4 rounded-2xl border border-border bg-muted p-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-primary">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21a8 8 0 0 1 16 0" />
-            </svg>
-          </span>
-          <div className="text-[12px] leading-relaxed">
-            <p className="text-[13px] font-bold">Demo Admin Access</p>
-            <p>
-              Email: <strong className="text-primary">admin@vertex.com</strong>
-            </p>
-            <p>
-              Password: <strong className="text-primary">admin123</strong>
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );

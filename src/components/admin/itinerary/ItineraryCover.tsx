@@ -32,10 +32,12 @@ export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCover
 
       <div className="relative flex min-h-[1160px] flex-col p-12 text-white">
         <div className="flex items-center gap-3">
-          <svg viewBox="0 0 44 44" className="h-11 w-11">
-            <path d="M6 9 19 35 22 17Z" fill="#16407f" />
-            <path d="M22 17 25 35 39 9Z" fill="#37b86b" />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/icon.png"
+            alt="Vertex Kashmir Holidays"
+            className="h-11 w-11 rounded-md bg-white object-contain p-1"
+          />
           <span className="leading-tight">
             <span className="block font-serif text-2xl font-bold">Vertex</span>
             <span className="block text-[10px] font-semibold tracking-[0.18em] text-white/85">Kashmir Holidays</span>

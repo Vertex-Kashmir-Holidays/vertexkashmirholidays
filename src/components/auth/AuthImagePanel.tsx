@@ -28,8 +28,8 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
   return (
     <aside className="relative hidden min-h-[760px] overflow-hidden lg:block">
       <motion.img
-        src="https://picsum.photos/seed/auth-shikara/1000/1400"
-        alt="Shikara on Dal Lake"
+        src="/hero/shikara-lg.webp"
+        alt="Shikara on Dal Lake, Srinagar, Kashmir"
         className="absolute inset-0 h-full w-full object-cover"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}

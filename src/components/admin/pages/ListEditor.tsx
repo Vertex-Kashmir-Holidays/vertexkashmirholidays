@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, X, Eye, EyeOff, Loader2 } from "lucide-react";
 import { getMeta, type FieldDef } from "@/lib/admin/pageFields";
 import { ImageField } from "@/components/admin/pages/ImageField";
+import { VideoField } from "@/components/admin/pages/VideoField";
 import { cn } from "@/lib/utils";
 
 type Item = Record<string, unknown> & { id: string; sortOrder?: number; isActive?: boolean };
@@ -212,6 +213,8 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                   </label>
                   {f.type === "image" ? (
                     <ImageField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} />
+                  ) : f.type === "video" ? (
+                    <VideoField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} />
                   ) : f.type === "textarea" ? (
                     <textarea
                       rows={3}
