@@ -17,8 +17,24 @@ model User {
   updatedAt    DateTime  @updatedAt
   bookings     Booking[]
   reviews      Review[]
+  itineraries  Itinerary[]
 
   @@index([email])
+}
+
+model Itinerary {
+  id        String          @id @default(cuid())
+  title     String
+  status    ItineraryStatus @default(DRAFT)
+  data      Json
+  ownerId   String
+  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([updatedAt])
 }
 
 model RolePermission {
@@ -697,4 +713,10 @@ enum InquiryStatus {
   CONTACTED
   CONVERTED
   CLOSED
+}
+
+enum ItineraryStatus {
+  DRAFT
+  SENT
+  CONFIRMED
 }
