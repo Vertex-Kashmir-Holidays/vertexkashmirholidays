@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendMail, otpVerificationHtml, otpVerificationText } from "@/lib/mail";
 import {
-  ALLOWED_DOMAINS_LABEL,
   OTP_TTL_MS,
   OTP_TTL_MINUTES,
   RESEND_COOLDOWN_MS,
@@ -13,20 +12,26 @@ import {
   clientIp,
   generateOtp,
   hashOtp,
-  isAllowedEmailDomain,
   rateLimit,
 } from "@/lib/auth/otp";
+import {
+  EMAIL_FORMAT_MESSAGE,
+  PASSWORD_MESSAGE,
+  PHONE_MESSAGE,
+  PUBLIC_DOMAINS_GENERIC_MESSAGE,
+  isAllowedEmailDomain,
+  isValidE164,
+  isValidPassword,
+} from "@/lib/auth/validation";
 
 export const dynamic = "force-dynamic";
 
 const requestSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
-  email: z.string().trim().email("Please enter a valid email address").max(200),
-  phone: z.string().trim().max(20).optional(),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .max(100),
+  name: z.string().trim().min(1, "Please enter your full name.").max(100),
+  email: z.string().trim().email(EMAIL_FORMAT_MESSAGE).max(200),
+  // Client sends an E.164 number (e.g. +919876543210) validated per country.
+  phone: z.string().trim().refine(isValidE164, PHONE_MESSAGE),
+  password: z.string().max(100).refine(isValidPassword, PASSWORD_MESSAGE),
 });
 
 // Step 1 of registration: validate inputs, enforce domain allowlist + anti-spam,
@@ -53,14 +58,12 @@ export async function POST(req: NextRequest) {
 
     const name = parsed.data.name;
     const email = parsed.data.email.toLowerCase();
-    const phone = parsed.data.phone || null;
+    const phone = parsed.data.phone;
     const { password } = parsed.data;
 
     if (!isAllowedEmailDomain(email)) {
       return NextResponse.json(
-        {
-          error: `Registration is only allowed from these email providers: ${ALLOWED_DOMAINS_LABEL}.`,
-        },
+        { error: PUBLIC_DOMAINS_GENERIC_MESSAGE },
         { status: 400 },
       );
     }

@@ -2,12 +2,39 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import type { CountryCode } from 'libphonenumber-js';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Logo } from '@/components/brand/Logo';
+import { PhoneInput } from '@/components/auth/PhoneInput';
+import {
+  EMAIL_FORMAT_MESSAGE,
+  PASSWORD_MESSAGE,
+  PHONE_MESSAGE,
+  PUBLIC_DOMAINS_GENERIC_MESSAGE,
+  isAllowedEmailDomain,
+  isValidEmailFormat,
+  isValidPassword,
+  isValidPhone,
+  toE164,
+} from '@/lib/auth/validation';
+
+type FieldErrors = Partial<
+  Record<'name' | 'email' | 'phone' | 'password' | 'confirm' | 'terms', string>
+>;
+
+// Small inline field-error line shown under an input (custom messages only).
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p className="mt-1.5 text-[11.5px] font-medium text-red-600 dark:text-red-400">
+      {message}
+    </p>
+  );
+}
 
 interface AuthFormPanelProps {
   view: 'login' | 'register';
@@ -26,13 +53,51 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
   // Login fields
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginErrors, setLoginErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
 
   // Register fields
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
-  const [regPhone, setRegPhone] = useState('');
+  const [regPhone, setRegPhone] = useState(''); // national number as typed
+  const [country, setCountry] = useState<CountryCode>('IN');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
+  const [agree, setAgree] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+
+  // Clears a single field error (called as the user edits that field).
+  function clearError(field: keyof FieldErrors) {
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  }
+
+  // Validates the whole register form, populating per-field custom messages.
+  function validateRegister(): boolean {
+    const e: FieldErrors = {};
+    if (!regName.trim()) e.name = 'Please enter your full name.';
+
+    if (!regEmail.trim()) e.email = 'Please enter your email address.';
+    else if (!isValidEmailFormat(regEmail)) e.email = EMAIL_FORMAT_MESSAGE;
+    else if (!isAllowedEmailDomain(regEmail))
+      e.email = PUBLIC_DOMAINS_GENERIC_MESSAGE;
+
+    if (!regPhone.trim()) e.phone = 'Please enter your phone number.';
+    else if (!isValidPhone(regPhone, country)) e.phone = PHONE_MESSAGE;
+
+    if (!regPassword) e.password = 'Please create a password.';
+    else if (!isValidPassword(regPassword)) e.password = PASSWORD_MESSAGE;
+
+    if (!regConfirm) e.confirm = 'Please confirm your password.';
+    else if (regPassword !== regConfirm) e.confirm = 'Passwords do not match.';
+
+    if (!agree)
+      e.terms = 'Please accept the Terms & Conditions and Privacy Policy.';
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
 
   // Two-step registration: 'form' collects details + requests an OTP, 'otp'
   // verifies the emailed code before the account is created.
@@ -56,6 +121,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
     setNotice(null);
     setRegStep('form');
     setOtpCode('');
+    setErrors({});
+    setLoginErrors({});
     onViewChange(next);
   }
 
@@ -78,6 +145,16 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Custom required-field checks (the form is noValidate — no native bubbles).
+    const le: { email?: string; password?: string } = {};
+    if (!loginEmail.trim()) le.email = 'Please enter your email address.';
+    else if (!isValidEmailFormat(loginEmail))
+      le.email = EMAIL_FORMAT_MESSAGE;
+    if (!loginPassword) le.password = 'Please enter your password.';
+    setLoginErrors(le);
+    if (Object.keys(le).length > 0) return;
+
     setSubmitting(true);
 
     const result = await signIn('credentials', {
@@ -103,8 +180,12 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
     setError(null);
     setNotice(null);
 
-    if (regPassword !== regConfirm) {
-      setError('Passwords do not match.');
+    if (!validateRegister()) return;
+
+    // validateRegister already confirmed the number is valid for the country.
+    const phoneE164 = toE164(regPhone, country);
+    if (!phoneE164) {
+      setErrors((prev) => ({ ...prev, phone: PHONE_MESSAGE }));
       return;
     }
 
@@ -116,7 +197,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
       body: JSON.stringify({
         name: regName,
         email: regEmail,
-        phone: regPhone,
+        phone: phoneE164,
         password: regPassword,
       }),
     });
@@ -187,7 +268,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
       body: JSON.stringify({
         name: regName,
         email: regEmail,
-        phone: regPhone,
+        phone: toE164(regPhone, country) ?? regPhone,
         password: regPassword,
       }),
     });
@@ -274,7 +355,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   Log in to your account to manage your bookings, view itineraries and more.
                 </p>
 
-                <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+                <form className="mt-6 space-y-4" onSubmit={handleLogin} noValidate>
                   {view === 'login' && error && (
                     <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
                       {error}
@@ -286,17 +367,21 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                       <input
                         id="liEmail"
                         type="email"
-                        required
                         placeholder="Enter your email"
                         autoComplete="email"
                         value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        onChange={(e) => {
+                          setLoginEmail(e.target.value);
+                          if (loginErrors.email)
+                            setLoginErrors((p) => ({ ...p, email: undefined }));
+                        }}
                       />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />
                         <path d="m22 7-10 6L2 7" />
                       </svg>
                     </div>
+                    <FieldError message={loginErrors.email} />
                   </div>
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="liPass">Password</label>
@@ -304,11 +389,14 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                       <input
                         id="liPass"
                         type={showPassword ? 'text' : 'password'}
-                        required
                         placeholder="Enter your password"
                         autoComplete="current-password"
                         value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
+                        onChange={(e) => {
+                          setLoginPassword(e.target.value);
+                          if (loginErrors.password)
+                            setLoginErrors((p) => ({ ...p, password: undefined }));
+                        }}
                       />
                       <button
                         type="button"
@@ -335,6 +423,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         </svg>
                       </button>
                     </div>
+                    <FieldError message={loginErrors.password} />
                     <div className="mt-2 flex justify-end">
                       <a href="#" className="text-[12px] font-semibold text-primary hover:underline">Forgot password?</a>
                     </div>
@@ -405,7 +494,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   Join thousands of happy travellers.<br/>It only takes a minute.
                 </p>
 
-                <form className="mt-6 space-y-4" onSubmit={handleRegister}>
+                <form className="mt-6 space-y-4" onSubmit={handleRegister} noValidate>
                   {view === 'register' && error && (
                     <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
                       {error}
@@ -413,78 +502,76 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   )}
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgName">Full name</label>
-                    <div className="input-wrap mt-1.5">
+                    <div className={`input-wrap mt-1.5 ${errors.name ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgName"
-                        required
                         placeholder="Enter your full name"
                         autoComplete="name"
                         value={regName}
-                        onChange={(e) => setRegName(e.target.value)}
+                        onChange={(e) => {
+                          setRegName(e.target.value);
+                          clearError('name');
+                        }}
                       />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4 21a8 8 0 0 1 16 0" />
                       </svg>
                     </div>
+                    <FieldError message={errors.name} />
                   </div>
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgEmail">Email address</label>
-                    <div className="input-wrap mt-1.5">
+                    <div className={`input-wrap mt-1.5 ${errors.email ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgEmail"
                         type="email"
-                        required
                         placeholder="Enter your email"
                         autoComplete="email"
                         value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
+                        onChange={(e) => {
+                          setRegEmail(e.target.value);
+                          clearError('email');
+                        }}
                       />
                       <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="4" width="20" height="16" rx="2" />
                         <path d="m22 7-10 6L2 7" />
                       </svg>
                     </div>
+                    <FieldError message={errors.email} />
                   </div>
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgPhone">Phone number</label>
-                    <div className="input-wrap mt-1.5">
-                      <button type="button" className="ml-3.5 flex shrink-0 items-center gap-1.5 border-r border-border pr-3 text-[12.5px] font-semibold">
-                        <span className="inline-block h-3.5 w-5 overflow-hidden rounded-[2px]" aria-hidden="true">
-                          <span className="block h-1/3 bg-orange-500"></span>
-                          <span className="block h-1/3 bg-white"></span>
-                          <span className="block h-1/3 bg-green-700"></span>
-                        </span>
-                        <svg viewBox="0 0 24 24" className="h-3 w-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
-                        +91
-                      </button>
-                      <input
-                        id="rgPhone"
-                        type="tel"
-                        required
-                        placeholder="Enter your phone number"
-                        autoComplete="tel"
-                        value={regPhone}
-                        onChange={(e) => setRegPhone(e.target.value)}
-                      />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
-                      </svg>
-                    </div>
+                    <PhoneInput
+                      id="rgPhone"
+                      country={country}
+                      onCountryChange={(c) => {
+                        setCountry(c);
+                        clearError('phone');
+                      }}
+                      value={regPhone}
+                      onChange={(v) => {
+                        setRegPhone(v);
+                        clearError('phone');
+                      }}
+                      invalid={!!errors.phone}
+                    />
+                    <FieldError message={errors.phone} />
                   </div>
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgPass">Password</label>
-                    <div className="input-wrap mt-1.5">
+                    <div className={`input-wrap mt-1.5 ${errors.password ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgPass"
                         type={showPassword ? 'text' : 'password'}
-                        required
                         placeholder="Create a password"
                         autoComplete="new-password"
                         value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
+                        onChange={(e) => {
+                          setRegPassword(e.target.value);
+                          clearError('password');
+                        }}
                       />
                       <button
                         type="button"
@@ -510,18 +597,27 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         </svg>
                       </button>
                     </div>
+                    {errors.password ? (
+                      <FieldError message={errors.password} />
+                    ) : (
+                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                        Use at least 8 characters with letters and numbers.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-[12px] font-semibold" htmlFor="rgPass2">Confirm password</label>
-                    <div className="input-wrap mt-1.5">
+                    <div className={`input-wrap mt-1.5 ${errors.confirm ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgPass2"
                         type={showConfirmPassword ? 'text' : 'password'}
-                        required
                         placeholder="Confirm your password"
                         autoComplete="new-password"
                         value={regConfirm}
-                        onChange={(e) => setRegConfirm(e.target.value)}
+                        onChange={(e) => {
+                          setRegConfirm(e.target.value);
+                          clearError('confirm');
+                        }}
                       />
                       <button
                         type="button"
@@ -547,15 +643,42 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         </svg>
                       </button>
                     </div>
+                    <FieldError message={errors.confirm} />
                   </div>
-                  <label className="flex items-start gap-2.5 text-[12px] leading-snug text-foreground/80">
-                    <input type="checkbox" required className="cbx mt-0.5" />
-                    <span>
-                      I agree to the{' '}
-                      <a href="#" className="font-bold text-primary hover:underline">Terms &amp; Conditions</a> and{' '}
-                      <a href="#" className="font-bold text-primary hover:underline">Privacy Policy</a>
-                    </span>
-                  </label>
+                  <div>
+                    <label className="flex items-start gap-2.5 text-[12px] leading-snug text-foreground/80">
+                      <input
+                        type="checkbox"
+                        className="cbx mt-0.5"
+                        checked={agree}
+                        onChange={(e) => {
+                          setAgree(e.target.checked);
+                          clearError('terms');
+                        }}
+                      />
+                      <span>
+                        I agree to the{' '}
+                        <Link
+                          href="/terms-and-conditions"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-primary hover:underline"
+                        >
+                          Terms &amp; Conditions
+                        </Link>{' '}
+                        and{' '}
+                        <Link
+                          href="/privacy-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-primary hover:underline"
+                        >
+                          Privacy Policy
+                        </Link>
+                      </span>
+                    </label>
+                    <FieldError message={errors.terms} />
+                  </div>
                   <button
                     type="submit"
                     disabled={submitting}
