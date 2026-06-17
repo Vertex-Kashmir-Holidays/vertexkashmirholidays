@@ -7,7 +7,7 @@ import Link from 'next/link';
 export function AuthExplore() {
   return (
     <motion.div
-      className="relative flex items-center overflow-hidden rounded-3xl bg-card p-7 shadow-soft"
+      className="relative flex items-center overflow-hidden rounded-3xl bg-card p-5 shadow-soft sm:p-7"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
