@@ -11,6 +11,7 @@ model User {
   id           String    @id @default(cuid())
   name         String?
   email        String    @unique
+  phone        String?
   passwordHash String
   role         Role      @default(CUSTOMER)
   createdAt    DateTime  @default(now())
@@ -35,6 +36,29 @@ model Itinerary {
   @@index([ownerId])
   @@index([status])
   @@index([updatedAt])
+}
+
+// Pending email-verification record for account registration. A row is created
+// when a visitor requests a sign-up OTP; the account is NOT created in `User`
+// until the OTP is verified. One pending row per email (email is unique) — a
+// re-request upserts. The OTP is stored hashed (codeHash), never in plaintext,
+// and the chosen password is stored already-bcrypt-hashed (passwordHash) so no
+// plaintext credentials are ever persisted. Expired rows are cleaned up on each
+// request/verify call (see src/lib/auth/otp.ts → cleanupExpiredOtps).
+model EmailOtp {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  codeHash     String // bcrypt hash of the 6-digit OTP
+  name         String // pending account display name
+  passwordHash String // pending account password (already bcrypt-hashed)
+  phone        String? // collected at sign-up; copied to User on verification
+  attempts     Int      @default(0) // failed verification attempts
+  expiresAt    DateTime // OTP expiry (now + 10 minutes)
+  lastSentAt   DateTime @default(now()) // drives the 60s resend cooldown
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
 }
 
 model RolePermission {

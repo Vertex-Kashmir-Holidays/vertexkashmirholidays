@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { sendMail, inquiryNotificationHtml } from "@/lib/mail";
+import {
+  sendMail,
+  inquiryNotificationHtml,
+  inquiryNotificationText,
+} from "@/lib/mail";
 import { requirePermission } from "@/lib/permissions";
 import type { Prisma } from "@prisma/client";
 
@@ -66,18 +70,22 @@ export async function POST(req: NextRequest) {
     process.env.MAIL_FROM ??
     "admin@vertexkashmirholidays.com";
 
+  const inquiryEmail = {
+    name: inquiry.name,
+    phone: inquiry.phone,
+    email: inquiry.email ?? undefined,
+    travelDate: travelDate,
+    travellers: inquiry.travellers ?? undefined,
+    message: inquiry.message ?? undefined,
+    source: inquiry.source ?? undefined,
+  };
   await sendMail({
     to: adminTo,
     subject: `New inquiry from ${inquiry.name} (${inquiry.phone})`,
-    html: inquiryNotificationHtml({
-      name: inquiry.name,
-      phone: inquiry.phone,
-      email: inquiry.email ?? undefined,
-      travelDate: travelDate,
-      travellers: inquiry.travellers ?? undefined,
-      message: inquiry.message ?? undefined,
-      source: inquiry.source ?? undefined,
-    }),
+    html: inquiryNotificationHtml(inquiryEmail),
+    text: inquiryNotificationText(inquiryEmail),
+    // Let staff reply straight to the customer when an email was provided.
+    replyTo: inquiry.email ?? undefined,
   });
 
   return NextResponse.json({ success: true, id: inquiry.id }, { status: 201 });
