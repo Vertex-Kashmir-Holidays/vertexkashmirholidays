@@ -1,40 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
-const registerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const parsed = registerSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
-      { status: 400 },
-    );
-  }
-
-  const { name, email, password } = parsed.data;
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json(
-      { error: "An account with this email already exists." },
-      { status: 409 },
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({
-    data: { name, email, passwordHash },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
-  });
-
-  return NextResponse.json({ user }, { status: 201 });
+// Direct account creation is intentionally disabled. Registration now requires
+// email OTP verification:
+//   1. POST /api/auth/register/request-otp  → emails a 6-digit code
+//   2. POST /api/auth/register/verify-otp   → verifies the code and creates the account
+//
+// This stub remains so any old client hitting the legacy endpoint gets a clear
+// signal instead of silently creating an unverified account.
+export async function POST() {
+  return NextResponse.json(
+    {
+      error:
+        "Email verification is now required to register. Please use the verification flow.",
+    },
+    { status: 410 },
+  );
 }
