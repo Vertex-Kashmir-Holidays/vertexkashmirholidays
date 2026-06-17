@@ -9,28 +9,16 @@ import { randomInt } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
-// ── Policy constants ─────────────────────────────────────────────────────────
+// Email-domain + password + phone validation now lives in ./validation (it is
+// pure and shared with the client form). Re-export the domain helpers here so
+// existing server imports keep working.
+export {
+  ALLOWED_EMAIL_DOMAINS,
+  isAllowedEmailDomain,
+  PUBLIC_DOMAINS_GENERIC_MESSAGE,
+} from "./validation";
 
-/** Domains we accept registrations from. Everything else is blocked. */
-export const ALLOWED_EMAIL_DOMAINS = [
-  // Google
-  "gmail.com",
-  "googlemail.com",
-  // Microsoft (Outlook / Hotmail / Live)
-  "outlook.com",
-  "hotmail.com",
-  "live.com",
-  // Yahoo
-  "yahoo.com",
-  "ymail.com",
-  // Zoho
-  "zoho.com",
-  "zohomail.com",
-  // Rediffmail
-  "rediffmail.com",
-  // Company
-  "vertexkashmirholidays.com",
-] as const;
+// ── Policy constants ─────────────────────────────────────────────────────────
 
 export const OTP_LENGTH = 6;
 export const OTP_TTL_MS = 10 * 60 * 1000; // OTP valid for 10 minutes
@@ -39,19 +27,6 @@ export const MAX_VERIFY_ATTEMPTS = 5; // wrong-code attempts before lockout
 
 export const OTP_TTL_MINUTES = OTP_TTL_MS / 60_000;
 export const RESEND_COOLDOWN_SECONDS = RESEND_COOLDOWN_MS / 1_000;
-
-// ── Email / domain validation ────────────────────────────────────────────────
-
-/** True when the email's domain is in {@link ALLOWED_EMAIL_DOMAINS}. */
-export function isAllowedEmailDomain(email: string): boolean {
-  const domain = email.split("@")[1]?.toLowerCase().trim();
-  return (
-    !!domain && (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(domain)
-  );
-}
-
-/** Human-readable list of allowed domains for validation messages. */
-export const ALLOWED_DOMAINS_LABEL = ALLOWED_EMAIL_DOMAINS.join(", ");
 
 // ── OTP generation & hashing ─────────────────────────────────────────────────
 
