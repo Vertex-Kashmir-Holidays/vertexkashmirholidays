@@ -29,7 +29,7 @@ export function AuthTrustStrip() {
 
   return (
     <motion.div
-      className="grid gap-7 rounded-3xl bg-card p-7 shadow-soft sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border"
+      className="grid grid-cols-1 gap-6 rounded-3xl bg-card p-5 shadow-soft sm:grid-cols-2 sm:gap-7 sm:p-7 lg:grid-cols-4 lg:divide-x lg:divide-border"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

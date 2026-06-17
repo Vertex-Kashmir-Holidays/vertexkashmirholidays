@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Logo } from '@/components/brand/Logo';
 
 interface AuthFormPanelProps {
   view: 'login' | 'register';
@@ -145,12 +146,15 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
   );
 
   return (
-    <section className="flex flex-col p-6 lg:p-9">
-      <div className="flex items-center justify-between">
+    <section className="flex min-w-0 flex-col p-4 sm:p-6 lg:p-9">
+      {/* Mobile/tablet brand — the image panel (which carries the logo) is hidden below lg */}
+      <Logo variant="auto" href="/" className="mb-5 self-start lg:hidden" />
+
+      <div className="flex items-center justify-between gap-3">
         <ThemeToggle />
         <Link
           href="/"
-          className="flex items-center gap-2 text-[13px] font-semibold text-foreground/75 transition hover:text-primary"
+          className="flex shrink-0 items-center gap-2 text-[13px] font-semibold text-foreground/75 transition hover:text-primary"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M11 18l-6-6 6-6" />
@@ -159,7 +163,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
         </Link>
       </div>
 
-      <div className="mx-auto mt-6 w-full max-w-[400px]">
+      <div className="mx-auto mt-6 w-full max-w-[400px] overflow-hidden">
         <AnimatePresence mode="wait">
           {/* Login View */}
           {view === 'login' && (
@@ -170,8 +174,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:p-7">
-                <h2 className="flex items-center gap-2.5 font-display text-[26px] font-bold text-primary">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6 lg:p-7">
+                <h2 className="flex items-center gap-2.5 font-display text-[22px] font-bold text-primary sm:text-[26px]">
                   Welcome back
                   <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="currentColor">
                     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
@@ -300,8 +304,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-soft lg:p-7">
-                <h2 className="flex items-center gap-2.5 font-display text-[26px] font-bold text-primary">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6 lg:p-7">
+                <h2 className="flex items-center gap-2.5 font-display text-[22px] font-bold text-primary sm:text-[26px]">
                   Create your account
                   <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="currentColor">
                     <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
