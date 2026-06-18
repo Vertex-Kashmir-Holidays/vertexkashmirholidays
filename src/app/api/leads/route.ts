@@ -18,10 +18,14 @@ function resolveSource(raw?: string): LeadSource {
   return LeadSource.WEBSITE;
 }
 
-// Admin: list leads with pagination and optional filters.
+// Admin: list leads with pagination, optional filters, and role-scoped access.
 export async function GET(req: NextRequest) {
   const guard = await requirePermission("leads", "view");
   if (guard instanceof NextResponse) return guard;
+
+  const role = (guard.user as { role: string }).role;
+  const userId = guard.user.id as string;
+  const isAdminOrSuper = role === "SUPERADMIN" || role === "ADMIN";
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status")?.trim();
@@ -32,9 +36,15 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * take;
 
   const where: Prisma.LeadWhereInput = {};
+  // Non-admin users can only see their assigned leads — enforced server-side.
+  if (!isAdminOrSuper) {
+    where.assignedToId = userId;
+  }
   if (status && status !== "ALL") where.status = status as Prisma.LeadWhereInput["status"];
   if (source && source !== "ALL") where.source = source as Prisma.LeadWhereInput["source"];
-  if (assignedToId && assignedToId !== "ALL") where.assignedToId = assignedToId;
+  if (isAdminOrSuper && assignedToId && assignedToId !== "ALL") {
+    where.assignedToId = assignedToId;
+  }
 
   const [leads, total] = await Promise.all([
     prisma.lead.findMany({
@@ -50,14 +60,15 @@ export async function GET(req: NextRequest) {
         source: true,
         category: true,
         adults: true,
-        children: true,
-        startDate: true,
         status: true,
-        assignedToId: true,
-        assignedTo: { select: { id: true, name: true } },
-        notes: true,
-        createdAt: true,
+        startDate: true,
+        followUpAt: true,
         updatedAt: true,
+        negotiatedAmount: true,
+        tokenAmount: true,
+        assignedToId: true,
+        assignedTo: { select: { id: true, name: true, email: true } },
+        createdAt: true,
       },
     }),
     prisma.lead.count({ where }),

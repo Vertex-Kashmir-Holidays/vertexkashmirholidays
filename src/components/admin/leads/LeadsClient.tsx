@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, ExternalLink, Trash2, ChevronDown } from "lucide-react";
+import { Search, Plus, ExternalLink, Trash2, ChevronDown, Pencil, Users, CalendarClock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type LeadStatus = "NEW" | "CONNECTED" | "NOT_CONNECTED" | "QUALIFIED" | "NEGOTIATION" | "ON_HOLD" | "CONVERTED" | "REJECTED";
@@ -22,19 +22,34 @@ interface Lead {
   status: LeadStatus;
   startDate: Date | string | null;
   followUpAt: Date | string | null;
-  assignedTo: { id: string; name: string | null } | null;
+  updatedAt: Date | string;
+  negotiatedAmount: number | null;
+  tokenAmount: number | null;
+  assignedTo: { id: string; name: string | null; email: string } | null;
   createdAt: Date | string;
 }
 
 interface StaffUser {
   id: string;
   name: string | null;
+  email: string;
+}
+
+interface Stats {
+  total: number;
+  todayFollowUps: number;
+  converted: number;
 }
 
 interface Props {
   initialLeads: Lead[];
   totalCount: number;
   staffUsers: StaffUser[];
+  stats: Stats;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  isAdmin: boolean;
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -48,33 +63,45 @@ const STATUS_STYLES: Record<LeadStatus, string> = {
   REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
 };
 
-function fmtSource(s: LeadSource) {
-  return s.toLowerCase().replace(/_/g, " ");
-}
-
-function fmtCategory(c: LeadCategory | null) {
-  if (!c) return "—";
-  return c.toLowerCase().replace(/_/g, " ");
-}
+const SOURCE_LABELS: Record<LeadSource, string> = {
+  WEBSITE: "Website",
+  MANUAL: "Manual",
+  GOOGLE_ADS: "Google",
+  META_ADS: "Meta",
+  THIRD_PARTY: "3rd Party",
+  REFERRAL: "Referral",
+};
 
 const selectCls =
   "pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none";
 
-export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
+function StatCard({ label, value, icon: Icon, accent }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; accent: string }) {
+  return (
+    <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-center gap-4">
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", accent)}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-extrabold text-foreground leading-none">{value}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCreate, canEdit, canDelete, isAdmin }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
-  const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [assigneeFilter, setAssigneeFilter] = useState("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const filtered = initialLeads.filter((l) => {
     if (statusFilter !== "ALL" && l.status !== statusFilter) return false;
     if (sourceFilter !== "ALL" && l.source !== sourceFilter) return false;
-    if (categoryFilter !== "ALL" && l.category !== categoryFilter) return false;
-    if (assigneeFilter !== "ALL") {
+    if (isAdmin && assigneeFilter !== "ALL") {
       if (assigneeFilter === "UNASSIGNED" && l.assignedTo !== null) return false;
       if (assigneeFilter !== "UNASSIGNED" && l.assignedTo?.id !== assigneeFilter) return false;
     }
@@ -107,18 +134,28 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Leads</h2>
           <p className="text-muted-foreground text-xs mt-0.5">{totalCount} total leads</p>
         </div>
-        <Link
-          href="/admin/leads/new"
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          New Lead
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/leads/new"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            New Lead
+          </Link>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard label="Total Leads" value={stats.total} icon={Users} accent="bg-blue-500/10 text-blue-600 dark:text-blue-400" />
+        <StatCard label="Today's Follow-ups" value={stats.todayFollowUps} icon={CalendarClock} accent="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
+        <StatCard label="Converted" value={stats.converted} icon={TrendingUp} accent="bg-green-500/10 text-green-600 dark:text-green-400" />
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
@@ -155,37 +192,26 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
               <option value="ALL">All Sources</option>
               <option value="WEBSITE">Website</option>
               <option value="MANUAL">Manual</option>
-              <option value="GOOGLE_ADS">Google Ads</option>
-              <option value="META_ADS">Meta Ads</option>
-              <option value="THIRD_PARTY">Third Party</option>
+              <option value="GOOGLE_ADS">Google</option>
+              <option value="META_ADS">Meta</option>
+              <option value="THIRD_PARTY">3rd Party</option>
               <option value="REFERRAL">Referral</option>
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           </div>
 
-          <div className="relative">
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={selectCls}>
-              <option value="ALL">All Categories</option>
-              <option value="HONEYMOON_TOUR">Honeymoon</option>
-              <option value="COUPLE">Couple</option>
-              <option value="FAMILY_TOUR">Family</option>
-              <option value="GROUP_TOUR">Group</option>
-              <option value="SKI_TOUR">Ski</option>
-              <option value="OFFBEAT_TOUR">Offbeat</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className={selectCls}>
-              <option value="ALL">All Staff</option>
-              <option value="UNASSIGNED">Unassigned</option>
-              {staffUsers.map((u) => (
-                <option key={u.id} value={u.id}>{u.name ?? u.id}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
+          {isAdmin && (
+            <div className="relative">
+              <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className={selectCls}>
+                <option value="ALL">All Staff</option>
+                <option value="UNASSIGNED">Unassigned</option>
+                {staffUsers.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name ?? u.email}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
         </div>
@@ -195,7 +221,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Lead", "Source", "Category", "Travel Date", "Pax", "Assigned To", "Follow-up", "Status", "Added", "Actions"].map((h) => (
+                {["Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -205,8 +231,8 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search || statusFilter !== "ALL" || sourceFilter !== "ALL" || categoryFilter !== "ALL"
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                    {search || statusFilter !== "ALL" || sourceFilter !== "ALL"
                       ? "No leads match your filters."
                       : "No leads yet. Create your first one!"}
                   </td>
@@ -214,65 +240,53 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
               ) : (
                 filtered.map((lead) => (
                   <tr key={lead.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === lead.id && "bg-red-500/5")}>
+                    {/* Lead */}
                     <td className="px-4 py-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-xs truncate max-w-[140px]">{lead.name}</p>
+                        <p className="font-semibold text-foreground text-xs truncate max-w-[160px]">{lead.name}</p>
                         <p className="text-[10px] text-muted-foreground">{lead.phone}</p>
                         {lead.email && (
-                          <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{lead.email}</p>
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">{lead.email}</p>
                         )}
                       </div>
                     </td>
 
+                    {/* Assigned To — name + email */}
                     <td className="px-4 py-3">
-                      <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md capitalize">
-                        {fmtSource(lead.source)}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-muted-foreground capitalize">
-                      {fmtCategory(lead.category)}
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {lead.startDate
-                        ? new Date(lead.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                        : "—"}
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {lead.adults}
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {lead.assignedTo?.name ?? <span className="text-muted-foreground/50">—</span>}
-                    </td>
-
-                    <td className="px-4 py-3 text-xs whitespace-nowrap">
-                      {lead.followUpAt ? (
-                        <span className={cn(
-                          "font-medium",
-                          new Date(lead.followUpAt) < new Date()
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-foreground",
-                        )}>
-                          {new Date(lead.followUpAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                        </span>
+                      {lead.assignedTo ? (
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate max-w-[140px]">
+                            {lead.assignedTo.name ?? "—"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+                            {lead.assignedTo.email}
+                          </p>
+                        </div>
                       ) : (
-                        <span className="text-muted-foreground/50">—</span>
+                        <span className="text-muted-foreground/50 text-xs">—</span>
                       )}
                     </td>
 
+                    {/* Status */}
                     <td className="px-4 py-3">
                       <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[lead.status])}>
                         {lead.status.replace(/_/g, " ")}
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(lead.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    {/* Source */}
+                    <td className="px-4 py-3">
+                      <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
+                        {SOURCE_LABELS[lead.source]}
+                      </span>
                     </td>
 
+                    {/* Last Updated */}
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(lead.updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </td>
+
+                    {/* Actions */}
                     <td className="px-4 py-3">
                       {confirmDelete === lead.id ? (
                         <div className="flex items-center gap-1.5">
@@ -299,13 +313,24 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers }: Props) {
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
-                          <button
-                            onClick={() => setConfirmDelete(lead.id)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canEdit && (
+                            <Link
+                              href={`/admin/leads/${lead.id}`}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => setConfirmDelete(lead.id)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>

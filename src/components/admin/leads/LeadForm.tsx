@@ -23,6 +23,8 @@ const schema = z.object({
   followUpAt: z.string().optional(),
   assignedToId: z.string().optional(),
   notes: z.string().optional(),
+  negotiatedAmount: z.string().optional(),
+  tokenAmount: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -79,6 +81,8 @@ export function LeadForm({ staffUsers }: Props) {
             followUpAt: data.followUpAt || undefined,
             assignedToId: data.assignedToId || undefined,
             notes: data.notes || undefined,
+            negotiatedAmount: data.negotiatedAmount ? parseFloat(data.negotiatedAmount) : undefined,
+            tokenAmount: data.tokenAmount ? parseFloat(data.tokenAmount) : undefined,
           }),
         });
 
@@ -216,6 +220,21 @@ export function LeadForm({ staffUsers }: Props) {
             className={`${inputCls} resize-none`}
             placeholder="Any notes about this lead..."
           />
+        </div>
+      </div>
+
+      {/* Booking Amounts */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <h3 className="font-bold text-foreground text-sm">Booking Amounts (Optional)</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Negotiated Amount (₹)</label>
+            <input {...register("negotiatedAmount")} type="number" min={0} step={1000} className={inputCls} placeholder="e.g. 45000" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Token Amount (₹)</label>
+            <input {...register("tokenAmount")} type="number" min={0} step={1000} className={inputCls} placeholder="e.g. 9000" />
+          </div>
         </div>
       </div>
 

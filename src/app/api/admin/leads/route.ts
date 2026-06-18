@@ -19,6 +19,8 @@ const createSchema = z.object({
   assignedToId: z.string().nullable().optional(),
   notes: z.string().optional(),
   followUpAt: z.string().nullable().optional(),
+  negotiatedAmount: z.coerce.number().positive().nullable().optional(),
+  tokenAmount: z.coerce.number().positive().nullable().optional(),
 });
 
 // Staff-only: create a fully-populated lead in one step.
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { assignedToId, startDate, endDate, email, notes, followUpAt, ...rest } = parsed.data;
+  const { assignedToId, startDate, endDate, email, notes, followUpAt, negotiatedAmount, tokenAmount, ...rest } = parsed.data;
   const performedByName = (guard.user.name ?? guard.user.email) as string;
   const performedById = guard.user.id as string;
 
@@ -53,6 +55,8 @@ export async function POST(req: NextRequest) {
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         followUpAt: followUpAt ? new Date(followUpAt) : undefined,
+        ...(negotiatedAmount !== undefined && { negotiatedAmount }),
+        ...(tokenAmount !== undefined && { tokenAmount }),
         ...(assignedToId ? { assignedTo: { connect: { id: assignedToId } } } : {}),
       },
     });

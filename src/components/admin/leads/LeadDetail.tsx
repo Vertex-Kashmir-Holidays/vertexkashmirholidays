@@ -17,6 +17,12 @@ import {
   ChevronDown,
   Loader2,
   Link2,
+  FileText,
+  Lock,
+  Pencil,
+  Eye,
+  History,
+  Plus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +59,24 @@ interface LinkedBooking {
   guestName: string;
 }
 
+interface ByUser {
+  name: string | null;
+  email: string;
+}
+
+interface LeadItinerary {
+  id: string;
+  title: string;
+  status: string;
+  locked: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  owner: ByUser | null;
+  lastEditedBy: ByUser | null;
+  history: { id: string; title: string; editedByName: string; createdAt: Date | string }[];
+  _count: { history: number };
+}
+
 interface Lead {
   id: string;
   name: string;
@@ -70,20 +94,25 @@ interface Lead {
   bookingId: string | null;
   booking: LinkedBooking | null;
   assignedToId: string | null;
-  assignedTo: { id: string; name: string | null } | null;
+  assignedTo: { id: string; name: string | null; email: string } | null;
+  negotiatedAmount: number | null;
+  tokenAmount: number | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   activities: Activity[];
+  itinerary: LeadItinerary | null;
 }
 
 interface StaffUser {
   id: string;
   name: string | null;
+  email: string;
 }
 
 interface Props {
   lead: Lead;
   staffUsers: StaffUser[];
+  canManageItinerary: boolean;
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -164,15 +193,23 @@ function activityLabel(a: Activity): string {
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
 
-export function LeadDetail({ lead, staffUsers }: Props) {
+export function LeadDetail({ lead, staffUsers, canManageItinerary }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const converted = lead.status === "CONVERTED";
+  const itinerary = lead.itinerary;
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
   const [category, setCategory] = useState(lead.category ?? "");
   const [notes, setNotes] = useState(lead.notes ?? "");
   const [followUpAt, setFollowUpAt] = useState(
     lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "",
+  );
+  const [negotiatedAmount, setNegotiatedAmount] = useState(
+    lead.negotiatedAmount !== null ? String(lead.negotiatedAmount) : "",
+  );
+  const [tokenAmount, setTokenAmount] = useState(
+    lead.tokenAmount !== null ? String(lead.tokenAmount) : "",
   );
   const [bookingInput, setBookingInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -184,7 +221,9 @@ export function LeadDetail({ lead, staffUsers }: Props) {
     setCategory(lead.category ?? "");
     setNotes(lead.notes ?? "");
     setFollowUpAt(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "");
-  }, [lead.status, lead.assignedToId, lead.category, lead.notes, lead.followUpAt]);
+    setNegotiatedAmount(lead.negotiatedAmount !== null ? String(lead.negotiatedAmount) : "");
+    setTokenAmount(lead.tokenAmount !== null ? String(lead.tokenAmount) : "");
+  }, [lead.status, lead.assignedToId, lead.category, lead.notes, lead.followUpAt, lead.negotiatedAmount, lead.tokenAmount]);
 
   // Clear the booking input when a booking is unlinked.
   useEffect(() => {
@@ -214,10 +253,14 @@ export function LeadDetail({ lead, staffUsers }: Props) {
   }
 
   function handleStatusChange(val: LeadStatus) {
-    if (val === "CONVERTED" && !lead.booking) {
-      toast.error("CONVERTED requires a linked booking.");
-      setStatus(lead.status);
-      return;
+    if (val === "CONVERTED") {
+      const hasNegotiated = lead.negotiatedAmount !== null && lead.negotiatedAmount > 0;
+      const hasToken = lead.tokenAmount !== null && lead.tokenAmount > 0;
+      if (!hasNegotiated || !hasToken) {
+        toast.error("Set a Negotiated Amount and Token Amount before converting.");
+        setStatus(lead.status);
+        return;
+      }
     }
     setStatus(val);
     patch({ status: val });
@@ -237,12 +280,32 @@ export function LeadDetail({ lead, staffUsers }: Props) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          toast.error(j.error ?? "Failed to delete lead.");
+          return;
+        }
         toast.success("Lead deleted.");
         router.push("/admin/leads");
         router.refresh();
       } catch {
         toast.error("Failed to delete lead.");
+      }
+    });
+  }
+
+  function handleGenerateItinerary() {
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/leads/${lead.id}/itinerary`, { method: "POST" });
+        const j = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+        if (!res.ok || !j.id) {
+          toast.error(j.error ?? "Failed to create itinerary.");
+          return;
+        }
+        router.push(`/admin/itinerary/${j.id}`);
+      } catch {
+        toast.error("An error occurred.");
       }
     });
   }
@@ -282,7 +345,9 @@ export function LeadDetail({ lead, staffUsers }: Props) {
           ) : (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-3 py-2 rounded-xl border border-border transition-colors"
+              disabled={converted}
+              title={converted ? "Converted leads cannot be deleted." : undefined}
+              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-3 py-2 rounded-xl border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete
@@ -340,7 +405,24 @@ export function LeadDetail({ lead, staffUsers }: Props) {
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Assigned To</p>
-                <p className="font-semibold text-foreground">{lead.assignedTo?.name ?? "—"}</p>
+                <div>
+                  <p className="font-semibold text-foreground">{lead.assignedTo?.name ?? "—"}</p>
+                  {lead.assignedTo?.email && (
+                    <p className="text-[10px] text-muted-foreground">{lead.assignedTo.email}</p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Negotiated Amount</p>
+                <p className="font-semibold text-foreground">
+                  {lead.negotiatedAmount ? `₹${lead.negotiatedAmount.toLocaleString("en-IN")}` : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Token Amount</p>
+                <p className="font-semibold text-foreground">
+                  {lead.tokenAmount ? `₹${lead.tokenAmount.toLocaleString("en-IN")}` : "—"}
+                </p>
               </div>
               {lead.booking && (
                 <div className="col-span-2 sm:col-span-3">
@@ -381,6 +463,119 @@ export function LeadDetail({ lead, staffUsers }: Props) {
                 <p className="font-semibold text-foreground">{fmtDate(lead.updatedAt)}</p>
               </div>
             </div>
+          </div>
+
+          {/* Itinerary */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Itinerary
+              </h3>
+              {itinerary?.locked && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  <Lock className="w-3 h-3" /> Locked
+                </span>
+              )}
+            </div>
+
+            {itinerary ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-foreground text-sm">{itinerary.title}</p>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {itinerary.status}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
+                  <div>
+                    <p className="text-muted-foreground mb-0.5">Generated</p>
+                    <p className="font-semibold text-foreground">{fmtDate(itinerary.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-0.5">Last updated</p>
+                    <p className="font-semibold text-foreground">{fmtDate(itinerary.updatedAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-0.5">Created by</p>
+                    <p className="font-semibold text-foreground">{itinerary.owner?.name ?? "—"}</p>
+                    {itinerary.owner?.email && (
+                      <p className="text-[10px] text-muted-foreground">{itinerary.owner.email}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-0.5">Last updated by</p>
+                    <p className="font-semibold text-foreground">
+                      {(itinerary.lastEditedBy ?? itinerary.owner)?.name ?? "—"}
+                    </p>
+                    {(itinerary.lastEditedBy ?? itinerary.owner)?.email && (
+                      <p className="text-[10px] text-muted-foreground">
+                        {(itinerary.lastEditedBy ?? itinerary.owner)?.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  {canManageItinerary && !converted && !itinerary.locked ? (
+                    <Link
+                      href={`/admin/itinerary/${itinerary.id}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit Itinerary
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/admin/itinerary/${itinerary.id}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold border border-border text-foreground hover:bg-muted px-4 py-2 rounded-xl transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View Itinerary
+                    </Link>
+                  )}
+                </div>
+
+                {converted && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> Final itinerary for the converted lead — locked and no longer editable.
+                  </p>
+                )}
+
+                {itinerary.history.length > 0 && (
+                  <details className="pt-1">
+                    <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5">
+                      <History className="w-3.5 h-3.5" /> Edit history ({itinerary._count.history})
+                    </summary>
+                    <ol className="mt-2 space-y-2 border-l border-border pl-3">
+                      {itinerary.history.map((h) => (
+                        <li key={h.id} className="text-[10px]">
+                          <p className="font-semibold text-foreground">{fmtDateTime(h.createdAt)}</p>
+                          <p className="text-muted-foreground">by {h.editedByName}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs text-muted-foreground mb-3">No itinerary yet for this lead.</p>
+                {canManageItinerary && !converted ? (
+                  <button
+                    onClick={handleGenerateItinerary}
+                    disabled={isPending}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
+                  >
+                    {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    Generate Itinerary
+                  </button>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">
+                    {converted
+                      ? "Lead was converted without an itinerary."
+                      : "You don't have permission to manage this lead's itinerary."}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notes */}
@@ -460,8 +655,8 @@ export function LeadDetail({ lead, staffUsers }: Props) {
                   <option value="QUALIFIED">Qualified</option>
                   <option value="NEGOTIATION">Negotiation</option>
                   <option value="ON_HOLD">On Hold</option>
-                  <option value="CONVERTED" disabled={!lead.booking}>
-                    Converted{!lead.booking ? " (requires booking)" : ""}
+                  <option value="CONVERTED" disabled={!lead.negotiatedAmount || !lead.tokenAmount}>
+                    Converted{(!lead.negotiatedAmount || !lead.tokenAmount) ? " (set amounts first)" : ""}
                   </option>
                   <option value="REJECTED">Rejected</option>
                 </select>
@@ -482,7 +677,7 @@ export function LeadDetail({ lead, staffUsers }: Props) {
                   <option value="">Unassigned</option>
                   {staffUsers.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.name ?? u.id}
+                      {u.name ?? u.email} ({u.email})
                     </option>
                   ))}
                 </select>
@@ -511,6 +706,67 @@ export function LeadDetail({ lead, staffUsers }: Props) {
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
             </div>
+          </div>
+
+          {/* Amounts */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
+            <h3 className="font-bold text-foreground text-sm">Booking Amounts</h3>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Negotiated Amount (₹)
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={1000}
+                value={negotiatedAmount}
+                onChange={(e) => setNegotiatedAmount(e.target.value)}
+                disabled={isPending}
+                placeholder="e.g. 45000"
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card disabled:opacity-60"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Token Amount (₹)
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={1000}
+                value={tokenAmount}
+                onChange={(e) => setTokenAmount(e.target.value)}
+                disabled={isPending}
+                placeholder="e.g. 9000"
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card disabled:opacity-60"
+              />
+            </div>
+            <button
+              onClick={() =>
+                patch({
+                  negotiatedAmount: negotiatedAmount ? parseFloat(negotiatedAmount) : null,
+                  tokenAmount: tokenAmount ? parseFloat(tokenAmount) : null,
+                })
+              }
+              disabled={
+                isPending ||
+                (negotiatedAmount === (lead.negotiatedAmount !== null ? String(lead.negotiatedAmount) : "") &&
+                  tokenAmount === (lead.tokenAmount !== null ? String(lead.tokenAmount) : ""))
+              }
+              className="w-full flex items-center justify-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
+            >
+              {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Save Amounts
+            </button>
+            {lead.negotiatedAmount && lead.tokenAmount ? (
+              <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">
+                Ready to convert
+              </p>
+            ) : (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                Both amounts required to convert lead.
+              </p>
+            )}
           </div>
 
           {/* Follow-up */}
@@ -586,7 +842,8 @@ export function LeadDetail({ lead, staffUsers }: Props) {
                 {status !== "CONVERTED" && (
                   <button
                     onClick={() => handleStatusChange("CONVERTED")}
-                    disabled={isPending}
+                    disabled={isPending || !lead.negotiatedAmount || !lead.tokenAmount}
+                    title={!lead.negotiatedAmount || !lead.tokenAmount ? "Set Negotiated Amount and Token Amount first" : undefined}
                     className="w-full mt-1 flex items-center justify-center gap-1.5 text-xs font-bold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
                   >
                     {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

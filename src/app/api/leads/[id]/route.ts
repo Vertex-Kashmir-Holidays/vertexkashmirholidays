@@ -8,7 +8,6 @@ type Params = { params: Promise<{ id: string }> };
 
 export const dynamic = "force-dynamic";
 
-// Admin: get single lead with activity history.
 export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("leads", "view");
   if (guard instanceof NextResponse) return guard;
@@ -18,11 +17,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
     where: { id },
     include: {
       activities: { orderBy: { performedAt: "desc" } },
-      assignedTo: { select: { id: true, name: true } },
+      assignedTo: { select: { id: true, name: true, email: true } },
       booking: { select: { id: true, status: true, amount: true, travelDate: true, guestName: true } },
     },
   });
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // SALES users can only view leads assigned to them.
+  const role = (guard.user as { role: string }).role;
+  if (role === "SALES" && lead.assignedToId !== (guard.user.id as string)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   return NextResponse.json(lead);
 }
 
@@ -37,9 +43,10 @@ const patchSchema = z.object({
   endDate: z.string().nullable().optional(),
   followUpAt: z.string().nullable().optional(),
   bookingId: z.string().nullable().optional(),
+  negotiatedAmount: z.coerce.number().positive().nullable().optional(),
+  tokenAmount: z.coerce.number().positive().nullable().optional(),
 });
 
-// Admin: update lead fields. Status changes, assignment changes, booking linkage all write LeadActivity rows.
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("leads", "edit");
   if (guard instanceof NextResponse) return guard;
@@ -47,6 +54,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const existing = await prisma.lead.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // SALES users can only edit leads assigned to them.
+  const role = (guard.user as { role: string }).role;
+  if (role === "SALES" && existing.assignedToId !== (guard.user.id as string)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   let body: unknown;
   try {
@@ -59,21 +72,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { status, assignedToId, startDate, endDate, notes, followUpAt, bookingId, ...rest } = parsed.data;
+  const { status, assignedToId, startDate, endDate, notes, followUpAt, bookingId, negotiatedAmount, tokenAmount, ...rest } = parsed.data;
 
-  // Validate booking exists when linking.
   if (bookingId) {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId }, select: { id: true } });
     if (!booking) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
 
-  // CONVERTED is gated: the lead must have a booking linked (existing or being set in this same call).
-  const nextBookingId = bookingId !== undefined ? bookingId : existing.bookingId;
-  if (status === LeadStatus.CONVERTED && !nextBookingId) {
-    return NextResponse.json(
-      { error: "CONVERTED status requires a linked booking." },
-      { status: 422 },
-    );
+  // Gate: CONVERTED requires negotiatedAmount AND tokenAmount to be set.
+  if (status === LeadStatus.CONVERTED) {
+    const effectiveNegotiated = negotiatedAmount !== undefined ? negotiatedAmount : existing.negotiatedAmount;
+    const effectiveToken = tokenAmount !== undefined ? tokenAmount : existing.tokenAmount;
+    if (!effectiveNegotiated || !effectiveToken) {
+      return NextResponse.json(
+        { error: "Cannot convert: both Negotiated Amount and Token Amount must be set and greater than zero." },
+        { status: 422 },
+      );
+    }
   }
 
   const performedByName = (guard.user.name ?? guard.user.email) as string;
@@ -89,103 +104,43 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...rest,
         ...(notes !== undefined && { notes }),
         ...(status !== undefined && { status }),
+        ...(negotiatedAmount !== undefined && { negotiatedAmount }),
+        ...(tokenAmount !== undefined && { tokenAmount }),
         ...(bookingId !== undefined && {
           booking: bookingId ? { connect: { id: bookingId } } : { disconnect: true },
         }),
         ...(assignedToId !== undefined && {
-          assignedTo: assignedToId
-            ? { connect: { id: assignedToId } }
-            : { disconnect: true },
+          assignedTo: assignedToId ? { connect: { id: assignedToId } } : { disconnect: true },
         }),
         ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
         ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
         ...(followUpAt !== undefined && { followUpAt: followUpAt ? new Date(followUpAt) : null }),
       },
     }),
-    // Write activity row for status transitions.
     ...(status !== undefined && status !== existing.status
-      ? [
-          prisma.leadActivity.create({
-            data: {
-              leadId: id,
-              type: LeadActivityType.STATUS_CHANGE,
-              fromStatus: existing.status,
-              toStatus: status,
-              performedById,
-              performedByName,
-            },
-          }),
-        ]
+      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.STATUS_CHANGE, fromStatus: existing.status, toStatus: status, performedById, performedByName } })]
       : []),
-    // Write activity row for assignment changes.
     ...(assignedToId !== undefined && assignedToId !== existing.assignedToId
-      ? [
-          prisma.leadActivity.create({
-            data: {
-              leadId: id,
-              type: LeadActivityType.ASSIGNMENT_CHANGE,
-              fromAssigneeId: existing.assignedToId,
-              toAssigneeId: assignedToId,
-              performedById,
-              performedByName,
-            },
-          }),
-        ]
+      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.ASSIGNMENT_CHANGE, fromAssigneeId: existing.assignedToId, toAssigneeId: assignedToId, performedById, performedByName } })]
       : []),
-    // Write activity row when notes are added or meaningfully changed.
     ...(notes !== undefined && notes.trim() !== "" && notes !== (existing.notes ?? "")
-      ? [
-          prisma.leadActivity.create({
-            data: {
-              leadId: id,
-              type: LeadActivityType.NOTE_ADDED,
-              note: notes,
-              performedById,
-              performedByName,
-            },
-          }),
-        ]
+      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.NOTE_ADDED, note: notes, performedById, performedByName } })]
       : []),
-    // Write activity row when follow-up is set, changed, or cleared.
-    ...(followUpAt !== undefined &&
-      (followUpAt ? new Date(followUpAt).getTime() : null) !==
-        (existing.followUpAt ? existing.followUpAt.getTime() : null)
-      ? [
-          prisma.leadActivity.create({
-            data: {
-              leadId: id,
-              type: LeadActivityType.FOLLOW_UP_SCHEDULED,
-              note: followUpAt
-                ? `Scheduled for ${new Date(followUpAt).toISOString().slice(0, 16).replace("T", " ")}`
-                : "Follow-up cleared",
-              performedById,
-              performedByName,
-            },
-          }),
-        ]
+    ...(followUpAt !== undefined && (followUpAt ? new Date(followUpAt).getTime() : null) !== (existing.followUpAt ? existing.followUpAt.getTime() : null)
+      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.FOLLOW_UP_SCHEDULED, note: followUpAt ? `Scheduled for ${new Date(followUpAt).toISOString().slice(0, 16).replace("T", " ")}` : "Follow-up cleared", performedById, performedByName } })]
       : []),
-    // Write activity row when booking is linked or unlinked.
     ...(bookingChanged
-      ? [
-          prisma.leadActivity.create({
-            data: {
-              leadId: id,
-              type: LeadActivityType.BOOKING_LINKED,
-              note: bookingId
-                ? `Linked to booking ...${bookingId.slice(-8)}`
-                : "Booking unlinked",
-              performedById,
-              performedByName,
-            },
-          }),
-        ]
+      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.BOOKING_LINKED, note: bookingId ? `Linked to booking ...${bookingId.slice(-8)}` : "Booking unlinked", performedById, performedByName } })]
+      : []),
+    // On conversion, lock the lead's current itinerary as the final canonical one.
+    ...(status === LeadStatus.CONVERTED && existing.status !== LeadStatus.CONVERTED
+      ? [prisma.itinerary.updateMany({ where: { leadId: id }, data: { locked: true, status: "CONFIRMED" } })]
       : []),
   ]);
 
   return NextResponse.json(updated);
 }
 
-// Admin: delete a lead.
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("leads", "delete");
   if (guard instanceof NextResponse) return guard;
@@ -194,6 +149,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const existing = await prisma.lead.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Converted leads are permanent business records and cannot be deleted.
+  if (existing.status === LeadStatus.CONVERTED) {
+    return NextResponse.json(
+      { error: "A converted lead cannot be deleted." },
+      { status: 422 },
+    );
+  }
+
+  // Cascade rules (schema onDelete) clean up the linked itinerary, its history,
+  // and the lead's activity timeline — no orphan records remain.
   await prisma.lead.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

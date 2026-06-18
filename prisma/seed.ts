@@ -18,6 +18,18 @@ async function main() {
   });
   console.log("✓ Super admin user");
 
+  const salesUser = await prisma.user.upsert({
+    where: { email: "sales@vertex.com" },
+    update: { role: Role.SALES },
+    create: {
+      email: "sales@vertex.com",
+      name: "Aryan Kapoor",
+      passwordHash: await bcrypt.hash("sales123", 12),
+      role: Role.SALES,
+    },
+  });
+  console.log("✓ Sales user");
+
   // ── Default role permissions ─────────────────────────────────────────────────
   // SUPERADMIN is handled in code (full-access bypass), so no rows are needed for it.
   // Action tuple order: [view, create, edit, delete].
@@ -1384,6 +1396,147 @@ async function main() {
     ].map((html, i) => ({ html, sortOrder: i })),
   });
   console.log("✓ PressLogos");
+
+  // ── Seed leads ───────────────────────────────────────────────────────────────
+  const adminUser = await prisma.user.findUnique({ where: { email: "admin@vertex.com" }, select: { id: true } });
+  const seedLeads = [
+    {
+      name: "Rahul Sharma",
+      phone: "+91 98765 43210",
+      email: "rahul.sharma@gmail.com",
+      source: "GOOGLE_ADS" as const,
+      category: "HONEYMOON_TOUR" as const,
+      adults: 2,
+      children: 0,
+      startDate: new Date("2026-08-15"),
+      status: "QUALIFIED" as const,
+      notes: "Interested in 7-day honeymoon package. Budget around ₹60,000.",
+      followUpAt: new Date("2026-06-20T10:00:00"),
+      assignedToId: salesUser.id,
+      negotiatedAmount: 58000,
+      tokenAmount: 11600,
+    },
+    {
+      name: "Priya Singh",
+      phone: "+91 99887 76655",
+      email: "priya.singh@yahoo.com",
+      source: "META_ADS" as const,
+      category: "COUPLE" as const,
+      adults: 2,
+      startDate: new Date("2026-09-01"),
+      status: "CONNECTED" as const,
+      notes: "Saw our Instagram ad. Wants Pahalgam + Dal Lake itinerary.",
+      followUpAt: new Date("2026-06-22T14:00:00"),
+      assignedToId: salesUser.id,
+    },
+    {
+      name: "The Mehta Family",
+      phone: "+91 90011 22334",
+      email: "nitin.mehta@outlook.com",
+      source: "GOOGLE_ADS" as const,
+      category: "FAMILY_TOUR" as const,
+      adults: 2,
+      children: 2,
+      startDate: new Date("2026-07-10"),
+      endDate: new Date("2026-07-16"),
+      status: "NEGOTIATION" as const,
+      notes: "Family of 4. Kids aged 8 and 11. Prefers Gulmarg + Sonmarg itinerary.",
+      assignedToId: adminUser?.id,
+      negotiatedAmount: 45000,
+      tokenAmount: 9000,
+    },
+    {
+      name: "Aisha Khan",
+      phone: "+91 81234 56789",
+      source: "REFERRAL" as const,
+      category: "OFFBEAT_TOUR" as const,
+      adults: 3,
+      startDate: new Date("2026-10-05"),
+      status: "NEW" as const,
+      notes: "Referred by Rahul Sharma. Group of 3 friends. Interested in Great Lakes trek.",
+    },
+    {
+      name: "Vikram Nair",
+      phone: "+91 70000 11122",
+      email: "vikram.nair@gmail.com",
+      source: "WEBSITE" as const,
+      category: "OFFBEAT_TOUR" as const,
+      adults: 1,
+      startDate: new Date("2026-08-20"),
+      status: "CONNECTED" as const,
+      notes: "Solo traveller. Found us while checking Gulmarg weather forecast. Interested in High Altitude Adventure package.",
+      followUpAt: new Date("2026-06-25T11:00:00"),
+      assignedToId: salesUser.id,
+    },
+    {
+      name: "Sunita Reddy",
+      phone: "+91 95555 44433",
+      email: "sunita.reddy@hotmail.com",
+      source: "META_ADS" as const,
+      category: "HONEYMOON_TOUR" as const,
+      adults: 2,
+      startDate: new Date("2026-11-01"),
+      status: "CONVERTED" as const,
+      notes: "Booked Royal Kashmir Luxury package. Token paid via NEFT.",
+      assignedToId: salesUser.id,
+      negotiatedAmount: 82000,
+      tokenAmount: 16400,
+    },
+    {
+      name: "Deepak Gupta",
+      phone: "+91 88800 77766",
+      source: "MANUAL" as const,
+      category: "FAMILY_TOUR" as const,
+      adults: 4,
+      children: 1,
+      startDate: new Date("2026-07-25"),
+      status: "ON_HOLD" as const,
+      notes: "Walk-in customer from Srinagar office. Wants to confirm after family discussion.",
+      assignedToId: adminUser?.id,
+    },
+    {
+      name: "Fatima Syed",
+      phone: "+91 77788 99900",
+      email: "fatima.syed@gmail.com",
+      source: "REFERRAL" as const,
+      category: "GROUP_TOUR" as const,
+      adults: 8,
+      startDate: new Date("2026-09-15"),
+      status: "QUALIFIED" as const,
+      notes: "Group of 8 colleagues from Bangalore. Referred by Sunita Reddy. Want full-board group package.",
+      followUpAt: new Date("2026-06-19T16:00:00"),
+      assignedToId: salesUser.id,
+      negotiatedAmount: 180000,
+    },
+    {
+      name: "Arjun Patel",
+      phone: "+91 62222 33344",
+      source: "WEBSITE" as const,
+      category: "SKI_TOUR" as const,
+      adults: 2,
+      startDate: new Date("2026-12-20"),
+      status: "NOT_CONNECTED" as const,
+      notes: "Enquired via weather widget contact form. Interested in ski season package.",
+    },
+    {
+      name: "Meena Joshi",
+      phone: "+91 93333 22211",
+      email: "meena.joshi@rediffmail.com",
+      source: "MANUAL" as const,
+      category: "FAMILY_TOUR" as const,
+      adults: 3,
+      children: 2,
+      startDate: new Date("2026-08-01"),
+      status: "REJECTED" as const,
+      notes: "Customer decided to travel with another agency. Budget mismatch.",
+      assignedToId: adminUser?.id,
+    },
+  ];
+
+  for (const lead of seedLeads) {
+    await prisma.lead.create({ data: lead });
+  }
+  console.log("✓ Seed leads (10)");
 
   console.log("\n🎉 Seed complete!");
 }
