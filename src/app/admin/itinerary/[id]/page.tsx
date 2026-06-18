@@ -30,6 +30,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
           name: true,
           assignedToId: true,
           status: true,
+          locked: true,
           category: true,
           adults: true,
           children: true,

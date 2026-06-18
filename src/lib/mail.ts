@@ -268,6 +268,97 @@ ${detailRow("Payment ID", data.razorpayPayId)}
   });
 }
 
+interface BookingInvoiceData {
+  guestName: string;
+  bookingRef: string;
+  services: { kind: string; name: string }[]; // NO per-line pricing
+  inclusions: string[];
+  totalAmount: number; // effective payable (after discount)
+  discountAmount: number;
+  paidAmount: number;
+  remainingBalance: number;
+  status: string; // e.g. "Partial"
+  whatsappNumber?: string | null;
+}
+
+const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+export function bookingInvoiceText(data: BookingInvoiceData): string {
+  const { text: waText } = resolveWhatsApp(data.whatsappNumber);
+  const lines = [
+    "Booking Summary — Vertex Kashmir Holidays",
+    "",
+    `Dear ${data.guestName}, here is your booking summary.`,
+    `Booking Ref: ${data.bookingRef}`,
+    "",
+    "Services included:",
+    ...data.services.map((s) => `  • ${s.name} (${s.kind.toLowerCase()})`),
+  ];
+  if (data.inclusions.length) {
+    lines.push("", "Inclusions:", ...data.inclusions.map((i) => `  • ${i}`));
+  }
+  lines.push(
+    "",
+    `Total Amount: ${inr(data.totalAmount)}`,
+    `Discount: ${inr(data.discountAmount)}`,
+    `Paid: ${inr(data.paidAmount)}`,
+    `Remaining Balance: ${inr(data.remainingBalance)}`,
+    `Status: ${data.status}`,
+    "",
+    `WhatsApp us: ${waText}`,
+  );
+  return lines.join("\n");
+}
+
+export function bookingInvoiceHtml(data: BookingInvoiceData): string {
+  const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
+  const serviceItems = data.services
+    .map(
+      (s) =>
+        `<li style="margin:0 0 6px;color:#222222;font-size:13px">${escapeHtml(s.name)} <span style="color:#9aa0a6;font-size:11px">(${escapeHtml(s.kind.toLowerCase())})</span></li>`,
+    )
+    .join("");
+  const inclusionItems = data.inclusions
+    .map((i) => `<li style="margin:0 0 4px;color:#444444;font-size:12px">${escapeHtml(i)}</li>`)
+    .join("");
+
+  const content = `          <tr>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Booking Summary</h1>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, here is your booking summary. Ref: <strong>${escapeHtml(data.bookingRef)}</strong></p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 0;font-family:Arial,Helvetica,sans-serif">
+              <h2 style="margin:8px 0 6px;color:${BRAND};font-size:14px">Services</h2>
+              <ul style="margin:0;padding-left:18px">${serviceItems || '<li style="color:#9aa0a6;font-size:12px">—</li>'}</ul>
+              ${inclusionItems ? `<h2 style="margin:14px 0 6px;color:${BRAND};font-size:14px">Inclusions</h2><ul style="margin:0;padding-left:18px">${inclusionItems}</ul>` : ""}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 28px 4px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Total Amount", inr(data.totalAmount))}
+${detailRow("Discount", inr(data.discountAmount))}
+${detailRow("Paid", inr(data.paidAmount))}
+${detailRow("Remaining Balance", inr(data.remainingBalance))}
+${detailRow("Status", data.status)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
+            </td>
+          </tr>`;
+
+  return emailShell({
+    title: `Booking Summary — ${data.bookingRef}`,
+    preheader: `Your booking summary — remaining balance ${inr(data.remainingBalance)}.`,
+    contentHtml: content,
+  });
+}
+
 // Escapes user-supplied values before they are interpolated into email HTML, so
 // a name/message can never inject markup into the message.
 function escapeHtml(value: string): string {
@@ -412,6 +503,83 @@ export function otpVerificationHtml(data: {
   return emailShell({
     title: "Verify your email",
     preheader,
+    contentHtml: content,
+    maxWidth: 480,
+  });
+}
+
+// ── New-customer default credentials ───────────────────────────────────────────
+// Sent when a lead is converted and a brand-new customer account is created. The
+// customer can log in with these credentials and is encouraged to change the
+// password. Only ever sent when an email is available (the unique login key).
+
+interface CustomerCredentialsData {
+  name: string;
+  email: string;
+  tempPassword: string;
+  /** Absolute login URL; falls back to the site /login. */
+  loginUrl?: string;
+}
+
+function resolveLoginUrl(loginUrl?: string): string {
+  if (loginUrl) return loginUrl;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXTAUTH_URL ??
+    "https://vertexkashmirholidays.com";
+  return `${siteUrl.replace(/\/$/, "")}/login`;
+}
+
+export function customerCredentialsText(data: CustomerCredentialsData): string {
+  const loginUrl = resolveLoginUrl(data.loginUrl);
+  return [
+    "Your Vertex Kashmir Holidays account",
+    "",
+    `Dear ${data.name}, an account has been created for you so you can track your`,
+    "bookings, payments and trip details online.",
+    "",
+    "Log in with these details:",
+    `  Email: ${data.email}`,
+    `  Temporary password: ${data.tempPassword}`,
+    "",
+    `Sign in: ${loginUrl}`,
+    "",
+    "For your security, please change this password after your first login.",
+    "",
+    "— Vertex Kashmir Holidays",
+  ].join("\n");
+}
+
+export function customerCredentialsHtml(data: CustomerCredentialsData): string {
+  const loginUrl = resolveLoginUrl(data.loginUrl);
+  const content = `          <tr>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Your account is ready</h1>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.name)}, an account has been created for you so you can track your bookings, payments and trip details online.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 4px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Email", data.email)}
+${detailRow("Temporary Password", data.tempPassword)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <a href="${loginUrl}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">Sign in to your account</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+              <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">For your security, please <strong>change this password</strong> after your first login.</p>
+            </td>
+          </tr>`;
+
+  return emailShell({
+    title: "Your Vertex Kashmir Holidays account",
+    preheader: `Your account is ready — sign in with ${escapeHtml(data.email)}.`,
     contentHtml: content,
     maxWidth: 480,
   });

@@ -45,9 +45,13 @@ export default async function AccountBookingsPage() {
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link href={`/tours/${b.tour.slug}`} className="truncate text-sm font-bold text-foreground hover:underline">
-                    {b.tour.title}
-                  </Link>
+                  {b.tour ? (
+                    <Link href={`/tours/${b.tour.slug}`} className="truncate text-sm font-bold text-foreground hover:underline">
+                      {b.tour.title}
+                    </Link>
+                  ) : (
+                    <span className="truncate text-sm font-bold text-foreground">Custom booking</span>
+                  )}
                   <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[b.status])}>
                     {b.status}
                   </span>

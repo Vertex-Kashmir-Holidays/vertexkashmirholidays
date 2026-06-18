@@ -17,7 +17,7 @@ const ACCESS_SELECT = {
   locked: true,
   title: true,
   data: true,
-  lead: { select: { assignedToId: true, status: true } },
+  lead: { select: { assignedToId: true, locked: true } },
 } as const;
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     where: { id },
     include: {
       owner: { select: { name: true, email: true } },
-      lead: { select: { id: true, assignedToId: true, status: true } },
+      lead: { select: { id: true, assignedToId: true, locked: true } },
     },
   });
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });

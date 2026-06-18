@@ -53,10 +53,10 @@ export default async function BookingSuccessPage({
   ]);
 
   const ref = booking ? formatRef(booking.id) : "VKH-CONFIRMED";
-  const nights = booking ? booking.tour.duration - 1 : 0;
+  const nights = booking?.tour ? booking.tour.duration - 1 : 0;
   const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
   const waText = encodeURIComponent(
-    `Hi! I just booked "${booking?.tour.title}" with Vertex Kashmir Holidays. Booking ref: ${ref}`,
+    `Hi! I just booked "${booking?.tour?.title ?? "a trip"}" with Vertex Kashmir Holidays. Booking ref: ${ref}`,
   );
 
   const NEXT_STEPS = [
@@ -122,8 +122,8 @@ export default async function BookingSuccessPage({
             <div className="flex gap-0 sm:gap-4">
               <div className="hidden sm:block relative w-48 shrink-0">
                 <Image
-                  src={booking.tour.coverImage ?? PLACEHOLDER}
-                  alt={booking.tour.title}
+                  src={booking.tour?.coverImage ?? PLACEHOLDER}
+                  alt={booking.tour?.title ?? "Your trip"}
                   fill
                   sizes="192px"
                   className="object-cover"
@@ -134,13 +134,13 @@ export default async function BookingSuccessPage({
                   Trip Summary
                 </p>
                 <h2 className="font-display font-bold text-foreground text-xl mb-4">
-                  {booking.tour.title}
+                  {booking.tour?.title ?? "Your trip"}
                 </h2>
                 <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
                   <div>
                     <dt className="text-muted-foreground text-xs">Duration</dt>
                     <dd className="font-semibold text-foreground">
-                      {booking.tour.duration}D · {nights}N
+                      {booking.tour?.duration ?? "—"}D · {nights}N
                     </dd>
                   </div>
                   <div>

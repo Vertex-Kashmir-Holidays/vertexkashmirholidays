@@ -77,7 +77,7 @@ export default async function AccountOverviewPage() {
             {bookings.map((b) => (
               <li key={b.id} className="flex items-center justify-between gap-3 px-5 py-4">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{b.tour.title}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{b.tour?.title ?? "Custom booking"}</p>
                   <p className="text-xs text-muted-foreground">
                     {b.travelDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     {" · "}

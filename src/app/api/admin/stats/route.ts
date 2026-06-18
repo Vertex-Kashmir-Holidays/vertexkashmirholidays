@@ -66,6 +66,7 @@ export async function GET() {
   // Top tours by revenue
   const tourRevMap: Record<string, { revenue: number; count: number }> = {};
   for (const b of allPaidBookings) {
+    if (!b.tourId) continue; // lead-converted bookings have no tour
     const e = tourRevMap[b.tourId] ?? { revenue: 0, count: 0 };
     e.revenue += b.amount;
     e.count += 1;

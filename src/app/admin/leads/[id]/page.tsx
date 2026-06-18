@@ -87,7 +87,12 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
           <li className="text-foreground font-medium truncate max-w-[200px]">{lead.name}</li>
         </ol>
       </nav>
-      <LeadDetail lead={lead} staffUsers={staffUsers} canManageItinerary={canManageItinerary} />
+      <LeadDetail
+        lead={lead}
+        staffUsers={staffUsers}
+        canManageItinerary={canManageItinerary}
+        isAdmin={!!role && isAdminRole(role)}
+      />
     </div>
   );
 }

@@ -17,7 +17,7 @@ export interface ItineraryForAccess {
   ownerId: string;
   leadId: string | null;
   locked: boolean;
-  lead?: { assignedToId: string | null; status: string } | null;
+  lead?: { assignedToId: string | null; locked: boolean } | null;
 }
 
 export interface SessionUserLike {
@@ -43,7 +43,7 @@ export function resolveItineraryAccess(
   if (it.leadId) {
     const assigned = it.lead?.assignedToId === user.id;
     const canView = admin || assigned;
-    const locked = it.locked || it.lead?.status === "CONVERTED";
+    const locked = it.locked || (it.lead?.locked ?? false);
     return { canView, canEdit: canView && !locked, locked };
   }
 

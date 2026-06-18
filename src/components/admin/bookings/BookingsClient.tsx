@@ -1,26 +1,27 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, ChevronDown, User } from "lucide-react";
+import { Search, ChevronDown, User, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type BookingStatus = "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
 
 interface Booking {
   id: string;
-  razorpayOrderId: string;
+  razorpayOrderId: string | null;
   razorpayPayId: string | null;
   status: BookingStatus;
   amount: number;
   travelDate: Date | string;
   travellers: number;
   guestName: string;
-  guestEmail: string;
+  guestEmail: string | null;
   guestPhone: string;
   createdAt: Date | string;
-  tour: { title: string; slug: string; coverImage: string | null };
+  tour: { title: string; slug: string; coverImage: string | null } | null;
   user: { name: string | null; email: string } | null;
 }
 
@@ -58,12 +59,13 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
 
   const filtered = initialBookings.filter((b) => {
     const matchesStatus = statusFilter === "ALL" || b.status === statusFilter;
+    const q = search.toLowerCase();
     const matchesSearch =
       search === "" ||
-      b.guestName.toLowerCase().includes(search.toLowerCase()) ||
-      b.guestEmail.toLowerCase().includes(search.toLowerCase()) ||
-      b.razorpayOrderId.toLowerCase().includes(search.toLowerCase()) ||
-      b.tour.title.toLowerCase().includes(search.toLowerCase());
+      b.guestName.toLowerCase().includes(q) ||
+      (b.guestEmail ?? "").toLowerCase().includes(q) ||
+      (b.razorpayOrderId ?? "").toLowerCase().includes(q) ||
+      (b.tour?.title ?? "").toLowerCase().includes(q);
     return matchesStatus && matchesSearch;
   });
 
@@ -163,7 +165,7 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-xs font-medium text-foreground truncate max-w-[140px]">{b.tour.title}</p>
+                        <p className="text-xs font-medium text-foreground truncate max-w-[140px]">{b.tour?.title ?? "Custom booking"}</p>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.travelDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
@@ -179,25 +181,29 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
                         {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </td>
                       <td className="px-4 py-3">
-                        {transitions.length > 0 ? (
-                          <div className="flex items-center gap-1">
-                            {transitions.map((s) => (
-                              <button
-                                key={s}
-                                onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, s); }}
-                                disabled={isPending}
-                                className={cn(
-                                  "text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-colors",
-                                  s === "REFUNDED" ? "border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10" : "border-border text-muted-foreground hover:bg-muted"
-                                )}
-                              >
-                                {s}
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground/60">—</span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/admin/bookings/${b.id}/services`}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Manage services"
+                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-border text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <ClipboardList className="w-3 h-3" /> Services
+                          </Link>
+                          {transitions.map((s) => (
+                            <button
+                              key={s}
+                              onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, s); }}
+                              disabled={isPending}
+                              className={cn(
+                                "text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-colors",
+                                s === "REFUNDED" ? "border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10" : "border-border text-muted-foreground hover:bg-muted"
+                              )}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -214,15 +220,15 @@ export function BookingsClient({ initialBookings, totalCount }: Props) {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
-              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId}</p>
+              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
             </div>
             <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-muted-foreground text-xs">✕ Close</button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
             <div><p className="text-muted-foreground mb-0.5">Guest</p><p className="font-semibold text-foreground">{selected.guestName}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Email</p><p className="font-semibold text-foreground">{selected.guestEmail}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Email</p><p className="font-semibold text-foreground">{selected.guestEmail ?? "—"}</p></div>
             <div><p className="text-muted-foreground mb-0.5">Phone</p><p className="font-semibold text-foreground">{selected.guestPhone}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Tour</p><p className="font-semibold text-foreground">{selected.tour.title}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Tour</p><p className="font-semibold text-foreground">{selected.tour?.title ?? "Custom booking"}</p></div>
             <div><p className="text-muted-foreground mb-0.5">Travel Date</p><p className="font-semibold text-foreground">{new Date(selected.travelDate).toLocaleDateString("en-IN")}</p></div>
             <div><p className="text-muted-foreground mb-0.5">Travellers</p><p className="font-semibold text-foreground">{selected.travellers}</p></div>
             <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>

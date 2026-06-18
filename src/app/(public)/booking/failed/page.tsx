@@ -52,13 +52,13 @@ export default async function BookingFailedPage({
   ]);
 
   const ref = booking ? formatRef(booking.id) : null;
-  const nights = booking ? booking.tour.duration - 1 : 0;
-  const retryHref = booking
+  const nights = booking?.tour ? booking.tour.duration - 1 : 0;
+  const retryHref = booking?.tour
     ? `/booking?tour=${booking.tour.slug}&date=${booking.travelDate.toISOString().split("T")[0]}&travellers=${booking.travellers}`
     : "/tours";
   const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
   const waText = encodeURIComponent(
-    `Hi! My payment failed for "${booking?.tour.title ?? "a Kashmir tour"}". Booking ref: ${ref ?? "N/A"}. Can you help?`,
+    `Hi! My payment failed for "${booking?.tour?.title ?? "a Kashmir tour"}". Booking ref: ${ref ?? "N/A"}. Can you help?`,
   );
 
   const OPTIONS = [
@@ -120,12 +120,12 @@ export default async function BookingFailedPage({
             <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <div>
                 <dt className="text-muted-foreground text-xs">Tour</dt>
-                <dd className="font-semibold text-foreground">{booking.tour.title}</dd>
+                <dd className="font-semibold text-foreground">{booking.tour?.title ?? "Custom booking"}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground text-xs">Duration</dt>
                 <dd className="font-semibold text-foreground">
-                  {booking.tour.duration}D · {nights}N
+                  {booking.tour?.duration ?? "—"}D · {nights}N
                 </dd>
               </div>
               <div>
