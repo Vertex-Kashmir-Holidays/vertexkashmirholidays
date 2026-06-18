@@ -23,7 +23,21 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const record = await prisma.itinerary.findUnique({
     where: { id },
-    include: { lead: { select: { id: true, name: true, assignedToId: true, status: true } } },
+    include: {
+      lead: {
+        select: {
+          id: true,
+          name: true,
+          assignedToId: true,
+          status: true,
+          category: true,
+          adults: true,
+          children: true,
+          startDate: true,
+          endDate: true,
+        },
+      },
+    },
   });
   if (!record) notFound();
 
@@ -35,6 +49,18 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
   const data: ItineraryData = parsed.success ? parsed.data : DEFAULT_ITINERARY_DATA;
 
   const canSave = (await can(role, "itinerary", "edit")) && access.canEdit;
+
+  const leadSync = record.lead
+    ? {
+        leadId: record.lead.id,
+        name: record.lead.name,
+        category: record.lead.category,
+        adults: record.lead.adults,
+        children: record.lead.children,
+        startDate: record.lead.startDate ? new Date(record.lead.startDate).toISOString().slice(0, 10) : "",
+        endDate: record.lead.endDate ? new Date(record.lead.endDate).toISOString().slice(0, 10) : "",
+      }
+    : undefined;
 
   return (
     <div className="space-y-3">
@@ -61,6 +87,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         initialTitle={record.title}
         initialStatus={record.status}
         canSave={canSave}
+        leadSync={leadSync}
       />
     </div>
   );

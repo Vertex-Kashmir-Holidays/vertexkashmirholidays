@@ -343,15 +343,24 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary }: Props) {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              disabled={converted}
-              title={converted ? "Converted leads cannot be deleted." : undefined}
-              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-3 py-2 rounded-xl border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete
-            </button>
+            <>
+              <Link
+                href={`/admin/leads/${lead.id}/edit`}
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/10 px-3 py-2 rounded-xl border border-border transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </Link>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                disabled={converted}
+                title={converted ? "Converted leads cannot be deleted." : undefined}
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-3 py-2 rounded-xl border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </button>
+            </>
           )}
         </div>
       </div>

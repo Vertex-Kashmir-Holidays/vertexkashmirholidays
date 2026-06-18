@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { isAdminRole } from "@/lib/itinerary/access";
-import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
+import { buildLeadItineraryData } from "@/lib/itinerary/lead-defaults";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,11 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: {
       id: true,
       name: true,
+      category: true,
+      adults: true,
+      children: true,
+      startDate: true,
+      endDate: true,
       assignedToId: true,
       status: true,
       itinerary: { select: { id: true } },
@@ -47,7 +52,8 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   const editedByName = (guard.user.name ?? guard.user.email) as string;
   const title = `${lead.name} — Kashmir Itinerary`;
-  const data = DEFAULT_ITINERARY_DATA as unknown as Prisma.InputJsonValue;
+  // Seed the itinerary with the lead's customer details (price starts at 0).
+  const data = buildLeadItineraryData(lead) as unknown as Prisma.InputJsonValue;
 
   const created = await prisma.itinerary.create({
     data: {
