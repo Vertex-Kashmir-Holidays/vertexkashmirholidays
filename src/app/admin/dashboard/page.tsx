@@ -138,6 +138,7 @@ export default async function AdminDashboard() {
   // Top tours
   const tourRevMap: Record<string, { revenue: number; count: number }> = {};
   for (const b of allPaidBookings) {
+    if (!b.tourId) continue; // lead-converted bookings have no tour
     const e = tourRevMap[b.tourId] ?? { revenue: 0, count: 0 };
     e.revenue += b.amount;
     e.count += 1;
@@ -316,8 +317,8 @@ export default async function AdminDashboard() {
                   <div key={b.id} className="flex items-center gap-3">
                     <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0">
                       <Image
-                        src={b.tour.coverImage ?? PLACEHOLDER}
-                        alt={b.tour.title}
+                        src={b.tour?.coverImage ?? PLACEHOLDER}
+                        alt={b.tour?.title ?? "Booking"}
                         fill
                         sizes="36px"
                         className="object-cover"
@@ -325,7 +326,7 @@ export default async function AdminDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-foreground truncate leading-tight">
-                        {b.tour.title}
+                        {b.tour?.title ?? "Custom booking"}
                       </p>
                       <p className="text-[10px] text-muted-foreground">{fmtDate(b.createdAt)}</p>
                     </div>

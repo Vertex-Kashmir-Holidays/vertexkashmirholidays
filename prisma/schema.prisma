@@ -192,28 +192,78 @@ model TourDestination {
 
 model Booking {
   id              String        @id @default(cuid())
-  tourId          String
+  // Optional: lead-converted bookings have no tour and no Razorpay order.
+  tourId          String?
   userId          String?
   status          BookingStatus @default(PENDING)
-  razorpayOrderId String        @unique
+  razorpayOrderId String?       @unique
   razorpayPayId   String?
+  // Canonical total booking amount (negotiated amount for leads; package price
+  // for direct website bookings). Financials always derive from this + payments.
   amount          Float
   currency        String        @default("INR")
   travelDate      DateTime
   travellers      Int           @default(1)
   guestName       String
-  guestEmail      String
+  guestEmail      String?
   guestPhone      String
+  // Discount applied to the booking total. type: "FLAT" | "PERCENT".
+  discountType    String?
+  discountValue   Float         @default(0)
+  // Free-form inclusion tags (e.g. Meals, Cab) stored as a JSON string array.
+  inclusions      String        @default("[]")
+  // Once locked, services can no longer be added/edited/deleted.
+  servicesLocked  Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  tour            Tour          @relation(fields: [tourId], references: [id])
+  tour            Tour?         @relation(fields: [tourId], references: [id])
   user            User?         @relation(fields: [userId], references: [id])
   leads           Lead[]
+  payments        BookingPayment[]
+  services        BookingService[]
 
   @@index([status])
   @@index([tourId])
   @@index([userId])
   @@index([createdAt])
+}
+
+// A single payment entry against a booking — the booking payment ledger.
+// Supports token/advance, partial, and final payments (any number of rows).
+model BookingPayment {
+  id           String      @id @default(cuid())
+  bookingId    String
+  booking      Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount       Float
+  type         PaymentType @default(PARTIAL)
+  method       String? // cash / upi / card / razorpay / bank …
+  reference    String? // gateway id, txn ref …
+  note         String?
+  recordedById String?
+  createdAt    DateTime    @default(now())
+
+  @@index([bookingId])
+  @@index([createdAt])
+}
+
+// A line item in a booking's services sheet. One table covers all kinds; only
+// the columns relevant to a kind are populated (others stay null).
+model BookingService {
+  id        String      @id @default(cuid())
+  bookingId String
+  booking   Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind      ServiceKind
+  name      String // Hotel name / Cab name / Activity name / Other name
+  amount    Float       @default(0)
+  location  String? // hotel + activity
+  nights    Int? // hotel
+  pickup    String? // transport
+  dropoff   String? // transport
+  timing    String? // activity
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@index([bookingId])
 }
 
 model Lead {
@@ -237,6 +287,8 @@ model Lead {
   booking          Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   negotiatedAmount Float?
   tokenAmount      Float?
+  // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
+  locked           Boolean       @default(false)
   createdAt        DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   activities   LeadActivity[]
@@ -816,6 +868,20 @@ enum BookingStatus {
   FAILED
   CANCELLED
   REFUNDED
+}
+
+enum PaymentType {
+  TOKEN
+  PARTIAL
+  FINAL
+  REFUND
+}
+
+enum ServiceKind {
+  HOTEL
+  TRANSPORT
+  ACTIVITY
+  OTHER
 }
 
 enum LeadStatus {

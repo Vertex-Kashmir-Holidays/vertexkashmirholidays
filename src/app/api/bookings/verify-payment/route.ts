@@ -60,6 +60,25 @@ export async function POST(req: NextRequest) {
     data: { status: "PAID", razorpayPayId: razorpay_payment_id },
   });
 
+  // Record the online payment in the shared booking payment ledger (idempotent on
+  // the gateway payment id), so direct bookings use the same financial model.
+  const alreadyRecorded = await prisma.bookingPayment.findFirst({
+    where: { bookingId: booking.id, reference: razorpay_payment_id },
+    select: { id: true },
+  });
+  if (!alreadyRecorded) {
+    await prisma.bookingPayment.create({
+      data: {
+        bookingId: booking.id,
+        amount: booking.amount,
+        type: "FINAL",
+        method: "razorpay",
+        reference: razorpay_payment_id,
+        note: "Online payment",
+      },
+    });
+  }
+
   // Public WhatsApp number for the confirmation email (whatsapp → sitePhone),
   // matching the fallback used across the site (e.g. Footer).
   const settings = await prisma.siteSettings.findUnique({
@@ -68,25 +87,28 @@ export async function POST(req: NextRequest) {
   });
 
   // Send confirmation email
-  const bookingEmail = {
-    guestName: booking.guestName,
-    tourTitle: booking.tour.title,
-    amount: booking.amount,
-    travelDate: booking.travelDate.toLocaleDateString("en-IN"),
-    travellers: booking.travellers,
-    razorpayPayId: razorpay_payment_id,
-    whatsappNumber: settings?.whatsapp ?? settings?.sitePhone ?? null,
-  };
-  await sendMail({
-    to: booking.guestEmail,
-    subject: `Booking Confirmed — ${booking.tour.title} | Vertex Kashmir Holidays`,
-    html: bookingConfirmationHtml(bookingEmail),
-    text: bookingConfirmationText(bookingEmail),
-  });
+  const tourTitle = booking.tour?.title ?? "Your Tour";
+  if (booking.guestEmail) {
+    const bookingEmail = {
+      guestName: booking.guestName,
+      tourTitle,
+      amount: booking.amount,
+      travelDate: booking.travelDate.toLocaleDateString("en-IN"),
+      travellers: booking.travellers,
+      razorpayPayId: razorpay_payment_id,
+      whatsappNumber: settings?.whatsapp ?? settings?.sitePhone ?? null,
+    };
+    await sendMail({
+      to: booking.guestEmail,
+      subject: `Booking Confirmed — ${tourTitle} | Vertex Kashmir Holidays`,
+      html: bookingConfirmationHtml(bookingEmail),
+      text: bookingConfirmationText(bookingEmail),
+    });
+  }
 
   // WhatsApp notification stub
   const waMessage = encodeURIComponent(
-    `New booking! Tour: ${booking.tour.title} | Guest: ${booking.guestName} | ₹${booking.amount} | PayID: ${razorpay_payment_id}`,
+    `New booking! Tour: ${tourTitle} | Guest: ${booking.guestName} | ₹${booking.amount} | PayID: ${razorpay_payment_id}`,
   );
   console.log(
     `[whatsapp] https://wa.me/${(process.env.MAIL_TO_ADMIN ?? "").replace(/\D/g, "")}?text=${waMessage}`,

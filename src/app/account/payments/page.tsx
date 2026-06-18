@@ -44,7 +44,7 @@ export default async function AccountPaymentsPage() {
             {payments.map((p) => (
               <div key={p.id} className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0 truncate font-semibold text-foreground">{p.tour.title}</p>
+                  <p className="min-w-0 truncate font-semibold text-foreground">{p.tour?.title ?? "Custom booking"}</p>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusBadge(p.status)}`}>
                     {p.status}
                   </span>
@@ -75,7 +75,7 @@ export default async function AccountPaymentsPage() {
               <tbody className="divide-y divide-border">
                 {payments.map((p) => (
                   <tr key={p.id}>
-                    <td className="px-4 py-3 font-medium text-foreground">{p.tour.title}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{p.tour?.title ?? "Custom booking"}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.razorpayPayId ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {p.updatedAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}

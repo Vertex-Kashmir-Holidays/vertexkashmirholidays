@@ -71,6 +71,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Locked (converted) leads cannot be edited until an admin unlocks them.
+  if (existing.locked) {
+    return NextResponse.json(
+      { error: "This lead is locked. An admin must unlock it before editing." },
+      { status: 423 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -89,16 +97,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!booking) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
 
-  // Gate: CONVERTED requires negotiatedAmount AND tokenAmount to be set.
+  // Conversion is an intentional CTA flow (POST /api/leads/[id]/convert), never a
+  // casual status edit — block CONVERTED from the normal status update path.
   if (status === LeadStatus.CONVERTED) {
-    const effectiveNegotiated = negotiatedAmount !== undefined ? negotiatedAmount : existing.negotiatedAmount;
-    const effectiveToken = tokenAmount !== undefined ? tokenAmount : existing.tokenAmount;
-    if (!effectiveNegotiated || !effectiveToken) {
-      return NextResponse.json(
-        { error: "Cannot convert: both Negotiated Amount and Token Amount must be set and greater than zero." },
-        { status: 422 },
-      );
-    }
+    return NextResponse.json(
+      { error: "Use the Convert action to convert a lead." },
+      { status: 422 },
+    );
   }
 
   const performedByName = (guard.user.name ?? guard.user.email) as string;
@@ -192,10 +197,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       : []),
     ...(bookingChanged
       ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.BOOKING_LINKED, note: bookingId ? `Linked to booking ...${bookingId.slice(-8)}` : "Booking unlinked", performedById, performedByName } })]
-      : []),
-    // On conversion, lock the lead's current itinerary as the final canonical one.
-    ...(status === LeadStatus.CONVERTED && existing.status !== LeadStatus.CONVERTED
-      ? [prisma.itinerary.updateMany({ where: { leadId: id }, data: { locked: true, status: "CONFIRMED" } })]
       : []),
     // Sync lead trip facts into the linked itinerary's cover fields.
     ...itinerarySyncOps,
