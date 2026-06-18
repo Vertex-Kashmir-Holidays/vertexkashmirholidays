@@ -55,11 +55,15 @@ const STATUS_STYLES: Record<string, { label: string; className: string; Icon: ty
   REFUNDED: { label: "Refunded", className: "bg-blue-500/15 text-blue-700 dark:text-blue-300", Icon: AlertCircle },
 };
 
-const INQUIRY_STATUS_STYLES: Record<string, string> = {
+const LEAD_STATUS_STYLES: Record<string, string> = {
   NEW: "bg-brand-cyan/10 text-brand-cyan",
-  CONTACTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  NEGOTIATION: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  ON_HOLD: "bg-muted text-muted-foreground",
   CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-  CLOSED: "bg-muted text-muted-foreground",
+  REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
 };
 
 const QUICK_ACTIONS = [
@@ -83,12 +87,12 @@ export default async function AdminDashboard() {
     totalBookings,
     thisMonthBookings,
     lastMonthBookings,
-    totalInquiries,
-    thisMonthInquiries,
-    lastMonthInquiries,
+    totalLeads,
+    thisMonthLeads,
+    lastMonthLeads,
     paidCount,
     recentBookings,
-    recentInquiries,
+    recentLeads,
     pendingReviews,
     allPaidBookings,
   ] = await Promise.all([
@@ -98,16 +102,16 @@ export default async function AdminDashboard() {
     prisma.booking.count(),
     prisma.booking.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.booking.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
-    prisma.inquiry.count(),
-    prisma.inquiry.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.inquiry.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
+    prisma.lead.count(),
+    prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
     prisma.booking.count({ where: { status: BookingStatus.PAID } }),
     prisma.booking.findMany({
       take: 8,
       orderBy: { createdAt: "desc" },
       include: { tour: { select: { title: true, coverImage: true, slug: true } } },
     }),
-    prisma.inquiry.findMany({ take: 8, orderBy: { createdAt: "desc" } }),
+    prisma.lead.findMany({ take: 8, orderBy: { createdAt: "desc" } }),
     prisma.review.findMany({
       where: { approved: false },
       take: 5,
@@ -167,7 +171,7 @@ export default async function AdminDashboard() {
   const thisMonthRev = thisMonthRevAgg._sum.amount ?? 0;
   const lastMonthRev = lastMonthRevAgg._sum.amount ?? 0;
   const conversionRate =
-    totalInquiries > 0 ? Math.round((paidCount / totalInquiries) * 1000) / 10 : 0;
+    totalLeads > 0 ? Math.round((paidCount / totalLeads) * 1000) / 10 : 0;
   const avgBooking = paidCount > 0 ? Math.round(totalRevenue / paidCount) : 0;
 
   const KPI = [
@@ -190,9 +194,9 @@ export default async function AdminDashboard() {
       bg: "bg-brand-cyan/10",
     },
     {
-      label: "Total Inquiries",
-      value: totalInquiries.toString(),
-      change: pctChange(thisMonthInquiries, lastMonthInquiries),
+      label: "Total Leads",
+      value: totalLeads.toString(),
+      change: pctChange(thisMonthLeads, lastMonthLeads),
       sub: "vs last month",
       Icon: MessageSquare,
       color: "text-accent",
@@ -202,7 +206,7 @@ export default async function AdminDashboard() {
       label: "Conversion Rate",
       value: `${conversionRate}%`,
       change: null,
-      sub: "inquiries → bookings",
+      sub: "leads → bookings",
       Icon: BarChart3,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-500/15",
@@ -339,12 +343,12 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Recent Inquiries ──────────────────────────────────────────────── */}
+      {/* ── Recent Leads ──────────────────────────────────────────────── */}
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <p className="font-display font-bold text-foreground text-sm">Recent Inquiries</p>
-          <Link href="/admin/inquiries" className="text-xs font-semibold text-primary hover:underline">
-            View all ({totalInquiries})
+          <p className="font-display font-bold text-foreground text-sm">Recent Leads</p>
+          <Link href="/admin/leads" className="text-xs font-semibold text-primary hover:underline">
+            View all ({totalLeads})
           </Link>
         </div>
         <div className="overflow-x-auto">
@@ -359,34 +363,34 @@ export default async function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {recentInquiries.length === 0 ? (
+              {recentLeads.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No inquiries yet.
+                    No leads yet.
                   </td>
                 </tr>
               ) : (
-                recentInquiries.map((inq) => (
-                  <tr key={inq.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">{inq.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{inq.phone}</td>
+                recentLeads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-foreground">{lead.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{lead.phone}</td>
                     <td className="px-4 py-3">
                       <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-md capitalize">
-                        {inq.source ?? "website"}
+                        {lead.source.toLowerCase().replace(/_/g, " ")}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {inq.travelDate ? fmtDate(inq.travelDate) : "—"}
+                      {lead.startDate ? fmtDate(lead.startDate) : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${INQUIRY_STATUS_STYLES[inq.status] ?? "bg-muted text-muted-foreground"}`}>
-                        {inq.status}
+                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${LEAD_STATUS_STYLES[lead.status] ?? "bg-muted text-muted-foreground"}`}>
+                        {lead.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button className="text-primary font-semibold hover:underline">
-                        Reply
-                      </button>
+                      <Link href="/admin/leads" className="text-primary font-semibold hover:underline">
+                        View
+                      </Link>
                     </td>
                   </tr>
                 ))

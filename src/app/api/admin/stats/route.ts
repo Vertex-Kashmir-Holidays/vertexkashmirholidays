@@ -20,12 +20,12 @@ export async function GET() {
     totalBookings,
     thisMonthBookings,
     lastMonthBookings,
-    totalInquiries,
-    thisMonthInquiries,
-    lastMonthInquiries,
+    totalLeads,
+    thisMonthLeads,
+    lastMonthLeads,
     paidCount,
     recentBookings,
-    recentInquiries,
+    recentLeads,
     pendingReviews,
     allPaidBookings,
   ] = await Promise.all([
@@ -35,16 +35,16 @@ export async function GET() {
     prisma.booking.count(),
     prisma.booking.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.booking.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
-    prisma.inquiry.count(),
-    prisma.inquiry.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.inquiry.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
+    prisma.lead.count(),
+    prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
     prisma.booking.count({ where: { status: BookingStatus.PAID } }),
     prisma.booking.findMany({
       take: 8,
       orderBy: { createdAt: "desc" },
       include: { tour: { select: { title: true, coverImage: true, slug: true } } },
     }),
-    prisma.inquiry.findMany({ take: 8, orderBy: { createdAt: "desc" } }),
+    prisma.lead.findMany({ take: 8, orderBy: { createdAt: "desc" } }),
     prisma.review.count({ where: { approved: false } }),
     prisma.booking.findMany({
       where: { status: BookingStatus.PAID },
@@ -91,7 +91,7 @@ export async function GET() {
 
   const totalRevenue = revenueAgg._sum.amount ?? 0;
   const conversionRate =
-    totalInquiries > 0 ? Math.round((paidCount / totalInquiries) * 1000) / 10 : 0;
+    totalLeads > 0 ? Math.round((paidCount / totalLeads) * 1000) / 10 : 0;
   const avgBooking = paidCount > 0 ? Math.round(totalRevenue / paidCount) : 0;
 
   return NextResponse.json({
@@ -101,13 +101,13 @@ export async function GET() {
       lastMonth: lastMonthRevAgg._sum.amount ?? 0,
     },
     bookings: { total: totalBookings, thisMonth: thisMonthBookings, lastMonth: lastMonthBookings },
-    inquiries: { total: totalInquiries, thisMonth: thisMonthInquiries, lastMonth: lastMonthInquiries },
+    leads: { total: totalLeads, thisMonth: thisMonthLeads, lastMonth: lastMonthLeads },
     paidCount,
     conversionRate,
     avgBooking,
     revenueByMonth,
     recentBookings,
-    recentInquiries,
+    recentLeads,
     topTours,
     pendingReviews,
   });
