@@ -144,7 +144,7 @@ export async function verifyTransport(): Promise<{
 
 // ── Reusable email builders ──────────────────────────────────────────────────
 
-interface InquiryData {
+interface LeadNotificationData {
   name: string;
   phone: string;
   email?: string;
@@ -154,9 +154,9 @@ interface InquiryData {
   source?: string;
 }
 
-export function inquiryNotificationText(data: InquiryData): string {
+export function leadNotificationText(data: LeadNotificationData): string {
   const lines = [
-    "New inquiry — Vertex Kashmir Holidays",
+    "New lead — Vertex Kashmir Holidays",
     "",
     `Name: ${data.name}`,
     `Phone: ${data.phone}`,
@@ -169,7 +169,7 @@ export function inquiryNotificationText(data: InquiryData): string {
   return lines.join("\n");
 }
 
-export function inquiryNotificationHtml(data: InquiryData): string {
+export function leadNotificationHtml(data: LeadNotificationData): string {
   // Multi-line message: escape first, then turn newlines into <br /> so it reads.
   const messageRow = data.message
     ? `          <tr>
@@ -180,7 +180,7 @@ export function inquiryNotificationHtml(data: InquiryData): string {
 
   const content = `          <tr>
             <td style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
-              <h1 style="margin:0;color:${BRAND};font-size:20px;font-weight:700">New Inquiry</h1>
+              <h1 style="margin:0;color:${BRAND};font-size:20px;font-weight:700">New Lead</h1>
               <p style="margin:6px 0 0;color:#666666;font-size:13px;line-height:1.5">A new enquiry was submitted on vertexkashmirholidays.com.</p>
             </td>
           </tr>
@@ -199,8 +199,8 @@ ${messageRow}
           </tr>`;
 
   return emailShell({
-    title: "New Inquiry — Vertex Kashmir Holidays",
-    preheader: `New inquiry from ${escapeHtml(data.name)} (${escapeHtml(data.phone)})`,
+    title: "New Lead — Vertex Kashmir Holidays",
+    preheader: `New lead from ${escapeHtml(data.name)} (${escapeHtml(data.phone)})`,
     contentHtml: content,
   });
 }

@@ -19,13 +19,10 @@ export async function POST(req: NextRequest) {
 
   const { email } = parsed.data;
 
-  await prisma.inquiry.create({
-    data: {
-      name: email,
-      phone: "newsletter",
-      email,
-      source: "newsletter",
-    },
+  await prisma.newsletterSubscriber.upsert({
+    where: { email },
+    update: {},
+    create: { email },
   });
 
   return NextResponse.json({ success: true }, { status: 201 });

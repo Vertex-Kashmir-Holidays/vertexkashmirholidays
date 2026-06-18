@@ -33,7 +33,7 @@ export function ContactForm({ content }: ContactFormProps) {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const res = await fetch('/api/inquiries', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, source: 'contact' }),

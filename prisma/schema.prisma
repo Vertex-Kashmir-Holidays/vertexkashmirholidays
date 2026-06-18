@@ -16,9 +16,10 @@ model User {
   role         Role      @default(CUSTOMER)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  bookings     Booking[]
-  reviews      Review[]
-  itineraries  Itinerary[]
+  bookings      Booking[]
+  reviews       Review[]
+  itineraries   Itinerary[]
+  leadsAssigned Lead[]      @relation("LeadAssignee")
 
   @@index([email])
 }
@@ -59,6 +60,12 @@ model EmailOtp {
 
   @@index([email])
   @@index([expiresAt])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }
 
 model RolePermission {
@@ -171,6 +178,7 @@ model Booking {
   updatedAt       DateTime      @updatedAt
   tour            Tour          @relation(fields: [tourId], references: [id])
   user            User?         @relation(fields: [userId], references: [id])
+  leads           Lead[]
 
   @@index([status])
   @@index([tourId])
@@ -178,21 +186,53 @@ model Booking {
   @@index([createdAt])
 }
 
-model Inquiry {
-  id         String        @id @default(cuid())
-  name       String
-  phone      String
-  email      String?
-  travelDate DateTime?
-  travellers Int?
-  message    String?
-  source     String?       @default("website")
-  status     InquiryStatus @default(NEW)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+model Lead {
+  id           String        @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  source       LeadSource    @default(WEBSITE)
+  category     LeadCategory?
+  adults       Int           @default(1)
+  children     Int?
+  startDate    DateTime?
+  endDate      DateTime?
+  attachments  String        @default("[]")
+  notes        String?
+  followUpAt   DateTime?
+  assignedToId String?
+  assignedTo   User?         @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  status       LeadStatus    @default(NEW)
+  bookingId    String?
+  booking      Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  activities   LeadActivity[]
 
   @@index([status])
+  @@index([source])
+  @@index([category])
+  @@index([assignedToId])
   @@index([createdAt])
+  @@index([followUpAt])
+}
+
+model LeadActivity {
+  id              String           @id @default(cuid())
+  leadId          String
+  lead            Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type            LeadActivityType
+  note            String?
+  fromStatus      LeadStatus?
+  toStatus        LeadStatus?
+  fromAssigneeId  String?
+  toAssigneeId    String?
+  performedById   String?
+  performedByName String
+  performedAt     DateTime         @default(now())
+
+  @@index([leadId])
+  @@index([performedAt])
 }
 
 model Review {
@@ -745,11 +785,44 @@ enum BookingStatus {
   REFUNDED
 }
 
-enum InquiryStatus {
+enum LeadStatus {
   NEW
-  CONTACTED
+  CONNECTED
+  NOT_CONNECTED
+  QUALIFIED
+  NEGOTIATION
+  ON_HOLD
   CONVERTED
-  CLOSED
+  REJECTED
+}
+
+enum LeadSource {
+  WEBSITE
+  MANUAL
+  GOOGLE_ADS
+  META_ADS
+  THIRD_PARTY
+  REFERRAL
+}
+
+enum LeadCategory {
+  HONEYMOON_TOUR
+  COUPLE
+  FAMILY_TOUR
+  GROUP_TOUR
+  SKI_TOUR
+  OFFBEAT_TOUR
+}
+
+enum LeadActivityType {
+  STATUS_CHANGE
+  ASSIGNMENT_CHANGE
+  NOTE_ADDED
+  FOLLOW_UP_SCHEDULED
+  ATTACHMENT_ADDED
+  CALL_LOGGED
+  EMAIL_SENT
+  BOOKING_LINKED
 }
 
 enum ItineraryStatus {

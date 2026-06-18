@@ -39,7 +39,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   packages: Package,
   destinations: MapPin,
   bookings: CalendarDays,
-  inquiries: Inbox,
+  leads: Inbox,
   itinerary: Map,
   users: Users,
   galleries: Images,

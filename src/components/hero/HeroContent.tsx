@@ -182,7 +182,7 @@ function InquiryCard() {
       if (data.travelDate) payload.travelDate = data.travelDate;
       if (data.travellers && data.travellers !== "") payload.travellers = parseInt(data.travellers, 10);
 
-      const res = await fetch("/api/inquiries", {
+      const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

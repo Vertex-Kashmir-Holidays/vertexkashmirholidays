@@ -73,7 +73,7 @@ export function CampaignHero({
     setSubmitting(true);
     try {
       const travellers = String(fd.get('travellers') ?? '');
-      const res = await fetch('/api/inquiries', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
