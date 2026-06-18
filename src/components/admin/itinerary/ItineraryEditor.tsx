@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
 import { ItineraryCover } from "./ItineraryCover";
+import { LeadTripSync } from "./LeadTripSync";
 import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf } from "@/lib/itinerary/export-pdf";
+import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
 import {
   type ItineraryData,
   type ItineraryStatus,
@@ -20,15 +22,27 @@ import {
 
 type ListKey = "inc" | "exc" | "pay" | "cancel";
 
+/** Structured lead data for the two-way trip-detail sync (lead-linked itineraries). */
+export interface LeadSyncData {
+  leadId: string;
+  name: string;
+  category: string | null;
+  adults: number;
+  children: number | null;
+  startDate: string; // yyyy-mm-dd or ""
+  endDate: string; // yyyy-mm-dd or ""
+}
+
 interface ItineraryEditorProps {
   id?: string;
   initialData: ItineraryData;
   initialTitle: string;
   initialStatus: ItineraryStatus;
   canSave?: boolean;
+  leadSync?: LeadSyncData;
 }
 
-export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, canSave = true }: ItineraryEditorProps) {
+export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, canSave = true, leadSync }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
   const [title, setTitle] = useState(initialTitle);
@@ -39,6 +53,11 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
   /* ---------- cover ---------- */
   const updateCover = (field: keyof ItineraryData, value: string) =>
     setData((p) => ({ ...p, [field]: value }));
+
+  /* ---------- lead trip sync (two-way) ---------- */
+  // Recompute the lead-derived cover/duration fields live when trip details change.
+  const handleLeadFacts = (facts: LeadItinerarySeed) =>
+    setData((p) => applyLeadFactsToItinerary(p, facts));
 
   /* ---------- info bar ---------- */
   const updateInfo = (id: string, field: "label" | "value", value: string) =>
@@ -174,11 +193,17 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[820px] space-y-8">
+          {/* Lead trip-detail sync (lead-linked, editable itineraries only) */}
+          {leadSync && canSave && (
+            <LeadTripSync leadId={leadSync.leadId} initial={leadSync} onFacts={handleLeadFacts} />
+          )}
+
           {/* Cover */}
           <ItineraryCover
             data={data}
             onUpdate={(field, value) => updateCover(field, value)}
             onImageChange={(src) => updateCover("coverImage", src)}
+            readOnlyDerived={!!leadSync}
           />
 
           {/* Destinations + Daily Itinerary */}

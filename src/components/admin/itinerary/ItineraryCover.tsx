@@ -13,9 +13,11 @@ interface ItineraryCoverProps {
   data: Pick<ItineraryData, CoverField | "coverImage">;
   onUpdate: (field: CoverField, value: string) => void;
   onImageChange: (src: string) => void;
+  /** Lead-linked itineraries derive these fields from the lead — show as read-only. */
+  readOnlyDerived?: boolean;
 }
 
-export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCoverProps) {
+export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived = false }: ItineraryCoverProps) {
   return (
     <article className="page cover relative min-h-[640px] overflow-hidden rounded-xl bg-gradient-to-br from-[#0f261b] via-[#1a3a2a] to-[#0f261b] sm:min-h-[880px] md:min-h-[1160px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -57,42 +59,62 @@ export function ItineraryCover({ data, onUpdate, onImageChange }: ItineraryCover
           />
           <div className="mt-6 flex items-center gap-4">
             <span className="h-px w-12 bg-white/60" />
-            <EditableField
-              value={data.duration}
-              onValueChange={(v) => onUpdate("duration", v)}
-              className="font-serif max-w-[260px] text-sm font-semibold tracking-[0.3em] text-white"
-            />
+            {readOnlyDerived ? (
+              <span className="font-serif max-w-[260px] text-sm font-semibold tracking-[0.3em] text-white">{data.duration}</span>
+            ) : (
+              <EditableField
+                value={data.duration}
+                onValueChange={(v) => onUpdate("duration", v)}
+                className="font-serif max-w-[260px] text-sm font-semibold tracking-[0.3em] text-white"
+              />
+            )}
             <span className="text-white/60">✦</span>
           </div>
         </div>
 
         <div className="mt-auto">
           <p className="text-center text-[11px] font-semibold tracking-[0.32em] text-white/70">PREPARED FOR</p>
-          <EditableField
-            value={data.preparedFor}
-            onValueChange={(v) => onUpdate("preparedFor", v)}
-            className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl"
-          />
+          {readOnlyDerived ? (
+            <p className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl">{data.preparedFor}</p>
+          ) : (
+            <EditableField
+              value={data.preparedFor}
+              onValueChange={(v) => onUpdate("preparedFor", v)}
+              className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl"
+            />
+          )}
 
           <div className="mt-7 grid grid-cols-1 gap-4 border-t border-white/20 pt-6 sm:mt-9 sm:grid-cols-3">
             <div className="flex items-start gap-3">
               <ItineraryIcon icon="calendar" className="mt-0.5 h-6 w-6 shrink-0 text-[hsl(146_35%_55%)]" />
               <div className="min-w-0">
-                <EditableField value={data.travelDates} onValueChange={(v) => onUpdate("travelDates", v)} className="text-sm font-bold text-white" />
+                {readOnlyDerived ? (
+                  <p className="text-sm font-bold text-white">{data.travelDates}</p>
+                ) : (
+                  <EditableField value={data.travelDates} onValueChange={(v) => onUpdate("travelDates", v)} className="text-sm font-bold text-white" />
+                )}
                 <p className="text-[10px] tracking-wide text-white/65">TRAVEL DATES</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <ItineraryIcon icon="support" className="mt-0.5 h-6 w-6 shrink-0 text-[hsl(146_35%_55%)]" />
               <div className="min-w-0">
-                <EditableField value={data.travelers} onValueChange={(v) => onUpdate("travelers", v)} className="text-sm font-bold text-white" />
+                {readOnlyDerived ? (
+                  <p className="text-sm font-bold text-white">{data.travelers}</p>
+                ) : (
+                  <EditableField value={data.travelers} onValueChange={(v) => onUpdate("travelers", v)} className="text-sm font-bold text-white" />
+                )}
                 <p className="text-[10px] tracking-wide text-white/65">TRAVELLERS</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <ItineraryIcon icon="star" className="mt-0.5 h-6 w-6 shrink-0 text-[hsl(146_35%_55%)]" />
               <div className="min-w-0">
-                <EditableField value={data.packageType} onValueChange={(v) => onUpdate("packageType", v)} className="text-sm font-bold text-white" />
+                {readOnlyDerived ? (
+                  <p className="text-sm font-bold text-white">{data.packageType}</p>
+                ) : (
+                  <EditableField value={data.packageType} onValueChange={(v) => onUpdate("packageType", v)} className="text-sm font-bold text-white" />
+                )}
                 <p className="text-[10px] tracking-wide text-white/65">PACKAGE TYPE</p>
               </div>
             </div>

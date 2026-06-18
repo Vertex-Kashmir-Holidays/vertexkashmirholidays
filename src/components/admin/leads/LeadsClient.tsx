@@ -315,7 +315,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                           </Link>
                           {canEdit && (
                             <Link
-                              href={`/admin/leads/${lead.id}`}
+                              href={`/admin/leads/${lead.id}/edit`}
                               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
                               title="Edit"
                             >

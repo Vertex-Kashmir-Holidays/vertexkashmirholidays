@@ -36,6 +36,10 @@ interface StaffUser {
 
 interface Props {
   staffUsers: StaffUser[];
+  /** When set, the form edits this lead (PATCH) instead of creating a new one (POST). */
+  leadId?: string;
+  /** Pre-fill values for edit mode. */
+  defaultValues?: Partial<FormData>;
 }
 
 const inputCls =
@@ -46,9 +50,10 @@ const selectWrapCls = "relative";
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition appearance-none bg-card";
 
-export function LeadForm({ staffUsers }: Props) {
+export function LeadForm({ staffUsers, leadId, defaultValues }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const isEdit = !!leadId;
 
   const {
     register,
@@ -56,7 +61,7 @@ export function LeadForm({ staffUsers }: Props) {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { source: "MANUAL", adults: "1" },
+    defaultValues: defaultValues ?? { source: "MANUAL", adults: "1" },
   });
 
   function onSubmit(data: FormData) {
@@ -64,26 +69,33 @@ export function LeadForm({ staffUsers }: Props) {
       try {
         const adults = data.adults ? parseInt(data.adults, 10) : 1;
         const children = data.children ? parseInt(data.children, 10) : undefined;
+        // In edit mode empties become null (to clear a field); in create mode
+        // they're omitted so server defaults apply.
+        const empty = isEdit ? null : undefined;
+        const negotiated = data.negotiatedAmount ? parseFloat(data.negotiatedAmount) : NaN;
+        const token = data.tokenAmount ? parseFloat(data.tokenAmount) : NaN;
 
-        const res = await fetch("/api/admin/leads", {
-          method: "POST",
+        const payload = {
+          name: data.name,
+          phone: data.phone,
+          email: data.email?.trim() ? data.email.trim() : empty,
+          source: data.source || "MANUAL",
+          category: data.category || empty,
+          adults: isNaN(adults) ? 1 : adults,
+          children: children !== undefined && !isNaN(children) ? children : empty,
+          startDate: data.startDate || empty,
+          endDate: data.endDate || empty,
+          followUpAt: data.followUpAt || empty,
+          assignedToId: data.assignedToId || empty,
+          notes: isEdit ? (data.notes ?? "") : (data.notes || undefined),
+          negotiatedAmount: negotiated > 0 ? negotiated : empty,
+          tokenAmount: token > 0 ? token : empty,
+        };
+
+        const res = await fetch(isEdit ? `/api/leads/${leadId}` : "/api/admin/leads", {
+          method: isEdit ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: data.name,
-            phone: data.phone,
-            email: data.email || undefined,
-            source: data.source || "MANUAL",
-            category: data.category || undefined,
-            adults: isNaN(adults) ? 1 : adults,
-            children: children !== undefined && !isNaN(children) ? children : undefined,
-            startDate: data.startDate || undefined,
-            endDate: data.endDate || undefined,
-            followUpAt: data.followUpAt || undefined,
-            assignedToId: data.assignedToId || undefined,
-            notes: data.notes || undefined,
-            negotiatedAmount: data.negotiatedAmount ? parseFloat(data.negotiatedAmount) : undefined,
-            tokenAmount: data.tokenAmount ? parseFloat(data.tokenAmount) : undefined,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
@@ -93,8 +105,8 @@ export function LeadForm({ staffUsers }: Props) {
           return;
         }
 
-        toast.success("Lead created!");
-        router.push("/admin/leads");
+        toast.success(isEdit ? "Lead updated!" : "Lead created!");
+        router.push(isEdit ? `/admin/leads/${leadId}` : "/admin/leads");
         router.refresh();
       } catch {
         toast.error("An error occurred.");
@@ -245,11 +257,11 @@ export function LeadForm({ staffUsers }: Props) {
           className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm"
         >
           {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          Create Lead
+          {isEdit ? "Save Changes" : "Create Lead"}
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin/leads")}
+          onClick={() => router.push(isEdit ? `/admin/leads/${leadId}` : "/admin/leads")}
           className="text-sm text-muted-foreground hover:text-foreground px-4 py-2.5 rounded-xl border border-border transition-colors"
         >
           Cancel

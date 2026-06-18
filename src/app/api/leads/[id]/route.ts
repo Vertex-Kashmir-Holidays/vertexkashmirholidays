@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
-import { LeadStatus, LeadCategory, LeadActivityType } from "@prisma/client";
+import { LeadStatus, LeadSource, LeadCategory, LeadActivityType } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { itineraryDataSchema } from "@/types/itinerary";
+import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -33,6 +36,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 const patchSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  phone: z.string().min(6, "Valid phone number required").optional(),
+  email: z.string().email("Enter a valid email").nullable().optional(),
+  source: z.nativeEnum(LeadSource).optional(),
   status: z.nativeEnum(LeadStatus).optional(),
   assignedToId: z.string().nullable().optional(),
   notes: z.string().optional(),
@@ -52,7 +59,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
-  const existing = await prisma.lead.findUnique({ where: { id } });
+  const existing = await prisma.lead.findUnique({
+    where: { id },
+    include: { itinerary: { select: { id: true, title: true, locked: true, data: true } } },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // SALES users can only edit leads assigned to them.
@@ -97,6 +107,57 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const bookingChanged =
     bookingId !== undefined && (bookingId ?? null) !== (existing.bookingId ?? null);
 
+  // Keep the linked (unlocked) itinerary's lead-derived cover fields in sync
+  // when the lead's trip facts change — especially dates.
+  const itin = existing.itinerary;
+  const tripFactsTouched =
+    rest.name !== undefined ||
+    rest.category !== undefined ||
+    rest.adults !== undefined ||
+    rest.children !== undefined ||
+    startDate !== undefined ||
+    endDate !== undefined;
+
+  const itinerarySyncOps: Prisma.PrismaPromise<unknown>[] = [];
+  if (itin && !itin.locked && tripFactsTouched) {
+    const parsedItin = itineraryDataSchema.safeParse(itin.data);
+    if (parsedItin.success) {
+      const facts = {
+        name: rest.name ?? existing.name,
+        category: rest.category !== undefined ? rest.category : existing.category,
+        adults: rest.adults ?? existing.adults,
+        children: rest.children !== undefined ? rest.children : existing.children,
+        startDate: startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
+        endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
+      };
+      const nextData = applyLeadFactsToItinerary(parsedItin.data, facts);
+      const changed =
+        nextData.preparedFor !== parsedItin.data.preparedFor ||
+        nextData.travelDates !== parsedItin.data.travelDates ||
+        nextData.duration !== parsedItin.data.duration ||
+        nextData.travelers !== parsedItin.data.travelers ||
+        nextData.packageType !== parsedItin.data.packageType;
+      if (changed) {
+        const jsonData = nextData as unknown as Prisma.InputJsonValue;
+        itinerarySyncOps.push(
+          prisma.itinerary.update({
+            where: { id: itin.id },
+            data: { data: jsonData, lastEditedById: performedById },
+          }),
+          prisma.itineraryHistory.create({
+            data: {
+              itineraryId: itin.id,
+              title: itin.title,
+              data: jsonData,
+              editedById: performedById,
+              editedByName: performedByName,
+            },
+          }),
+        );
+      }
+    }
+  }
+
   const [updated] = await prisma.$transaction([
     prisma.lead.update({
       where: { id },
@@ -136,6 +197,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     ...(status === LeadStatus.CONVERTED && existing.status !== LeadStatus.CONVERTED
       ? [prisma.itinerary.updateMany({ where: { leadId: id }, data: { locked: true, status: "CONFIRMED" } })]
       : []),
+    // Sync lead trip facts into the linked itinerary's cover fields.
+    ...itinerarySyncOps,
   ]);
 
   return NextResponse.json(updated);
