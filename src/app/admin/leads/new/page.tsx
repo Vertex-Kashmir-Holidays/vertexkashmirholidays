@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewLeadPage() {
   const staffUsers = await prisma.user.findMany({
-    where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] } },
+    where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });

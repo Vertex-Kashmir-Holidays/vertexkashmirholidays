@@ -1,15 +1,31 @@
 import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { can } from "@/lib/permissions";
+import type { Role } from "@/lib/rbac";
 import { LeadsClient } from "@/components/admin/leads/LeadsClient";
 
 export const metadata: Metadata = { title: "Leads — Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLeadsPage() {
-  const [leads, total, staffUsers] = await Promise.all([
+  const session = await auth();
+  const role = (session?.user?.role ?? "ADMIN") as Role;
+  const userId = session?.user?.id ?? "";
+  const isAdminOrSuper = role === "SUPERADMIN" || role === "ADMIN";
+
+  const scopeWhere = isAdminOrSuper ? {} : { assignedToId: userId };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [leads, staffUsers, total, todayFollowUps, converted, canCreate, canEdit, canDelete] = await Promise.all([
     prisma.lead.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 100,
+      where: scopeWhere,
+      orderBy: { updatedAt: "desc" },
+      take: 200,
       select: {
         id: true,
         name: true,
@@ -21,17 +37,39 @@ export default async function AdminLeadsPage() {
         status: true,
         startDate: true,
         followUpAt: true,
-        assignedTo: { select: { id: true, name: true } },
+        updatedAt: true,
+        negotiatedAmount: true,
+        tokenAmount: true,
+        assignedToId: true,
+        assignedTo: { select: { id: true, name: true, email: true } },
         createdAt: true,
       },
     }),
-    prisma.lead.count(),
     prisma.user.findMany({
-      where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] } },
-      select: { id: true, name: true },
+      where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
+      select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     }),
+    prisma.lead.count({ where: scopeWhere }),
+    prisma.lead.count({ where: { ...scopeWhere, followUpAt: { gte: today, lt: tomorrow } } }),
+    prisma.lead.count({ where: { ...scopeWhere, status: "CONVERTED" } }),
+    can(role, "leads", "create"),
+    can(role, "leads", "edit"),
+    can(role, "leads", "delete"),
   ]);
 
-  return <LeadsClient initialLeads={leads} totalCount={total} staffUsers={staffUsers} />;
+  const stats = { total, todayFollowUps, converted };
+
+  return (
+    <LeadsClient
+      initialLeads={leads}
+      totalCount={total}
+      staffUsers={staffUsers}
+      stats={stats}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      isAdmin={isAdminOrSuper}
+    />
+  );
 }

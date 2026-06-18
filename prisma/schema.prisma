@@ -14,14 +14,17 @@ model User {
   phone        String?
   passwordHash String
   role         Role      @default(CUSTOMER)
+  deletedAt    DateTime? // soft-delete marker; non-null = hidden + login blocked
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   bookings      Booking[]
   reviews       Review[]
-  itineraries   Itinerary[]
+  itineraries       Itinerary[] @relation("ItineraryOwner")
+  itinerariesEdited Itinerary[] @relation("ItineraryEditor")
   leadsAssigned Lead[]      @relation("LeadAssignee")
 
   @@index([email])
+  @@index([deletedAt])
 }
 
 model Itinerary {
@@ -30,13 +33,40 @@ model Itinerary {
   status    ItineraryStatus @default(DRAFT)
   data      Json
   ownerId   String
-  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner     User            @relation("ItineraryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // Optional link to a CRM lead. @unique enforces a single current itinerary per
+  // lead. Cascade so deleting a (non-converted) lead cleans up its itinerary.
+  leadId    String?         @unique
+  lead      Lead?           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  // Locked when the owning lead is converted — the final, immutable itinerary.
+  locked    Boolean         @default(false)
+  // Last editor (creator is `owner`). SetNull so a deleted staff user is tolerated.
+  lastEditedById String?
+  lastEditedBy   User?       @relation("ItineraryEditor", fields: [lastEditedById], references: [id], onDelete: SetNull)
+  history   ItineraryHistory[]
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
   @@index([ownerId])
   @@index([status])
   @@index([updatedAt])
+  @@index([lastEditedById])
+}
+
+// Append-only audit trail: one snapshot row per saved version of an itinerary.
+// Lets us see what was shared/updated over time. Cascade-deleted with its parent.
+model ItineraryHistory {
+  id           String    @id @default(cuid())
+  itineraryId  String
+  itinerary    Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  title        String
+  data         Json
+  editedById   String?
+  editedByName String
+  createdAt    DateTime  @default(now())
+
+  @@index([itineraryId])
+  @@index([createdAt])
 }
 
 // Pending email-verification record for account registration. A row is created
@@ -203,11 +233,14 @@ model Lead {
   assignedToId String?
   assignedTo   User?         @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   status       LeadStatus    @default(NEW)
-  bookingId    String?
-  booking      Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  createdAt    DateTime      @default(now())
+  bookingId        String?
+  booking          Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  negotiatedAmount Float?
+  tokenAmount      Float?
+  createdAt        DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   activities   LeadActivity[]
+  itinerary    Itinerary?
 
   @@index([status])
   @@index([source])

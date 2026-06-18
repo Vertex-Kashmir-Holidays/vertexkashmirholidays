@@ -32,6 +32,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Soft-deleted accounts cannot sign in.
+        if (user.deletedAt) {
+          return null;
+        }
+
         const validPassword = await bcrypt.compare(
           parsed.data.password,
           user.passwordHash
