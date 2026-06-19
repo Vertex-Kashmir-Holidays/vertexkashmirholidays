@@ -14,6 +14,10 @@ model User {
   phone        String?
   passwordHash String
   role         Role      @default(CUSTOMER)
+  // Set true for accounts created with a system-generated temp password (e.g. from
+  // lead conversion). Forces a password change on first login before any other
+  // account access is allowed. Cleared once the customer sets their own password.
+  mustChangePassword Boolean @default(false)
   deletedAt    DateTime? // soft-delete marker; non-null = hidden + login blocked
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

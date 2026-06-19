@@ -36,6 +36,24 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "This lead is already converted." }, { status: 422 });
   }
 
+  // Business rule: an itinerary must be prepared and linked to the lead before it
+  // can be converted — the itinerary is the agreed plan the booking is built on.
+  // This is the authoritative check (the UI mirrors it for a smoother prompt).
+  const itinerary = await prisma.itinerary.findUnique({
+    where: { leadId: id },
+    select: { id: true },
+  });
+  if (!itinerary) {
+    return NextResponse.json(
+      {
+        error:
+          "Add an itinerary for this lead before converting. The itinerary is required to create the booking.",
+        code: "ITINERARY_REQUIRED",
+      },
+      { status: 422 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

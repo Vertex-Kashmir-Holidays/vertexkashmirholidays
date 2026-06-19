@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { sendPaymentInvoiceEmail } from "@/lib/bookings/notify";
 import type { PaymentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -48,5 +49,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       recordedById: guard.user.id as string,
     },
   });
-  return NextResponse.json(created, { status: 201 });
+
+  // Branded payment receipt email + PDF (best-effort, never blocks the record).
+  const { delivered: emailed } = await sendPaymentInvoiceEmail(id, created.id);
+
+  return NextResponse.json({ ...created, emailed }, { status: 201 });
 }

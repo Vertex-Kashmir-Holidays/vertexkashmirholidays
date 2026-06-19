@@ -23,6 +23,12 @@ function createTransporter() {
   });
 }
 
+export interface MailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+}
+
 export interface MailOptions {
   to: string;
   subject: string;
@@ -32,6 +38,8 @@ export interface MailOptions {
   replyTo?: string;
   /** Extra headers, merged over the transactional defaults. */
   headers?: Record<string, string>;
+  /** Optional file attachments (e.g. PDF invoices). Passed straight to Nodemailer. */
+  attachments?: MailAttachment[];
 }
 
 export interface SendMailResult {
@@ -268,12 +276,25 @@ ${detailRow("Payment ID", data.razorpayPayId)}
   });
 }
 
+export interface InvoiceService {
+  kind: "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
+  name: string;
+  location?: string | null;
+  nights?: number | null;
+  pickup?: string | null;
+  dropoff?: string | null;
+  timing?: string | null;
+}
+
 interface BookingInvoiceData {
   guestName: string;
   bookingRef: string;
-  services: { kind: string; name: string }[]; // NO per-line pricing
+  travelDate?: string;
+  travellers?: number;
+  services: InvoiceService[]; // NO per-line pricing — detail only
   inclusions: string[];
   totalAmount: number; // effective payable (after discount)
+  bookingAmount: number; // raw booking amount before discount
   discountAmount: number;
   paidAmount: number;
   remainingBalance: number;
@@ -281,7 +302,44 @@ interface BookingInvoiceData {
   whatsappNumber?: string | null;
 }
 
-const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+
+const KIND_LABELS: Record<InvoiceService["kind"], string> = {
+  HOTEL: "Accommodation",
+  TRANSPORT: "Transport",
+  ACTIVITY: "Activities",
+  OTHER: "Other Inclusions",
+};
+
+// Human detail line for a service — never includes price.
+function serviceDetailLine(s: InvoiceService): string {
+  switch (s.kind) {
+    case "HOTEL": {
+      const parts: string[] = [];
+      if (s.location) parts.push(s.location);
+      if (s.nights != null) parts.push(`${s.nights} night${s.nights === 1 ? "" : "s"}`);
+      return parts.join(" · ");
+    }
+    case "TRANSPORT": {
+      const route = [s.pickup, s.dropoff].filter(Boolean).join(" → ");
+      return route ? `Route: ${route}` : "";
+    }
+    case "ACTIVITY": {
+      const parts: string[] = [];
+      if (s.timing) parts.push(s.timing);
+      if (s.location) parts.push(s.location);
+      return parts.join(" · ");
+    }
+    default:
+      return "";
+  }
+}
+
+function groupServices(services: InvoiceService[]) {
+  return (["HOTEL", "TRANSPORT", "ACTIVITY", "OTHER"] as const)
+    .map((kind) => ({ kind, items: services.filter((x) => x.kind === kind) }))
+    .filter((g) => g.items.length > 0);
+}
 
 export function bookingInvoiceText(data: BookingInvoiceData): string {
   const { text: waText } = resolveWhatsApp(data.whatsappNumber);
@@ -290,21 +348,30 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
     "",
     `Dear ${data.guestName}, here is your booking summary.`,
     `Booking Ref: ${data.bookingRef}`,
-    "",
-    "Services included:",
-    ...data.services.map((s) => `  • ${s.name} (${s.kind.toLowerCase()})`),
   ];
+  if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
+  if (data.travellers) lines.push(`Travellers: ${data.travellers}`);
+  lines.push("", "Your package includes:");
+  for (const g of groupServices(data.services)) {
+    lines.push(`  ${KIND_LABELS[g.kind]}:`);
+    for (const s of g.items) {
+      const detail = serviceDetailLine(s);
+      lines.push(`    • ${s.name}${detail ? ` — ${detail}` : ""}`);
+    }
+  }
   if (data.inclusions.length) {
-    lines.push("", "Inclusions:", ...data.inclusions.map((i) => `  • ${i}`));
+    lines.push("", "Additional inclusions:", ...data.inclusions.map((i) => `  • ${i}`));
   }
   lines.push(
     "",
-    `Total Amount: ${inr(data.totalAmount)}`,
+    `Total Booking Amount: ${inr(data.bookingAmount)}`,
     `Discount: ${inr(data.discountAmount)}`,
+    `Payable: ${inr(data.totalAmount)}`,
     `Paid: ${inr(data.paidAmount)}`,
     `Remaining Balance: ${inr(data.remainingBalance)}`,
     `Status: ${data.status}`,
     "",
+    "A detailed PDF summary is attached to this email.",
     `WhatsApp us: ${waText}`,
   );
   return lines.join("\n");
@@ -312,12 +379,25 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
 
 export function bookingInvoiceHtml(data: BookingInvoiceData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
-  const serviceItems = data.services
-    .map(
-      (s) =>
-        `<li style="margin:0 0 6px;color:#222222;font-size:13px">${escapeHtml(s.name)} <span style="color:#9aa0a6;font-size:11px">(${escapeHtml(s.kind.toLowerCase())})</span></li>`,
-    )
+
+  const serviceBlocks = groupServices(data.services)
+    .map((g) => {
+      const rows = g.items
+        .map((s) => {
+          const detail = serviceDetailLine(s);
+          return `<li style="margin:0 0 8px;list-style:none">
+            <div style="color:#1a1a1a;font-size:13px;font-weight:700">${escapeHtml(s.name)}</div>
+            ${detail ? `<div style="color:#777777;font-size:11px;margin-top:1px">${escapeHtml(detail)}</div>` : ""}
+          </li>`;
+        })
+        .join("");
+      return `<div style="margin:0 0 14px">
+        <p style="margin:0 0 6px;color:${BRAND};font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase">${escapeHtml(KIND_LABELS[g.kind])}</p>
+        <ul style="margin:0;padding:0">${rows}</ul>
+      </div>`;
+    })
     .join("");
+
   const inclusionItems = data.inclusions
     .map((i) => `<li style="margin:0 0 4px;color:#444444;font-size:12px">${escapeHtml(i)}</li>`)
     .join("");
@@ -325,21 +405,31 @@ export function bookingInvoiceHtml(data: BookingInvoiceData): string {
   const content = `          <tr>
             <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
               <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Booking Summary</h1>
-              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, here is your booking summary. Ref: <strong>${escapeHtml(data.bookingRef)}</strong></p>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, here is your confirmed booking summary. Ref: <strong>${escapeHtml(data.bookingRef)}</strong></p>
             </td>
           </tr>
           <tr>
-            <td style="padding:8px 28px 0;font-family:Arial,Helvetica,sans-serif">
-              <h2 style="margin:8px 0 6px;color:${BRAND};font-size:14px">Services</h2>
-              <ul style="margin:0;padding-left:18px">${serviceItems || '<li style="color:#9aa0a6;font-size:12px">—</li>'}</ul>
-              ${inclusionItems ? `<h2 style="margin:14px 0 6px;color:${BRAND};font-size:14px">Inclusions</h2><ul style="margin:0;padding-left:18px">${inclusionItems}</ul>` : ""}
+            <td style="padding:8px 28px 4px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
+${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 28px 0;font-family:Arial,Helvetica,sans-serif">
+              <h2 style="margin:0 0 10px;color:${BRAND};font-size:14px">Your Package Includes</h2>
+              ${serviceBlocks || '<p style="color:#9aa0a6;font-size:12px">Service details will be shared shortly.</p>'}
+              ${inclusionItems ? `<h2 style="margin:6px 0 6px;color:${BRAND};font-size:14px">Additional Inclusions</h2><ul style="margin:0;padding-left:18px">${inclusionItems}</ul>` : ""}
             </td>
           </tr>
           <tr>
             <td style="padding:12px 28px 4px">
+              <h2 style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;color:${BRAND};font-size:14px">Price Summary</h2>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
-${detailRow("Total Amount", inr(data.totalAmount))}
-${detailRow("Discount", inr(data.discountAmount))}
+${detailRow("Total Booking Amount", inr(data.bookingAmount))}
+${data.discountAmount > 0 ? detailRow("Discount", `– ${inr(data.discountAmount)}`) : ""}
+${detailRow("Payable", inr(data.totalAmount))}
 ${detailRow("Paid", inr(data.paidAmount))}
 ${detailRow("Remaining Balance", inr(data.remainingBalance))}
 ${detailRow("Status", data.status)}
@@ -347,7 +437,12 @@ ${detailRow("Status", data.status)}
             </td>
           </tr>
           <tr>
-            <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+            <td style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
+              <p style="margin:0;color:#666666;font-size:12px;line-height:1.6">📎 A professionally formatted PDF summary is attached for your records.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 28px 28px;font-family:Arial,Helvetica,sans-serif">
               <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
             </td>
           </tr>`;
@@ -355,6 +450,102 @@ ${detailRow("Status", data.status)}
   return emailShell({
     title: `Booking Summary — ${data.bookingRef}`,
     preheader: `Your booking summary — remaining balance ${inr(data.remainingBalance)}.`,
+    contentHtml: content,
+  });
+}
+
+// ── Payment invoice / receipt ────────────────────────────────────────────────
+// Sent whenever a payment is recorded against a booking (online or staff-entered).
+// Strictly payment-focused — never includes the booking's service line items.
+
+interface PaymentInvoiceData {
+  customerName: string;
+  bookingRef: string;
+  invoiceRef: string;
+  amount: number;
+  type: string; // Token / Partial / Final / Refund
+  method?: string | null;
+  paymentDate: string;
+  totalPaid: number;
+  remainingBalance: number;
+  status: string;
+  whatsappNumber?: string | null;
+}
+
+export function paymentInvoiceText(data: PaymentInvoiceData): string {
+  const { text: waText } = resolveWhatsApp(data.whatsappNumber);
+  const lines = [
+    "Payment Receipt — Vertex Kashmir Holidays",
+    "",
+    `Dear ${data.customerName}, we have received your payment.`,
+    `Receipt: ${data.invoiceRef}`,
+    `Booking Ref: ${data.bookingRef}`,
+    "",
+    `Amount Received: ${inr(data.amount)}`,
+    `Payment Type: ${data.type}`,
+  ];
+  if (data.method) lines.push(`Method: ${data.method}`);
+  lines.push(
+    `Payment Date: ${data.paymentDate}`,
+    "",
+    `Total Paid To Date: ${inr(data.totalPaid)}`,
+    `Remaining Balance: ${inr(data.remainingBalance)}`,
+    `Status: ${data.status}`,
+    "",
+    "A PDF receipt is attached to this email.",
+    `WhatsApp us: ${waText}`,
+  );
+  return lines.join("\n");
+}
+
+export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
+  const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
+
+  const content = `          <tr>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Payment Receipt</h1>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.customerName)}, thank you — we have received your payment. Receipt: <strong>${escapeHtml(data.invoiceRef)}</strong></p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:14px 28px 4px">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:16px 30px;border-radius:12px;background:${BRAND}">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.75)">AMOUNT RECEIVED</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:700;color:#ffffff;margin-top:4px">${inr(data.amount)}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 28px 4px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Booking Ref", data.bookingRef)}
+${detailRow("Payment Type", data.type)}
+${data.method ? detailRow("Method", data.method) : ""}
+${detailRow("Payment Date", data.paymentDate)}
+${detailRow("Total Paid To Date", inr(data.totalPaid))}
+${detailRow("Remaining Balance", inr(data.remainingBalance))}
+${detailRow("Status", data.status)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
+              <p style="margin:0;color:#666666;font-size:12px;line-height:1.6">📎 A PDF receipt is attached for your records.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
+            </td>
+          </tr>`;
+
+  return emailShell({
+    title: `Payment Receipt — ${data.invoiceRef}`,
+    preheader: `Payment of ${inr(data.amount)} received — balance ${inr(data.remainingBalance)}.`,
     contentHtml: content,
   });
 }
@@ -372,6 +563,38 @@ function escapeHtml(value: string): string {
 
 // Brand navy used across all emails.
 const BRAND = "#0f3460";
+
+function siteUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXTAUTH_URL ??
+    "https://vertexkashmirholidays.com"
+  ).replace(/\/$/, "");
+}
+
+/**
+ * Branded header band rendered at the top of every transactional email: the
+ * company logo (absolute URL so it resolves in the inbox) and wordmark on the
+ * brand navy. Falls back gracefully to the wordmark if the image is blocked.
+ */
+function brandHeader(): string {
+  const logo = `${siteUrl()}/brand/icon.png`;
+  return `          <tr>
+            <td style="padding:20px 28px;background:${BRAND};border-radius:14px 14px 0 0">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px">
+                    <img src="${logo}" width="34" height="34" alt="Vertex Kashmir Holidays" style="display:block;border:0;border-radius:7px;background:#ffffff" />
+                  </td>
+                  <td style="vertical-align:middle">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#ffffff;line-height:1.1">Vertex Kashmir</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.75);margin-top:2px">HOLIDAYS</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
+}
 
 /**
  * Shared, cross-client email chrome: a full HTML document with a centered white
@@ -402,6 +625,7 @@ function emailShell(opts: {
     <tr>
       <td align="center" style="padding:32px 16px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:${maxWidth}px;background:#ffffff;border-radius:14px;border:1px solid #e6e8eb">
+${brandHeader()}
 ${opts.contentHtml}
         </table>
         <p style="margin:16px 0 0;color:#9aa0a6;font-size:11px;font-family:Arial,Helvetica,sans-serif">

@@ -102,6 +102,10 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
   const [drafts, setDrafts] = useState<Service[]>([]);
+  // Live amounts lifted from rows on blur (keyed by row id, drafts included), so
+  // totals recalc as soon as an amount field is edited — no per-row save needed.
+  // Persistence still happens via each row's Save button.
+  const [liveAmounts, setLiveAmounts] = useState<Record<string, number>>({});
   const [payments, setPayments] = useState<Payment[]>(booking.payments);
   const [discountType, setDiscountType] = useState<string>(booking.discountType ?? "");
   const [discountValue, setDiscountValue] = useState<string>(booking.discountValue ? String(booking.discountValue) : "");
@@ -119,6 +123,18 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
   const [dialog, setDialog] = useState<null | "email" | "confirm">(null);
   const [savingEmail, startSaveEmail] = useTransition();
 
+  // Amount actually in effect for a row: the live (blurred) value if present, else
+  // the persisted amount. Drafts default to 0 until edited.
+  const amountOf = (row: Service) =>
+    liveAmounts[row.id] ?? row.amount;
+
+  // Services as the finance calc sees them — persisted + drafts, with live amounts.
+  const effectiveServices = useMemo(
+    () => [...services, ...drafts].map((s) => ({ amount: amountOf(s) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [services, drafts, liveAmounts],
+  );
+
   const finance = useMemo(
     () =>
       computeBookingFinance({
@@ -126,13 +142,20 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
         discountType: discountType || null,
         discountValue: discountValue ? parseFloat(discountValue) : 0,
         payments,
-        services,
+        services: effectiveServices,
       }),
-    [booking.amount, discountType, discountValue, payments, services],
+    [booking.amount, discountType, discountValue, payments, effectiveServices],
   );
 
+  // Record a row's amount on blur so totals react immediately.
+  function setLiveAmount(id: string, amount: number) {
+    setLiveAmounts((prev) => (prev[id] === amount ? prev : { ...prev, [id]: amount }));
+  }
+
   function capError(amount: number, excludeId: string | null): string | null {
-    const others = services.filter((s) => s.id !== excludeId).reduce((t, s) => t + s.amount, 0);
+    const others = [...services, ...drafts]
+      .filter((s) => s.id !== excludeId)
+      .reduce((t, s) => t + amountOf(s), 0);
     if (round2(others + amount) > booking.amount) {
       return `Services total would exceed the booking amount (${inr(booking.amount)}).`;
     }
@@ -296,7 +319,7 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
       {SECTIONS.map((section) => {
         const persisted = services.filter((s) => s.kind === section.kind);
         const sectionDrafts = drafts.filter((s) => s.kind === section.kind);
-        const sectionTotal = persisted.reduce((t, s) => t + s.amount, 0);
+        const sectionTotal = [...persisted, ...sectionDrafts].reduce((t, s) => t + amountOf(s), 0);
         const Icon = section.icon;
         return (
           <div key={section.kind} className="bg-card rounded-2xl border border-border shadow-sm p-5">
@@ -317,6 +340,7 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
                   fields={section.fields}
                   locked={locked}
                   capError={capError}
+                  onAmountBlur={setLiveAmount}
                   onSaved={(s) => setServices((prev) => prev.map((x) => (x.id === s.id ? s : x)))}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
@@ -330,9 +354,12 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
                   fields={section.fields}
                   locked={locked}
                   capError={capError}
+                  onAmountBlur={setLiveAmount}
                   onSaved={(s) => {
                     setDrafts((prev) => prev.filter((x) => x.id !== svc.id));
                     setServices((prev) => [...prev, s]);
+                    // Carry the live amount over to the new persisted row id.
+                    setLiveAmounts((prev) => ({ ...prev, [s.id]: s.amount }));
                   }}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
@@ -593,6 +620,7 @@ function ServiceRow({
   fields,
   locked,
   capError,
+  onAmountBlur,
   onSaved,
   onRemoved,
 }: {
@@ -602,6 +630,7 @@ function ServiceRow({
   fields: FieldDef[];
   locked: boolean;
   capError: (amount: number, excludeId: string | null) => string | null;
+  onAmountBlur: (id: string, amount: number) => void;
   onSaved: (s: Service) => void;
   onRemoved: () => void;
 }) {
@@ -677,6 +706,11 @@ function ServiceRow({
             type={f.type}
             value={form[f.key]}
             onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
+            onBlur={
+              f.key === "amount"
+                ? () => onAmountBlur(record.id, form.amount ? parseFloat(form.amount) || 0 : 0)
+                : undefined
+            }
             disabled={locked}
             className={`${inputCls} mt-0.5`}
           />

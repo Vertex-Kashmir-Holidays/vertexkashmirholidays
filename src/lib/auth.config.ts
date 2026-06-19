@@ -31,14 +31,33 @@ export const authConfig = {
         return Response.redirect(new URL("/account", nextUrl.origin));
       }
 
-      // isAccountPath: any authenticated user may access their account area.
+      // isAccountPath: any authenticated user may access their account area, but a
+      // customer holding a system-issued temp password must set a new one first.
+      // Coarse edge gate — the server page + API also enforce this authoritatively.
+      if (auth.user.mustChangePassword && pathname !== "/account/change-password") {
+        return Response.redirect(new URL("/account/change-password", nextUrl.origin));
+      }
       return true;
     },
 
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.mustChangePassword = user.mustChangePassword ?? false;
+      }
+
+      // After the customer sets a new password the client calls update() so the
+      // JWT (and thus the middleware gate) immediately reflects the cleared flag.
+      if (
+        trigger === "update" &&
+        session &&
+        typeof session === "object" &&
+        "mustChangePassword" in session
+      ) {
+        token.mustChangePassword = Boolean(
+          (session as { mustChangePassword?: unknown }).mustChangePassword,
+        );
       }
 
       return token;
@@ -48,6 +67,7 @@ export const authConfig = {
       if (session.user) {
         session.user.role = token.role as Role;
         session.user.id = token.id as string;
+        session.user.mustChangePassword = Boolean(token.mustChangePassword);
       }
 
       return session;
