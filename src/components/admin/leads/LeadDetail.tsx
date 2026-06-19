@@ -384,8 +384,16 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Pr
                   any other status. The booking/token amounts are entered in the modal. */}
               {status === "NEGOTIATION" && !locked && (
                 <button
-                  onClick={() => setShowConvert(true)}
+                  onClick={() => {
+                    // Mirror the server rule: itinerary is mandatory before conversion.
+                    if (!itinerary) {
+                      toast.error("Add an itinerary for this lead before converting.");
+                      return;
+                    }
+                    setShowConvert(true);
+                  }}
                   disabled={isPending}
+                  title={itinerary ? undefined : "An itinerary is required before converting this lead."}
                   className="flex items-center gap-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />

@@ -14,22 +14,24 @@ export default async function AccountOverviewPage() {
   const userId = session!.user.id;
   const now = new Date();
 
-  const [bookings, paid] = await Promise.all([
+  const [bookings, payments] = await Promise.all([
     prisma.booking.findMany({
       where: { userId },
       orderBy: { travelDate: "asc" },
       take: 3,
       include: { tour: { select: { title: true, slug: true } } },
     }),
-    prisma.booking.findMany({
-      where: { userId, status: "PAID" },
-      select: { amount: true },
+    // The actual payment ledger (online + staff-recorded), kept in sync with the
+    // Payments tab. Net of refunds.
+    prisma.bookingPayment.findMany({
+      where: { booking: { userId } },
+      select: { amount: true, type: true },
     }),
   ]);
 
   const totalBookings = await prisma.booking.count({ where: { userId } });
   const upcoming = bookings.filter((b) => b.travelDate >= now).length;
-  const totalSpent = paid.reduce((sum, b) => sum + b.amount, 0);
+  const totalSpent = payments.reduce((sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount), 0);
 
   const stats = [
     { label: "Total Bookings", value: String(totalBookings), Icon: CalendarDays },

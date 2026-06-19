@@ -39,19 +39,16 @@ export default async function AccountBookingsPage() {
       ) : (
         <div className="space-y-3">
           {bookings.map((b) => (
-            <div
+            <Link
               key={b.id}
-              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+              href={`/account/bookings/${b.id}`}
+              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  {b.tour ? (
-                    <Link href={`/tours/${b.tour.slug}`} className="truncate text-sm font-bold text-foreground hover:underline">
-                      {b.tour.title}
-                    </Link>
-                  ) : (
-                    <span className="truncate text-sm font-bold text-foreground">Custom booking</span>
-                  )}
+                  <span className="truncate text-sm font-bold text-foreground">
+                    {b.tour?.title ?? "Custom booking"}
+                  </span>
                   <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[b.status])}>
                     {b.status}
                   </span>
@@ -64,12 +61,13 @@ export default async function AccountBookingsPage() {
                   {" · "}
                   Booked {b.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Ref: {b.razorpayOrderId}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Ref: {b.id.slice(-8).toUpperCase()}</p>
               </div>
               <div className="text-right">
                 <p className="text-base font-bold text-foreground">{inr.format(b.amount)}</p>
+                <p className="text-[11px] font-semibold text-primary">View details →</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

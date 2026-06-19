@@ -2,20 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { computeBookingFinance } from "@/lib/bookings/finance";
-import { sendMail, bookingInvoiceHtml, bookingInvoiceText } from "@/lib/mail";
+import { sendBookingSummaryEmail } from "@/lib/bookings/notify";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
-
-function parseInclusions(raw: string): string[] {
-  try {
-    const v = JSON.parse(raw);
-    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
 
 /** Lock a booking's services and email the customer a summary/invoice. */
 export async function POST(_req: NextRequest, { params }: Params) {
@@ -70,36 +61,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   await prisma.booking.update({ where: { id }, data: { servicesLocked: true } });
 
-  // Summary/invoice email (no per-line service pricing). Email presence is
-  // guaranteed by the precondition above; delivery is still reported back.
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "singleton" },
-    select: { whatsapp: true, sitePhone: true },
-  });
-  const payload = {
-    guestName: booking.guestName,
-    bookingRef: booking.id.slice(-8).toUpperCase(),
-    services: booking.services.map((s) => ({ kind: s.kind, name: s.name })),
-    inclusions: parseInclusions(booking.inclusions),
-    totalAmount: finance.effectivePayable,
-    discountAmount: finance.discountAmount,
-    paidAmount: finance.paidAmount,
-    remainingBalance: finance.balance,
-    status: "Partial",
-    whatsappNumber: settings?.whatsapp ?? settings?.sitePhone ?? null,
-  };
-  let emailed = false;
-  try {
-    const res = await sendMail({
-      to,
-      subject: "Your Booking Summary — Vertex Kashmir Holidays",
-      html: bookingInvoiceHtml(payload),
-      text: bookingInvoiceText(payload),
-    });
-    emailed = res.delivered;
-  } catch (err) {
-    console.error("[lock-services] invoice email failed", err);
-  }
+  // Branded summary email + PDF (rich service detail, no per-line pricing). Email
+  // presence is guaranteed by the precondition above; delivery is reported back.
+  const { delivered: emailed } = await sendBookingSummaryEmail(id);
 
   return NextResponse.json({ ok: true, emailed });
 }

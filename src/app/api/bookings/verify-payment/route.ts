@@ -7,6 +7,7 @@ import {
   bookingConfirmationHtml,
   bookingConfirmationText,
 } from "@/lib/mail";
+import { sendPaymentInvoiceEmail } from "@/lib/bookings/notify";
 
 const verifySchema = z.object({
   razorpay_order_id: z.string(),
@@ -66,8 +67,10 @@ export async function POST(req: NextRequest) {
     where: { bookingId: booking.id, reference: razorpay_payment_id },
     select: { id: true },
   });
+  // Only email a receipt for a freshly recorded payment (idempotent on retries).
+  let newPaymentId: string | null = null;
   if (!alreadyRecorded) {
-    await prisma.bookingPayment.create({
+    const payment = await prisma.bookingPayment.create({
       data: {
         bookingId: booking.id,
         amount: booking.amount,
@@ -76,7 +79,9 @@ export async function POST(req: NextRequest) {
         reference: razorpay_payment_id,
         note: "Online payment",
       },
+      select: { id: true },
     });
+    newPaymentId = payment.id;
   }
 
   // Public WhatsApp number for the confirmation email (whatsapp → sitePhone),
@@ -104,6 +109,12 @@ export async function POST(req: NextRequest) {
       html: bookingConfirmationHtml(bookingEmail),
       text: bookingConfirmationText(bookingEmail),
     });
+  }
+
+  // Branded payment receipt email + PDF for the online payment (separate from the
+  // booking confirmation above). Best-effort — never blocks the response.
+  if (newPaymentId) {
+    await sendPaymentInvoiceEmail(booking.id, newPaymentId);
   }
 
   // WhatsApp notification stub

@@ -59,7 +59,9 @@ export async function resolveLeadCustomer(
   const tempPassword = crypto.randomBytes(9).toString("base64url"); // ~12 url-safe chars
   const passwordHash = await bcrypt.hash(tempPassword, 10);
   const created = await tx.user.create({
-    data: { email, name: lead.name, phone, passwordHash, role: "CUSTOMER" },
+    // mustChangePassword: the account ships with a system-generated temp password
+    // emailed to the customer, so they must set their own on first login.
+    data: { email, name: lead.name, phone, passwordHash, role: "CUSTOMER", mustChangePassword: true },
     select: { id: true },
   });
   return { customerId: created.id, created: true, tempPassword };
