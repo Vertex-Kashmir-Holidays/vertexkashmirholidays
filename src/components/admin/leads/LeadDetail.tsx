@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
 import {
   Trash2,
   Clock,
@@ -117,6 +118,7 @@ interface Props {
   staffUsers: StaffUser[];
   canManageItinerary: boolean;
   isAdmin: boolean;
+  gstRates: number[];
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -197,7 +199,7 @@ function activityLabel(a: Activity): string {
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
 
-export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Props) {
+export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstRates }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const converted = lead.status === "CONVERTED";
@@ -213,6 +215,8 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Pr
   );
   const [bookingInput, setBookingInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Activity timeline is collapsed to the latest 3 entries by default.
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   // Sync local state when RSC re-delivers fresh props after router.refresh().
   useEffect(() => {
@@ -259,13 +263,13 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Pr
     patch({ status: val });
   }
 
-  function handleConvert(bookingAmount: number, tokenAmount: number) {
+  function handleConvert(bookingAmount: number, tokenAmount: number, paymentMethod: string, gstPercent: number | null) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/leads/${lead.id}/convert`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingAmount, tokenAmount }),
+          body: JSON.stringify({ bookingAmount, tokenAmount, paymentMethod, gstPercent }),
         });
         const j = (await res.json().catch(() => ({}))) as { bookingId?: string; error?: string };
         if (!res.ok || !j.bookingId) {
@@ -692,7 +696,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Pr
               <p className="text-muted-foreground text-xs py-4 text-center">No activity recorded yet.</p>
             ) : (
               <ol className="space-y-3">
-                {lead.activities.map((a) => {
+                {(showAllActivity ? lead.activities : lead.activities.slice(0, 3)).map((a) => {
                   const Icon = ACTIVITY_ICONS[a.type];
                   return (
                     <li key={a.id} className="flex items-start gap-3">
@@ -710,6 +714,16 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Pr
                   );
                 })}
               </ol>
+            )}
+            {lead.activities.length > 3 && (
+              <button
+                onClick={() => setShowAllActivity((v) => !v)}
+                className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                {showAllActivity
+                  ? "View Less"
+                  : `View More (${lead.activities.length - 3} older)`}
+              </button>
             )}
           </div>
         </div>
@@ -929,6 +943,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin }: Pr
           leadName={lead.name}
           defaultBookingAmount={lead.negotiatedAmount}
           defaultTokenAmount={lead.tokenAmount}
+          gstRates={gstRates}
           isPending={isPending}
           onClose={() => setShowConvert(false)}
           onConfirm={handleConvert}
@@ -942,6 +957,7 @@ function ConvertModal({
   leadName,
   defaultBookingAmount,
   defaultTokenAmount,
+  gstRates,
   isPending,
   onClose,
   onConfirm,
@@ -949,9 +965,10 @@ function ConvertModal({
   leadName: string;
   defaultBookingAmount: number | null;
   defaultTokenAmount: number | null;
+  gstRates: number[];
   isPending: boolean;
   onClose: () => void;
-  onConfirm: (bookingAmount: number, tokenAmount: number) => void;
+  onConfirm: (bookingAmount: number, tokenAmount: number, paymentMethod: string, gstPercent: number | null) => void;
 }) {
   const [bookingAmount, setBookingAmount] = useState(
     defaultBookingAmount != null ? String(defaultBookingAmount) : "",
@@ -959,7 +976,12 @@ function ConvertModal({
   const [tokenAmount, setTokenAmount] = useState(
     defaultTokenAmount != null ? String(defaultTokenAmount) : "",
   );
+  // Token is usually paid online, so default the mode to a non-cash method.
+  const [paymentMethod, setPaymentMethod] = useState<string>("Online");
+  const [gstPercent, setGstPercent] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  const gstEligible = !isCashMethod(paymentMethod);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -969,7 +991,7 @@ function ConvertModal({
     if (!t || t <= 0) return setError("Enter a valid token amount.");
     if (t >= b) return setError("Token amount must be less than the booking amount.");
     setError(null);
-    onConfirm(b, t);
+    onConfirm(b, t, paymentMethod, gstEligible && gstPercent ? parseFloat(gstPercent) : null);
   }
 
   const inputCls =
@@ -1016,6 +1038,34 @@ function ConvertModal({
             />
             <span className="text-[10px] text-muted-foreground">Recorded as the first payment. Must be less than the booking amount.</span>
           </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Payment Mode</span>
+              <select
+                value={paymentMethod}
+                onChange={(e) => { setPaymentMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
+                className={`${inputCls} mt-1`}
+              >
+                {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">GST</span>
+              <select
+                value={gstPercent}
+                onChange={(e) => setGstPercent(e.target.value)}
+                disabled={!gstEligible}
+                title={gstEligible ? undefined : "GST does not apply to cash payments."}
+                className={`${inputCls} mt-1`}
+              >
+                <option value="">No GST</option>
+                {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
+              </select>
+            </label>
+          </div>
+          {!gstEligible && (
+            <p className="text-[10px] text-muted-foreground">GST applies to non-cash payments only.</p>
+          )}
         </div>
 
         {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}

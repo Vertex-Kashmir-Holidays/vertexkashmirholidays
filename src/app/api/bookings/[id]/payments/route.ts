@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { sendPaymentInvoiceEmail } from "@/lib/bookings/notify";
+import { resolveGst } from "@/lib/payments/gst";
 import type { PaymentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ const schema = z.object({
   method: z.string().trim().max(40).nullable().optional(),
   reference: z.string().trim().max(120).nullable().optional(),
   note: z.string().trim().max(300).nullable().optional(),
+  // Optional GST percent — only applied for non-cash methods (server recomputes).
+  gstPercent: z.coerce.number().min(0).max(100).nullable().optional(),
 });
 
 /** Record an additional payment against a booking (token/partial/final/refund). */
@@ -38,6 +41,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
   const d = parsed.data;
 
+  // GST is server-authoritative: applied only to non-cash methods, recomputed here.
+  const { gstPercent, gstAmount } = resolveGst(d.amount, d.gstPercent, d.method);
+
   const created = await prisma.bookingPayment.create({
     data: {
       bookingId: id,
@@ -46,6 +52,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       method: d.method ?? null,
       reference: d.reference ?? null,
       note: d.note ?? null,
+      gstPercent,
+      gstAmount,
       recordedById: guard.user.id as string,
     },
   });

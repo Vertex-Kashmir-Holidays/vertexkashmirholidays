@@ -31,7 +31,7 @@ export default async function AccountPaymentsPage() {
   // (Razorpay) payments AND payments recorded internally by staff. Scoped to the
   // authenticated user via the booking relation.
   const payments = await prisma.bookingPayment.findMany({
-    where: { booking: { userId } },
+    where: { booking: { userId, deletedAt: null } },
     orderBy: { createdAt: "desc" },
     include: { booking: { select: { id: true, tour: { select: { title: true } } } } },
   });

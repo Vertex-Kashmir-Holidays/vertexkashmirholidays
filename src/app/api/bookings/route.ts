@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     : undefined;
 
   const where = {
+    deletedAt: null,
     ...(status ? { status } : {}),
     ...(search
       ? {

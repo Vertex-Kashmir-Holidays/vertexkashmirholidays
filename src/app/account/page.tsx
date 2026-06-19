@@ -16,7 +16,7 @@ export default async function AccountOverviewPage() {
 
   const [bookings, payments] = await Promise.all([
     prisma.booking.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { travelDate: "asc" },
       take: 3,
       include: { tour: { select: { title: true, slug: true } } },
@@ -24,12 +24,12 @@ export default async function AccountOverviewPage() {
     // The actual payment ledger (online + staff-recorded), kept in sync with the
     // Payments tab. Net of refunds.
     prisma.bookingPayment.findMany({
-      where: { booking: { userId } },
+      where: { booking: { userId, deletedAt: null } },
       select: { amount: true, type: true },
     }),
   ]);
 
-  const totalBookings = await prisma.booking.count({ where: { userId } });
+  const totalBookings = await prisma.booking.count({ where: { userId, deletedAt: null } });
   const upcoming = bookings.filter((b) => b.travelDate >= now).length;
   const totalSpent = payments.reduce((sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount), 0);
 

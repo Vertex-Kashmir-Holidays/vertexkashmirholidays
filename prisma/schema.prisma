@@ -18,6 +18,10 @@ model User {
   // lead conversion). Forces a password change on first login before any other
   // account access is allowed. Cleared once the customer sets their own password.
   mustChangePassword Boolean @default(false)
+  // Sales incentive rate (percent) applied to a booking's PROFIT, not the booking
+  // amount. Optional; only meaningful for SALES staff. Kept on the user so future
+  // monthly salary/commission reports can compute payouts per salesperson.
+  bookingConversionPct Float?
   deletedAt    DateTime? // soft-delete marker; non-null = hidden + login blocked
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -218,6 +222,9 @@ model Booking {
   inclusions      String        @default("[]")
   // Once locked, services can no longer be added/edited/deleted.
   servicesLocked  Boolean       @default(false)
+  // Soft-delete marker. Non-null = hidden from all listings/reports but the row
+  // (and its payments/services) is retained. Permanent delete removes the row.
+  deletedAt       DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   tour            Tour?         @relation(fields: [tourId], references: [id])
@@ -243,6 +250,11 @@ model BookingPayment {
   method       String? // cash / upi / card / razorpay / bank …
   reference    String? // gateway id, txn ref …
   note         String?
+  // GST applies only to non-cash payments and is optional. Both the selected
+  // percent and the computed value are persisted so future booking-wise and
+  // payment-wise GST reports need no recomputation. Null for cash / no GST.
+  gstPercent   Float?
+  gstAmount    Float?
   recordedById String?
   createdAt    DateTime    @default(now())
 
@@ -847,6 +859,9 @@ model SiteSettings {
   metaTitle   String?
   metaDesc    String?
   ogImage     String?
+  // Configurable GST percentage options offered when recording non-cash payments,
+  // stored as a JSON number array so they can change without a schema migration.
+  gstRates    String   @default("[5,16,18]")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

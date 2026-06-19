@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { parseGstRates } from "@/lib/payments/gst";
 import { BookingServicesClient } from "@/components/admin/bookings/BookingServicesClient";
 
 export const metadata: Metadata = { title: "Booking Services — Admin" };
@@ -22,8 +23,8 @@ function parseInclusions(raw: string): string[] {
 export default async function BookingServicesPage({ params }: PageProps) {
   const { id } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, deletedAt: null },
     include: {
       tour: { select: { title: true } },
       user: { select: { name: true, email: true } },
@@ -80,9 +81,17 @@ export default async function BookingServicesPage({ params }: PageProps) {
       method: p.method,
       reference: p.reference,
       note: p.note,
+      gstPercent: p.gstPercent,
+      gstAmount: p.gstAmount,
       createdAt: p.createdAt.toISOString(),
     })),
   };
+
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: "singleton" },
+    select: { gstRates: true },
+  });
+  const gstRates = parseGstRates(settings?.gstRates);
 
   return (
     <div className="space-y-5">
@@ -95,7 +104,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
           <li className="text-foreground font-medium">Services · {booking.id.slice(-8).toUpperCase()}</li>
         </ol>
       </nav>
-      <BookingServicesClient booking={data} />
+      <BookingServicesClient booking={data} gstRates={gstRates} />
     </div>
   );
 }

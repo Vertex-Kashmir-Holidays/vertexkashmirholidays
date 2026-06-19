@@ -15,6 +15,7 @@ interface UserRow {
   email: string;
   phone: string | null;
   role: Role;
+  bookingConversionPct: number | null;
   deletedAt: Date | string | null;
   createdAt: Date | string;
   _count: { bookings: number; reviews: number };
@@ -404,6 +405,7 @@ interface EditPayload {
   email: string;
   phone: string | null;
   role?: Role;
+  bookingConversionPct?: number | null;
 }
 
 function EditModal({
@@ -425,6 +427,9 @@ function EditModal({
   const [email, setEmail] = useState(user.email);
   const [phone, setPhone] = useState(user.phone ?? "");
   const [role, setRole] = useState<Role>(user.role);
+  const [bookingConversionPct, setBookingConversionPct] = useState<string>(
+    user.bookingConversionPct != null ? String(user.bookingConversionPct) : "",
+  );
 
   const roleOptions: Role[] = allowSuperadmin
     ? ["SUPERADMIN", ...STAFF_ROLE_OPTIONS]
@@ -439,6 +444,12 @@ function EditModal({
     };
     // Customers stay CUSTOMER; only employees can have their staff role edited.
     if (isEmployee && role !== user.role) payload.role = role;
+    // Booking conversion % (incentive on profit) — employees only, optional.
+    if (isEmployee) {
+      const next = bookingConversionPct.trim() === "" ? null : parseFloat(bookingConversionPct);
+      const current = user.bookingConversionPct ?? null;
+      if (next !== current) payload.bookingConversionPct = next;
+    }
     onSave(payload);
   }
 
@@ -480,6 +491,20 @@ function EditModal({
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
+            </Field>
+          )}
+          {isEmployee && (
+            <Field label="Booking Conversion % (incentive on profit)">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                value={bookingConversionPct}
+                onChange={(e) => setBookingConversionPct(e.target.value)}
+                placeholder="Optional — e.g. 5 or 10"
+                className={inputCls}
+              />
             </Field>
           )}
         </div>

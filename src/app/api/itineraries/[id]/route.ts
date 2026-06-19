@@ -20,6 +20,19 @@ const ACCESS_SELECT = {
   lead: { select: { assignedToId: true, locked: true } },
 } as const;
 
+/**
+ * Extract a numeric amount from the itinerary's free-form "total cost" string
+ * (e.g. "Rs 30,500/-" → 30500). Returns null when no positive number is present.
+ * Used to keep the lead's negotiated amount in sync with the proposed price.
+ */
+function parseProposedAmount(raw: unknown): number | null {
+  if (typeof raw !== "string") return null;
+  const digits = raw.replace(/[^0-9.]/g, "");
+  if (!digits) return null;
+  const n = parseFloat(digits);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
 export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("itinerary", "view");
   if (guard instanceof NextResponse) return guard;
@@ -119,6 +132,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         },
       }),
     );
+
+    // Sync the proposed package cost into the lead's negotiated amount (tentative
+    // until conversion). Only while the lead is unlocked; the Convert modal then
+    // prefills its Booking Amount from this value. No-op if no positive number.
+    if (!existing.lead?.locked) {
+      const proposed = parseProposedAmount(parsed.data.data.totalCost);
+      if (proposed != null) {
+        ops.push(
+          prisma.lead.update({
+            where: { id: existing.leadId },
+            data: { negotiatedAmount: proposed },
+          }),
+        );
+      }
+    }
   }
 
   const [updated] = await prisma.$transaction(ops);
