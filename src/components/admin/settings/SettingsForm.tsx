@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+import { parseGstRates } from "@/lib/payments/gst";
 
 const schema = z.object({
   siteName: z.string().min(1, "Site name is required"),
@@ -21,6 +22,9 @@ const schema = z.object({
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),
+  // Comma-separated GST percentages, e.g. "5, 16, 18". Parsed to a number array
+  // before saving.
+  gstRates: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -39,6 +43,7 @@ interface SiteSettings {
   metaTitle: string | null;
   metaDesc: string | null;
   ogImage: string | null;
+  gstRates: string;
 }
 
 interface Props {
@@ -85,16 +90,26 @@ export function SettingsForm({ settings }: Props) {
       metaTitle: settings.metaTitle ?? "",
       metaDesc: settings.metaDesc ?? "",
       ogImage: settings.ogImage ?? "",
+      gstRates: parseGstRates(settings.gstRates).join(", "),
     },
   });
 
   function onSubmit(data: FormData) {
+    // Parse the comma-separated GST rates into a positive-number array. Invalid /
+    // empty entries are dropped; an empty result resets to the system defaults.
+    const { gstRates, ...rest } = data;
+    const rates = (gstRates ?? "")
+      .split(",")
+      .map((s) => parseFloat(s.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0 && n <= 100);
+    const payload = { ...rest, gstRates: rates };
+
     startTransition(async () => {
       try {
         const res = await fetch("/api/settings", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error();
         toast.success("Settings saved!");
@@ -133,6 +148,20 @@ export function SettingsForm({ settings }: Props) {
           <Field label="Twitter/X URL" name="twitter" register={register} placeholder="https://twitter.com/..." />
           <Field label="YouTube URL" name="youtube" register={register} placeholder="https://youtube.com/..." />
         </div>
+      </div>
+
+      {/* Payments / GST */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <h3 className="font-bold text-foreground text-sm">Payments</h3>
+        <Field
+          label="GST Rate Options (%)"
+          name="gstRates"
+          register={register}
+          placeholder="5, 16, 18"
+        />
+        <p className="text-[11px] text-muted-foreground -mt-2">
+          Comma-separated percentages offered when recording non-cash payments. Leave blank to use the defaults (5, 16, 18). GST never applies to cash payments.
+        </p>
       </div>
 
       {/* Default SEO */}

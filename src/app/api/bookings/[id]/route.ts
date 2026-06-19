@@ -61,3 +61,34 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
   return NextResponse.json(updated);
 }
+
+/**
+ * Delete a booking (admin). Soft delete by default (sets `deletedAt`, hiding it
+ * from every listing/report while retaining the row + its payment/service
+ * history). Pass `?permanent=1` to remove the row irreversibly — Prisma cascade
+ * rules then delete its BookingPayment + BookingService rows (no orphans), and
+ * any linked lead's `bookingId` is set null.
+ */
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const guard = await requirePermission("bookings", "delete");
+  if (guard instanceof NextResponse) return guard;
+  const { id } = await params;
+
+  const existing = await prisma.booking.findUnique({ where: { id }, select: { id: true, deletedAt: true } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const permanent = new URL(req.url).searchParams.get("permanent") === "1";
+
+  if (permanent) {
+    // Cascade (schema onDelete) removes BookingPayment + BookingService rows and
+    // nulls Lead.bookingId — the delete is atomic and leaves no orphans.
+    await prisma.booking.delete({ where: { id } });
+    return NextResponse.json({ ok: true, mode: "permanent" });
+  }
+
+  if (existing.deletedAt) {
+    return NextResponse.json({ error: "Booking is already deleted." }, { status: 422 });
+  }
+  await prisma.booking.update({ where: { id }, data: { deletedAt: new Date() } });
+  return NextResponse.json({ ok: true, mode: "soft" });
+}

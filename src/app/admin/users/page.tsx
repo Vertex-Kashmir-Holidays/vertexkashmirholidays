@@ -12,6 +12,7 @@ const SELECT = {
   email: true,
   phone: true,
   role: true,
+  bookingConversionPct: true,
   deletedAt: true,
   createdAt: true,
   _count: { select: { bookings: true, reviews: true } },

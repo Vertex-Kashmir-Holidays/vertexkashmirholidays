@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Loader2, Lock, Save, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
+import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
@@ -29,6 +30,8 @@ interface Payment {
   method: string | null;
   reference: string | null;
   note: string | null;
+  gstPercent: number | null;
+  gstAmount: number | null;
   createdAt: string;
 }
 
@@ -98,7 +101,7 @@ const inputCls =
 
 let draftSeq = 0;
 
-export function BookingServicesClient({ booking }: { booking: BookingData }) {
+export function BookingServicesClient({ booking, gstRates }: { booking: BookingData; gstRates: number[] }) {
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
   const [drafts, setDrafts] = useState<Service[]>([]);
@@ -452,7 +455,7 @@ export function BookingServicesClient({ booking }: { booking: BookingData }) {
       </div>
 
       {/* Payments ledger */}
-      <PaymentsCard bookingId={booking.id} payments={payments} onAdded={(p) => setPayments((prev) => [...prev, p])} />
+      <PaymentsCard bookingId={booking.id} payments={payments} gstRates={gstRates} onAdded={(p) => setPayments((prev) => [...prev, p])} />
 
       {/* Lock CTA */}
       {!locked ? (
@@ -730,12 +733,16 @@ function ServiceRow({
   );
 }
 
-function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; payments: Payment[]; onAdded: (p: Payment) => void }) {
+function PaymentsCard({ bookingId, payments, gstRates, onAdded }: { bookingId: string; payments: Payment[]; gstRates: number[]; onAdded: (p: Payment) => void }) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("PARTIAL");
-  const [method, setMethod] = useState("");
+  const [method, setMethod] = useState<string>("Cash");
+  const [gstPercent, setGstPercent] = useState<string>("");
   const [note, setNote] = useState("");
   const [pending, start] = useTransition();
+
+  // GST is only offered for non-cash methods (server enforces the same rule).
+  const gstEligible = !isCashMethod(method);
 
   function add() {
     const amt = parseFloat(amount);
@@ -745,7 +752,13 @@ function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; pay
         const res = await fetch(`/api/bookings/${bookingId}/payments`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: amt, type, method: method.trim() || null, note: note.trim() || null }),
+          body: JSON.stringify({
+            amount: amt,
+            type,
+            method: method.trim() || null,
+            note: note.trim() || null,
+            gstPercent: gstEligible && gstPercent ? parseFloat(gstPercent) : null,
+          }),
         });
         const j = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -755,7 +768,8 @@ function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; pay
         toast.success("Payment recorded.");
         onAdded(j as Payment);
         setAmount("");
-        setMethod("");
+        setMethod("Cash");
+        setGstPercent("");
         setNote("");
         setType("PARTIAL");
       } catch {
@@ -773,6 +787,7 @@ function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; pay
             <tr className="text-left text-[10px] uppercase tracking-wide text-muted-foreground border-b border-border">
               <th className="py-2 pr-3 font-bold">Type</th>
               <th className="py-2 pr-3 font-bold">Method</th>
+              <th className="py-2 pr-3 font-bold">GST</th>
               <th className="py-2 pr-3 font-bold">Note</th>
               <th className="py-2 pr-3 font-bold">Date</th>
               <th className="py-2 text-right font-bold">Amount</th>
@@ -780,12 +795,15 @@ function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; pay
           </thead>
           <tbody className="divide-y divide-border">
             {payments.length === 0 ? (
-              <tr><td colSpan={5} className="py-4 text-center text-muted-foreground">No payments recorded.</td></tr>
+              <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">No payments recorded.</td></tr>
             ) : (
               payments.map((p) => (
                 <tr key={p.id}>
                   <td className="py-2 pr-3"><span className="font-bold text-foreground">{p.type}</span></td>
                   <td className="py-2 pr-3 text-muted-foreground">{p.method ?? "—"}</td>
+                  <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+                    {p.gstPercent ? `${p.gstPercent}% · ${inr(p.gstAmount ?? 0)}` : "—"}
+                  </td>
                   <td className="py-2 pr-3 text-muted-foreground">{p.note ?? "—"}</td>
                   <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">{new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}</td>
                   <td className="py-2 text-right font-bold text-foreground">{inr(p.amount)}</td>
@@ -797,11 +815,11 @@ function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; pay
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
-        <label className="w-28">
+        <label className="w-24">
           <span className="text-[10px] font-semibold text-muted-foreground">Amount</span>
           <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} mt-0.5`} />
         </label>
-        <label className="w-28">
+        <label className="w-24">
           <span className="text-[10px] font-semibold text-muted-foreground">Type</span>
           <select value={type} onChange={(e) => setType(e.target.value)} className={`${inputCls} mt-0.5`}>
             <option value="TOKEN">Token</option>
@@ -812,7 +830,20 @@ function PaymentsCard({ bookingId, payments, onAdded }: { bookingId: string; pay
         </label>
         <label className="w-28">
           <span className="text-[10px] font-semibold text-muted-foreground">Method</span>
-          <input value={method} onChange={(e) => setMethod(e.target.value)} placeholder="cash/upi…" className={`${inputCls} mt-0.5`} />
+          <select
+            value={method}
+            onChange={(e) => { setMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
+            className={`${inputCls} mt-0.5`}
+          >
+            {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </label>
+        <label className="w-24">
+          <span className="text-[10px] font-semibold text-muted-foreground">GST</span>
+          <select value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} disabled={!gstEligible} title={gstEligible ? undefined : "GST does not apply to cash payments."} className={`${inputCls} mt-0.5`}>
+            <option value="">No GST</option>
+            {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
+          </select>
         </label>
         <label className="flex-1 min-w-[120px]">
           <span className="text-[10px] font-semibold text-muted-foreground">Note</span>

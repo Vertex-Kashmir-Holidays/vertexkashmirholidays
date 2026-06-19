@@ -50,7 +50,7 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
 
   // Scope strictly to the authenticated customer — never another user's booking.
   const booking = await prisma.booking.findFirst({
-    where: { id, userId },
+    where: { id, userId, deletedAt: null },
     include: {
       tour: { select: { title: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },

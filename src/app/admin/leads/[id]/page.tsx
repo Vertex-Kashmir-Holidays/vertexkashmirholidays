@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { isAdminRole } from "@/lib/itinerary/access";
+import { parseGstRates } from "@/lib/payments/gst";
 import { LeadDetail } from "@/components/admin/leads/LeadDetail";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,12 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
 
   if (!lead) notFound();
 
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: "singleton" },
+    select: { gstRates: true },
+  });
+  const gstRates = parseGstRates(settings?.gstRates);
+
   const role = session?.user?.role;
 
   // Role-based lead visibility: SALES may only open leads assigned to them
@@ -92,6 +99,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
         staffUsers={staffUsers}
         canManageItinerary={canManageItinerary}
         isAdmin={!!role && isAdminRole(role)}
+        gstRates={gstRates}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { resolveLeadCustomer } from "@/lib/bookings/customer";
 import { sendMail, customerCredentialsHtml, customerCredentialsText } from "@/lib/mail";
+import { resolveGst } from "@/lib/payments/gst";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ type Params = { params: Promise<{ id: string }> };
 const schema = z.object({
   bookingAmount: z.coerce.number().positive("Booking amount must be greater than zero."),
   tokenAmount: z.coerce.number().positive("Token amount must be greater than zero."),
+  // Token payment mode + optional GST (GST applies only to non-cash; server recomputes).
+  paymentMethod: z.string().trim().max(40).nullable().optional(),
+  gstPercent: z.coerce.number().min(0).max(100).nullable().optional(),
 });
 
 /**
@@ -64,7 +68,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
   }
-  const { bookingAmount, tokenAmount } = parsed.data;
+  const { bookingAmount, tokenAmount, paymentMethod } = parsed.data;
+
+  // GST on the token payment — only for non-cash modes; server-authoritative.
+  const tokenGst = resolveGst(tokenAmount, parsed.data.gstPercent, paymentMethod);
 
   // Token must always be less than the booking amount.
   if (tokenAmount >= bookingAmount) {
@@ -102,6 +109,9 @@ export async function POST(req: NextRequest, { params }: Params) {
           create: {
             amount: tokenAmount,
             type: "TOKEN",
+            method: paymentMethod ?? null,
+            gstPercent: tokenGst.gstPercent,
+            gstAmount: tokenGst.gstAmount,
             recordedById: performedById,
             note: "Token / advance payment at conversion",
           },

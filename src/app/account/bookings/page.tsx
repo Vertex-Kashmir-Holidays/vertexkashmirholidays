@@ -20,7 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default async function AccountBookingsPage() {
   const session = await auth();
   const bookings = await prisma.booking.findMany({
-    where: { userId: session!.user.id },
+    where: { userId: session!.user.id, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: { tour: { select: { title: true, slug: true, coverImage: true } } },
   });

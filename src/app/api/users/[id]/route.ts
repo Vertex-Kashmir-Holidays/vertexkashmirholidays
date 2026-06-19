@@ -11,6 +11,9 @@ const patchSchema = z.object({
   email: z.string().trim().email().optional(),
   phone: z.string().trim().max(40).nullable().optional(),
   role: z.enum(["SUPERADMIN", "ADMIN", "SALES", "EDITOR", "CUSTOMER"]).optional(),
+  // Optional sales incentive rate (percent of booking profit). Stored on the user
+  // for future monthly commission/payout reports. null clears it.
+  bookingConversionPct: z.coerce.number().min(0).max(100).nullable().optional(),
 });
 
 /** Edit a user's profile fields and/or role. */
@@ -56,8 +59,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
         ...(data.role !== undefined ? { role: data.role as Role } : {}),
+        ...(data.bookingConversionPct !== undefined ? { bookingConversionPct: data.bookingConversionPct } : {}),
       },
-      select: { id: true, name: true, email: true, phone: true, role: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, bookingConversionPct: true },
     });
     return NextResponse.json(updated);
   } catch (err) {

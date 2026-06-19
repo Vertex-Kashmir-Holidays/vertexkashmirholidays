@@ -19,6 +19,8 @@ const patchSchema = z.object({
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
+  // Configurable GST percentage options (stored as a JSON number array string).
+  gstRates: z.array(z.coerce.number().positive().max(100)).optional(),
 });
 
 export async function GET() {
@@ -39,10 +41,13 @@ export async function PATCH(request: Request) {
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  // gstRates is stored as a JSON string column; serialise it before persisting.
+  const { gstRates, ...rest } = parsed.data;
+  const data = { ...rest, ...(gstRates !== undefined ? { gstRates: JSON.stringify(gstRates) } : {}) };
   const updated = await prisma.siteSettings.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", ...parsed.data },
-    update: parsed.data,
+    create: { id: "singleton", ...data },
+    update: data,
   });
   return NextResponse.json(updated);
 }
