@@ -14,6 +14,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import { PDF_COLORS as C, PDF_CONTACT as CONTACT, inr } from "./assets";
+import { groupServiceTables } from "@/lib/bookings/serviceDisplay";
 
 export interface PdfService {
   kind: "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
@@ -79,10 +80,19 @@ const s = StyleSheet.create({
   // Services
   svcGroup: { marginBottom: 12 },
   svcGroupTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.green, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 5 },
-  svcRow: { flexDirection: "row", gap: 7, marginBottom: 4, paddingLeft: 2 },
   svcDot: { fontSize: 9, color: C.mint, fontFamily: "Helvetica-Bold", width: 8 },
-  svcName: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.ink },
   svcDetail: { fontSize: 8.5, color: C.muted, marginTop: 1 },
+
+  // Service tables (price-free) — one per kind, mirroring the admin UI columns.
+  tbl: { borderWidth: 1, borderColor: C.border, borderRadius: 6, overflow: "hidden" },
+  tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.border },
+  trHead: { backgroundColor: C.lightGreen },
+  th: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, paddingVertical: 5, paddingHorizontal: 7, textTransform: "uppercase" },
+  td: { fontSize: 9, paddingVertical: 5, paddingHorizontal: 7 },
+  colW2: { flexGrow: 2, flexBasis: 0 },
+  colW1: { flexGrow: 1.4, flexBasis: 0 },
+  tdFirst: { fontFamily: "Helvetica-Bold", color: C.ink },
+  tdRest: { color: C.muted },
 
   incRow: { flexDirection: "row", gap: 7, marginBottom: 3, paddingLeft: 2 },
   incText: { fontSize: 9, color: "#444" },
@@ -149,43 +159,10 @@ function MetaCell({ label, value }: { label: string; value: string }) {
   );
 }
 
-const KIND_TITLES: Record<PdfService["kind"], string> = {
-  HOTEL: "Accommodation",
-  TRANSPORT: "Transport",
-  ACTIVITY: "Activities",
-  OTHER: "Other Inclusions",
-};
-
-// Structured, labelled detail line for a service — never includes price. Mirrors
-// the admin services UI columns (Hotel: Location/Nights, Transport: Pickup/Drop,
-// Activity: Duration/Location).
-function serviceDetail(svc: PdfService): string {
-  const fields: { label: string; value: string }[] = [];
-  switch (svc.kind) {
-    case "HOTEL":
-      if (svc.location) fields.push({ label: "Location", value: svc.location });
-      if (svc.nights != null) fields.push({ label: "Nights", value: `${svc.nights} night${svc.nights === 1 ? "" : "s"}` });
-      break;
-    case "TRANSPORT":
-      if (svc.pickup) fields.push({ label: "Pickup", value: svc.pickup });
-      if (svc.dropoff) fields.push({ label: "Drop", value: svc.dropoff });
-      break;
-    case "ACTIVITY":
-      if (svc.timing) fields.push({ label: "Duration", value: svc.timing });
-      if (svc.location) fields.push({ label: "Location", value: svc.location });
-      break;
-    default:
-      break;
-  }
-  return fields.map((f) => `${f.label}: ${f.value}`).join("  ·  ");
-}
-
-// Booking summary — rich service detail, NO per-service prices, overall price
+// Booking summary — services shown as a price-free table per kind, overall price
 // summary visible.
 export function BookingSummaryPdf({ data, logo }: { data: BookingSummaryPdfData; logo: string | null }) {
-  const grouped = (["HOTEL", "TRANSPORT", "ACTIVITY", "OTHER"] as const)
-    .map((kind) => ({ kind, items: data.services.filter((x) => x.kind === kind) }))
-    .filter((g) => g.items.length > 0);
+  const grouped = groupServiceTables(data.services);
 
   return (
     <Document title={`Booking Summary - ${data.bookingRef}`} author={CONTACT.brand}>
@@ -205,19 +182,21 @@ export function BookingSummaryPdf({ data, logo }: { data: BookingSummaryPdfData;
         ) : (
           grouped.map((g) => (
             <View key={g.kind} style={s.svcGroup}>
-              <Text style={s.svcGroupTitle}>{KIND_TITLES[g.kind]}</Text>
-              {g.items.map((svc, i) => {
-                const detail = serviceDetail(svc);
-                return (
-                  <View key={i} style={s.svcRow} wrap={false}>
-                    <Text style={s.svcDot}>•</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.svcName}>{svc.name}</Text>
-                      {detail ? <Text style={s.svcDetail}>{detail}</Text> : null}
-                    </View>
+              <Text style={s.svcGroupTitle}>{g.title}</Text>
+              <View style={s.tbl}>
+                <View style={[s.tr, s.trHead]} wrap={false}>
+                  {g.headers.map((h, i) => (
+                    <Text key={i} style={[s.th, i === 0 ? s.colW2 : s.colW1]}>{h}</Text>
+                  ))}
+                </View>
+                {g.rows.map((r, ri) => (
+                  <View key={ri} style={s.tr} wrap={false}>
+                    {r.map((c, ci) => (
+                      <Text key={ci} style={[s.td, ci === 0 ? s.colW2 : s.colW1, ci === 0 ? s.tdFirst : s.tdRest]}>{c}</Text>
+                    ))}
                   </View>
-                );
-              })}
+                ))}
+              </View>
             </View>
           ))
         )}

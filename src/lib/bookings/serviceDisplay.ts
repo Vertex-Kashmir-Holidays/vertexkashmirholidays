@@ -69,6 +69,49 @@ export function groupServices<T extends DisplayService>(services: T[]) {
     .filter((g) => g.items.length > 0);
 }
 
+// ── Tabular, price-free service presentation ─────────────────────────────────
+// Column headers per kind, mirroring the admin services UI. Used to render the
+// same table layout in the customer account, the booking email, and the PDF.
+export const SERVICE_COLUMNS: Record<ServiceKind, string[]> = {
+  HOTEL: ["Hotel Name", "Location", "Nights"],
+  TRANSPORT: ["Cab Name", "Pickup", "Drop"],
+  ACTIVITY: ["Activity", "Duration", "Location"],
+  OTHER: ["Item"],
+};
+
+const DASH = "—";
+
+/** One price-free table row (cells) for a service, matching SERVICE_COLUMNS order. */
+export function serviceRow(s: DisplayService): string[] {
+  switch (s.kind) {
+    case "HOTEL":
+      return [s.name, s.location || DASH, s.nights != null ? String(s.nights) : DASH];
+    case "TRANSPORT":
+      return [s.name, s.pickup || DASH, s.dropoff || DASH];
+    case "ACTIVITY":
+      return [s.name, s.timing || DASH, s.location || DASH];
+    default:
+      return [s.name];
+  }
+}
+
+export interface ServiceTableGroup {
+  kind: ServiceKind;
+  title: string;
+  headers: string[];
+  rows: string[][];
+}
+
+/** Group services into per-kind tables (headers + price-free rows), empty groups dropped. */
+export function groupServiceTables<T extends DisplayService>(services: T[]): ServiceTableGroup[] {
+  return groupServices(services).map((g) => ({
+    kind: g.kind,
+    title: g.label,
+    headers: SERVICE_COLUMNS[g.kind],
+    rows: g.items.map(serviceRow),
+  }));
+}
+
 export function parseInclusions(raw: string): string[] {
   try {
     const v = JSON.parse(raw);
