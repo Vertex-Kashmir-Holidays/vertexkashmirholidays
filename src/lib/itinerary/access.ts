@@ -42,9 +42,12 @@ export function resolveItineraryAccess(
 
   if (it.leadId) {
     const assigned = it.lead?.assignedToId === user.id;
+    // Admins may VIEW any lead-linked itinerary, but only the lead's assignee may
+    // EDIT it — managing a lead (incl. its itinerary) is the assignee's job; an
+    // admin's only lead power is reassignment.
     const canView = admin || assigned;
     const locked = it.locked || (it.lead?.locked ?? false);
-    return { canView, canEdit: canView && !locked, locked };
+    return { canView, canEdit: assigned && !locked, locked };
   }
 
   // Standalone itinerary — owner-scoped.

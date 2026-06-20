@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 
 export const metadata: Metadata = { title: "My Bookings — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 const STATUS_STYLES: Record<string, string> = {
+  CONFIRMED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   PAID: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   FAILED: "bg-red-500/15 text-red-700 dark:text-red-300",
@@ -17,13 +19,32 @@ const STATUS_STYLES: Record<string, string> = {
   REFUNDED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
 };
 
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  PARTIAL: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  FULL: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+};
+
 export default async function AccountBookingsPage() {
   const session = await auth();
-  const bookings = await prisma.booking.findMany({
+  const rows = await prisma.booking.findMany({
     where: { userId: session!.user.id, deletedAt: null },
     orderBy: { createdAt: "desc" },
-    include: { tour: { select: { title: true, slug: true, coverImage: true } } },
+    include: {
+      tour: { select: { title: true, slug: true, coverImage: true } },
+      payments: { select: { amount: true } },
+    },
   });
+  const bookings = rows.map((b) => ({
+    ...b,
+    paymentStatus: computeBookingFinance({
+      amount: b.amount,
+      discountType: b.discountType,
+      discountValue: b.discountValue,
+      payments: b.payments,
+      services: [],
+    }).paymentStatus,
+  }));
 
   return (
     <div className="space-y-5">
@@ -51,6 +72,9 @@ export default async function AccountBookingsPage() {
                   </span>
                   <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[b.status])}>
                     {b.status}
+                  </span>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                    {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">

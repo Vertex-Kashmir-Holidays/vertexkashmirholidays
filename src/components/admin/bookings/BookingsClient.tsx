@@ -7,13 +7,17 @@ import { toast } from "sonner";
 import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type BookingStatus = "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
+type BookingStatus = "PENDING" | "CONFIRMED" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
+type PaymentStatus = "PENDING" | "PARTIAL" | "FULL";
 
 interface Booking {
   id: string;
   razorpayOrderId: string | null;
   razorpayPayId: string | null;
   status: BookingStatus;
+  paymentStatus: PaymentStatus;
+  paidAmount: number;
+  balance: number;
   amount: number;
   travelDate: Date | string;
   travellers: number;
@@ -29,29 +33,44 @@ interface Props {
   initialBookings: Booking[];
   totalCount: number;
   canDelete: boolean;
+  isAdmin: boolean;
 }
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   PENDING: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
+  CONFIRMED: "bg-green-500/15 text-green-700 dark:text-green-300",
   PAID: "bg-green-500/15 text-green-700 dark:text-green-300",
   FAILED: "bg-red-500/15 text-red-700 dark:text-red-300",
   CANCELLED: "bg-muted text-muted-foreground",
   REFUNDED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
 };
 
-const ALLOWED_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
-  PENDING: ["CANCELLED"],
-  PAID: ["REFUNDED", "CANCELLED"],
-  FAILED: ["CANCELLED"],
-  CANCELLED: [],
-  REFUNDED: [],
+const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
+  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  PARTIAL: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  FULL: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
 };
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  PENDING: "Pending",
+  PARTIAL: "Partial",
+  FULL: "Full",
+};
+
+// A booking may be cancelled only by an admin and only while PARTIALLY paid
+// (server enforces the same rule). A fully paid booking may instead be refunded.
+function canCancel(b: Booking, isAdmin: boolean): boolean {
+  return isAdmin && b.paymentStatus === "PARTIAL" && b.status !== "CANCELLED" && b.status !== "REFUNDED";
+}
+function canRefund(b: Booking, isAdmin: boolean): boolean {
+  return isAdmin && b.paymentStatus === "FULL" && b.status !== "CANCELLED" && b.status !== "REFUNDED";
+}
 
 function fmtINR(n: number) {
   return "₹" + n.toLocaleString("en-IN");
 }
 
-export function BookingsClient({ initialBookings, totalCount, canDelete }: Props) {
+export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -99,7 +118,11 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status }),
         });
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          toast.error(j.error ?? "Failed to update booking status.");
+          return;
+        }
         toast.success(`Booking marked as ${status.toLowerCase()}.`);
         router.refresh();
         setSelected(null);
@@ -139,6 +162,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
             >
               <option value="ALL">All Status</option>
               <option value="PENDING">Pending</option>
+              <option value="CONFIRMED">Confirmed</option>
               <option value="PAID">Paid</option>
               <option value="FAILED">Failed</option>
               <option value="CANCELLED">Cancelled</option>
@@ -154,7 +178,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Guest", "Tour", "Travel Date", "Pax", "Amount", "Status", "Booked", "Actions"].map((h) => (
+                {["Guest", "Tour", "Travel Date", "Pax", "Amount", "Status", "Payment", "Booked", "Actions"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -162,13 +186,14 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No bookings found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((b) => {
-                  const transitions = ALLOWED_TRANSITIONS[b.status];
+                  const showCancel = canCancel(b, isAdmin);
+                  const showRefund = canRefund(b, isAdmin);
                   return (
                     <tr
                       key={b.id}
@@ -199,6 +224,11 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
                           {b.status}
                         </span>
                       </td>
+                      <td className="px-4 py-3">
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                          {PAYMENT_STATUS_LABELS[b.paymentStatus]}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </td>
@@ -212,19 +242,26 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
                           >
                             <ClipboardList className="w-3 h-3" /> Services
                           </Link>
-                          {transitions.map((s) => (
+                          {showCancel && (
                             <button
-                              key={s}
-                              onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, s); }}
+                              onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "CANCELLED"); }}
                               disabled={isPending}
-                              className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-colors",
-                                s === "REFUNDED" ? "border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10" : "border-border text-muted-foreground hover:bg-muted"
-                              )}
+                              title="Cancel booking (partially paid only)"
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-red-200 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                             >
-                              {s}
+                              CANCEL
                             </button>
-                          ))}
+                          )}
+                          {showRefund && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "REFUNDED"); }}
+                              disabled={isPending}
+                              title="Mark as refunded"
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                            >
+                              REFUND
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -259,6 +296,12 @@ export function BookingsClient({ initialBookings, totalCount, canDelete }: Props
               <p className="text-muted-foreground mb-0.5">Status</p>
               <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
             </div>
+            <div>
+              <p className="text-muted-foreground mb-0.5">Payment</p>
+              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
+            </div>
+            <div><p className="text-muted-foreground mb-0.5">Paid</p><p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p></div>
+            <div><p className="text-muted-foreground mb-0.5">Balance</p><p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p></div>
           </div>
 
           {/* Delete — admin only, server-enforced via requirePermission. */}

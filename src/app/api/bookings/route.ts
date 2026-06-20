@@ -5,7 +5,7 @@ import { BookingStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-const VALID_STATUSES = ["PENDING", "PAID", "FAILED", "CANCELLED", "REFUNDED"] as const;
+const VALID_STATUSES = ["PENDING", "CONFIRMED", "PAID", "FAILED", "CANCELLED", "REFUNDED"] as const;
 
 export async function GET(req: NextRequest) {
   const guard = await requirePermission("bookings", "view");

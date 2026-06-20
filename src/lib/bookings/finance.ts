@@ -10,6 +10,23 @@
 
 export type DiscountType = "FLAT" | "PERCENT";
 
+// Payment status is a derived financial state — kept separate from the booking
+// lifecycle status (Pending → Confirmed → …). It is never stored; always computed
+// from the effective payable vs the amount paid so it can never drift.
+export type PaymentStatus = "PENDING" | "PARTIAL" | "FULL";
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  PENDING: "Pending",
+  PARTIAL: "Partial",
+  FULL: "Full",
+};
+
+export function computePaymentStatus(effectivePayable: number, paidAmount: number): PaymentStatus {
+  if (paidAmount <= 0) return "PENDING";
+  if (paidAmount >= effectivePayable) return "FULL";
+  return "PARTIAL";
+}
+
 export interface BookingFinanceInput {
   amount: number; // raw booking amount
   discountType?: string | null; // "FLAT" | "PERCENT" | null
@@ -25,6 +42,7 @@ export interface BookingFinance {
   paidAmount: number;
   servicesTotal: number;
   balance: number;
+  paymentStatus: PaymentStatus;
 }
 
 export function round2(n: number): number {
@@ -51,5 +69,6 @@ export function computeBookingFinance(input: BookingFinanceInput): BookingFinanc
   const paidAmount = round2(input.payments.reduce((s, p) => s + (p.amount || 0), 0));
   const servicesTotal = round2(input.services.reduce((s, p) => s + (p.amount || 0), 0));
   const balance = round2(effectivePayable - paidAmount);
-  return { bookingAmount, discountAmount, effectivePayable, paidAmount, servicesTotal, balance };
+  const paymentStatus = computePaymentStatus(effectivePayable, paidAmount);
+  return { bookingAmount, discountAmount, effectivePayable, paidAmount, servicesTotal, balance, paymentStatus };
 }

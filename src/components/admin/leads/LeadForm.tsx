@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2, ChevronDown, Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // All fields kept as strings so react-hook-form/zod inference is stable.
 // Numeric and enum coercion happens in onSubmit before sending to the API.
@@ -40,6 +41,10 @@ interface Props {
   leadId?: string;
   /** Pre-fill values for edit mode. */
   defaultValues?: Partial<FormData>;
+  /** Render all fields read-only (locked lead, or a non-assignee admin viewing). */
+  readOnly?: boolean;
+  /** Business notice shown above the read-only form (title + explanation). */
+  readOnlyNotice?: { title: string; body: string };
 }
 
 const inputCls =
@@ -50,7 +55,7 @@ const selectWrapCls = "relative";
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition appearance-none bg-card";
 
-export function LeadForm({ staffUsers, leadId, defaultValues }: Props) {
+export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, readOnlyNotice }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!leadId;
@@ -116,6 +121,23 @@ export function LeadForm({ staffUsers, leadId, defaultValues }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      {readOnly && (
+        <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <p className="font-semibold text-amber-700 dark:text-amber-300">
+              {readOnlyNotice?.title ?? "This lead is read-only"}
+            </p>
+            <p className="text-muted-foreground mt-0.5">
+              {readOnlyNotice?.body ??
+                "It has been converted to a booking, so its details are read-only. An admin must unlock the lead before any changes can be made."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* All fields are natively disabled while the lead is locked. */}
+      <fieldset disabled={readOnly} className={cn("space-y-6 min-w-0 border-0 m-0 p-0", readOnly && "opacity-70")}>
       {/* Contact Details */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
         <h3 className="font-bold text-foreground text-sm">Contact Details</h3>
@@ -249,22 +271,25 @@ export function LeadForm({ staffUsers, leadId, defaultValues }: Props) {
           </div>
         </div>
       </div>
+      </fieldset>
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm"
-        >
-          {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isEdit ? "Save Changes" : "Create Lead"}
-        </button>
+        {!readOnly && (
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors shadow-sm"
+          >
+            {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isEdit ? "Save Changes" : "Create Lead"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => router.push(isEdit ? `/admin/leads/${leadId}` : "/admin/leads")}
           className="text-sm text-muted-foreground hover:text-foreground px-4 py-2.5 rounded-xl border border-border transition-colors"
         >
-          Cancel
+          {readOnly ? "Back" : "Cancel"}
         </button>
       </div>
     </form>

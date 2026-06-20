@@ -3,9 +3,8 @@
 // All functions are best-effort and never throw — a failed email/PDF must never
 // break the underlying business action (locking services, recording a payment).
 
-import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/prisma";
-import { computeBookingFinance } from "@/lib/bookings/finance";
+import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import {
   sendMail,
   bookingInvoiceHtml,
@@ -14,20 +13,7 @@ import {
   paymentInvoiceText,
   type InvoiceService,
 } from "@/lib/mail";
-import { loadLogoDataUrl } from "@/lib/pdf/assets";
-import {
-  BookingSummaryPdf,
-  PaymentInvoicePdf,
-  type PdfService,
-} from "@/lib/pdf/InvoiceDocuments";
-
-const bookingRef = (id: string) => id.slice(-8).toUpperCase();
-
-function paymentStatusLabel(payable: number, paid: number): string {
-  if (paid <= 0) return "Unpaid";
-  if (paid >= payable) return "Paid";
-  return "Partially Paid";
-}
+import { renderBookingSummaryPdf, renderPaymentReceiptPdf, bookingRef } from "@/lib/bookings/invoice-pdf";
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -95,29 +81,12 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
     const inclusions = parseInclusions(booking.inclusions);
     const ref = bookingRef(booking.id);
     const guestName = booking.guestName || booking.user?.name || "Guest";
-    const statusLabel = paymentStatusLabel(finance.effectivePayable, finance.paidAmount);
+    const statusLabel = PAYMENT_STATUS_LABELS[finance.paymentStatus];
     const travelDate = fmtDate(booking.travelDate);
 
-    const logo = await loadLogoDataUrl();
-    const pdf = await renderToBuffer(
-      <BookingSummaryPdf
-        logo={logo}
-        data={{
-          bookingRef: ref,
-          guestName,
-          travelDate,
-          travellers: booking.travellers,
-          services: services as PdfService[],
-          inclusions,
-          bookingAmount: finance.bookingAmount,
-          discountAmount: finance.discountAmount,
-          effectivePayable: finance.effectivePayable,
-          paidAmount: finance.paidAmount,
-          balance: finance.balance,
-          statusLabel,
-        }}
-      />,
-    );
+    const rendered = await renderBookingSummaryPdf(booking.id);
+    if (!rendered) return { delivered: false };
+    const pdf = rendered.buffer;
 
     const wa = await whatsappNumber();
     const payload = {
@@ -190,27 +159,11 @@ export async function sendPaymentInvoiceEmail(
     const customerName = booking.guestName || booking.user?.name || "Guest";
     const typeLabel = PAYMENT_TYPE_LABELS[payment.type] ?? payment.type;
     const paymentDate = fmtDate(payment.createdAt);
-    const statusLabel = paymentStatusLabel(finance.effectivePayable, finance.paidAmount);
+    const statusLabel = PAYMENT_STATUS_LABELS[finance.paymentStatus];
 
-    const logo = await loadLogoDataUrl();
-    const pdf = await renderToBuffer(
-      <PaymentInvoicePdf
-        logo={logo}
-        data={{
-          invoiceRef,
-          bookingRef: ref,
-          customerName,
-          amount: payment.amount,
-          type: typeLabel,
-          method: payment.method,
-          paymentDate,
-          effectivePayable: finance.effectivePayable,
-          totalPaid: finance.paidAmount,
-          balance: finance.balance,
-          statusLabel,
-        }}
-      />,
-    );
+    const rendered = await renderPaymentReceiptPdf(booking.id, payment.id);
+    if (!rendered) return { delivered: false };
+    const pdf = rendered.buffer;
 
     const wa = await whatsappNumber();
     const payload = {

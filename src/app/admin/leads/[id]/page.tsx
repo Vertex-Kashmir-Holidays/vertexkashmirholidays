@@ -71,13 +71,12 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
   // (matches the GET /api/leads/[id] guard — enforced server-side, not just UI).
   if (role === "SALES" && lead.assignedToId !== session?.user?.id) notFound();
 
-  // UI-only flag (the API independently enforces these rules server-side):
-  // a user may manage this lead's itinerary if they have itinerary-edit
-  // permission AND are an admin or the lead's assignee.
+  // Lead activities (status, itinerary, convert, edits) belong to the assignee;
+  // an admin's only lead power is reassignment. These UI flags mirror the rules
+  // the API enforces server-side.
+  const isAssignee = !!session?.user?.id && lead.assignedToId === session.user.id;
   const canManageItinerary =
-    !!role &&
-    (await can(role, "itinerary", "edit")) &&
-    (isAdminRole(role) || lead.assignedToId === session?.user?.id);
+    !!role && (await can(role, "itinerary", "edit")) && isAssignee;
 
   return (
     <div className="space-y-5">
@@ -99,6 +98,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
         staffUsers={staffUsers}
         canManageItinerary={canManageItinerary}
         isAdmin={!!role && isAdminRole(role)}
+        isAssignee={isAssignee}
         gstRates={gstRates}
       />
     </div>

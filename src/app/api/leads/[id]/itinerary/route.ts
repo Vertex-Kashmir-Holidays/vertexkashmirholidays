@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
-import { isAdminRole } from "@/lib/itinerary/access";
 import { buildLeadItineraryData } from "@/lib/itinerary/lead-defaults";
 import type { Prisma } from "@prisma/client";
 
@@ -35,9 +34,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
   });
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
-  // SALES (non-admin) may only act on leads assigned to them.
-  if (!isAdminRole(guard.user.role) && lead.assignedToId !== guard.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Creating an itinerary is a lead activity — only the lead's assignee may do it
+  // (an admin acting on someone else's lead can only reassign, not manage it).
+  if (lead.assignedToId !== guard.user.id) {
+    return NextResponse.json(
+      { error: "Only the staff member this lead is assigned to can manage its itinerary." },
+      { status: 403 },
+    );
   }
   if (lead.status === "CONVERTED") {
     return NextResponse.json(

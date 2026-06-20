@@ -6,6 +6,8 @@ import { LeadStatus, LeadSource, LeadCategory, LeadActivityType } from "@prisma/
 import type { Prisma } from "@prisma/client";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
+import { isAdminRole } from "@/lib/itinerary/access";
+import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -65,11 +67,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // SALES users can only edit leads assigned to them.
+  // Access split: an admin's only lead power is (re)assignment; every other lead
+  // change (status, details, notes, follow-up, booking link, amounts) belongs to
+  // the staff member the lead is assigned to. Both rules are applied per-field
+  // after the body is parsed (see below).
   const role = (guard.user as { role: string }).role;
-  if (role === "SALES" && existing.assignedToId !== (guard.user.id as string)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const userId = guard.user.id as string;
+  const admin = isAdminRole(role);
+  const isAssignee = existing.assignedToId === userId;
 
   // Locked (converted) leads cannot be edited until an admin unlocks them.
   if (existing.locked) {
@@ -91,6 +96,43 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const { status, assignedToId, startDate, endDate, notes, followUpAt, bookingId, negotiatedAmount, tokenAmount, ...rest } = parsed.data;
+
+  // Changing a lead's assignee is an admin-only action.
+  const assignmentChanged =
+    assignedToId !== undefined && (assignedToId ?? null) !== (existing.assignedToId ?? null);
+  if (assignmentChanged && !admin) {
+    return NextResponse.json(
+      { error: "Only an admin can change a lead's assignee." },
+      { status: 403 },
+    );
+  }
+
+  // Any non-assignment change is a lead activity reserved for the assignee — an
+  // admin acting on someone else's lead may only reassign it, nothing more.
+  const sameTime = (a: Date | null, b: string | null | undefined) =>
+    (a ? a.getTime() : null) === (b ? new Date(b).getTime() : null);
+  const workChanged =
+    (status !== undefined && status !== existing.status) ||
+    (notes !== undefined && notes !== (existing.notes ?? "")) ||
+    (followUpAt !== undefined && !sameTime(existing.followUpAt, followUpAt)) ||
+    (bookingId !== undefined && (bookingId ?? null) !== (existing.bookingId ?? null)) ||
+    (negotiatedAmount !== undefined && (negotiatedAmount ?? null) !== (existing.negotiatedAmount ?? null)) ||
+    (tokenAmount !== undefined && (tokenAmount ?? null) !== (existing.tokenAmount ?? null)) ||
+    (startDate !== undefined && !sameTime(existing.startDate, startDate)) ||
+    (endDate !== undefined && !sameTime(existing.endDate, endDate)) ||
+    (rest.name !== undefined && rest.name !== existing.name) ||
+    (rest.phone !== undefined && rest.phone !== existing.phone) ||
+    (rest.email !== undefined && (rest.email ?? null) !== (existing.email ?? null)) ||
+    (rest.source !== undefined && rest.source !== existing.source) ||
+    (rest.category !== undefined && (rest.category ?? null) !== (existing.category ?? null)) ||
+    (rest.adults !== undefined && rest.adults !== existing.adults) ||
+    (rest.children !== undefined && (rest.children ?? null) !== (existing.children ?? null));
+  if (workChanged && !isAssignee) {
+    return NextResponse.json(
+      { error: "Only the staff member this lead is assigned to can update it." },
+      { status: 403 },
+    );
+  }
 
   if (bookingId) {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId }, select: { id: true } });
@@ -201,6 +243,27 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Sync lead trip facts into the linked itinerary's cover fields.
     ...itinerarySyncOps,
   ]);
+
+  // Post-commit, best-effort: notify the affected staff (in-app + email). On a
+  // reassignment both the removed and the added owner are informed.
+  if (assignmentChanged) {
+    const leadForNotify = {
+      id: updated.id,
+      name: updated.name,
+      phone: updated.phone,
+      email: updated.email,
+      category: updated.category,
+      startDate: updated.startDate,
+    };
+    const newAssignee = assignedToId ?? null;
+    const oldAssignee = existing.assignedToId ?? null;
+    if (oldAssignee && oldAssignee !== newAssignee) {
+      await notifyLeadUnassigned(oldAssignee, leadForNotify, performedByName);
+    }
+    if (newAssignee && newAssignee !== oldAssignee) {
+      await notifyLeadAssigned(newAssignee, leadForNotify, performedByName);
+    }
+  }
 
   return NextResponse.json(updated);
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { LeadForm } from "@/components/admin/leads/LeadForm";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,8 @@ export default async function EditLeadPage({ params }: PageProps) {
         notes: true,
         negotiatedAmount: true,
         tokenAmount: true,
+        locked: true,
+        assignedTo: { select: { name: true, email: true } },
       },
     }),
     prisma.user.findMany({
@@ -50,9 +53,29 @@ export default async function EditLeadPage({ params }: PageProps) {
 
   if (!lead) notFound();
 
-  // Role-based visibility: SALES may only edit leads assigned to them.
-  const role = session?.user?.role;
-  if (role === "SALES" && lead.assignedToId !== session?.user?.id) notFound();
+  // Access rules (the form opens for the assignee or any admin — others not found):
+  //  • Assignee on an active lead → full edit.
+  //  • Admin on someone else's lead → view-only (can reassign elsewhere, not edit).
+  //  • Anyone on a locked (converted) lead → view-only until an admin unlocks it.
+  // Read-only states show the form with a business message instead of a 404, which
+  // would wrongly imply the lead doesn't exist.
+  const isAssignee = lead.assignedToId === session?.user?.id;
+  const isAdmin = isAdminRole(session?.user?.role);
+  if (!isAssignee && !isAdmin) notFound();
+
+  const readOnly = lead.locked || !isAssignee;
+  const assigneeName = lead.assignedTo?.name ?? lead.assignedTo?.email ?? "another staff member";
+  const readOnlyNotice = lead.locked
+    ? {
+        title: "This lead is locked",
+        body: "It has been converted to a booking, so its details are read-only. An admin must unlock the lead before any changes can be made.",
+      }
+    : !isAssignee
+      ? {
+          title: "View only",
+          body: `This lead is assigned to ${assigneeName}. As an admin you can reassign it from the lead page, but only the assignee can edit its details.`,
+        }
+      : undefined;
 
   const defaultValues = {
     name: lead.name,
@@ -91,16 +114,24 @@ export default async function EditLeadPage({ params }: PageProps) {
           <li aria-hidden>
             <ChevronRight className="w-3 h-3" />
           </li>
-          <li className="text-foreground font-medium">Edit</li>
+          <li className="text-foreground font-medium">{readOnly ? "View" : "Edit"}</li>
         </ol>
       </nav>
 
       <div>
-        <h2 className="font-display font-extrabold text-foreground text-xl">Edit Lead</h2>
-        <p className="text-muted-foreground text-xs mt-0.5">Update {lead.name}&apos;s details</p>
+        <h2 className="font-display font-extrabold text-foreground text-xl">{readOnly ? "View Lead" : "Edit Lead"}</h2>
+        <p className="text-muted-foreground text-xs mt-0.5">
+          {readOnly ? `${lead.name}'s details (read-only)` : `Update ${lead.name}'s details`}
+        </p>
       </div>
 
-      <LeadForm staffUsers={staffUsers} leadId={lead.id} defaultValues={defaultValues} />
+      <LeadForm
+        staffUsers={staffUsers}
+        leadId={lead.id}
+        defaultValues={defaultValues}
+        readOnly={readOnly}
+        readOnlyNotice={readOnlyNotice}
+      />
     </div>
   );
 }
