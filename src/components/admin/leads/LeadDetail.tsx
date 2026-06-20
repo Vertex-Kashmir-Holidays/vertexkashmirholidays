@@ -118,6 +118,8 @@ interface Props {
   staffUsers: StaffUser[];
   canManageItinerary: boolean;
   isAdmin: boolean;
+  /** True when the current user is the staff member this lead is assigned to. */
+  isAssignee: boolean;
   gstRates: number[];
 }
 
@@ -199,7 +201,7 @@ function activityLabel(a: Activity): string {
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
 
-export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstRates }: Props) {
+export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, isAssignee, gstRates }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const converted = lead.status === "CONVERTED";
@@ -386,7 +388,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
             <>
               {/* Convert is offered only while the lead is in NEGOTIATION — not for
                   any other status. The booking/token amounts are entered in the modal. */}
-              {status === "NEGOTIATION" && !locked && (
+              {status === "NEGOTIATION" && !locked && isAssignee && (
                 <button
                   onClick={() => {
                     // Mirror the server rule: itinerary is mandatory before conversion.
@@ -414,7 +416,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
                   Unlock
                 </button>
               )}
-              {!locked && (
+              {/* Assignee on an active lead edits; the assignee on a locked lead and
+                  any admin get a read-only "View Form" instead. */}
+              {isAssignee && !locked ? (
                 <Link
                   href={`/admin/leads/${lead.id}/edit`}
                   className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/10 px-3 py-2 rounded-xl border border-border transition-colors"
@@ -422,7 +426,15 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
                   <Pencil className="w-3.5 h-3.5" />
                   Edit
                 </Link>
-              )}
+              ) : isAssignee || isAdmin ? (
+                <Link
+                  href={`/admin/leads/${lead.id}/edit`}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/10 px-3 py-2 rounded-xl border border-border transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  View Form
+                </Link>
+              ) : null}
               <button
                 onClick={() => setConfirmDelete(true)}
                 disabled={converted}
@@ -436,6 +448,20 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
           )}
         </div>
       </div>
+
+      {/* Locked (converted) lead — read-only notice for everyone. */}
+      {locked && (
+        <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <p className="font-semibold text-amber-700 dark:text-amber-300">This lead is locked</p>
+            <p className="text-muted-foreground mt-0.5">
+              It has been converted to a booking, so its details are read-only.{" "}
+              {isAdmin ? "Unlock the lead to make changes." : "Ask an admin to unlock it before any changes can be made."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
         {/* LEFT: details + notes + activity */}
@@ -672,13 +698,14 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
-              placeholder="Add notes about this lead..."
+              disabled={!isAssignee || locked}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none disabled:opacity-60"
+              placeholder={isAssignee ? "Add notes about this lead..." : "Only the assignee can add notes."}
             />
             <div className="flex justify-end mt-2">
               <button
                 onClick={() => patch({ notes })}
-                disabled={isPending || notes === (lead.notes ?? "")}
+                disabled={isPending || notes === (lead.notes ?? "") || !isAssignee || locked}
                 className="flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
               >
                 {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -736,6 +763,14 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
               {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
             </div>
 
+            {!isAssignee && !locked && (
+              <p className="text-[11px] text-muted-foreground rounded-lg bg-muted px-2.5 py-2">
+                {isAdmin
+                  ? "As an admin you can reassign this lead. Status, itinerary, conversion and other updates are handled by its assignee."
+                  : "This lead is managed by its assignee."}
+              </p>
+            )}
+
             {/* Status */}
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">Status</label>
@@ -743,7 +778,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
                 <select
                   value={status}
                   onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
-                  disabled={isPending || locked}
+                  disabled={isPending || locked || !isAssignee}
                   className={selectCls}
                 >
                   <option value="NEW">New</option>
@@ -767,7 +802,8 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
                 <select
                   value={assignedToId}
                   onChange={(e) => handleAssignChange(e.target.value)}
-                  disabled={isPending}
+                  disabled={isPending || !isAdmin || locked}
+                  title={locked ? "Unlock the lead before reassigning." : isAdmin ? undefined : "Only an admin can change the assignee."}
                   className={selectCls}
                 >
                   <option value="">Unassigned</option>
@@ -788,7 +824,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
                 <select
                   value={category}
                   onChange={(e) => handleCategoryChange(e.target.value)}
-                  disabled={isPending}
+                  disabled={isPending || !isAssignee || locked}
                   className={selectCls}
                 >
                   <option value="">— Select —</option>
@@ -836,7 +872,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-foreground text-sm">Follow-up</h3>
-              {lead.followUpAt && (
+              {lead.followUpAt && isAssignee && !locked && (
                 <button
                   onClick={() => { setFollowUpAt(""); patch({ followUpAt: null }); }}
                   disabled={isPending}
@@ -850,12 +886,12 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
               type="datetime-local"
               value={followUpAt}
               onChange={(e) => setFollowUpAt(e.target.value)}
-              disabled={isPending}
+              disabled={isPending || !isAssignee || locked}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card disabled:opacity-60"
             />
             <button
               onClick={() => patch({ followUpAt: followUpAt || null })}
-              disabled={isPending || followUpAt === (lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "")}
+              disabled={isPending || !isAssignee || locked || followUpAt === (lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "")}
               className="w-full flex items-center justify-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
             >
               {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -867,7 +903,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-foreground text-sm">Linked Booking</h3>
-              {lead.booking && (
+              {lead.booking && isAssignee && !locked && (
                 <button
                   onClick={() => patch({ bookingId: null })}
                   disabled={isPending}
@@ -909,18 +945,19 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, gstR
             ) : (
               <>
                 <p className="text-[10px] text-muted-foreground">
-                  Paste a booking ID to link this lead to a booking.
+                  {isAssignee ? "Paste a booking ID to link this lead to a booking." : "Only the assignee can link a booking."}
                 </p>
                 <input
                   type="text"
                   value={bookingInput}
                   onChange={(e) => setBookingInput(e.target.value)}
                   placeholder="Booking ID..."
-                  className="w-full px-3 py-2 text-xs font-mono border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                  disabled={!isAssignee || locked}
+                  className="w-full px-3 py-2 text-xs font-mono border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition disabled:opacity-60"
                 />
                 <button
                   onClick={() => patch({ bookingId: bookingInput.trim() })}
-                  disabled={isPending || !bookingInput.trim()}
+                  disabled={isPending || !bookingInput.trim() || !isAssignee || locked}
                   className="w-full flex items-center justify-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
                 >
                   {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

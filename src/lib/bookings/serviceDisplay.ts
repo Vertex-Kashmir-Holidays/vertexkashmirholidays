@@ -20,28 +20,46 @@ export const SERVICE_KIND_LABELS: Record<ServiceKind, string> = {
   OTHER: "Other Inclusions",
 };
 
-/** A human, price-free detail line for a service. */
-export function serviceDetailLine(s: DisplayService): string {
+/** A labelled, price-free field for a service (e.g. { label: "Location", value: "Srinagar" }). */
+export interface ServiceField {
+  label: string;
+  value: string;
+}
+
+/**
+ * Structured, price-free detail fields for a service, in display order. Mirrors
+ * the admin services UI columns so the customer-facing views read the same way:
+ *   Hotel    → Location | Nights
+ *   Transport→ Pickup | Drop
+ *   Activity → Duration | Location
+ * Empty fields are dropped.
+ */
+export function serviceFields(s: DisplayService): ServiceField[] {
+  const fields: ServiceField[] = [];
   switch (s.kind) {
-    case "HOTEL": {
-      const parts: string[] = [];
-      if (s.location) parts.push(s.location);
-      if (s.nights != null) parts.push(`${s.nights} night${s.nights === 1 ? "" : "s"}`);
-      return parts.join(" · ");
-    }
-    case "TRANSPORT": {
-      const route = [s.pickup, s.dropoff].filter(Boolean).join(" → ");
-      return route ? `Route: ${route}` : "";
-    }
-    case "ACTIVITY": {
-      const parts: string[] = [];
-      if (s.timing) parts.push(s.timing);
-      if (s.location) parts.push(s.location);
-      return parts.join(" · ");
-    }
+    case "HOTEL":
+      if (s.location) fields.push({ label: "Location", value: s.location });
+      if (s.nights != null) fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
+      break;
+    case "TRANSPORT":
+      if (s.pickup) fields.push({ label: "Pickup", value: s.pickup });
+      if (s.dropoff) fields.push({ label: "Drop", value: s.dropoff });
+      break;
+    case "ACTIVITY":
+      if (s.timing) fields.push({ label: "Duration", value: s.timing });
+      if (s.location) fields.push({ label: "Location", value: s.location });
+      break;
     default:
-      return "";
+      break;
   }
+  return fields;
+}
+
+/** A human, price-free detail line for a service (labelled fields joined by " · "). */
+export function serviceDetailLine(s: DisplayService): string {
+  return serviceFields(s)
+    .map((f) => `${f.label}: ${f.value}`)
+    .join(" · ");
 }
 
 /** Group services by kind in a stable order, dropping empty groups. */

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, MapPin, Car, Ticket, Package, CalendarDays, Users } from "lucide-react";
+import { ChevronLeft, MapPin, Car, Ticket, Package, CalendarDays, Users, FileText, Download } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
-import { computeBookingFinance } from "@/lib/bookings/finance";
-import { groupServices, serviceDetailLine, parseInclusions, type ServiceKind } from "@/lib/bookings/serviceDisplay";
+import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
+import { groupServices, serviceFields, parseInclusions, type ServiceKind } from "@/lib/bookings/serviceDisplay";
 
 export const metadata: Metadata = { title: "Booking Details — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 const STATUS_STYLES: Record<string, string> = {
+  CONFIRMED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   PAID: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   FAILED: "bg-red-500/15 text-red-700 dark:text-red-300",
@@ -36,12 +37,6 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
 };
 
 type PageProps = { params: Promise<{ id: string }> };
-
-function paymentStatusLabel(payable: number, paid: number): string {
-  if (paid <= 0) return "Unpaid";
-  if (paid >= payable) return "Fully Paid";
-  return "Partially Paid";
-}
 
 export default async function AccountBookingDetailPage({ params }: PageProps) {
   const { id } = await params;
@@ -70,7 +65,9 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
   const grouped = groupServices(booking.services);
   const inclusions = parseInclusions(booking.inclusions);
   const ref = booking.id.slice(-8).toUpperCase();
-  const statusLabel = paymentStatusLabel(finance.effectivePayable, finance.paidAmount);
+  const statusLabel = PAYMENT_STATUS_LABELS[finance.paymentStatus];
+  // The booking-summary invoice exists only once services are finalised (locked).
+  const invoiceAvailable = booking.servicesLocked;
 
   return (
     <div className="space-y-5">
@@ -123,11 +120,19 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
                   </p>
                   <ul className="space-y-2">
                     {g.items.map((s) => {
-                      const detail = serviceDetailLine(s);
+                      const fields = serviceFields(s);
                       return (
                         <li key={s.id} className="rounded-xl border border-border px-3 py-2">
                           <p className="text-sm font-semibold text-foreground">{s.name}</p>
-                          {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
+                          {fields.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                              {fields.map((f) => (
+                                <span key={f.label} className="text-xs text-muted-foreground">
+                                  <span className="font-semibold text-foreground/70">{f.label}:</span> {f.value}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -161,7 +166,19 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
             <Row label="Remaining Balance" value={inr.format(finance.balance)} strong />
           </div>
         </dl>
-        <span className="mt-3 inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">{statusLabel}</span>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">{statusLabel}</span>
+          {invoiceAvailable && (
+            <a
+              href={`/api/account/bookings/${booking.id}/invoice`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary/10"
+            >
+              <FileText className="h-3.5 w-3.5" /> Download Invoice (PDF)
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Payment history for this booking */}
@@ -177,7 +194,8 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
                   <th className="py-2 pr-3 font-semibold">Date</th>
                   <th className="py-2 pr-3 font-semibold">Type</th>
                   <th className="py-2 pr-3 font-semibold">Method</th>
-                  <th className="py-2 text-right font-semibold">Amount</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Amount</th>
+                  <th className="py-2 text-right font-semibold">Receipt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -186,7 +204,18 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
                     <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">{p.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
                     <td className="py-2 pr-3 font-semibold text-foreground">{PAYMENT_TYPE_LABELS[p.type] ?? p.type}</td>
                     <td className="py-2 pr-3 text-muted-foreground">{p.method ?? "—"}</td>
-                    <td className="py-2 text-right font-bold text-foreground">{inr.format(p.amount)}</td>
+                    <td className="py-2 pr-3 text-right font-bold text-foreground">{inr.format(p.amount)}</td>
+                    <td className="py-2 text-right">
+                      <a
+                        href={`/api/account/bookings/${booking.id}/payments/${p.id}/receipt`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Download receipt"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" /> PDF
+                      </a>
+                    </td>
                   </tr>
                 ))}
               </tbody>

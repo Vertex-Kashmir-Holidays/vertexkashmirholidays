@@ -213,6 +213,117 @@ ${messageRow}
   });
 }
 
+// ── Lead assignment notifications (staff-facing) ─────────────────────────────
+// Sent to a salesperson when a lead is assigned to them, and to the previous
+// owner when a lead is reassigned away. Internal team emails — concise, with the
+// key lead facts and a direct link into the CRM.
+
+export interface LeadAssignmentData {
+  assigneeName: string;
+  leadName: string;
+  leadPhone: string;
+  leadEmail?: string | null;
+  category?: string | null;
+  travelDate?: string | null;
+  /** Staff member who performed the (re)assignment. */
+  actorName: string;
+  /** Absolute URL to the lead in the admin CRM. */
+  leadUrl: string;
+}
+
+function leadFactsText(data: LeadAssignmentData): string[] {
+  const lines = [`Name: ${data.leadName}`, `Phone: ${data.leadPhone}`];
+  if (data.leadEmail) lines.push(`Email: ${data.leadEmail}`);
+  if (data.category) lines.push(`Category: ${data.category}`);
+  if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
+  return lines;
+}
+
+function leadFactsRows(data: LeadAssignmentData): string {
+  return [
+    detailRow("Name", data.leadName),
+    detailRow("Phone", data.leadPhone),
+    data.leadEmail ? detailRow("Email", data.leadEmail) : "",
+    data.category ? detailRow("Category", data.category) : "",
+    data.travelDate ? detailRow("Travel Date", data.travelDate) : "",
+  ].join("\n");
+}
+
+export function leadAssignedText(data: LeadAssignmentData): string {
+  return [
+    "Lead Assigned — Vertex Kashmir Holidays",
+    "",
+    `Hello ${data.assigneeName},`,
+    "",
+    `A new lead has been assigned to you by ${data.actorName}. Please review and follow up.`,
+    "",
+    ...leadFactsText(data),
+    "",
+    `Open the lead: ${data.leadUrl}`,
+  ].join("\n");
+}
+
+export function leadAssignedHtml(data: LeadAssignmentData): string {
+  const content = `          <tr>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">A New Lead Has Been Assigned to You</h1>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Hello ${escapeHtml(data.assigneeName)}, ${escapeHtml(data.actorName)} has assigned the following lead to you. Please review the details and follow up promptly.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 4px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${leadFactsRows(data)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+              <a href="${escapeHtml(data.leadUrl)}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">View Lead</a>
+            </td>
+          </tr>`;
+
+  return emailShell({
+    title: "A new lead has been assigned to you",
+    preheader: `${escapeHtml(data.leadName)} — ${escapeHtml(data.leadPhone)}`,
+    contentHtml: content,
+  });
+}
+
+export function leadUnassignedText(data: LeadAssignmentData): string {
+  return [
+    "Lead Reassigned — Vertex Kashmir Holidays",
+    "",
+    `Hello ${data.assigneeName},`,
+    "",
+    `The following lead has been reassigned and is no longer assigned to you by ${data.actorName}. No further action is required from your side.`,
+    "",
+    ...leadFactsText(data),
+  ].join("\n");
+}
+
+export function leadUnassignedHtml(data: LeadAssignmentData): string {
+  const content = `          <tr>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">A Lead Has Been Reassigned</h1>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Hello ${escapeHtml(data.assigneeName)}, the following lead has been reassigned by ${escapeHtml(data.actorName)} and is no longer assigned to you. No further action is required from your side.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 28px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${leadFactsRows(data)}
+              </table>
+            </td>
+          </tr>`;
+
+  return emailShell({
+    title: "A lead has been reassigned",
+    preheader: `${escapeHtml(data.leadName)} is no longer assigned to you`,
+    contentHtml: content,
+  });
+}
+
 interface BookingData {
   guestName: string;
   tourTitle: string;
@@ -311,28 +422,35 @@ const KIND_LABELS: Record<InvoiceService["kind"], string> = {
   OTHER: "Other Inclusions",
 };
 
+// Structured, labelled fields for a service — never includes price. Mirrors the
+// admin services UI columns (Hotel: Location/Nights, Transport: Pickup/Drop,
+// Activity: Duration/Location).
+function serviceFields(s: InvoiceService): { label: string; value: string }[] {
+  const fields: { label: string; value: string }[] = [];
+  switch (s.kind) {
+    case "HOTEL":
+      if (s.location) fields.push({ label: "Location", value: s.location });
+      if (s.nights != null) fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
+      break;
+    case "TRANSPORT":
+      if (s.pickup) fields.push({ label: "Pickup", value: s.pickup });
+      if (s.dropoff) fields.push({ label: "Drop", value: s.dropoff });
+      break;
+    case "ACTIVITY":
+      if (s.timing) fields.push({ label: "Duration", value: s.timing });
+      if (s.location) fields.push({ label: "Location", value: s.location });
+      break;
+    default:
+      break;
+  }
+  return fields;
+}
+
 // Human detail line for a service — never includes price.
 function serviceDetailLine(s: InvoiceService): string {
-  switch (s.kind) {
-    case "HOTEL": {
-      const parts: string[] = [];
-      if (s.location) parts.push(s.location);
-      if (s.nights != null) parts.push(`${s.nights} night${s.nights === 1 ? "" : "s"}`);
-      return parts.join(" · ");
-    }
-    case "TRANSPORT": {
-      const route = [s.pickup, s.dropoff].filter(Boolean).join(" → ");
-      return route ? `Route: ${route}` : "";
-    }
-    case "ACTIVITY": {
-      const parts: string[] = [];
-      if (s.timing) parts.push(s.timing);
-      if (s.location) parts.push(s.location);
-      return parts.join(" · ");
-    }
-    default:
-      return "";
-  }
+  return serviceFields(s)
+    .map((f) => `${f.label}: ${f.value}`)
+    .join(" · ");
 }
 
 function groupServices(services: InvoiceService[]) {
@@ -384,10 +502,15 @@ export function bookingInvoiceHtml(data: BookingInvoiceData): string {
     .map((g) => {
       const rows = g.items
         .map((s) => {
-          const detail = serviceDetailLine(s);
+          const fields = serviceFields(s);
+          const detailHtml = fields.length
+            ? `<div style="color:#777777;font-size:11px;margin-top:2px">${fields
+                .map((f) => `<span style="margin-right:10px"><span style="color:#999999">${escapeHtml(f.label)}:</span> ${escapeHtml(f.value)}</span>`)
+                .join("")}</div>`
+            : "";
           return `<li style="margin:0 0 8px;list-style:none">
             <div style="color:#1a1a1a;font-size:13px;font-weight:700">${escapeHtml(s.name)}</div>
-            ${detail ? `<div style="color:#777777;font-size:11px;margin-top:1px">${escapeHtml(detail)}</div>` : ""}
+            ${detailHtml}
           </li>`;
         })
         .join("");

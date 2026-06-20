@@ -56,9 +56,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, status: "FAILED" }, { status: 400 });
   }
 
+  // Booking lifecycle status reaches Confirmed once payment is verified. Payment
+  // state (Pending/Partial/Full) is derived separately from the payment ledger.
   const updated = await prisma.booking.update({
     where: { id: booking.id },
-    data: { status: "PAID", razorpayPayId: razorpay_payment_id },
+    data: { status: "CONFIRMED", razorpayPayId: razorpay_payment_id },
   });
 
   // Record the online payment in the shared booking payment ledger (idempotent on

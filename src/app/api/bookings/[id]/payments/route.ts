@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { sendPaymentInvoiceEmail } from "@/lib/bookings/notify";
 import { resolveGst } from "@/lib/payments/gst";
+import { computeBookingFinance } from "@/lib/bookings/finance";
 import type { PaymentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,16 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
 
-  const booking = await prisma.booking.findUnique({ where: { id }, select: { id: true } });
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      amount: true,
+      discountType: true,
+      discountValue: true,
+      payments: { select: { amount: true } },
+    },
+  });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
   let body: unknown;
@@ -40,6 +50,32 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
   }
   const d = parsed.data;
+
+  // A payment can never exceed the remaining balance (server-authoritative).
+  // Refunds are excluded — they are not collections against the payable.
+  if ((d.type ?? "PARTIAL") !== "REFUND") {
+    const finance = computeBookingFinance({
+      amount: booking.amount,
+      discountType: booking.discountType,
+      discountValue: booking.discountValue,
+      payments: booking.payments,
+      services: [],
+    });
+    if (finance.balance <= 0) {
+      return NextResponse.json(
+        { error: "This booking is already fully paid. No further payment can be recorded." },
+        { status: 422 },
+      );
+    }
+    if (d.amount > finance.balance) {
+      return NextResponse.json(
+        {
+          error: `Payment (₹${d.amount.toLocaleString("en-IN")}) exceeds the remaining balance (₹${finance.balance.toLocaleString("en-IN")}).`,
+        },
+        { status: 422 },
+      );
+    }
+  }
 
   // GST is server-authoritative: applied only to non-cash methods, recomputed here.
   const { gstPercent, gstAmount } = resolveGst(d.amount, d.gstPercent, d.method);

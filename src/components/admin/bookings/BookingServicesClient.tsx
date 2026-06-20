@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, Lock, Save, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Loader2, Lock, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
 import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
@@ -106,8 +106,8 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
   const [services, setServices] = useState<Service[]>(booking.services);
   const [drafts, setDrafts] = useState<Service[]>([]);
   // Live amounts lifted from rows on blur (keyed by row id, drafts included), so
-  // totals recalc as soon as an amount field is edited — no per-row save needed.
-  // Persistence still happens via each row's Save button.
+  // totals recalc as soon as an amount field is edited. Each row also persists
+  // itself on blur (auto-save) — there is no per-row manual Save step.
   const [liveAmounts, setLiveAmounts] = useState<Record<string, number>>({});
   const [payments, setPayments] = useState<Payment[]>(booking.payments);
   const [discountType, setDiscountType] = useState<string>(booking.discountType ?? "");
@@ -344,7 +344,6 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
                   locked={locked}
                   capError={capError}
                   onAmountBlur={setLiveAmount}
-                  onSaved={(s) => setServices((prev) => prev.map((x) => (x.id === s.id ? s : x)))}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
               ))}
@@ -358,12 +357,6 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
                   locked={locked}
                   capError={capError}
                   onAmountBlur={setLiveAmount}
-                  onSaved={(s) => {
-                    setDrafts((prev) => prev.filter((x) => x.id !== svc.id));
-                    setServices((prev) => [...prev, s]);
-                    // Carry the live amount over to the new persisted row id.
-                    setLiveAmounts((prev) => ({ ...prev, [s.id]: s.amount }));
-                  }}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
               ))}
@@ -455,7 +448,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
       </div>
 
       {/* Payments ledger */}
-      <PaymentsCard bookingId={booking.id} payments={payments} gstRates={gstRates} onAdded={(p) => setPayments((prev) => [...prev, p])} />
+      <PaymentsCard bookingId={booking.id} payments={payments} gstRates={gstRates} balance={finance.balance} onAdded={(p) => setPayments((prev) => [...prev, p])} />
 
       {/* Lock CTA */}
       {!locked ? (
@@ -616,6 +609,22 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
 
 interface RowForm { name: string; location: string; nights: string; pickup: string; dropoff: string; timing: string; amount: string; }
 
+// Build the API payload + a stable snapshot string from the current form. The
+// snapshot lets us skip no-op saves (so blurring an unchanged field is free).
+function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
+  return {
+    kind,
+    name: form.name.trim(),
+    amount: form.amount ? parseFloat(form.amount) || 0 : 0,
+    location: form.location.trim() || null,
+    nights: form.nights === "" ? null : parseInt(form.nights, 10),
+    pickup: form.pickup.trim() || null,
+    dropoff: form.dropoff.trim() || null,
+    timing: form.timing.trim() || null,
+    sortOrder,
+  };
+}
+
 function ServiceRow({
   bookingId,
   record,
@@ -624,7 +633,6 @@ function ServiceRow({
   locked,
   capError,
   onAmountBlur,
-  onSaved,
   onRemoved,
 }: {
   bookingId: string;
@@ -634,7 +642,6 @@ function ServiceRow({
   locked: boolean;
   capError: (amount: number, excludeId: string | null) => string | null;
   onAmountBlur: (id: string, amount: number) => void;
-  onSaved: (s: Service) => void;
   onRemoved: () => void;
 }) {
   const [form, setForm] = useState<RowForm>({
@@ -646,48 +653,80 @@ function ServiceRow({
     timing: record.timing ?? "",
     amount: record.amount ? String(record.amount) : "",
   });
+  // The persisted server id for this row. Persisted rows start with it; a draft
+  // gets one after its first successful auto-save (and stays in place — no remount).
+  const [serverId, setServerId] = useState<string | null>(isDraft ? null : record.id);
+  // Snapshot of what was last persisted, so a blur with no real change is a no-op.
+  const initialSnapshot = isDraft ? "" : JSON.stringify(buildPayload(record.kind, record.sortOrder, {
+    name: record.name,
+    location: record.location ?? "",
+    nights: record.nights != null ? String(record.nights) : "",
+    pickup: record.pickup ?? "",
+    dropoff: record.dropoff ?? "",
+    timing: record.timing ?? "",
+    amount: record.amount ? String(record.amount) : "",
+  }));
+  const [savedSnapshot, setSavedSnapshot] = useState<string>(initialSnapshot);
+  const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  function save() {
-    if (!form.name.trim()) return toast.error("Name is required.");
-    const amount = form.amount ? parseFloat(form.amount) : 0;
-    const err = capError(amount, record.id);
-    if (err) return toast.error(err);
-    const payload = {
-      kind: record.kind,
-      name: form.name.trim(),
-      amount,
-      location: form.location.trim() || null,
-      nights: form.nights === "" ? null : parseInt(form.nights, 10),
-      pickup: form.pickup.trim() || null,
-      dropoff: form.dropoff.trim() || null,
-      timing: form.timing.trim() || null,
-      sortOrder: record.sortOrder,
-    };
+  const currentSnapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
+  const isClean = !!serverId && currentSnapshot === savedSnapshot;
+
+  // Auto-save the row whenever a field loses focus. No manual Save click needed:
+  // a draft is POSTed on its first save and PATCHed thereafter. A name is the one
+  // hard requirement (the row can't be persisted without it).
+  function autoSave() {
+    if (locked || pending) return;
+    if (!form.name.trim()) return; // nothing meaningful to persist yet
+    const snapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
+    if (snapshot === savedSnapshot) return; // unchanged since last save
+
+    const payload = buildPayload(record.kind, record.sortOrder, form);
+    const err = capError(payload.amount, record.id);
+    if (err) { setError(err); toast.error(err); return; }
+
     start(async () => {
       try {
         const res = await fetch(
-          isDraft ? `/api/bookings/${bookingId}/services` : `/api/bookings/${bookingId}/services/${record.id}`,
-          { method: isDraft ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+          serverId ? `/api/bookings/${bookingId}/services/${serverId}` : `/api/bookings/${bookingId}/services`,
+          { method: serverId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
         );
         const j = await res.json().catch(() => ({}));
         if (!res.ok) {
-          toast.error((j as { error?: string }).error ?? "Save failed.");
+          const msg = (j as { error?: string }).error ?? "Save failed.";
+          setError(msg);
+          toast.error(msg);
           return;
         }
-        toast.success("Saved.");
-        onSaved(j as Service);
+        const saved = j as Service;
+        if (!serverId && saved.id) setServerId(saved.id);
+        setSavedSnapshot(snapshot);
+        setError(null);
       } catch {
+        setError("An error occurred.");
         toast.error("An error occurred.");
       }
     });
   }
 
+  // If the user kept typing while a save was in flight (auto-save is skipped while
+  // pending to avoid a duplicate POST), flush the pending changes once the current
+  // save settles — but never after an error (wait for the next blur to retry).
+  useEffect(() => {
+    if (pending || error || locked) return;
+    if (!form.name.trim()) return;
+    if (currentSnapshot !== savedSnapshot) autoSave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending]);
+
   function remove() {
-    if (isDraft) return onRemoved();
+    // A draft that was never persisted is just dropped locally; anything with a
+    // server id (persisted row or an auto-saved draft) is deleted server-side.
+    if (!serverId) return onRemoved();
     start(async () => {
       try {
-        const res = await fetch(`/api/bookings/${bookingId}/services/${record.id}`, { method: "DELETE" });
+        const res = await fetch(`/api/bookings/${bookingId}/services/${serverId}`, { method: "DELETE" });
         if (!res.ok) {
           const j = (await res.json().catch(() => ({}))) as { error?: string };
           toast.error(j.error ?? "Delete failed.");
@@ -709,11 +748,10 @@ function ServiceRow({
             type={f.type}
             value={form[f.key]}
             onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
-            onBlur={
-              f.key === "amount"
-                ? () => onAmountBlur(record.id, form.amount ? parseFloat(form.amount) || 0 : 0)
-                : undefined
-            }
+            onBlur={() => {
+              if (f.key === "amount") onAmountBlur(record.id, form.amount ? parseFloat(form.amount) || 0 : 0);
+              autoSave();
+            }}
             disabled={locked}
             className={`${inputCls} mt-0.5`}
           />
@@ -721,9 +759,20 @@ function ServiceRow({
       ))}
       {!locked && (
         <div className="flex items-center gap-1">
-          <button onClick={save} disabled={pending} title="Save" className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
-            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          </button>
+          <span
+            className="inline-flex items-center justify-center w-8 h-8 shrink-0"
+            title={pending ? "Saving…" : error ? error : isClean ? "Saved" : "Unsaved — leave the field to save"}
+          >
+            {pending ? (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : error ? (
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+            ) : isClean ? (
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+            )}
+          </span>
           <button onClick={remove} disabled={pending} title="Delete" className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-red-500 hover:bg-red-500/10 disabled:opacity-50">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -733,7 +782,7 @@ function ServiceRow({
   );
 }
 
-function PaymentsCard({ bookingId, payments, gstRates, onAdded }: { bookingId: string; payments: Payment[]; gstRates: number[]; onAdded: (p: Payment) => void }) {
+function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded }: { bookingId: string; payments: Payment[]; gstRates: number[]; balance: number; onAdded: (p: Payment) => void }) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("PARTIAL");
   const [method, setMethod] = useState<string>("Cash");
@@ -747,6 +796,12 @@ function PaymentsCard({ bookingId, payments, gstRates, onAdded }: { bookingId: s
   function add() {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return toast.error("Enter a valid amount.");
+    // A collection can never exceed the remaining balance (server enforces this
+    // too). Refunds are exempt — they are not collections against the payable.
+    if (type !== "REFUND") {
+      if (balance <= 0) return toast.error("This booking is already fully paid.");
+      if (amt > balance) return toast.error(`Payment cannot exceed the remaining balance (${inr(balance)}).`);
+    }
     start(async () => {
       try {
         const res = await fetch(`/api/bookings/${bookingId}/payments`, {

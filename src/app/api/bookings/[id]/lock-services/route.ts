@@ -59,7 +59,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
     );
   }
 
-  await prisma.booking.update({ where: { id }, data: { servicesLocked: true } });
+  // Locking finalises the booking: lifecycle status moves Pending → Confirmed.
+  // (Payment status is a separate, derived concept and is not touched here.)
+  await prisma.booking.update({ where: { id }, data: { servicesLocked: true, status: "CONFIRMED" } });
 
   // Branded summary email + PDF (rich service detail, no per-line pricing). Email
   // presence is guaranteed by the precondition above; delivery is reported back.

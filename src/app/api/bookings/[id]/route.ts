@@ -3,11 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { z } from "zod";
 import { BookingStatus } from "@prisma/client";
+import { computeBookingFinance } from "@/lib/bookings/finance";
 
 type Params = { params: Promise<{ id: string }> };
 
 const patchSchema = z.object({
-  status: z.enum(["PENDING", "PAID", "FAILED", "CANCELLED", "REFUNDED"]).optional(),
+  status: z.enum(["PENDING", "CONFIRMED", "PAID", "FAILED", "CANCELLED", "REFUNDED"]).optional(),
   discountType: z.enum(["FLAT", "PERCENT"]).nullable().optional(),
   discountValue: z.coerce.number().min(0).optional(),
   inclusions: z.array(z.string().trim().min(1).max(120)).optional(),
@@ -34,7 +35,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.booking.findUnique({ where: { id }, select: { id: true, servicesLocked: true } });
+  const existing = await prisma.booking.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      servicesLocked: true,
+      amount: true,
+      discountType: true,
+      discountValue: true,
+      payments: { select: { amount: true } },
+    },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -47,6 +58,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const touchesServices = discountType !== undefined || discountValue !== undefined || inclusions !== undefined;
   if (touchesServices && existing.servicesLocked) {
     return NextResponse.json({ error: "Services are locked and cannot be changed." }, { status: 423 });
+  }
+
+  // ── Cancellation business rules (server-authoritative) ──
+  // A booking may be cancelled only by an admin, and only while it is PARTIALLY
+  // PAID. Customers can never reach this route (staff-guarded above); SALES/EDITOR
+  // staff are additionally blocked here so only ADMIN/SUPERADMIN can cancel.
+  if (status === "CANCELLED") {
+    const role = (guard.user as { role?: string }).role;
+    if (role !== "ADMIN" && role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Only an administrator can cancel a booking." }, { status: 403 });
+    }
+    const finance = computeBookingFinance({
+      amount: existing.amount,
+      discountType: existing.discountType,
+      discountValue: existing.discountValue,
+      payments: existing.payments,
+      services: [],
+    });
+    if (finance.paymentStatus !== "PARTIAL") {
+      return NextResponse.json(
+        { error: "Only a partially paid booking can be cancelled." },
+        { status: 422 },
+      );
+    }
   }
 
   const updated = await prisma.booking.update({

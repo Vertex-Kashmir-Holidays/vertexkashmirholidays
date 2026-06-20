@@ -32,9 +32,13 @@ export async function POST(req: NextRequest, { params }: Params) {
   const lead = await prisma.lead.findUnique({ where: { id } });
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
-  const role = (guard.user as { role: string }).role;
-  if (role === "SALES" && lead.assignedToId !== guard.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Conversion is a lead activity, so only the staff member the lead is assigned
+  // to may convert it — not an admin acting on someone else's lead.
+  if (lead.assignedToId !== guard.user.id) {
+    return NextResponse.json(
+      { error: "Only the staff member this lead is assigned to can convert it." },
+      { status: 403 },
+    );
   }
   if (lead.status === "CONVERTED" || lead.locked) {
     return NextResponse.json({ error: "This lead is already converted." }, { status: 422 });

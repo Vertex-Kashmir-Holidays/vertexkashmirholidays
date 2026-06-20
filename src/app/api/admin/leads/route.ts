@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { notifyLeadAssigned } from "@/lib/notifications";
 import { LeadSource, LeadCategory, LeadActivityType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +100,15 @@ export async function POST(req: NextRequest) {
 
     return created;
   });
+
+  // Notify the assignee (in-app + email), best-effort — never blocks creation.
+  if (assignedToId) {
+    await notifyLeadAssigned(
+      assignedToId,
+      { id: lead.id, name: lead.name, phone: lead.phone, email: lead.email, category: lead.category, startDate: lead.startDate },
+      performedByName,
+    );
+  }
 
   return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
 }

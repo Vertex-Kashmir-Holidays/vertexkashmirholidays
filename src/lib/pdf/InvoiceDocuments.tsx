@@ -156,27 +156,28 @@ const KIND_TITLES: Record<PdfService["kind"], string> = {
   OTHER: "Other Inclusions",
 };
 
+// Structured, labelled detail line for a service — never includes price. Mirrors
+// the admin services UI columns (Hotel: Location/Nights, Transport: Pickup/Drop,
+// Activity: Duration/Location).
 function serviceDetail(svc: PdfService): string {
+  const fields: { label: string; value: string }[] = [];
   switch (svc.kind) {
-    case "HOTEL": {
-      const parts: string[] = [];
-      if (svc.location) parts.push(svc.location);
-      if (svc.nights != null) parts.push(`${svc.nights} night${svc.nights === 1 ? "" : "s"}`);
-      return parts.join("  ·  ");
-    }
-    case "TRANSPORT": {
-      const route = [svc.pickup, svc.dropoff].filter(Boolean).join(" -> ");
-      return route ? `Route: ${route}` : "";
-    }
-    case "ACTIVITY": {
-      const parts: string[] = [];
-      if (svc.timing) parts.push(svc.timing);
-      if (svc.location) parts.push(svc.location);
-      return parts.join("  ·  ");
-    }
+    case "HOTEL":
+      if (svc.location) fields.push({ label: "Location", value: svc.location });
+      if (svc.nights != null) fields.push({ label: "Nights", value: `${svc.nights} night${svc.nights === 1 ? "" : "s"}` });
+      break;
+    case "TRANSPORT":
+      if (svc.pickup) fields.push({ label: "Pickup", value: svc.pickup });
+      if (svc.dropoff) fields.push({ label: "Drop", value: svc.dropoff });
+      break;
+    case "ACTIVITY":
+      if (svc.timing) fields.push({ label: "Duration", value: svc.timing });
+      if (svc.location) fields.push({ label: "Location", value: svc.location });
+      break;
     default:
-      return "";
+      break;
   }
+  return fields.map((f) => `${f.label}: ${f.value}`).join("  ·  ");
 }
 
 // Booking summary — rich service detail, NO per-service prices, overall price

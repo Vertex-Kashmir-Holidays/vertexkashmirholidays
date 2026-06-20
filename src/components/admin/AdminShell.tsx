@@ -23,7 +23,6 @@ import {
   ScrollText,
   Megaphone,
   LogOut,
-  Bell,
   Menu,
   X,
   Map,
@@ -31,6 +30,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 import { cn } from "@/lib/utils";
 import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
 
@@ -223,10 +223,7 @@ export function AdminShell({ children, userName, userEmail, permissions }: Admin
               View Site
             </Link>
             <ThemeToggle />
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-accent rounded-full" />
-            </button>
+            <NotificationBell />
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
               {userName.charAt(0).toUpperCase()}
             </div>
