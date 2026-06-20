@@ -58,7 +58,7 @@ export function ToursHeroSection({ heading, stats }: ToursHeroSectionProps) {
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/50 to-transparent"></div>
 
-      <div className="relative mx-auto max-w-[1300px] px-4 py-12 sm:px-6 sm:py-16 lg:pb-20 lg:pt-28">
+      <div className="relative mx-auto max-w-[1300px] px-4 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-32 lg:pb-20 lg:pt-28">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>

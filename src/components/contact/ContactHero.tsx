@@ -33,7 +33,7 @@ export function ContactHero({ data, features }: ContactHeroProps) {
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/40 to-transparent"></div>
 
-      <div className="relative mx-auto max-w-[1300px] px-6 py-20 lg:py-24">
+      <div className="relative mx-auto max-w-[1300px] px-5 pb-16 pt-28 sm:px-6 sm:pt-32 lg:py-24">
         <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
           <a href="/" className="transition hover:text-white">Home</a>
           <span>›</span>
