@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 export function ForceChangePasswordForm() {
-  const router = useRouter();
   const { update } = useSession();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,11 +32,13 @@ export function ForceChangePasswordForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error);
 
-      // Refresh the JWT so the middleware gate clears immediately, then continue.
+      // Refresh the JWT so the middleware gate clears immediately, then do a full
+      // page reload. A soft navigation (router.replace/refresh) leaves the App
+      // Router RSC cache and edge middleware seeing a stale token, which makes
+      // subsequent /account links bounce back to this gate and appear stuck.
       await update({ mustChangePassword: false });
       toast.success("Password updated. Welcome!");
-      router.replace("/account");
-      router.refresh();
+      window.location.assign("/account");
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : "Update failed.");
     } finally {
