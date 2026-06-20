@@ -247,7 +247,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                     </span>
                     <span className="dotline mt-1 w-px flex-1" />
                   </div>
-                  <div className="flex flex-1 flex-wrap items-start gap-5 pb-2 md:flex-nowrap">
+                  <div className="flex flex-1 flex-col items-start gap-5 pb-2 md:flex-row md:flex-nowrap">
                     <div className="min-w-0 flex-1">
                       <EditableField value={day.title} onValueChange={(v) => updateDay(day.id, { title: v })} className="font-serif text-xl font-bold text-ink dark:text-foreground" />
                       <EditableField value={day.body} onValueChange={(v) => updateDay(day.id, { body: v })} className="mt-1.5 block text-sm leading-relaxed text-ink/70 dark:text-muted-foreground" rows={3} />
@@ -267,7 +267,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                         <Plus className="h-3 w-3" /> detail
                       </button>
                     </div>
-                    <div className="relative shrink-0">
+                    <div className="relative w-full shrink-0 md:w-auto">
                       <ImagePicker value={day.image} onChange={(src) => updateDay(day.id, { image: src })} className="absolute right-2 top-2 z-10" label="Replace" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={day.image} alt={day.title} className="h-[120px] w-full rounded-xl object-cover shadow-soft md:w-[210px]" loading="lazy" />
