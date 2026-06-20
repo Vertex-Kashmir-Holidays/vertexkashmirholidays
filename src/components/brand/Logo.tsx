@@ -1,4 +1,4 @@
-// src/components/ui/Logo.tsx
+// src/components/brand/Logo.tsx
 'use client';
 
 import Image from "next/image";
@@ -13,55 +13,43 @@ interface LogoProps {
   href?: string;
 }
 
-export function Logo({
-  variant = "auto",
-  className,
-  href = "/",
-}: LogoProps) {
-  // Define colors based on variant
-  const isLight = variant === "light";
-  const isDark = variant === "dark";
-  
-  // For auto mode, we use CSS classes to handle dark/light mode:
-  // light theme → dark (navy) text, dark theme → white text.
-  const textColor = isLight
-    ? "text-white"
-    : isDark
-      ? "text-navy-brand"
-      : "text-navy-brand dark:text-white";
+// Brand-kit horizontal lockups. Note the kit naming is by *background*:
+//   horizontal-light.svg → navy wordmark, for LIGHT surfaces
+//   horizontal-dark.svg  → white wordmark, for DARK surfaces / photos
+// This component's `variant` is by *desired text colour* (its historical API):
+//   variant="dark"  → navy wordmark (use on light surfaces)
+//   variant="light" → white wordmark (use on dark surfaces / hero photos)
+//   variant="auto"  → follows the active theme (navy in light, white in dark)
+const NAVY_LOCKUP = "/brand/kit/svg/vertex-logo-horizontal-light.svg";
+const WHITE_LOCKUP = "/brand/kit/svg/vertex-logo-horizontal-dark.svg";
 
-  const subTextColor = isLight
-    ? "text-green-glow"
-    : isDark
-      ? "text-green-brand"
-      : "text-green-brand dark:text-green-glow";
-
-  const logoContent = (
-    <div className={cn("flex items-center gap-2.5", !href && className)}>
-      {/* Icon - same for all variants */}
-      <div className="grid h-8 w-8 place-items-center rounded-md bg-white text-white shadow-glow ring-inner">
-        <Image
-          src="/brand/icon.png"
-          alt="V"
-          width={40}
-          height={40}
-          className="object-contain"
-        />
-      </div>
-      
-      {/* Text */}
-      <div className="leading-none">
-        <span className={`block font-display text-[16px] font-extrabold ${textColor}`}>
-          Vertex Kashmir
-        </span>
-        <span className={`block text-center mt-1 text-[8px] font-bold tracking-[0.4em] ${subTextColor}`}>
-          HOLIDAYS
-        </span>
-      </div>
-    </div>
+export function Logo({ variant = "auto", className, href = "/" }: LogoProps) {
+  const img = (src: string, extra?: string) => (
+    <Image
+      src={src}
+      alt="Vertex Kashmir Holidays"
+      width={168}
+      height={54}
+      priority
+      className={cn("h-8 w-auto select-none object-contain", extra)}
+    />
   );
 
-  if (!href) return logoContent;
+  const content =
+    variant === "light" ? (
+      img(WHITE_LOCKUP)
+    ) : variant === "dark" ? (
+      img(NAVY_LOCKUP)
+    ) : (
+      <>
+        {img(NAVY_LOCKUP, "block dark:hidden")}
+        {img(WHITE_LOCKUP, "hidden dark:block")}
+      </>
+    );
+
+  if (!href) {
+    return <span className={cn("inline-flex items-center", className)}>{content}</span>;
+  }
 
   return (
     <Link
@@ -69,7 +57,7 @@ export function Logo({
       aria-label="Vertex Kashmir Holidays"
       className={cn("inline-flex items-center", className)}
     >
-      {logoContent}
+      {content}
     </Link>
   );
 }

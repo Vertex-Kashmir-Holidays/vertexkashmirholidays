@@ -16,7 +16,7 @@ import type { ItineraryData } from "@/types/itinerary";
 
 // Brand mark used on the cover and Thank-You pages. The data URL is supplied
 // through the `images` map (keyed by this path), matching the sidebar logo.
-export const LOGO_SRC = "/brand/icon.png";
+export const LOGO_SRC = "/brand/kit/png/icon/vertex-icon-512.png";
 
 const C = {
   green: "#1d5c43",

@@ -48,30 +48,54 @@ export function Navbar() {
     return pathname.startsWith(path);
   };
 
+  // Pages that open with a full-bleed dark hero behind the navbar. Only on these
+  // does the un-scrolled navbar go transparent with a white lockup; everywhere
+  // else (booking, legal, etc.) it keeps the cream glass + ink/theme-aware logo.
+  const heroRoutes = ['/', '/tours', '/destinations', '/about', '/blog', '/contact'];
+  const hasHero =
+    heroRoutes.includes(pathname) ||
+    /^\/(tours|destinations|blog)\/[^/]+$/.test(pathname);
+  const overHero = hasHero && !scrolled;
+
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 transition-all duration-500">
         <nav
           className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-5 py-3 transition-all duration-500 lg:px-6 ${
-            scrolled ? 'glass-deep' : 'glass'
+            overHero ? 'bg-transparent' : 'glass-cream'
           }`}
         >
-          {/* Logo - adapts to active theme */}
-          <Logo variant="auto" className="h-8" />
+          {/* Logo — white lockup over the hero photo (transparent state), then
+              theme-aware (navy on cream / white in dark) once the cream nav lands. */}
+          <Logo variant={overHero ? 'light' : 'auto'} className="h-8" />
 
-          {/* Desktop Navigation */}
-          <ul className="hidden items-center gap-7 text-[13px] font-medium text-foreground/75 lg:flex">
+          {/* Desktop Navigation — light-on-dark over the hero, ink once landed. */}
+          <ul
+            className={`hidden items-center gap-7 text-[13px] font-medium lg:flex ${
+              overHero ? 'text-white/80' : 'text-foreground/75'
+            }`}
+          >
             {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className={`relative transition hover:text-foreground ${
-                    isActive(link.href) ? 'text-foreground' : 'text-foreground/75'
+                  className={`relative transition ${
+                    overHero
+                      ? isActive(link.href)
+                        ? 'text-white'
+                        : 'text-white/80 hover:text-white'
+                      : isActive(link.href)
+                        ? 'text-foreground'
+                        : 'text-foreground/75 hover:text-foreground'
                   }`}
                 >
                   {link.label}
                   {isActive(link.href) && (
-                    <span className="absolute -bottom-1.5 left-0 h-[2px] w-full rounded-full bg-primary" />
+                    <span
+                      className={`absolute -bottom-1.5 left-0 h-[2px] w-full rounded-full ${
+                        overHero ? 'bg-white' : 'bg-primary'
+                      }`}
+                    />
                   )}
                 </Link>
               </li>
@@ -83,7 +107,11 @@ export function Navbar() {
             <ThemeToggle />
             <Link
               href="/login"
-              className="grid h-9 w-9 place-items-center rounded-full border border-foreground/20 text-foreground transition hover:bg-foreground hover:text-background"
+              className={`grid h-9 w-9 place-items-center rounded-full border transition ${
+                overHero
+                  ? 'border-white/30 text-white hover:bg-white hover:text-foreground'
+                  : 'border-foreground/20 text-foreground hover:bg-foreground hover:text-background'
+              }`}
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />

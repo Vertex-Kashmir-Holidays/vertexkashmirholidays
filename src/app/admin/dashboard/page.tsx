@@ -56,7 +56,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string; Icon: ty
 };
 
 const LEAD_STATUS_STYLES: Record<string, string> = {
-  NEW: "bg-brand-cyan/10 text-brand-cyan",
+  NEW: "bg-link/10 text-link",
   CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
   NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
   QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
@@ -68,7 +68,7 @@ const LEAD_STATUS_STYLES: Record<string, string> = {
 
 const QUICK_ACTIONS = [
   { label: "New Package", Icon: Plus, href: "/admin/packages/new", color: "bg-primary/10 text-primary" },
-  { label: "Add Destination", Icon: MapPin, href: "/admin/destinations/new", color: "bg-brand-cyan/10 text-brand-cyan" },
+  { label: "Add Destination", Icon: MapPin, href: "/admin/destinations/new", color: "bg-link/10 text-link" },
   { label: "Add Blog Post", Icon: FileText, href: "/admin/blogs/new", color: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
   { label: "View Bookings", Icon: CalendarDays, href: "/admin/bookings", color: "bg-accent/10 text-accent" },
   { label: "Export Report", Icon: Download, href: "#", color: "bg-muted text-muted-foreground" },
@@ -192,8 +192,8 @@ export default async function AdminDashboard() {
       change: pctChange(thisMonthBookings, lastMonthBookings),
       sub: "vs last month",
       Icon: CalendarDays,
-      color: "text-brand-cyan",
-      bg: "bg-brand-cyan/10",
+      color: "text-link",
+      bg: "bg-link/10",
     },
     {
       label: "Total Leads",

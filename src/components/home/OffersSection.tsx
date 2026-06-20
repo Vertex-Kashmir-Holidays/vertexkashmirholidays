@@ -35,11 +35,13 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
   if (offers.length === 0) return null;
 
   return (
-    <section id="offers" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section id="offers" className="relative isolate z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+      <div aria-hidden className="orb orb-gold absolute -left-16 top-10 -z-10 h-72 w-72" />
+      <div aria-hidden className="orb orb-green absolute -right-10 bottom-0 -z-10 h-80 w-80" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
-            className="rv text-[11px] font-bold tracking-[0.22em] text-orange-brand"
+            className="rv text-[11px] font-bold tracking-[0.22em] text-gold"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -99,7 +101,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                   )}
                   {o.badge && (
                     <motion.span
-                      className="grad-orange pop-sm absolute left-3 top-3 rounded-lg px-3 py-1 text-[10px] font-extrabold text-white shadow-lg"
+                      className="grad-orange pop-sm absolute left-3 top-3 rounded-lg px-3 py-1 text-[10px] font-extrabold text-navy-brand shadow-lg"
                       initial={{ x: -20 }}
                       animate={{ x: 0 }}
                       transition={{ delay: i * 0.05 + 0.3 }}
@@ -123,11 +125,11 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                           <br />
                         </>
                       )}
-                      <span className="text-2xl font-extrabold text-orange-brand">{formatINR(o.price)}</span>
+                      <span className="text-2xl font-extrabold text-brand-green">{formatINR(o.price)}</span>
                       <span className="text-[10px] text-muted-foreground"> /person</span>
                     </p>
                     {o.endsText && (
-                      <span className="glass rounded-full px-3 py-1.5 text-[10px] font-bold text-orange-brand">
+                      <span className="glass rounded-full px-3 py-1.5 text-[10px] font-bold text-brand-green">
                         ⏳ {o.endsText}
                       </span>
                     )}
@@ -139,7 +141,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                   >
                     <Link
                       href={o.ctaHref ?? '#'}
-                      className="grad-orange mt-5 block rounded-xl py-3 text-center text-xs font-extrabold text-white ring-inner transition-all duration-300 hover:brightness-110 hover:shadow-orange-glow"
+                      className="grad-orange mt-5 block rounded-xl py-3 text-center text-xs font-extrabold text-navy-brand ring-inner transition-all duration-300 hover:brightness-110 hover:shadow-gold"
                     >
                       Grab This Deal →
                     </Link>

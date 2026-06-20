@@ -67,14 +67,14 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
         <div className="mt-3 flex items-center justify-between">
           <div>
             <p className="flex items-start text-[40px] font-extrabold leading-none">
-              <svg viewBox="0 0 24 24" className="mr-1 mt-1 h-5 w-5 text-cyan-500" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg viewBox="0 0 24 24" className="mr-1 mt-1 h-5 w-5 text-link" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 4v10.5a4 4 0 1 1-4-4" />
                 <path d="M14 4a2 2 0 1 1 4 0v6" />
               </svg>
               {weather.temperature}°C
             </p>
             <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 text-cyan-500" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-link" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.3A7 7 0 1 0 4 16.4" />
               </svg>
               {weather.condition}

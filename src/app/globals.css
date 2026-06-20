@@ -12,55 +12,60 @@
 :root {
   color-scheme: light;
 
-  --background: 150 20% 98%;
-  --foreground: 200 25% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 200 25% 12%;
-  --muted: 150 20% 94%;
-  --muted-foreground: 206 12% 45%;
-  --border: 150 12% 88%;
-  --input: 150 12% 88%;
-  --ring: 152 56% 40%;
-  --primary: 152 56% 40%;
-  --primary-foreground: 0 0% 100%;
-  --accent: 22 92% 56%;
+  /* Light-golden brand palette. Navy ink on warm cream, green CTA, gold accents. */
+  --background: 44 66% 92%;       /* #F8F1DD */
+  --foreground: 214 68% 14%;      /* #0B1F3A navy */
+  --card: 45 86% 97%;             /* #FEFBF2 */
+  --card-foreground: 214 68% 14%;
+  --muted: 43 55% 87%;            /* #F0E6CC */
+  --muted-foreground: 45 20% 35%; /* #6B6248 */
+  --border: 42 48% 82%;           /* #E7DABB */
+  --input: 42 48% 82%;
+  --ring: 43 49% 53%;             /* #C2A14E gold */
+  --primary: 214 68% 14%;         /* navy */
+  --primary-foreground: 44 66% 92%;
+  --accent: 151 87% 34%;          /* #0BA45B green CTA */
   --accent-foreground: 0 0% 100%;
+  --link: 214 88% 34%;           /* #0A4DA2 */
+  --gold: 43 49% 53%;            /* #C2A14E */
 
-  /* Glass surface tint (adapts per theme). Light mode uses a translucent
-     white frost so panels stay visible over the near-white background. */
-  --glass-1: 0 0% 100% / 0.6;
-  --glass-2: 0 0% 100% / 0.4;
-  --glass-strong-1: 0 0% 100% / 0.78;
-  --glass-strong-2: 0 0% 100% / 0.58;
-  --glass-deep-1: 0 0% 100% / 0.9;
-  --glass-deep-2: 0 0% 100% / 0.78;
-  --glass-border: 200 25% 12% / 0.12;
+  /* Glass surface tint (adapts per theme). Light mode uses a warm cream
+     frost (#FEFBF2) so panels glow over the golden background. */
+  --glass-1: 45 86% 97% / 0.6;
+  --glass-2: 45 86% 97% / 0.4;
+  --glass-strong-1: 45 86% 97% / 0.8;
+  --glass-strong-2: 45 86% 97% / 0.58;
+  --glass-deep-1: 45 86% 97% / 0.92;
+  --glass-deep-2: 43 55% 90% / 0.82;
+  --glass-border: 0 0% 100% / 0.6;
 }
 
 .dark {
   color-scheme: dark;
 
-  --background: 200 50% 6%;
-  --foreground: 0 0% 100%;
-  --card: 200 50% 8%;
-  --card-foreground: 0 0% 100%;
-  --muted: 204 40% 12%;
-  --muted-foreground: 0 0% 72%;
-  --border: 200 30% 22%;
-  --input: 200 30% 22%;
-  --ring: 150 65% 46%;
-  --primary: 150 65% 46%;
-  --primary-foreground: 200 50% 6%;
-  --accent: 22 92% 56%;
-  --accent-foreground: 0 0% 100%;
+  --background: 214 68% 14%;      /* #0B1F3A navy */
+  --foreground: 44 52% 90%;       /* #F3ECD9 */
+  --card: 213 64% 18%;            /* #102A4A */
+  --card-foreground: 44 52% 90%;
+  --muted: 213 50% 20%;
+  --muted-foreground: 212 24% 70%; /* #9FB0C4 */
+  --border: 214 55% 24%;          /* #1C3A60 */
+  --input: 214 55% 24%;
+  --ring: 43 56% 66%;             /* #D9BE7A gold */
+  --primary: 43 56% 66%;          /* #D9BE7A gold */
+  --primary-foreground: 214 68% 14%;
+  --accent: 150 78% 39%;          /* #16B364 green CTA */
+  --accent-foreground: 140 69% 8%;
+  --link: 216 65% 54%;           /* #3D7AD6 */
+  --gold: 42 52% 65%;            /* #D4B978 */
 
-  --glass-1: 0 0% 100% / 0.1;
-  --glass-2: 0 0% 100% / 0.035;
-  --glass-strong-1: 0 0% 100% / 0.14;
-  --glass-strong-2: 0 0% 100% / 0.05;
-  --glass-deep-1: 8 26% 20% / 0.72;
-  --glass-deep-2: 6 18% 15% / 0.58;
-  --glass-border: 0 0% 100% / 0.12;
+  --glass-1: 213 64% 18% / 0.5;
+  --glass-2: 213 64% 18% / 0.3;
+  --glass-strong-1: 213 64% 18% / 0.62;
+  --glass-strong-2: 213 64% 18% / 0.42;
+  --glass-deep-1: 214 68% 14% / 0.78;
+  --glass-deep-2: 213 64% 18% / 0.6;
+  --glass-border: 43 56% 66% / 0.18;
 }
 
 html {
@@ -79,16 +84,59 @@ body {
 }
 
 @layer utilities {
-  .grad-orange { background-image:linear-gradient(135deg,hsl(30 95% 58%),hsl(10 85% 50%)); }
-  .grad-cyan   { background-image:linear-gradient(135deg,hsl(190 88% 52%),hsl(158 70% 42%)); }
-  .grad-text-warm { background-image:linear-gradient(110deg,hsl(35 95% 65%),hsl(15 90% 55%)); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .grad-text-cool { background-image:linear-gradient(110deg,hsl(160 75% 58%),hsl(190 85% 60%)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  /* Brand gradients — retinted for the golden theme (gold + green/blue). */
+  .grad-orange { background-image:linear-gradient(135deg,hsl(43 60% 62%),hsl(40 49% 48%)); }       /* gold */
+  .grad-cyan   { background-image:linear-gradient(135deg,hsl(214 80% 46%),hsl(151 70% 38%)); }     /* blue→green */
+  .grad-text-warm { background-image:linear-gradient(110deg,hsl(43 60% 62%),hsl(40 55% 48%)); -webkit-background-clip:text; background-clip:text; color:transparent; } /* gold */
+  .grad-text-cool { background-image:linear-gradient(110deg,hsl(151 70% 40%),hsl(43 55% 55%)); -webkit-background-clip:text; background-clip:text; color:transparent; } /* green→gold */
   .h-display { font-family:'Playfair Display',serif; letter-spacing:-0.022em; line-height:1.04; }
   .glass { background:linear-gradient(155deg,hsl(var(--glass-1)),hsl(var(--glass-2))); backdrop-filter:blur(18px) saturate(1.3); -webkit-backdrop-filter:blur(18px) saturate(1.3); border:1px solid hsl(var(--glass-border)); }
   .glass-strong { background:linear-gradient(155deg,hsl(var(--glass-strong-1)),hsl(var(--glass-strong-2))); backdrop-filter:blur(26px) saturate(1.4); -webkit-backdrop-filter:blur(26px) saturate(1.4); border:1px solid hsl(var(--glass-border)); }
   .glass-deep { background:linear-gradient(165deg,hsl(var(--glass-deep-1)),hsl(var(--glass-deep-2))); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid hsl(var(--glass-border)); }
+
+  /* .glass-cream — flat warm-frost glass for navbar-on-scroll, quote cards, CTA panels. */
+  .glass-cream {
+    background: rgba(254,251,242,0.55);
+    backdrop-filter: blur(18px) saturate(135%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow:
+      0 10px 34px rgba(11,31,58,0.10),
+      inset 0 1px 0 rgba(255,255,255,0.75),
+      inset 0 0 0 1px rgba(194,161,78,0.16);
+  }
+  .dark .glass-cream {
+    background: rgba(16,42,74,0.55);
+    border: 1px solid rgba(217,190,122,0.18);
+    box-shadow:
+      0 12px 44px rgba(0,0,0,0.40),
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      inset 0 0 0 1px rgba(217,190,122,0.14);
+  }
+
+  /* .glass-photo — dark frost for glass over imagery (hero overlay, tiles). */
+  .glass-photo {
+    background: rgba(11,31,58,0.30);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 14px 44px rgba(0,0,0,0.30);
+    color: #F3ECD9;
+  }
+  .dark .glass-photo {
+    background: rgba(16,42,74,0.55);
+    border: 1px solid rgba(217,190,122,0.18);
+    box-shadow: 0 12px 44px rgba(0,0,0,0.40);
+  }
+
+  /* Glow orbs — soft radial bloom behind golden sections. Decorative only.
+     Pair with `isolate` + a negative z (e.g. -z-10) on the host section. */
+  .orb { position:absolute; border-radius:9999px; filter:blur(70px); pointer-events:none; }
+  .orb-gold  { background:radial-gradient(closest-side, hsl(43 49% 53% / 0.10), transparent 72%); }
+  .orb-green { background:radial-gradient(closest-side, hsl(151 87% 34% / 0.09), transparent 72%); }
+
   .ring-inner { box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(0,0,0,.25); }
-  .bg-brand-cream { background-color: hsl(35 45% 96% / var(--tw-bg-opacity, 1)) }
+  .bg-brand-cream { background-color: hsl(45 86% 97% / var(--tw-bg-opacity, 1)) }
 }
 
 /* Auth form inputs — theme-aware (used on the /login page) */
@@ -145,7 +193,7 @@ body {
 /* Particles */
 .flake { position:absolute; border-radius:50%; background:rgba(255,255,255,.85); animation:fall linear infinite; }
 @keyframes fall { from{ transform:translateY(-8vh) translateX(0)} to{ transform:translateY(105vh) translateX(4vw)} }
-.ember { position:absolute; border-radius:50%; background:hsl(28 100% 62%); box-shadow:0 0 8px hsl(25 100% 55%); animation:rise linear infinite; }
+.ember { position:absolute; border-radius:50%; background:hsl(43 60% 60%); box-shadow:0 0 8px hsl(43 55% 50%); animation:rise linear infinite; }
 @keyframes rise { from{ transform:translateY(0); opacity:.9 } to{ transform:translateY(-60vh); opacity:0 } }
 
 /* Marquee */
@@ -166,10 +214,10 @@ body {
 
 /* Campaign accent — driven by per-campaign --camp-accent / --camp-accent2
    (set inline on the campaign wrapper), with sensible cyan/teal fallbacks. */
-.bg-accent-grad { background-image:linear-gradient(120deg, var(--camp-accent, hsl(196 90% 52%)), var(--camp-accent2, hsl(170 80% 50%))); }
-.grad-accent-text { background-image:linear-gradient(120deg, var(--camp-accent, hsl(196 90% 52%)), var(--camp-accent2, hsl(170 80% 50%))); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.text-camp-accent { color: var(--camp-accent, hsl(196 90% 52%)); }
-.tl-line { background-image:linear-gradient(to bottom, var(--camp-accent, hsl(196 90% 52%)), var(--camp-accent2, hsl(170 80% 50%))); }
+.bg-accent-grad { background-image:linear-gradient(120deg, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); }
+.grad-accent-text { background-image:linear-gradient(120deg, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.text-camp-accent { color: var(--camp-accent, hsl(214 88% 34%)); }
+.tl-line { background-image:linear-gradient(to bottom, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); }
 
 /* Campaign marquee tracks (gallery + strip) */
 .mq-track { display:flex; gap:3.5rem; width:max-content; animation:marq 28s linear infinite; }

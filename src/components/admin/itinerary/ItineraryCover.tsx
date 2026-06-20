@@ -36,7 +36,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/icon.png"
+            src="/brand/kit/png/icon/vertex-icon-512.png"
             alt="Vertex Kashmir Holidays"
             className="h-11 w-11 rounded-md bg-white object-contain p-1"
           />

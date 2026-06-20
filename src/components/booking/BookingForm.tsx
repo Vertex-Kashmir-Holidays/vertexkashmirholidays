@@ -154,10 +154,10 @@ export function BookingForm({
       currency: order.currency,
       name: "Vertex Kashmir Holidays",
       description: tourTitle,
-      image: "/brand/icon.png",
+      image: "/brand/kit/png/icon/vertex-icon-512.png",
       order_id: order.orderId,
       prefill: { name, email, contact: phone },
-      theme: { color: "#12783c" },
+      theme: { color: "#0BA45B" },
       modal: {
         ondismiss() {
           setStep("idle");

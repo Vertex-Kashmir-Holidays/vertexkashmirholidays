@@ -33,7 +33,7 @@ let logoCache: string | null | undefined;
 export async function loadLogoDataUrl(): Promise<string | null> {
   if (logoCache !== undefined) return logoCache;
   try {
-    const buf = await readFile(path.join(process.cwd(), "public", "brand", "icon.png"));
+    const buf = await readFile(path.join(process.cwd(), "public", "brand", "kit", "png", "icon", "vertex-icon-512.png"));
     logoCache = `data:image/png;base64,${buf.toString("base64")}`;
   } catch {
     logoCache = null;

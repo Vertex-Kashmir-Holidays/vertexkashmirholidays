@@ -53,7 +53,7 @@ interface Props {
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
-  NEW: "bg-brand-cyan/10 text-brand-cyan",
+  NEW: "bg-link/10 text-link",
   CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
   NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
   QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",

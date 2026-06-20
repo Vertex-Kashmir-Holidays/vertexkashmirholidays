@@ -72,8 +72,8 @@ export function HeroParallax() {
           style={{ background: "radial-gradient(circle, rgba(255,200,80,0.9), rgba(255,140,0,0.6), transparent 60%)" }}
         />
         {/* Heat shimmer lines */}
-        <div className="absolute left-[5%] bottom-[15%] w-[35%] h-px bg-gradient-to-r from-transparent via-brand-orange/25 to-transparent" />
-        <div className="absolute left-[8%] bottom-[20%] w-[28%] h-px bg-gradient-to-r from-transparent via-brand-orange/15 to-transparent" />
+        <div className="absolute left-[5%] bottom-[15%] w-[35%] h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent" />
+        <div className="absolute left-[8%] bottom-[20%] w-[28%] h-px bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
 
         {/* Kashmir mountain silhouette */}
         <div className="absolute right-0 bottom-0 w-[52%] h-[70%]">
@@ -128,13 +128,13 @@ export function HeroParallax() {
           />
           {/* Temperature labels — desktop only */}
           <div className="hidden lg:flex absolute -left-36 top-1/2 -translate-y-1/2 flex-col items-center gap-1">
-            <Flame className="h-5 w-5 text-brand-orange" />
-            <p className="text-brand-orange font-bold text-2xl font-mono leading-none">46°C</p>
+            <Flame className="h-5 w-5 text-gold" />
+            <p className="text-gold font-bold text-2xl font-mono leading-none">46°C</p>
             <p className="text-white/35 text-[10px] uppercase tracking-widest">Delhi Plains</p>
           </div>
           <div className="hidden lg:flex absolute -right-36 top-1/2 -translate-y-1/2 flex-col items-center gap-1">
-            <Snowflake className="h-5 w-5 text-brand-cyan" />
-            <p className="text-brand-cyan font-bold text-2xl font-mono leading-none">18°C</p>
+            <Snowflake className="h-5 w-5 text-link" />
+            <p className="text-link font-bold text-2xl font-mono leading-none">18°C</p>
             <p className="text-white/35 text-[10px] uppercase tracking-widest">Kashmir</p>
           </div>
         </div>
