@@ -59,9 +59,9 @@ export function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 transition-all duration-500">
+      <header className="fixed inset-x-0 top-0 z-50 px-3 transition-all duration-500 sm:px-4 lg:px-0">
         <nav
-          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-5 py-3 transition-all duration-500 lg:px-6 ${
+          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-all duration-500 sm:px-5 lg:px-6 ${
             overHero ? 'bg-transparent' : 'glass-cream'
           }`}
         >

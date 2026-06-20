@@ -33,7 +33,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/80 via-brand-dark/40 to-brand-dark/20"></div>
 
-      <div className="relative mx-auto max-w-[1300px] px-6 py-16 lg:py-28">
+      <div className="relative mx-auto max-w-[1300px] px-5 pb-16 pt-28 sm:px-6 sm:pt-32 lg:py-28">
         <motion.p
           className="text-[12px] font-bold tracking-[0.32em] text-white/90"
           initial={{ opacity: 0, y: 20 }}

@@ -70,6 +70,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* Guard against horizontal scroll from decorative absolutely-positioned
+     elements (glow orbs, parallax layers) that bleed past the viewport on
+     small screens. `clip` (unlike `hidden`) does not create a scroll
+     container, so `position: sticky` descendants keep working. */
+  overflow-x: clip;
 }
 
 body {
@@ -77,6 +82,8 @@ body {
   font-family: Inter, system-ui, sans-serif;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 * {
