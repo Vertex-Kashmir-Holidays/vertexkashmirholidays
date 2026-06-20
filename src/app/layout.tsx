@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -45,9 +45,9 @@ export const metadata: Metadata = {
       "Curated Kashmir packages — honeymoon, family, adventure, luxury. Houseboat stays, Gondola, glacier treks.",
     images: [
       {
-        url: "/brand/icon.png",
-        width: 512,
-        height: 512,
+        url: "/brand/kit/social/vertex-og-1200x630.png",
+        width: 1200,
+        height: 630,
         alt: "Vertex Kashmir Holidays",
       },
     ],
@@ -57,13 +57,16 @@ export const metadata: Metadata = {
     title: "Vertex Kashmir Holidays",
     description:
       "Premium Kashmir tourism — honeymoon, family, adventure, luxury packages.",
-    images: ["/brand/icon.png"],
+    images: ["/brand/kit/social/vertex-og-1200x630.png"],
   },
-  icons: {
-    icon: "/brand/icon.png",
-    apple: [{ url: "/brand/icon.png", sizes: "180x180", type: "image/jpeg" }],
-    shortcut: "/brand/icon.png",
-  },
+  // favicon.ico, icon.svg and apple-icon.png are auto-discovered from src/app.
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F8F1DD" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1F3A" },
+  ],
 };
 
 export default function RootLayout({

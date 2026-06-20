@@ -812,7 +812,7 @@ async function main() {
       metaTitle: "Vertex Kashmir Holidays — Premium Kashmir Tourism & Booking",
       metaDesc:
         "Discover Kashmir with Vertex — curated honeymoon, family, adventure, and luxury packages. Houseboat stays, Gondola rides, glacier treks, and expert guides. Book online.",
-      ogImage: "https://picsum.photos/seed/vertex-kashmir-og/1200/630",
+      ogImage: "/brand/kit/social/vertex-og-1200x630.png",
     },
   });
   console.log("✓ SiteSettings");

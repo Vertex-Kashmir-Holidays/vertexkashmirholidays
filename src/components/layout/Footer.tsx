@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Logo } from '@/components/brand/Logo';
 
 export interface FooterSettings {
   siteName: string;
@@ -40,6 +41,7 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
       <div className="mx-auto max-w-[1300px] px-6">
         <div className="sweep glass-strong relative overflow-hidden rounded-[2rem] p-10 text-center shadow-glass">
           <div className="pointer-events-none absolute -left-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-3xl"></div>
+          <div aria-hidden className="orb orb-gold absolute -right-16 -bottom-16 h-64 w-64"></div>
           <h2 className="rv h-display text-4xl font-bold text-foreground">
             Ready to step <span className="grad-text-cool italic">through the portal?</span>
           </h2>
@@ -68,17 +70,7 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
       <div className="mt-16 border-t border-border bg-card/60 backdrop-blur">
         <div className="mx-auto grid max-w-[1300px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground ring-inner">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              </span>
-              <span className="leading-none">
-                <span className="block font-display text-lg font-extrabold text-foreground">{siteName}</span>
-                <span className="block text-[9px] font-bold tracking-[0.4em] text-primary">HOLIDAYS</span>
-              </span>
-            </div>
+            <Logo variant="auto" href="/" className="h-9" />
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">{tagline}</p>
             <div className="mt-5 flex gap-2.5">
               {settings?.instagram && (

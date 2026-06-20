@@ -22,13 +22,13 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         aria-hidden
         className="absolute inset-0 overflow-hidden pointer-events-none"
       >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-brand-orange/5 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gold/5 blur-3xl" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md">
         <Logo variant="auto" className="mb-10" />
 
-        <p className="text-brand-orange font-semibold text-sm uppercase tracking-widest mb-3">
+        <p className="text-gold font-semibold text-sm uppercase tracking-widest mb-3">
           Something went wrong
         </p>
 

@@ -344,7 +344,7 @@ function InquiryCard() {
             type="submit"
             disabled={isSubmitting}
             size="lg"
-            className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-semibold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 rounded-full"
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 rounded-full"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
