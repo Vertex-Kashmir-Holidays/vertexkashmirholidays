@@ -219,9 +219,9 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
             </div>
 
             {/* Info bar */}
-            <div className="mt-8 grid grid-cols-2 gap-y-6 rounded-2xl border border-[hsl(40_14%_87%)] bg-white px-7 py-7 shadow-soft dark:border-mute/20 dark:bg-card sm:grid-cols-4">
+            <div className="mt-8 grid grid-cols-2 gap-y-6 rounded-2xl border border-[hsl(40_14%_87%)] bg-white px-3 py-6 shadow-soft dark:border-mute/20 dark:bg-card sm:grid-cols-4 sm:px-7 sm:py-7">
               {data.info.map((it, i) => (
-                <div key={it.id} className={`flex flex-col items-center px-4 text-center ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
+                <div key={it.id} className={`flex flex-col items-center px-2 text-center sm:px-4 ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
                   <ItineraryIcon icon={it.icon} className="h-6 w-6 text-[hsl(156_40%_21%)] dark:text-primary" />
                   <EditableField value={it.value} onValueChange={(v) => updateInfo(it.id, "value", v)} className="mt-2.5 text-center text-sm font-bold" />
                   <EditableField value={it.label} onValueChange={(v) => updateInfo(it.id, "label", v)} className="text-center text-[10.5px] text-mute dark:text-muted-foreground" />
@@ -251,14 +251,14 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                     <div className="min-w-0 flex-1">
                       <EditableField value={day.title} onValueChange={(v) => updateDay(day.id, { title: v })} className="font-serif text-xl font-bold text-ink dark:text-foreground" />
                       <EditableField value={day.body} onValueChange={(v) => updateDay(day.id, { body: v })} className="mt-1.5 block text-sm leading-relaxed text-ink/70 dark:text-muted-foreground" rows={3} />
-                      <div className="mt-4 flex flex-wrap gap-x-9 gap-y-3">
+                      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 sm:gap-x-9">
                         {day.meta.map((m) => (
                           <div key={m.id} className="metaitem group/m relative flex items-start gap-2">
                             <button onClick={() => removeMeta(day.id, m.id)} className="absolute -left-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white text-xs group-hover/m:flex no-print">×</button>
                             <ItineraryIcon icon={m.label.trim().toLowerCase()} className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary" />
                             <div className="leading-tight">
-                              <EditableField value={m.label} onValueChange={(v) => updateMeta(day.id, m.id, "label", v)} className="w-[110px] text-[11px] font-bold" />
-                              <EditableField value={m.value} onValueChange={(v) => updateMeta(day.id, m.id, "value", v)} className="w-[150px] text-[11px] text-mute dark:text-muted-foreground" />
+                              <EditableField value={m.label} onValueChange={(v) => updateMeta(day.id, m.id, "label", v)} className="w-[96px] text-[11px] font-bold sm:w-[110px]" />
+                              <EditableField value={m.value} onValueChange={(v) => updateMeta(day.id, m.id, "value", v)} className="w-[120px] text-[11px] text-mute dark:text-muted-foreground sm:w-[150px]" />
                             </div>
                           </div>
                         ))}
@@ -319,9 +319,9 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
             <button onClick={addHotel} className={addBtn}><Plus className="h-3 w-3" /> Add Hotel</button>
             <p className="mt-2.5 text-[10.5px] italic text-mute dark:text-muted-foreground">*All accommodations are subject to availability at the time of confirmation.</p>
 
-            <div className="mt-7 grid grid-cols-2 gap-y-6 rounded-2xl bg-[hsl(40_33%_96%)] px-7 py-6 dark:bg-muted/20 sm:grid-cols-4">
+            <div className="mt-7 grid grid-cols-2 gap-y-6 rounded-2xl bg-[hsl(40_33%_96%)] px-3 py-6 dark:bg-muted/20 sm:grid-cols-4 sm:px-7">
               {data.trust.map((t, i) => (
-                <div key={t.id} className={`flex flex-col items-center px-3 text-center ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
+                <div key={t.id} className={`flex flex-col items-center px-2 text-center sm:px-3 ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
                   <ItineraryIcon icon={t.icon} className="h-6 w-6 text-[hsl(156_40%_21%)] dark:text-primary" />
                   <EditableField value={t.title} onValueChange={(v) => updateTrust(t.id, "title", v)} className="mt-2 text-center text-xs font-bold" />
                   <EditableField value={t.subtitle} onValueChange={(v) => updateTrust(t.id, "subtitle", v)} className="text-center text-[10px] leading-snug text-mute dark:text-muted-foreground" />

@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
-import { groupServices, serviceFields, parseInclusions, type ServiceKind } from "@/lib/bookings/serviceDisplay";
+import { groupServiceTables, parseInclusions, type ServiceKind } from "@/lib/bookings/serviceDisplay";
 
 export const metadata: Metadata = { title: "Booking Details — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
@@ -62,7 +62,7 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
     services: booking.services,
   });
 
-  const grouped = groupServices(booking.services);
+  const serviceTables = groupServiceTables(booking.services);
   const inclusions = parseInclusions(booking.inclusions);
   const ref = booking.id.slice(-8).toUpperCase();
   const statusLabel = PAYMENT_STATUS_LABELS[finance.paymentStatus];
@@ -107,36 +107,37 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       {/* Service details — no per-service prices */}
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display font-bold text-foreground">Your Trip Includes</h2>
-        {grouped.length === 0 && inclusions.length === 0 ? (
+        {serviceTables.length === 0 && inclusions.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">Service details will appear here once your trip is finalised.</p>
         ) : (
           <div className="mt-4 space-y-5">
-            {grouped.map((g) => {
+            {serviceTables.map((g) => {
               const Icon = KIND_ICONS[g.kind];
               return (
                 <div key={g.kind}>
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary">
-                    <Icon className="h-3.5 w-3.5" /> {g.label}
+                    <Icon className="h-3.5 w-3.5" /> {g.title}
                   </p>
-                  <ul className="space-y-2">
-                    {g.items.map((s) => {
-                      const fields = serviceFields(s);
-                      return (
-                        <li key={s.id} className="rounded-xl border border-border px-3 py-2">
-                          <p className="text-sm font-semibold text-foreground">{s.name}</p>
-                          {fields.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                              {fields.map((f) => (
-                                <span key={f.label} className="text-xs text-muted-foreground">
-                                  <span className="font-semibold text-foreground/70">{f.label}:</span> {f.value}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {g.headers.map((h) => (
+                            <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {g.rows.map((r, ri) => (
+                          <tr key={ri}>
+                            {r.map((c, ci) => (
+                              <td key={ci} className={cn("px-3 py-2", ci === 0 ? "font-semibold text-foreground" : "text-muted-foreground")}>{c}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               );
             })}

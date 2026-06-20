@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { groupServiceTables } from "@/lib/bookings/serviceDisplay";
 
 function createTransporter() {
   if (!process.env.SMTP_HOST) return null;
@@ -415,50 +416,6 @@ interface BookingInvoiceData {
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
-const KIND_LABELS: Record<InvoiceService["kind"], string> = {
-  HOTEL: "Accommodation",
-  TRANSPORT: "Transport",
-  ACTIVITY: "Activities",
-  OTHER: "Other Inclusions",
-};
-
-// Structured, labelled fields for a service — never includes price. Mirrors the
-// admin services UI columns (Hotel: Location/Nights, Transport: Pickup/Drop,
-// Activity: Duration/Location).
-function serviceFields(s: InvoiceService): { label: string; value: string }[] {
-  const fields: { label: string; value: string }[] = [];
-  switch (s.kind) {
-    case "HOTEL":
-      if (s.location) fields.push({ label: "Location", value: s.location });
-      if (s.nights != null) fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
-      break;
-    case "TRANSPORT":
-      if (s.pickup) fields.push({ label: "Pickup", value: s.pickup });
-      if (s.dropoff) fields.push({ label: "Drop", value: s.dropoff });
-      break;
-    case "ACTIVITY":
-      if (s.timing) fields.push({ label: "Duration", value: s.timing });
-      if (s.location) fields.push({ label: "Location", value: s.location });
-      break;
-    default:
-      break;
-  }
-  return fields;
-}
-
-// Human detail line for a service — never includes price.
-function serviceDetailLine(s: InvoiceService): string {
-  return serviceFields(s)
-    .map((f) => `${f.label}: ${f.value}`)
-    .join(" · ");
-}
-
-function groupServices(services: InvoiceService[]) {
-  return (["HOTEL", "TRANSPORT", "ACTIVITY", "OTHER"] as const)
-    .map((kind) => ({ kind, items: services.filter((x) => x.kind === kind) }))
-    .filter((g) => g.items.length > 0);
-}
-
 export function bookingInvoiceText(data: BookingInvoiceData): string {
   const { text: waText } = resolveWhatsApp(data.whatsappNumber);
   const lines = [
@@ -470,11 +427,11 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
   if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
   if (data.travellers) lines.push(`Travellers: ${data.travellers}`);
   lines.push("", "Your package includes:");
-  for (const g of groupServices(data.services)) {
-    lines.push(`  ${KIND_LABELS[g.kind]}:`);
-    for (const s of g.items) {
-      const detail = serviceDetailLine(s);
-      lines.push(`    • ${s.name}${detail ? ` — ${detail}` : ""}`);
+  for (const g of groupServiceTables(data.services)) {
+    lines.push(`  ${g.title}:`);
+    lines.push(`    ${g.headers.join(" | ")}`);
+    for (const r of g.rows) {
+      lines.push(`    ${r.join(" | ")}`);
     }
   }
   if (data.inclusions.length) {
@@ -498,25 +455,31 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
 export function bookingInvoiceHtml(data: BookingInvoiceData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
 
-  const serviceBlocks = groupServices(data.services)
+  const serviceBlocks = groupServiceTables(data.services)
     .map((g) => {
-      const rows = g.items
-        .map((s) => {
-          const fields = serviceFields(s);
-          const detailHtml = fields.length
-            ? `<div style="color:#777777;font-size:11px;margin-top:2px">${fields
-                .map((f) => `<span style="margin-right:10px"><span style="color:#999999">${escapeHtml(f.label)}:</span> ${escapeHtml(f.value)}</span>`)
-                .join("")}</div>`
-            : "";
-          return `<li style="margin:0 0 8px;list-style:none">
-            <div style="color:#1a1a1a;font-size:13px;font-weight:700">${escapeHtml(s.name)}</div>
-            ${detailHtml}
-          </li>`;
-        })
+      const headCells = g.headers
+        .map(
+          (h, i) =>
+            `<th style="padding:7px 10px;border-bottom:1px solid #e6e6e6;font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:#ffffff;text-align:${i === 0 ? "left" : "left"}">${escapeHtml(h)}</th>`,
+        )
         .join("");
-      return `<div style="margin:0 0 14px">
-        <p style="margin:0 0 6px;color:${BRAND};font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase">${escapeHtml(KIND_LABELS[g.kind])}</p>
-        <ul style="margin:0;padding:0">${rows}</ul>
+      const bodyRows = g.rows
+        .map(
+          (r) =>
+            `<tr>${r
+              .map(
+                (c, i) =>
+                  `<td style="padding:8px 10px;border-bottom:1px solid #eeeeee;font-size:12px;color:${i === 0 ? "#1a1a1a" : "#666666"};font-weight:${i === 0 ? "700" : "400"}">${escapeHtml(c)}</td>`,
+              )
+              .join("")}</tr>`,
+        )
+        .join("");
+      return `<div style="margin:0 0 16px">
+        <p style="margin:0 0 6px;color:${BRAND};font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase">${escapeHtml(g.title)}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid #eeeeee;border-radius:8px;overflow:hidden">
+          <thead><tr style="background:${BRAND}">${headCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
       </div>`;
     })
     .join("");

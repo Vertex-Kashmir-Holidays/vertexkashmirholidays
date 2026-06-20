@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, Lock, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Loader2, Lock, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle, Pencil, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
 import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
@@ -448,7 +448,15 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
       </div>
 
       {/* Payments ledger */}
-      <PaymentsCard bookingId={booking.id} payments={payments} gstRates={gstRates} balance={finance.balance} onAdded={(p) => setPayments((prev) => [...prev, p])} />
+      <PaymentsCard
+        bookingId={booking.id}
+        payments={payments}
+        gstRates={gstRates}
+        balance={finance.balance}
+        onAdded={(p) => setPayments((prev) => [...prev, p])}
+        onUpdated={(p) => setPayments((prev) => prev.map((x) => (x.id === p.id ? p : x)))}
+        onRemoved={(pid) => setPayments((prev) => prev.filter((x) => x.id !== pid))}
+      />
 
       {/* Lock CTA */}
       {!locked ? (
@@ -782,7 +790,7 @@ function ServiceRow({
   );
 }
 
-function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded }: { bookingId: string; payments: Payment[]; gstRates: number[]; balance: number; onAdded: (p: Payment) => void }) {
+function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdated, onRemoved }: { bookingId: string; payments: Payment[]; gstRates: number[]; balance: number; onAdded: (p: Payment) => void; onUpdated: (p: Payment) => void; onRemoved: (id: string) => void }) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("PARTIAL");
   const [method, setMethod] = useState<string>("Cash");
@@ -792,6 +800,13 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded }: { boo
 
   // GST is only offered for non-cash methods (server enforces the same rule).
   const gstEligible = !isCashMethod(method);
+
+  // Once the balance is cleared, there is nothing left to collect — hide the add
+  // row and show a totals summary instead.
+  const fullyPaid = balance <= 0 && payments.length > 0;
+  const totalReceived = payments.filter((p) => p.type !== "REFUND").reduce((t, p) => t + p.amount, 0);
+  const refundedTotal = payments.filter((p) => p.type === "REFUND").reduce((t, p) => t + p.amount, 0);
+  const gstTotal = payments.reduce((t, p) => t + (p.gstAmount ?? 0), 0);
 
   function add() {
     const amt = parseFloat(amount);
@@ -845,69 +860,233 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded }: { boo
               <th className="py-2 pr-3 font-bold">GST</th>
               <th className="py-2 pr-3 font-bold">Note</th>
               <th className="py-2 pr-3 font-bold">Date</th>
-              <th className="py-2 text-right font-bold">Amount</th>
+              <th className="py-2 pr-3 text-right font-bold">Amount</th>
+              <th className="py-2 text-right font-bold">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {payments.length === 0 ? (
-              <tr><td colSpan={6} className="py-4 text-center text-muted-foreground">No payments recorded.</td></tr>
+              <tr><td colSpan={7} className="py-4 text-center text-muted-foreground">No payments recorded.</td></tr>
             ) : (
               payments.map((p) => (
-                <tr key={p.id}>
-                  <td className="py-2 pr-3"><span className="font-bold text-foreground">{p.type}</span></td>
-                  <td className="py-2 pr-3 text-muted-foreground">{p.method ?? "—"}</td>
-                  <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
-                    {p.gstPercent ? `${p.gstPercent}% · ${inr(p.gstAmount ?? 0)}` : "—"}
-                  </td>
-                  <td className="py-2 pr-3 text-muted-foreground">{p.note ?? "—"}</td>
-                  <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">{new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}</td>
-                  <td className="py-2 text-right font-bold text-foreground">{inr(p.amount)}</td>
-                </tr>
+                <PaymentRow key={p.id} bookingId={bookingId} payment={p} gstRates={gstRates} onUpdated={onUpdated} onRemoved={onRemoved} />
               ))
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
-        <label className="w-24">
-          <span className="text-[10px] font-semibold text-muted-foreground">Amount</span>
-          <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} mt-0.5`} />
-        </label>
-        <label className="w-24">
-          <span className="text-[10px] font-semibold text-muted-foreground">Type</span>
-          <select value={type} onChange={(e) => setType(e.target.value)} className={`${inputCls} mt-0.5`}>
+      {fullyPaid ? (
+        <div className="mt-4 border-t border-border pt-3 space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Total Payments Received</span>
+            <span className="font-extrabold text-foreground">{inr(totalReceived)}</span>
+          </div>
+          {gstTotal > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">GST Total (incl. above)</span>
+              <span className="font-semibold text-foreground">{inr(gstTotal)}</span>
+            </div>
+          )}
+          {refundedTotal > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Refunds</span>
+              <span className="font-semibold text-foreground">– {inr(refundedTotal)}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 pt-1 text-xs font-bold text-green-600 dark:text-green-400">
+            <CheckCircle2 className="w-4 h-4" /> Fully paid — no further payment required.
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
+          <label className="w-24">
+            <span className="text-[10px] font-semibold text-muted-foreground">Amount</span>
+            <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} mt-0.5`} />
+          </label>
+          <label className="w-24">
+            <span className="text-[10px] font-semibold text-muted-foreground">Type</span>
+            <select value={type} onChange={(e) => setType(e.target.value)} className={`${inputCls} mt-0.5`}>
+              <option value="TOKEN">Token</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="FINAL">Final</option>
+              <option value="REFUND">Refund</option>
+            </select>
+          </label>
+          <label className="w-28">
+            <span className="text-[10px] font-semibold text-muted-foreground">Method</span>
+            <select
+              value={method}
+              onChange={(e) => { setMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
+              className={`${inputCls} mt-0.5`}
+            >
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </label>
+          <label className="w-24">
+            <span className="text-[10px] font-semibold text-muted-foreground">GST</span>
+            <select value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} disabled={!gstEligible} title={gstEligible ? undefined : "GST does not apply to cash payments."} className={`${inputCls} mt-0.5`}>
+              <option value="">No GST</option>
+              {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
+            </select>
+          </label>
+          <label className="flex-1 min-w-[120px]">
+            <span className="text-[10px] font-semibold text-muted-foreground">Note</span>
+            <input value={note} onChange={(e) => setNote(e.target.value)} className={`${inputCls} mt-0.5`} />
+          </label>
+          <button onClick={add} disabled={pending} className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 disabled:opacity-50">
+            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Add Payment
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bookingId: string; payment: Payment; gstRates: number[]; onUpdated: (p: Payment) => void; onRemoved: (id: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [amount, setAmount] = useState(String(payment.amount));
+  const [type, setType] = useState(payment.type);
+  const [method, setMethod] = useState<string>(payment.method ?? "Cash");
+  const [gstPercent, setGstPercent] = useState<string>(payment.gstPercent ? String(payment.gstPercent) : "");
+  const [note, setNote] = useState(payment.note ?? "");
+  const [pending, start] = useTransition();
+  const gstEligible = !isCashMethod(method);
+  const date = new Date(payment.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" });
+
+  function startEdit() {
+    setAmount(String(payment.amount));
+    setType(payment.type);
+    setMethod(payment.method ?? "Cash");
+    setGstPercent(payment.gstPercent ? String(payment.gstPercent) : "");
+    setNote(payment.note ?? "");
+    setEditing(true);
+  }
+
+  function save() {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount.");
+    start(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/payments/${payment.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: amt,
+            type,
+            method: method.trim() || null,
+            note: note.trim() || null,
+            gstPercent: gstEligible && gstPercent ? parseFloat(gstPercent) : null,
+          }),
+        });
+        const j = (await res.json().catch(() => ({}))) as Payment & { error?: string; emailed?: boolean };
+        if (!res.ok) {
+          toast.error(j.error ?? "Update failed.");
+          return;
+        }
+        toast.success(j.emailed ? "Payment updated. Receipt re-sent." : "Payment updated.");
+        onUpdated(j);
+        setEditing(false);
+      } catch {
+        toast.error("An error occurred.");
+      }
+    });
+  }
+
+  function del() {
+    start(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/payments/${payment.id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          toast.error(j.error ?? "Delete failed.");
+          return;
+        }
+        toast.success("Payment deleted.");
+        onRemoved(payment.id);
+      } catch {
+        toast.error("An error occurred.");
+      }
+    });
+  }
+
+  if (editing) {
+    return (
+      <tr>
+        <td className="py-2 pr-2">
+          <select value={type} onChange={(e) => setType(e.target.value)} className={`${inputCls} py-1`}>
             <option value="TOKEN">Token</option>
             <option value="PARTIAL">Partial</option>
             <option value="FINAL">Final</option>
             <option value="REFUND">Refund</option>
           </select>
-        </label>
-        <label className="w-28">
-          <span className="text-[10px] font-semibold text-muted-foreground">Method</span>
-          <select
-            value={method}
-            onChange={(e) => { setMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
-            className={`${inputCls} mt-0.5`}
-          >
+        </td>
+        <td className="py-2 pr-2">
+          <select value={method} onChange={(e) => { setMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }} className={`${inputCls} py-1`}>
             {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
-        </label>
-        <label className="w-24">
-          <span className="text-[10px] font-semibold text-muted-foreground">GST</span>
-          <select value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} disabled={!gstEligible} title={gstEligible ? undefined : "GST does not apply to cash payments."} className={`${inputCls} mt-0.5`}>
+        </td>
+        <td className="py-2 pr-2">
+          <select value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} disabled={!gstEligible} title={gstEligible ? undefined : "GST does not apply to cash payments."} className={`${inputCls} py-1`}>
             <option value="">No GST</option>
             {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
           </select>
-        </label>
-        <label className="flex-1 min-w-[120px]">
-          <span className="text-[10px] font-semibold text-muted-foreground">Note</span>
-          <input value={note} onChange={(e) => setNote(e.target.value)} className={`${inputCls} mt-0.5`} />
-        </label>
-        <button onClick={add} disabled={pending} className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 disabled:opacity-50">
-          {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Add Payment
-        </button>
-      </div>
-    </div>
+        </td>
+        <td className="py-2 pr-2">
+          <input value={note} onChange={(e) => setNote(e.target.value)} className={`${inputCls} py-1`} />
+        </td>
+        <td className="py-2 pr-2 text-muted-foreground whitespace-nowrap">{date}</td>
+        <td className="py-2 pr-2">
+          <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} py-1 text-right`} />
+        </td>
+        <td className="py-2">
+          <div className="flex items-center justify-end gap-1">
+            <button onClick={save} disabled={pending} title="Save" className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+              {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={() => setEditing(false)} disabled={pending} title="Cancel" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-50">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr>
+      <td className="py-2 pr-3"><span className="font-bold text-foreground">{payment.type}</span></td>
+      <td className="py-2 pr-3 text-muted-foreground">{payment.method ?? "—"}</td>
+      <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">
+        {payment.gstPercent ? `${payment.gstPercent}% · ${inr(payment.gstAmount ?? 0)}` : "—"}
+      </td>
+      <td className="py-2 pr-3 text-muted-foreground">{payment.note ?? "—"}</td>
+      <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">{date}</td>
+      <td className="py-2 pr-3 text-right font-bold text-foreground">{inr(payment.amount)}</td>
+      <td className="py-2">
+        <div className="flex items-center justify-end gap-1">
+          {confirmDel ? (
+            <>
+              <button onClick={del} disabled={pending} title="Confirm delete" className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">
+                {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              </button>
+              <button onClick={() => setConfirmDel(false)} disabled={pending} title="Cancel" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-50">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={startEdit} title="Edit" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-border text-muted-foreground hover:text-primary hover:bg-primary/10">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setConfirmDel(true)} title="Delete" className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-border text-muted-foreground hover:text-red-500 hover:bg-red-500/10">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 }
