@@ -2,6 +2,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Phone, Calendar, ChevronDown, FileText, Zap } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
+import { WhatsAppIcon } from '@/components/icons/brand';
 import Link from 'next/link';
 
 interface DestinationDetailHeroProps {
@@ -28,7 +31,7 @@ export function DestinationDetailHero({
   return (
     <section className="relative bg-brand-dark">
       <motion.img
-        src={image}
+        src={imgSrc(image)}
         alt={name}
         className="absolute inset-0 h-full w-full object-cover"
         initial={{ scale: 1.1 }}
@@ -129,9 +132,7 @@ export function DestinationDetailHero({
                     className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/80"
                     placeholder="Phone Number"
                   />
-                  <svg viewBox="0 0 24 24" className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
-                  </svg>
+                  <Phone className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
                 </div>
                 <div className="flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                   <input
@@ -140,10 +141,7 @@ export function DestinationDetailHero({
                     placeholder="Travel Date"
                     onFocus={(e) => (e.target.type = 'date')}
                   />
-                  <svg viewBox="0 0 24 24" className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <path d="M16 2v4M8 2v4M3 10h18" />
-                  </svg>
+                  <Calendar className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
                 </div>
                 <div className="relative">
                   <select
@@ -159,9 +157,7 @@ export function DestinationDetailHero({
                     <option>5</option>
                     <option>6+</option>
                   </select>
-                  <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" strokeWidth={2.4} />
                 </div>
                 <motion.button
                   type="submit"
@@ -169,17 +165,13 @@ export function DestinationDetailHero({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                    <path d="M14 2v6h6" />
-                  </svg>
-                  Get a Free Itinerary ⚡
+                  <FileText className="h-4 w-4" strokeWidth={2} />
+                  Get a Free Itinerary
+                  <Zap className="h-4 w-4 fill-current" strokeWidth={2} />
                 </motion.button>
               </form>
               <a href="#" className="mt-3.5 flex items-center justify-center gap-2 text-[13px] font-bold text-primary transition hover:underline">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
-                </svg>
+                <WhatsAppIcon className="h-4 w-4" />
                 Chat on WhatsApp
               </a>
             </div>

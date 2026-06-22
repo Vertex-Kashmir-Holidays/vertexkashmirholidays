@@ -7,6 +7,8 @@ import { auth } from "@/lib/auth";
 const updateSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters").optional(),
+    // Profile picture URL. Empty string clears it (back to the default avatar).
+    image: z.string().max(2048).optional(),
     currentPassword: z.string().optional(),
     newPassword: z.string().min(6, "New password must be at least 6 characters").optional(),
   })
@@ -36,10 +38,11 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const { name, currentPassword, newPassword } = parsed.data;
-  const data: { name?: string; passwordHash?: string } = {};
+  const { name, image, currentPassword, newPassword } = parsed.data;
+  const data: { name?: string; image?: string | null; passwordHash?: string } = {};
 
   if (name !== undefined) data.name = name;
+  if (image !== undefined) data.image = image.trim() === "" ? null : image.trim();
 
   if (newPassword) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
@@ -59,7 +62,7 @@ export async function PATCH(req: Request) {
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data,
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, image: true },
   });
 
   return NextResponse.json({ user: updated });

@@ -8,9 +8,10 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Upload, Loader2, Eye,
-  GripVertical, ImageIcon, X,
+  GripVertical, ImageIcon, X, Images,
   CheckCircle2, XCircle, Save,
 } from "lucide-react";
+import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -161,6 +162,7 @@ function ImageUploadField({
   hint?: string;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
@@ -168,6 +170,7 @@ function ImageUploadField({
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("folder", "tours");
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const json = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) throw new Error(json.error ?? "Upload failed");
@@ -194,6 +197,14 @@ function ImageUploadField({
         />
         <button
           type="button"
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-2.5 border border-dashed border-border rounded-xl text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
+        >
+          <Images className="w-3.5 h-3.5" />
+          Gallery
+        </button>
+        <button
+          type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           className="flex items-center gap-1.5 px-3 py-2.5 border border-dashed border-border rounded-xl text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
@@ -209,6 +220,7 @@ function ImageUploadField({
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
       </div>
+      <GalleryPicker open={pickerOpen} type="IMAGE" onSelect={onChange} onClose={() => setPickerOpen(false)} />
       {value && (
         <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -283,6 +295,8 @@ export function PackageForm({ defaults }: PackageFormProps) {
   const { fields: inclusionFields, append: addInclusion, remove: removeInclusion } = useFieldArray({ control, name: "inclusions" });
   const { fields: exclusionFields, append: addExclusion, remove: removeExclusion } = useFieldArray({ control, name: "exclusions" });
   const { fields: galleryFields, append: addGalleryItem, remove: removeGalleryItem } = useFieldArray({ control, name: "gallery" });
+  // Gallery picker for appending existing media to the tour's gallery array.
+  const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
 
   // ── Auto-slug from title (new tours only) ──────────────────────────────────
   const titleValue = watch("title");
@@ -584,13 +598,22 @@ export function PackageForm({ defaults }: PackageFormProps) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <FieldLabel>Gallery Images</FieldLabel>
-              <button
-                type="button"
-                onClick={() => addGalleryItem({ url: "" })}
-                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Image
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGalleryPickerOpen(true)}
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Images className="w-3.5 h-3.5" /> From Gallery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addGalleryItem({ url: "" })}
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Image
+                </button>
+              </div>
             </div>
             {galleryFields.length === 0 ? (
               <p className="text-xs text-muted-foreground py-2">No gallery images added yet.</p>
@@ -618,6 +641,13 @@ export function PackageForm({ defaults }: PackageFormProps) {
               </div>
             )}
           </div>
+          <GalleryPicker
+            open={galleryPickerOpen}
+            type="IMAGE"
+            title="Add images to this tour's gallery"
+            onSelect={(url) => addGalleryItem({ url })}
+            onClose={() => setGalleryPickerOpen(false)}
+          />
         </SectionCard>
 
         {/* 4. SEO & Settings */}

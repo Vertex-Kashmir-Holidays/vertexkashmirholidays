@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { imgSrc } from '@/lib/placeholder';
 
 interface DestinationDetailGalleryProps {
   name: string;
@@ -37,7 +38,7 @@ export function DestinationDetailGallery({ name, images }: DestinationDetailGall
             transition={{ delay: i * 0.05 }}
           >
             <Image
-              src={image}
+              src={imgSrc(image)}
               alt={name}
               fill
               sizes="176px"

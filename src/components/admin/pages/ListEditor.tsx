@@ -212,9 +212,9 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                     {f.label}{f.required && <span className="text-red-400"> *</span>}
                   </label>
                   {f.type === "image" ? (
-                    <ImageField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} />
+                    <ImageField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} folder={resource} />
                   ) : f.type === "video" ? (
-                    <VideoField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} />
+                    <VideoField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} folder={resource} />
                   ) : f.type === "textarea" ? (
                     <textarea
                       rows={3}

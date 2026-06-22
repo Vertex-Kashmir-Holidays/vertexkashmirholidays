@@ -2,6 +2,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Heart, Mail, Eye, EyeOff, ShieldCheck, User, Check } from 'lucide-react';
 import type { CountryCode } from 'libphonenumber-js';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -347,9 +348,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
               <div className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6 lg:p-7">
                 <h2 className="flex items-center gap-2.5 font-display text-[22px] font-bold text-primary sm:text-[26px]">
                   Welcome back
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="currentColor">
-                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
-                  </svg>
+                  <Heart className="h-5 w-5 text-primary" fill="currentColor" strokeWidth={0} />
                 </h2>
                 <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                   Log in to your account to manage your bookings, view itineraries and more.
@@ -376,10 +375,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                             setLoginErrors((p) => ({ ...p, email: undefined }));
                         }}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <path d="m22 7-10 6L2 7" />
-                      </svg>
+                      <Mail className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" strokeWidth={2} />
                     </div>
                     <FieldError message={loginErrors.email} />
                   </div>
@@ -404,23 +400,11 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         aria-label="Show password"
                         className="mr-3.5 shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                       >
-                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                          {showPassword ? (
-                            <>
-                              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </>
-                          ) : (
-                            <>
-                              <path d="M17.5 17.5 6.5 6.5" />
-                              <path d="M9.5 9.5A3 3 0 0 0 12 15a3 3 0 0 0 1.5-.4" />
-                              <path d="M2 12s2.5-5 10-5c3.5 0 6.5 1.5 8 3.5" />
-                              <path d="M2 12s2.5-5 10-5c3.5 0 6.5 1.5 8 3.5" />
-                              <path d="M22 12s-2.5 5-10 5c-1.5 0-3-.3-4.5-1" />
-                              <path d="M8.5 8.5a5 5 0 0 0 6 6" />
-                            </>
-                          )}
-                        </svg>
+                        {showPassword ? (
+                          <Eye className="h-4 w-4" strokeWidth={2} />
+                        ) : (
+                          <EyeOff className="h-4 w-4" strokeWidth={2} />
+                        )}
                       </button>
                     </div>
                     <FieldError message={loginErrors.password} />
@@ -437,9 +421,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Logging in…' : 'Log In'}
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
                   </button>
                 </form>
 
@@ -459,10 +441,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                 </p>
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
-                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
                   <p className="text-[12px] leading-snug">
                     <strong className="text-[12.5px]">Your data is safe with us</strong>
                     <br />
@@ -486,9 +465,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
               <div className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6 lg:p-7">
                 <h2 className="flex items-center gap-2.5 font-display text-[22px] font-bold text-primary sm:text-[26px]">
                   Create your account
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="currentColor">
-                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
-                  </svg>
+                  <Heart className="h-5 w-5 text-primary" fill="currentColor" strokeWidth={0} />
                 </h2>
                 <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                   Join thousands of happy travellers.<br/>It only takes a minute.
@@ -513,10 +490,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                           clearError('name');
                         }}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="8" r="4" />
-                        <path d="M4 21a8 8 0 0 1 16 0" />
-                      </svg>
+                      <User className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" strokeWidth={2} />
                     </div>
                     <FieldError message={errors.name} />
                   </div>
@@ -534,10 +508,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                           clearError('email');
                         }}
                       />
-                      <svg viewBox="0 0 24 24" className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <path d="m22 7-10 6L2 7" />
-                      </svg>
+                      <Mail className="mr-3.5 h-4 w-4 shrink-0 text-muted-foreground/70" strokeWidth={2} />
                     </div>
                     <FieldError message={errors.email} />
                   </div>
@@ -579,22 +550,11 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         aria-label="Show password"
                         className="mr-3.5 shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                       >
-                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                          {showPassword ? (
-                            <>
-                              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </>
-                          ) : (
-                            <>
-                              <path d="M17.5 17.5 6.5 6.5" />
-                              <path d="M9.5 9.5A3 3 0 0 0 12 15a3 3 0 0 0 1.5-.4" />
-                              <path d="M2 12s2.5-5 10-5c3.5 0 6.5 1.5 8 3.5" />
-                              <path d="M22 12s-2.5 5-10 5c-1.5 0-3-.3-4.5-1" />
-                              <path d="M8.5 8.5a5 5 0 0 0 6 6" />
-                            </>
-                          )}
-                        </svg>
+                        {showPassword ? (
+                          <Eye className="h-4 w-4" strokeWidth={2} />
+                        ) : (
+                          <EyeOff className="h-4 w-4" strokeWidth={2} />
+                        )}
                       </button>
                     </div>
                     {errors.password ? (
@@ -625,22 +585,11 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                         aria-label="Show password"
                         className="mr-3.5 shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                       >
-                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                          {showConfirmPassword ? (
-                            <>
-                              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </>
-                          ) : (
-                            <>
-                              <path d="M17.5 17.5 6.5 6.5" />
-                              <path d="M9.5 9.5A3 3 0 0 0 12 15a3 3 0 0 0 1.5-.4" />
-                              <path d="M2 12s2.5-5 10-5c3.5 0 6.5 1.5 8 3.5" />
-                              <path d="M22 12s-2.5 5-10 5c-1.5 0-3-.3-4.5-1" />
-                              <path d="M8.5 8.5a5 5 0 0 0 6 6" />
-                            </>
-                          )}
-                        </svg>
+                        {showConfirmPassword ? (
+                          <Eye className="h-4 w-4" strokeWidth={2} />
+                        ) : (
+                          <EyeOff className="h-4 w-4" strokeWidth={2} />
+                        )}
                       </button>
                     </div>
                     <FieldError message={errors.confirm} />
@@ -685,9 +634,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Creating account…' : 'Create Account'}
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
                   </button>
                 </form>
 
@@ -707,10 +654,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                 </p>
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
-                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
                   <p className="text-[12px] leading-snug">
                     <strong className="text-[12.5px]">Your data is safe with us</strong>
                     <br />
@@ -729,18 +673,13 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   }}
                   className="flex items-center gap-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:text-primary"
                 >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M11 18l-6-6 6-6" />
-                  </svg>
+                  <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
                   Edit details
                 </button>
 
                 <h2 className="mt-4 flex items-center gap-2.5 font-display text-[22px] font-bold text-primary sm:text-[26px]">
                   Verify your email
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22 7-10 6L2 7" />
-                  </svg>
+                  <Mail className="h-5 w-5 text-primary" strokeWidth={1.8} />
                 </h2>
                 <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                   Enter the 6-digit code we sent to{' '}
@@ -782,9 +721,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {verifying ? 'Verifying…' : 'Verify & Create Account'}
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6 9 17l-5-5" />
-                    </svg>
+                    <Check className="h-4 w-4" strokeWidth={2.4} />
                   </button>
                 </form>
 
@@ -805,10 +742,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                 </div>
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
-                  <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
                   <p className="text-[12px] leading-snug">
                     <strong className="text-[12.5px]">Your account isn&apos;t created yet</strong>
                     <br />

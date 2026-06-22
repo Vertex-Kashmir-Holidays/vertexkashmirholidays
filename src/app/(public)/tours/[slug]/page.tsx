@@ -48,6 +48,7 @@ async function getTour(slug: string) {
         where: { approved: true },
         orderBy: { createdAt: "desc" },
         take: 12,
+        include: { user: { select: { image: true } } },
       },
     },
   });
@@ -136,6 +137,9 @@ export default async function TourDetailsPage({ params }: PageProps) {
   const reviews = tour.reviews.map((r) => ({
     seed: r.id,
     name: r.name,
+    // Per-review picture wins, then the reviewer's profile picture; null falls
+    // back to a deterministic placeholder in the component.
+    avatar: r.avatar ?? r.user?.image ?? null,
     meta: `${r.createdAt.toLocaleDateString("en-US", {
       month: "short",
       year: "numeric",

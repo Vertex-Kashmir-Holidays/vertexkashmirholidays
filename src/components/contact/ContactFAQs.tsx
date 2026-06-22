@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { ChevronDown, ArrowRight } from 'lucide-react';
 import type { ContactFaqData, ContactSectionHeading } from '@/types/contact';
 
 interface ContactFAQsProps {
@@ -29,9 +30,7 @@ export function ContactFAQs({ heading, faqs, ctaLabel, ctaHref }: ContactFAQsPro
           <details key={faq.id} className="rounded-lg border border-border bg-card px-4 py-3 shadow-soft">
             <summary className="flex cursor-pointer items-center justify-between gap-3 text-[12.5px] font-semibold">
               {faq.question}
-              <svg viewBox="0 0 24 24" className="chev h-3.5 w-3.5 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+              <ChevronDown className="chev h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={2.4} />
             </summary>
             <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">{faq.answer}</p>
           </details>
@@ -40,9 +39,7 @@ export function ContactFAQs({ heading, faqs, ctaLabel, ctaHref }: ContactFAQsPro
       {ctaLabel && (
         <Link href={ctaHref ?? '#'} className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline">
           {ctaLabel}
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </Link>
       )}
     </motion.div>

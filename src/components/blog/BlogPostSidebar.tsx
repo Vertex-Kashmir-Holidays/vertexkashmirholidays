@@ -4,6 +4,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { MapPin, Star, CheckCircle2, ArrowRight, Clock } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface BlogPostSidebarProps {
   toc: Array<{ label: string; href: string }>;
@@ -69,17 +71,15 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <h2 className="text-[15.5px] font-bold">{relatedTour.label}</h2>
-          {relatedTour.image && (
-            <div className="relative mt-4 h-[140px] w-full overflow-hidden rounded-xl">
-              <Image
-                src={relatedTour.image}
-                alt={relatedTour.name}
-                fill
-                sizes="(max-width: 1024px) 100vw, 280px"
-                className="object-cover"
-              />
-            </div>
-          )}
+          <div className="relative mt-4 h-[140px] w-full overflow-hidden rounded-xl">
+            <Image
+              src={imgSrc(relatedTour.image)}
+              alt={relatedTour.name}
+              fill
+              sizes="(max-width: 1024px) 100vw, 280px"
+              className="object-cover"
+            />
+          </div>
           <h3 className="mt-4 text-[16px] font-bold leading-snug">{relatedTour.name}</h3>
           <p className="text-[13px] font-semibold text-muted-foreground">{relatedTour.duration}</p>
           <p className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -96,23 +96,15 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           </p>
           <ul className="mt-3.5 space-y-2 text-[12px] text-foreground/80">
             <li className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
               {relatedTour.route}
             </li>
             <li className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-amber-400" fill="currentColor">
-                <path d="m12 2 3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1Z" />
-              </svg>
-              {relatedTour.rating} ★ ({relatedTour.reviews})
+              <Star className="h-3.5 w-3.5 shrink-0 text-amber-400" fill="currentColor" strokeWidth={0} />
+              {relatedTour.rating} ({relatedTour.reviews})
             </li>
             <li className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="m9 12 2 2 4-5" />
-              </svg>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
               {relatedTour.note}
             </li>
           </ul>
@@ -121,9 +113,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
             className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
           >
             View Details
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
           </Link>
           <Link href={relatedTour.href} className="mt-3 block text-center text-[12.5px] font-bold text-primary underline-offset-2 hover:underline">
             Customize this trip
@@ -161,10 +151,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           </motion.button>
         </form>
         <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 3" />
-          </svg>
+          <Clock className="h-3.5 w-3.5" strokeWidth={2} />
           No spam. Unsubscribe anytime.
         </p>
       </motion.div>

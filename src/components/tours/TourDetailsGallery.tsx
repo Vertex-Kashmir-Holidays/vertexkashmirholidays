@@ -3,6 +3,8 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { Images } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface TourDetailsGalleryProps {
   images: string[];
@@ -29,7 +31,7 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
             transition={{ duration: 0.3 }}
           >
             <Image
-              src={img}
+              src={imgSrc(img)}
               alt=""
               fill
               sizes="(max-width: 768px) 50vw, 25vw"
@@ -44,11 +46,7 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
           className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline"
         >
           View All Photos
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="9" cy="9" r="2" />
-            <path d="m21 15-3.8-3.8a2 2 0 0 0-2.8 0L6 20" />
-          </svg>
+          <Images className="h-4 w-4" strokeWidth={2} />
         </a>
       </div>
     </motion.section>

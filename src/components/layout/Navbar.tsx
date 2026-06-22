@@ -8,6 +8,8 @@ import { Logo } from '@/components/brand/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import { motion, AnimatePresence } from 'framer-motion';
+import { User, Menu, X, Home, ShoppingBag, MapPin, type LucideIcon } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/brand';
 
 export function Navbar() {
   const { siteName } = useSiteSettings();
@@ -18,7 +20,7 @@ export function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40);
+    const handleScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -37,10 +39,10 @@ export function Navbar() {
     { href: '/contact', label: 'Contact' },
   ];
 
-  const bottomNavLinks = [
-    { href: '/', label: 'Home', icon: 'M3 12l9-9 9 9M9 21v-6h6v6' },
-    { href: '/tours', label: 'Tours', icon: 'M3 11h18l-2 8H5ZM8 11V7a4 4 0 0 1 8 0v4' },
-    { href: '/destinations', label: 'Destinations', icon: 'M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0ZM12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6' },
+  const bottomNavLinks: { href: string; label: string; Icon: LucideIcon }[] = [
+    { href: '/', label: 'Home', Icon: Home },
+    { href: '/tours', label: 'Tours', Icon: ShoppingBag },
+    { href: '/destinations', label: 'Destinations', Icon: MapPin },
   ];
 
   const isActive = (path: string) => {
@@ -61,8 +63,8 @@ export function Navbar() {
     <>
       <header className="fixed inset-x-0 top-0 z-50 px-3 transition-all duration-500 sm:px-4 lg:px-0">
         <nav
-          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-all duration-500 sm:px-5 lg:px-6 ${
-            overHero ? 'bg-transparent' : 'glass-cream'
+          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-5 lg:px-6 ${
+            overHero ? 'bg-transparent' : 'nav-pill-solid'
           }`}
         >
           {/* Logo — white lockup over the hero photo (transparent state), then
@@ -113,10 +115,7 @@ export function Navbar() {
                   : 'border-foreground/20 text-foreground hover:bg-foreground hover:text-background'
               }`}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <User className="h-4 w-4" strokeWidth={2} />
             </Link>
             <Link
               href={planTripHref}
@@ -124,9 +123,7 @@ export function Navbar() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
-              </svg>
+              <WhatsAppIcon className="h-4 w-4" />
               Plan My Trip
             </Link>
           </div>
@@ -149,9 +146,7 @@ export function Navbar() {
                 isActive(link.href) ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
               }`}
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d={link.icon} />
-              </svg>
+              <link.Icon className="h-5 w-5" strokeWidth={1.8} />
               <span className="text-[9px] font-medium">{link.label}</span>
             </Link>
           ))}
@@ -163,10 +158,7 @@ export function Navbar() {
               pathname === '/login' ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
             }`}
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
+            <User className="h-5 w-5" strokeWidth={1.8} />
             <span className="text-[9px] font-medium">Profile</span>
           </Link>
           
@@ -178,17 +170,11 @@ export function Navbar() {
             }`}
             aria-label="Toggle menu"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              {mobileMenuOpen ? (
-                <path d="M18 6 6 18M6 6l12 12" />
-              ) : (
-                <>
-                  <path d="M3 12h18" />
-                  <path d="M3 6h18" />
-                  <path d="M3 18h18" />
-                </>
-              )}
-            </svg>
+            {mobileMenuOpen ? (
+              <X className="h-5 w-5" strokeWidth={1.8} />
+            ) : (
+              <Menu className="h-5 w-5" strokeWidth={1.8} />
+            )}
             <span className="text-[9px] font-medium">Menu</span>
           </button>
         </div>
@@ -234,9 +220,7 @@ export function Navbar() {
                 ease: "linear"
               }}
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-                <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
-              </svg>
+              <WhatsAppIcon className="h-5 w-5" />
             </motion.div>
             <span className="text-sm font-bold text-primary-foreground">Plan My Trip</span>
             

@@ -3,12 +3,14 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { FileCheck, FileText, BadgeIndianRupee, Clock } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/brand';
 
 export function DestinationsCTABand() {
   const features = [
-    { t: 'Free Consultation', s: 'No obligation', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8ZM14 2v6h6M9 14l2 2 4-4' },
-    { t: 'Custom Itineraries', s: 'Tailored for you', icon: 'M4 3h16v18H4ZM8 7h8M8 11h8M8 15h5' },
-    { t: 'Best Price Guarantee', s: 'Always', icon: 'M12 7v1m0 8v1m2.5-7.5c0-1-1.1-1.7-2.5-1.7s-2.5.7-2.5 1.6c0 2.4 5 1.4 5 3.8 0 .9-1.1 1.6-2.5 1.6s-2.5-.7-2.5-1.7' },
+    { t: 'Free Consultation', s: 'No obligation', Icon: FileCheck },
+    { t: 'Custom Itineraries', s: 'Tailored for you', Icon: FileText },
+    { t: 'Best Price Guarantee', s: 'Always', Icon: BadgeIndianRupee },
   ];
 
   return (
@@ -44,9 +46,7 @@ export function DestinationsCTABand() {
               {features.map((feat, i) => (
                 <div key={i} className="text-center">
                   <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d={feat.icon} />
-                    </svg>
+                    <feat.Icon className="h-5 w-5" strokeWidth={1.8} />
                   </span>
                   <p className="mt-2.5 text-[12.5px] font-bold text-white">{feat.t}</p>
                   <p className="text-[11px] text-white/70">{feat.s}</p>
@@ -62,16 +62,11 @@ export function DestinationsCTABand() {
               >
                 Talk to an Expert
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-bright text-white">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                    <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
-                  </svg>
+                  <WhatsAppIcon className="h-4 w-4" />
                 </span>
               </motion.a>
               <p className="mt-2.5 flex items-center justify-end gap-1.5 text-[12px] text-white/75">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 3" />
-                </svg>
+                <Clock className="h-3.5 w-3.5" strokeWidth={2} />
                 Reply in 60 seconds
               </p>
             </div>

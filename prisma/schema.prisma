@@ -12,6 +12,7 @@ model User {
   name         String?
   email        String    @unique
   phone        String?
+  image        String? // profile picture URL (customer-managed in /account/profile)
   passwordHash String
   role         Role      @default(CUSTOMER)
   // Set true for accounts created with a system-generated temp password (e.g. from
@@ -241,6 +242,13 @@ model Booking {
   inclusions      String        @default("[]")
   // Once locked, services can no longer be added/edited/deleted.
   servicesLocked  Boolean       @default(false)
+  // Assigned driver/vehicle, added by staff after services are locked. Editable
+  // only until one day before travelDate. driverAddedAt non-null = details exist.
+  driverName      String?
+  driverPhone     String?
+  vehicleNumber   String?
+  vehicleName     String?
+  driverAddedAt   DateTime?
   // Soft-delete marker. Non-null = hidden from all listings/reports but the row
   // (and its payments/services) is retained. Permanent delete removes the row.
   deletedAt       DateTime?
@@ -360,6 +368,7 @@ model Review {
   tourId    String
   userId    String?
   name      String
+  avatar    String? // reviewer picture; admin-set per review, overrides the user's profile image
   rating    Int
   body      String
   approved  Boolean  @default(false)
@@ -368,6 +377,9 @@ model Review {
   tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
   user      User?    @relation(fields: [userId], references: [id])
 
+  // A signed-in customer may review a given tour only once. Guest reviews have a
+  // null userId; Postgres treats NULLs as distinct, so this never blocks them.
+  @@unique([userId, tourId])
   @@index([tourId])
   @@index([approved])
 }

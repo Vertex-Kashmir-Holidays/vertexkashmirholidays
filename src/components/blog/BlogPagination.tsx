@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 
 interface BlogPaginationProps {
   currentPage: number;
@@ -65,9 +66,7 @@ export function BlogPagination({ currentPage, totalPages, onPageChange }: BlogPa
         whileTap={{ scale: 0.98 }}
       >
         Next
-        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
       </motion.button>
     </nav>
   );

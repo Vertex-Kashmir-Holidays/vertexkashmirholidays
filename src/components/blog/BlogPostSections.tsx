@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { Mountain, MapPin } from 'lucide-react';
 
 interface Section {
   title: string;
@@ -29,9 +30,7 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
       transition={{ duration: 0.5 }}
     >
       <h2 className="flex scroll-mt-24 items-center gap-2.5 text-[20px] font-bold">
-        <svg viewBox="0 0 40 40" className="h-7 w-7 text-brand-green" fill="currentColor">
-          <path d="m6 28 8-14 5 8 4-6 11 12Z" />
-        </svg>
+        <Mountain className="h-7 w-7 text-brand-green" strokeWidth={2} />
         {title}
       </h2>
       <div className="relative mt-6">
@@ -60,10 +59,7 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
                   <h3 className="text-[15.5px] font-bold">{section.title}</h3>
                   {section.tag && (
                     <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-brand-mute">
-                      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
+                      <MapPin className="h-3 w-3" strokeWidth={2} />
                       {section.tag}
                     </p>
                   )}

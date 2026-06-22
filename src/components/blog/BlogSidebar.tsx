@@ -4,6 +4,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { PenLine, ArrowRight, ShieldCheck } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 import type { BlogCategoryData, BlogPageContent, BlogTrendingData } from '@/types/blog';
 
 interface BlogSidebarProps {
@@ -25,10 +27,7 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
       >
         <div className="flex items-start gap-3.5">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
+            <PenLine className="h-5 w-5" strokeWidth={1.8} />
           </span>
           <div>
             <h2 className="text-[15px] font-bold">{content.aboutTitle}</h2>
@@ -41,9 +40,7 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
                 className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline"
               >
                 {content.aboutCtaLabel}
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
               </Link>
             )}
           </div>
@@ -109,15 +106,13 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
                 transition={{ delay: i * 0.05 }}
               >
                 <Link href={`/blog/${item.slug}`} className="group flex items-start gap-3">
-                  {item.image && (
-                    <Image
-                      src={item.image}
-                      alt=""
-                      width={68}
-                      height={52}
-                      className="h-[52px] w-[68px] shrink-0 rounded-lg object-cover"
-                    />
-                  )}
+                  <Image
+                    src={imgSrc(item.image)}
+                    alt=""
+                    width={68}
+                    height={52}
+                    className="h-[52px] w-[68px] shrink-0 rounded-lg object-cover"
+                  />
                   <div className="leading-snug">
                     <p className="text-[12.5px] font-bold transition group-hover:text-primary">
                       {item.title}
@@ -159,10 +154,7 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
           </motion.button>
         </form>
         <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
-            <path d="m9 12 2 2 4-4" />
-          </svg>
+          <ShieldCheck className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
           No spam. Unsubscribe anytime.
         </p>
       </motion.div>

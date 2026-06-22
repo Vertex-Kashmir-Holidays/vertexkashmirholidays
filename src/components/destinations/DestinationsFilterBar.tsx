@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Search, ChevronDown } from 'lucide-react';
 
 interface DestinationsFilterBarProps {
   onFilterChange: (chip: string, search: string) => void;
@@ -30,10 +31,7 @@ export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarP
       <div className="mx-auto flex max-w-[1300px] flex-wrap items-center gap-3 px-6">
         {/* Search */}
         <label className="flex w-full max-w-[235px] items-center gap-2.5 rounded-full border border-border bg-card px-4 py-2.5 shadow-soft">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4-4" />
-          </svg>
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
           <input
             value={searchQuery}
             onChange={handleSearch}
@@ -64,9 +62,7 @@ export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarP
         {/* Sort */}
         <button className="ml-auto flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-[13px] font-semibold shadow-soft">
           Sort by: Popular
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.4} />
         </button>
       </div>
     </section>

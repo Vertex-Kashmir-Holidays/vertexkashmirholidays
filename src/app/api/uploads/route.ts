@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { requireStaff } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+import { saveUpload } from "@/lib/storage";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50 MB
@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
 
+  // Module/category folder this asset belongs to, and optional alt text. Both
+  // are optional so older callers that only send `file` keep working.
+  const folder = (formData.get("folder") as string | null)?.trim() || "general";
+  const alt = (formData.get("alt") as string | null)?.trim() || null;
+
   const isImage = file.type.startsWith("image/");
   const isVideo = file.type.startsWith("video/");
   if (!isImage && !isVideo) {
@@ -37,14 +42,22 @@ export async function POST(req: NextRequest) {
   const buffer = Buffer.from(bytes);
 
   const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const type = isVideo ? "VIDEO" : "IMAGE";
 
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
-  await writeFile(path.join(uploadsDir, filename), buffer);
+  const { url } = await saveUpload(buffer, { folder, ext });
 
-  return NextResponse.json(
-    { url: `/uploads/${filename}`, type: isVideo ? "VIDEO" : "IMAGE" },
-    { status: 201 }
-  );
+  // Register every upload in the central Gallery so it becomes reusable across
+  // any module. Failure to register must not fail the upload — the file is
+  // already written and the URL is valid — so we swallow registration errors.
+  let galleryId: string | null = null;
+  try {
+    const item = await prisma.gallery.create({
+      data: { url, type, category: folder, alt },
+    });
+    galleryId = item.id;
+  } catch {
+    galleryId = null;
+  }
+
+  return NextResponse.json({ url, type, id: galleryId }, { status: 201 });
 }

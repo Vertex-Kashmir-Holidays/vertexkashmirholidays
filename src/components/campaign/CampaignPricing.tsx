@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
 import Link from 'next/link';
 import type { CampaignTier } from '@/types/campaign';
@@ -74,7 +75,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
                     <ul className="mt-5 flex-1 space-y-2.5 text-[12.5px] text-foreground/75">
                       {tier.feats.map((feat, j) => (
                         <li key={j} className="flex items-start gap-2.5">
-                          <span className="mt-0.5 text-green-glow">✓</span>
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-glow" strokeWidth={2.5} />
                           {feat}
                         </li>
                       ))}

@@ -155,6 +155,29 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
         )}
       </div>
 
+      {/* Driver & vehicle — shown once staff assign one */}
+      {booking.driverName && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="flex items-center gap-2 font-display font-bold text-foreground">
+            <Car className="h-4 w-4 text-primary" /> Your Driver &amp; Vehicle
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {[
+              { label: "Driver", value: booking.driverName },
+              { label: "Driver Phone", value: booking.driverPhone },
+              { label: "Vehicle", value: booking.vehicleName },
+              { label: "Vehicle Number", value: booking.vehicleNumber },
+            ].map((f) => (
+              <div key={f.label} className="rounded-xl border border-border bg-muted/30 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{f.label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground break-words">{f.value || "—"}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">Your driver will contact you before pickup.</p>
+        </div>
+      )}
+
       {/* Price summary */}
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display font-bold text-foreground">Price Summary</h2>

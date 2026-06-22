@@ -9,7 +9,16 @@ import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
-export function ImageField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function ImageField({
+  value,
+  onChange,
+  folder = "general",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  /** Module folder uploads are filed under (also their gallery category). */
+  folder?: string;
+}) {
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -18,6 +27,7 @@ export function ImageField({ value, onChange }: { value: string; onChange: (v: s
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("folder", folder);
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);

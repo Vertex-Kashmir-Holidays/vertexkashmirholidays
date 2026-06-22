@@ -3,6 +3,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { Clock, Star } from 'lucide-react';
 import { Logo } from '@/components/brand/Logo';
 
 interface AuthImagePanelProps {
@@ -91,10 +92,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
             </div>
             <div>
               <p className="flex items-center gap-1.5 text-[17px] font-extrabold leading-tight">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 3" />
-                </svg>
+                <Clock className="h-4 w-4" strokeWidth={2} />
                 24×7
               </p>
               <p className="text-[10.5px] text-white/70">WhatsApp support</p>
@@ -103,7 +101,11 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
 
           {/* Testimonial */}
           <div className="mt-6 rounded-2xl bg-brand-dark/75 p-5 backdrop-blur">
-            <p className="text-[14px] tracking-[0.15em] text-amber-400">★★★★★</p>
+            <p className="flex gap-0.5 text-amber-400">
+              {Array.from({ length: 5 }).map((_, s) => (
+                <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
+              ))}
+            </p>
             <AnimatePresence mode="wait">
               <motion.p
                 key={testimonialIndex}

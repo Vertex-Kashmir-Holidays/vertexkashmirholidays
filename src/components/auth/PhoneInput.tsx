@@ -6,6 +6,7 @@ import {
   getCountryCallingCode,
   type CountryCode,
 } from 'libphonenumber-js';
+import { ChevronDown } from 'lucide-react';
 
 // ISO-3166 alpha-2 → flag emoji (regional indicator symbols).
 function flagOf(code: string): string {
@@ -98,16 +99,7 @@ export function PhoneInput({
       >
         <span aria-hidden="true">{flagOf(country)}</span>
         <span className="text-muted-foreground">+{dial}</span>
-        <svg
-          viewBox="0 0 24 24"
-          className="h-3 w-3 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <ChevronDown className="h-3 w-3 text-muted-foreground" strokeWidth={2.4} />
       </button>
 
       <input

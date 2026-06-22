@@ -74,7 +74,7 @@ export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
               <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
                 <label className="mb-1 block text-xs font-semibold text-muted-foreground">{f.label}</label>
                 {f.type === "image" ? (
-                  <ImageField value={form[f.key] ?? ""} onChange={(v) => set(f.key, v)} />
+                  <ImageField value={form[f.key] ?? ""} onChange={(v) => set(f.key, v)} folder={contentKey} />
                 ) : f.type === "textarea" ? (
                   <textarea
                     rows={3}

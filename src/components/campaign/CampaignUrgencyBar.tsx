@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface CampaignUrgencyBarProps {
@@ -46,7 +47,7 @@ export function CampaignUrgencyBar({ offerText, deadline, seats }: CampaignUrgen
             </strong>
           </span>
         )}
-        {seats && <span className="flex items-center gap-1.5 text-green-glow">👤 {seats}</span>}
+        {seats && <span className="flex items-center gap-1.5 text-green-glow"><Users className="h-3.5 w-3.5" strokeWidth={2.2} /> {seats}</span>}
       </div>
     </div>
   );

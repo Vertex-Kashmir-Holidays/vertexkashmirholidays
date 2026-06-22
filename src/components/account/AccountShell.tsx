@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, CalendarDays, CreditCard, UserCircle, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarDays, CreditCard, Star, UserCircle, LogOut } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/account", label: "Overview", short: "Overview", Icon: LayoutDashboard },
   { href: "/account/bookings", label: "My Bookings", short: "Bookings", Icon: CalendarDays },
   { href: "/account/payments", label: "Payments", short: "Payments", Icon: CreditCard },
+  { href: "/account/reviews", label: "My Reviews", short: "Reviews", Icon: Star },
   { href: "/account/profile", label: "Profile", short: "Profile", Icon: UserCircle },
 ];
 

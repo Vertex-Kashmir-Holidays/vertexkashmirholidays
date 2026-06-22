@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Check, X } from 'lucide-react';
 
 interface TourDetailsInclusionsProps {
   inclusions: string[];
@@ -31,9 +32,7 @@ export function TourDetailsInclusions({ inclusions, exclusions }: TourDetailsInc
               transition={{ delay: i * 0.05 }}
             >
               <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-emerald-500 text-white">
-                <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
+                <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
               </span>
               {item}
             </motion.li>
@@ -54,9 +53,7 @@ export function TourDetailsInclusions({ inclusions, exclusions }: TourDetailsInc
               transition={{ delay: i * 0.05 }}
             >
               <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-badge-red text-white">
-                <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
+                <X className="h-2.5 w-2.5" strokeWidth={3.5} />
               </span>
               {item}
             </motion.li>

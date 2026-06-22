@@ -55,6 +55,14 @@ export default async function BookingServicesPage({ params }: PageProps) {
     discountValue: booking.discountValue,
     inclusions: parseInclusions(booking.inclusions),
     travelDate: booking.travelDate.toISOString(),
+    driver: booking.driverAddedAt
+      ? {
+          driverName: booking.driverName ?? "",
+          driverPhone: booking.driverPhone ?? "",
+          vehicleNumber: booking.vehicleNumber ?? "",
+          vehicleName: booking.vehicleName ?? "",
+        }
+      : null,
     travellers: booking.travellers,
     guestName: booking.guestName,
     guestEmail: booking.guestEmail,

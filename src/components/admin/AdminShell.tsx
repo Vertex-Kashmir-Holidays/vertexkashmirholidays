@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -63,6 +64,7 @@ interface AdminShellProps {
   children: React.ReactNode;
   userName: string;
   userEmail: string;
+  userImage: string | null;
   role: Role;
   permissions: PermissionMap;
 }
@@ -73,17 +75,41 @@ interface NavItem {
   Icon: LucideIcon;
 }
 
+// Small circular avatar showing the user's picture, or their initial as a
+// fallback. Used in both the sidebar and the topbar.
+function Avatar({ src, name, className }: { src: string | null; name: string; className?: string }) {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt=""
+        width={32}
+        height={32}
+        unoptimized
+        className={cn("rounded-full object-cover shrink-0", className)}
+      />
+    );
+  }
+  return (
+    <div className={cn("rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0", className)}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
 function SidebarContent({
   pathname,
   nav,
   userName,
   userEmail,
+  userImage,
   onClose,
 }: {
   pathname: string;
   nav: NavItem[];
   userName: string;
   userEmail: string;
+  userImage: string | null;
   onClose?: () => void;
 }) {
   return (
@@ -140,18 +166,23 @@ function SidebarContent({
         </div>
       </div> */}
 
-      {/* User info + sign out */}
+      {/* User info (links to profile) + sign out */}
       <div className="border-t border-border px-4 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
-          {userName.charAt(0).toUpperCase()}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-foreground text-xs font-semibold truncate">{userName}</p>
-          <p className="text-muted-foreground text-[10px] truncate">{userEmail}</p>
-        </div>
+        <Link
+          href="/admin/profile"
+          onClick={onClose}
+          className="flex flex-1 min-w-0 items-center gap-3 rounded-lg -mx-1 px-1 py-1 transition-colors hover:bg-muted"
+          title="My profile"
+        >
+          <Avatar src={userImage} name={userName} className="w-8 h-8" />
+          <div className="flex-1 min-w-0">
+            <p className="text-foreground text-xs font-semibold truncate">{userName}</p>
+            <p className="text-muted-foreground text-[10px] truncate">{userEmail}</p>
+          </div>
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          className="text-muted-foreground hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0"
           aria-label="Sign out"
         >
           <LogOut className="w-4 h-4" />
@@ -161,10 +192,10 @@ function SidebarContent({
   );
 }
 
-export function AdminShell({ children, userName, userEmail, permissions }: AdminShellProps) {
+export function AdminShell({ children, userName, userEmail, userImage, permissions }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const pageTitle = PAGE_TITLES[pathname] ?? "Admin";
+  const pageTitle = pathname === "/admin/profile" ? "My Profile" : PAGE_TITLES[pathname] ?? "Admin";
 
   // Only show modules the current role may view.
   const nav: NavItem[] = MODULES.filter((m) => permissions[m.key]?.view).map((m) => ({
@@ -177,7 +208,7 @@ export function AdminShell({ children, userName, userEmail, permissions }: Admin
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0">
-        <SidebarContent pathname={pathname} nav={nav} userName={userName} userEmail={userEmail} />
+        <SidebarContent pathname={pathname} nav={nav} userName={userName} userEmail={userEmail} userImage={userImage} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -193,6 +224,7 @@ export function AdminShell({ children, userName, userEmail, permissions }: Admin
               nav={nav}
               userName={userName}
               userEmail={userEmail}
+              userImage={userImage}
               onClose={() => setSidebarOpen(false)}
             />
           </aside>
@@ -224,9 +256,9 @@ export function AdminShell({ children, userName, userEmail, permissions }: Admin
             </Link>
             <ThemeToggle />
             <NotificationBell />
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-              {userName.charAt(0).toUpperCase()}
-            </div>
+            <Link href="/admin/profile" title="My profile" className="transition hover:opacity-90">
+              <Avatar src={userImage} name={userName} className="w-8 h-8" />
+            </Link>
           </div>
         </header>
 

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Star } from 'lucide-react';
 import type { ContactSectionHeading, ContactTestimonialData } from '@/types/contact';
 
 interface ContactTestimonialsProps {
@@ -55,7 +56,11 @@ export function ContactTestimonials({ heading, testimonials }: ContactTestimonia
               />
             )}
             <div>
-              <span className="text-[13px] tracking-tight text-amber-400">{'★'.repeat(t.rating)}</span>
+              <span className="flex gap-0.5 text-amber-400">
+                {Array.from({ length: Math.max(1, Math.min(5, t.rating)) }).map((_, s) => (
+                  <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
+                ))}
+              </span>
               <p className="mt-2 text-[12.5px] leading-relaxed text-foreground/75">{t.quote}</p>
               <p className="mt-3 text-[13px] font-bold">{t.name}</p>
               {t.location && <p className="text-[11.5px] text-muted-foreground">{t.location}</p>}

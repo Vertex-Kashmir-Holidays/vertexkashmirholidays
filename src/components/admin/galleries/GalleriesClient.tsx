@@ -48,20 +48,18 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
     let uploaded = 0;
     try {
       for (const file of Array.from(files)) {
+        // The uploads route stores the file under the chosen category folder and
+        // registers it in the Gallery in one step — no separate create needed.
         const fd = new FormData();
         fd.append("file", file);
+        if (newCategory) fd.append("folder", newCategory);
+        if (newAlt) fd.append("alt", newAlt);
         const res = await fetch("/api/uploads", { method: "POST", body: fd });
         if (!res.ok) {
           const { error } = await res.json().catch(() => ({ error: "" }));
           if (error) toast.error(error);
           continue;
         }
-        const { url, type } = await res.json() as { url: string; type: MediaType };
-        await fetch("/api/galleries", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, type, category: newCategory || undefined, alt: newAlt || undefined }),
-        });
         uploaded++;
       }
       if (uploaded > 0) toast.success(`${uploaded} file${uploaded !== 1 ? "s" : ""} uploaded.`);

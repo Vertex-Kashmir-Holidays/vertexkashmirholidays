@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 
 interface ThingToDo {
   seed: string;
@@ -36,9 +37,7 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
         <h2 className="text-[21px] font-bold">Things to Do in {name}</h2>
         <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
           View all
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </a>
       </div>
       <div className="relative mt-5">
@@ -73,7 +72,7 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          ›
+          <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
         </motion.button>
       </div>
     </motion.section>

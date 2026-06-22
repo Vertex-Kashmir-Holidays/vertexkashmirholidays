@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 export function AuthExplore() {
   return (
@@ -28,9 +29,7 @@ export function AuthExplore() {
           className="mt-4 inline-flex items-center gap-2 rounded-full border-[1.5px] border-primary px-5 py-2.5 text-[12.5px] font-bold text-primary transition hover:bg-primary hover:text-primary-foreground"
         >
           Explore Tours
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </Link>
       </div>
     </motion.div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { renderAccents } from '@/lib/accents';
 import type { SectionHeading, VideoReviewData } from '@/types/home';
 
@@ -50,15 +51,17 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
         <div className="rv flex gap-2" style={{ '--rd': '0.2s' } as React.CSSProperties}>
           <button
             onClick={() => scroll('prev')}
+            aria-label="Previous videos"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
-            ←
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.2} />
           </button>
           <button
             onClick={() => scroll('next')}
+            aria-label="Next videos"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
-            →
+            <ChevronRight className="h-5 w-5" strokeWidth={2.2} />
           </button>
         </div>
       </div>
@@ -97,7 +100,7 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
                     aria-label="Close video"
                     className="glass absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full text-white transition hover:bg-foreground/20"
                   >
-                    ✕
+                    <X className="h-4 w-4" strokeWidth={2.4} />
                   </button>
                 </>
               ) : (

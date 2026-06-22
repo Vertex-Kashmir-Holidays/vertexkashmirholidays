@@ -2,6 +2,7 @@
 'use client';
 
 import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
 import { renderAccents } from '@/lib/accents';
 import type { HeroContentData, HeroSlideData, SiteStatData } from '@/types/home';
@@ -151,7 +152,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
           {content.badge && (
             <motion.p
               variants={itemVariants}
-              className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[11px] font-bold tracking-[0.22em] text-green-glow"
+              className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[11px] font-bold tracking-[0.22em] "
             >
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> {content.badge}
             </motion.p>
@@ -183,15 +184,13 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110"
               >
                 {content.ctaPrimaryLabel}
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
+                <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
               </Link>
             )}
             {content.ctaSecondaryLabel && (
               <Link
                 href={content.ctaSecondaryHref ?? '#'}
-                className="glass inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-white/15"
+                className="glass inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold primary-foreground transition hover:scale-[1.03] hover:bg-white/15"
               >
                 ▶&nbsp; {content.ctaSecondaryLabel}
               </Link>
@@ -205,11 +204,11 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
             >
               {stats.map((stat, i) => (
                 <div key={i}>
-                  <p className="text-base sm:text-lg font-extrabold text-white">
+                  <p className="text-base sm:text-lg font-extrabold primary-foreground">
                     {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString('en-IN') : stat.value}
                     {stat.suffix}
                   </p>
-                  <p className="mt-1 text-[10px] text-white/55">{stat.label}</p>
+                  <p className="mt-1 text-[10px] primary-foreground/55">{stat.label}</p>
                 </div>
               ))}
             </motion.div>

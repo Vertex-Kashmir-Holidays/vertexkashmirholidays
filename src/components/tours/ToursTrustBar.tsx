@@ -1,42 +1,14 @@
 'use client';
 
 import { motion, type Variants } from 'framer-motion';
+import { ShieldCheck, Headphones, PenLine, Lock } from 'lucide-react';
 
 export function ToursTrustBar() {
   const trustItems = [
-    {
-      t: 'Best Price Guarantee',
-      s: 'No hidden charges',
-      icon: (
-        <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" />
-      ),
-      icon2: <path d="m9 12 2 2 4-4" />,
-    },
-    {
-      t: '24/7 On-ground Support',
-      s: "We're with you always",
-      icon: <path d="M3 12a9 9 0 1 1 18 0v5a2 2 0 0 1-2 2h-3v-6h5M3 12v5a2 2 0 0 0 2 2h3v-6H3" />,
-    },
-    {
-      t: 'Customised Itineraries',
-      s: 'Made just for you',
-      icon: (
-        <>
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-        </>
-      ),
-    },
-    {
-      t: 'Secure Payments',
-      s: 'Powered by Razorpay',
-      icon: (
-        <>
-          <rect x="3" y="11" width="18" height="11" rx="2" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-        </>
-      ),
-    },
+    { t: 'Best Price Guarantee', s: 'No hidden charges', Icon: ShieldCheck },
+    { t: '24/7 On-ground Support', s: "We're with you always", Icon: Headphones },
+    { t: 'Customised Itineraries', s: 'Made just for you', Icon: PenLine },
+    { t: 'Secure Payments', s: 'Powered by Razorpay', Icon: Lock },
   ];
 
   const containerVariants = {
@@ -78,10 +50,7 @@ export function ToursTrustBar() {
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                {x.icon}
-                {x.icon2 && x.icon2}
-              </svg>
+              <x.Icon className="h-5 w-5" strokeWidth={1.8} />
             </motion.span>
             <div>
               <p className="text-[13.5px] font-bold">{x.t}</p>

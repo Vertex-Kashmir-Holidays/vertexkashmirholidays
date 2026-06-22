@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import type { CampaignFaq } from '@/types/campaign';
 
 interface CampaignFAQProps {
@@ -27,9 +28,7 @@ export function CampaignFAQ({ title, faqs }: CampaignFAQProps) {
           <details key={i} className="glass rounded-2xl px-5 py-4">
             <summary className="flex cursor-pointer items-center justify-between gap-4 text-[13.5px] font-bold text-foreground">
               {faq.question}
-              <svg viewBox="0 0 24 24" className="chev h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+              <ChevronDown className="chev h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.4} />
             </summary>
             <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{faq.answer}</p>
           </details>

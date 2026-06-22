@@ -4,10 +4,12 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Star } from 'lucide-react';
 
 interface Review {
   seed: string;
   name: string;
+  avatar?: string | null;
   meta: string;
   quote: string;
 }
@@ -62,16 +64,21 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
               transition={{ duration: 0.3 }}
             >
               <Image
-                src={`https://picsum.photos/seed/${reviews[currentReview].seed}/80`}
+                src={reviews[currentReview].avatar || `https://picsum.photos/seed/${reviews[currentReview].seed}/80`}
                 alt=""
                 width={44}
                 height={44}
                 className="h-11 w-11 shrink-0 rounded-full object-cover"
+                unoptimized
               />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <p className="text-[14px] font-bold">{reviews[currentReview].name}</p>
-                  <span className="text-amber-400">★★★★★</span>
+                  <span className="flex gap-0.5 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, s) => (
+                      <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
+                    ))}
+                  </span>
                 </div>
                 <p className="text-[11.5px] text-muted-foreground">{reviews[currentReview].meta}</p>
                 <p className="mt-2.5 text-[13px] leading-relaxed text-foreground/75">

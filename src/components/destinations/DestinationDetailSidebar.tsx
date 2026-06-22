@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Thermometer, Cloud, Sun } from 'lucide-react';
 
 interface DestinationDetailSidebarProps {
   name: string;
@@ -67,29 +68,17 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
         <div className="mt-3 flex items-center justify-between">
           <div>
             <p className="flex items-start text-[40px] font-extrabold leading-none">
-              <svg viewBox="0 0 24 24" className="mr-1 mt-1 h-5 w-5 text-link" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 4v10.5a4 4 0 1 1-4-4" />
-                <path d="M14 4a2 2 0 1 1 4 0v6" />
-              </svg>
+              <Thermometer className="mr-1 mt-1 h-5 w-5 text-link" strokeWidth={2} />
               {weather.temperature}°C
             </p>
             <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 text-link" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.3A7 7 0 1 0 4 16.4" />
-              </svg>
+              <Cloud className="h-4 w-4 text-link" strokeWidth={2} />
               {weather.condition}
             </p>
           </div>
           <div className="relative h-16 w-20">
-            <svg viewBox="0 0 24 24" className="absolute right-1 top-0 h-10 w-10 text-amber-400" fill="currentColor">
-              <circle cx="12" cy="12" r="5" />
-              <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-              </g>
-            </svg>
-            <svg viewBox="0 0 24 24" className="absolute bottom-0 left-0 h-11 w-14 text-sky-200" fill="currentColor">
-              <path d="M17.5 19a4.5 4.5 0 1 0-.9-8.9A7 7 0 1 0 5 17.5c.5.9 1.5 1.5 2.6 1.5Z" />
-            </svg>
+            <Sun className="absolute right-1 top-0 h-10 w-10 text-amber-400" strokeWidth={2} />
+            <Cloud className="absolute bottom-0 left-0 h-11 w-14 text-sky-300" fill="currentColor" strokeWidth={1.5} />
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 divide-x divide-border border-t border-border pt-4 text-center">

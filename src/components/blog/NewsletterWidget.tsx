@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function NewsletterWidget() {
@@ -47,8 +47,8 @@ export function NewsletterWidget() {
       </p>
 
       {done ? (
-        <p className="text-brand-green text-sm font-semibold py-2">
-          ✓ Subscribed! Welcome to the Kashmir community.
+        <p className="flex items-center gap-1.5 text-brand-green text-sm font-semibold py-2">
+          <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.2} /> Subscribed! Welcome to the Kashmir community.
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-2">

@@ -4,6 +4,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 import type { BlogFeaturedData } from '@/types/blog';
 
 interface BlogFeaturedStoryProps {
@@ -54,21 +56,17 @@ export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
             className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-[12.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
           >
             Read Full Story
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
           </Link>
         </div>
         <div className="relative min-h-[220px]">
-          {story.image && (
-            <Image
-              src={story.image}
-              alt={story.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          )}
+          <Image
+            src={imgSrc(story.image)}
+            alt={story.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
         </div>
       </article>
     </motion.div>

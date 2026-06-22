@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import Link from "next/link";
-import { ArrowRight, Phone, User, Users, Calendar, ChevronDown } from "lucide-react";
+import { ArrowRight, Phone, User, Users, Calendar, ChevronDown, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ─── Inquiry form schema ───────────────────────────────────────────────────────
@@ -233,15 +233,7 @@ function InquiryCard() {
         /* Success state */
         <div className="text-center py-8">
           <div className="w-14 h-14 rounded-full bg-brand-green/20 border border-brand-green/30 flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-7 h-7 text-brand-green"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
+            <Check className="w-7 h-7 text-brand-green" strokeWidth={2.5} />
           </div>
           <p className="text-white font-semibold text-lg mb-1">Request received!</p>
           <p className="text-white/50 text-sm">We&apos;ll call you back shortly.</p>
@@ -348,25 +340,7 @@ function InquiryCard() {
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
+                <Loader2 className="animate-spin h-4 w-4" />
                 Sending…
               </span>
             ) : (

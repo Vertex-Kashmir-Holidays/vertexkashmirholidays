@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 import type { CampaignTestimonial } from '@/types/campaign';
 
 interface CampaignTestimonialsProps {
@@ -41,7 +42,11 @@ export function CampaignTestimonials({ testimonials }: CampaignTestimonialsProps
             viewport={{ once: true }}
             transition={{ delay: i * 0.08 }}
           >
-            <p className="text-[13px] tracking-[0.18em] text-amber-500 dark:text-amber-300">★★★★★</p>
+            <p className="flex gap-0.5 text-amber-500 dark:text-amber-300">
+              {Array.from({ length: 5 }).map((_, s) => (
+                <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
+              ))}
+            </p>
             <p className="mt-3 text-[13.5px] leading-relaxed text-foreground/80">&ldquo;{testimonial.quote}&rdquo;</p>
             <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {testimonial.image && (

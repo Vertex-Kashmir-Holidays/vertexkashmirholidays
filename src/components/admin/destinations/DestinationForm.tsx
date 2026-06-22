@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, Images } from "lucide-react";
+import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -34,6 +35,8 @@ export function DestinationForm({ defaults }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
+  // Which field the gallery picker is currently targeting (null = closed).
+  const [picker, setPicker] = useState<"coverImage" | "ogImage" | null>(null);
   const isEdit = !!defaults?.id;
 
   const {
@@ -69,6 +72,7 @@ export function DestinationForm({ defaults }: Props) {
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("folder", "destinations");
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json() as { url: string };
@@ -150,6 +154,14 @@ export function DestinationForm({ defaults }: Props) {
             className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
             placeholder="https://... or /uploads/..."
           />
+          <button
+            type="button"
+            onClick={() => setPicker("coverImage")}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            <Images className="w-3.5 h-3.5" />
+            Gallery
+          </button>
           <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
             {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
             Upload
@@ -177,7 +189,17 @@ export function DestinationForm({ defaults }: Props) {
         </div>
         <div>
           <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Image URL</label>
-          <input {...register("ogImage")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+          <div className="flex gap-3">
+            <input {...register("ogImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+            <button
+              type="button"
+              onClick={() => setPicker("ogImage")}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+            >
+              <Images className="w-3.5 h-3.5" />
+              Gallery
+            </button>
+          </div>
         </div>
       </div>
 
@@ -198,6 +220,13 @@ export function DestinationForm({ defaults }: Props) {
           Cancel
         </button>
       </div>
+
+      <GalleryPicker
+        open={picker !== null}
+        type="IMAGE"
+        onSelect={(url) => picker && setValue(picker, url)}
+        onClose={() => setPicker(null)}
+      />
     </form>
   );
 }

@@ -17,7 +17,7 @@ import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { UpdatesStrip } from "@/components/home/UpdatesStrip";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 import { WhyChooseSection } from "@/components/home/WhyChooseSection";
-import type { SectionHeading } from "@/types/home";
+import type { SectionHeading, TestimonialData } from "@/types/home";
 
 // ISR: serve cached HTML and refresh in the background (admin edits appear
 // within the window). Replaces force-dynamic, which hit the DB every request.
@@ -42,6 +42,55 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
+// Blend curated CMS testimonials with recent approved tour reviews into a single
+// list for the home "what travellers say" section. Curated testimonials come
+// first; reviews fill in after, skipping any whose text duplicates one already
+// shown. Review avatars resolve per-review → reviewer's profile picture → null.
+type TestimonialRow = {
+  id: string;
+  name: string;
+  location: string | null;
+  avatar: string | null;
+  quote: string;
+  rating: number;
+};
+type ReviewRow = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  rating: number;
+  body: string;
+  tour: { title: string } | null;
+  user: { image: string | null } | null;
+};
+
+function mergeTestimonials(testimonials: TestimonialRow[], reviews: ReviewRow[]): TestimonialData[] {
+  const seen = new Set<string>();
+  const norm = (s: string) => s.trim().toLowerCase();
+  const out: TestimonialData[] = [];
+
+  for (const t of testimonials) {
+    const key = norm(t.quote);
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    out.push({ id: t.id, name: t.name, location: t.location, avatar: t.avatar, quote: t.quote, rating: t.rating });
+  }
+  for (const r of reviews) {
+    const key = norm(r.body);
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    out.push({
+      id: r.id,
+      name: r.name,
+      location: r.tour?.title ?? null,
+      avatar: r.avatar ?? r.user?.image ?? null,
+      quote: r.body,
+      rating: r.rating,
+    });
+  }
+  return out;
+}
+
 export default async function HomePage() {
   const [
     content,
@@ -55,6 +104,7 @@ export default async function HomePage() {
     destinations,
     offers,
     testimonials,
+    reviews,
     blogs,
     settings,
   ] = await Promise.all([
@@ -80,6 +130,22 @@ export default async function HomePage() {
     }),
     prisma.offer.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, take: 3 }),
     prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    // Recent approved tour reviews, blended into the testimonials section so real
+    // customer reviews surface on the home page alongside curated testimonials.
+    prisma.review.findMany({
+      where: { approved: true },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        rating: true,
+        body: true,
+        tour: { select: { title: true } },
+        user: { select: { image: true } },
+      },
+    }),
     prisma.blog.findMany({
       where: { published: true },
       orderBy: { publishedAt: "desc" },
@@ -238,14 +304,7 @@ export default async function HomePage() {
       />
       <TestimonialsSection
         heading={heading("testimonials")}
-        testimonials={testimonials.map((t) => ({
-          id: t.id,
-          name: t.name,
-          location: t.location,
-          avatar: t.avatar,
-          quote: t.quote,
-          rating: t.rating,
-        }))}
+        testimonials={mergeTestimonials(testimonials, reviews)}
       />
       <BlogSection
         heading={heading("blogs")}

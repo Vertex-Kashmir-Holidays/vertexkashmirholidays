@@ -71,6 +71,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("folder", "itinerary");
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Upload failed");
