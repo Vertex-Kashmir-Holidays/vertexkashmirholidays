@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { imgSrc } from '@/lib/placeholder';
 import { renderAccents } from '@/lib/accents';
 import type { AboutContentData, SectionHeading, SiteStatData } from '@/types/home';
 
@@ -56,36 +57,32 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
             )}
           </div>
           <div className="rv relative h-[420px]" style={{ '--rd': '0.18s' } as React.CSSProperties} data-depth-group>
-            {content.image1 && (
-              <div
-                className="absolute left-0 top-6 h-[320px] w-[62%] overflow-hidden rounded-3xl border border-border shadow-card"
-                data-depth
-                style={{ '--d': '0.6' } as React.CSSProperties}
-              >
-                <Image
-                  src={content.image1}
-                  alt={content.cardTitle ?? 'About us'}
-                  fill
-                  sizes="(max-width: 1024px) 60vw, 400px"
-                  className="object-cover"
-                />
-              </div>
-            )}
-            {content.image2 && (
-              <div
-                className="absolute bottom-0 right-0 h-[230px] w-[52%] overflow-hidden rounded-3xl border border-border shadow-card"
-                data-depth
-                style={{ '--d': '1.1' } as React.CSSProperties}
-              >
-                <Image
-                  src={content.image2}
-                  alt=""
-                  fill
-                  sizes="(max-width: 1024px) 50vw, 340px"
-                  className="object-cover"
-                />
-              </div>
-            )}
+            <div
+              className="absolute left-0 top-6 h-[320px] w-[62%] overflow-hidden rounded-3xl border border-border shadow-card"
+              data-depth
+              style={{ '--d': '0.6' } as React.CSSProperties}
+            >
+              <Image
+                src={imgSrc(content.image1)}
+                alt={content.cardTitle ?? 'About us'}
+                fill
+                sizes="(max-width: 1024px) 60vw, 400px"
+                className="object-cover"
+              />
+            </div>
+            <div
+              className="absolute bottom-0 right-0 h-[230px] w-[52%] overflow-hidden rounded-3xl border border-border shadow-card"
+              data-depth
+              style={{ '--d': '1.1' } as React.CSSProperties}
+            >
+              <Image
+                src={imgSrc(content.image2)}
+                alt=""
+                fill
+                sizes="(max-width: 1024px) 50vw, 340px"
+                className="object-cover"
+              />
+            </div>
             {content.cardTitle && (
               <div className="glass-strong absolute right-4 top-2 rounded-2xl px-5 py-4 shadow-card" data-depth style={{ '--d': '1.6' } as React.CSSProperties}>
                 {content.cardEmoji && <p className="text-2xl">{content.cardEmoji}</p>}

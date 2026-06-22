@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { imgSrc } from '@/lib/placeholder';
 import { renderMint } from '@/lib/accents';
 import type { AboutTeamHeading, TeamMemberData } from '@/types/about';
 
@@ -33,7 +34,7 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
             >
               <div className="relative h-[120px] w-full overflow-hidden">
                 <Image
-                  src={m.image}
+                  src={imgSrc(m.image)}
                   alt={m.name}
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"

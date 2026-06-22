@@ -4,6 +4,8 @@
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ChevronDown, Bookmark } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 import type { BlogArticleData } from '@/types/blog';
 
 interface BlogArticlesGridProps {
@@ -48,9 +50,7 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
         <h2 className="text-[20px] font-bold">All Articles</h2>
         <button className="flex items-center gap-2 text-[13px] font-semibold text-foreground/80">
           Latest First
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.4} />
         </button>
       </div>
       {articles.length === 0 ? (
@@ -73,15 +73,13 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
             >
               <Link href={`/blog/${article.slug}`} className="block">
                 <div className="relative h-[150px] overflow-hidden">
-                  {article.coverImage && (
-                    <Image
-                      src={article.coverImage}
-                      alt=""
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                      className="object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  )}
+                  <Image
+                    src={imgSrc(article.coverImage)}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                  />
                   {article.category && (
                     <span className={`absolute bottom-2.5 left-2.5 rounded ${badgeColor[article.category] ?? 'bg-primary'} px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-white`}>
                       {article.category.toUpperCase()}
@@ -103,9 +101,7 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
                       className="text-muted-foreground transition hover:text-primary"
                       onClick={(e) => e.preventDefault()}
                     >
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-                        <path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z" />
-                      </svg>
+                      <Bookmark className="h-4 w-4" strokeWidth={2} />
                     </button>
                   </div>
                 </div>

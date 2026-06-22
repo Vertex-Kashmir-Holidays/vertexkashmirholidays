@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { imgSrc } from '@/lib/placeholder';
 import { renderMint } from '@/lib/accents';
 import type { AboutStoryData, AboutStoryFeatureData } from '@/types/about';
 
@@ -22,15 +23,13 @@ export function AboutStory({ data, features }: AboutStoryProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          {data.image && (
-            <Image
-              src={data.image}
-              alt="Houseboat and shikara on Dal Lake"
-              fill
-              sizes="(max-width: 1024px) 100vw, 45vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-          )}
+          <Image
+            src={imgSrc(data.image)}
+            alt="Houseboat and shikara on Dal Lake"
+            fill
+            sizes="(max-width: 1024px) 100vw, 45vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 30 }}

@@ -31,7 +31,7 @@ export function Logo({ variant = "auto", className, href = "/" }: LogoProps) {
       width={168}
       height={54}
       priority
-      className={cn("h-8 w-auto select-none object-contain", extra)}
+      className={cn("h-12 md:h-16 w-auto select-none object-contain", extra)}
     />
   );
 

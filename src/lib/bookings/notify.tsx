@@ -11,6 +11,8 @@ import {
   bookingInvoiceText,
   paymentInvoiceHtml,
   paymentInvoiceText,
+  driverDetailsHtml,
+  driverDetailsText,
   type InvoiceService,
 } from "@/lib/mail";
 import { renderBookingSummaryPdf, renderPaymentReceiptPdf, bookingRef } from "@/lib/bookings/invoice-pdf";
@@ -192,6 +194,56 @@ export async function sendPaymentInvoiceEmail(
     return { delivered: res.delivered };
   } catch (err) {
     console.error("[notify] payment invoice email failed", err);
+    return { delivered: false };
+  }
+}
+
+/**
+ * Driver & vehicle details email to the customer. Sent when staff assign or
+ * update the driver for a booking and choose to notify the customer. Best-effort.
+ */
+export async function sendDriverDetailsEmail(
+  bookingId: string,
+  opts: { updated?: boolean } = {},
+): Promise<{ delivered: boolean }> {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        tour: { select: { title: true } },
+        user: { select: { name: true, email: true } },
+      },
+    });
+    if (!booking) return { delivered: false };
+    if (!booking.driverName || !booking.driverPhone || !booking.vehicleName || !booking.vehicleNumber) {
+      return { delivered: false };
+    }
+
+    const to = booking.guestEmail ?? booking.user?.email ?? null;
+    if (!to) return { delivered: false };
+
+    const wa = await whatsappNumber();
+    const payload = {
+      guestName: booking.guestName || booking.user?.name || "Guest",
+      driverName: booking.driverName,
+      driverPhone: booking.driverPhone,
+      vehicleName: booking.vehicleName,
+      vehicleNumber: booking.vehicleNumber,
+      tourTitle: booking.tour?.title ?? null,
+      travelDate: fmtDate(booking.travelDate),
+      updated: opts.updated ?? false,
+      whatsappNumber: wa,
+    };
+
+    const res = await sendMail({
+      to,
+      subject: `Driver & Vehicle Details — ${bookingRef(booking.id)} | Vertex Kashmir Holidays`,
+      html: driverDetailsHtml(payload),
+      text: driverDetailsText(payload),
+    });
+    return { delivered: res.delivered };
+  } catch (err) {
+    console.error("[notify] driver details email failed", err);
     return { delivered: false };
   }
 }

@@ -4,6 +4,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Share2, Star } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface TourDetailsHeroProps {
   tourName: string;
@@ -82,7 +84,7 @@ export function TourDetailsHero({
             transition={{ duration: 0.7 }}
           >
             <Image
-              src={images[currentImage] || `https://picsum.photos/seed/detail-hero/1800/760`}
+              src={imgSrc(images[currentImage])}
               alt={tourName}
               fill
               priority
@@ -153,9 +155,7 @@ export function TourDetailsHero({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
-              </svg>
+              <Heart className="h-[18px] w-[18px]" strokeWidth={2} />
             </motion.button>
             <motion.button
               className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] font-semibold text-brand-ink shadow-card transition hover:brightness-95"
@@ -163,12 +163,7 @@ export function TourDetailsHero({
               whileTap={{ scale: 0.98 }}
             >
               Share
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="18" cy="5" r="3" />
-                <circle cx="6" cy="12" r="3" />
-                <circle cx="18" cy="19" r="3" />
-                <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
-              </svg>
+              <Share2 className="h-4 w-4" strokeWidth={2} />
             </motion.button>
           </div>
         </div>
@@ -210,9 +205,7 @@ export function TourDetailsHero({
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <span className="flex items-center gap-1.5">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 text-amber-400" fill="currentColor">
-                <path d="m12 2 3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1Z" />
-              </svg>
+              <Star className="h-4 w-4 text-amber-400" fill="currentColor" strokeWidth={0} />
               {rating} ({reviews.toLocaleString()} reviews)
             </span>
             {happyLabel && (
@@ -255,7 +248,7 @@ export function TourDetailsHero({
               onClick={() => setCurrentImage(i)}
               whileHover={{ scale: 1.05 }}
             >
-              <Image src={img} alt="" fill sizes="104px" className="object-cover" />
+              <Image src={imgSrc(img)} alt="" fill sizes="104px" className="object-cover" />
               {i === currentImage && (
                 <span className="absolute inset-0 grid place-items-center bg-black/30">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[11px] text-brand-ink">▶</span>

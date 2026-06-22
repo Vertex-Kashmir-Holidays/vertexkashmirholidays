@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { renderAccents } from '@/lib/accents';
+import { imgSrc } from '@/lib/placeholder';
 import type { DestinationCardData, SectionHeading } from '@/types/home';
 
 interface DestinationsSectionProps {
@@ -39,15 +40,13 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
             className={`rv group relative block overflow-hidden rounded-3xl border border-border ${cellClasses[Math.min(i, 1)]}`}
             style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}
           >
-            {d.coverImage && (
-              <Image
-                src={d.coverImage}
-                alt={d.name}
-                fill
-                sizes="(max-width: 768px) 50vw, 25vw"
-                className="object-cover transition duration-700 group-hover:scale-110"
-              />
-            )}
+            <Image
+              src={imgSrc(d.coverImage)}
+              alt={d.name}
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover transition duration-700 group-hover:scale-110"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
             <div className="absolute inset-x-0 bottom-0 p-5 transition duration-300 group-hover:-translate-y-1">
               <h3 className="h-display text-2xl font-bold text-white">{d.name}</h3>

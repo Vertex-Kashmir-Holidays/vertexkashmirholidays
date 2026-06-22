@@ -636,6 +636,80 @@ ${detailRow("Status", data.status)}
   });
 }
 
+// ── Driver / vehicle details ─────────────────────────────────────────────────
+// Sent to the customer when staff assign (or update) the driver and vehicle for
+// an upcoming trip. Purely informational — driver contact + vehicle, plus the
+// trip date for context.
+
+interface DriverDetailsEmailData {
+  guestName: string;
+  driverName: string;
+  driverPhone: string;
+  vehicleName: string;
+  vehicleNumber: string;
+  tourTitle?: string | null;
+  travelDate?: string | null;
+  updated?: boolean; // true when this is an update to previously-sent details
+  whatsappNumber?: string | null;
+}
+
+export function driverDetailsText(data: DriverDetailsEmailData): string {
+  const { text: waText } = resolveWhatsApp(data.whatsappNumber);
+  const lines = [
+    `Driver & Vehicle Details — Vertex Kashmir Holidays`,
+    "",
+    `Dear ${data.guestName}, ${data.updated ? "your driver and vehicle details have been updated." : "the driver and vehicle for your upcoming trip have been assigned."}`,
+    "",
+  ];
+  if (data.tourTitle) lines.push(`Tour: ${data.tourTitle}`);
+  if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
+  lines.push(
+    `Driver Name: ${data.driverName}`,
+    `Driver Phone: ${data.driverPhone}`,
+    `Vehicle: ${data.vehicleName}`,
+    `Vehicle Number: ${data.vehicleNumber}`,
+    "",
+    "Your driver will contact you before pickup. Safe travels!",
+    `WhatsApp us: ${waText}`,
+  );
+  return lines.join("\n");
+}
+
+export function driverDetailsHtml(data: DriverDetailsEmailData): string {
+  const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
+
+  const content = `          <tr>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">${data.updated ? "Updated Driver &amp; Vehicle Details" : "Your Driver &amp; Vehicle Details"}</h1>
+              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, ${data.updated ? "your driver and vehicle details have been updated. Here is the latest information for your trip." : "the driver and vehicle for your upcoming trip have been assigned. Please keep these details handy."}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 4px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${data.tourTitle ? detailRow("Tour", data.tourTitle) : ""}
+${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
+${detailRow("Driver Name", data.driverName)}
+${detailRow("Driver Phone", data.driverPhone)}
+${detailRow("Vehicle", data.vehicleName)}
+${detailRow("Vehicle Number", data.vehicleNumber)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+              <p style="margin:0 0 16px;color:#444444;font-size:13px;line-height:1.6">Your driver will reach out before pickup. If you have any questions, we&apos;re a message away.</p>
+              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
+            </td>
+          </tr>`;
+
+  return emailShell({
+    title: `Driver & Vehicle Details — Vertex Kashmir Holidays`,
+    preheader: `${escapeHtml(data.driverName)} · ${escapeHtml(data.vehicleNumber)}`,
+    contentHtml: content,
+  });
+}
+
 // Escapes user-supplied values before they are interpolated into email HTML, so
 // a name/message can never inject markup into the message.
 function escapeHtml(value: string): string {

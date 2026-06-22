@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import { Tilt3D } from '@/components/ui/3DTilt';
+import { imgSrc } from '@/lib/placeholder';
 import type { CampaignHighlight } from '@/types/campaign';
 
 interface CampaignHighlightsProps {
@@ -45,9 +46,7 @@ export function CampaignHighlights({ title, highlights }: CampaignHighlightsProp
             <Tilt3D intensity={6}>
               <article className="glass relative overflow-hidden rounded-3xl shadow-card">
                 <div className="relative h-36 overflow-hidden">
-                  {highlight.image && (
-                    <img src={highlight.image} alt="" className="h-full w-full object-cover" />
-                  )}
+                  <img src={imgSrc(highlight.image)} alt="" className="h-full w-full object-cover" />
                   <span className="glass-strong absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-xl text-xl">
                     {highlight.emoji}
                   </span>

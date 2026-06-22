@@ -3,6 +3,7 @@
 import { TourCard } from '@/components/ui/TourCard';
 import { formatINR } from '@/lib/accents';
 import { motion } from 'framer-motion';
+import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TourListItemData, TourSortOption } from '@/types/tours';
 
 interface ToursGridSectionProps {
@@ -65,17 +66,7 @@ export function ToursGridSection({
             onClick={onFilterToggle}
             className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 font-semibold shadow-soft lg:hidden"
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 21V14" />
-              <path d="M4 10V3" />
-              <path d="M12 21V12" />
-              <path d="M12 8V3" />
-              <path d="M20 21V16" />
-              <path d="M20 12V3" />
-              <path d="M1 14h6" />
-              <path d="M9 8h6" />
-              <path d="M17 16h6" />
-            </svg>
+            <SlidersHorizontal className="h-4 w-4" strokeWidth={2} />
             <span>Filters</span>
           </button>
 
@@ -150,7 +141,7 @@ export function ToursGridSection({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            ‹
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.2} />
           </motion.button>
           {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
             <motion.button
@@ -176,7 +167,7 @@ export function ToursGridSection({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            ›
+            <ChevronRight className="h-5 w-5" strokeWidth={2.2} />
           </motion.button>
         </nav>
       )}

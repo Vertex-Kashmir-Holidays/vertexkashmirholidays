@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Star, Check, Lock, Phone } from 'lucide-react';
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -208,7 +209,7 @@ export function CampaignHero({
                 <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[10px] font-extrabold text-white">2k+</span>
               </div>
               <p className="text-[12.5px] leading-snug text-white/70">
-                <span className="font-bold text-amber-300">★ 4.9</span> from{' '}
+                <span className="inline-flex items-center gap-1 font-bold text-amber-300"><Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} /> 4.9</span> from{' '}
                 <span className="font-bold text-white">{proofCount}</span> travellers on this trip last season
               </p>
             </motion.div>
@@ -231,7 +232,7 @@ export function CampaignHero({
 
             {sent ? (
               <div className="py-10 text-center">
-                <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-accent-grad text-white">✓</div>
+                <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-accent-grad text-white"><Check className="h-6 w-6" strokeWidth={2.5} /></div>
                 <p className="text-[15px] font-bold text-white">Request received!</p>
                 <p className="mt-1 text-[12.5px] text-white/60">We&apos;ll call you back shortly.</p>
               </div>
@@ -274,9 +275,9 @@ export function CampaignHero({
               </form>
             )}
             <p className="mt-3.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10.5px] font-semibold text-white/55">
-              <span>🔒 Razorpay secured</span>
-              <span>✓ J&amp;K licensed</span>
-              {phone && <span>📞 {phone}</span>}
+              <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" strokeWidth={2.2} /> Razorpay secured</span>
+              <span className="inline-flex items-center gap-1"><Check className="h-3 w-3" strokeWidth={2.5} /> J&amp;K licensed</span>
+              {phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" strokeWidth={2.2} /> {phone}</span>}
             </p>
           </motion.div>
         </div>

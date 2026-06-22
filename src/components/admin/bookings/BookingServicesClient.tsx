@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, Lock, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle, Pencil, Check } from "lucide-react";
+import { Plus, Trash2, Loader2, Lock, X, Hotel, Car, Ticket, Package, Wallet, CheckCircle2, Mail, AlertTriangle, Pencil, Check, UserRound, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
 import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
+import { canEditDriver, type DriverDetails } from "@/lib/bookings/driver";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
@@ -53,6 +54,7 @@ interface BookingData {
   lead: { id: string; name: string; phone: string; email: string | null; assignedTo: { name: string | null; email: string } | null } | null;
   services: Service[];
   payments: Payment[];
+  driver: DriverDetails | null;
 }
 
 type FieldKey = "name" | "location" | "nights" | "pickup" | "dropoff" | "timing" | "amount";
@@ -476,6 +478,15 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         </div>
       )}
 
+      {/* Driver & vehicle — only once services are locked */}
+      {locked && (
+        <DriverSection
+          bookingId={booking.id}
+          travelDate={booking.travelDate}
+          initialDriver={booking.driver}
+        />
+      )}
+
       {dialog && (
         <LockDialog
           mode={dialog}
@@ -488,6 +499,177 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
           onConfirm={performLock}
         />
       )}
+    </div>
+  );
+}
+
+// ── Driver & vehicle section ──────────────────────────────────────────────────
+// Appears after services are locked. Staff can add the assigned driver/vehicle
+// and optionally email the customer; details remain editable until one day
+// before travel, after which the card is read-only.
+function DriverSection({
+  bookingId,
+  travelDate,
+  initialDriver,
+}: {
+  bookingId: string;
+  travelDate: string;
+  initialDriver: DriverDetails | null;
+}) {
+  const router = useRouter();
+  const [driver, setDriver] = useState<DriverDetails | null>(initialDriver);
+  const [open, setOpen] = useState(false);
+  const [saving, startSave] = useTransition();
+  const editable = canEditDriver(travelDate);
+
+  const empty: DriverDetails = { driverName: "", driverPhone: "", vehicleNumber: "", vehicleName: "" };
+  const [form, setForm] = useState<DriverDetails>(initialDriver ?? empty);
+  const [sendEmail, setSendEmail] = useState(true);
+
+  function openModal() {
+    setForm(driver ?? empty);
+    setSendEmail(true);
+    setOpen(true);
+  }
+
+  function submit() {
+    if (form.driverName.trim().length < 2) return toast.error("Enter the driver's name.");
+    if (form.driverPhone.trim().length < 7) return toast.error("Enter a valid driver phone.");
+    if (form.vehicleNumber.trim().length < 4) return toast.error("Enter the vehicle number.");
+    if (form.vehicleName.trim().length < 2) return toast.error("Enter the vehicle name.");
+
+    startSave(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/driver`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            driverName: form.driverName.trim(),
+            driverPhone: form.driverPhone.trim(),
+            vehicleNumber: form.vehicleNumber.trim(),
+            vehicleName: form.vehicleName.trim(),
+            sendEmail,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed to save driver details.");
+        setDriver({
+          driverName: data.driverName,
+          driverPhone: data.driverPhone,
+          vehicleNumber: data.vehicleNumber,
+          vehicleName: data.vehicleName,
+        });
+        setOpen(false);
+        if (data.requestedEmail) {
+          toast.success(data.emailed ? "Driver details saved and emailed to the customer." : "Driver details saved (email could not be sent).");
+        } else {
+          toast.success("Driver details saved.");
+        }
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to save driver details.");
+      }
+    });
+  }
+
+  const fieldCls = "w-full px-2.5 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 font-bold text-foreground text-sm">
+          <Car className="w-4 h-4 text-primary" /> Driver &amp; Vehicle
+        </h3>
+        {driver ? (
+          editable && (
+            <button onClick={openModal} className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80">
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </button>
+          )
+        ) : (
+          editable && (
+            <button onClick={openModal} className="inline-flex items-center gap-1.5 text-sm font-bold bg-primary text-white px-4 py-2 rounded-xl hover:brightness-110">
+              <Plus className="w-4 h-4" /> Add Driver
+            </button>
+          )
+        )}
+      </div>
+
+      {driver ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <DriverFact icon={UserRound} label="Driver" value={driver.driverName} />
+          <DriverFact icon={Phone} label="Driver Phone" value={driver.driverPhone} />
+          <DriverFact icon={Car} label="Vehicle" value={driver.vehicleName} />
+          <DriverFact icon={Car} label="Vehicle Number" value={driver.vehicleNumber} />
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {editable
+            ? "No driver assigned yet. Add the driver and vehicle for this trip."
+            : "No driver was assigned, and details can no longer be added (within one day of travel)."}
+        </p>
+      )}
+
+      {driver && !editable && (
+        <p className="mt-3 text-[11px] text-muted-foreground">Editing is closed — driver details can only be changed up to one day before travel.</p>
+      )}
+
+      {open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h4 className="font-display text-base font-bold text-foreground">{driver ? "Edit driver details" : "Add driver details"}</h4>
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Driver name <span className="text-red-500">*</span></label>
+                <input value={form.driverName} onChange={(e) => setForm({ ...form, driverName: e.target.value })} className={fieldCls} placeholder="e.g. Bashir Ahmad" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Driver phone <span className="text-red-500">*</span></label>
+                <input value={form.driverPhone} onChange={(e) => setForm({ ...form, driverPhone: e.target.value })} className={fieldCls} placeholder="e.g. +91 98765 43210" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Vehicle name <span className="text-red-500">*</span></label>
+                <input value={form.vehicleName} onChange={(e) => setForm({ ...form, vehicleName: e.target.value })} className={fieldCls} placeholder="e.g. Toyota Innova Crysta" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Vehicle number <span className="text-red-500">*</span></label>
+                <input value={form.vehicleNumber} onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value })} className={fieldCls} placeholder="e.g. JK01AB1234" />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4 rounded border-border" />
+                Email these details to the customer
+              </label>
+              <div className="flex items-center gap-2 pt-1">
+                <button onClick={submit} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {driver ? "Save changes" : "Add driver"}
+                </button>
+                <button onClick={() => setOpen(false)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DriverFact({ icon: Icon, label, value }: { icon: typeof Car; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/30 p-3">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-sm font-semibold text-foreground break-words">{value}</p>
+      </div>
     </div>
   );
 }

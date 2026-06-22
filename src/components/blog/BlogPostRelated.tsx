@@ -4,6 +4,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 import { useState, useEffect } from 'react';
 import type { BlogArticleData } from '@/types/blog';
 
@@ -79,7 +81,7 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              ‹
+              <ChevronLeft className="h-5 w-5" strokeWidth={2.2} />
             </motion.button>
             <motion.button
               onClick={nextSlide}
@@ -88,7 +90,7 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              ›
+              <ChevronRight className="h-5 w-5" strokeWidth={2.2} />
             </motion.button>
           </div>
         )}
@@ -114,15 +116,13 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
               >
                 <Link href={`/blog/${post.slug}`} className="block">
                   <div className="relative h-[150px] overflow-hidden">
-                    {post.coverImage && (
-                      <Image
-                        src={post.coverImage}
-                        alt=""
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition duration-500 group-hover:scale-105"
-                      />
-                    )}
+                    <Image
+                      src={imgSrc(post.coverImage)}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
                     {post.category && (
                       <span className={`absolute bottom-2 left-2 rounded ${badgeColor[post.category] ?? 'bg-primary'} px-2 py-0.5 text-[8.5px] font-extrabold tracking-wide text-white`}>
                         {post.category.toUpperCase()}

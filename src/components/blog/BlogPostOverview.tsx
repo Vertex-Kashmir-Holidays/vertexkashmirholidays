@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { FileText } from 'lucide-react';
 
 interface BlogPostOverviewProps {
   title: string;
@@ -19,10 +20,7 @@ export function BlogPostOverview({ title, facts, bestFor }: BlogPostOverviewProp
       transition={{ duration: 0.5 }}
     >
       <p className="flex items-center gap-2.5 text-[14.5px] font-bold text-brand-green2">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <rect x="3" y="3" width="18" height="18" rx="3" />
-          <path d="M8 8h4M8 12h8M8 16h6" />
-        </svg>
+        <FileText className="h-5 w-5" strokeWidth={1.8} />
         {title}
       </p>
       <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12.5px] text-brand-ink/80">

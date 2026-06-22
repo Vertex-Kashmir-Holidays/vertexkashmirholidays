@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Heart, Users, Mountain, Crown, type LucideIcon } from 'lucide-react';
 import { ToursFiltersSidebar } from '@/components/tours/ToursFiltersSidebar';
 import { ToursGridSection } from '@/components/tours/ToursGridSection';
 import type { TourListItemData, TourSortOption } from '@/types/tours';
@@ -9,11 +10,11 @@ interface ToursPageClientProps {
   tours: TourListItemData[];
 }
 
-const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
-  HONEYMOON: { label: 'Honeymoon', emoji: '❤️' },
-  FAMILY: { label: 'Family', emoji: '👨‍👩‍👧' },
-  ADVENTURE: { label: 'Adventure', emoji: '🏔️' },
-  LUXURY: { label: 'Luxury', emoji: '👑' },
+const CATEGORY_META: Record<string, { label: string; Icon: LucideIcon }> = {
+  HONEYMOON: { label: 'Honeymoon', Icon: Heart },
+  FAMILY: { label: 'Family', Icon: Users },
+  ADVENTURE: { label: 'Adventure', Icon: Mountain },
+  LUXURY: { label: 'Luxury', Icon: Crown },
 };
 
 const DURATION_BUCKETS = [

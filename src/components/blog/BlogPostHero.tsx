@@ -4,6 +4,9 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Clock, Calendar, Link2 } from 'lucide-react';
+import { WhatsAppIcon, FacebookIcon, TwitterIcon } from '@/components/icons/brand';
+import { imgSrc } from '@/lib/placeholder';
 
 interface BlogPostHeroProps {
   category: string | null;
@@ -38,7 +41,7 @@ export function BlogPostHero({
         animate={{ scale: 1 }}
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Image src={image} alt={title} fill priority sizes="100vw" className="object-cover" />
+        <Image src={imgSrc(image)} alt={title} fill priority sizes="100vw" className="object-cover" />
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/45 to-brand-dark/15"></div>
 
@@ -114,19 +117,13 @@ export function BlogPostHero({
             </div>
             {readTime && (
               <span className="flex items-center gap-1.5 text-[12.5px]">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 3" />
-                </svg>
+                <Clock className="h-4 w-4" strokeWidth={2} />
                 {readTime}
               </span>
             )}
             {date && (
               <span className="flex items-center gap-1.5 text-[12.5px]">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
+                <Calendar className="h-4 w-4" strokeWidth={2} />
                 {date}
               </span>
             )}
@@ -143,27 +140,10 @@ export function BlogPostHero({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {label === 'WhatsApp' && (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                    <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3-.6-2.5-1-4.1-3.6-4.2-3.8-.1-.2-1-1.3-1-2.5s.6-1.7.8-2c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c0 .2.1.3 0 .5l-.4.6c-.2.2-.3.4-.1.7.2.3.8 1.3 1.7 2 1.1.9 2 .9 2.3 1 .2 0 .4 0 .5-.2l.6-.8c.2-.2.4-.2.6-.1l1.7.8c.2.1.4.2.4.3.1.2.1.6-.1 1Z" />
-                  </svg>
-                )}
-                {label === 'Facebook' && (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                    <path d="M14 8h3V5h-3a4 4 0 0 0-4 4v2H7v3h3v7h3v-7h3l1-3h-4V9a1 1 0 0 1 1-1Z" />
-                  </svg>
-                )}
-                {label === 'X' && (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                    <path d="m4 4 6.8 8.5L4.4 20h2.3l5.1-6 4.8 6H20l-7-8.8L19.2 4H17l-4.6 5.4L8 4Z" />
-                  </svg>
-                )}
-                {label === 'Copy' && (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
-                    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
-                  </svg>
-                )}
+                {label === 'WhatsApp' && <WhatsAppIcon className="h-4 w-4" />}
+                {label === 'Facebook' && <FacebookIcon className="h-4 w-4" />}
+                {label === 'X' && <TwitterIcon className="h-4 w-4" />}
+                {label === 'Copy' && <Link2 className="h-4 w-4" strokeWidth={2} />}
               </motion.a>
             ))}
           </div>

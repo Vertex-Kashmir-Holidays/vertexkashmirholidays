@@ -4,7 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, type Variants } from 'framer-motion';
 import { Tilt3D } from '@/components/ui/3DTilt';
+import { Clock } from 'lucide-react';
 import { formatINR, renderAccents } from '@/lib/accents';
+import { imgSrc } from '@/lib/placeholder';
 import type { OfferData, SectionHeading } from '@/types/home';
 
 interface OffersSectionProps {
@@ -90,15 +92,13 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                 <div className="shine absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                 <div className="relative h-40 overflow-hidden">
-                  {o.image && (
-                    <Image
-                      src={o.image}
-                      alt={o.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                  )}
+                  <Image
+                    src={imgSrc(o.image)}
+                    alt={o.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
                   {o.badge && (
                     <motion.span
                       className="grad-orange pop-sm absolute left-3 top-3 rounded-lg px-3 py-1 text-[10px] font-extrabold text-navy-brand shadow-lg"
@@ -129,8 +129,8 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                       <span className="text-[10px] text-muted-foreground"> /person</span>
                     </p>
                     {o.endsText && (
-                      <span className="glass rounded-full px-3 py-1.5 text-[10px] font-bold text-brand-green">
-                        ⏳ {o.endsText}
+                      <span className="glass inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-bold text-brand-green">
+                        <Clock className="h-3 w-3" strokeWidth={2} /> {o.endsText}
                       </span>
                     )}
                   </div>

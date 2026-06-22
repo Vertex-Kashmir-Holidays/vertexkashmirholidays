@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { renderAccents } from '@/lib/accents';
+import { imgSrc } from '@/lib/placeholder';
 import type { BlogCardData, SectionHeading } from '@/types/home';
 
 interface BlogSectionProps {
@@ -33,9 +34,7 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
           <Link key={b.id} href={`/blog/${b.slug}`} className="rv tilt glass group relative block overflow-hidden rounded-3xl shadow-card" data-tilt style={{ '--rd': `${i * 0.09}s` } as React.CSSProperties}>
             <div className="shine"></div>
             <div className="relative h-44 overflow-hidden">
-              {b.coverImage && (
-                <Image src={b.coverImage} alt={b.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-110" />
-              )}
+              <Image src={imgSrc(b.coverImage)} alt={b.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-110" />
               {b.category && (
                 <span className="glass pop-sm absolute left-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold text-white">
                   {b.category}

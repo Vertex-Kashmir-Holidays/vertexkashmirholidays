@@ -1,5 +1,6 @@
 // Serializable shapes passed from the tours page (server) to its client sections.
 
+import type { LucideIcon } from 'lucide-react';
 import type { HomeTourData } from './home';
 
 export interface TourListItemData extends HomeTourData {
@@ -12,7 +13,7 @@ export type TourSortOption = 'popular' | 'price-asc' | 'price-desc' | 'rating';
 export interface CategoryOption {
   id: string;
   label: string;
-  emoji: string;
+  Icon: LucideIcon;
   count: number;
 }
 

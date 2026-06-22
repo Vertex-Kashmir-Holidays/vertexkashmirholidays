@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { renderAccents } from '@/lib/accents';
 import type { SectionHeading, TestimonialData } from '@/types/home';
 
@@ -31,15 +32,17 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
         <div className="rv flex gap-2" style={{ '--rd': '0.16s' } as React.CSSProperties}>
           <button
             onClick={() => scroll('prev')}
+            aria-label="Previous testimonials"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
-            ←
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.2} />
           </button>
           <button
             onClick={() => scroll('next')}
+            aria-label="Next testimonials"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
-            →
+            <ChevronRight className="h-5 w-5" strokeWidth={2.2} />
           </button>
         </div>
       </div>
@@ -50,13 +53,17 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
             <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{t.quote}</p>
             <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
-                <Image src={t.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" />
+                <Image src={t.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" unoptimized />
               )}
               <div>
                 <p className="text-sm font-bold text-foreground">{t.name}</p>
                 {t.location && <p className="text-[11px] text-muted-foreground">{t.location}</p>}
               </div>
-              <span className="ml-auto text-amber-300">{'★'.repeat(Math.max(1, Math.min(5, t.rating)))}</span>
+              <span className="ml-auto flex gap-0.5 text-amber-300">
+                {Array.from({ length: Math.max(1, Math.min(5, t.rating)) }).map((_, s) => (
+                  <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
+                ))}
+              </span>
             </div>
           </article>
         ))}

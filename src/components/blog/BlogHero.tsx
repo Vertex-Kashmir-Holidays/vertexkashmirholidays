@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Search } from 'lucide-react';
 import type { BlogPageContent } from '@/types/blog';
 
 interface BlogHeroProps {
@@ -70,10 +71,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
             placeholder={content.heroSearchPlaceholder ?? 'Search articles...'}
             onChange={(e) => onSearch(e.target.value)}
           />
-          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-foreground/70" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4-4" />
-          </svg>
+          <Search className="h-4 w-4 shrink-0 text-foreground/70" strokeWidth={2} />
         </motion.label>
       </div>
     </section>

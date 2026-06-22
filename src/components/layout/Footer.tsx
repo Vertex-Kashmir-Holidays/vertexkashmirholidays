@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { MapPin, Phone } from 'lucide-react';
 import { Logo } from '@/components/brand/Logo';
+import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon } from '@/components/icons/brand';
 
 export interface FooterSettings {
   siteName: string;
@@ -75,21 +77,21 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
             <div className="mt-5 flex gap-2.5">
               {settings?.instagram && (
                 <a href={settings.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                  ◎
+                  <InstagramIcon className="h-[18px] w-[18px]" />
                 </a>
               )}
               {settings?.facebook && (
                 <a href={settings.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                  f
+                  <FacebookIcon className="h-[18px] w-[18px]" />
                 </a>
               )}
               {settings?.youtube && (
                 <a href={settings.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                  ▶
+                  <YoutubeIcon className="h-[18px] w-[18px]" />
                 </a>
               )}
               <a href={whatsappChatHref} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
-                ✆
+                <WhatsAppIcon className="h-[18px] w-[18px]" />
               </a>
             </div>
           </div>
@@ -149,9 +151,9 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
               </button>
             </div>
             <p className="mt-5 text-[12px] leading-relaxed text-muted-foreground">
-              📍 {address}
+              <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> {address}
               <br />
-              ✆ <a href={`tel:${phone.replace(/\s+/g, '')}`} className="transition hover:text-primary">{phone}</a>
+              <Phone className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> <a href={`tel:${phone.replace(/\s+/g, '')}`} className="transition hover:text-primary">{phone}</a>
               {' · '}
               <a href={`mailto:${email}`} className="transition hover:text-primary">{email}</a>
             </p>

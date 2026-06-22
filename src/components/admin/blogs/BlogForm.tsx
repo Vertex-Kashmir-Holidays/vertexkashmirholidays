@@ -78,6 +78,7 @@ export function BlogForm({ defaults }: Props) {
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("folder", "blog");
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       if (!res.ok) throw new Error();
       const data = await res.json() as { url: string };

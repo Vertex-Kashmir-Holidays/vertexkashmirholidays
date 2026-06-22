@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { Search, RotateCcw, X } from 'lucide-react';
 import { formatINR } from '@/lib/accents';
 import type { CategoryOption, DurationOption } from '@/types/tours';
 
@@ -49,10 +50,7 @@ function FilterContent({
           className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
           placeholder="Search tours..."
         />
-        <svg viewBox="0 0 24 24" className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m21 21-4-4" />
-        </svg>
+        <Search className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
       </label>
 
       {/* Categories */}
@@ -75,7 +73,7 @@ function FilterContent({
                 id={`${idPrefix}-cat-${c.id}`}
               />
               <label htmlFor={`${idPrefix}-cat-${c.id}`} className="flex w-full cursor-pointer items-center gap-2 text-foreground/85">
-                <span className="text-[13px]">{c.emoji}</span>
+                <c.Icon size={18} strokeWidth={1.75} className="shrink-0 text-foreground/70" />
                 {c.label}
               </label>
               <span className="text-[12px] text-muted-foreground">{c.count}</span>
@@ -135,9 +133,7 @@ function FilterContent({
         onClick={onClear}
       >
         Clear Filters
-        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />
-        </svg>
+        <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
       </motion.button>
     </>
   );
@@ -197,9 +193,7 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
                 onClick={onClose}
                 className="grid h-9 w-9 place-items-center rounded-full hover:bg-muted"
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
+                <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
 
