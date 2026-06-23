@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePagination } from "@/components/admin/ui/usePagination";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
 type PaymentStatus = "PENDING" | "PARTIAL" | "FULL";
@@ -87,9 +89,12 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
       b.guestName.toLowerCase().includes(q) ||
       (b.guestEmail ?? "").toLowerCase().includes(q) ||
       (b.razorpayOrderId ?? "").toLowerCase().includes(q) ||
+      b.id.toLowerCase().includes(q) ||
       (b.tour?.title ?? "").toLowerCase().includes(q);
     return matchesStatus && matchesSearch;
   });
+
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
 
   function handleDelete(id: string, permanent: boolean) {
     startTransition(async () => {
@@ -150,7 +155,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, order ID..."
+              placeholder="Search by name, email, ref, order ID..."
               className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
             />
           </div>
@@ -178,7 +183,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Guest", "Tour", "Travel Date", "Pax", "Amount", "Status", "Payment", "Booked", "Actions"].map((h) => (
+                {["Ref", "Guest", "Travel Date", "Amount", "Status", "Payment", "Actions"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -186,12 +191,12 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No bookings found.
                   </td>
                 </tr>
               ) : (
-                filtered.map((b) => {
+                pageItems.map((b) => {
                   const showCancel = canCancel(b, isAdmin);
                   const showRefund = canRefund(b, isAdmin);
                   return (
@@ -200,6 +205,11 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       onClick={() => { setConfirmMode(null); setSelected(selected?.id === b.id ? null : b); }}
                       className={cn("hover:bg-muted/50 transition-colors cursor-pointer", selected?.id === b.id && "bg-primary/5 border-l-2 border-l-primary")}
                     >
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-[10px] font-semibold text-foreground" title={b.id}>
+                          #{b.id.slice(-8).toUpperCase()}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -211,13 +221,9 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <p className="text-xs font-medium text-foreground truncate max-w-[140px]">{b.tour?.title ?? "Custom booking"}</p>
-                      </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.travelDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{b.travellers}</td>
                       <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">{fmtINR(b.amount)}</td>
                       <td className="px-4 py-3">
                         <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
@@ -228,9 +234,6 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                         <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
                           {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
@@ -271,6 +274,16 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="bookings"
+        />
       </div>
 
       {/* Detail panel */}

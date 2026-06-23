@@ -11,6 +11,10 @@ type Params = { params: Promise<{ slug: string }> };
 const patchSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
+  // Banner image URLs from the gallery. Empty string clears back to the
+  // shipped default; omitted leaves the stored value untouched.
+  heroImage: z.string().optional(),
+  heroImageMobile: z.string().optional(),
 });
 
 // Upsert a legal page by slug (admin-managed).
@@ -35,10 +39,28 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const def = getLegalDefault(slug)!;
+  // Normalise blank strings to null so the public page falls back to the
+  // shipped default banner rather than rendering an empty <img>.
+  const heroImage =
+    parsed.data.heroImage !== undefined ? parsed.data.heroImage.trim() || null : undefined;
+  const heroImageMobile =
+    parsed.data.heroImageMobile !== undefined ? parsed.data.heroImageMobile.trim() || null : undefined;
+
   const saved = await prisma.legalPage.upsert({
     where: { slug },
-    update: { title: parsed.data.title, content: parsed.data.content },
-    create: { slug, title: parsed.data.title || def.title, content: parsed.data.content },
+    update: {
+      title: parsed.data.title,
+      content: parsed.data.content,
+      ...(heroImage !== undefined ? { heroImage } : {}),
+      ...(heroImageMobile !== undefined ? { heroImageMobile } : {}),
+    },
+    create: {
+      slug,
+      title: parsed.data.title || def.title,
+      content: parsed.data.content,
+      heroImage: heroImage ?? null,
+      heroImageMobile: heroImageMobile ?? null,
+    },
   });
   return NextResponse.json(saved);
 }

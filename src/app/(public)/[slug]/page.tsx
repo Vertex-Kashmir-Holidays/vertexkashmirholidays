@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
+import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { LEGAL_PAGES, LEGAL_SLUGS, getLegalDefault } from "@/lib/legal/content";
 
 export const revalidate = 300;
@@ -41,6 +42,9 @@ export default async function LegalPage({ params }: PageProps) {
   const title = record?.title ?? def.title;
   const html = record?.content ?? def.content;
   const updated = record?.updatedAt ?? new Date();
+  // Admin-set banner from the gallery, falling back to the shipped default.
+  const heroImage = record?.heroImage ?? def.heroImage;
+  const heroImageMobile = record?.heroImageMobile ?? def.heroImageMobile;
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
@@ -51,21 +55,18 @@ export default async function LegalPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
 
-      {/* Hero band */}
-      <header className="relative overflow-hidden border-b border-border bg-card/60">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
-        <div className="mx-auto max-w-[1100px] px-6 py-14 sm:py-16">
-          <nav className="flex flex-wrap items-center gap-1.5 text-[12px] text-muted-foreground">
-            <Link href="/" className="transition hover:text-primary">Home</Link>
-            <span>/</span>
-            <span className="font-semibold text-foreground">{title}</span>
-          </nav>
-          <h1 className="h-display mt-4 text-3xl font-bold text-foreground sm:text-4xl">{title}</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Last updated: {longDate(updated)}
-          </p>
-        </div>
-      </header>
+      {/* Unified image-banner hero (admin-replaceable from the gallery). */}
+      <SecondaryHero image={heroImage} imageMobile={heroImageMobile} alt={title}>
+        <nav className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+          <Link href="/" className="transition hover:text-white">Home</Link>
+          <span>›</span>
+          <span className="font-semibold text-white">{title}</span>
+        </nav>
+        <h1 className="h-display mt-4 text-3xl font-bold text-white sm:text-4xl">{title}</h1>
+        <p className="mt-3 text-sm text-white/80">
+          Last updated: {longDate(updated)}
+        </p>
+      </SecondaryHero>
 
       <main className="mx-auto max-w-[1100px] px-6 py-10 sm:py-12">
         <div className="grid items-start gap-10 lg:grid-cols-[1fr_240px]">

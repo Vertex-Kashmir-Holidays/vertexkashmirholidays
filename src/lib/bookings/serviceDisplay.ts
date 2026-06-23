@@ -8,6 +8,7 @@ export interface DisplayService {
   name: string;
   location?: string | null;
   nights?: number | null;
+  roomType?: string | null;
   pickup?: string | null;
   dropoff?: string | null;
   timing?: string | null;
@@ -39,6 +40,7 @@ export function serviceFields(s: DisplayService): ServiceField[] {
   switch (s.kind) {
     case "HOTEL":
       if (s.location) fields.push({ label: "Location", value: s.location });
+      if (s.roomType) fields.push({ label: "Room Type", value: s.roomType });
       if (s.nights != null) fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
       break;
     case "TRANSPORT":
@@ -73,7 +75,7 @@ export function groupServices<T extends DisplayService>(services: T[]) {
 // Column headers per kind, mirroring the admin services UI. Used to render the
 // same table layout in the customer account, the booking email, and the PDF.
 export const SERVICE_COLUMNS: Record<ServiceKind, string[]> = {
-  HOTEL: ["Hotel Name", "Location", "Nights"],
+  HOTEL: ["Hotel Name", "Location", "Room Type", "Nights"],
   TRANSPORT: ["Cab Name", "Pickup", "Drop"],
   ACTIVITY: ["Activity", "Duration", "Location"],
   OTHER: ["Item"],
@@ -85,7 +87,7 @@ const DASH = "—";
 export function serviceRow(s: DisplayService): string[] {
   switch (s.kind) {
     case "HOTEL":
-      return [s.name, s.location || DASH, s.nights != null ? String(s.nights) : DASH];
+      return [s.name, s.location || DASH, s.roomType || DASH, s.nights != null ? String(s.nights) : DASH];
     case "TRANSPORT":
       return [s.name, s.pickup || DASH, s.dropoff || DASH];
     case "ACTIVITY":

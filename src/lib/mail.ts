@@ -393,6 +393,7 @@ export interface InvoiceService {
   name: string;
   location?: string | null;
   nights?: number | null;
+  roomType?: string | null;
   pickup?: string | null;
   dropoff?: string | null;
   timing?: string | null;

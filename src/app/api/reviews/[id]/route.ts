@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { recomputeTourRating } from "@/lib/reviews";
 import { z } from "zod";
 
@@ -31,6 +32,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+
+  // Approving/rejecting (publishing) a review is an admin-only action. Other
+  // staff with reviews "edit" permission may still correct content, but cannot
+  // change a review's published state.
+  const approvalChange = parsed.data.approved !== undefined && parsed.data.approved !== existing.approved;
+  if (approvalChange && !isAdminRole((guard.user as { role?: string }).role)) {
+    return NextResponse.json(
+      { error: "Only an admin can approve or reject reviews." },
+      { status: 403 },
+    );
+  }
 
   const updated = await prisma.review.update({
     where: { id },

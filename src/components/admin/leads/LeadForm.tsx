@@ -26,6 +26,16 @@ const schema = z.object({
   notes: z.string().optional(),
   negotiatedAmount: z.string().optional(),
   tokenAmount: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Business rule: a trip can't end before it starts. Date strings are
+  // YYYY-MM-DD so a lexical compare is also a chronological compare.
+  if (data.startDate && data.endDate && data.endDate < data.startDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endDate"],
+      message: "Travel end date can't be before the start date.",
+    });
+  }
 });
 
 type FormData = z.infer<typeof schema>;
@@ -43,7 +53,12 @@ interface Props {
   defaultValues?: Partial<FormData>;
   /** Render all fields read-only (locked lead, or a non-assignee admin viewing). */
   readOnly?: boolean;
-  /** Business notice shown above the read-only form (title + explanation). */
+  /**
+   * Reassign-only mode: every field is locked EXCEPT "Assign To". Used when an
+   * admin opens an assigned lead they don't own — they may only reassign it.
+   */
+  assignOnly?: boolean;
+  /** Business notice shown above a locked / reassign-only form (title + explanation). */
   readOnlyNotice?: { title: string; body: string };
 }
 
@@ -55,19 +70,39 @@ const selectWrapCls = "relative";
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition appearance-none bg-card";
 
-export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, readOnlyNotice }: Props) {
+export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, assignOnly = false, readOnlyNotice }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!leadId;
+  // Non-assignment fields are locked when the lead is fully read-only OR when an
+  // admin is only allowed to reassign it. The "Assign To" field stays editable in
+  // reassign-only mode, so it lives in its own fieldset below.
+  const lockOthers = readOnly || assignOnly;
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: defaultValues ?? { source: "MANUAL", adults: "1" },
   });
+
+  const startDate = watch("startDate");
+  const startReg = register("startDate");
+
+  // When the travel start changes, pull the end date into the same month so the
+  // user only has to pick the day (and never lands on an end-before-start date).
+  function onStartChange(e: React.ChangeEvent<HTMLInputElement>) {
+    startReg.onChange(e);
+    const next = e.target.value;
+    const currentEnd = watch("endDate");
+    if (next && (!currentEnd || currentEnd < next)) {
+      setValue("endDate", next, { shouldValidate: true });
+    }
+  }
 
   function onSubmit(data: FormData) {
     startTransition(async () => {
@@ -121,11 +156,18 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-      {readOnly && (
-        <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+      {(readOnly || assignOnly) && (
+        <div
+          className={cn(
+            "flex items-start gap-2 rounded-2xl border px-4 py-3",
+            assignOnly
+              ? "border-primary/30 bg-primary/10"
+              : "border-amber-500/30 bg-amber-500/10",
+          )}
+        >
+          <Lock className={cn("w-4 h-4 shrink-0 mt-0.5", assignOnly ? "text-primary" : "text-amber-600 dark:text-amber-400")} />
           <div className="text-xs">
-            <p className="font-semibold text-amber-700 dark:text-amber-300">
+            <p className={cn("font-semibold", assignOnly ? "text-primary" : "text-amber-700 dark:text-amber-300")}>
               {readOnlyNotice?.title ?? "This lead is read-only"}
             </p>
             <p className="text-muted-foreground mt-0.5">
@@ -136,8 +178,9 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
         </div>
       )}
 
-      {/* All fields are natively disabled while the lead is locked. */}
-      <fieldset disabled={readOnly} className={cn("space-y-6 min-w-0 border-0 m-0 p-0", readOnly && "opacity-70")}>
+      {/* Every field except "Assign To" is disabled while the lead is locked or in
+          reassign-only mode. */}
+      <fieldset disabled={lockOthers} className={cn("space-y-6 min-w-0 border-0 m-0 p-0", lockOthers && "opacity-70")}>
       {/* Contact Details */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
         <h3 className="font-bold text-foreground text-sm">Contact Details</h3>
@@ -169,11 +212,19 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">Travel Start</label>
-            <input {...register("startDate")} type="date" className={inputCls} />
+            <input {...startReg} onChange={onStartChange} type="date" className={inputCls} />
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">Travel End</label>
-            <input {...register("endDate")} type="date" className={inputCls} />
+            <input
+              {...register("endDate")}
+              type="date"
+              min={startDate || undefined}
+              className={inputCls}
+            />
+            {errors.endDate && (
+              <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.endDate.message}</p>
+            )}
           </div>
         </div>
 
@@ -210,39 +261,22 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
         </div>
       </div>
 
-      {/* Source & Assignment */}
+      {/* Source & Notes */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
-        <h3 className="font-bold text-foreground text-sm">Source & Assignment</h3>
+        <h3 className="font-bold text-foreground text-sm">Source &amp; Notes</h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Source</label>
-            <div className={selectWrapCls}>
-              <select {...register("source")} className={selectCls}>
-                <option value="MANUAL">Manual</option>
-                <option value="WEBSITE">Website</option>
-                <option value="REFERRAL">Referral</option>
-                <option value="GOOGLE_ADS">Google Ads</option>
-                <option value="META_ADS">Meta Ads</option>
-                <option value="THIRD_PARTY">Third Party</option>
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Assign To</label>
-            <div className={selectWrapCls}>
-              <select {...register("assignedToId")} className={selectCls}>
-                <option value="">Unassigned</option>
-                {staffUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name ?? u.id}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            </div>
+        <div>
+          <label className="block text-xs font-semibold text-muted-foreground mb-1">Source</label>
+          <div className={selectWrapCls}>
+            <select {...register("source")} className={selectCls}>
+              <option value="MANUAL">Manual</option>
+              <option value="WEBSITE">Website</option>
+              <option value="REFERRAL">Referral</option>
+              <option value="GOOGLE_ADS">Google Ads</option>
+              <option value="META_ADS">Meta Ads</option>
+              <option value="THIRD_PARTY">Third Party</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           </div>
         </div>
 
@@ -271,6 +305,28 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
           </div>
         </div>
       </div>
+      </fieldset>
+
+      {/* Assignment lives in its own fieldset so an admin can reassign a lead they
+          don't own (reassign-only mode) while every other field stays locked. */}
+      <fieldset disabled={readOnly} className={cn("min-w-0 border-0 m-0 p-0", readOnly && "opacity-70")}>
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <h3 className="font-bold text-foreground text-sm">Assignment</h3>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Assign To</label>
+            <div className={selectWrapCls}>
+              <select {...register("assignedToId")} className={selectCls}>
+                <option value="">Unassigned</option>
+                {staffUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.id}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+        </div>
       </fieldset>
 
       <div className="flex items-center gap-3">

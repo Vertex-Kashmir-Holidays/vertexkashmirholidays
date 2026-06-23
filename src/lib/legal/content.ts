@@ -12,6 +12,10 @@ export interface LegalPageDef {
   navLabel: string;
   /** Meta description for SEO. */
   description: string;
+  /** Shipped default banner image (desktop). DB heroImage overrides this. */
+  heroImage: string;
+  /** Shipped default banner image (≤640px). */
+  heroImageMobile: string;
   /** HTML body. */
   content: string;
 }
@@ -25,6 +29,8 @@ export const LEGAL_PAGES: LegalPageDef[] = [
     title: "Terms & Conditions",
     navLabel: "Terms & Conditions",
     description: `Read the terms and conditions governing bookings, payments, travel and use of ${COMPANY}' services and website.`,
+    heroImage: "/hero/pahalgam-lg.webp",
+    heroImageMobile: "/hero/pahalgam.webp",
     content: `
 <p>These Terms &amp; Conditions ("Terms") govern your use of the ${COMPANY} website and the booking of any tour, package, or travel-related service offered by ${LEGAL_ENTITY} ("${COMPANY}", "we", "us", or "our"). By accessing our website or making a booking with us, you ("the client", "you") confirm that you have read, understood, and agree to be bound by these Terms.</p>
 
@@ -87,6 +93,8 @@ export const LEGAL_PAGES: LegalPageDef[] = [
     title: "Privacy Policy",
     navLabel: "Privacy Policy",
     description: `Learn how ${COMPANY} collects, uses, and protects your personal information when you use our website and book our travel services.`,
+    heroImage: "/hero/shikara-lg.webp",
+    heroImageMobile: "/hero/shikara.webp",
     content: `
 <p>${LEGAL_ENTITY} ("${COMPANY}", "we", "us", or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains what information we collect, how we use it, and the choices you have. By using our website or services, you consent to the practices described here.</p>
 
@@ -142,6 +150,8 @@ export const LEGAL_PAGES: LegalPageDef[] = [
     title: "Refund & Cancellation Policy",
     navLabel: "Refund & Cancellation",
     description: `Understand the cancellation timelines, refund eligibility, and processing details for bookings made with ${COMPANY}.`,
+    heroImage: "/hero/sonamarg-lg.webp",
+    heroImageMobile: "/hero/sonamarg.webp",
     content: `
 <p>This Refund &amp; Cancellation Policy explains what happens if a booking with ${LEGAL_ENTITY} ("${COMPANY}", "we", "us", or "our") is cancelled or modified. It forms part of our <a href="/terms-and-conditions">Terms &amp; Conditions</a>. Because Kashmir tours involve advance commitments to hotels, houseboats, and transport, cancellation charges apply on the scale below.</p>
 

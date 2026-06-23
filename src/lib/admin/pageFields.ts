@@ -83,13 +83,6 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "validUntil", label: "Valid until", type: "date" },
     { key: "ctaHref", label: "CTA link", type: "text" },
   ],
-  testimonials: [
-    { key: "name", label: "Name", type: "text", required: true },
-    { key: "location", label: "Location", type: "text" },
-    { key: "avatar", label: "Avatar", type: "image" },
-    { key: "quote", label: "Quote", type: "textarea", required: true },
-    { key: "rating", label: "Rating", type: "number" },
-  ],
   videoReviews: [
     { key: "name", label: "Name", type: "text", required: true },
     { key: "place", label: "Place", type: "text" },

@@ -1,7 +1,7 @@
 "use client";
 
 import { pdf } from "@react-pdf/renderer";
-import { ItineraryPdf, LOGO_SRC } from "@/components/admin/itinerary/ItineraryPdf";
+import { ItineraryPdf, LOGO_ASSETS } from "@/components/admin/itinerary/ItineraryPdf";
 import { compressMany } from "@/lib/itinerary/compress-image";
 import type { ItineraryData } from "@/types/itinerary";
 
@@ -42,12 +42,18 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   ].filter(Boolean);
 
   // The cover wants a larger, fuller-bleed image; day thumbnails stay tiny.
-  const [coverImages, smallImages, logo] = await Promise.all([
+  // Brand logos (icon watermark + horizontal lockups) embed losslessly via
+  // data URLs so PNG transparency survives.
+  const [coverImages, smallImages, logos] = await Promise.all([
     compressMany([data.coverImage].filter(Boolean), { maxWidth: 900, maxHeight: 1300, quality: 0.6 }),
     compressMany(srcs.filter((s) => s !== data.coverImage), { maxWidth: 640, maxHeight: 480, quality: 0.7 }),
-    fetchAsDataUrl(LOGO_SRC).catch(() => ""),
+    Promise.all(LOGO_ASSETS.map((src) => fetchAsDataUrl(src).catch(() => ""))),
   ]);
-  const images = { ...smallImages, ...coverImages, ...(logo ? { [LOGO_SRC]: logo } : {}) };
+  const logoMap: Record<string, string> = {};
+  LOGO_ASSETS.forEach((src, i) => {
+    if (logos[i]) logoMap[src] = logos[i];
+  });
+  const images = { ...smallImages, ...coverImages, ...logoMap };
 
   const blob = await pdf(<ItineraryPdf data={data} images={images} />).toBlob();
 

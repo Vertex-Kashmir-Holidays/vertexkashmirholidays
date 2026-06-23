@@ -403,15 +403,19 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
           <article className="page overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] bg-white shadow-page dark:border-mute/20 dark:bg-card">
             <div className="grid sm:grid-cols-[1.6fr_1fr]">
               <div className="p-6 sm:p-10">
-                <div className="flex items-center gap-3">
-                  <svg viewBox="0 0 44 44" className="h-12 w-12">
-                    <path d="M6 9 19 35 22 17Z" fill="#16407f" />
-                    <path d="M22 17 25 35 39 9Z" fill="#37b86b" />
-                  </svg>
-                  <span className="leading-tight">
-                    <span className="block font-serif text-2xl font-bold text-ink dark:text-foreground">Vertex</span>
-                    <span className="block text-[10px] font-semibold tracking-[0.18em] text-[hsl(156_40%_21%)] dark:text-primary">Kashmir Holidays</span>
-                  </span>
+                <div className="flex items-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/brand/kit/png/horizontal/vertex-horizontal-light-1600w.png"
+                    alt="Vertex Kashmir Holidays"
+                    className="h-12 w-auto object-contain dark:hidden"
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/brand/kit/png/horizontal/vertex-horizontal-dark-1600w.png"
+                    alt="Vertex Kashmir Holidays"
+                    className="hidden h-12 w-auto object-contain dark:block"
+                  />
                 </div>
                 <p className="font-serif mt-4 text-xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">Vertex Kashmir Tour &amp; Travel</p>
                 <p className="text-sm text-mute dark:text-muted-foreground">J&amp;K Tourism Registration number - JKTA0004560</p>

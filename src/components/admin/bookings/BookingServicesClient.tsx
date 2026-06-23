@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
 import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
 import { canEditDriver, type DriverDetails } from "@/lib/bookings/driver";
+import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
@@ -18,6 +19,7 @@ interface Service {
   amount: number;
   location: string | null;
   nights: number | null;
+  roomType: string | null;
   pickup: string | null;
   dropoff: string | null;
   timing: string | null;
@@ -45,6 +47,7 @@ interface BookingData {
   discountValue: number;
   inclusions: string[];
   travelDate: string;
+  travelEndDate: string | null;
   travellers: number;
   guestName: string;
   guestEmail: string | null;
@@ -57,7 +60,7 @@ interface BookingData {
   driver: DriverDetails | null;
 }
 
-type FieldKey = "name" | "location" | "nights" | "pickup" | "dropoff" | "timing" | "amount";
+type FieldKey = "name" | "location" | "nights" | "roomType" | "pickup" | "dropoff" | "timing" | "amount";
 interface FieldDef { key: FieldKey; label: string; type: "text" | "number"; }
 
 const SECTIONS: { kind: Kind; title: string; icon: typeof Hotel; addLabel: string; fields: FieldDef[] }[] = [
@@ -66,6 +69,7 @@ const SECTIONS: { kind: Kind; title: string; icon: typeof Hotel; addLabel: strin
     fields: [
       { key: "name", label: "Hotel Name", type: "text" },
       { key: "location", label: "Location", type: "text" },
+      { key: "roomType", label: "Room Type", type: "text" },
       { key: "nights", label: "Nights", type: "number" },
       { key: "amount", label: "Amount", type: "number" },
     ],
@@ -98,6 +102,17 @@ const SECTIONS: { kind: Kind; title: string; icon: typeof Hotel; addLabel: strin
 ];
 
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+// "12 Jul 2026 – 18 Jul 2026" when an end date exists and differs, else the single date.
+function formatTravel(start: string, end: string | null): string {
+  if (end && new Date(end).getTime() !== new Date(start).getTime()) {
+    return `${fmtDate(start)} – ${fmtDate(end)}`;
+  }
+  return fmtDate(start);
+}
 const inputCls =
   "w-full px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary disabled:opacity-60";
 
@@ -170,7 +185,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
   function addDraft(kind: Kind) {
     setDrafts((d) => [
       ...d,
-      { id: `draft-${++draftSeq}`, kind, name: "", amount: 0, location: null, nights: null, pickup: null, dropoff: null, timing: null, sortOrder: services.length + d.length },
+      { id: `draft-${++draftSeq}`, kind, name: "", amount: 0, location: null, nights: null, roomType: null, pickup: null, dropoff: null, timing: null, sortOrder: services.length + d.length },
     ]);
   }
 
@@ -296,7 +311,12 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-xs">
           <Detail label="Customer" value={booking.lead?.name ?? booking.customer?.name ?? booking.guestName} sub={booking.lead?.phone ?? booking.guestPhone} />
           <Detail label="Email" value={email || "Not provided"} />
-          <Detail label="Source" value={booking.lead ? "Converted lead" : booking.tourTitle ? "Website booking" : "Direct booking"} sub={booking.lead?.assignedTo ? `Sales: ${booking.lead.assignedTo.name ?? booking.lead.assignedTo.email}` : booking.tourTitle ?? undefined} />
+          <Detail label="Source" value={booking.lead ? "Converted lead" : booking.tourTitle ? "Website booking" : "Direct booking"} sub={booking.tourTitle ?? undefined} />
+          {/* Assignee comes from the originating lead — absent for direct/website bookings. */}
+          {booking.lead?.assignedTo && (
+            <Detail label="Assignee" value={booking.lead.assignedTo.name ?? booking.lead.assignedTo.email} sub={booking.lead.assignedTo.name ? booking.lead.assignedTo.email : undefined} />
+          )}
+          <Detail label="Travel Dates" value={formatTravel(booking.travelDate, booking.travelEndDate)} sub={`${booking.travellers} traveller${booking.travellers === 1 ? "" : "s"}`} />
           <Detail label="Booking Amount" value={inr(finance.bookingAmount)} strong />
           <Detail label="Paid Amount" value={inr(finance.paidAmount)} strong />
           <Detail label="Balance" value={inr(finance.balance)} strong />
@@ -534,7 +554,7 @@ function DriverSection({
 
   function submit() {
     if (form.driverName.trim().length < 2) return toast.error("Enter the driver's name.");
-    if (form.driverPhone.trim().length < 7) return toast.error("Enter a valid driver phone.");
+    if (!isValidPhone(form.driverPhone.trim(), "IN")) return toast.error(PHONE_MESSAGE);
     if (form.vehicleNumber.trim().length < 4) return toast.error("Enter the vehicle number.");
     if (form.vehicleName.trim().length < 2) return toast.error("Enter the vehicle name.");
 
@@ -797,7 +817,7 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
   );
 }
 
-interface RowForm { name: string; location: string; nights: string; pickup: string; dropoff: string; timing: string; amount: string; }
+interface RowForm { name: string; location: string; nights: string; roomType: string; pickup: string; dropoff: string; timing: string; amount: string; }
 
 // Build the API payload + a stable snapshot string from the current form. The
 // snapshot lets us skip no-op saves (so blurring an unchanged field is free).
@@ -808,6 +828,7 @@ function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
     amount: form.amount ? parseFloat(form.amount) || 0 : 0,
     location: form.location.trim() || null,
     nights: form.nights === "" ? null : parseInt(form.nights, 10),
+    roomType: form.roomType.trim() || null,
     pickup: form.pickup.trim() || null,
     dropoff: form.dropoff.trim() || null,
     timing: form.timing.trim() || null,
@@ -838,6 +859,7 @@ function ServiceRow({
     name: record.name,
     location: record.location ?? "",
     nights: record.nights != null ? String(record.nights) : "",
+    roomType: record.roomType ?? "",
     pickup: record.pickup ?? "",
     dropoff: record.dropoff ?? "",
     timing: record.timing ?? "",
@@ -851,6 +873,7 @@ function ServiceRow({
     name: record.name,
     location: record.location ?? "",
     nights: record.nights != null ? String(record.nights) : "",
+    roomType: record.roomType ?? "",
     pickup: record.pickup ?? "",
     dropoff: record.dropoff ?? "",
     timing: record.timing ?? "",

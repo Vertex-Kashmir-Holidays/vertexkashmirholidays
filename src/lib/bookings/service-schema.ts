@@ -7,6 +7,7 @@ export const serviceBodySchema = z.object({
   amount: z.coerce.number().min(0, "Amount cannot be negative").default(0),
   location: z.string().trim().max(200).nullable().optional(),
   nights: z.coerce.number().int().min(0).nullable().optional(),
+  roomType: z.string().trim().max(120).nullable().optional(),
   pickup: z.string().trim().max(200).nullable().optional(),
   dropoff: z.string().trim().max(200).nullable().optional(),
   timing: z.string().trim().max(200).nullable().optional(),

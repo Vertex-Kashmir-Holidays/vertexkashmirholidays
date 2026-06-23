@@ -27,6 +27,10 @@ export default async function AdminLegalPage() {
       navLabel: def.navLabel,
       title: row?.title ?? def.title,
       content: row?.content ?? def.content,
+      // Admin-set banner (null = using the shipped default shown alongside).
+      heroImage: row?.heroImage ?? null,
+      heroImageMobile: row?.heroImageMobile ?? null,
+      defaultHeroImage: def.heroImage,
       updatedAt: row?.updatedAt ? row.updatedAt.toISOString() : null,
     };
   });

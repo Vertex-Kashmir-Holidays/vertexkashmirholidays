@@ -230,6 +230,58 @@ async function main() {
       ogImage: "https://picsum.photos/seed/doodhpathri/1200/630",
     },
   });
+  // Backfill display facts + coordinates on the five originals above. Coords
+  // power the live weather widget (Open-Meteo) on each destination detail page.
+  const DEST_FACTS: { slug: string; altitude: string; season: string; region: string; latitude: number; longitude: number }[] = [
+    { slug: "gulmarg", altitude: "2,650 m", season: "Dec – Mar (ski) · Apr – Oct", region: "Kashmir Valley", latitude: 34.05, longitude: 74.38 },
+    { slug: "pahalgam", altitude: "2,130 m", season: "Mar – Nov", region: "Kashmir Valley", latitude: 34.0161, longitude: 75.315 },
+    { slug: "srinagar", altitude: "1,585 m", season: "Mar – Dec", region: "Kashmir Valley", latitude: 34.0837, longitude: 74.7973 },
+    { slug: "sonmarg", altitude: "2,800 m", season: "Apr – Oct", region: "Kashmir Valley", latitude: 34.303, longitude: 75.293 },
+    { slug: "doodhpathri", altitude: "2,730 m", season: "Apr – Oct", region: "Kashmir Valley", latitude: 33.83, longitude: 74.85 },
+  ];
+  for (const f of DEST_FACTS) {
+    await prisma.destination.update({
+      where: { slug: f.slug },
+      data: { altitude: f.altitude, season: f.season, region: f.region, latitude: f.latitude, longitude: f.longitude },
+    });
+  }
+
+  // Extra destinations so the public listing, filters and "load more" have real
+  // depth. Each carries coordinates for live weather.
+  const EXTRA_DESTINATIONS = [
+    { slug: "yusmarg", name: "Yusmarg", tagline: "The meadow", region: "Kashmir Valley", altitude: "2,400 m", season: "Apr – Oct", latitude: 33.843, longitude: 74.666, excerpt: "Rolling alpine meadows fringed by pine, perfect for quiet picnics and gentle walks." },
+    { slug: "aru-valley", name: "Aru Valley", tagline: "Hidden gem near Pahalgam", region: "Kashmir Valley", altitude: "2,400 m", season: "Mar – Nov", latitude: 34.102, longitude: 75.264, excerpt: "A scenic riverside hamlet and trailhead for the Kolahoi glacier trek." },
+    { slug: "betaab-valley", name: "Betaab Valley", tagline: "Bollywood's valley", region: "Kashmir Valley", altitude: "2,393 m", season: "Apr – Nov", latitude: 34.056, longitude: 75.354, excerpt: "Emerald lawns hemmed by snow peaks, made famous by the silver screen." },
+    { slug: "gurez-valley", name: "Gurez Valley", tagline: "Frontier wilderness", region: "Kashmir Valley", altitude: "2,400 m", season: "May – Sep", latitude: 34.633, longitude: 74.833, excerpt: "A remote Himalayan valley of log houses, the Kishanganga river and Habba Khatoon peak." },
+    { slug: "leh", name: "Leh", tagline: "Land of high passes", region: "Ladakh", altitude: "3,500 m", season: "May – Sep", latitude: 34.1526, longitude: 77.577, excerpt: "The high-desert capital of Ladakh — monasteries, markets and a gateway to the passes." },
+    { slug: "pangong-lake", name: "Pangong Lake", tagline: "The colour-changing lake", region: "Ladakh", altitude: "4,350 m", season: "May – Sep", latitude: 33.75, longitude: 78.9, excerpt: "A surreal high-altitude lake that shifts through blues and greens with the light." },
+    { slug: "nubra-valley", name: "Nubra Valley", tagline: "Valley of dunes & camels", region: "Ladakh", altitude: "3,048 m", season: "May – Sep", latitude: 34.68, longitude: 77.55, excerpt: "Sand dunes, double-humped camels and dramatic confluence of two rivers." },
+    { slug: "patnitop", name: "Patnitop", tagline: "Hilltop of Jammu", region: "Jammu Region", altitude: "2,024 m", season: "Mar – Nov", latitude: 33.082, longitude: 75.334, excerpt: "A pine-clad hill station on the Jammu–Srinagar highway, lovely year-round." },
+    { slug: "verinag", name: "Verinag", tagline: "Source of the Jhelum", region: "Kashmir Valley", altitude: "1,876 m", season: "Apr – Oct", latitude: 33.538, longitude: 75.254, excerpt: "A serene Mughal-era spring and octagonal pool where the Jhelum river is born." },
+    { slug: "kokernag", name: "Kokernag", tagline: "Valley of springs & gardens", region: "Kashmir Valley", altitude: "2,000 m", season: "Apr – Oct", latitude: 33.6, longitude: 75.3, excerpt: "Freshwater springs, a botanical garden and Kashmir's largest trout farm." },
+  ];
+  let extraOrder = 5;
+  for (const d of EXTRA_DESTINATIONS) {
+    const common = {
+      name: d.name,
+      tagline: d.tagline,
+      region: d.region,
+      altitude: d.altitude,
+      season: d.season,
+      latitude: d.latitude,
+      longitude: d.longitude,
+      excerpt: d.excerpt,
+      description: d.excerpt,
+      coverImage: `https://picsum.photos/seed/${d.slug}/1600/900`,
+      ogImage: `https://picsum.photos/seed/${d.slug}/1200/630`,
+      sortOrder: extraOrder++,
+    };
+    await prisma.destination.upsert({
+      where: { slug: d.slug },
+      update: common,
+      create: { slug: d.slug, ...common },
+    });
+  }
   console.log("✓ Destinations");
 
   // ── Tours ───────────────────────────────────────────────────────────────────
@@ -567,6 +619,85 @@ async function main() {
       ogImage: "https://picsum.photos/seed/luxury-kashmir/1200/630",
     },
   });
+  // ── Extra tours — give the listing real depth so filters & pagination work ──
+  const EXTRA_TOURS: {
+    slug: string; title: string; category: TourCategory; duration: number;
+    priceFrom: number; priceWas: number; rating: number; reviewCount: number;
+    badge: string; badgeColor: string; tagline: string; excerpt: string; destSlugs: string[];
+  }[] = [
+    { slug: "kashmir-great-lakes-trek", title: "Kashmir Great Lakes Trek", category: TourCategory.ADVENTURE, duration: 8, priceFrom: 26500, priceWas: 31000, rating: 4.9, reviewCount: 0, badge: "TRENDING", badgeColor: "green", tagline: "Seven alpine lakes in eight days", excerpt: "The crown jewel of Himalayan treks — Vishansar, Krishnasar, Gadsar and more.", destSlugs: ["sonmarg", "gulmarg"] },
+    { slug: "winter-gulmarg-ski-week", title: "Winter Gulmarg Ski Week", category: TourCategory.ADVENTURE, duration: 6, priceFrom: 39000, priceWas: 46000, rating: 4.8, reviewCount: 0, badge: "WINTER", badgeColor: "blue", tagline: "Powder days on Apharwat", excerpt: "Six days of certified ski instruction, gear and gondola laps in Gulmarg.", destSlugs: ["gulmarg"] },
+    { slug: "srinagar-houseboat-getaway", title: "Srinagar Houseboat Getaway", category: TourCategory.FAMILY, duration: 4, priceFrom: 18500, priceWas: 22000, rating: 4.7, reviewCount: 0, badge: "POPULAR", badgeColor: "blue", tagline: "Dal Lake at its dreamiest", excerpt: "A short, soulful break of houseboats, gardens and shikara evenings.", destSlugs: ["srinagar"] },
+    { slug: "pahalgam-valley-explorer", title: "Pahalgam Valley Explorer", category: TourCategory.FAMILY, duration: 5, priceFrom: 23000, priceWas: 27500, rating: 4.6, reviewCount: 0, badge: "FAMILY", badgeColor: "green", tagline: "Meadows, rivers & pony trails", excerpt: "Betaab Valley, Aru and the Lidder — paced perfectly for families.", destSlugs: ["pahalgam"] },
+    { slug: "leh-ladakh-overland", title: "Leh–Ladakh Overland Expedition", category: TourCategory.ADVENTURE, duration: 9, priceFrom: 52000, priceWas: 61000, rating: 4.9, reviewCount: 0, badge: "EPIC", badgeColor: "orange", tagline: "High passes & moonscapes", excerpt: "Leh, Nubra dunes and the colour-shifting Pangong Lake across nine days.", destSlugs: ["leh", "nubra-valley", "pangong-lake"] },
+    { slug: "honeymoon-houseboat-romance", title: "Honeymoon Houseboat Romance", category: TourCategory.HONEYMOON, duration: 6, priceFrom: 42000, priceWas: 49000, rating: 4.9, reviewCount: 0, badge: "BESTSELLER", badgeColor: "orange", tagline: "Just the two of you", excerpt: "Candlelit decks, private shikaras and Gulmarg's meadows for two.", destSlugs: ["srinagar", "gulmarg", "pahalgam"] },
+    { slug: "doodhpathri-yusmarg-meadows", title: "Doodhpathri & Yusmarg Meadows", category: TourCategory.FAMILY, duration: 4, priceFrom: 16500, priceWas: 19500, rating: 4.5, reviewCount: 0, badge: "HIDDEN GEM", badgeColor: "green", tagline: "Kashmir's quiet meadows", excerpt: "Off-beat alpine meadows and milky streams away from the crowds.", destSlugs: ["doodhpathri", "yusmarg"] },
+    { slug: "sonmarg-glacier-adventure", title: "Sonmarg Glacier Adventure", category: TourCategory.ADVENTURE, duration: 5, priceFrom: 24500, priceWas: 28500, rating: 4.7, reviewCount: 0, badge: "ADVENTURE", badgeColor: "green", tagline: "Gateway to the glaciers", excerpt: "Thajiwas glacier, river rafting and high-meadow camps in Sonmarg.", destSlugs: ["sonmarg"] },
+    { slug: "gurez-valley-frontier", title: "Gurez Valley Frontier Trail", category: TourCategory.ADVENTURE, duration: 6, priceFrom: 31000, priceWas: 36000, rating: 4.8, reviewCount: 0, badge: "OFFBEAT", badgeColor: "blue", tagline: "Beyond the tourist trail", excerpt: "Log villages, the Kishanganga river and Habba Khatoon peak.", destSlugs: ["gurez-valley"] },
+    { slug: "grand-kashmir-luxury-circuit", title: "Grand Kashmir Luxury Circuit", category: TourCategory.LUXURY, duration: 8, priceFrom: 98000, priceWas: 115000, rating: 5.0, reviewCount: 0, badge: "LUXURY", badgeColor: "orange", tagline: "Kashmir without compromise", excerpt: "Heritage houseboats, butler service and private excursions across the valley.", destSlugs: ["srinagar", "gulmarg", "pahalgam", "sonmarg"] },
+  ];
+
+  for (const t of EXTRA_TOURS) {
+    const nights = t.duration - 1;
+    const common = {
+      title: t.title,
+      category: t.category,
+      duration: t.duration,
+      priceFrom: t.priceFrom,
+      priceWas: t.priceWas,
+      discountPct: Math.round((1 - t.priceFrom / t.priceWas) * 100),
+      rating: t.rating,
+      reviewCount: t.reviewCount,
+      published: true,
+      bestseller: t.badge === "BESTSELLER",
+      badge: t.badge,
+      badgeColor: t.badgeColor,
+      tagline: t.tagline,
+      excerpt: t.excerpt,
+      description: `${t.excerpt} A thoughtfully paced ${nights}-night / ${t.duration}-day journey crafted by Vertex Kashmir Holidays, with private transfers, hand-picked stays and local experts throughout.`,
+      coverImage: `https://picsum.photos/seed/${t.slug}/1600/900`,
+      gallery: JSON.stringify([1, 2, 3, 4].map((n) => `https://picsum.photos/seed/${t.slug}-${n}/1600/900`)),
+      highlights: JSON.stringify(["🏔️ Scenic Himalayan drives", "🏨 Hand-picked stays", "🧭 Local expert guides", "🚐 Private transfers"]),
+      inclusions: JSON.stringify([`${nights} nights accommodation`, "Daily breakfast & dinner", "Private air-conditioned transfers", "All applicable taxes"]),
+      exclusions: JSON.stringify(["Airfare", "Personal expenses & tips", "Travel insurance", "Anything not listed in inclusions"]),
+      itinerary: JSON.stringify(
+        Array.from({ length: t.duration }, (_, i) => ({
+          day: i + 1,
+          title: i === 0 ? "Arrival & welcome" : i === t.duration - 1 ? "Departure" : `Exploring ${t.title.split(" ")[0]} — Day ${i + 1}`,
+          description: "Curated sightseeing, leisure and local experiences with your private guide.",
+        })),
+      ),
+      faqs: JSON.stringify([
+        { question: "Is this package customisable?", answer: "Yes — every itinerary is handcrafted. Add days, upgrade hotels or swap activities and your quote updates transparently." },
+        { question: "What is the advance payment?", answer: "Just 20% to lock your dates. The balance is payable 7 days before the trip starts." },
+      ]),
+      startCity: t.destSlugs.includes("leh") ? "Leh" : "Srinagar",
+      transport: "Private Cab",
+      difficulty: t.category === TourCategory.ADVENTURE ? "Moderate" : "Easy",
+      bestTime: "Apr – Oct",
+      tourType: "Private Tour",
+      pickupDrop: t.destSlugs.includes("leh") ? "Leh Airport" : "Srinagar Airport",
+      happyCount: 1000 + t.reviewCount,
+      metaTitle: `${t.title} — ${t.duration}-Day Kashmir Package | Vertex Kashmir Holidays`,
+      metaDesc: `${t.excerpt} Starting ₹${t.priceFrom.toLocaleString("en-IN")}. Book with Vertex Kashmir Holidays.`,
+      ogImage: `https://picsum.photos/seed/${t.slug}/1200/630`,
+    };
+    const created = await prisma.tour.upsert({
+      where: { slug: t.slug },
+      update: common,
+      create: { slug: t.slug, ...common },
+    });
+    for (const ds of t.destSlugs) {
+      const dest = await prisma.destination.findUnique({ where: { slug: ds }, select: { id: true } });
+      if (dest) {
+        await prisma.tourDestination.upsert({
+          where: { tourId_destinationId: { tourId: created.id, destinationId: dest.id } },
+          update: {},
+          create: { tourId: created.id, destinationId: dest.id },
+        });
+      }
+    }
+  }
   console.log("✓ Tours");
 
   // ── TourDestination joins ───────────────────────────────────────────────────
@@ -1033,18 +1164,6 @@ async function main() {
   });
   console.log("✓ Offers");
 
-  await prisma.testimonial.deleteMany();
-  await prisma.testimonial.createMany({
-    data: [
-      { name: "Ananya Iyer", location: "Chennai · Honeymoon, May 2026", avatar: "https://picsum.photos/seed/t1/80", quote: "Our planner Bilal redid the whole itinerary when it rained in Pahalgam — we ended up in Doodhpathri and it was the best day of the trip.", sortOrder: 0 },
-      { name: "Vikram Mehta", location: "Mumbai · Family Trip, Apr 2026", avatar: "https://picsum.photos/seed/t2/80", quote: "Travelling with my parents and a toddler, I needed zero surprises. Hotels matched photos exactly, driver was a saint, and pricing was to the rupee.", sortOrder: 1 },
-      { name: "Sarah Thomas", location: "Bengaluru · Great Lakes Trek", avatar: "https://picsum.photos/seed/t3/80", quote: "Camps, mules, permits — everything was handled. The local guides knew every shortcut and every shepherd on the route.", sortOrder: 2 },
-      { name: "Arjun & Kavya", location: "Hyderabad · Signature Luxury", avatar: "https://picsum.photos/seed/t4/80", quote: "The heritage houseboat with a private chef felt unreal. They even arranged a saffron-farm visit on a random request.", sortOrder: 3 },
-      { name: "Neha Kapoor", location: "Delhi · Solo, Mar 2026", avatar: "https://picsum.photos/seed/t5/80", quote: "As a solo woman traveller I got daily check-ins on WhatsApp. Felt safer in Srinagar than in my own city, honestly.", sortOrder: 4 },
-    ],
-  });
-  console.log("✓ Testimonials");
-
   // ── Contact page content ──────────────────────────────────────────────────
   // Real contact details (phone/email/address/whatsapp/socials) live in
   // SiteSettings; this is the contact-page-specific copy only.
@@ -1244,11 +1363,6 @@ async function main() {
           img(s, 540, 380),
         ),
       ),
-      testimonials: JSON.stringify([
-        { image: img("t-ski1", 80, 80), name: "Tanvi R.", location: "Mumbai", quote: "Went in unable to stand on skis, came back carving turns. The instructors are saints with infinite patience." },
-        { image: img("t-ski2", 80, 80), name: "Aditya & Friends", location: "Delhi", quote: "Bonfire wazwan night alone was worth the price. The batch becomes a family by day three." },
-        { image: img("t-ski3", 80, 80), name: "Neeraj K.", location: "Bengaluru", quote: "Everything they promised was there — gear, passes, photographer. Zero surprise costs." },
-      ]),
       faqsTitle: 'Questions, <span class="grad-accent-text italic">answered</span>',
       faqs: JSON.stringify([
         { question: "I've never skied. Is this really for me?", answer: "Yes — 80% of every batch are first-timers. Day 1 starts with how to wear boots. By day 4 you'll be doing controlled runs." },
@@ -1265,6 +1379,110 @@ async function main() {
       metaDesc:
         "6-day Gulmarg ski week for beginners & intermediates — certified instructors, all gear, Gondola access and slope-side stay. Limited winter 2027 departures.",
       ogImage: img("camp-ski-hero", 1200, 630),
+    },
+  });
+
+  await prisma.campaign.upsert({
+    where: { slug: "tulip-spring-srinagar" },
+    update: { published: true },
+    create: {
+      slug: "tulip-spring-srinagar",
+      published: true,
+      accent: "hsl(340 82% 60%)",
+      accent2: "hsl(45 95% 58%)",
+      particles: "snow",
+      name: "Tulip Spring · Srinagar",
+      badge: "🌷 SPRING 2027 · TULIP SEASON",
+      titleHtml: 'Asia\'s largest <span class="grad-accent-text italic">tulip garden</span> in full bloom',
+      sub: "Time your Kashmir escape with the two-week tulip window — 1.5 million blooms framed by Dal Lake and the Zabarwan range.",
+      heroImage: img("camp-tulip-hero", 1800, 1000),
+      heroImageMobile: img("camp-tulip-hero-m", 800, 1000),
+      finalImage: img("camp-tulip-final", 1800, 700),
+      facts: JSON.stringify(["4D / 3N", "Srinagar", "Tulip garden", "Shikara evenings", "Mar – Apr"]),
+      heroCta: "Book My Tulip Trip",
+      proofCount: "1,400+",
+      offerText: "🌷 Bloom-window seats filling fast",
+      offerDeadline: new Date("2027-03-15T23:59:59+05:30"),
+      offerSeats: "Limited bloom-window departures",
+      navCta: "Book a Seat",
+      phone: "+91 94190 00000",
+      whatsappHref: "https://wa.me/919419000000",
+      strip: JSON.stringify(["🌷 1.5M tulips", "🛶 Sunset shikara", "🌳 Mughal gardens", "🏨 Dal-view stay", "🔒 Razorpay secured"]),
+      stats: JSON.stringify([["1.5", "M", "Tulips in bloom"], ["15", "", "Day bloom window"], ["4.8", "★", "Average rating"]]),
+      highlightsTitle: "Why this trip",
+      highlights: JSON.stringify([
+        { image: img("hl-tulip-garden", 480, 300), emoji: "🌷", title: "Indira Gandhi Tulip Garden", description: "Asia's largest, terraced against the Zabarwan hills above Dal Lake." },
+        { image: img("hl-tulip-shikara", 480, 300), emoji: "🛶", title: "Golden-hour shikara", description: "Glide through the floating gardens as the sun sets behind the mountains." },
+        { image: img("hl-tulip-mughal", 480, 300), emoji: "🌳", title: "Mughal gardens", description: "Nishat and Shalimar Bagh at the peak of their spring colour." },
+      ]),
+      tiers: JSON.stringify([
+        { name: "Classic", price: "₹21,999", old: "₹25,999", tag: "", desc: "Dal-view hotel, daily breakfast", feats: ["3N hotel stay", "Daily breakfast", "Tulip garden entry", "Airport transfers"] },
+        { name: "Premium", price: "₹29,999", old: "₹34,999", tag: "MOST POPULAR", desc: "Houseboat + hotel split", feats: ["1N houseboat + 2N hotel", "Breakfast & dinner", "Private shikara evening", "Mughal gardens tour"] },
+      ]),
+      faqsTitle: "Questions, answered",
+      faqs: JSON.stringify([
+        { question: "When exactly do the tulips bloom?", answer: "Typically late March to mid-April. We track the bloom forecast and advise the best dates each season." },
+        { question: "What is the advance payment?", answer: "20% to lock your dates; the balance is due a week before travel." },
+      ]),
+      finalTitle: "The bloom window is short. Don't miss it.",
+      finalSub: "Reserve with 20% today — pay the rest a week before you fly.",
+      finalCta: "Book My Tulip Trip",
+      finalNote: "Peak-bloom dates sell out weeks in advance.",
+      metaTitle: "Tulip Spring Srinagar 2027 — Kashmir Tulip Festival | Vertex Kashmir Holidays",
+      metaDesc: "4-day Srinagar tulip-season escape — Asia's largest tulip garden, Dal Lake shikaras and Mughal gardens. Limited spring 2027 departures.",
+      ogImage: img("camp-tulip-hero", 1200, 630),
+    },
+  });
+
+  await prisma.campaign.upsert({
+    where: { slug: "ladakh-overland-expedition" },
+    update: { published: true },
+    create: {
+      slug: "ladakh-overland-expedition",
+      published: true,
+      accent: "hsl(28 90% 55%)",
+      accent2: "hsl(205 80% 55%)",
+      particles: "embers",
+      name: "Ladakh Overland Expedition",
+      badge: "🏔️ SUMMER 2027 · HIGH PASSES",
+      titleHtml: 'Cross the <span class="grad-accent-text italic">highest passes</span> on earth',
+      sub: "Nine days overland from Leh to Nubra's dunes and the surreal blues of Pangong — a small-group expedition with experienced mountain crew.",
+      heroImage: img("camp-ladakh-hero", 1800, 1000),
+      heroImageMobile: img("camp-ladakh-hero-m", 800, 1000),
+      finalImage: img("camp-ladakh-final", 1800, 700),
+      facts: JSON.stringify(["9D / 8N", "Leh · Nubra · Pangong", "Acclimatised route", "Max 10 / batch", "May – Sep"]),
+      heroCta: "Join the Expedition",
+      proofCount: "900+",
+      offerText: "🏔️ Summer batches opening now",
+      offerDeadline: new Date("2027-05-01T23:59:59+05:30"),
+      offerSeats: "Only 10 seats per batch",
+      navCta: "Reserve a Seat",
+      phone: "+91 94190 00000",
+      whatsappHref: "https://wa.me/919419000000",
+      strip: JSON.stringify(["🏔️ Khardung La", "🐫 Nubra dunes", "💧 Pangong Lake", "🏯 Monasteries", "🔒 Razorpay secured"]),
+      stats: JSON.stringify([["5,359", "m", "Highest pass"], ["900", "+", "Travellers led"], ["4.9", "★", "Average rating"]]),
+      highlightsTitle: "Expedition highlights",
+      highlights: JSON.stringify([
+        { image: img("hl-ladakh-pangong", 480, 300), emoji: "💧", title: "Pangong Lake", description: "Camp beside the colour-shifting high-altitude lake at 4,350 m." },
+        { image: img("hl-ladakh-nubra", 480, 300), emoji: "🐫", title: "Nubra dunes & camels", description: "Double-humped Bactrian camels among cold-desert sand dunes." },
+        { image: img("hl-ladakh-monastery", 480, 300), emoji: "🏯", title: "Ancient monasteries", description: "Thiksey, Diskit and Hemis — living Buddhist heritage." },
+      ]),
+      tiers: JSON.stringify([
+        { name: "Group", price: "₹48,999", old: "₹56,999", tag: "", desc: "Shared twin, full board", feats: ["8N stays + camps", "All meals", "Inner-line permits", "Oxygen & medical kit"] },
+        { name: "Comfort", price: "₹64,999", old: "₹72,999", tag: "MOST POPULAR", desc: "Upgraded stays + private 4x4", feats: ["Premium hotels in Leh", "Private 4x4 transfers", "Pangong lake-view camp", "Trip photographer"] },
+      ]),
+      faqsTitle: "Questions, answered",
+      faqs: JSON.stringify([
+        { question: "How do you handle altitude?", answer: "The route is built around gradual acclimatisation, with rest days in Leh and oxygen plus a medical kit on every batch." },
+        { question: "What is the advance payment?", answer: "20% to lock your dates; the balance is due a week before departure." },
+      ]),
+      finalTitle: "The passes are open for a few short months.",
+      finalSub: "Reserve with 20% today — small groups fill quickly.",
+      finalCta: "Join the Expedition",
+      finalNote: "Summer batches sell out by spring.",
+      metaTitle: "Ladakh Overland Expedition 2027 — Leh, Nubra & Pangong | Vertex Kashmir Holidays",
+      metaDesc: "9-day small-group Ladakh expedition — Khardung La, Nubra dunes and Pangong Lake with experienced mountain crew. Limited summer 2027 batches.",
+      ogImage: img("camp-ladakh-hero", 1200, 630),
     },
   });
   console.log("✓ Campaign");

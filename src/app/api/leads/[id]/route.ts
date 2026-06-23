@@ -75,6 +75,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const userId = guard.user.id as string;
   const admin = isAdminRole(role);
   const isAssignee = existing.assignedToId === userId;
+  // An unassigned lead has no owner, so an admin may act on it freely (any
+  // operation). Once a lead is assigned, an admin's only power is reassignment;
+  // all other work belongs to the assignee.
+  const canManage = isAssignee || (admin && existing.assignedToId === null);
 
   // Locked (converted) leads cannot be edited until an admin unlocks them.
   if (existing.locked) {
@@ -127,10 +131,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     (rest.category !== undefined && (rest.category ?? null) !== (existing.category ?? null)) ||
     (rest.adults !== undefined && rest.adults !== existing.adults) ||
     (rest.children !== undefined && (rest.children ?? null) !== (existing.children ?? null));
-  if (workChanged && !isAssignee) {
+  if (workChanged && !canManage) {
     return NextResponse.json(
       { error: "Only the staff member this lead is assigned to can update it." },
       { status: 403 },
+    );
+  }
+
+  // Business rule: travel end can't precede travel start. Compare the effective
+  // values (incoming where provided, otherwise the stored ones) so a partial
+  // update that touches only one date is still validated against the other.
+  const effStart =
+    startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate;
+  const effEnd =
+    endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate;
+  if (effStart && effEnd && effEnd.getTime() < effStart.getTime()) {
+    return NextResponse.json(
+      { error: "Travel end date can't be before the start date." },
+      { status: 422 },
     );
   }
 

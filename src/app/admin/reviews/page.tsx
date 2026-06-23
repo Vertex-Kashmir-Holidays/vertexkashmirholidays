@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { ReviewsClient } from "@/components/admin/reviews/ReviewsClient";
 
 export const metadata: Metadata = { title: "Reviews — Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminReviewsPage() {
+  const session = await auth();
+  const isAdmin = isAdminRole(session?.user?.role);
   const [reviews, totalCount, pendingCount, tours] = await Promise.all([
     prisma.review.findMany({
       orderBy: [{ approved: "asc" }, { createdAt: "desc" }],
@@ -25,6 +29,7 @@ export default async function AdminReviewsPage() {
       totalCount={totalCount}
       pendingCount={pendingCount}
       tours={tours}
+      isAdmin={isAdmin}
     />
   );
 }

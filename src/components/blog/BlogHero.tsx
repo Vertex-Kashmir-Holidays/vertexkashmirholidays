@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
+import { SecondaryHero } from '@/components/layout/SecondaryHero';
 import type { BlogPageContent } from '@/types/blog';
 
 interface BlogHeroProps {
@@ -12,29 +13,7 @@ interface BlogHeroProps {
 
 export function BlogHero({ content, onSearch }: BlogHeroProps) {
   return (
-    <section className="relative overflow-hidden bg-brand-dark">
-      {content.heroImage && (
-        <motion.div
-          className="absolute inset-0"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <picture className="block h-full w-full">
-            {content.heroImageMobile && (
-              <source media="(max-width: 640px)" srcSet={content.heroImageMobile} />
-            )}
-            <img
-              src={content.heroImage}
-              alt="Houseboats on a Kashmir lake"
-              className="h-full w-full object-cover"
-            />
-          </picture>
-        </motion.div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/80 via-brand-dark/40 to-brand-dark/20"></div>
-
-      <div className="relative mx-auto max-w-[1300px] px-5 pb-16 pt-28 sm:px-6 sm:pt-32 lg:py-28">
+    <SecondaryHero image={content.heroImage} imageMobile={content.heroImageMobile} alt="Houseboats on a Kashmir lake">
         <motion.p
           className="text-[12px] font-bold tracking-[0.32em] text-white/90"
           initial={{ opacity: 0, y: 20 }}
@@ -73,7 +52,6 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
           />
           <Search className="h-4 w-4 shrink-0 text-foreground/70" strokeWidth={2} />
         </motion.label>
-      </div>
-    </section>
+    </SecondaryHero>
   );
 }

@@ -5,7 +5,26 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save } from "lucide-react";
 import { ImageField } from "@/components/admin/pages/ImageField";
+import { SectionArrayEditor, type ItemSpec } from "@/components/admin/pages/SectionArrayEditor";
 import { CAMPAIGN_JSON_FIELDS } from "@/lib/admin/campaignSchema";
+
+// Per-section structured-editor config for the advanced JSON arrays. Each entry
+// maps a campaign JSON field to a friendly label + the shape of one item, so
+// staff edit real fields (with gallery-backed image pickers) instead of raw JSON.
+const SECTION_SPECS: Record<string, { label: string; description?: string; spec: ItemSpec }> = {
+  facts: { label: "Facts", description: "Short trust facts shown near the hero.", spec: { kind: "scalar", type: "text" } },
+  strip: { label: "Strip", description: "Scrolling marquee items.", spec: { kind: "scalar", type: "text" } },
+  stats: { label: "Stats", description: "Headline numbers.", spec: { kind: "tuple", fields: [{ label: "Value" }, { label: "Label" }, { label: "Sub" }] } },
+  highlights: { label: "Highlights", spec: { kind: "object", fields: [{ key: "emoji", label: "Emoji" }, { key: "title", label: "Title" }, { key: "description", label: "Description", type: "textarea" }, { key: "image", label: "Image", type: "image" }] } },
+  activities: { label: "Activities", spec: { kind: "object", fields: [{ key: "title", label: "Title" }, { key: "image", label: "Image", type: "image" }] } },
+  itinerary: { label: "Itinerary", spec: { kind: "object", fields: [{ key: "title", label: "Title" }, { key: "description", label: "Description", type: "textarea" }, { key: "image", label: "Image", type: "image" }] } },
+  tiers: { label: "Pricing tiers", spec: { kind: "object", fields: [{ key: "name", label: "Name" }, { key: "price", label: "Price", placeholder: "₹28,999" }, { key: "old", label: "Old price", placeholder: "₹32,999" }, { key: "tag", label: "Tag", placeholder: "MOST POPULAR" }, { key: "desc", label: "Description", type: "textarea" }, { key: "feats", label: "Features (one per line)", type: "stringList" }] } },
+  batches: { label: "Departure batches", spec: { kind: "object", fields: [{ key: "date", label: "Date" }, { key: "seats", label: "Seats", type: "number" }, { key: "price", label: "Price" }, { key: "status", label: "Status", placeholder: "filling | open | sold" }] } },
+  inclusions: { label: "Inclusions", spec: { kind: "scalar", type: "text" } },
+  exclusions: { label: "Exclusions", spec: { kind: "scalar", type: "text" } },
+  gallery: { label: "Gallery images", spec: { kind: "scalar", type: "image" } },
+  faqs: { label: "FAQs", spec: { kind: "object", fields: [{ key: "question", label: "Question" }, { key: "answer", label: "Answer", type: "textarea" }] } },
+};
 
 type FieldType = "text" | "textarea" | "image" | "date";
 interface F { key: string; label: string; type?: FieldType; placeholder?: string; }
@@ -183,16 +202,26 @@ export function CampaignForm({ initial, canEdit }: { initial: CampaignRecord | n
 
       <div className="rounded-2xl border border-border bg-card shadow-sm">
         <div className="border-b border-border px-5 py-3.5">
-          <h3 className="text-sm font-bold text-foreground">Sections (advanced)</h3>
-          <p className="text-xs text-muted-foreground">Each must be a valid JSON array. See the public campaign page for the expected shape.</p>
+          <h3 className="text-sm font-bold text-foreground">Sections</h3>
+          <p className="text-xs text-muted-foreground">Add, remove and reorder items. Image fields pull from the media gallery or upload.</p>
         </div>
-        <div className="grid gap-4 p-5 sm:grid-cols-2">
-          {CAMPAIGN_JSON_FIELDS.map((k) => (
-            <div key={k}>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">{k}</label>
-              <textarea rows={4} value={form[k] ?? "[]"} disabled={!canEdit} onChange={(e) => set(k, e.target.value)} className={`${inputCls} font-mono text-xs`} />
-            </div>
-          ))}
+        <div className="space-y-4 p-5">
+          {CAMPAIGN_JSON_FIELDS.map((k) => {
+            const cfg = SECTION_SPECS[k];
+            if (!cfg) return null;
+            return (
+              <SectionArrayEditor
+                key={k}
+                label={cfg.label}
+                description={cfg.description}
+                value={form[k] ?? "[]"}
+                onChange={(json) => set(k, json)}
+                spec={cfg.spec}
+                folder="campaigns"
+                disabled={!canEdit}
+              />
+            );
+          })}
         </div>
       </div>
 

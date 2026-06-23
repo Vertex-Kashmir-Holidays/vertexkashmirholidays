@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
+import { getLiveWeather } from "@/lib/weather";
 import {
   JsonLd,
   buildBreadcrumbList,
@@ -137,10 +138,19 @@ export default async function DestinationDetailPage({ params }: PageProps) {
 
   if (!dest) notFound();
 
-  // ── Derived values from real DB fields ────────────────────────────────────
-  const region = /ladakh/i.test(dest.location ?? "") ? "Ladakh" : "Kashmir Valley";
+  // ── Display facts: prefer explicit DB fields, fall back to deriving from
+  // `location` for older records that predate the dedicated columns. ──────────
+  const region =
+    dest.region ?? (/ladakh/i.test(dest.location ?? "") ? "Ladakh" : "Kashmir Valley");
   const altMatch = dest.location?.match(/([\d,]+)\s*m\b/i);
-  const altitude = altMatch ? `${altMatch[1]} m` : "High Altitude";
+  const altitude = dest.altitude ?? (altMatch ? `${altMatch[1]} m` : "High Altitude");
+  const season = dest.season ?? "Apr – Oct";
+
+  // Live current conditions from Open-Meteo when the destination has coords.
+  const liveWeather =
+    dest.latitude != null && dest.longitude != null
+      ? await getLiveWeather(dest.latitude, dest.longitude)
+      : null;
 
   const tours = dest.tours.map((td) => td.tour);
   const totalReviews = tours.reduce((sum, t) => sum + t.reviewCount, 0);
@@ -152,7 +162,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
 
   const stats = [
     { value: altitude, label: "Altitude", icon: ICON.altitude },
-    { value: "Apr – Oct", label: "Best Season", icon: ICON.calendar },
+    { value: season, label: "Best Season", icon: ICON.calendar },
     {
       value: String(tours.length),
       label: tours.length === 1 ? "Tour Package" : "Tour Packages",
@@ -202,7 +212,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   const quickInfo = [
     { label: "Location", value: dest.location ?? "Jammu & Kashmir", icon: ICON.pin },
     { label: "Altitude", value: altitude, icon: ICON.altitude },
-    { label: "Best Time to Visit", value: "April to October", icon: ICON.calendar },
+    { label: "Best Time to Visit", value: season, icon: ICON.calendar },
     { label: "Famous For", value: dest.tagline ?? "Scenic beauty", icon: ICON.star },
     { label: "Region", value: region, icon: ICON.pin },
     {
@@ -212,7 +222,9 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     },
   ];
 
-  const weather = {
+  // Live weather when available, otherwise a neutral fallback so the widget
+  // always renders.
+  const weather = liveWeather ?? {
     temperature: 18,
     condition: "Partly Cloudy",
     humidity: 56,

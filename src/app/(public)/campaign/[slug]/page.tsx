@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
+import { getDisplayReviews } from '@/lib/reviews';
 import type {
   CampaignActivity,
   CampaignBatch,
@@ -56,6 +57,16 @@ export default async function CampaignPage({ params }: PageProps) {
   const c = await prisma.campaign.findUnique({ where: { slug } });
   if (!c || !c.published) notFound();
 
+  // Campaign "traveller stories" now pull from the global Review module rather
+  // than a per-campaign JSON field — reviews are admin/customer managed.
+  const reviews = await getDisplayReviews(6);
+  const testimonials: CampaignTestimonial[] = reviews.map((r) => ({
+    image: r.avatar ?? '',
+    name: r.name,
+    location: r.location ?? '',
+    quote: r.quote,
+  }));
+
   const data: CampaignData = {
     slug: c.slug,
     accent: c.accent,
@@ -95,7 +106,7 @@ export default async function CampaignPage({ params }: PageProps) {
     exclusions: parse<string[]>(c.exclusions, []),
     galleryTitle: c.galleryTitle,
     gallery: parse<string[]>(c.gallery, []),
-    testimonials: parse<CampaignTestimonial[]>(c.testimonials, []),
+    testimonials,
     faqsTitle: c.faqsTitle,
     faqs: parse<CampaignFaq[]>(c.faqs, []),
     finalTitle: c.finalTitle,

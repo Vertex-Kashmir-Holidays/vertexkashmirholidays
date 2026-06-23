@@ -37,6 +37,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
           name: true,
           phone: true,
           email: true,
+          endDate: true,
           assignedTo: { select: { name: true, email: true } },
         },
       },
@@ -55,6 +56,9 @@ export default async function BookingServicesPage({ params }: PageProps) {
     discountValue: booking.discountValue,
     inclusions: parseInclusions(booking.inclusions),
     travelDate: booking.travelDate.toISOString(),
+    // Travel end comes from the originating lead (the Booking model stores only a
+    // single travelDate). null for direct/website bookings with no lead.
+    travelEndDate: lead?.endDate ? lead.endDate.toISOString() : null,
     driver: booking.driverAddedAt
       ? {
           driverName: booking.driverName ?? "",
@@ -77,6 +81,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
       amount: s.amount,
       location: s.location,
       nights: s.nights,
+      roomType: s.roomType,
       pickup: s.pickup,
       dropoff: s.dropoff,
       timing: s.timing,

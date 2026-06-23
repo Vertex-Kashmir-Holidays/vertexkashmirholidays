@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { z } from "zod";
@@ -14,6 +15,9 @@ const patchSchema = z.object({
   // Optional sales incentive rate (percent of booking profit). Stored on the user
   // for future monthly commission/payout reports. null clears it.
   bookingConversionPct: z.coerce.number().min(0).max(100).nullable().optional(),
+  // Admin-set password reset (e.g. the employee forgot theirs). When provided,
+  // it is re-hashed and the user is forced to change it on next login.
+  password: z.string().min(8, "Password must be at least 8 characters").max(100).optional(),
 });
 
 /** Edit a user's profile fields and/or role. */
@@ -60,6 +64,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
         ...(data.role !== undefined ? { role: data.role as Role } : {}),
         ...(data.bookingConversionPct !== undefined ? { bookingConversionPct: data.bookingConversionPct } : {}),
+        ...(data.password
+          ? { passwordHash: await bcrypt.hash(data.password, 12), mustChangePassword: true }
+          : {}),
       },
       select: { id: true, name: true, email: true, phone: true, role: true, bookingConversionPct: true },
     });
