@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { PackageForm } from "@/components/admin/packages/PackageForm";
 
 export const metadata: Metadata = { title: "New Package — Admin" };
+// Loads activity options for the "Things to Do" picker, so it touches the DB.
+export const dynamic = "force-dynamic";
 
-export default function NewPackagePage() {
+export default async function NewPackagePage() {
+  const activities = await prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
   return (
     <div className="space-y-5">
       {/* Breadcrumb */}
@@ -24,7 +28,7 @@ export default function NewPackagePage() {
         </p>
       </div>
 
-      <PackageForm />
+      <PackageForm activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))} />
     </div>
   );
 }

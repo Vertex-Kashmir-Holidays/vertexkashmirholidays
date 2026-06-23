@@ -4,6 +4,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface ItineraryDay {
   day: number;
@@ -99,7 +100,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                     </p>
                     {day.image && (
                       <Image
-                        src={`https://picsum.photos/seed/${day.image}/300/200`}
+                        src={imgSrc(day.image)}
                         alt=""
                         width={140}
                         height={88}

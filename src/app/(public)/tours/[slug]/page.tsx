@@ -18,6 +18,7 @@ import { TourDetailsOverview } from "@/components/tours/TourDetailsOverview";
 import { TourDetailsReviews } from "@/components/tours/TourDetailsReviews";
 import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
 import { TourDetailsTabs } from "@/components/tours/TourDetailsTabs";
+import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
 
 export const revalidate = 300;
 
@@ -49,6 +50,11 @@ async function getTour(slug: string) {
         orderBy: { createdAt: "desc" },
         take: 12,
         include: { user: { select: { image: true } } },
+      },
+      // Published activities linked to this tour → "Things to Do".
+      activities: {
+        where: { activity: { published: true } },
+        include: { activity: { select: { id: true, name: true, description: true, coverImage: true, duration: true } } },
       },
     },
   });
@@ -147,6 +153,15 @@ export default async function TourDetailsPage({ params }: PageProps) {
     quote: r.body,
   }));
 
+  // Things to Do — driven by the Activities module (published, linked to this tour).
+  const things = tour.activities.map((a) => ({
+    id: a.activity.id,
+    image: a.activity.coverImage,
+    title: a.activity.name,
+    description: a.activity.description ?? "",
+    duration: a.activity.duration,
+  }));
+
   // ── Tabs (only for sections that have content) ─────────────────────────────
   const tabs = [
     { id: "overview", label: "Overview" },
@@ -154,6 +169,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
     ...(inclusions.length || exclusions.length
       ? [{ id: "inclusions", label: "Inclusions" }]
       : []),
+    ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
     ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
     ...(reviews.length ? [{ id: "reviews", label: "Reviews" }] : []),
     ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
@@ -223,6 +239,12 @@ export default async function TourDetailsPage({ params }: PageProps) {
                   inclusions={inclusions}
                   exclusions={exclusions}
                 />
+              </section>
+            )}
+
+            {things.length > 0 && (
+              <section id="things" className="scroll-mt-16 mt-6">
+                <ActivitiesShowcase title={`Things to Do on This Tour`} items={things} />
               </section>
             )}
 

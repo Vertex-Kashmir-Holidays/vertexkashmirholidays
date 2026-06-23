@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { DestinationForm } from "@/components/admin/destinations/DestinationForm";
 
 export const metadata: Metadata = { title: "New Destination — Admin" };
+// Loads the activity options for the "Things to Do" picker, so it touches the DB.
+export const dynamic = "force-dynamic";
 
-export default function NewDestinationPage() {
+export default async function NewDestinationPage() {
+  const activities = await prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
   return (
     <div className="space-y-5">
       <nav>
@@ -19,7 +23,7 @@ export default function NewDestinationPage() {
         <h2 className="font-display font-extrabold text-foreground text-xl">Add Destination</h2>
         <p className="text-muted-foreground text-xs mt-0.5">Create a new destination for Kashmir tours</p>
       </div>
-      <DestinationForm />
+      <DestinationForm activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))} />
     </div>
   );
 }

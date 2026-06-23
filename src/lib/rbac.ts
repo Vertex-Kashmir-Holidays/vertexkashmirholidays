@@ -22,6 +22,7 @@ export const MODULES = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard" },
   { key: "packages", label: "Packages", href: "/admin/packages" },
   { key: "destinations", label: "Destinations", href: "/admin/destinations" },
+  { key: "activities", label: "Activities", href: "/admin/activities" },
   { key: "bookings", label: "Bookings", href: "/admin/bookings" },
   { key: "leads", label: "Leads", href: "/admin/leads" },
   { key: "itinerary", label: "Itineraries", href: "/admin/itinerary" },

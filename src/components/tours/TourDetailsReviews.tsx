@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface Review {
   seed: string;
@@ -64,7 +65,7 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
               transition={{ duration: 0.3 }}
             >
               <Image
-                src={reviews[currentReview].avatar || `https://picsum.photos/seed/${reviews[currentReview].seed}/80`}
+                src={imgSrc(reviews[currentReview].avatar)}
                 alt=""
                 width={44}
                 height={44}

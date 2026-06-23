@@ -12,6 +12,7 @@ import {
   CheckCircle2, XCircle, Save,
 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +82,7 @@ export interface PackageFormDefaults {
   metaTitle?: string;
   metaDesc?: string;
   ogImage?: string;
+  activityIds?: string[];
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -242,16 +244,18 @@ function ImageUploadField({
 
 interface PackageFormProps {
   defaults?: PackageFormDefaults;
+  activityOptions?: LinkOption[];
 }
 
 function toArrayField<T>(arr: T[] | undefined, map: (v: T) => unknown) {
   return (arr ?? []).map(map) as ReturnType<typeof map>[];
 }
 
-export function PackageForm({ defaults }: PackageFormProps) {
+export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps) {
   const router = useRouter();
   const isEdit = Boolean(defaults?.id);
   const [activeSection, setActiveSection] = useState("basics");
+  const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
 
   const {
     register,
@@ -323,6 +327,7 @@ export function PackageForm({ defaults }: PackageFormProps) {
       gallery: JSON.stringify(data.gallery.map((g) => g.url).filter(Boolean)),
       priceWas: data.priceWas || null,
       discountPct: data.discountPct || null,
+      activityIds,
     };
 
     const url = isEdit ? `/api/tours/${defaults!.id}` : "/api/tours";
@@ -667,6 +672,12 @@ export function PackageForm({ defaults }: PackageFormProps) {
             label="OG / Social Share Image"
             hint="Recommended: 1200×630px"
           />
+
+          <div>
+            <FieldLabel>Things to Do (Activities)</FieldLabel>
+            <p className="text-[10px] text-muted-foreground mb-2">Activities shown on this tour&apos;s page. Manage activities in the Activities module.</p>
+            <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
+          </div>
         </SectionCard>
       </div>
 

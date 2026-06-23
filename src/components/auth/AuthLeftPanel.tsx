@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Star } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { imgSrc } from "@/lib/placeholder";
 
 const STATS = [
   { value: "25+", label: "Years" },
@@ -20,7 +21,7 @@ export function AuthLeftPanel({ headline, subheadline }: AuthLeftPanelProps) {
     <div className="relative hidden lg:flex flex-col h-full min-h-screen">
       {/* Background image */}
       <Image
-        src="https://picsum.photos/seed/auth-kashmir/900/1200"
+        src={imgSrc()}
         alt="Kashmir landscape"
         fill
         priority
