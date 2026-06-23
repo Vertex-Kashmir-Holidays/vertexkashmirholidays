@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { SecondaryHero } from '@/components/layout/SecondaryHero';
 import type { ContactHeroData, ContactHeroFeatureData } from '@/types/contact';
 
 interface ContactHeroProps {
@@ -11,29 +12,7 @@ interface ContactHeroProps {
 
 export function ContactHero({ data, features }: ContactHeroProps) {
   return (
-    <section className="relative overflow-hidden bg-brand-dark">
-      {data.image && (
-        <motion.div
-          className="absolute inset-0"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <picture className="block h-full w-full">
-            {data.imageMobile && (
-              <source media="(max-width: 640px)" srcSet={data.imageMobile} />
-            )}
-            <img
-              src={data.image}
-              alt="Houseboats on Dal Lake at dusk"
-              className="h-full w-full object-cover"
-            />
-          </picture>
-        </motion.div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/40 to-transparent"></div>
-
-      <div className="relative mx-auto max-w-[1300px] px-5 pb-16 pt-28 sm:px-6 sm:pt-32 lg:py-24">
+    <SecondaryHero image={data.image} imageMobile={data.imageMobile} alt="Houseboats on Dal Lake at dusk">
         <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
           <a href="/" className="transition hover:text-white">Home</a>
           <span>›</span>
@@ -79,7 +58,6 @@ export function ContactHero({ data, features }: ContactHeroProps) {
             ))}
           </motion.div>
         )}
-      </div>
-    </section>
+    </SecondaryHero>
   );
 }

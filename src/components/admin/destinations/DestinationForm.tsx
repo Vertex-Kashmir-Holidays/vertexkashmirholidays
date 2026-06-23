@@ -16,6 +16,13 @@ const schema = z.object({
   excerpt: z.string().optional(),
   description: z.string().optional(),
   coverImage: z.string().optional(),
+  altitude: z.string().optional(),
+  season: z.string().optional(),
+  region: z.string().optional(),
+  // Coordinates kept as strings in the form; the API coerces to numbers. Allow
+  // an optional leading minus and decimals.
+  latitude: z.string().regex(/^-?\d*\.?\d*$/, "Numbers only").optional(),
+  longitude: z.string().regex(/^-?\d*\.?\d*$/, "Numbers only").optional(),
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),
@@ -54,6 +61,11 @@ export function DestinationForm({ defaults }: Props) {
       excerpt: defaults?.excerpt ?? "",
       description: defaults?.description ?? "",
       coverImage: defaults?.coverImage ?? "",
+      altitude: defaults?.altitude ?? "",
+      season: defaults?.season ?? "",
+      region: defaults?.region ?? "",
+      latitude: defaults?.latitude ?? "",
+      longitude: defaults?.longitude ?? "",
       metaTitle: defaults?.metaTitle ?? "",
       metaDesc: defaults?.metaDesc ?? "",
       ogImage: defaults?.ogImage ?? "",
@@ -142,6 +154,38 @@ export function DestinationForm({ defaults }: Props) {
         <div>
           <label className="block text-xs font-semibold text-muted-foreground mb-1">Description</label>
           <textarea {...register("description")} rows={5} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="Full destination description..." />
+        </div>
+      </div>
+
+      {/* Facts & Coordinates */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <div>
+          <h3 className="font-bold text-foreground text-sm">Facts &amp; Coordinates</h3>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Shown on destination cards &amp; detail page. Coordinates power the live weather widget.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Altitude</label>
+            <input {...register("altitude")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. 2,650 m" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Best Season</label>
+            <input {...register("season")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Apr – Oct" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Region</label>
+            <input {...register("region")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Kashmir Valley" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Latitude</label>
+            <input {...register("latitude")} inputMode="decimal" className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" placeholder="e.g. 34.0500" />
+            {errors.latitude && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.latitude.message}</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Longitude</label>
+            <input {...register("longitude")} inputMode="decimal" className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" placeholder="e.g. 74.3800" />
+            {errors.longitude && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.longitude.message}</p>}
+          </div>
         </div>
       </div>
 

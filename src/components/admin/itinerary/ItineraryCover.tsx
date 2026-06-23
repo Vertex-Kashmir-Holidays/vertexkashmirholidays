@@ -33,17 +33,13 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
       <ImagePicker value={data.coverImage} onChange={onImageChange} className="absolute right-4 top-4 z-20" label="Cover image" />
 
       <div className="relative flex min-h-[640px] flex-col p-6 text-white sm:min-h-[880px] sm:p-9 md:min-h-[1160px] md:p-12">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/kit/png/icon/vertex-icon-512.png"
+            src="/brand/kit/png/horizontal/vertex-horizontal-dark-1600w.png"
             alt="Vertex Kashmir Holidays"
-            className="h-11 w-11 rounded-md bg-white object-contain p-1"
+            className="h-12 w-auto object-contain sm:h-14"
           />
-          <span className="leading-tight">
-            <span className="block font-serif text-2xl font-bold">Vertex</span>
-            <span className="block text-[10px] font-semibold tracking-[0.18em] text-white/85">Kashmir Holidays</span>
-          </span>
         </div>
 
         <div className="mt-12 sm:mt-20 md:mt-24">

@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Shield, User, Pencil, Trash2, RotateCcw, X } from "lucide-react";
+import { Search, Shield, User, Pencil, Trash2, RotateCcw, X, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isStaff, type Role } from "@/lib/rbac";
+import { usePagination } from "@/components/admin/ui/usePagination";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
 
 const STAFF_ROLE_OPTIONS: Role[] = ["ADMIN", "SALES", "EDITOR"];
 
@@ -43,6 +45,7 @@ export function UsersClient({
   const [showDeleted, setShowDeleted] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [deleting, setDeleting] = useState<UserRow | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const isSuperadmin = currentUserRole === "SUPERADMIN";
   const source = tab === "customers" ? initialCustomers : initialEmployees;
@@ -59,6 +62,10 @@ export function UsersClient({
       );
     });
   }, [source, search, showDeleted]);
+
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+  // Reset to the first page when switching tabs so you don't land mid-list.
+  useEffect(() => { setPage(1); }, [tab, setPage]);
 
   const deletedCount = source.filter((u) => u.deletedAt).length;
 
@@ -114,6 +121,27 @@ export function UsersClient({
     );
   }
 
+  function handleCreate(form: CreatePayload) {
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(typeof data.error === "string" ? data.error : "Create failed.");
+        }
+        toast.success("Employee added.");
+        setAdding(false);
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error && err.message ? err.message : "Create failed.");
+      }
+    });
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -123,6 +151,14 @@ export function UsersClient({
             {initialCustomers.length} customers · {initialEmployees.length} employees
           </p>
         </div>
+        {tab === "employees" && (
+          <button
+            onClick={() => setAdding(true)}
+            className="inline-flex items-center gap-2 self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+          >
+            <UserPlus className="h-4 w-4" /> Add Employee
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -193,7 +229,7 @@ export function UsersClient({
                   </td>
                 </tr>
               ) : (
-                filtered.map((u) => {
+                pageItems.map((u) => {
                   const isDeleted = !!u.deletedAt;
                   const isSelf = u.id === currentUserId;
                   // Non-superadmins cannot act on a superadmin row.
@@ -287,6 +323,16 @@ export function UsersClient({
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun={tab === "customers" ? "customers" : "employees"}
+        />
       </div>
 
       {editing && (
@@ -297,6 +343,15 @@ export function UsersClient({
           isPending={isPending}
           onClose={() => setEditing(null)}
           onSave={handleSaveEdit}
+        />
+      )}
+
+      {adding && (
+        <AddEmployeeModal
+          allowSuperadmin={isSuperadmin}
+          isPending={isPending}
+          onClose={() => setAdding(false)}
+          onCreate={handleCreate}
         />
       )}
 
@@ -406,6 +461,16 @@ interface EditPayload {
   phone: string | null;
   role?: Role;
   bookingConversionPct?: number | null;
+  password?: string;
+}
+
+interface CreatePayload {
+  name: string;
+  email: string;
+  phone: string;
+  role: Role;
+  password: string;
+  bookingConversionPct?: number | null;
 }
 
 function EditModal({
@@ -430,6 +495,7 @@ function EditModal({
   const [bookingConversionPct, setBookingConversionPct] = useState<string>(
     user.bookingConversionPct != null ? String(user.bookingConversionPct) : "",
   );
+  const [password, setPassword] = useState("");
 
   const roleOptions: Role[] = allowSuperadmin
     ? ["SUPERADMIN", ...STAFF_ROLE_OPTIONS]
@@ -437,6 +503,10 @@ function EditModal({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (password && password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
     const payload: EditPayload = {
       name: name.trim(),
       email: email.trim(),
@@ -450,6 +520,8 @@ function EditModal({
       const current = user.bookingConversionPct ?? null;
       if (next !== current) payload.bookingConversionPct = next;
     }
+    // Optional admin password reset — only sent when a new password was typed.
+    if (password) payload.password = password;
     onSave(payload);
   }
 
@@ -507,6 +579,19 @@ function EditModal({
               />
             </Field>
           )}
+          <Field label="Reset password">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Leave blank to keep current password"
+              autoComplete="new-password"
+              className={inputCls}
+            />
+            <span className="mt-1 block text-[10px] text-muted-foreground">
+              Min 8 characters. The user will be asked to set their own on next login.
+            </span>
+          </Field>
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
@@ -515,6 +600,115 @@ function EditModal({
           </button>
           <button type="submit" disabled={isPending} className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
             {isPending ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function AddEmployeeModal({
+  allowSuperadmin,
+  isPending,
+  onClose,
+  onCreate,
+}: {
+  allowSuperadmin: boolean;
+  isPending: boolean;
+  onClose: () => void;
+  onCreate: (p: CreatePayload) => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<Role>("SALES");
+  const [password, setPassword] = useState("");
+  const [bookingConversionPct, setBookingConversionPct] = useState("");
+
+  const roleOptions: Role[] = allowSuperadmin
+    ? ["SUPERADMIN", ...STAFF_ROLE_OPTIONS]
+    : [...STAFF_ROLE_OPTIONS];
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return toast.error("Name is required.");
+    if (!email.trim()) return toast.error("Email is required.");
+    if (password.length < 8) return toast.error("Password must be at least 8 characters.");
+    onCreate({
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      role,
+      password,
+      bookingConversionPct: bookingConversionPct.trim() === "" ? null : parseFloat(bookingConversionPct),
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <form
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={submit}
+        className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-bold text-foreground">Add employee</h3>
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <Field label="Name">
+            <input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
+          </Field>
+          <Field label="Email">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} />
+          </Field>
+          <Field label="Phone">
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className={inputCls} />
+          </Field>
+          <Field label="Role">
+            <select value={role} onChange={(e) => setRole(e.target.value as Role)} className={inputCls}>
+              {roleOptions.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Temporary password">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 8 characters"
+              autoComplete="new-password"
+              required
+              className={inputCls}
+            />
+            <span className="mt-1 block text-[10px] text-muted-foreground">
+              The employee will be asked to set their own password on first login.
+            </span>
+          </Field>
+          <Field label="Booking Conversion % (incentive on profit)">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={bookingConversionPct}
+              onChange={(e) => setBookingConversionPct(e.target.value)}
+              placeholder="Optional — e.g. 5 or 10"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted">
+            Cancel
+          </button>
+          <button type="submit" disabled={isPending} className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+            {isPending ? "Adding…" : "Add employee"}
           </button>
         </div>
       </form>

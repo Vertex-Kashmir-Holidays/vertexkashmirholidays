@@ -118,16 +118,20 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
                   )}
 
                   <div className="mt-5 flex items-end justify-between">
-                    <p>
-                      {o.oldPrice && (
-                        <>
-                          <span className="text-[11px] text-muted-foreground line-through">{formatINR(o.oldPrice)}</span>
-                          <br />
-                        </>
-                      )}
-                      <span className="text-2xl font-extrabold text-brand-green">{formatINR(o.price)}</span>
-                      <span className="text-[10px] text-muted-foreground"> /person</span>
-                    </p>
+                    {o.price > 0 ? (
+                      <p>
+                        {o.oldPrice && (
+                          <>
+                            <span className="text-[11px] text-muted-foreground line-through">{formatINR(o.oldPrice)}</span>
+                            <br />
+                          </>
+                        )}
+                        <span className="text-2xl font-extrabold text-brand-green">{formatINR(o.price)}</span>
+                        <span className="text-[10px] text-muted-foreground"> /person</span>
+                      </p>
+                    ) : (
+                      <span />
+                    )}
                     {o.endsText && (
                       <span className="glass inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10px] font-bold text-brand-green">
                         <Clock className="h-3 w-3" strokeWidth={2} /> {o.endsText}

@@ -14,9 +14,17 @@ import {
 } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
 
-// Brand mark used on the cover and Thank-You pages. The data URL is supplied
-// through the `images` map (keyed by this path), matching the sidebar logo.
+// Brand assets. Each data URL is supplied through the `images` map (keyed by
+// these paths). The icon doubles as the faint per-page watermark; the
+// horizontal lockups are the primary logo — dark-bg (white text) variant for
+// the cover/thank-you pages, light-bg (dark text) variant for the body header.
 export const LOGO_SRC = "/brand/kit/png/icon/vertex-icon-512.png";
+export const LOGO_DARK_SRC = "/brand/kit/png/horizontal/vertex-horizontal-dark-1600w.png";
+export const LOGO_LIGHT_SRC = "/brand/kit/png/horizontal/vertex-horizontal-light-1600w.png";
+
+// Every brand asset the PDF embeds — the export pipeline fetches each as a data
+// URL up-front so a missing one degrades gracefully instead of throwing.
+export const LOGO_ASSETS = [LOGO_SRC, LOGO_DARK_SRC, LOGO_LIGHT_SRC] as const;
 
 const C = {
   green: "#1d5c43",
@@ -47,7 +55,17 @@ const s = StyleSheet.create({
   // resolved against the 10pt base size, squashing every line box to ~14.5pt —
   // which makes large display text (titles, price) overlap the next element.
   // Multi-line body styles set their own lineHeight where readable spacing matters.
-  page: { paddingVertical: 36, paddingHorizontal: 40, fontSize: 10, color: C.ink, fontFamily: "Helvetica" },
+  page: { paddingTop: 58, paddingBottom: 40, paddingHorizontal: 40, fontSize: 10, color: C.ink, fontFamily: "Helvetica" },
+
+  // Fixed brand header repeated on every physical sheet of the body page.
+  header: { position: "absolute", top: 20, left: 40, right: 40, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 8 },
+  headerLogo: { width: 120, height: 30, objectFit: "contain" },
+  headerTag: { fontSize: 7.5, color: C.muted, letterSpacing: 1 },
+
+  // Faint centred icon watermark — sits behind body content on every sheet.
+  watermark: { position: "absolute", top: 250, left: 116, width: 360, height: 360, opacity: 0.045 },
+  watermarkImg: { width: 360, height: 360, objectFit: "contain" },
+
   footer: { position: "absolute", bottom: 14, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1.5, borderTopColor: C.green, paddingTop: 7 },
   footerLeft: { flexDirection: "row", alignItems: "center", gap: 5, width: "30%" },
   footerDotMark: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.mint },
@@ -67,6 +85,9 @@ const s = StyleSheet.create({
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   logoBox: { width: 34, height: 34, borderRadius: 6, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   logoImg: { width: 28, height: 28, objectFit: "contain" },
+  // Horizontal brand lockup used on the cover (dark overlay) and thank-you page.
+  coverLogo: { width: 188, height: 47, objectFit: "contain" },
+  tyLogo: { width: 200, height: 50, objectFit: "contain" },
   brandName: { fontSize: 20, fontFamily: "Helvetica-Bold", color: C.white },
   brandSub: { fontSize: 8, letterSpacing: 2, color: "rgba(255,255,255,0.85)" },
   coverTitle: { fontSize: 58, fontFamily: "Helvetica-Bold", color: C.white, letterSpacing: 2 },
@@ -214,13 +235,19 @@ export function ItineraryPdf({ data, images }: Props) {
         <View style={s.coverOverlay} fixed />
 
         <View style={s.coverBrand}>
-          {img(LOGO_SRC) ? (
-            <View style={s.logoBox}>
-              <Image src={img(LOGO_SRC)} style={s.logoImg} />
-            </View>
-          ) : null}
-          <Text style={s.brandName}>Vertex</Text>
-          <Text style={s.brandSub}>KASHMIR HOLIDAYS</Text>
+          {img(LOGO_DARK_SRC) ? (
+            <Image src={img(LOGO_DARK_SRC)} style={s.coverLogo} />
+          ) : (
+            <>
+              {img(LOGO_SRC) ? (
+                <View style={s.logoBox}>
+                  <Image src={img(LOGO_SRC)} style={s.logoImg} />
+                </View>
+              ) : null}
+              <Text style={s.brandName}>Vertex</Text>
+              <Text style={s.brandSub}>KASHMIR HOLIDAYS</Text>
+            </>
+          )}
         </View>
 
         <View style={s.coverTitleBlock}>
@@ -261,6 +288,24 @@ export function ItineraryPdf({ data, images }: Props) {
       {/* BODY — one continuous page so content flows and fills each sheet
           instead of leaving a near-empty page after every section. */}
       <Page size="A4" style={s.page}>
+        {/* Faint icon watermark behind all content — fixed so it repeats on
+            every physical sheet this flowing page spans. */}
+        {img(LOGO_SRC) ? (
+          <View style={s.watermark} fixed>
+            <Image src={img(LOGO_SRC)} style={s.watermarkImg} />
+          </View>
+        ) : null}
+
+        {/* Brand header, fixed to the top of every sheet. */}
+        <View style={s.header} fixed>
+          {img(LOGO_LIGHT_SRC) ? (
+            <Image src={img(LOGO_LIGHT_SRC)} style={s.headerLogo} />
+          ) : (
+            <Text style={s.brandName}>Vertex</Text>
+          )}
+          <Text style={s.headerTag}>YOUR JOURNEY, CRAFTED</Text>
+        </View>
+
         <View style={s.centerHead}>
           <Text style={s.destLabel}>Destinations</Text>
           <Text style={s.destValue}>{data.destinations}</Text>
@@ -393,13 +438,19 @@ export function ItineraryPdf({ data, images }: Props) {
       {/* THANK YOU — centred on a full dark page. */}
       <Page size="A4" style={[s.page, s.tyPage]}>
         <View style={s.brandRow}>
-          {img(LOGO_SRC) ? (
-            <View style={s.logoBox}>
-              <Image src={img(LOGO_SRC)} style={s.logoImg} />
-            </View>
-          ) : null}
-          <Text style={s.tyBrandName}>Vertex</Text>
-          <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
+          {img(LOGO_DARK_SRC) ? (
+            <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />
+          ) : (
+            <>
+              {img(LOGO_SRC) ? (
+                <View style={s.logoBox}>
+                  <Image src={img(LOGO_SRC)} style={s.logoImg} />
+                </View>
+              ) : null}
+              <Text style={s.tyBrandName}>Vertex</Text>
+              <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
+            </>
+          )}
         </View>
 
         <Text style={s.tyScript}>Thank You!</Text>

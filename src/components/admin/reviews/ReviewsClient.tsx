@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Trash2, Star, Search, Plus, Pencil, X, Loader2, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { usePagination } from "@/components/admin/ui/usePagination";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { cn } from "@/lib/utils";
 
 interface Review {
@@ -29,6 +31,8 @@ interface Props {
   totalCount: number;
   pendingCount: number;
   tours: TourOption[];
+  /** Only admins may approve/reject (publish) reviews. */
+  isAdmin: boolean;
 }
 
 // Draft used by both the "add" and "edit" modal. tourId only applies to new
@@ -62,11 +66,13 @@ function RatingInput({ value, onChange }: { value: number; onChange: (n: number)
   );
 }
 
-export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours }: Props) {
+export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours, isAdmin }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED">("PENDING");
+  // Default to ALL so every review (admin-added and customer-submitted) is
+  // visible at a glance; admins can still filter to the pending queue.
+  const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED">("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [draft, setDraft] = useState<ReviewDraft | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -84,6 +90,8 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
       r.body.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
 
   async function handleApprove(id: string, approved: boolean) {
     startTransition(async () => {
@@ -118,7 +126,9 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
   }
 
   function openAdd() {
-    setDraft({ id: null, tourId: "", name: "", avatar: "", userImage: null, rating: 5, body: "", approved: true });
+    // Non-admins can add a review but cannot publish it — it goes to the
+    // pending queue for an admin to approve.
+    setDraft({ id: null, tourId: "", name: "", avatar: "", userImage: null, rating: 5, body: "", approved: isAdmin });
   }
 
   function openEdit(r: Review & { tourId?: string }) {
@@ -245,7 +255,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
           {filtered.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground text-sm">No reviews in this category.</div>
           ) : (
-            filtered.map((review) => (
+            pageItems.map((review) => (
               <div key={review.id} className={cn("p-5 hover:bg-muted/50 transition-colors", !review.approved && "border-l-2 border-l-orange-300")}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -283,7 +293,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
 
                   {/* Actions */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {!review.approved ? (
+                    {isAdmin && (!review.approved ? (
                       <button
                         onClick={() => handleApprove(review.id, true)}
                         disabled={isPending}
@@ -303,7 +313,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
                         <XCircle className="w-3 h-3" />
                         Reject
                       </button>
-                    )}
+                    ))}
 
                     <button
                       onClick={() => openEdit(review)}
@@ -337,6 +347,16 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
             ))
           )}
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="reviews"
+        />
       </div>
 
       {/* Add / edit modal */}
@@ -439,15 +459,17 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours 
                   className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={draft.approved}
-                  onChange={(e) => setDraft({ ...draft, approved: e.target.checked })}
-                  className="h-4 w-4 rounded border-border"
-                />
-                Approved (visible on the public site)
-              </label>
+              {isAdmin && (
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={draft.approved}
+                    onChange={(e) => setDraft({ ...draft, approved: e.target.checked })}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  Approved (visible on the public site)
+                </label>
+              )}
 
               <div className="flex items-center gap-2 pt-1">
                 <button

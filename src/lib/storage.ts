@@ -1,20 +1,23 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Media storage abstraction.
 //
-// All uploaded media flows through `saveUpload`, which today writes to the
-// local `public/uploads/<folder>/` tree and returns a site-relative URL. The
-// folder mirrors the module the asset belongs to (see MEDIA_FOLDERS), so the
-// whole media tree is organised by purpose and can be lifted to Cloudinary or
-// another bucket later by swapping only the body of `saveUpload` — every caller
-// already speaks in terms of a `folder` + returned `url`.
+// All uploaded media flows through `saveUpload`. In production (Vercel) the
+// filesystem is read-only, so we upload to Cloudinary whenever it is
+// configured (CLOUDINARY_URL or the discrete CLOUDINARY_* vars). When it is
+// NOT configured we fall back to writing the local `public/uploads/<folder>/`
+// tree — this keeps local development working with zero setup.
+//
+// Every caller speaks only in terms of a `folder` + returned `url`, so the
+// storage backend is fully swappable here without touching any caller.
 // ──────────────────────────────────────────────────────────────────────────
 
 // Canonical module folders. Used to populate folder pickers and to validate
 // incoming folder values. Free-text categories (from the Gallery page) are also
-// allowed — they are slugified into a folder on disk.
+// allowed — they are slugified into a folder.
 export const MEDIA_FOLDERS = [
   "home",
   "tours",
@@ -29,7 +32,41 @@ export const MEDIA_FOLDERS = [
 
 export const DEFAULT_FOLDER = "general";
 
-// Slugify an arbitrary folder/category label into a filesystem-safe segment.
+// Root Cloudinary folder so all of this site's media is grouped under one tree.
+const CLOUDINARY_ROOT = "vertexkashmir";
+
+/**
+ * True when Cloudinary credentials are present. Supports either the single
+ * CLOUDINARY_URL (cloudinary://key:secret@cloud) or the three discrete vars.
+ */
+export function isCloudinaryConfigured(): boolean {
+  return Boolean(
+    process.env.CLOUDINARY_URL ||
+      (process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET),
+  );
+}
+
+let cloudinaryReady = false;
+function ensureCloudinaryConfig() {
+  if (cloudinaryReady) return;
+  // CLOUDINARY_URL is picked up automatically by the SDK; only configure the
+  // discrete vars explicitly when the URL form is absent.
+  if (!process.env.CLOUDINARY_URL) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+  } else {
+    cloudinary.config({ secure: true });
+  }
+  cloudinaryReady = true;
+}
+
+// Slugify an arbitrary folder/category label into a safe segment.
 // Falls back to DEFAULT_FOLDER when nothing usable remains.
 export function folderSlug(raw: string | null | undefined): string {
   const slug = (raw ?? "")
@@ -41,7 +78,7 @@ export function folderSlug(raw: string | null | undefined): string {
 }
 
 export interface SaveUploadResult {
-  /** Site-relative URL, e.g. /uploads/blog/1718000000000-ab12cd.jpg */
+  /** Public URL (Cloudinary secure_url or site-relative /uploads/... path). */
   url: string;
   /** The folder segment the file was stored under (slugified). */
   folder: string;
@@ -58,11 +95,51 @@ export async function saveUpload(
   { folder, ext }: { folder: string; ext: string },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+  if (isCloudinaryConfigured()) {
+    return saveToCloudinary(buffer, slug);
+  }
+
+  return saveToLocalDisk(buffer, slug, ext);
+}
+
+async function saveToCloudinary(
+  buffer: Buffer,
+  slug: string,
+): Promise<SaveUploadResult> {
+  ensureCloudinaryConfig();
+
+  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: `${CLOUDINARY_ROOT}/${slug}`,
+        // Let Cloudinary detect image vs video from the bytes.
+        resource_type: "auto",
+        // Unique public id; Cloudinary appends the correct extension itself.
+        public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      },
+      (error, uploaded) => {
+        if (error || !uploaded) {
+          reject(error ?? new Error("Cloudinary upload failed"));
+          return;
+        }
+        resolve(uploaded as { secure_url: string });
+      },
+    );
+    stream.end(buffer);
+  });
+
+  return { url: result.secure_url, folder: slug };
+}
+
+async function saveToLocalDisk(
+  buffer: Buffer,
+  slug: string,
+  ext: string,
+): Promise<SaveUploadResult> {
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const dir = path.join(process.cwd(), "public", "uploads", slug);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), buffer);
-
   return { url: `/uploads/${slug}/${filename}`, folder: slug };
 }

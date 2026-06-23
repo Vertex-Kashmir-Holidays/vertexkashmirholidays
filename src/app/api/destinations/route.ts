@@ -5,6 +5,12 @@ import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
+// Blank string → null for the numeric coordinate fields so they clear cleanly.
+const coord = z.preprocess(
+  (v) => (v === "" || v == null ? null : typeof v === "string" ? Number(v) : v),
+  z.number().min(-180).max(180).nullable(),
+);
+
 const createSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
@@ -12,6 +18,11 @@ const createSchema = z.object({
   excerpt: z.string().optional(),
   coverImage: z.string().optional(),
   location: z.string().optional(),
+  altitude: z.string().optional(),
+  season: z.string().optional(),
+  region: z.string().optional(),
+  latitude: coord.optional(),
+  longitude: coord.optional(),
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),

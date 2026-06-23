@@ -55,6 +55,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       amount: d.amount,
       location: d.location ?? null,
       nights: d.nights ?? null,
+      roomType: d.roomType ?? null,
       pickup: d.pickup ?? null,
       dropoff: d.dropoff ?? null,
       timing: d.timing ?? null,

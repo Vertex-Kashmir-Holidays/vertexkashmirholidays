@@ -58,6 +58,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(d.amount !== undefined ? { amount: d.amount } : {}),
       ...(d.location !== undefined ? { location: d.location } : {}),
       ...(d.nights !== undefined ? { nights: d.nights } : {}),
+      ...(d.roomType !== undefined ? { roomType: d.roomType } : {}),
       ...(d.pickup !== undefined ? { pickup: d.pickup } : {}),
       ...(d.dropoff !== undefined ? { dropoff: d.dropoff } : {}),
       ...(d.timing !== undefined ? { timing: d.timing } : {}),

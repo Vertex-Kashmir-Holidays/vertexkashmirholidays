@@ -72,11 +72,14 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
   if (role === "SALES" && lead.assignedToId !== session?.user?.id) notFound();
 
   // Lead activities (status, itinerary, convert, edits) belong to the assignee;
-  // an admin's only lead power is reassignment. These UI flags mirror the rules
-  // the API enforces server-side.
+  // an admin's only lead power is reassignment — UNLESS the lead is still
+  // unassigned, in which case an admin may do anything. These UI flags mirror
+  // the rules the API enforces server-side.
   const isAssignee = !!session?.user?.id && lead.assignedToId === session.user.id;
+  const isAdmin = !!role && isAdminRole(role);
+  const canManage = isAssignee || (isAdmin && !lead.assignedToId);
   const canManageItinerary =
-    !!role && (await can(role, "itinerary", "edit")) && isAssignee;
+    !!role && (await can(role, "itinerary", "edit")) && canManage;
 
   return (
     <div className="space-y-5">
@@ -97,8 +100,8 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
         lead={lead}
         staffUsers={staffUsers}
         canManageItinerary={canManageItinerary}
-        isAdmin={!!role && isAdminRole(role)}
-        isAssignee={isAssignee}
+        isAdmin={isAdmin}
+        canManage={canManage}
         gstRates={gstRates}
       />
     </div>

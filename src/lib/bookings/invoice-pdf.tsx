@@ -58,6 +58,7 @@ export async function renderBookingSummaryPdf(
     name: s.name,
     location: s.location,
     nights: s.nights,
+    roomType: s.roomType,
     pickup: s.pickup,
     dropoff: s.dropoff,
     timing: s.timing,

@@ -63,7 +63,7 @@ export default async function AdminHomePage() {
   const perms = { canCreate, canEdit, canDelete };
   const order = [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }];
 
-  const [content, heroSlides, tickerItems, siteStats, whyChooseItems, offers, testimonials, videoReviews, homeSections] =
+  const [content, heroSlides, tickerItems, siteStats, whyChooseItems, offers, videoReviews, homeSections] =
     await Promise.all([
       prisma.homeContent.findUnique({ where: { id: "singleton" } }),
       prisma.heroSlide.findMany({ orderBy: order }),
@@ -71,7 +71,6 @@ export default async function AdminHomePage() {
       prisma.siteStat.findMany({ orderBy: order }),
       prisma.whyChooseItem.findMany({ orderBy: order }),
       prisma.offer.findMany({ orderBy: order }),
-      prisma.testimonial.findMany({ orderBy: order }),
       prisma.videoReview.findMany({ orderBy: order }),
       prisma.homeSection.findMany({ orderBy: { createdAt: "asc" } }),
     ]);
@@ -89,7 +88,6 @@ export default async function AdminHomePage() {
         <ListEditor title="Site Stats" resource="siteStats" fields={FIELD_DEFS.siteStats} items={siteStats} {...perms} />
         <ListEditor title="Why Choose Us" resource="whyChooseItems" fields={FIELD_DEFS.whyChooseItems} items={whyChooseItems} {...perms} />
         <ListEditor title="Offers" resource="offers" fields={FIELD_DEFS.offers} items={offers} {...perms} />
-        <ListEditor title="Testimonials" resource="testimonials" fields={FIELD_DEFS.testimonials} items={testimonials} {...perms} />
         <ListEditor title="Video Reviews" resource="videoReviews" fields={FIELD_DEFS.videoReviews} items={videoReviews} {...perms} />
       </div>
     </div>

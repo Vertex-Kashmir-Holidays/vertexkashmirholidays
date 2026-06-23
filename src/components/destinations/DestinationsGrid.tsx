@@ -8,19 +8,20 @@ import { motion, type Variants } from 'framer-motion';
 import { Heart, Mountain, Calendar, ChevronDown } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
 
-interface Destination {
-  seed: string;
+export interface DestinationCardData {
+  slug: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  coverImage: string | null;
+  altitude: string | null;
+  season: string | null;
+  region: string;
   tours: number;
-  n: string;
-  tag: string;
-  d: string;
-  alt: string;
-  season: string;
-  g: string;
 }
 
 interface DestinationsGridProps {
-  destinations: Destination[];
+  destinations: DestinationCardData[];
 }
 
 export function DestinationsGrid({ destinations }: DestinationsGridProps) {
@@ -57,26 +58,26 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
         initial="hidden"
         animate="visible"
       >
-        {destinations.slice(0, displayed).map((dest, i) => {
-          const slug = dest.n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        {destinations.slice(0, displayed).map((dest) => {
+          const image = dest.coverImage ?? `https://picsum.photos/seed/${dest.slug}/520/380`;
           return (
-          <motion.div key={i} variants={itemVariants}>
+          <motion.div key={dest.slug} variants={itemVariants}>
             <Tilt3D intensity={6}>
-              <Link href={`/destinations/${slug}`} aria-label={`View ${dest.n}`} className="block">
+              <Link href={`/destinations/${dest.slug}`} aria-label={`View ${dest.name}`} className="block">
               <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
                 <div className="relative h-44 overflow-hidden">
                   <Image
-                    src={`https://picsum.photos/seed/${dest.seed}/520/380`}
-                    alt={dest.n}
+                    src={image}
+                    alt={dest.name}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[10.5px] font-bold text-white backdrop-blur">
-                    {dest.tours} Tours
+                    {dest.tours} {dest.tours === 1 ? 'Tour' : 'Tours'}
                   </span>
                   <motion.button
-                    aria-label={`Save ${dest.n}`}
+                    aria-label={`Save ${dest.name}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -89,19 +90,25 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
                   </motion.button>
                 </div>
                 <div className="p-4">
-                  <h3 className="text-[17px] font-bold">{dest.n}</h3>
-                  <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">{dest.tag}</p>
-                  <p className="mt-2 min-h-[40px] text-[12.5px] leading-relaxed text-foreground/70">{dest.d}</p>
-                  <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[11.5px] font-semibold text-foreground/75">
-                    <span className="flex items-center gap-1.5">
-                      <Mountain className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
-                      {dest.alt}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
-                      {dest.season}
-                    </span>
-                  </div>
+                  <h3 className="text-[17px] font-bold">{dest.name}</h3>
+                  {dest.tagline && <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">{dest.tagline}</p>}
+                  {dest.description && <p className="mt-2 min-h-[40px] text-[12.5px] leading-relaxed text-foreground/70">{dest.description}</p>}
+                  {(dest.altitude || dest.season) && (
+                    <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[11.5px] font-semibold text-foreground/75">
+                      {dest.altitude && (
+                        <span className="flex items-center gap-1.5">
+                          <Mountain className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
+                          {dest.altitude}
+                        </span>
+                      )}
+                      {dest.season && (
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
+                          {dest.season}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </article>
               </Link>

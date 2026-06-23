@@ -5,6 +5,12 @@ import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
 
+// Blank string → null for numeric coordinate fields so they clear cleanly.
+const coord = z.preprocess(
+  (v) => (v === "" || v == null ? null : typeof v === "string" ? Number(v) : v),
+  z.number().min(-180).max(180).nullable(),
+);
+
 const patchSchema = z.object({
   name: z.string().min(2).optional(),
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/).optional(),
@@ -12,6 +18,11 @@ const patchSchema = z.object({
   excerpt: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
   location: z.string().optional().nullable(),
+  altitude: z.string().optional().nullable(),
+  season: z.string().optional().nullable(),
+  region: z.string().optional().nullable(),
+  latitude: coord.optional(),
+  longitude: coord.optional(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),

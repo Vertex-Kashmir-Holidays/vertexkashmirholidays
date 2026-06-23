@@ -13,6 +13,7 @@ import { ContactReachCards } from '@/components/contact/ContactReachCards';
 import { ContactSocial } from '@/components/contact/ContactSocial';
 import { ContactTestimonials } from '@/components/contact/ContactTestimonials';
 import { ContactWhatsAppFloat } from '@/components/contact/ContactWhatsAppFloat';
+import { getDisplayReviews } from '@/lib/reviews';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
 export const revalidate = 300;
@@ -41,7 +42,8 @@ export default async function ContactPage() {
       prisma.contactFaq.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.contactOffice.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
-      prisma.testimonial.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+      // Approved customer reviews (admin-managed) replace CMS testimonials here.
+      getDisplayReviews(8),
     ]);
 
   const phone = settings?.sitePhone ?? null;

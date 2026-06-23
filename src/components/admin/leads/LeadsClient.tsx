@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, Plus, ExternalLink, Trash2, ChevronDown, Pencil, Users, CalendarClock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePagination } from "@/components/admin/ui/usePagination";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
 
 type LeadStatus = "NEW" | "CONNECTED" | "NOT_CONNECTED" | "QUALIFIED" | "NEGOTIATION" | "ON_HOLD" | "CONVERTED" | "REJECTED";
 type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
@@ -110,12 +112,15 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
       if (
         !l.name.toLowerCase().includes(q) &&
         !l.phone.includes(q) &&
-        !(l.email?.toLowerCase().includes(q) ?? false)
+        !(l.email?.toLowerCase().includes(q) ?? false) &&
+        !l.id.toLowerCase().includes(q)
       )
         return false;
     }
     return true;
   });
+
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -167,7 +172,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, phone, email..."
+              placeholder="Search name, phone, email, ref..."
               className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
             />
           </div>
@@ -221,7 +226,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map((h) => (
+                {["Ref", "Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -231,15 +236,22 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     {search || statusFilter !== "ALL" || sourceFilter !== "ALL"
                       ? "No leads match your filters."
                       : "No leads yet. Create your first one!"}
                   </td>
                 </tr>
               ) : (
-                filtered.map((lead) => (
+                pageItems.map((lead) => (
                   <tr key={lead.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === lead.id && "bg-red-500/5")}>
+                    {/* Ref */}
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-[10px] font-semibold text-foreground" title={lead.id}>
+                        #{lead.id.slice(-8).toUpperCase()}
+                      </span>
+                    </td>
+
                     {/* Lead */}
                     <td className="px-4 py-3">
                       <div className="min-w-0">
@@ -340,6 +352,16 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="leads"
+        />
       </div>
     </div>
   );

@@ -147,6 +147,13 @@ model Destination {
   tagline     String?
   coverImage  String?
   location    String?
+  // Display facts shown on cards + detail page (free-form, admin-editable).
+  altitude    String? // e.g. "2,650 m"
+  season      String? // best season, e.g. "Apr – Oct"
+  region      String? // filter grouping, e.g. "Kashmir Valley" | "Ladakh"
+  // Coordinates power the live weather widget (Open-Meteo).
+  latitude    Float?
+  longitude   Float?
   isFeatured  Boolean           @default(false)
   sortOrder   Int               @default(0)
   metaTitle   String?
@@ -300,6 +307,7 @@ model BookingService {
   amount    Float       @default(0)
   location  String? // hotel + activity
   nights    Int? // hotel
+  roomType  String? // hotel — e.g. "1 room", "1 room + 1 extra bed", "Family room"
   pickup    String? // transport
   dropoff   String? // transport
   timing    String? // activity
@@ -465,11 +473,13 @@ model Gallery {
 // Keyed by slug; content is admin-editable HTML. The app ships professional
 // defaults so a page always renders even before a row exists.
 model LegalPage {
-  slug      String   @id // terms-and-conditions | privacy-policy | refund-and-cancellation
-  title     String
-  content   String // HTML
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  slug            String   @id // terms-and-conditions | privacy-policy | refund-and-cancellation
+  title           String
+  content         String // HTML
+  heroImage       String? // desktop banner image (gallery URL); falls back to shipped default
+  heroImageMobile String? // optional ≤640px banner image
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
 }
 
 model HomeContent {
@@ -592,21 +602,6 @@ model Offer {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  @@index([isActive, sortOrder])
-}
-
-model Testimonial {
-  id        String   @id @default(cuid())
-  name      String
-  location  String?
-  avatar    String?
-  quote     String
-  rating    Int      @default(5)
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([isActive, sortOrder])
 }
@@ -857,7 +852,6 @@ model Campaign {
   exclusions      String    @default("[]")
   galleryTitle    String?
   gallery         String    @default("[]")
-  testimonials    String    @default("[]")
   faqsTitle       String?
   faqs            String    @default("[]")
   finalTitle      String?

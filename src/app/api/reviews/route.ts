@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { recomputeTourRating } from "@/lib/reviews";
 import { z } from "zod";
 
@@ -41,6 +42,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Tour not found" }, { status: 404 });
   }
 
+  // Publishing is admin-only: a non-admin staff member's review is forced into
+  // the pending queue regardless of the requested `approved` flag.
+  const approved = isAdminRole((guard.user as { role?: string }).role)
+    ? parsed.data.approved
+    : false;
+
   // Staff-created reviews are not tied to a customer account (userId stays null),
   // so the per-user unique constraint does not apply.
   const review = await prisma.review.create({
@@ -50,7 +57,7 @@ export async function POST(request: Request) {
       avatar: parsed.data.avatar?.trim() ? parsed.data.avatar.trim() : null,
       rating: parsed.data.rating,
       body: parsed.data.body,
-      approved: parsed.data.approved,
+      approved,
     },
   });
 
