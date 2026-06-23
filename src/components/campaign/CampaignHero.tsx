@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Star, Check, Lock, Phone } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -204,7 +205,7 @@ export function CampaignHero({
             >
               <div className="flex -space-x-2.5">
                 {['sp1', 'sp2', 'sp3'].map((s) => (
-                  <img key={s} className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover" src={`https://picsum.photos/seed/${s}/70`} alt="" />
+                  <img key={s} className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover" src={imgSrc()} alt="" />
                 ))}
                 <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[10px] font-extrabold text-white">2k+</span>
               </div>

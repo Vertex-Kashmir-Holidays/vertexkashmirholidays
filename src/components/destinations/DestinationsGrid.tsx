@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion, type Variants } from 'framer-motion';
 import { Heart, Mountain, Calendar, ChevronDown } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
+import { imgSrc } from '@/lib/placeholder';
 
 export interface DestinationCardData {
   slug: string;
@@ -59,7 +60,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
         animate="visible"
       >
         {destinations.slice(0, displayed).map((dest) => {
-          const image = dest.coverImage ?? `https://picsum.photos/seed/${dest.slug}/520/380`;
+          const image = imgSrc(dest.coverImage);
           return (
           <motion.div key={dest.slug} variants={itemVariants}>
             <Tilt3D intensity={6}>

@@ -1,12 +1,11 @@
-// src/components/sections/DestinationDetailThingsToDo.tsx
 'use client';
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { ArrowRight, ChevronRight, Clock } from 'lucide-react';
+import { ChevronRight, Clock } from 'lucide-react';
 import { imgSrc } from '@/lib/placeholder';
 
-interface ThingToDo {
+export interface ShowcaseActivity {
   id: string;
   image: string | null;
   title: string;
@@ -14,13 +13,16 @@ interface ThingToDo {
   duration?: string | null;
 }
 
-interface DestinationDetailThingsToDoProps {
-  name: string;
-  things: ThingToDo[];
+interface Props {
+  title: string;
+  items: ShowcaseActivity[];
 }
 
-export function DestinationDetailThingsToDo({ name, things }: DestinationDetailThingsToDoProps) {
-  if (things.length === 0) return null;
+// Shared "Things to Do" card row, driven by the Activities module. Used by both
+// the destination and tour detail pages (kept in a neutral tree so neither
+// public section cross-imports the other).
+export function ActivitiesShowcase({ title, items }: Props) {
+  if (items.length === 0) return null;
 
   const scroll = (direction: 'prev' | 'next') => {
     const row = document.getElementById('thingsRow');
@@ -39,15 +41,11 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[21px] font-bold">Things to Do in {name}</h2>
-        <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
-          View all
-          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-        </a>
+        <h2 className="text-[21px] font-bold">{title}</h2>
       </div>
       <div className="relative mt-5">
         <div className="snap-row scrollbar-none flex gap-4 overflow-x-auto pb-1" id="thingsRow">
-          {things.map((thing, i) => (
+          {items.map((thing, i) => (
             <motion.article
               key={thing.id}
               className="w-[160px] shrink-0"
@@ -75,15 +73,17 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
             </motion.article>
           ))}
         </div>
-        <motion.button
-          onClick={() => scroll('next')}
-          aria-label="Next"
-          className="absolute -right-3 top-[72px] grid h-10 w-10 place-items-center rounded-full bg-card text-foreground shadow-card transition hover:text-primary"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
-        </motion.button>
+        {items.length > 2 && (
+          <motion.button
+            onClick={() => scroll('next')}
+            aria-label="Next"
+            className="absolute -right-3 top-[72px] grid h-10 w-10 place-items-center rounded-full bg-card text-foreground shadow-card transition hover:text-primary"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
+          </motion.button>
+        )}
       </div>
     </motion.section>
   );

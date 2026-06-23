@@ -27,6 +27,7 @@ import {
   Menu,
   X,
   Map,
+  Ticket,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -39,6 +40,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   dashboard: LayoutDashboard,
   packages: Package,
   destinations: MapPin,
+  activities: Ticket,
   bookings: CalendarDays,
   leads: Inbox,
   itinerary: Map,

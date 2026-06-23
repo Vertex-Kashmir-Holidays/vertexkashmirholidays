@@ -19,7 +19,10 @@ function safeParse<T>(json: string, fallback: T): T {
 
 export default async function EditPackagePage({ params }: Props) {
   const { id } = await params;
-  const tour = await prisma.tour.findUnique({ where: { id } });
+  const [tour, activities] = await Promise.all([
+    prisma.tour.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
+    prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
   if (!tour) notFound();
 
   const defaults = {
@@ -43,6 +46,7 @@ export default async function EditPackagePage({ params }: Props) {
     metaTitle: tour.metaTitle ?? "",
     metaDesc: tour.metaDesc ?? "",
     ogImage: tour.ogImage ?? "",
+    activityIds: tour.activities.map((a) => a.activityId),
   };
 
   return (
@@ -71,7 +75,7 @@ export default async function EditPackagePage({ params }: Props) {
         </a>
       </div>
 
-      <PackageForm defaults={defaults} />
+      <PackageForm defaults={defaults} activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))} />
     </div>
   );
 }

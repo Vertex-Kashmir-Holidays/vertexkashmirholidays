@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { imgSrc } from '@/lib/placeholder';
 
 export function ToursNewsletter() {
   const [email, setEmail] = useState('');
@@ -44,7 +45,7 @@ export function ToursNewsletter() {
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <Image
-          src="https://picsum.photos/seed/news-mtn/1800/420"
+          src={imgSrc()}
           alt=""
           fill
           sizes="100vw"

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { FileCheck, FileText, BadgeIndianRupee, Clock } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/brand';
+import { imgSrc } from '@/lib/placeholder';
 
 export function DestinationsCTABand() {
   const features = [
@@ -24,7 +25,7 @@ export function DestinationsCTABand() {
       >
         <div className="absolute inset-y-0 right-0 w-[55%]">
           <Image
-            src="https://picsum.photos/seed/cta-lake/1100/420"
+            src={imgSrc()}
             alt=""
             fill
             sizes="(max-width: 1024px) 100vw, 55vw"

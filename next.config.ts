@@ -1,5 +1,18 @@
 import type { NextConfig } from "next";
 
+// Host of the branded placeholder image (env-driven so it follows the
+// deployment). Added to image remotePatterns so next/image can serve it.
+const PLACEHOLDER_HOST = (() => {
+  try {
+    return new URL(
+      process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE ??
+        "https://vertexkashmirholidays.vercel.app/uploads/general/1782136262740-dy3wqa.svg",
+    ).hostname;
+  } catch {
+    return "vertexkashmirholidays.vercel.app";
+  }
+})();
+
 const nextConfig: NextConfig = {
   images: {
     // Serve modern formats; Next negotiates AVIF → WebP → original per browser.
@@ -14,7 +27,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "picsum.photos",
+        hostname: PLACEHOLDER_HOST,
         pathname: "/**",
       },
       {

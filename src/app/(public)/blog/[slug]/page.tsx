@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { JsonLd, buildBreadcrumbList, buildBlogPosting } from '@/components/seo/JsonLd';
 import { formatINR } from '@/lib/accents';
+import { imgSrc } from '@/lib/placeholder';
 import { BlogPostBody } from '@/components/blog/BlogPostBody';
 import { BlogPostHero } from '@/components/blog/BlogPostHero';
 import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
@@ -111,7 +112,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const { html, toc } = withHeadingIds(post.body);
 
-  const avatar = post.authorImage ?? 'https://picsum.photos/seed/vk-author/110';
+  const avatar = imgSrc(post.authorImage);
 
   const fullToc = [...toc, ...(tour ? [{ label: 'Related Tours', href: '#tourCard' }] : [])];
 
@@ -130,7 +131,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         category={post.category}
         title={post.title}
         excerpt={post.excerpt}
-        image={post.coverImage ?? 'https://picsum.photos/seed/blog-post-hero/1800/640'}
+        image={imgSrc(post.coverImage)}
         author={{ name: post.author ?? 'Vertex Kashmir Holidays', role: post.authorRole, avatar }}
         readTime={post.readTime ? `${post.readTime} min read` : null}
         date={longDate(post.publishedAt)}

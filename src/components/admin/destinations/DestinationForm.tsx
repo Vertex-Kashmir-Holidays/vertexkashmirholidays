@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2, Upload, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -31,19 +32,21 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface Props {
-  defaults?: Partial<FormData> & { id?: string };
+  defaults?: Partial<FormData> & { id?: string; activityIds?: string[] };
+  activityOptions?: LinkOption[];
 }
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-export function DestinationForm({ defaults }: Props) {
+export function DestinationForm({ defaults, activityOptions = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   // Which field the gallery picker is currently targeting (null = closed).
   const [picker, setPicker] = useState<"coverImage" | "ogImage" | null>(null);
+  const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
   const isEdit = !!defaults?.id;
 
   const {
@@ -105,7 +108,7 @@ export function DestinationForm({ defaults }: Props) {
         const res = await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify({ ...data, activityIds }),
         });
         if (!res.ok) {
           const err = await res.json() as { error?: string | { fieldErrors?: Record<string, string[]> } };
@@ -218,6 +221,15 @@ export function DestinationForm({ defaults }: Props) {
             <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
           </div>
         )}
+      </div>
+
+      {/* Linked Activities (Things to Do) */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+        <div>
+          <h3 className="font-bold text-foreground text-sm">Things to Do</h3>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Activities shown on this destination&apos;s page. Manage activities in the Activities module.</p>
+        </div>
+        <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
       </div>
 
       {/* SEO */}

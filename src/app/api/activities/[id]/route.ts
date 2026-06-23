@@ -5,58 +5,73 @@ import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
 
-// Blank string → null for numeric coordinate fields so they clear cleanly.
-const coord = z.preprocess(
+const priceField = z.preprocess(
   (v) => (v === "" || v == null ? null : typeof v === "string" ? Number(v) : v),
-  z.number().min(-180).max(180).nullable(),
+  z.number().min(0).nullable(),
 );
 
 const patchSchema = z.object({
   name: z.string().min(2).optional(),
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/).optional(),
   description: z.string().optional().nullable(),
-  excerpt: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
+  images: z.string().optional(),
   location: z.string().optional().nullable(),
-  altitude: z.string().optional().nullable(),
-  season: z.string().optional().nullable(),
-  region: z.string().optional().nullable(),
-  latitude: coord.optional(),
-  longitude: coord.optional(),
+  icon: z.string().optional().nullable(),
+  duration: z.string().optional().nullable(),
+  price: priceField.optional(),
+  published: z.boolean().optional(),
+  sortOrder: z.coerce.number().int().optional(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
-  activityIds: z.array(z.string()).optional(),
+  destinationIds: z.array(z.string()).optional(),
+  tourIds: z.array(z.string()).optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  const guard = await requirePermission("destinations", "view");
+  const guard = await requirePermission("activities", "view");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const dest = await prisma.destination.findUnique({ where: { id } });
-  if (!dest) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(dest);
+  const activity = await prisma.activity.findUnique({
+    where: { id },
+    include: {
+      destinations: { select: { destinationId: true } },
+      tours: { select: { tourId: true } },
+    },
+  });
+  if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(activity);
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const guard = await requirePermission("destinations", "edit");
+  const guard = await requirePermission("activities", "edit");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.destination.findUnique({ where: { id } });
+  const existing = await prisma.activity.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  const { activityIds, ...data } = parsed.data;
+
+  const { destinationIds, tourIds, ...data } = parsed.data;
+
   try {
-    const updated = await prisma.destination.update({
+    const updated = await prisma.activity.update({
       where: { id },
       data: {
         ...data,
-        ...(activityIds
-          ? { activities: { deleteMany: {}, create: activityIds.map((activityId) => ({ activityId })) } }
+        // Re-sync the join tables only when the client sent the link arrays.
+        ...(destinationIds
+          ? { destinations: { deleteMany: {}, create: destinationIds.map((destinationId) => ({ destinationId })) } }
           : {}),
+        ...(tourIds ? { tours: { deleteMany: {}, create: tourIds.map((tourId) => ({ tourId })) } } : {}),
       },
     });
     return NextResponse.json(updated);
@@ -68,11 +83,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const guard = await requirePermission("destinations", "delete");
+  const guard = await requirePermission("activities", "delete");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.destination.findUnique({ where: { id } });
+  const existing = await prisma.activity.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  await prisma.destination.delete({ where: { id } });
+  await prisma.activity.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { getLiveWeather } from "@/lib/weather";
+import { imgSrc } from "@/lib/placeholder";
 import {
   JsonLd,
   buildBreadcrumbList,
@@ -15,7 +16,7 @@ import { DestinationDetailHero } from "@/components/destinations/DestinationDeta
 import { DestinationDetailOverview } from "@/components/destinations/DestinationDetailOverview";
 import { DestinationDetailSidebar } from "@/components/destinations/DestinationDetailSidebar";
 import { DestinationDetailTabs } from "@/components/destinations/DestinationDetailTabs";
-import { DestinationDetailThingsToDo } from "@/components/destinations/DestinationDetailThingsToDo";
+import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
 import {
   DestinationDetailTours,
   type DestinationTour,
@@ -91,6 +92,15 @@ async function getDestination(slug: string) {
           },
         },
       },
+      // Published activities linked to this destination → "Things to Do".
+      activities: {
+        where: { activity: { published: true } },
+        include: {
+          activity: {
+            select: { id: true, name: true, description: true, coverImage: true, duration: true },
+          },
+        },
+      },
     },
   });
 }
@@ -158,7 +168,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     ? tours.reduce((sum, t) => sum + t.rating, 0) / tours.length
     : 4.8;
 
-  const heroImage = dest.coverImage ?? `https://picsum.photos/seed/${slug}-hero/1800/820`;
+  const heroImage = imgSrc(dest.coverImage);
 
   const stats = [
     { value: altitude, label: "Altitude", icon: ICON.altitude },
@@ -193,21 +203,21 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     p: formatINR(t.priceFrom),
   }));
 
-  const things = [
-    { seed: `${slug}-1`, title: "Sightseeing", description: `Explore the most scenic viewpoints and landmarks of ${dest.name}.` },
-    { seed: `${slug}-2`, title: "Nature Walks", description: "Wander through meadows, pine forests and riverside trails." },
-    { seed: `${slug}-3`, title: "Photography", description: "Capture postcard-worthy Himalayan landscapes." },
-    { seed: `${slug}-4`, title: "Local Cuisine", description: "Savour authentic Kashmiri Wazwan and street food." },
-    { seed: `${slug}-5`, title: "Adventure", description: "Trekking, pony rides and seasonal snow activities." },
-  ];
+  // Things to Do — driven by the Activities module (published, linked to this
+  // destination). The section hides itself when nothing is linked.
+  const things = dest.activities.map((a) => ({
+    id: a.activity.id,
+    image: a.activity.coverImage,
+    title: a.activity.name,
+    description: a.activity.description ?? "",
+    duration: a.activity.duration,
+  }));
 
-  const gallery = [
-    dest.coverImage,
-    `https://picsum.photos/seed/${slug}-1/400/280`,
-    `https://picsum.photos/seed/${slug}-2/400/280`,
-    `https://picsum.photos/seed/${slug}-3/400/280`,
-    `https://picsum.photos/seed/${slug}-4/400/280`,
-  ].filter((img): img is string => Boolean(img));
+  // Gallery = the destination cover + the cover images of its linked activities
+  // (real content, no external placeholders).
+  const gallery = [dest.coverImage, ...dest.activities.map((a) => a.activity.coverImage)].filter(
+    (img): img is string => Boolean(img),
+  );
 
   const quickInfo = [
     { label: "Location", value: dest.location ?? "Jammu & Kashmir", icon: ICON.pin },
@@ -272,7 +282,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
                 description={dest.description ?? dest.excerpt ?? ""}
                 features={FEATURES}
               />
-              <DestinationDetailThingsToDo name={dest.name} things={things} />
+              <ActivitiesShowcase title={`Things to Do in ${dest.name}`} items={things} />
               {destinationTours.length > 0 && (
                 <DestinationDetailTours name={dest.name} tours={destinationTours} />
               )}

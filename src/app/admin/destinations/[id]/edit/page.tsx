@@ -13,9 +13,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: dest ? `Edit: ${dest.name} — Admin` : "Edit Destination — Admin" };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function EditDestinationPage({ params }: Props) {
   const { id } = await params;
-  const dest = await prisma.destination.findUnique({ where: { id } });
+  const [dest, activities] = await Promise.all([
+    prisma.destination.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
+    prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
   if (!dest) notFound();
 
   return (
@@ -53,7 +58,9 @@ export default async function EditDestinationPage({ params }: Props) {
           metaTitle: dest.metaTitle ?? "",
           metaDesc: dest.metaDesc ?? "",
           ogImage: dest.ogImage ?? "",
+          activityIds: dest.activities.map((a) => a.activityId),
         }}
+        activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
       />
     </div>
   );

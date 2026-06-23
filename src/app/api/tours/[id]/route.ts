@@ -26,6 +26,7 @@ const patchSchema = z.object({
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
+  activityIds: z.array(z.string()).optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -58,13 +59,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { category, ...rest } = parsed.data;
+  const { category, activityIds, ...rest } = parsed.data;
   try {
     const updated = await prisma.tour.update({
       where: { id },
       data: {
         ...rest,
         ...(category ? { category: category as TourCategory } : {}),
+        ...(activityIds
+          ? { activities: { deleteMany: {}, create: activityIds.map((activityId) => ({ activityId })) } }
+          : {}),
       },
     });
     return NextResponse.json(updated);

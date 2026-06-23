@@ -59,11 +59,15 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
         </p>
       ) : (
         <motion.div
+          // Key on the current article set so the grid remounts and re-runs its
+          // stagger on every page/filter change. Without this, framer-motion's
+          // once-fired whileInView never re-orchestrates the swapped-in items,
+          // leaving them stuck at opacity 0 (blank) after the first change.
+          key={articles.map((a) => a.id).join(',')}
           className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+          animate="visible"
         >
           {articles.map((article) => (
             <motion.article

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon, TwitterIcon } from '@/components/icons/brand';
 import type { ContactSocialContent, ContactSocialLink } from '@/types/contact';
+import { imgSrc } from '@/lib/placeholder';
 
 interface ContactSocialProps {
   content: ContactSocialContent;
@@ -64,10 +65,10 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
       )}
       {content.text && <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">{content.text}</p>}
       <div className="mt-4 grid grid-cols-4 gap-2">
-        {igImages.map((s, i) => (
+        {igImages.map((_s, i) => (
           <a key={i} href={content.ctaHref ?? '#'} className="group relative block aspect-square overflow-hidden rounded-lg">
             <Image
-              src={`https://picsum.photos/seed/${s}/200`}
+              src={imgSrc()}
               alt=""
               fill
               sizes="(max-width: 768px) 25vw, 80px"

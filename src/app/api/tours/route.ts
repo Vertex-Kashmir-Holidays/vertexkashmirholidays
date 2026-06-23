@@ -102,6 +102,7 @@ const createSchema = z.object({
   discountPct: z.coerce.number().int().min(0).max(100).optional().nullable(),
   bestseller: z.boolean().optional(),
   published: z.boolean().optional(),
+  activityIds: z.array(z.string()).optional(),
 });
 
 export async function POST(request: Request) {
@@ -120,10 +121,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { category, ...rest } = parsed.data;
+  const { category, activityIds = [], ...rest } = parsed.data;
   try {
     const tour = await prisma.tour.create({
-      data: { ...rest, category: category as TourCategory },
+      data: {
+        ...rest,
+        category: category as TourCategory,
+        activities: { create: activityIds.map((activityId) => ({ activityId })) },
+      },
     });
     return NextResponse.json(tour, { status: 201 });
   } catch (err: unknown) {

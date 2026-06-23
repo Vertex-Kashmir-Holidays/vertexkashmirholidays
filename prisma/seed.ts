@@ -4,6 +4,13 @@ import { LEGAL_PAGES } from "../src/lib/legal/content";
 
 const prisma = new PrismaClient();
 
+// Branded placeholder used for ALL seeded images — keeps seed data on our own
+// (lightweight SVG) asset instead of hammering an external service like
+// picsum.photos. The domain is env-driven so it follows the deployment.
+const PLACEHOLDER =
+  process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE ??
+  "https://vertexkashmirholidays.vercel.app/uploads/general/1782136262740-dy3wqa.svg";
+
 async function main() {
   // ── Super admin user ─────────────────────────────────────────────────────────
   await prisma.user.upsert({
@@ -46,6 +53,7 @@ async function main() {
       dashboard: VIEW,
       packages: ALL,
       destinations: ALL,
+      activities: ALL,
       bookings: ALL,
       leads: ALL,
       itinerary: ALL,
@@ -66,6 +74,7 @@ async function main() {
       dashboard: VIEW,
       packages: VIEW,
       destinations: VIEW,
+      activities: VIEW,
       bookings: ALL,
       leads: VIEW_EDIT,
       itinerary: ALL,
@@ -86,6 +95,7 @@ async function main() {
       dashboard: VIEW,
       packages: ALL,
       destinations: ALL,
+      activities: ALL,
       bookings: VIEW,
       leads: VIEW,
       itinerary: NONE,
@@ -139,12 +149,12 @@ async function main() {
       excerpt: "The Meadow of Flowers — Asia's premier ski resort and summer alpine paradise.",
       description:
         "Perched at 2,650 m in the Pir Panjal range, Gulmarg is Kashmir's crown jewel. In winter it transforms into a world-class ski destination with the world's second-highest cable car; in summer it's a rolling carpet of wildflowers. Famous for the Gulmarg Gondola, golf at the world's highest course, and breathtaking Himalayan vistas.",
-      coverImage: "https://picsum.photos/seed/gulmarg/1600/900",
+      coverImage: PLACEHOLDER,
       location: "Baramulla District, Jammu & Kashmir, 2650 m",
       metaTitle: "Gulmarg — Meadow of Flowers | Vertex Kashmir Holidays",
       metaDesc:
         "Explore Gulmarg — Asia's highest ski resort, the iconic Gondola, and sweeping meadows of wildflowers. Book your Gulmarg tour with Vertex Kashmir Holidays.",
-      ogImage: "https://picsum.photos/seed/gulmarg/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
 
@@ -160,12 +170,12 @@ async function main() {
       excerpt: "The Valley of Shepherds — lush meadows, roaring rivers, and pine forests.",
       description:
         "Nestled at 2,130 m where the Lidder river meets rolling meadows, Pahalgam is one of Kashmir's most scenic valleys. It serves as the base camp for the annual Amarnath Yatra and is celebrated for Betaab Valley, Aru Valley, Baisaran meadow, and trout fishing in the crystal-clear Lidder. A favourite for honeymoon couples and trekkers alike.",
-      coverImage: "https://picsum.photos/seed/pahalgam/1600/900",
+      coverImage: PLACEHOLDER,
       location: "Anantnag District, Jammu & Kashmir, 2130 m",
       metaTitle: "Pahalgam — Valley of Shepherds | Vertex Kashmir Holidays",
       metaDesc:
         "Discover Pahalgam's emerald meadows, Betaab Valley, and the Lidder river. Perfect for honeymooners and adventure seekers. Book with Vertex Kashmir Holidays.",
-      ogImage: "https://picsum.photos/seed/pahalgam/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
 
@@ -181,12 +191,12 @@ async function main() {
       excerpt: "The Summer Capital — Dal Lake, Mughal gardens, and floating markets.",
       description:
         "Srinagar, the summer capital of Jammu & Kashmir, is the soul of Kashmir. Dal Lake with its ornate houseboats, shikara rides, and floating vegetable markets is iconic worldwide. The city is also home to the 9th-century Shankaracharya temple, the fragrant Mughal gardens of Shalimar Bagh and Nishat Bagh, and the vibrant bazaars of Lal Chowk.",
-      coverImage: "https://picsum.photos/seed/srinagar/1600/900",
+      coverImage: PLACEHOLDER,
       location: "Srinagar District, Jammu & Kashmir, 1585 m",
       metaTitle: "Srinagar — Dal Lake & Mughal Gardens | Vertex Kashmir Holidays",
       metaDesc:
         "Experience Srinagar's Dal Lake houseboats, shikara rides, Mughal gardens, and old city bazaars. Book your Srinagar package with Vertex Kashmir Holidays.",
-      ogImage: "https://picsum.photos/seed/srinagar/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
 
@@ -202,12 +212,12 @@ async function main() {
       excerpt: "The Meadow of Gold — gateway to glaciers and high-altitude treks.",
       description:
         "Sonmarg — literally 'meadow of gold' — sits at 2,800 m along the Sindh river and marks the entry point of the Himalayan high-altitude terrain. It is the base for the spectacular Thajiwas Glacier, the Krishnasar and Vishansar alpine lakes trek, and serves as the last major stop before Zoji La pass on the Srinagar–Leh highway. Stunning river vistas and snow-capped peaks make it unforgettable.",
-      coverImage: "https://picsum.photos/seed/sonmarg/1600/900",
+      coverImage: PLACEHOLDER,
       location: "Ganderbal District, Jammu & Kashmir, 2800 m",
       metaTitle: "Sonmarg — Meadow of Gold | Vertex Kashmir Holidays",
       metaDesc:
         "Explore Sonmarg's Thajiwas Glacier, alpine lakes, and dramatic river valley. Book your Sonmarg adventure with Vertex Kashmir Holidays.",
-      ogImage: "https://picsum.photos/seed/sonmarg/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
   await prisma.destination.upsert({
@@ -222,12 +232,12 @@ async function main() {
       excerpt: "The Valley of Milk — pristine meadows, milky-white streams, and total serenity.",
       description:
         "Doodhpathri — literally 'valley of milk' — is named after its frothing white streams that tumble over smooth stones. At 2,730 m in the Budgam district, this undeveloped meadow is a riot of wildflowers in spring and remains one of Kashmir's best-kept secrets. No shops, no hotels — just waterfalls, pine fringes, and shepherds grazing their flocks.",
-      coverImage: "https://picsum.photos/seed/doodhpathri/1600/900",
+      coverImage: PLACEHOLDER,
       location: "Budgam District, Jammu & Kashmir, 2730 m",
       metaTitle: "Doodhpathri — Valley of Milk | Vertex Kashmir Holidays",
       metaDesc:
         "Discover Doodhpathri — Kashmir's hidden valley of milky streams and untouched meadows. Day trips from Srinagar with Vertex Kashmir Holidays.",
-      ogImage: "https://picsum.photos/seed/doodhpathri/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
   // Backfill display facts + coordinates on the five originals above. Coords
@@ -272,8 +282,8 @@ async function main() {
       longitude: d.longitude,
       excerpt: d.excerpt,
       description: d.excerpt,
-      coverImage: `https://picsum.photos/seed/${d.slug}/1600/900`,
-      ogImage: `https://picsum.photos/seed/${d.slug}/1200/630`,
+      coverImage: PLACEHOLDER,
+      ogImage: PLACEHOLDER,
       sortOrder: extraOrder++,
     };
     await prisma.destination.upsert({
@@ -322,12 +332,12 @@ async function main() {
       excerpt: "Float on Dal Lake, ride through Gulmarg's golden meadows, and lose yourselves in Pahalgam's pine-scented valleys on the ultimate Kashmir honeymoon.",
       description:
         "Seven days crafted entirely for two. Begin with a luxurious houseboat stay on Dal Lake with candlelit shikara evenings, then ascend to the alpine romance of Gulmarg where the world's highest gondola lifts you above the clouds. Finish in the pastoral beauty of Pahalgam's Betaab Valley. Private transfers, premium accommodation, and curated experiences throughout.",
-      coverImage: "https://picsum.photos/seed/honeymoon-kashmir/1600/900",
+      coverImage: PLACEHOLDER,
       gallery: JSON.stringify([
-        "https://picsum.photos/seed/honeymoon-1/1600/900",
-        "https://picsum.photos/seed/honeymoon-2/1600/900",
-        "https://picsum.photos/seed/honeymoon-3/1600/900",
-        "https://picsum.photos/seed/honeymoon-4/1600/900",
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
       ]),
       itinerary: JSON.stringify([
         { day: 1, title: "Arrival in Srinagar — Dal Lake", description: "Arrive at Srinagar airport, transfer to your deluxe houseboat on Dal Lake. Evening shikara ride through the floating market channels. Welcome dinner on deck under the stars." },
@@ -364,7 +374,7 @@ async function main() {
       published: true,
       metaTitle: "Honeymoon in Heaven — 7-Day Kashmir Package | Vertex Kashmir Holidays",
       metaDesc: "7-day Kashmir honeymoon: Dal Lake houseboat, Gulmarg Gondola, Pahalgam meadows. Starting ₹45,000/couple. Book your dream Kashmir honeymoon today.",
-      ogImage: "https://picsum.photos/seed/honeymoon-kashmir/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
 
@@ -405,11 +415,11 @@ async function main() {
       excerpt: "From shikara rides on Dal Lake to snowball fights in Gulmarg — a wholesome Kashmir adventure the whole family will treasure forever.",
       description:
         "Six days designed for families with children of all ages. Stay on a traditional houseboat, ride the world-famous Gondola, explore Pahalgam's meadows on pony-back, and create memories that will last a lifetime. Child-friendly activities, paced itinerary, and family suites throughout.",
-      coverImage: "https://picsum.photos/seed/family-kashmir/1600/900",
+      coverImage: PLACEHOLDER,
       gallery: JSON.stringify([
-        "https://picsum.photos/seed/family-1/1600/900",
-        "https://picsum.photos/seed/family-2/1600/900",
-        "https://picsum.photos/seed/family-3/1600/900",
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
       ]),
       itinerary: JSON.stringify([
         { day: 1, title: "Arrival & Dal Lake", description: "Land in Srinagar, transfer to your family houseboat. Kids love the floating market shikara ride — spotting vegetables and flowers being sold from small boats." },
@@ -445,7 +455,7 @@ async function main() {
       published: true,
       metaTitle: "Family Kashmir Explorer — 6-Day Kashmir Family Package | Vertex Kashmir Holidays",
       metaDesc: "6-day family Kashmir tour: Dal Lake houseboat, Sonmarg glacier, Gulmarg Gondola, Pahalgam pony rides. Starting ₹32,000/family. Book now.",
-      ogImage: "https://picsum.photos/seed/family-kashmir/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
 
@@ -486,12 +496,12 @@ async function main() {
       excerpt: "Trek across the Krishnasar and Vishansar lakes, conquer Apharwat peak in Gulmarg, and cross the legendary Zoji La pass on Kashmir's ultimate adventure circuit.",
       description:
         "Eight days for those who want to push beyond the postcard. From the Sonmarg glacier approaches and Zoji La to the alpine lake treks of Pahalgam and the 4,200 m summit of Apharwat in Gulmarg — this itinerary packages the best of Himalayan adventure into one cohesive journey. All activities are guided by certified local mountain guides.",
-      coverImage: "https://picsum.photos/seed/adventure-kashmir/1600/900",
+      coverImage: PLACEHOLDER,
       gallery: JSON.stringify([
-        "https://picsum.photos/seed/adventure-1/1600/900",
-        "https://picsum.photos/seed/adventure-2/1600/900",
-        "https://picsum.photos/seed/adventure-3/1600/900",
-        "https://picsum.photos/seed/adventure-4/1600/900",
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
       ]),
       itinerary: JSON.stringify([
         { day: 1, title: "Arrival in Srinagar", description: "Arrive Srinagar, acclimatisation walk around Dal Lake. Equipment check and briefing with lead guide. Stay: budget guesthouse near Dal." },
@@ -530,7 +540,7 @@ async function main() {
       published: true,
       metaTitle: "High Altitude Adventure — 8-Day Kashmir Trek | Vertex Kashmir Holidays",
       metaDesc: "8-day Kashmir adventure: Vishansar & Krishnasar lake trek, Apharwat summit, Sonmarg glacier. Starting ₹28,000. Book with Vertex Kashmir Holidays.",
-      ogImage: "https://picsum.photos/seed/adventure-kashmir/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
 
@@ -571,13 +581,13 @@ async function main() {
       excerpt: "Stay on a heritage 5-star houseboat, dine at Srinagar's finest, and experience Kashmir through the eyes of royalty — butler service, private shikara, and bespoke itinerary.",
       description:
         "Five nights of uncompromising luxury in the heart of Kashmir. Your suite is a restored Maharaja-era cedar houseboat, hand-carved and appointed with Pashmina soft furnishings. Private shikara at all hours, personal butler, Wazwan tasting menus, a curated shopping experience with master craftsmen — everything arranged before you arrive. This is Kashmir without compromise.",
-      coverImage: "https://picsum.photos/seed/luxury-kashmir/1600/900",
+      coverImage: PLACEHOLDER,
       gallery: JSON.stringify([
-        "https://picsum.photos/seed/luxury-1/1600/900",
-        "https://picsum.photos/seed/luxury-2/1600/900",
-        "https://picsum.photos/seed/luxury-3/1600/900",
-        "https://picsum.photos/seed/luxury-4/1600/900",
-        "https://picsum.photos/seed/luxury-5/1600/900",
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
       ]),
       itinerary: JSON.stringify([
         { day: 1, title: "Private Airport Transfer & Houseboat Arrival", description: "Met at Srinagar airport by your personal host. Transfer to your heritage deluxe houseboat on Dal Lake in a private shikara. Champagne welcome, tour of your cedar-carved suite. Evening candlelit dinner on the upper deck." },
@@ -616,7 +626,7 @@ async function main() {
       published: true,
       metaTitle: "Royal Kashmir Luxury — 5-Day Heritage Houseboat | Vertex Kashmir Holidays",
       metaDesc: "5-night luxury Kashmir retreat: heritage houseboat, private butler, Wazwan dinner, bespoke Pashmina. Starting ₹85,000/couple. Book your royal Kashmir experience.",
-      ogImage: "https://picsum.photos/seed/luxury-kashmir/1200/630",
+      ogImage: PLACEHOLDER,
     },
   });
   // ── Extra tours — give the listing real depth so filters & pagination work ──
@@ -655,8 +665,8 @@ async function main() {
       tagline: t.tagline,
       excerpt: t.excerpt,
       description: `${t.excerpt} A thoughtfully paced ${nights}-night / ${t.duration}-day journey crafted by Vertex Kashmir Holidays, with private transfers, hand-picked stays and local experts throughout.`,
-      coverImage: `https://picsum.photos/seed/${t.slug}/1600/900`,
-      gallery: JSON.stringify([1, 2, 3, 4].map((n) => `https://picsum.photos/seed/${t.slug}-${n}/1600/900`)),
+      coverImage: PLACEHOLDER,
+      gallery: JSON.stringify([1, 2, 3, 4].map((n) => PLACEHOLDER)),
       highlights: JSON.stringify(["🏔️ Scenic Himalayan drives", "🏨 Hand-picked stays", "🧭 Local expert guides", "🚐 Private transfers"]),
       inclusions: JSON.stringify([`${nights} nights accommodation`, "Daily breakfast & dinner", "Private air-conditioned transfers", "All applicable taxes"]),
       exclusions: JSON.stringify(["Airfare", "Personal expenses & tips", "Travel insurance", "Anything not listed in inclusions"]),
@@ -680,7 +690,7 @@ async function main() {
       happyCount: 1000 + t.reviewCount,
       metaTitle: `${t.title} — ${t.duration}-Day Kashmir Package | Vertex Kashmir Holidays`,
       metaDesc: `${t.excerpt} Starting ₹${t.priceFrom.toLocaleString("en-IN")}. Book with Vertex Kashmir Holidays.`,
-      ogImage: `https://picsum.photos/seed/${t.slug}/1200/630`,
+      ogImage: PLACEHOLDER,
     };
     const created = await prisma.tour.upsert({
       where: { slug: t.slug },
@@ -723,6 +733,45 @@ async function main() {
   }
   console.log("✓ Tour-Destination joins");
 
+  // ── Activities (Things to Do) ───────────────────────────────────────────────
+  const ACTIVITIES = [
+    { slug: "gulmarg-gondola-ride", name: "Gulmarg Gondola Ride", icon: "🚡", duration: "Half day", price: 1600, location: "Gulmarg", description: "Ride the world's second-highest cable car to Apharwat Peak for sweeping Himalayan views.", destSlugs: ["gulmarg"], tourSlugs: ["winter-gulmarg-ski-week", "honeymoon-houseboat-romance"] },
+    { slug: "shikara-ride-dal-lake", name: "Shikara Ride on Dal Lake", icon: "🛶", duration: "1 hour", price: 800, location: "Srinagar", description: "Glide across Dal Lake at golden hour, past floating gardens and the vegetable market.", destSlugs: ["srinagar"], tourSlugs: ["srinagar-houseboat-getaway", "honeymoon-houseboat-romance"] },
+    { slug: "thajiwas-glacier-trek", name: "Thajiwas Glacier Trek", icon: "🏔️", duration: "3 hours", price: 1200, location: "Sonmarg", description: "A pony ride or hike to the snout of the Thajiwas glacier, snowbound much of the year.", destSlugs: ["sonmarg"], tourSlugs: ["sonmarg-glacier-adventure"] },
+    { slug: "betaab-valley-visit", name: "Betaab Valley Visit", icon: "🌲", duration: "Half day", price: 900, location: "Pahalgam", description: "Wander the emerald lawns and riverbanks of Bollywood's favourite valley.", destSlugs: ["pahalgam", "betaab-valley"], tourSlugs: ["pahalgam-valley-explorer"] },
+    { slug: "pangong-lake-camping", name: "Pangong Lake Camping", icon: "⛺", duration: "Overnight", price: 3500, location: "Pangong", description: "Camp beside the colour-shifting high-altitude lake under a blanket of stars.", destSlugs: ["pangong-lake", "leh"], tourSlugs: ["leh-ladakh-overland"] },
+    { slug: "mughal-gardens-tour", name: "Mughal Gardens Tour", icon: "🌳", duration: "Half day", price: 700, location: "Srinagar", description: "Stroll the terraced Nishat and Shalimar Bagh gardens laid out by the Mughal emperors.", destSlugs: ["srinagar"], tourSlugs: [] },
+    { slug: "skiing-in-gulmarg", name: "Skiing in Gulmarg", icon: "⛷️", duration: "Full day", price: 2500, location: "Gulmarg", description: "Certified instruction and gear on Asia's best powder, from beginner slopes to Apharwat bowls.", destSlugs: ["gulmarg"], tourSlugs: ["winter-gulmarg-ski-week"] },
+    { slug: "river-rafting-lidder", name: "River Rafting on the Lidder", icon: "🚣", duration: "2 hours", price: 1500, location: "Pahalgam", description: "Splash through grade II–III rapids on the cold, clear Lidder river.", destSlugs: ["pahalgam", "aru-valley"], tourSlugs: ["pahalgam-valley-explorer"] },
+  ];
+
+  for (const a of ACTIVITIES) {
+    const destIds = (await Promise.all(a.destSlugs.map((s) => prisma.destination.findUnique({ where: { slug: s }, select: { id: true } })))).filter(Boolean) as { id: string }[];
+    const tourIds = (await Promise.all(a.tourSlugs.map((s) => prisma.tour.findUnique({ where: { slug: s }, select: { id: true } })))).filter(Boolean) as { id: string }[];
+    const common = {
+      name: a.name,
+      icon: a.icon,
+      duration: a.duration,
+      price: a.price,
+      location: a.location,
+      description: a.description,
+      coverImage: PLACEHOLDER,
+      images: JSON.stringify([1, 2, 3].map((n) => PLACEHOLDER)),
+      published: true,
+    };
+    const activity = await prisma.activity.upsert({
+      where: { slug: a.slug },
+      update: common,
+      create: { slug: a.slug, ...common },
+    });
+    // Reset and recreate links for idempotency.
+    await prisma.activityDestination.deleteMany({ where: { activityId: activity.id } });
+    await prisma.activityTour.deleteMany({ where: { activityId: activity.id } });
+    if (destIds.length) await prisma.activityDestination.createMany({ data: destIds.map((d) => ({ activityId: activity.id, destinationId: d.id })) });
+    if (tourIds.length) await prisma.activityTour.createMany({ data: tourIds.map((t) => ({ activityId: activity.id, tourId: t.id })) });
+  }
+  console.log("✓ Activities");
+
   // ── Reviews ─────────────────────────────────────────────────────────────────
   // Clear existing reviews and recreate for idempotency
   await prisma.review.deleteMany({ where: { tourId: { in: [tour1.id, tour2.id, tour3.id, tour4.id] } } });
@@ -752,7 +801,7 @@ async function main() {
       slug: "15-best-places-to-visit-in-kashmir-2026",
       excerpt: "From snow-capped Gulmarg to the tulip gardens of Srinagar — discover the most beautiful places in Kashmir you shouldn't miss this season.",
       body: "<p>Kashmir — the paradise on earth — has no shortage of breathtaking places. With so many valleys, lakes, meadows, and peaks, planning where to go can feel overwhelming. Here are the 15 best places to visit this summer, as recommended by our Srinagar-based guides.</p><h2>1. Gulmarg — The Meadow of Flowers</h2><p>Perched at 2,650 m, Gulmarg is Kashmir's crown jewel. The Gulmarg Gondola lifts you to Apharwat Peak (4,200 m) for panoramic Himalayan views. In summer, rolling meadows of wildflowers replace the ski slopes. Don't miss the world's highest golf course.</p><h2>2. Pahalgam — Valley of Shepherds</h2><p>Nestled at 2,130 m where the Lidder river carves through emerald valleys, Pahalgam is Kashmir's most romantic destination. Betaab Valley — Bollywood's favourite backdrop — and the pristine Aru Valley are highlights. The river is ideal for trout fishing and riverside picnics.</p><h2>3. Srinagar — The Summer Capital</h2><p>Dal Lake with its ornate houseboats, shikara rides through floating markets, the Mughal gardens of Shalimar Bagh and Nishat Bagh, and the old city's wooden mosques — Srinagar is inexhaustible. The Shankaracharya temple hill offers the best panoramic view of the entire valley.</p><h2>4. Sonmarg — Meadow of Gold</h2><p>At 2,800 m, Sonmarg is the gateway to Kashmir's high-altitude wilderness. The Thajiwas Glacier is accessible by pony even in summer. The multi-day trek to Krishnasar and Vishansar alpine lakes is one of India's most beautiful treks.</p><h2>5. Yusmarg — The Hidden Meadow</h2><p>Far fewer tourists reach Yusmarg, and that's exactly its charm. This peaceful high-altitude meadow, carpeted in spring flowers and framed by fir forests, is perfect for those seeking Kashmir without the crowds. Ideal for day trips from Srinagar.</p><h2>6. Doodhpathri — Valley of Milk</h2><p>Named after its milky-white streams, Doodhpathri is completely undeveloped — no shops, no hotels, just a pristine valley of waterfalls and wildflowers. A hidden gem best visited as a day trip from Srinagar.</p><h2>7. Nagin Lake — Dal's Quieter Sister</h2><p>Connected to Dal by a narrow channel, Nagin is smaller, cleaner, and less crowded. Many travellers prefer a houseboat stay here for the tranquility while staying within easy reach of Srinagar's sights.</p><h2>8. Betaab Valley — Bollywood's Paradise</h2><p>Located just 15 km from Pahalgam, Betaab Valley became famous after the 1983 Bollywood film. Its lush bowl of green meadows, snow-streaked peaks, and the rushing Lidder river create picture-perfect scenery.</p><h2>9. Aru Valley</h2><p>One of the least-visited beautiful valleys in Kashmir, Aru is a 12 km drive from Pahalgam. The tiny village of Aru is the starting point for several alpine lake treks and is perfect for gentle walks surrounded by pine forests.</p><h2>10. Baisaran — Mini Switzerland</h2><p>A 30-minute pony ride above Pahalgam reveals Baisaran — an open meadow with sweeping views often called Kashmir's mini Switzerland. In spring, the meadow is blanketed in buttercups and daisies.</p><h2>11. Wular Lake</h2><p>One of Asia's largest freshwater lakes, Wular is less visited but deeply beautiful. Surrounded by the Haramukh range, it is a major stopover for migratory birds and the lotus beds in summer are spectacular.</p><h2>12. Verinag Garden</h2><p>A Mughal octagonal pool garden at the source of the Jhelum river. Built by Emperor Jehangir in 1620, the transparent spring water and Himalayan backdrop make this a quiet, contemplative stop.</p><h2>13. Dachigam National Park</h2><p>Just 21 km from Srinagar, Dachigam is the only habitat of the critically endangered Hangul (Kashmir stag). Autumn visits offer the best wildlife sightings. Prior permits required.</p><h2>14. Lolab Valley</h2><p>The apple orchards and dense forests of Lolab valley are a riot of pink and white blossoms in April–May. This off-beaten valley is the real Kashmir of village life and traditional culture.</p><h2>15. Bangus Valley</h2><p>One of Kashmir's best-kept secrets, Bangus is a remote double-meadow valley near Handwara. Visited only by serious trekkers, it rewards with complete solitude and extraordinary Himalayan beauty.</p><h2>When to Visit</h2><p>The ideal window is <strong>April to October</strong>. April brings tulip blooms in Srinagar; May–June are perfect for Gulmarg and Pahalgam wildflowers; July–August for high-altitude treks; September for golden-lit landscapes with fewer crowds.</p>",
-      coverImage: "https://picsum.photos/seed/blog-kashmir-places/1600/900",
+      coverImage: PLACEHOLDER,
       author: "Hamid Bashir",
       category: "Travel Guide",
       readTime: 7,
@@ -760,14 +809,14 @@ async function main() {
       publishedAt: new Date("2026-05-10"),
       metaTitle: "15 Best Places to Visit in Kashmir This Summer 2026 — Vertex Kashmir",
       metaDesc: "Discover the 15 most beautiful destinations in Kashmir this summer — from Gulmarg's meadows to Srinagar's Dal Lake. Complete guide by local experts.",
-      ogImage: "https://picsum.photos/seed/blog-kashmir-places/1200/630",
+      ogImage: PLACEHOLDER,
     },
     {
       title: "The Perfect 7-Day Kashmir Itinerary for First-Timers (2026)",
       slug: "perfect-7-day-kashmir-itinerary-first-timers-2026",
       excerpt: "Planning your first trip to Kashmir? Use this exact 7-day itinerary — crafted by our local guides — to see the very best of the valley without missing a beat.",
       body: "<p>Kashmir rewards the well-planned traveller. This 7-day itinerary — crafted by our Srinagar-based team — covers Dal Lake, Pahalgam's meadows, Sonmarg's glacier, and Gulmarg's famous Gondola in exactly one week.</p><h2>Quick Overview</h2><ul><li><strong>Duration:</strong> 7 days / 6 nights</li><li><strong>Best Season:</strong> April – October</li><li><strong>Difficulty:</strong> Easy</li><li><strong>Covers:</strong> Srinagar, Pahalgam, Sonmarg, Gulmarg</li></ul><h2>Day 1: Arrival in Srinagar — Dal Lake Welcome</h2><p>Arrive at Srinagar's Sheikh ul-Alam International Airport. Transfer to a deluxe houseboat on Dal Lake in a private vehicle. Afternoon shikara ride through the lake's famous floating vegetable and flower markets. Welcome dinner on the houseboat deck under the stars.</p><h2>Day 2: Srinagar Sightseeing</h2><p>Early morning at the floating flower market (6–8 AM) — a magical sight most tourists miss. Visit the Mughal gardens: Nishat Bagh and Shalimar Bagh, built by Emperor Jehangir in the 17th century. Afternoon: Shankaracharya temple for panoramic valley views, followed by the old city's Jamia Masjid and the Lal Chowk handicraft market.</p><h2>Day 3: Srinagar to Pahalgam</h2><p>A scenic 3-hour drive via the Sindh valley. Stop at the Awantipora ruins (9th-century Hindu temple) and the saffron fields of Pampore. Check in to a riverside resort in Pahalgam. Evening nature walk along the crystal-clear Lidder river.</p><h2>Day 4: Pahalgam — Betaab Valley and Aru</h2><p>Full day excursion in Pahalgam. Betaab Valley — made famous by Bollywood — is a lush bowl of green surrounded by pine forests. Then to Aru Valley, even more remote and peaceful. Pony rides through both valleys are highly recommended.</p><h2>Day 5: Pahalgam to Gulmarg via Sonmarg</h2><p>Drive to Sonmarg (3 hrs) for a morning pony ride to the Thajiwas Glacier — even in summer there is snow here. Picnic lunch at the glacier base. Afternoon drive to Gulmarg (2.5 hrs). Evening stroll through the famous wildflower meadows.</p><h2>Day 6: Gulmarg — Gondola and Alpine Summit</h2><p>The centrepiece of any Kashmir trip. Take the Gondola to Kongdori (Phase 1) and Apharwat Peak at 4,200 m (Phase 2) — views stretch to Nanga Parbat on clear days. Afternoon horse ride through Gulmarg's legendary golf course meadow.</p><h2>Day 7: Gulmarg to Srinagar and Departure</h2><p>Leisurely morning in Gulmarg. Drive back to Srinagar (2 hrs). Last-minute shopping for saffron, Pashmina shawls, and Kashmiri walnut wood crafts at the Polo View Market. Transfer to the airport with a heart full of Kashmir.</p><h2>What's Included in Most Packages</h2><ul><li>Houseboat stay on Dal Lake (2 nights)</li><li>Resort accommodation in Pahalgam (2 nights) and Gulmarg (2 nights)</li><li>All transfers in private AC vehicle</li><li>Gondola tickets (Phase 1 and 2) in Gulmarg</li><li>Pony rides in Pahalgam and Sonmarg</li><li>Shikara ride on Dal Lake</li><li>Breakfast and dinner throughout</li></ul><p>This itinerary is the basis for our <a href=\"/tours/honeymoon-in-heaven\">Honeymoon in Heaven</a> and <a href=\"/tours/family-kashmir-explorer\">Family Kashmir Explorer</a> packages.</p>",
-      coverImage: "https://picsum.photos/seed/blog-7day-itinerary/1600/900",
+      coverImage: PLACEHOLDER,
       author: "Aisha Khan",
       category: "Itinerary",
       readTime: 6,
@@ -775,14 +824,14 @@ async function main() {
       publishedAt: new Date("2026-05-20"),
       metaTitle: "The Perfect 7-Day Kashmir Itinerary for First-Timers (2026) — Vertex Kashmir",
       metaDesc: "Complete 7-day Kashmir itinerary for first-time visitors: Srinagar, Pahalgam, Sonmarg, Gulmarg. Day-by-day guide by local experts.",
-      ogImage: "https://picsum.photos/seed/blog-7day-itinerary/1200/630",
+      ogImage: PLACEHOLDER,
     },
     {
       title: "Kashmir Packing List: What to Pack and What to Skip",
       slug: "kashmir-packing-list-what-to-pack",
       excerpt: "Confused about what to pack for Kashmir? Our local experts break down exactly what you need — and what will just weigh you down.",
       body: "<p>Packing for Kashmir is trickier than most destinations. The weather varies dramatically: Srinagar (1,585 m) can be warm and sunny while Gulmarg (2,650 m) is cold and windy. This guide is written by our Srinagar-based team who answer packing questions from guests every single day.</p><h2>Clothing (Summer: April–October)</h2><ul><li><strong>Layering base:</strong> 2–3 lightweight full-sleeve t-shirts — UV is intense at altitude, so full sleeves are smart even in summer</li><li><strong>Midlayer:</strong> 1–2 light fleece or sweater — essential even in July for evenings and the Gondola ride</li><li><strong>Outer layer:</strong> A windproof jacket — critical for the Apharwat summit and any high-altitude day</li><li><strong>Bottoms:</strong> Comfortable trousers (not jeans — too heavy when wet). Dress modestly, especially in Srinagar's old city</li><li><strong>Footwear:</strong> Good walking shoes. If trekking, proper hiking boots with ankle support</li><li><strong>Warm socks:</strong> Essential for Gulmarg and Sonmarg days</li><li><strong>Rain poncho:</strong> Summer showers are common, especially in Pahalgam</li></ul><h2>Documents and Money</h2><ul><li>Original government ID (required at checkpoints in J&amp;K)</li><li>Printed copies of hotel bookings and tour vouchers</li><li>Emergency contact card with your guide's local number</li><li>Cash in INR — ATMs exist in Srinagar but are unreliable in Pahalgam and Gulmarg</li><li>Travel insurance documents</li></ul><h2>Electronics</h2><ul><li>Phone, charger, and a portable power bank (essential for long drive days)</li><li>Universal travel adapter (India uses Type D/M sockets)</li><li>Camera with extra memory cards — Kashmir is extraordinarily photogenic</li><li>Earphones for the scenic mountain drives</li></ul><h2>Health and Toiletries</h2><ul><li>High-SPF sunscreen (SPF 50+ minimum — UV increases with altitude)</li><li>Lip balm with SPF</li><li>Basic first aid: paracetamol, ORS sachets, altitude sickness tablets if going above 3,500 m</li><li>Personal medications (Srinagar pharmacies are well-stocked; Gulmarg and Pahalgam less so)</li><li>Insect repellent for meadow areas in the evening</li></ul><h2>What NOT to Pack</h2><ul><li><strong>Heavy suitcases</strong> — mountain roads and houseboat transfers favour backpacks</li><li><strong>Shorts and sleeveless tops</strong> — impractical at altitude and disrespectful in local areas</li><li><strong>More than 2 pairs of shoes</strong> — one walking shoe and one sandal is enough</li><li><strong>Hair dryer or straightener</strong> — power supply in mountain areas is limited</li></ul><h2>Local Buys Worth Space in Your Bag</h2><ul><li><strong>Kashmiri saffron</strong> — the world's best, from Pampore. Buy only from certified shops</li><li><strong>Pashmina shawl</strong> — a genuine Pashmina from a certified weaver is worth every rupee</li><li><strong>Kashmiri dry fruits</strong> — walnuts, apricots, and saffron-infused almonds</li><li><strong>Papier-mâché handicrafts</strong> — lightweight and uniquely Kashmiri souvenirs</li></ul><h2>Final Tips</h2><p>Always carry a warm layer even in July — the Gondola summit at 4,200 m is cold year-round. Download offline maps before you go — mobile data is patchy in mountain areas. Pack light, stay flexible, and let Kashmir surprise you.</p>",
-      coverImage: "https://picsum.photos/seed/blog-packing-list/1600/900",
+      coverImage: PLACEHOLDER,
       author: "Farhan Ali",
       category: "Tips",
       readTime: 5,
@@ -790,7 +839,7 @@ async function main() {
       publishedAt: new Date("2026-06-01"),
       metaTitle: "Kashmir Packing List: What to Pack and What to Skip — Vertex Kashmir",
       metaDesc: "Complete Kashmir packing list by local experts. Clothing, documents, electronics, and what NOT to bring. Summer and winter packing tips.",
-      ogImage: "https://picsum.photos/seed/blog-packing-list/1200/630",
+      ogImage: PLACEHOLDER,
     },
   ];
 
@@ -811,7 +860,7 @@ async function main() {
     data: {
       featured: true,
       category: "Kashmir",
-      authorImage: "https://picsum.photos/seed/author-hamid/110",
+      authorImage: PLACEHOLDER,
       authorRole: "Senior Travel Writer, Srinagar",
       authorBio:
         "Born and raised in Kashmir. 10+ years documenting the valley's hidden corners for travellers from around the world.",
@@ -821,7 +870,7 @@ async function main() {
     where: { slug: "perfect-7-day-kashmir-itinerary-first-timers-2026" },
     data: {
       category: "Travel Tips",
-      authorImage: "https://picsum.photos/seed/author-aisha/110",
+      authorImage: PLACEHOLDER,
       authorRole: "Trip Designer, Vertex Kashmir",
       authorBio:
         "Crafts balanced, local-approved itineraries that show first-timers the very best of Kashmir without the rush.",
@@ -831,7 +880,7 @@ async function main() {
     where: { slug: "kashmir-packing-list-what-to-pack" },
     data: {
       category: "Travel Tips",
-      authorImage: "https://picsum.photos/seed/author-farhan/110",
+      authorImage: PLACEHOLDER,
       authorRole: "Local Travel Expert, Srinagar",
       authorBio:
         "Answers travellers' packing and logistics questions every single day from our Srinagar HQ.",
@@ -901,9 +950,9 @@ async function main() {
       title: p.title,
       excerpt: `${p.title} — local insights and practical tips from the Vertex Kashmir team.`,
       body: `<p>${p.title} — full guide coming soon. Our local experts are putting the finishing touches on this article.</p>`,
-      coverImage: `https://picsum.photos/seed/${p.seed}/800/500`,
+      coverImage: PLACEHOLDER,
       author: "Vertex Editorial Team",
-      authorImage: `https://picsum.photos/seed/${p.seed}-author/110`,
+      authorImage: PLACEHOLDER,
       authorRole: "Vertex Editorial",
       authorBio:
         "The Vertex Kashmir Holidays editorial team shares local stories, guides, and practical tips straight from the valley.",
@@ -970,16 +1019,16 @@ async function main() {
       formButtonLabel: "Request Free Itinerary →",
       formNote: "12,248+ planned their trip this month",
       formAvatars: JSON.stringify([
-        "https://picsum.photos/seed/p1/60",
-        "https://picsum.photos/seed/p2/60",
-        "https://picsum.photos/seed/p3/60",
+        PLACEHOLDER,
+        PLACEHOLDER,
+        PLACEHOLDER,
       ]),
       aboutPara1:
         "Vertex Kashmir Holidays is a locally based travel company run by people who grew up between Dal Lake and Gulmarg's meadows. We design every trip ourselves — no resellers, no Delhi call centres, no commissions stacked on your bill.",
       aboutPara2:
         "From honeymoon shikaras to Great Lakes treks, your itinerary is built by a neighbour, not an algorithm — and we stay on call 24/7 while you're in the valley.",
-      aboutImage1: "https://picsum.photos/seed/about-dal/520/640",
-      aboutImage2: "https://picsum.photos/seed/about-gulmarg/420/420",
+      aboutImage1: PLACEHOLDER,
+      aboutImage2: PLACEHOLDER,
       aboutCardEmoji: "🏔️",
       aboutCardTitle: "Srinagar HQ",
       aboutCardSubtitle: "Boulevard Road, Dal Gate",
@@ -1103,12 +1152,12 @@ async function main() {
   await prisma.videoReview.deleteMany();
   await prisma.videoReview.createMany({
     data: [
-      { name: "Aarav & Meera", place: "Honeymoon · Pahalgam", duration: "0:42", thumbnail: "https://picsum.photos/seed/vid-honeymoon/480/840", sortOrder: 0 },
-      { name: "The Sharma Family", place: "Snow Day · Gulmarg", duration: "1:05", thumbnail: "https://picsum.photos/seed/vid-family/480/840", sortOrder: 1 },
-      { name: "Rohit", place: "Great Lakes Trek", duration: "0:58", thumbnail: "https://picsum.photos/seed/vid-trek/480/840", sortOrder: 2 },
-      { name: "Fatima & Zoya", place: "Shikara Morning · Dal Lake", duration: "0:36", thumbnail: "https://picsum.photos/seed/vid-shikara/480/840", sortOrder: 3 },
-      { name: "Daniel", place: "Skiing · Apharwat Peak", duration: "1:12", thumbnail: "https://picsum.photos/seed/vid-ski/480/840", sortOrder: 4 },
-      { name: "Priya", place: "Tulip Garden · Srinagar", duration: "0:47", thumbnail: "https://picsum.photos/seed/vid-tulip/480/840", sortOrder: 5 },
+      { name: "Aarav & Meera", place: "Honeymoon · Pahalgam", duration: "0:42", thumbnail: PLACEHOLDER, sortOrder: 0 },
+      { name: "The Sharma Family", place: "Snow Day · Gulmarg", duration: "1:05", thumbnail: PLACEHOLDER, sortOrder: 1 },
+      { name: "Rohit", place: "Great Lakes Trek", duration: "0:58", thumbnail: PLACEHOLDER, sortOrder: 2 },
+      { name: "Fatima & Zoya", place: "Shikara Morning · Dal Lake", duration: "0:36", thumbnail: PLACEHOLDER, sortOrder: 3 },
+      { name: "Daniel", place: "Skiing · Apharwat Peak", duration: "1:12", thumbnail: PLACEHOLDER, sortOrder: 4 },
+      { name: "Priya", place: "Tulip Garden · Srinagar", duration: "0:47", thumbnail: PLACEHOLDER, sortOrder: 5 },
     ],
   });
   console.log("✓ VideoReviews");
@@ -1131,7 +1180,7 @@ async function main() {
         badge: "SAVE 25%",
         title: "Monsoon Escape Flash Sale",
         description: "5N/6D Srinagar + Gulmarg + Pahalgam. Houseboat night included.",
-        image: "https://picsum.photos/seed/offer-monsoon/520/320",
+        image: PLACEHOLDER,
         price: 18749,
         oldPrice: 24999,
         endsText: "Ends June 30",
@@ -1142,7 +1191,7 @@ async function main() {
         badge: "FREE SHIKARA",
         title: "Honeymoon Early-Bird",
         description: "Book 60 days ahead — candlelit shikara dinner + room upgrade free.",
-        image: "https://picsum.photos/seed/offer-honeymoon/520/320",
+        image: PLACEHOLDER,
         price: 31499,
         oldPrice: 34999,
         endsText: "July departures",
@@ -1153,7 +1202,7 @@ async function main() {
         badge: "GROUP DEAL",
         title: "Squad of 6+ Special",
         description: "Tempo traveller, bonfire night & rafting add-on at no extra cost.",
-        image: "https://picsum.photos/seed/offer-group/520/320",
+        image: PLACEHOLDER,
         price: 16999,
         oldPrice: 21999,
         endsText: "Limited slots",
@@ -1255,8 +1304,7 @@ async function main() {
   console.log("✓ ContactOffices");
 
   // ── Campaign landing page ─────────────────────────────────────────────────
-  const img = (seed: string, w: number, h: number) =>
-    `https://picsum.photos/seed/${seed}/${w}/${h}`;
+  const img = (_seed: string, _w: number, _h: number) => PLACEHOLDER;
 
   await prisma.campaign.upsert({
     where: { slug: "gulmarg-winter-ski-week" },
@@ -1510,9 +1558,9 @@ async function main() {
       storyTitle: "From a Small Dream\nto Thousands of Smiles",
       storyBody:
         "Vertex Kashmir Holidays began in 2010 with a single taxi and a big belief— that tourism in Kashmir can be honest, responsible, and world-class. Today, we've hosted 12,000+ travellers from 45+ countries. But we still treat every trip like it's for our own guests.",
-      storyImage: "https://picsum.photos/seed/story-houseboat/900/680",
+      storyImage: PLACEHOLDER,
       // Stats strip
-      statsImage: "https://picsum.photos/seed/stats-mtn/1400/300",
+      statsImage: PLACEHOLDER,
       // Values
       valuesKicker: "OUR VALUES",
       valuesTitle: "The Promises\nWe Keep",
@@ -1531,7 +1579,7 @@ async function main() {
       // Final CTA
       ctaTitle: "Come as a guest,\nleave as family.",
       ctaSubtitle: "Let's plan your Kashmir story.",
-      ctaImage: "https://picsum.photos/seed/cta-valley/1800/420",
+      ctaImage: PLACEHOLDER,
       ctaWhatsappLabel: "Chat on WhatsApp",
       ctaWhatsappHref: "#",
       ctaCallLabel: "Call Us Now",
@@ -1579,11 +1627,11 @@ async function main() {
   await prisma.teamMember.deleteMany();
   await prisma.teamMember.createMany({
     data: [
-      { name: "Aamir Lone", role: "Founder & CEO", bio: "Born and raised in Srinagar. Loves mountain roads and strong kahwa.", image: "https://picsum.photos/seed/tm-aamir/360/300", sortOrder: 0 },
-      { name: "Sara Rashid", role: "Trip Designer", bio: "Curates experiences that feel personal and beautiful.", image: "https://picsum.photos/seed/tm-sara/360/300", sortOrder: 1 },
-      { name: "Faisal Ahmad", role: "Head of Operations", bio: "Ensures every trip runs like clockwork.", image: "https://picsum.photos/seed/tm-faisal/360/300", sortOrder: 2 },
-      { name: "Iqra Hamid", role: "Guest Experience", bio: "Your first call, your best friend in Kashmir.", image: "https://picsum.photos/seed/tm-iqra/360/300", sortOrder: 3 },
-      { name: "Rahil Mir", role: "On-ground Lead", bio: "Mountains are his office, guests are his family.", image: "https://picsum.photos/seed/tm-rahil/360/300", sortOrder: 4 },
+      { name: "Aamir Lone", role: "Founder & CEO", bio: "Born and raised in Srinagar. Loves mountain roads and strong kahwa.", image: PLACEHOLDER, sortOrder: 0 },
+      { name: "Sara Rashid", role: "Trip Designer", bio: "Curates experiences that feel personal and beautiful.", image: PLACEHOLDER, sortOrder: 1 },
+      { name: "Faisal Ahmad", role: "Head of Operations", bio: "Ensures every trip runs like clockwork.", image: PLACEHOLDER, sortOrder: 2 },
+      { name: "Iqra Hamid", role: "Guest Experience", bio: "Your first call, your best friend in Kashmir.", image: PLACEHOLDER, sortOrder: 3 },
+      { name: "Rahil Mir", role: "On-ground Lead", bio: "Mountains are his office, guests are his family.", image: PLACEHOLDER, sortOrder: 4 },
     ],
   });
   console.log("✓ TeamMembers");

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import Link from "next/link";
+import { imgSrc } from "@/lib/placeholder";
 import { ArrowRight, Phone, User, Users, Calendar, ChevronDown, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -204,7 +205,7 @@ function InquiryCard() {
       {/* Background photo */}
       <div className="absolute inset-0" aria-hidden>
         <Image
-          src="https://picsum.photos/seed/kashmir-lake-card/600/800"
+          src={imgSrc()}
           alt=""
           fill
           sizes="(max-width: 1024px) 100vw, 480px"

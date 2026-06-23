@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Mountain, MapPin } from 'lucide-react';
+import { imgSrc } from '@/lib/placeholder';
 
 interface Section {
   title: string;
@@ -68,7 +69,7 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
                 {section.image && (
                   <div className="relative h-[88px] w-full shrink-0 overflow-hidden rounded-lg md:w-[150px]">
                     <Image
-                      src={`https://picsum.photos/seed/${section.image}/360/240`}
+                      src={imgSrc(section.image)}
                       alt=""
                       fill
                       sizes="(max-width: 768px) 100vw, 150px"

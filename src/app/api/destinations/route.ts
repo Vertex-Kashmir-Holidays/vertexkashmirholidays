@@ -26,6 +26,7 @@ const createSchema = z.object({
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),
+  activityIds: z.array(z.string()).optional(),
 });
 
 export async function GET() {
@@ -59,8 +60,11 @@ export async function POST(request: Request) {
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  const { activityIds = [], ...data } = parsed.data;
   try {
-    const dest = await prisma.destination.create({ data: parsed.data });
+    const dest = await prisma.destination.create({
+      data: { ...data, activities: { create: activityIds.map((activityId) => ({ activityId })) } },
+    });
     return NextResponse.json(dest, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
