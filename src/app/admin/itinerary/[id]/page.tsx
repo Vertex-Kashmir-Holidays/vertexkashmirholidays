@@ -38,6 +38,8 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
           endDate: true,
         },
       },
+      // Needed so the services-lock gates editability for booking itineraries.
+      booking: { select: { servicesLocked: true } },
     },
   });
   if (!record) notFound();
@@ -78,6 +80,23 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
               <Lock className="h-3.5 w-3.5" />
               Final itinerary — locked (lead converted)
+            </span>
+          )}
+        </div>
+      )}
+      {record.bookingId && !record.lead && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+          <Link
+            href={`/admin/bookings/${record.bookingId}/services`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to booking: {record.bookingId.slice(-8).toUpperCase()}
+          </Link>
+          {access.locked && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+              <Lock className="h-3.5 w-3.5" />
+              View-only — services locked
             </span>
           )}
         </div>

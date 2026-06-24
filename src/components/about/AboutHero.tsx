@@ -21,7 +21,7 @@ export function AboutHero({ data }: AboutHeroProps) {
           <span className="font-semibold text-white">{data.breadcrumb}</span>
         </nav>
         <motion.h1
-          className="h-display mt-4 font-display text-[44px] font-bold leading-[1.12] text-white lg:text-[52px]"
+          className="h-display mt-4 font-display text-3xl font-bold leading-[1.12] text-white sm:text-4xl lg:text-[52px]"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}

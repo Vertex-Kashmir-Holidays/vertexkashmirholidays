@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
 import Link from 'next/link';
+import { AffordabilityWidget } from '@/components/payments/AffordabilityWidget';
 import type { CampaignTier } from '@/types/campaign';
 
 interface CampaignPricingProps {
@@ -12,6 +13,14 @@ interface CampaignPricingProps {
 }
 
 export function CampaignPricing({ tiers }: CampaignPricingProps) {
+  // Cheapest tier price (tiers store prices as "₹28,999"-style strings) → EMI widget.
+  const minPrice = Math.min(
+    ...tiers
+      .map((t) => Number(String(t.price).replace(/[^\d]/g, "")))
+      .filter((n) => n > 0),
+  );
+  const emiAmount = Number.isFinite(minPrice) ? minPrice : 0;
+
   return (
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20" id="pricing">
       <div className="text-center">
@@ -40,7 +49,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          Lock your seat with just 20% advance · Balance 7 days before departure
+          Lock your seat with just 10% advance · Balance 7 days before departure
         </motion.p>
       </div>
       <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-3">
@@ -97,6 +106,14 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
           );
         })}
       </div>
+
+      {emiAmount > 0 && (
+        <AffordabilityWidget
+          amount={emiAmount}
+          title="No-cost & low-cost EMI available"
+          className="mx-auto mt-10 max-w-xl"
+        />
+      )}
     </section>
   );
 }

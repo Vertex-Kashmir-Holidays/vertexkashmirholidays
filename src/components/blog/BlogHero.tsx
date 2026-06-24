@@ -29,7 +29,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
           {content.heroKicker}
         </motion.p>
         <motion.h1
-          className="mt-4 text-[38px] font-bold leading-tight text-white lg:text-[42px]"
+          className="mt-4 text-3xl font-bold leading-tight text-white sm:text-[38px] lg:text-[42px]"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}

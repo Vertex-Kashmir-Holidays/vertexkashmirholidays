@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { customerBookingWhere } from "@/lib/account/bookingScope";
 import { renderBookingSummaryPdf } from "@/lib/bookings/invoice-pdf";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export async function GET(_req: Request, { params }: Params) {
   const { id } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, userId: session.user.id, deletedAt: null },
+    where: { id, ...customerBookingWhere(session.user.id, session.user.email) },
     select: { id: true, servicesLocked: true },
   });
   if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });

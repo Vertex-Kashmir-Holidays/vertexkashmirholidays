@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { customerBookingWhere } from "@/lib/account/bookingScope";
 
 export const metadata: Metadata = { title: "Payments — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
@@ -25,13 +26,12 @@ const TYPE_STYLES: Record<string, string> = {
 
 export default async function AccountPaymentsPage() {
   const session = await auth();
-  const userId = session!.user.id;
 
   // The complete payment ledger across the customer's bookings — includes online
   // (Razorpay) payments AND payments recorded internally by staff. Scoped to the
-  // authenticated user via the booking relation.
+  // authenticated user (by account or verified email) via the booking relation.
   const payments = await prisma.bookingPayment.findMany({
-    where: { booking: { userId, deletedAt: null } },
+    where: { booking: customerBookingWhere(session!.user.id, session!.user.email) },
     orderBy: { createdAt: "desc" },
     include: { booking: { select: { id: true, tour: { select: { title: true } } } } },
   });

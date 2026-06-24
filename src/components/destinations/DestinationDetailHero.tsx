@@ -61,7 +61,7 @@ export function DestinationDetailHero({
               {region}
             </motion.span>
             <motion.h1
-              className="mt-4 text-[56px] font-extrabold leading-none text-white lg:text-[64px]"
+              className="mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-[64px] lg:leading-none"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -69,7 +69,7 @@ export function DestinationDetailHero({
               {name}
             </motion.h1>
             <motion.p
-              className="mt-2 text-[26px] font-bold text-white lg:text-[30px]"
+              className="mt-2 text-xl font-bold text-white sm:text-2xl lg:text-[30px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}

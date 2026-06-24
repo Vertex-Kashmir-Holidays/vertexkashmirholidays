@@ -14,10 +14,12 @@ type Params = { params: Promise<{ id: string }> };
 const ACCESS_SELECT = {
   ownerId: true,
   leadId: true,
+  bookingId: true,
   locked: true,
   title: true,
   data: true,
   lead: { select: { assignedToId: true, locked: true } },
+  booking: { select: { servicesLocked: true } },
 } as const;
 
 /**
@@ -43,6 +45,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     include: {
       owner: { select: { name: true, email: true } },
       lead: { select: { id: true, assignedToId: true, locked: true } },
+      booking: { select: { servicesLocked: true } },
     },
   });
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -57,6 +60,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     ownerId: record.ownerId,
     ownerName: record.owner?.name ?? null,
     leadId: record.leadId,
+    bookingId: record.bookingId,
     locked: access.locked,
     canEdit: access.canEdit,
     createdAt: record.createdAt,
@@ -119,8 +123,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }),
   ];
 
-  // Snapshot a history row for lead-linked itineraries whenever content changes.
-  if (existing.leadId && parsed.data.data !== undefined) {
+  // Snapshot a history row (version history) whenever content changes for a
+  // lead- OR booking-linked itinerary.
+  if ((existing.leadId || existing.bookingId) && parsed.data.data !== undefined) {
     ops.push(
       prisma.itineraryHistory.create({
         data: {
@@ -133,10 +138,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }),
     );
 
-    // Sync the proposed package cost into the lead's negotiated amount (tentative
-    // until conversion). Only while the lead is unlocked; the Convert modal then
-    // prefills its Booking Amount from this value. No-op if no positive number.
-    if (!existing.lead?.locked) {
+    // Lead-only: sync the proposed package cost into the lead's negotiated amount
+    // (tentative until conversion). Only while the lead is unlocked; the Convert
+    // modal then prefills its Booking Amount from this. No-op if no positive number.
+    if (existing.leadId && !existing.lead?.locked) {
       const proposed = parseProposedAmount(parsed.data.data.totalCost);
       if (proposed != null) {
         ops.push(

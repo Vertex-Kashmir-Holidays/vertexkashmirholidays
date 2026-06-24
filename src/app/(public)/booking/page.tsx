@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { BookingForm } from "@/components/booking/BookingForm";
 
 export const metadata: Metadata = {
@@ -21,7 +22,9 @@ export default async function BookingPage({
 
   if (!tourSlug) redirect("/tours");
 
-  const [tour, settings] = await Promise.all([
+  const session = await auth();
+
+  const [tour, settings, customer] = await Promise.all([
     prisma.tour.findFirst({
       where: { slug: tourSlug, published: true },
       select: {
@@ -35,6 +38,13 @@ export default async function BookingPage({
       },
     }),
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    // Prefill the form for a signed-in customer (their own details only).
+    session?.user?.id
+      ? prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { name: true, email: true, phone: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   if (!tour) redirect("/tours");
@@ -104,6 +114,9 @@ export default async function BookingPage({
           initialDate={initialDate}
           initialTravellers={initialTravellers}
           whatsappNumber={whatsappNumber}
+          defaultName={customer?.name ?? ""}
+          defaultEmail={customer?.email ?? ""}
+          defaultPhone={customer?.phone ?? ""}
         />
       </div>
     </div>

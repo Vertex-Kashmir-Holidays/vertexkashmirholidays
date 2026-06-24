@@ -32,6 +32,7 @@ export default async function BookingSuccessPage({
 }) {
   const { bookingId } = await searchParams;
 
+  // Never let a transient DB outage crash the result page — degrade gracefully.
   const [booking, settings] = await Promise.all([
     bookingId
       ? prisma.booking.findUnique({
@@ -50,7 +51,10 @@ export default async function BookingSuccessPage({
         })
       : null,
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
-  ]);
+  ]).catch((err) => {
+    console.error("[booking/success] data load failed", err);
+    return [null, null] as [null, null];
+  });
 
   const ref = booking ? formatRef(booking.id) : "VKH-CONFIRMED";
   const nights = booking?.tour ? booking.tour.duration - 1 : 0;

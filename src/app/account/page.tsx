@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarDays, CreditCard, MapPin, ArrowRight } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { customerBookingWhere } from "@/lib/account/bookingScope";
 
 export const metadata: Metadata = { title: "My Account — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
@@ -11,12 +12,14 @@ const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR",
 
 export default async function AccountOverviewPage() {
   const session = await auth();
-  const userId = session!.user.id;
   const now = new Date();
+  // A customer's bookings = linked to their account OR made as a guest with their
+  // verified login email.
+  const scope = customerBookingWhere(session!.user.id, session!.user.email);
 
   const [bookings, payments] = await Promise.all([
     prisma.booking.findMany({
-      where: { userId, deletedAt: null },
+      where: scope,
       orderBy: { travelDate: "asc" },
       take: 3,
       include: { tour: { select: { title: true, slug: true } } },
@@ -24,12 +27,12 @@ export default async function AccountOverviewPage() {
     // The actual payment ledger (online + staff-recorded), kept in sync with the
     // Payments tab. Net of refunds.
     prisma.bookingPayment.findMany({
-      where: { booking: { userId, deletedAt: null } },
+      where: { booking: scope },
       select: { amount: true, type: true },
     }),
   ]);
 
-  const totalBookings = await prisma.booking.count({ where: { userId, deletedAt: null } });
+  const totalBookings = await prisma.booking.count({ where: scope });
   const upcoming = bookings.filter((b) => b.travelDate >= now).length;
   const totalSpent = payments.reduce((sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount), 0);
 

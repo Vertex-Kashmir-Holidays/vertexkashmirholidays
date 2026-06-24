@@ -14,12 +14,18 @@ import {
   Phone,
   CalendarDays,
   Users,
+  MapPin,
+  MessageSquare,
   Loader2,
   ShieldCheck,
   BadgeCheck,
   Lock,
+  Check,
+  Wallet,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
 
 // ── Razorpay window type ────────────────────────────────────────────────────
 
@@ -30,18 +36,18 @@ declare global {
   }
 }
 
-// ── Schema ──────────────────────────────────────────────────────────────────
+// ── Schema (client validation; the server re-validates authoritatively) ──────
 
 const guestSchema = z.object({
-  name: z.string().min(2, "Full name is required"),
-  email: z.string().email("Valid email required"),
-  phone: z.string().min(8, "Valid phone number required"),
+  name: z.string().trim().min(2, "Full name is required"),
+  email: z.string().trim().email("Valid email required"),
+  phone: z.string().trim().min(8, "Valid phone number required"),
+  address: z.string().trim().max(300).optional(),
+  requirements: z.string().trim().max(1000).optional(),
 });
 type GuestData = z.infer<typeof guestSchema>;
 
 type Step = "idle" | "creating" | "paying" | "redirecting";
-
-// ── Category label map ───────────────────────────────────────────────────────
 
 const CAT: Record<string, string> = {
   HONEYMOON: "Honeymoon",
@@ -52,6 +58,11 @@ const CAT: Record<string, string> = {
 
 const PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYyNjVjIi8+PC9zdmc+";
+
+const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+// Minimum lead time for a booking (must match the server rule in create-order).
+const MIN_LEAD_DAYS = 7;
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -66,6 +77,9 @@ export interface BookingFormProps {
   initialDate: string;
   initialTravellers: number;
   whatsappNumber?: string;
+  defaultName?: string;
+  defaultEmail?: string;
+  defaultPhone?: string;
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -80,27 +94,47 @@ export function BookingForm({
   initialDate,
   initialTravellers,
   whatsappNumber = "919419000000",
+  defaultName = "",
+  defaultEmail = "",
+  defaultPhone = "",
 }: BookingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("idle");
   const [date, setDate] = useState(initialDate);
   const [travellers, setTravellers] = useState(String(initialTravellers || 2));
+  const [paymentOption, setPaymentOption] = useState<PaymentOption>("ADVANCE");
 
   const nights = duration - 1;
   const count = parseInt(travellers, 10) || 2;
+  // Bookings require at least 7 days' lead time (server-enforced; mirrored here).
+  const minBookingDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + MIN_LEAD_DAYS);
+    return d.toISOString().split("T")[0];
+  })();
+
+  // All money is recomputed on the server; these are for display only.
   const total = priceFrom * count;
-  const today = new Date().toISOString().split("T")[0];
+  const payable = computeChargeable(total, paymentOption);
+  const remaining = Math.max(0, total - payable);
 
   const {
     register,
     handleSubmit,
     getValues,
     formState: { errors },
-  } = useForm<GuestData>({ resolver: zodResolver(guestSchema) });
+  } = useForm<GuestData>({
+    resolver: zodResolver(guestSchema),
+    defaultValues: { name: defaultName, email: defaultEmail, phone: defaultPhone },
+  });
 
   async function handlePay(data: GuestData) {
     if (!date) {
       toast.error("Please select a travel date.");
+      return;
+    }
+    if (date < minBookingDate) {
+      toast.error(`Please choose a travel date at least ${MIN_LEAD_DAYS} days from today.`);
       return;
     }
 
@@ -112,6 +146,7 @@ export function BookingForm({
       currency: string;
       bookingId: string;
       keyId: string;
+      chargeable: number;
     };
 
     try {
@@ -123,8 +158,11 @@ export function BookingForm({
           guestName: data.name,
           guestEmail: data.email,
           guestPhone: data.phone,
+          address: data.address || undefined,
+          requirements: data.requirements || undefined,
           travelDate: date,
           travellers: count,
+          paymentOption,
         }),
       });
 
@@ -153,7 +191,7 @@ export function BookingForm({
       amount: order.amount,
       currency: order.currency,
       name: "Vertex Kashmir Holidays",
-      description: tourTitle,
+      description: `${tourTitle} — ${paymentOption === "ADVANCE" ? `${ADVANCE_PERCENT}% advance` : "full payment"}`,
       image: "/brand/kit/png/icon/vertex-icon-512.png",
       order_id: order.orderId,
       prefill: { name, email, contact: phone },
@@ -180,11 +218,11 @@ export function BookingForm({
         })
           .then((r) => r.json())
           .then((result: { success: boolean }) => {
-            if (result.success) {
-              router.push(`/booking/success?bookingId=${bookingId}`);
-            } else {
-              router.push(`/booking/failed?bookingId=${bookingId}`);
-            }
+            router.push(
+              result.success
+                ? `/booking/success?bookingId=${bookingId}`
+                : `/booking/failed?bookingId=${bookingId}`,
+            );
           })
           .catch(() => {
             router.push(`/booking/failed?bookingId=${bookingId}`);
@@ -202,20 +240,18 @@ export function BookingForm({
       ? "Creating order…"
       : step === "redirecting"
         ? "Confirming payment…"
-        : `Pay ₹${total.toLocaleString("en-IN")}`;
+        : `Pay ${inr(payable)}`;
 
   const inputClass =
     "w-full pl-9 pr-3 py-2.5 text-sm bg-card text-foreground border border-border rounded-xl outline-none transition placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/30 focus:border-primary";
 
   return (
     <>
-      {/* Load Razorpay SDK */}
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* ── Left: Order summary ─────────────────────────────────────────── */}
+        {/* ── Left: summary ───────────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Tour card */}
           <div className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border">
             <div className="relative aspect-video">
               <Image
@@ -237,19 +273,13 @@ export function BookingForm({
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Duration</dt>
-                  <dd className="font-medium text-foreground">
-                    {duration}D · {nights}N
-                  </dd>
+                  <dd className="font-medium text-foreground">{duration}D · {nights}N</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Travel Date</dt>
                   <dd className="font-medium text-foreground">
                     {date
-                      ? new Date(date).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })
+                      ? new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                       : "—"}
                   </dd>
                 </div>
@@ -257,21 +287,35 @@ export function BookingForm({
                   <dt className="text-muted-foreground">Travellers</dt>
                   <dd className="font-medium text-foreground">{count}</dd>
                 </div>
-                <div className="border-t border-border pt-2 mt-2 flex justify-between">
-                  <dt className="text-muted-foreground">Per person</dt>
-                  <dd className="font-medium text-foreground">
-                    ₹{priceFrom.toLocaleString("en-IN")}
-                  </dd>
-                </div>
-                <div className="flex justify-between text-base font-bold">
-                  <dt className="text-foreground">Total</dt>
-                  <dd className="text-primary">₹{total.toLocaleString("en-IN")}</dd>
-                </div>
               </dl>
+
+              {/* Booking summary */}
+              <div className="mt-4 border-t border-border pt-3 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">
+                    Tour Cost <span className="text-xs">({inr(priceFrom)} × {count})</span>
+                  </dt>
+                  <dd className="font-medium text-foreground">{inr(total)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Taxes</dt>
+                  <dd className="font-medium text-foreground">Inclusive</dd>
+                </div>
+                <div className="flex justify-between border-t border-border pt-2 text-base font-bold">
+                  <dt className="text-foreground">Payable Now</dt>
+                  <dd className="text-primary">{inr(payable)}</dd>
+                </div>
+                {remaining > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <dt className="text-muted-foreground">Remaining Balance (later)</dt>
+                    <dd className="font-semibold text-foreground">{inr(remaining)}</dd>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Trust signals */}
+          {/* Trust */}
           <div className="bg-muted rounded-xl p-4 space-y-2.5">
             {[
               { Icon: ShieldCheck, text: "100% secure payment via Razorpay" },
@@ -286,139 +330,108 @@ export function BookingForm({
           </div>
         </div>
 
-        {/* ── Right: Guest form ───────────────────────────────────────────── */}
+        {/* ── Right: form ─────────────────────────────────────────────────── */}
         <div className="lg:col-span-3">
           <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8">
-            <h2 className="font-display font-bold text-foreground text-xl mb-6">
-              Your Details
-            </h2>
+            <h2 className="font-display font-bold text-foreground text-xl mb-6">Your Details</h2>
 
             <form onSubmit={handleSubmit(handlePay)} className="space-y-5">
               {/* Name */}
-              <div>
-                <label
-                  htmlFor="bf-name"
-                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
-                >
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input
-                    id="bf-name"
-                    type="text"
-                    {...register("name")}
-                    placeholder="e.g. Priya Sharma"
-                    className={inputClass}
-                  />
-                </div>
-                {errors.name && (
-                  <p className="text-xs text-rose-500 mt-1">{errors.name.message}</p>
-                )}
-              </div>
+              <Field label="Full Name" htmlFor="bf-name" error={errors.name?.message}>
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input id="bf-name" type="text" {...register("name")} placeholder="e.g. Priya Sharma" className={inputClass} />
+              </Field>
 
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="bf-email"
-                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
-                >
-                  Email Address
-                </label>
-                <div className="relative">
+              {/* Email + Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Email Address" htmlFor="bf-email" error={errors.email?.message}>
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input
-                    id="bf-email"
-                    type="email"
-                    {...register("email")}
-                    placeholder="you@example.com"
-                    className={inputClass}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-xs text-rose-500 mt-1">{errors.email.message}</p>
-                )}
+                  <input id="bf-email" type="email" {...register("email")} placeholder="you@example.com" className={inputClass} />
+                </Field>
+                <Field label="Phone / WhatsApp" htmlFor="bf-phone" error={errors.phone?.message}>
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input id="bf-phone" type="tel" {...register("phone")} placeholder="+91 98000 00000" className={inputClass} />
+                </Field>
               </div>
 
-              {/* Phone */}
-              <div>
-                <label
-                  htmlFor="bf-phone"
-                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
-                >
-                  Phone / WhatsApp
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input
-                    id="bf-phone"
-                    type="tel"
-                    {...register("phone")}
-                    placeholder="+91 98000 00000"
-                    className={inputClass}
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="text-xs text-rose-500 mt-1">{errors.phone.message}</p>
-                )}
-              </div>
+              {/* Address */}
+              <Field label="Billing Address (optional)" htmlFor="bf-address">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input id="bf-address" type="text" {...register("address")} placeholder="City, State, PIN" className={inputClass} />
+              </Field>
 
               {/* Date + Travellers */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="bf-date"
-                    className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
+                <Field label="Travel Date" htmlFor="bf-date">
+                  <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    id="bf-date"
+                    type="date"
+                    value={date}
+                    min={minBookingDate}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={`${inputClass} pr-2 [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                </Field>
+                <Field label="Travellers" htmlFor="bf-travellers">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <select
+                    id="bf-travellers"
+                    value={travellers}
+                    onChange={(e) => setTravellers(e.target.value)}
+                    className={`${inputClass} pr-2 appearance-none`}
                   >
-                    Travel Date
-                  </label>
-                  <div className="relative">
-                    <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    <input
-                      id="bf-date"
-                      type="date"
-                      value={date}
-                      min={today}
-                      onChange={(e) => setDate(e.target.value)}
-                      className={`${inputClass} pr-2 [color-scheme:light] dark:[color-scheme:dark]`}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="bf-travellers"
-                    className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
-                  >
-                    Travellers
-                  </label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    <select
-                      id="bf-travellers"
-                      value={travellers}
-                      onChange={(e) => setTravellers(e.target.value)}
-                      className={`${inputClass} pr-2 appearance-none`}
-                    >
-                      {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              {/* Custom requirements */}
+              <Field label="Custom Requirements (optional)" htmlFor="bf-req">
+                <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <textarea
+                  id="bf-req"
+                  rows={3}
+                  {...register("requirements")}
+                  placeholder="Anything special — hotel preferences, dietary needs, occasions…"
+                  className={`${inputClass} resize-none`}
+                />
+              </Field>
+
+              {/* Payment options */}
+              <div>
+                <p className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                  Payment Option
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <PaymentChoice
+                    selected={paymentOption === "ADVANCE"}
+                    onClick={() => setPaymentOption("ADVANCE")}
+                    Icon={Wallet}
+                    title={`Pay ${ADVANCE_PERCENT}% Advance`}
+                    amount={inr(computeChargeable(total, "ADVANCE"))}
+                    sub={`Balance ${inr(Math.max(0, total - computeChargeable(total, "ADVANCE")))} later`}
+                  />
+                  <PaymentChoice
+                    selected={paymentOption === "FULL"}
+                    onClick={() => setPaymentOption("FULL")}
+                    Icon={CreditCard}
+                    title="Pay Full Amount"
+                    amount={inr(total)}
+                    sub="Nothing left to pay"
+                  />
                 </div>
               </div>
 
-              {/* Total + CTA */}
+              {/* CTA */}
               <div className="border-t border-border pt-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    ₹{priceFrom.toLocaleString("en-IN")} × {count} person
-                    {count !== 1 ? "s" : ""}
+                    {paymentOption === "ADVANCE" ? `${ADVANCE_PERCENT}% advance` : "Full payment"}
                   </span>
-                  <span className="font-display font-bold text-foreground text-xl">
-                    ₹{total.toLocaleString("en-IN")}
-                  </span>
+                  <span className="font-display font-bold text-foreground text-xl">{inr(payable)}</span>
                 </div>
 
                 <Button
@@ -441,7 +454,6 @@ export function BookingForm({
             </form>
           </div>
 
-          {/* Help */}
           <p className="text-center text-sm text-muted-foreground mt-4">
             Need help?{" "}
             <a
@@ -456,5 +468,66 @@ export function BookingForm({
         </div>
       </div>
     </>
+  );
+}
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  htmlFor,
+  error,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={htmlFor} className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+        {label}
+      </label>
+      <div className="relative">{children}</div>
+      {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
+    </div>
+  );
+}
+
+function PaymentChoice({
+  selected,
+  onClick,
+  Icon,
+  title,
+  amount,
+  sub,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  Icon: typeof Wallet;
+  title: string;
+  amount: string;
+  sub: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`relative flex flex-col items-start gap-1 rounded-xl border-2 p-4 text-left transition ${
+        selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+      }`}
+    >
+      {selected && (
+        <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground">
+          <Check className="h-3 w-3" strokeWidth={3} />
+        </span>
+      )}
+      <Icon className={`h-5 w-5 ${selected ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2} />
+      <span className="text-[13px] font-bold text-foreground">{title}</span>
+      <span className="text-[18px] font-extrabold text-primary">{amount}</span>
+      <span className="text-[11px] text-muted-foreground">{sub}</span>
+    </button>
   );
 }
