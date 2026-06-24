@@ -60,6 +60,11 @@ export function Navbar() {
     /^\/(tours|destinations|blog|activities)\/[^/]+$/.test(pathname);
   const overHero = hasHero && !scrolled;
 
+  // On a tour detail page the sticky Book / Inquiry CTA bar (BookingMobileBar)
+  // owns the bottom of the screen on phones, so we hide the global bottom tab
+  // bar there to keep those CTAs visible and uncluttered.
+  const isTourDetail = /^\/tours\/[^/]+$/.test(pathname);
+
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 px-3 transition-all duration-500 sm:px-4 lg:px-0">
@@ -136,8 +141,9 @@ export function Navbar() {
         </nav>
       </header>
 
-      {/* Mobile Bottom Tab Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg lg:hidden">
+      {/* Mobile Bottom Tab Bar — hidden on tour detail pages where the sticky
+          Book / Inquiry CTA bar takes over the bottom of the screen. */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg lg:hidden ${isTourDetail ? 'hidden' : ''}`}>
         <div className="flex items-center justify-around py-2">
           {bottomNavLinks.map((link) => (
             <Link
