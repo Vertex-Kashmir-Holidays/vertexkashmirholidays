@@ -298,6 +298,9 @@ export default async function TourDetailsPage({ params }: PageProps) {
         formMode={tour.formMode}
         tourName={tour.title}
         tourSlug={tour.slug}
+        price={tour.priceFrom}
+        oldPrice={tour.priceWas ?? undefined}
+        discountPct={tour.discountPct ?? undefined}
       />
     </div>
   );
