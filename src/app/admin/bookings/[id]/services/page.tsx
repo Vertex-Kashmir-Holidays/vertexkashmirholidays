@@ -4,7 +4,10 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { parseGstRates } from "@/lib/payments/gst";
+import { computeBookingFinance } from "@/lib/bookings/finance";
 import { BookingServicesClient } from "@/components/admin/bookings/BookingServicesClient";
+import { BookingItineraryCard } from "@/components/admin/bookings/BookingItineraryCard";
+import { BookingAdminPanel } from "@/components/admin/bookings/BookingAdminPanel";
 
 export const metadata: Metadata = { title: "Booking Services — Admin" };
 export const dynamic = "force-dynamic";
@@ -27,7 +30,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
     where: { id, deletedAt: null },
     include: {
       tour: { select: { title: true } },
-      user: { select: { name: true, email: true } },
+      user: { select: { name: true, email: true, mustChangePassword: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       payments: { orderBy: { createdAt: "asc" } },
       leads: {
@@ -39,8 +42,11 @@ export default async function BookingServicesPage({ params }: PageProps) {
           email: true,
           endDate: true,
           assignedTo: { select: { name: true, email: true } },
+          itinerary: { select: { id: true } },
         },
       },
+      // Direct-booking itinerary (lead-converted bookings use the lead's instead).
+      itinerary: { select: { id: true, status: true } },
     },
   });
   if (!booking) notFound();
@@ -106,6 +112,15 @@ export default async function BookingServicesPage({ params }: PageProps) {
   });
   const gstRates = parseGstRates(settings?.gstRates);
 
+  // Derived financials for the admin payment panel (single source of truth).
+  const finance = computeBookingFinance({
+    amount: booking.amount,
+    discountType: booking.discountType,
+    discountValue: booking.discountValue,
+    payments: booking.payments,
+    services: booking.services,
+  });
+
   return (
     <div className="space-y-5">
       <nav>
@@ -118,6 +133,34 @@ export default async function BookingServicesPage({ params }: PageProps) {
         </ol>
       </nav>
       <BookingServicesClient booking={data} gstRates={gstRates} />
+      <div className="grid gap-5 lg:grid-cols-2">
+        <BookingAdminPanel
+          bookingId={booking.id}
+          paymentOption={booking.paymentOption}
+          status={booking.status}
+          razorpayOrderId={booking.razorpayOrderId}
+          razorpayPayId={booking.razorpayPayId}
+          paidAmount={finance.paidAmount}
+          balance={finance.balance}
+          paymentStatus={finance.paymentStatus}
+          customer={
+            booking.user
+              ? {
+                  email: booking.user.email,
+                  name: booking.user.name,
+                  mustChangePassword: booking.user.mustChangePassword,
+                }
+              : null
+          }
+        />
+        <BookingItineraryCard
+          bookingId={booking.id}
+          servicesLocked={booking.servicesLocked}
+          isLeadConverted={!!lead}
+          leadItineraryId={lead?.itinerary?.id ?? null}
+          itinerary={booking.itinerary ?? null}
+        />
+      </div>
     </div>
   );
 }

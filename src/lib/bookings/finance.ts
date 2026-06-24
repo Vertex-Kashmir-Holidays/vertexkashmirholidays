@@ -49,6 +49,25 @@ export function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
+// ── Online payment options (advance vs full) ─────────────────────────────────
+// The customer may pay a 10% advance or the full amount online. The chargeable
+// amount is ALWAYS computed server-side from the booking total — never trusted
+// from the client. Both create-order and verify-payment use this one function so
+// the order amount and the recorded payment can never drift.
+
+export type PaymentOption = "ADVANCE" | "FULL";
+export const ADVANCE_PERCENT = 10;
+
+export function isPaymentOption(v: unknown): v is PaymentOption {
+  return v === "ADVANCE" || v === "FULL";
+}
+
+/** The amount to charge online for the chosen option, given the booking total. */
+export function computeChargeable(total: number, option: PaymentOption): number {
+  const t = round2(Math.max(0, total));
+  return option === "ADVANCE" ? round2(t * (ADVANCE_PERCENT / 100)) : t;
+}
+
 export function computeDiscountAmount(
   amount: number,
   type?: string | null,

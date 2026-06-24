@@ -342,6 +342,8 @@ interface BookingData {
   razorpayPayId: string;
   /** Public WhatsApp number (e.g. SiteSettings.whatsapp). Digits are extracted. */
   whatsappNumber?: string | null;
+  /** Booking id — when present, the portal CTA section is appended. */
+  bookingId?: string;
 }
 
 export function bookingConfirmationText(data: BookingData): string {
@@ -359,6 +361,7 @@ export function bookingConfirmationText(data: BookingData): string {
     "",
     "Our team will contact you within 24 hours with your complete itinerary details.",
     `WhatsApp us: ${waText}`,
+    ...(data.bookingId ? [bookingPortalSectionText(data.bookingId)] : []),
   ].join("\n");
 }
 
@@ -392,7 +395,7 @@ ${detailRow("Payment ID", data.razorpayPayId)}
   return emailShell({
     title: `Booking Confirmed — ${data.tourTitle}`,
     preheader: `Your booking for ${escapeHtml(data.tourTitle)} is confirmed.`,
-    contentHtml: content,
+    contentHtml: content + (data.bookingId ? bookingPortalSectionHtml(data.bookingId) : ""),
   });
 }
 
@@ -421,6 +424,7 @@ interface BookingInvoiceData {
   remainingBalance: number;
   status: string; // e.g. "Partial"
   whatsappNumber?: string | null;
+  bookingId?: string;
 }
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -458,6 +462,7 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
     "A detailed PDF summary is attached to this email.",
     `WhatsApp us: ${waText}`,
   );
+  if (data.bookingId) lines.push(bookingPortalSectionText(data.bookingId));
   return lines.join("\n");
 }
 
@@ -545,7 +550,7 @@ ${detailRow("Status", data.status)}
   return emailShell({
     title: `Booking Summary — ${data.bookingRef}`,
     preheader: `Your booking summary — remaining balance ${inr(data.remainingBalance)}.`,
-    contentHtml: content,
+    contentHtml: content + (data.bookingId ? bookingPortalSectionHtml(data.bookingId) : ""),
   });
 }
 
@@ -565,6 +570,7 @@ interface PaymentInvoiceData {
   remainingBalance: number;
   status: string;
   whatsappNumber?: string | null;
+  bookingId?: string;
 }
 
 export function paymentInvoiceText(data: PaymentInvoiceData): string {
@@ -590,6 +596,7 @@ export function paymentInvoiceText(data: PaymentInvoiceData): string {
     "A PDF receipt is attached to this email.",
     `WhatsApp us: ${waText}`,
   );
+  if (data.bookingId) lines.push(bookingPortalSectionText(data.bookingId));
   return lines.join("\n");
 }
 
@@ -641,7 +648,7 @@ ${detailRow("Status", data.status)}
   return emailShell({
     title: `Payment Receipt — ${data.invoiceRef}`,
     preheader: `Payment of ${inr(data.amount)} received — balance ${inr(data.remainingBalance)}.`,
-    contentHtml: content,
+    contentHtml: content + (data.bookingId ? bookingPortalSectionHtml(data.bookingId) : ""),
   });
 }
 
@@ -739,6 +746,67 @@ function siteUrl(): string {
     process.env.NEXTAUTH_URL ??
     "https://vertexkashmirholidays.com"
   ).replace(/\/$/, "");
+}
+
+// Human-friendly booking reference (matches lib/bookings/invoice-pdf bookingRef).
+function shortRef(bookingId: string): string {
+  return bookingId.slice(-8).toUpperCase();
+}
+
+// Customer-portal links for the booking emails. All point to authenticated,
+// ownership-scoped account routes (session-secured); unauthenticated clicks are
+// bounced to /login by the middleware, so a forwarded email can never expose
+// another customer's booking.
+function portalUrls(bookingId: string) {
+  const base = siteUrl();
+  return {
+    login: `${base}/login`,
+    view: `${base}/account/bookings/${bookingId}`,
+    invoice: `${base}/api/account/bookings/${bookingId}/invoice`,
+    portal: `${base}/account/bookings`,
+  };
+}
+
+// ── Customer-portal CTA block (shared by all booking emails) ─────────────────
+// "Manage your booking anytime…" with Login / View Booking / Download Invoice
+// buttons + the booking reference. Rendered as the inner <tr> rows of the card.
+export function bookingPortalSectionHtml(bookingId: string): string {
+  const u = portalUrls(bookingId);
+  const ref = shortRef(bookingId);
+  const btn = (href: string, label: string, primary: boolean) =>
+    `<a href="${escapeHtml(href)}" style="display:inline-block;margin:4px 6px 0 0;padding:10px 16px;border-radius:9px;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;text-decoration:none;${
+      primary
+        ? `background:${BRAND};color:#ffffff`
+        : `background:#ffffff;color:${BRAND};border:1px solid ${BRAND}`
+    }">${escapeHtml(label)}</a>`;
+
+  return `          <tr>
+            <td style="padding:4px 28px 28px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:#f4f7fb;border:1px solid #e6e8eb;border-radius:12px">
+                <tr>
+                  <td style="padding:18px 20px;font-family:Arial,Helvetica,sans-serif">
+                    <p style="margin:0 0 4px;color:${BRAND};font-size:14px;font-weight:700">Your Customer Dashboard</p>
+                    <p style="margin:0 0 10px;color:#444444;font-size:12.5px;line-height:1.6">Manage your booking anytime from your customer dashboard — view status, payments and documents.</p>
+                    <p style="margin:0 0 12px;color:#666666;font-size:12.5px">Booking Reference: <strong style="color:#1a1a1a">${escapeHtml(ref)}</strong></p>
+                    ${btn(u.view, "View Booking", true)}${btn(u.invoice, "Download Invoice", false)}${btn(u.login, "Login to Account", false)}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
+}
+
+export function bookingPortalSectionText(bookingId: string): string {
+  const u = portalUrls(bookingId);
+  return [
+    "",
+    "── Your Customer Dashboard ──",
+    "Manage your booking anytime from your customer dashboard.",
+    `Booking Reference: ${shortRef(bookingId)}`,
+    `View Booking:     ${u.view}`,
+    `Download Invoice: ${u.invoice}`,
+    `Login to Account: ${u.login}`,
+  ].join("\n");
 }
 
 /**

@@ -31,8 +31,8 @@ function contentSecurityPolicy(): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://checkout.razorpay.com https://challenges.cloudflare.com https://*.spline.design`,
-    "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design",
+    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design`,
+    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design",
     `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com${connectExtra}`,
     "worker-src 'self' blob:",
   ].join("; ");

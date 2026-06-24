@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Heart, Users, Mountain, Crown, type LucideIcon } from 'lucide-react';
 import { ToursFiltersSidebar } from '@/components/tours/ToursFiltersSidebar';
 import { ToursGridSection } from '@/components/tours/ToursGridSection';
+import { AffordabilityWidget } from '@/components/payments/AffordabilityWidget';
 import type { TourListItemData, TourSortOption } from '@/types/tours';
 
 interface ToursPageClientProps {
@@ -132,7 +133,11 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
   return (
     <main className="mx-auto max-w-[1300px] px-6 py-10">
       <div className="grid gap-7 lg:grid-cols-[252px_1fr]">
-        <ToursFiltersSidebar
+        <div className="space-y-5">
+          {priceBounds.min > 0 && (
+            <AffordabilityWidget amount={priceBounds.min} title="EMI options — book on easy installments" />
+          )}
+          <ToursFiltersSidebar
           search={search}
           onSearchChange={handleSearchChange}
           categories={categories}
@@ -150,6 +155,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
           isMobileOpen={showMobileFilters}
           onClose={() => setShowMobileFilters(false)}
         />
+        </div>
         <ToursGridSection
           tours={paged}
           totalCount={filtered.length}

@@ -19,7 +19,7 @@ export function ContactHero({ data, features }: ContactHeroProps) {
           <span className="font-semibold text-white">{data.breadcrumb}</span>
         </nav>
         <motion.h1
-          className="h-display mt-6 font-display text-[42px] font-bold leading-[1.12] text-white lg:text-[48px]"
+          className="h-display mt-6 font-display text-3xl font-bold leading-[1.12] text-white sm:text-4xl lg:text-[48px]"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}

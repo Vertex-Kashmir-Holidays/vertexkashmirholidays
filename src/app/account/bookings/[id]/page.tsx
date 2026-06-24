@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
+import { customerBookingWhere } from "@/lib/account/bookingScope";
 import { groupServiceTables, parseInclusions, type ServiceKind } from "@/lib/bookings/serviceDisplay";
 
 export const metadata: Metadata = { title: "Booking Details — Vertex Kashmir Holidays" };
@@ -41,11 +42,11 @@ type PageProps = { params: Promise<{ id: string }> };
 export default async function AccountBookingDetailPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
-  const userId = session!.user.id;
 
-  // Scope strictly to the authenticated customer — never another user's booking.
+  // Scope strictly to the authenticated customer (by account or their verified
+  // email) — never another user's booking.
   const booking = await prisma.booking.findFirst({
-    where: { id, userId, deletedAt: null },
+    where: { id, ...customerBookingWhere(session!.user.id, session!.user.email) },
     include: {
       tour: { select: { title: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },

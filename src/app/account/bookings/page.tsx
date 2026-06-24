@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
+import { customerBookingWhere } from "@/lib/account/bookingScope";
 
 export const metadata: Metadata = { title: "My Bookings — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
 export default async function AccountBookingsPage() {
   const session = await auth();
   const rows = await prisma.booking.findMany({
-    where: { userId: session!.user.id, deletedAt: null },
+    where: customerBookingWhere(session!.user.id, session!.user.email),
     orderBy: { createdAt: "desc" },
     include: {
       tour: { select: { title: true, slug: true, coverImage: true } },

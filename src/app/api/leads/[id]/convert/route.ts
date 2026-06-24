@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { resolveLeadCustomer } from "@/lib/bookings/customer";
-import { sendMail, customerCredentialsHtml, customerCredentialsText } from "@/lib/mail";
+import { sendCustomerCredentialsEmail } from "@/lib/bookings/notify";
 import { resolveGst } from "@/lib/payments/gst";
 
 export const dynamic = "force-dynamic";
@@ -153,16 +153,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Best-effort: email default credentials when a brand-new customer was created
   // and we have an email to send them to. Never blocks/fails the conversion.
   if (result.created && lead.email && result.tempPassword) {
-    try {
-      await sendMail({
-        to: lead.email,
-        subject: "Your Vertex Kashmir Holidays account",
-        html: customerCredentialsHtml({ name: lead.name, email: lead.email, tempPassword: result.tempPassword }),
-        text: customerCredentialsText({ name: lead.name, email: lead.email, tempPassword: result.tempPassword }),
-      });
-    } catch (err) {
-      console.error("[convert] customer credentials email failed", err);
-    }
+    await sendCustomerCredentialsEmail(lead.email, lead.name, result.tempPassword);
   }
 
   return NextResponse.json({ bookingId: result.bookingId }, { status: 201 });

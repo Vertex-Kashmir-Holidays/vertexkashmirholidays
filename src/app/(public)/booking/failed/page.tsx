@@ -37,6 +37,7 @@ export default async function BookingFailedPage({
 }) {
   const { bookingId } = await searchParams;
 
+  // Never let a transient DB outage crash the result page — degrade gracefully.
   const [booking, settings] = await Promise.all([
     bookingId
       ? prisma.booking.findUnique({
@@ -49,7 +50,10 @@ export default async function BookingFailedPage({
         })
       : null,
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
-  ]);
+  ]).catch((err) => {
+    console.error("[booking/failed] data load failed", err);
+    return [null, null] as [null, null];
+  });
 
   const ref = booking ? formatRef(booking.id) : null;
   const nights = booking?.tour ? booking.tour.duration - 1 : 0;
@@ -101,6 +105,10 @@ export default async function BookingFailedPage({
           </h1>
           <p className="text-rose-600/80 dark:text-rose-300/80 text-lg">
             Don&apos;t worry — your booking details are saved. You can retry anytime or contact us for help.
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            If you were charged, your booking will be confirmed automatically within a few minutes — you&apos;ll
+            receive a confirmation email, and it will appear in your account. No need to pay again.
           </p>
           {ref && (
             <div className="mt-4 inline-block bg-rose-500/15 border border-rose-500/25 text-rose-600 dark:text-rose-300 text-sm font-mono font-bold px-5 py-2.5 rounded-full">

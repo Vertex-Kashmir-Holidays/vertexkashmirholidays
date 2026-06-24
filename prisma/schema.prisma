@@ -66,6 +66,11 @@ model Itinerary {
   // lead. Cascade so deleting a (non-converted) lead cleans up its itinerary.
   leadId    String?         @unique
   lead      Lead?           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  // Optional link to a direct (website) booking — one current itinerary per
+  // booking. Mutually exclusive with leadId in practice (a converted booking
+  // uses its lead's itinerary). Cascade so deleting the booking cleans it up.
+  bookingId String?         @unique
+  booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   // Locked when the owning lead is converted — the final, immutable itinerary.
   locked    Boolean         @default(false)
   // Last editor (creator is `owner`). SetNull so a deleted staff user is tolerated.
@@ -288,11 +293,18 @@ model Booking {
   // for direct website bookings). Financials always derive from this + payments.
   amount          Float
   currency        String        @default("INR")
+  // Customer's chosen online-payment option: "ADVANCE" (10% now) or "FULL".
+  // Amounts are always derived server-side; this only records the choice.
+  paymentOption   String?
   travelDate      DateTime
   travellers      Int           @default(1)
   guestName       String
   guestEmail      String?
   guestPhone      String
+  // Customer-supplied billing address + free-text custom requirements (direct
+  // website bookings). Optional; lead-converted bookings leave these null.
+  address         String?
+  requirements    String?
   // Discount applied to the booking total. type: "FLAT" | "PERCENT".
   discountType    String?
   discountValue   Float         @default(0)
@@ -317,6 +329,7 @@ model Booking {
   leads           Lead[]
   payments        BookingPayment[]
   services        BookingService[]
+  itinerary       Itinerary?
 
   @@index([status])
   @@index([tourId])
@@ -334,6 +347,11 @@ model BookingPayment {
   type         PaymentType @default(PARTIAL)
   method       String? // cash / upi / card / razorpay / bank …
   reference    String? // gateway id, txn ref …
+  // Razorpay record for online payments (null for staff-entered cash/UPI etc.).
+  // `reference` holds the payment id; these hold the rest of the gateway record.
+  gatewayOrderId   String?
+  gatewaySignature String?
+  metadata         String? // JSON blob of gateway metadata (method, bank, etc.)
   note         String?
   // GST applies only to non-cash payments and is optional. Both the selected
   // percent and the computed value are persisted so future booking-wise and
@@ -366,6 +384,27 @@ model BookingService {
   createdAt DateTime    @default(now())
 
   @@index([bookingId])
+}
+
+// Append-only payment audit trail. Records every payment-gateway event (order
+// creation, signature verification success/failure, webhook events) for security
+// review + dispute resolution. bookingId is a loose reference (no FK) so the
+// audit survives a booking deletion. Never throws — best-effort writes.
+model PaymentAudit {
+  id        String   @id @default(cuid())
+  bookingId String?
+  event     String // ORDER_CREATED | PAYMENT_VERIFIED | VERIFICATION_FAILED | WEBHOOK_CAPTURED | WEBHOOK_FAILED
+  status    String? // success | failed
+  orderId   String?
+  paymentId String?
+  amount    Float?
+  ip        String?
+  detail    String? // free text / JSON context (never raw secrets)
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+  @@index([event])
+  @@index([createdAt])
 }
 
 model Lead {

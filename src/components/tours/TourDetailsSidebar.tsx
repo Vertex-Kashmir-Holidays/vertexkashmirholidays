@@ -2,8 +2,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Star, ShieldCheck, ChevronDown, Calendar, Lock, Users, Car, BadgeCheck, Clock, type LucideIcon } from 'lucide-react';
+import { Star, ShieldCheck, Calendar, Lock, Users, Car, BadgeCheck, Clock, ArrowRight, type LucideIcon } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/brand';
 import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import { LeadForm } from '@/components/leads/LeadForm';
@@ -14,8 +15,9 @@ interface TourDetailsSidebarProps {
   discountPct?: number;
   rating: number;
   reviews: number;
-  tourId: string;
   tourName: string;
+  /** Slug used to deep-link into the /booking checkout page. */
+  tourSlug: string;
   /** Which lead forms to expose. Defaults to showing both. */
   formMode?: 'BOOKING_ONLY' | 'INQUIRY_ONLY' | 'BOTH';
   bestTime: string;
@@ -24,25 +26,47 @@ interface TourDetailsSidebarProps {
   helpPhone: string;
 }
 
+// Online advance is 10% of the booking total (kept in sync with the server +
+// the /booking checkout via @/lib/bookings/finance).
+const ADVANCE_PCT = 10;
+
 export function TourDetailsSidebar({
   price,
   oldPrice,
   discountPct,
   rating,
   reviews,
-  tourId,
   tourName,
+  tourSlug,
   formMode = 'BOTH',
   bestTime,
   tourType,
   pickupDrop,
   helpPhone,
 }: TourDetailsSidebarProps) {
+  const router = useRouter();
   const showInquiry = formMode !== 'BOOKING_ONLY';
   const showBook = formMode !== 'INQUIRY_ONLY';
   const [activeTab, setActiveTab] = useState<'inquiry' | 'book'>(
     showInquiry ? 'inquiry' : 'book',
   );
+  const [bookDate, setBookDate] = useState('');
+  const [bookPax, setBookPax] = useState('2');
+  // Bookings need ≥7 days' lead time (server-enforced on /booking).
+  const minBookDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  })();
+  const advanceAmount = Math.round(price * (parseInt(bookPax, 10) || 2) * (ADVANCE_PCT / 100));
+
+  function goToBooking() {
+    const params = new URLSearchParams({ tour: tourSlug });
+    if (bookDate) params.set('date', bookDate);
+    if (bookPax) params.set('travellers', bookPax);
+    router.push(`/booking?${params.toString()}`);
+  }
+
   const wa = useWhatsAppLink();
   const helpHref = wa(`Hi! I'd like help with the "${tourName}" Kashmir tour. Please assist.`);
 
@@ -96,10 +120,13 @@ export function TourDetailsSidebar({
         <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-primary/10 px-4 py-3 text-foreground">
           <ShieldCheck className="h-5 w-5 shrink-0" strokeWidth={2} />
           <p className="text-[12px] font-semibold leading-snug">
-            Book with 20% advance to lock your dates
+            Book with {ADVANCE_PCT}% advance to lock your dates
           </p>
         </div>
 
+        {/* Forms area — hidden on mobile (the sticky BookingMobileBar + modal
+            handle phones); shown inline from lg up. */}
+        <div className="hidden lg:block">
         {/* Tabs — only shown when both forms are enabled. */}
         {showInquiry && showBook && (
           <div className="mt-5 flex border-b border-border text-[14px] font-bold">
@@ -145,111 +172,66 @@ export function TourDetailsSidebar({
         </motion.div>
         )}
 
-        {/* Book Form */}
+        {/* Book — pick date + travellers, then continue to secure checkout.
+            Full details + payment are collected on the /booking page. */}
         {showBook && (
-        <motion.form
+        <motion.div
           className="mt-4 space-y-3.5"
           initial={{ opacity: 0 }}
           animate={{ opacity: activeTab === 'book' ? 1 : 0 }}
           transition={{ duration: 0.3 }}
           style={{ display: activeTab === 'book' ? 'block' : 'none' }}
         >
-          <input type="hidden" name="tour_id" value={tourId} />
-          <input type="hidden" name="tour_name" value={tourName} />
-
-          <div>
-            <label htmlFor="bkName" className="text-[12.5px] font-semibold">
-              Full Name <span className="text-badge-red">*</span>
-            </label>
-            <input
-              id="bkName"
-              name="name"
-              required
-              className="mt-1.5 w-full rounded-lg border border-border px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Enter your name"
-            />
-          </div>
-          <div>
-            <label htmlFor="bkEmail" className="text-[12.5px] font-semibold">
-              Email <span className="text-badge-red">*</span>
-            </label>
-            <input
-              id="bkEmail"
-              name="email"
-              type="email"
-              required
-              className="mt-1.5 w-full rounded-lg border border-border px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Enter your email"
-            />
-          </div>
-          <div>
-            <label htmlFor="bkPhone" className="text-[12.5px] font-semibold">
-              Phone Number <span className="text-badge-red">*</span>
-            </label>
-            <div className="mt-1.5 flex overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-              <span className="flex items-center gap-1 border-r border-border bg-muted px-3 text-[13px] font-semibold text-muted-foreground">
-                +91 <ChevronDown className="h-3 w-3" strokeWidth={2.4} />
-              </span>
-              <input
-                id="bkPhone"
-                name="phone"
-                type="tel"
-                required
-                className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/70"
-                placeholder="Enter your phone"
-              />
-            </div>
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="bkDate" className="text-[12.5px] font-semibold">
-                Start Date <span className="text-badge-red">*</span>
+                Start Date
               </label>
               <div className="mt-1.5 flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                 <input
                   id="bkDate"
-                  name="start_date"
-                  required
-                  className="w-full px-3 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/70"
-                  placeholder="Select date"
-                  onFocus={(e) => (e.target.type = 'date')}
+                  type="date"
+                  min={minBookDate}
+                  value={bookDate}
+                  onChange={(e) => setBookDate(e.target.value)}
+                  className="w-full px-3 py-2.5 text-[13px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
                 />
                 <Calendar className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
               </div>
             </div>
             <div>
               <label htmlFor="bkPax" className="text-[12.5px] font-semibold">
-                Travellers <span className="text-badge-red">*</span>
+                Travellers
               </label>
               <select
                 id="bkPax"
-                name="travellers"
-                defaultValue="2"
+                value={bookPax}
+                onChange={(e) => setBookPax(e.target.value)}
                 className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[13px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6+</option>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
               </select>
             </div>
           </div>
           <motion.button
-            type="submit"
+            type="button"
+            onClick={goToBooking}
             className="!mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <Lock className="h-4 w-4" strokeWidth={2} />
-            Book Now — Pay 20% Advance
+            Book Now — Pay {ADVANCE_PCT}% Advance
+            <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
           </motion.button>
           <p className="text-center text-[11px] text-muted-foreground">
-            Secure checkout via Razorpay · ₹7,000 advance for 2 travellers
+            Secure checkout via Razorpay · Pay {advanceAmount > 0 ? `₹${advanceAmount.toLocaleString('en-IN')}` : `${ADVANCE_PCT}%`} advance now, balance later
           </p>
-        </motion.form>
+        </motion.div>
         )}
+        </div>
       </motion.div>
 
       {/* Trust List */}

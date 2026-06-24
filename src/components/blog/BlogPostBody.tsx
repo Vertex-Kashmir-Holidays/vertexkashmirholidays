@@ -1,6 +1,6 @@
 // src/components/blog/BlogPostBody.tsx
 
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 // Renders a blog post's stored HTML body with theme-aware, prose-like styling.
 // (The project has no @tailwindcss/typography, so styles are hand-rolled via
@@ -9,10 +9,33 @@ interface BlogPostBodyProps {
   html: string;
 }
 
+// Allow the formatting tags the editor produces (headings, lists, links,
+// images, blockquotes, basic inline marks) — everything else (script, style,
+// event handlers, javascript: URLs) is stripped. Runs server-side via
+// htmlparser2 (no jsdom), so it works under Turbopack/RSC.
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    "p", "a", "ul", "ol", "li", "blockquote", "br", "hr", "span", "div",
+    "strong", "b", "em", "i", "u", "s", "code", "pre",
+    "img", "figure", "figcaption", "table", "thead", "tbody", "tr", "th", "td",
+  ],
+  allowedAttributes: {
+    a: ["href", "name", "target", "rel"],
+    img: ["src", "alt", "title", "width", "height", "loading"],
+    "*": ["class"],
+  },
+  allowedSchemes: ["http", "https", "mailto", "tel"],
+  // Force safe link behaviour for any target=_blank links.
+  transformTags: {
+    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, false),
+  },
+};
+
 export function BlogPostBody({ html }: BlogPostBodyProps) {
   // Admin-authored HTML is sanitized before injection so a stored <script>,
   // onerror=, javascript: URL, etc. can never execute in a visitor's browser.
-  const clean = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+  const clean = sanitizeHtml(html, SANITIZE_OPTIONS);
   return (
     <div
       className="

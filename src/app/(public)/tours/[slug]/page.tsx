@@ -19,6 +19,8 @@ import { TourDetailsReviews } from "@/components/tours/TourDetailsReviews";
 import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
 import { TourDetailsTabs } from "@/components/tours/TourDetailsTabs";
 import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
+import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
+import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
 
 export const revalidate = 300;
 
@@ -216,7 +218,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
         images={heroImages}
       />
 
-      <main className="mx-auto max-w-[1300px] px-6 py-6">
+      <main className="mx-auto max-w-[1300px] px-6 pt-6 pb-28 lg:pb-6">
         <TourDetailsTabs sections={tabs} />
 
         <div className="grid items-start gap-7 lg:grid-cols-[1fr_320px] mt-6">
@@ -271,22 +273,32 @@ export default async function TourDetailsPage({ params }: PageProps) {
             )}
           </div>
 
+          <div className="space-y-5">
+          <AffordabilityWidget amount={tour.priceFrom} />
           <TourDetailsSidebar
             price={tour.priceFrom}
             oldPrice={tour.priceWas ?? undefined}
             discountPct={tour.discountPct ?? undefined}
             rating={tour.rating}
             reviews={tour.reviewCount}
-            tourId={tour.id}
             tourName={tour.title}
+            tourSlug={tour.slug}
             formMode={tour.formMode}
             bestTime={tour.bestTime ?? "Apr – Oct"}
             tourType={tour.tourType ?? "Private Tour"}
             pickupDrop={tour.pickupDrop ?? `${tour.startCity ?? "Srinagar"} Airport`}
             helpPhone={settings?.sitePhone ?? "+91 94190 00000"}
           />
+          </div>
         </div>
       </main>
+
+      {/* Mobile-only sticky Book / Inquiry CTAs (forms open in a bottom-sheet). */}
+      <BookingMobileBar
+        formMode={tour.formMode}
+        tourName={tour.title}
+        tourSlug={tour.slug}
+      />
     </div>
   );
 }

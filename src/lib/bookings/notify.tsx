@@ -5,8 +5,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
+import { linkBookingCustomer } from "@/lib/bookings/customer";
 import {
   sendMail,
+  customerCredentialsHtml,
+  customerCredentialsText,
+  bookingConfirmationHtml,
+  bookingConfirmationText,
   bookingInvoiceHtml,
   bookingInvoiceText,
   paymentInvoiceHtml,
@@ -106,6 +111,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
       remainingBalance: finance.balance,
       status: statusLabel,
       whatsappNumber: wa,
+      bookingId: booking.id,
     };
 
     const res = await sendMail({
@@ -120,6 +126,114 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
     return { delivered: res.delivered };
   } catch (err) {
     console.error("[notify] booking summary email failed", err);
+    return { delivered: false };
+  }
+}
+
+/**
+ * Welcome + login-credentials email for a freshly auto-created customer account.
+ * Reused by the Lead→Booking conversion and direct-booking flows. Best-effort.
+ */
+export async function sendCustomerCredentialsEmail(
+  email: string,
+  name: string,
+  tempPassword: string,
+): Promise<{ delivered: boolean }> {
+  try {
+    const res = await sendMail({
+      to: email,
+      subject: "Your Vertex Kashmir Holidays account",
+      html: customerCredentialsHtml({ name, email, tempPassword }),
+      text: customerCredentialsText({ name, email, tempPassword }),
+    });
+    return { delivered: res.delivered };
+  } catch (err) {
+    console.error("[notify] customer credentials email failed", err);
+    return { delivered: false };
+  }
+}
+
+/**
+ * Post-payment finalisation shared by the verify-payment route and the webhook
+ * (called once — only when the payment was recorded fresh, so no double-runs):
+ *   1. Link the booking to a customer account (create a new one for a new email,
+ *      reusing the exact Lead→Booking logic) and email credentials if created.
+ *   2. Send the booking confirmation + payment receipt emails.
+ * `paidAmount` is what was charged now (advance or full); `ledgerPaymentId` is the
+ * BookingPayment row id (for the receipt PDF); `gatewayPaymentId` is the Razorpay id.
+ * Best-effort throughout — never throws.
+ */
+export async function finalizeOnlinePayment(
+  bookingId: string,
+  paidAmount: number,
+  gatewayPaymentId: string,
+  ledgerPaymentId: string,
+): Promise<void> {
+  try {
+    const customer = await linkBookingCustomer(bookingId);
+    if (customer.created && customer.tempPassword) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { guestName: true, guestEmail: true, user: { select: { name: true, email: true } } },
+      });
+      const email = booking?.guestEmail ?? booking?.user?.email ?? null;
+      const name = booking?.guestName || booking?.user?.name || "Guest";
+      if (email) await sendCustomerCredentialsEmail(email, name, customer.tempPassword);
+    }
+  } catch (err) {
+    console.error("[notify] customer link/credentials failed", err);
+  }
+
+  await sendBookingConfirmationEmail(bookingId, paidAmount, gatewayPaymentId);
+  await sendPaymentInvoiceEmail(bookingId, ledgerPaymentId);
+}
+
+/**
+ * Booking confirmation email sent once a payment is verified (by the client
+ * verify-payment route OR the webhook, whichever records the payment first).
+ * `paidAmount` is what was actually charged now (advance or full) — not always
+ * the booking total. Best-effort; never throws.
+ */
+export async function sendBookingConfirmationEmail(
+  bookingId: string,
+  paidAmount: number,
+  paymentId: string,
+): Promise<{ delivered: boolean }> {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        tour: { select: { title: true } },
+        user: { select: { name: true, email: true } },
+      },
+    });
+    if (!booking) return { delivered: false };
+
+    const to = booking.guestEmail ?? booking.user?.email ?? null;
+    if (!to) return { delivered: false };
+
+    const tourTitle = booking.tour?.title ?? "Your Tour";
+    const wa = await whatsappNumber();
+    const payload = {
+      guestName: booking.guestName || booking.user?.name || "Guest",
+      tourTitle,
+      amount: paidAmount,
+      travelDate: fmtDate(booking.travelDate),
+      travellers: booking.travellers,
+      razorpayPayId: paymentId,
+      whatsappNumber: wa,
+      bookingId: booking.id,
+    };
+
+    const res = await sendMail({
+      to,
+      subject: `Booking Confirmed — ${tourTitle} | Vertex Kashmir Holidays`,
+      html: bookingConfirmationHtml(payload),
+      text: bookingConfirmationText(payload),
+    });
+    return { delivered: res.delivered };
+  } catch (err) {
+    console.error("[notify] booking confirmation email failed", err);
     return { delivered: false };
   }
 }
@@ -181,6 +295,7 @@ export async function sendPaymentInvoiceEmail(
       remainingBalance: finance.balance,
       status: statusLabel,
       whatsappNumber: wa,
+      bookingId: booking.id,
     };
 
     const res = await sendMail({
