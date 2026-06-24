@@ -236,6 +236,8 @@ model Tour {
   rating       Float             @default(0)
   reviewCount  Int               @default(0)
   published    Boolean           @default(false)
+  // Which lead-capture forms render on the public tour-detail page.
+  formMode     TourFormMode      @default(BOTH)
   metaTitle    String?
   metaDesc     String?
   ogImage      String?
@@ -372,6 +374,9 @@ model Lead {
   phone        String
   email        String?
   source       LeadSource    @default(WEBSITE)
+  // Free-text page/campaign tag (home, tours, blog-detail, …). The LeadSource
+  // enum captures the marketing channel; this captures which on-site form fired.
+  sourcePage   String?
   category     LeadCategory?
   adults       Int           @default(1)
   children     Int?
@@ -400,6 +405,9 @@ model Lead {
   @@index([assignedToId])
   @@index([createdAt])
   @@index([followUpAt])
+  // Public-form dedupe looks up the most recent lead by normalized phone/email.
+  @@index([phone])
+  @@index([email])
 }
 
 model LeadActivity {
@@ -996,6 +1004,13 @@ enum LeadSource {
   META_ADS
   THIRD_PARTY
   REFERRAL
+}
+
+// Controls which forms the public tour-detail page exposes. Default BOTH.
+enum TourFormMode {
+  BOOKING_ONLY
+  INQUIRY_ONLY
+  BOTH
 }
 
 enum LeadCategory {

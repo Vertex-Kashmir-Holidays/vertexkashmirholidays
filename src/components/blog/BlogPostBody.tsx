@@ -1,5 +1,7 @@
 // src/components/blog/BlogPostBody.tsx
 
+import DOMPurify from "isomorphic-dompurify";
+
 // Renders a blog post's stored HTML body with theme-aware, prose-like styling.
 // (The project has no @tailwindcss/typography, so styles are hand-rolled via
 // arbitrary child selectors.)
@@ -8,6 +10,9 @@ interface BlogPostBodyProps {
 }
 
 export function BlogPostBody({ html }: BlogPostBodyProps) {
+  // Admin-authored HTML is sanitized before injection so a stored <script>,
+  // onerror=, javascript: URL, etc. can never execute in a visitor's browser.
+  const clean = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
   return (
     <div
       className="
@@ -23,7 +28,7 @@ export function BlogPostBody({ html }: BlogPostBodyProps) {
         [&_img]:my-6 [&_img]:rounded-xl
         [&_blockquote]:my-6 [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground
       "
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: clean }}
     />
   );
 }

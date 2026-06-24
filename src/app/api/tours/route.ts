@@ -102,6 +102,8 @@ const createSchema = z.object({
   discountPct: z.coerce.number().int().min(0).max(100).optional().nullable(),
   bestseller: z.boolean().optional(),
   published: z.boolean().optional(),
+  // Which lead-capture forms the public detail page exposes.
+  formMode: z.enum(["BOOKING_ONLY", "INQUIRY_ONLY", "BOTH"]).optional(),
   activityIds: z.array(z.string()).optional(),
 });
 

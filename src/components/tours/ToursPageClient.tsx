@@ -25,12 +25,16 @@ const DURATION_BUCKETS = [
 ];
 
 const PAGE_SIZE = 9;
+// Price slider granularity — each drag step moves the handle ₹1000.
+const PRICE_STEP = 1000;
 
 export function ToursPageClient({ tours }: ToursPageClientProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDurations, setSelectedDurations] = useState<string[]>([]);
+  // null = "full range"; a tuple means the user has narrowed the price.
+  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sort, setSort] = useState<TourSortOption>('popular');
   const [page, setPage] = useState(1);
 
@@ -54,14 +58,22 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
     [tours],
   );
 
+  // Slider bounds snapped to the ₹1000 step so the handles land on clean values.
   const priceBounds = useMemo(() => {
     if (tours.length === 0) return { min: 0, max: 0 };
     const prices = tours.map((t) => t.priceFrom);
-    return { min: Math.min(...prices), max: Math.max(...prices) };
+    return {
+      min: Math.floor(Math.min(...prices) / PRICE_STEP) * PRICE_STEP,
+      max: Math.ceil(Math.max(...prices) / PRICE_STEP) * PRICE_STEP,
+    };
   }, [tours]);
+
+  // Effective range: the user's selection, or the full bounds when untouched.
+  const effectiveRange: [number, number] = priceRange ?? [priceBounds.min, priceBounds.max];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    const [lo, hi] = priceRange ?? [priceBounds.min, priceBounds.max];
     const result = tours.filter((t) => {
       const searchMatch =
         !q || t.title.toLowerCase().includes(q) || t.places.toLowerCase().includes(q);
@@ -75,7 +87,8 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
             t.durationDays >= b.min &&
             t.durationDays <= b.max,
         );
-      return searchMatch && categoryMatch && durationMatch;
+      const priceMatch = t.priceFrom >= lo && t.priceFrom <= hi;
+      return searchMatch && categoryMatch && durationMatch && priceMatch;
     });
 
     // "popular" keeps the server order (bestseller first, then rating)
@@ -83,7 +96,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
     if (sort === 'price-desc') result.sort((a, b) => b.priceFrom - a.priceFrom);
     if (sort === 'rating') result.sort((a, b) => b.rating - a.rating);
     return result;
-  }, [tours, search, selectedCategories, selectedDurations, sort]);
+  }, [tours, search, selectedCategories, selectedDurations, sort, priceRange, priceBounds]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -104,10 +117,15 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
     setSelectedDurations((prev) => toggle(prev, id));
     setPage(1);
   };
+  const handlePriceChange = (range: [number, number]) => {
+    setPriceRange(range);
+    setPage(1);
+  };
   const handleClear = () => {
     setSearch('');
     setSelectedCategories([]);
     setSelectedDurations([]);
+    setPriceRange(null);
     setPage(1);
   };
 
@@ -125,6 +143,9 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
           onToggleDuration={handleToggleDuration}
           priceMin={priceBounds.min}
           priceMax={priceBounds.max}
+          priceStep={PRICE_STEP}
+          priceRange={effectiveRange}
+          onPriceChange={handlePriceChange}
           onClear={handleClear}
           isMobileOpen={showMobileFilters}
           onClose={() => setShowMobileFilters(false)}

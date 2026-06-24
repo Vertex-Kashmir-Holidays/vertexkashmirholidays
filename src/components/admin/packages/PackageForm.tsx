@@ -48,6 +48,8 @@ const packageSchema = z.object({
   ),
   bestseller: z.boolean().default(false),
   published: z.boolean().default(false),
+  // Which lead-capture forms show on the public tour-detail page.
+  formMode: z.enum(["BOOKING_ONLY", "INQUIRY_ONLY", "BOTH"]).default("BOTH"),
   itinerary: z.array(itineraryDaySchema).default([]),
   inclusions: z.array(listItemSchema).default([]),
   exclusions: z.array(listItemSchema).default([]),
@@ -75,6 +77,7 @@ export interface PackageFormDefaults {
   discountPct?: number | null;
   bestseller?: boolean;
   published?: boolean;
+  formMode?: string;
   itinerary?: { day: number; title: string; description: string }[];
   inclusions?: string[];
   exclusions?: string[];
@@ -280,6 +283,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       discountPct: defaults?.discountPct ?? null,
       bestseller: defaults?.bestseller ?? false,
       published: defaults?.published ?? false,
+      formMode: (defaults?.formMode as PackageFormData["formMode"]) ?? "BOTH",
       itinerary: (defaults?.itinerary ?? []).map((d) => ({
         day: d.day,
         title: d.title,
@@ -431,10 +435,24 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
             </div>
           </div>
 
-          <div>
-            <FieldLabel required>Duration (days)</FieldLabel>
-            <TextInput {...register("duration", { valueAsNumber: true })} type="number" min={1} max={30} placeholder="7" className="max-w-xs" />
-            <FieldError message={errors.duration?.message} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <FieldLabel required>Duration (days)</FieldLabel>
+              <TextInput {...register("duration", { valueAsNumber: true })} type="number" min={1} max={30} placeholder="7" />
+              <FieldError message={errors.duration?.message} />
+            </div>
+            <div>
+              <FieldLabel>Detail-page Forms</FieldLabel>
+              <select
+                {...register("formMode")}
+                className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+              >
+                <option value="BOTH">Enable Both (Booking + Inquiry)</option>
+                <option value="BOOKING_ONLY">Enable Booking Only</option>
+                <option value="INQUIRY_ONLY">Enable Inquiry Only</option>
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">Controls which forms visitors see on the tour page.</p>
+            </div>
           </div>
 
           <div>

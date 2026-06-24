@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Search, RotateCcw, X } from 'lucide-react';
-import { formatINR } from '@/lib/accents';
+import { PriceRangeSlider } from '@/components/ui/PriceRangeSlider';
 import type { CategoryOption, DurationOption } from '@/types/tours';
 
 interface ToursFiltersSidebarProps {
@@ -17,6 +17,9 @@ interface ToursFiltersSidebarProps {
   onToggleDuration: (id: string) => void;
   priceMin: number;
   priceMax: number;
+  priceStep: number;
+  priceRange: [number, number];
+  onPriceChange: (range: [number, number]) => void;
   onClear: () => void;
   isMobileOpen?: boolean;
   onClose?: () => void;
@@ -37,6 +40,9 @@ function FilterContent({
   onToggleDuration,
   priceMin,
   priceMax,
+  priceStep,
+  priceRange,
+  onPriceChange,
   onClear,
 }: ToursFiltersSidebarProps & { idPrefix: string }) {
   return (
@@ -115,15 +121,13 @@ function FilterContent({
         <p className="text-[15px] font-bold">
           Price Range <span className="text-[11px] font-medium text-muted-foreground">(per person)</span>
         </p>
-        <div className="range-track mt-5">
-          <div className="range-fill"></div>
-          <motion.span className="thumb" style={{ left: '2%' }} whileHover={{ scale: 1.2 }}></motion.span>
-          <motion.span className="thumb" style={{ left: '98%' }} whileHover={{ scale: 1.2 }}></motion.span>
-        </div>
-        <div className="mt-3 flex justify-between text-[12px] font-semibold text-foreground/80">
-          <span>{formatINR(priceMin)}</span>
-          <span>{formatINR(priceMax)}</span>
-        </div>
+        <PriceRangeSlider
+          min={priceMin}
+          max={priceMax}
+          step={priceStep}
+          value={priceRange}
+          onChange={onPriceChange}
+        />
       </div>
 
       <motion.button

@@ -194,6 +194,41 @@ body {
   accent-color: hsl(var(--primary));
 }
 
+/* Dual-handle price slider — two overlaid range inputs. The input track stays
+   transparent + click-through (pointer-events:none); only the thumbs capture
+   input, so both handles work despite overlapping. */
+.price-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  margin: 0;
+  height: 100%;
+}
+.price-range::-webkit-slider-runnable-track { background: transparent; }
+.price-range::-moz-range-track { background: transparent; }
+.price-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--card));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+.price-range::-moz-range-thumb {
+  pointer-events: auto;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--card));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
 /* Portal animation */
 .portal-wrap { perspective:900px; }
 .portal {

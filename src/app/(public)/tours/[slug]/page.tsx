@@ -54,7 +54,7 @@ async function getTour(slug: string) {
       // Published activities linked to this tour → "Things to Do".
       activities: {
         where: { activity: { published: true } },
-        include: { activity: { select: { id: true, name: true, description: true, coverImage: true, duration: true } } },
+        include: { activity: { select: { id: true, slug: true, name: true, description: true, coverImage: true, duration: true } } },
       },
     },
   });
@@ -160,6 +160,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
     title: a.activity.name,
     description: a.activity.description ?? "",
     duration: a.activity.duration,
+    href: `/activities/${a.activity.slug}`,
   }));
 
   // ── Tabs (only for sections that have content) ─────────────────────────────
@@ -244,7 +245,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
             {things.length > 0 && (
               <section id="things" className="scroll-mt-16 mt-6">
-                <ActivitiesShowcase title={`Things to Do on This Tour`} items={things} />
+                <ActivitiesShowcase title={`Things to Do on This Tour`} items={things} seeAllHref="/activities" />
               </section>
             )}
 
@@ -278,6 +279,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
             reviews={tour.reviewCount}
             tourId={tour.id}
             tourName={tour.title}
+            formMode={tour.formMode}
             bestTime={tour.bestTime ?? "Apr – Oct"}
             tourType={tour.tourType ?? "Private Tour"}
             pickupDrop={tour.pickupDrop ?? `${tour.startCity ?? "Srinagar"} Airport`}

@@ -97,7 +97,7 @@ async function getDestination(slug: string) {
         where: { activity: { published: true } },
         include: {
           activity: {
-            select: { id: true, name: true, description: true, coverImage: true, duration: true },
+            select: { id: true, slug: true, name: true, description: true, coverImage: true, duration: true },
           },
         },
       },
@@ -211,6 +211,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     title: a.activity.name,
     description: a.activity.description ?? "",
     duration: a.activity.duration,
+    href: `/activities/${a.activity.slug}`,
   }));
 
   // Gallery = the destination cover + the cover images of its linked activities
@@ -282,7 +283,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
                 description={dest.description ?? dest.excerpt ?? ""}
                 features={FEATURES}
               />
-              <ActivitiesShowcase title={`Things to Do in ${dest.name}`} items={things} />
+              <ActivitiesShowcase title={`Things to Do in ${dest.name}`} items={things} seeAllHref="/activities" />
               {destinationTours.length > 0 && (
                 <DestinationDetailTours name={dest.name} tours={destinationTours} />
               )}

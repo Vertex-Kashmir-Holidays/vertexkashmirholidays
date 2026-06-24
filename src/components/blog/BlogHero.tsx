@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import type { BlogPageContent } from '@/types/blog';
 
 interface BlogHeroProps {
@@ -13,7 +14,12 @@ interface BlogHeroProps {
 
 export function BlogHero({ content, onSearch }: BlogHeroProps) {
   return (
-    <SecondaryHero image={content.heroImage} imageMobile={content.heroImageMobile} alt="Houseboats on a Kashmir lake">
+    <SecondaryHero
+      image={content.heroImage}
+      imageMobile={content.heroImageMobile}
+      alt="Houseboats on a Kashmir lake"
+      aside={<HeroLeadCard source="blog-list" />}
+    >
         <motion.p
           className="text-[12px] font-bold tracking-[0.32em] text-white/90"
           initial={{ opacity: 0, y: 20 }}

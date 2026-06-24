@@ -23,6 +23,7 @@ const patchSchema = z.object({
   discountPct: z.coerce.number().int().min(0).max(100).optional().nullable(),
   bestseller: z.boolean().optional(),
   published: z.boolean().optional(),
+  formMode: z.enum(["BOOKING_ONLY", "INQUIRY_ONLY", "BOTH"]).optional(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),

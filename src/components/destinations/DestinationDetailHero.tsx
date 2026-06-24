@@ -2,9 +2,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Phone, Calendar, ChevronDown, FileText, Zap } from 'lucide-react';
 import { imgSrc } from '@/lib/placeholder';
 import { WhatsAppIcon } from '@/components/icons/brand';
+import { LeadForm } from '@/components/leads/LeadForm';
 import Link from 'next/link';
 
 interface DestinationDetailHeroProps {
@@ -115,62 +115,16 @@ export function DestinationDetailHero({
             <div className="rounded-2xl bg-card p-5 shadow-card lg:absolute lg:inset-x-0 lg:top-0">
               <h2 className="text-[19px] font-bold">Planning {name}?</h2>
               <p className="mt-1 text-[12.5px] text-muted-foreground">Get expert help from our local team.</p>
-              <form className="mt-4 space-y-3" id="planForm">
-                <input type="hidden" name="destination_id" value={name.toLowerCase()} />
-                <input type="hidden" name="destination_name" value={name} />
-                <input
-                  name="name"
-                  required
-                  className="w-full rounded-lg border border-border px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-muted-foreground/80 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  placeholder="Your Name"
-                />
-                <div className="flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                  <input
-                    name="phone"
-                    type="tel"
-                    required
-                    className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/80"
-                    placeholder="Phone Number"
-                  />
-                  <Phone className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
-                </div>
-                <div className="flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                  <input
-                    name="travel_date"
-                    className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/80"
-                    placeholder="Travel Date"
-                    onFocus={(e) => (e.target.type = 'date')}
-                  />
-                  <Calendar className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
-                </div>
-                <div className="relative">
-                  <select
-                    name="travellers"
-                    defaultValue=""
-                    className="w-full appearance-none rounded-lg border border-border bg-card px-3.5 py-2.5 text-[13px] text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="">No. of Travellers</option>
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                    <option>6+</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" strokeWidth={2.4} />
-                </div>
-                <motion.button
-                  type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <FileText className="h-4 w-4" strokeWidth={2} />
-                  Get a Free Itinerary
-                  <Zap className="h-4 w-4 fill-current" strokeWidth={2} />
-                </motion.button>
-              </form>
-              <a href="#" className="mt-3.5 flex items-center justify-center gap-2 text-[13px] font-bold text-primary transition hover:underline">
+              <LeadForm
+                source="destination-detail"
+                context={{ destinationName: name }}
+                buttonLabel="Get a Free Itinerary"
+                className="mt-1"
+              />
+              <a
+                href="#"
+                className="mt-3.5 flex items-center justify-center gap-2 text-[13px] font-bold text-primary transition hover:underline"
+              >
                 <WhatsAppIcon className="h-4 w-4" />
                 Chat on WhatsApp
               </a>

@@ -6,7 +6,10 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Star, Check, Lock, Phone } from 'lucide-react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { imgSrc } from '@/lib/placeholder';
+import { toE164 } from '@/lib/auth/validation';
+import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -44,6 +47,9 @@ export function CampaignHero({
   const flakesRef = useRef<HTMLDivElement>(null);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const renderedAt = useRef<number>(Date.now());
 
   useEffect(() => {
     const createParticles = (container: HTMLDivElement, className: string, count: number, isEmber: boolean) => {
@@ -68,8 +74,23 @@ export function CampaignHero({
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get('name') ?? '').trim();
     const phoneVal = String(fd.get('phone') ?? '').trim();
-    if (name.length < 2 || phoneVal.length < 6) {
-      toast.error('Please enter your name and a valid phone number.');
+    const agree = fd.get('agree') === 'on';
+    // Campaign form has no country selector — assume India and normalize to E.164.
+    const e164 = toE164(phoneVal, 'IN');
+    if (name.length < 2) {
+      toast.error('Please enter your name.');
+      return;
+    }
+    if (!e164) {
+      toast.error('Please enter a valid phone number.');
+      return;
+    }
+    if (!agree) {
+      toast.error('Please accept the Terms & Conditions and Privacy Policy.');
+      return;
+    }
+    if (siteKey && !captchaToken) {
+      toast.error('Please complete the verification challenge.');
       return;
     }
     setSubmitting(true);
@@ -80,9 +101,13 @@ export function CampaignHero({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          phone: phoneVal,
+          phone: e164,
           travellers: travellers && /^\d+$/.test(travellers) ? Number(travellers) : undefined,
+          agree,
           source: 'campaign',
+          [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ''),
+          [TIMETRAP_FIELD]: renderedAt.current,
+          turnstileToken: captchaToken ?? undefined,
         }),
       });
       if (!res.ok) throw new Error('Request failed');
@@ -240,6 +265,14 @@ export function CampaignHero({
             ) : (
               <form className="mt-5 space-y-3" onSubmit={handleSubmit} noValidate>
                 <input
+                  name={HONEYPOT_FIELD}
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                />
+                <input
                   name="name"
                   required
                   className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[13px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
@@ -266,9 +299,32 @@ export function CampaignHero({
                   ))}
                   <option value="5" className="text-black">5+</option>
                 </select>
+                <label className="flex items-start gap-2.5 text-[11px] leading-relaxed text-white/65">
+                  <input type="checkbox" name="agree" required className="cbx mt-0.5 shrink-0" />
+                  <span>
+                    I agree to the{' '}
+                    <Link href="/terms-and-conditions" target="_blank" className="font-semibold text-white underline underline-offset-2">
+                      Terms &amp; Conditions
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy-policy" target="_blank" className="font-semibold text-white underline underline-offset-2">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+                {siteKey && (
+                  <Turnstile
+                    siteKey={siteKey}
+                    options={{ size: 'flexible', theme: 'auto' }}
+                    onSuccess={(t) => setCaptchaToken(t)}
+                    onError={() => setCaptchaToken(null)}
+                    onExpire={() => setCaptchaToken(null)}
+                  />
+                )}
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || (!!siteKey && !captchaToken)}
                   className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-accent-grad py-3.5 text-[14px] font-extrabold text-white ring-inner shadow-glow transition hover:brightness-110 disabled:opacity-60"
                 >
                   {submitting ? 'Reserving…' : 'Reserve My Seat →'}
