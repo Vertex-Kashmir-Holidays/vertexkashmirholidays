@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { User, Users, Clock, Star, type LucideIcon } from 'lucide-react';
 import { renderAccents } from '@/lib/accents';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import type { SectionHeading, SiteStatData } from '@/types/home';
 
 interface ToursHeroSectionProps {
@@ -37,7 +38,12 @@ export function ToursHeroSection({ heading, stats }: ToursHeroSectionProps) {
   };
 
   return (
-    <SecondaryHero image="/hero/gulmarg-lg.webp" imageMobile="/hero/gulmarg.webp" alt="Kashmir valley">
+    <SecondaryHero
+      image="/hero/gulmarg-lg.webp"
+      imageMobile="/hero/gulmarg.webp"
+      alt="Kashmir valley"
+      aside={<HeroLeadCard source="tours" buttonLabel="Get Tour Quotes" />}
+    >
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>

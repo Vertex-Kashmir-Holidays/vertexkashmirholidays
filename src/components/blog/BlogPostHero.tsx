@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Clock, Calendar, Link2 } from 'lucide-react';
 import { WhatsAppIcon, FacebookIcon, TwitterIcon } from '@/components/icons/brand';
 import { imgSrc } from '@/lib/placeholder';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 
 interface BlogPostHeroProps {
   category: string | null;
@@ -45,7 +46,8 @@ export function BlogPostHero({
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/45 to-brand-dark/15"></div>
 
-      <div className="relative mx-auto max-w-[1300px] px-6 pb-9 pt-28">
+      <div className="relative mx-auto grid max-w-[1300px] items-center gap-10 px-6 pb-9 pt-28 lg:grid-cols-[1fr_minmax(0,340px)]">
+       <div>
         <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
           {crumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-2">
@@ -148,6 +150,12 @@ export function BlogPostHero({
             ))}
           </div>
         </motion.div>
+       </div>
+
+        {/* Lead-capture card (right) */}
+        <div className="lg:justify-self-end">
+          <HeroLeadCard source="blog-detail" />
+        </div>
       </div>
     </section>
   );

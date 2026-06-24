@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Logo } from '@/components/brand/Logo';
 import { PhoneInput } from '@/components/auth/PhoneInput';
@@ -50,6 +51,10 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Turnstile (rendered + enforced only when the public site key is set).
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Login fields
   const [loginEmail, setLoginEmail] = useState('');
@@ -124,8 +129,21 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
     setOtpCode('');
     setErrors({});
     setLoginErrors({});
+    setCaptchaToken(null);
     onViewChange(next);
   }
+
+  // Turnstile widget, shown on each form step when configured.
+  const captcha = siteKey ? (
+    <Turnstile
+      siteKey={siteKey}
+      options={{ size: 'flexible', theme: 'auto' }}
+      onSuccess={(t) => setCaptchaToken(t)}
+      onError={() => setCaptchaToken(null)}
+      onExpire={() => setCaptchaToken(null)}
+    />
+  ) : null;
+  const captchaPending = !!siteKey && !captchaToken;
 
   // After a successful sign-in, send the user to the page they came from
   // (?callbackUrl=…), or to the role-aware landing endpoint which routes staff
@@ -161,6 +179,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
     const result = await signIn('credentials', {
       email: loginEmail,
       password: loginPassword,
+      turnstileToken: captchaToken ?? undefined,
       redirect: false,
     });
 
@@ -200,6 +219,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
         email: regEmail,
         phone: phoneE164,
         password: regPassword,
+        turnstileToken: captchaToken ?? undefined,
       }),
     });
 
@@ -271,6 +291,7 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
         email: regEmail,
         phone: toE164(regPhone, country) ?? regPhone,
         password: regPassword,
+        turnstileToken: captchaToken ?? undefined,
       }),
     });
 
@@ -415,9 +436,10 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                   <label className="flex items-center gap-2.5 text-[12.5px] font-medium text-foreground/80">
                     <input type="checkbox" className="cbx" /> Remember me
                   </label>
+                  {captcha}
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || captchaPending}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Logging in…' : 'Log In'}
@@ -628,9 +650,10 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                     </label>
                     <FieldError message={errors.terms} />
                   </div>
+                  {captcha}
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || captchaPending}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Creating account…' : 'Create Account'}
@@ -724,6 +747,8 @@ export function AuthFormPanel({ view, onViewChange }: AuthFormPanelProps) {
                     <Check className="h-4 w-4" strokeWidth={2.4} />
                   </button>
                 </form>
+
+                {siteKey && <div className="mt-5">{captcha}</div>}
 
                 <div className="mt-5 text-center text-[12.5px] text-muted-foreground">
                   Didn&apos;t get the code?{' '}

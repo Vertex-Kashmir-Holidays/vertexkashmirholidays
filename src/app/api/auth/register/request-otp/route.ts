@@ -23,6 +23,7 @@ import {
   isValidE164,
   isValidPassword,
 } from "@/lib/auth/validation";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ const requestSchema = z.object({
   // Client sends an E.164 number (e.g. +919876543210) validated per country.
   phone: z.string().trim().refine(isValidE164, PHONE_MESSAGE),
   password: z.string().max(100).refine(isValidPassword, PASSWORD_MESSAGE),
+  // Optional Turnstile token (verified only when TURNSTILE_SECRET_KEY is set).
+  turnstileToken: z.string().optional(),
 });
 
 // Step 1 of registration: validate inputs, enforce domain allowlist + anti-spam,
@@ -60,6 +63,15 @@ export async function POST(req: NextRequest) {
     const email = parsed.data.email.toLowerCase();
     const phone = parsed.data.phone;
     const { password } = parsed.data;
+
+    // CAPTCHA (enforced only when TURNSTILE_SECRET_KEY is configured).
+    const captchaOk = await verifyTurnstile(parsed.data.turnstileToken, clientIp(req));
+    if (!captchaOk) {
+      return NextResponse.json(
+        { error: "Verification failed. Please refresh and try again." },
+        { status: 403 },
+      );
+    }
 
     if (!isAllowedEmailDomain(email)) {
       return NextResponse.json(

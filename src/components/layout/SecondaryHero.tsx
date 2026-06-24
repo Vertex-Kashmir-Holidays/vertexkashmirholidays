@@ -22,9 +22,12 @@ interface SecondaryHeroProps {
   imageMobile?: string | null;
   alt?: string;
   children: ReactNode;
+  /** Optional right-side content (e.g. a lead-capture card). When present the
+   *  hero switches to a two-column layout; content stays left, aside goes right. */
+  aside?: ReactNode;
 }
 
-export function SecondaryHero({ image, imageMobile, alt = '', children }: SecondaryHeroProps) {
+export function SecondaryHero({ image, imageMobile, alt = '', children, aside }: SecondaryHeroProps) {
   return (
     <section className="relative min-h-[360px] overflow-hidden bg-brand-dark">
       {image && (
@@ -45,7 +48,14 @@ export function SecondaryHero({ image, imageMobile, alt = '', children }: Second
       {/* min-h matches the section so short heroes still fill the band; the
           flex column vertically centres content within the nav-cleared area. */}
       <div className="relative mx-auto flex min-h-[360px] w-full max-w-[1300px] flex-col justify-center px-5 pb-12 pt-28 sm:px-6 sm:pb-14 sm:pt-32">
-        {children}
+        {aside ? (
+          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_minmax(0,0.85fr)]">
+            <div>{children}</div>
+            <div className="lg:justify-self-end">{aside}</div>
+          </div>
+        ) : (
+          children
+        )}
       </div>
     </section>
   );

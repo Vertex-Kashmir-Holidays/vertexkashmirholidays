@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import { Sparkles, Compass, BadgeIndianRupee, type LucideIcon } from 'lucide-react';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 
 const badges: { t: string; s: string; Icon: LucideIcon }[] = [
   { t: 'Handpicked', s: 'by local experts', Icon: Sparkles },
@@ -13,7 +14,12 @@ const badges: { t: string; s: string; Icon: LucideIcon }[] = [
 
 export function DestinationsHero() {
   return (
-    <SecondaryHero image="/hero/srinagar-lg.webp" imageMobile="/hero/srinagar.webp" alt="Dal Lake, Kashmir">
+    <SecondaryHero
+      image="/hero/srinagar-lg.webp"
+      imageMobile="/hero/srinagar.webp"
+      alt="Dal Lake, Kashmir"
+      aside={<HeroLeadCard source="destinations" />}
+    >
       <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
         <a href="/" className="transition hover:text-white">Home</a>
         <span>›</span>

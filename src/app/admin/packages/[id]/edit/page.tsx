@@ -39,6 +39,7 @@ export default async function EditPackagePage({ params }: Props) {
     discountPct: tour.discountPct,
     bestseller: tour.bestseller,
     published: tour.published,
+    formMode: tour.formMode,
     itinerary: safeParse<{ day: number; title: string; description: string }[]>(tour.itinerary, []),
     inclusions: safeParse<string[]>(tour.inclusions, []),
     exclusions: safeParse<string[]>(tour.exclusions, []),

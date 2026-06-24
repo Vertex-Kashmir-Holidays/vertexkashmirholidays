@@ -1,23 +1,36 @@
 // src/components/contact/ContactForm.tsx
 'use client';
 
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
+import type { CountryCode } from 'libphonenumber-js';
 import { WhatsAppIcon } from '@/components/icons/brand';
+import { PhoneInput } from '@/components/auth/PhoneInput';
+import { toE164 } from '@/lib/auth/validation';
+import { nameField, phoneField } from '@/lib/leads/schema';
+import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
 import type { ContactFormContent } from '@/types/contact';
 
+// Reuses the shared lead primitives (name sanitize + E.164 phone) so the
+// contact form validates identically to the rest of the site. Email is required
+// here (unlike the optional lead form), and consent is mandatory.
 const schema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Enter a valid email'),
-  phone: z.string().min(6, 'Enter a valid phone number'),
-  message: z.string().optional(),
+  name: nameField,
+  phone: phoneField,
+  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+  message: z.string().trim().max(2000).optional(),
+  agree: z.boolean().refine((v) => v === true, {
+    message: 'Please accept the Terms & Conditions and Privacy Policy.',
+  }),
 });
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.input<typeof schema>;
 
 const formTrust = ['No spam. Ever.', 'We reply within 2 hours', '100% free advice'];
 
@@ -26,26 +39,67 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ content }: ContactFormProps) {
+  const [country, setCountry] = useState<CountryCode>('IN');
+  const [national, setNational] = useState('');
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const renderedAt = useRef<number>(Date.now());
+
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    setError,
+    trigger,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: 'onChange' });
+
+  function syncPhone(nextNational: string, nextCountry: CountryCode) {
+    setNational(nextNational);
+    setCountry(nextCountry);
+    const e164 = toE164(nextNational, nextCountry);
+    setValue('phone', e164 ?? nextNational, { shouldValidate: true });
+  }
 
   const onSubmit = async (data: FormValues) => {
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, source: 'contact' }),
+        body: JSON.stringify({
+          name: data.name,
+          phone: data.phone,
+          email: data.email,
+          message: data.message || undefined,
+          agree: data.agree,
+          source: 'contact',
+          [HONEYPOT_FIELD]: honeypotRef.current?.value ?? '',
+          [TIMETRAP_FIELD]: renderedAt.current,
+          turnstileToken: captchaToken ?? undefined,
+        }),
       });
       if (!res.ok) {
-        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        const j = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          blocked?: boolean;
+          fieldErrors?: Record<string, string[] | undefined>;
+        };
+        // Map validation failures onto their fields (inline, no stack traces).
+        if (j.fieldErrors) {
+          for (const key of ['name', 'phone', 'email', 'message', 'agree'] as const) {
+            const msg = j.fieldErrors[key]?.[0];
+            if (msg) setError(key, { type: 'server', message: msg });
+          }
+          return;
+        }
         throw new Error(j.error ?? 'Request failed');
       }
       toast.success("Message sent! We'll reply within 2 hours.");
       reset();
+      setNational('');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     }
@@ -76,6 +130,15 @@ export function ContactForm({ content }: ContactFormProps) {
       </motion.h2>
 
       <form className="mt-5 space-y-3.5" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <input
+          ref={honeypotRef}
+          type="text"
+          name={HONEYPOT_FIELD}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+        />
         <div>
           <label htmlFor="cName" className="text-[12px] font-semibold">
             Your Name <span className="text-rose-500">*</span>
@@ -94,7 +157,15 @@ export function ContactForm({ content }: ContactFormProps) {
           <label htmlFor="cPhone" className="text-[12px] font-semibold">
             Phone Number <span className="text-rose-500">*</span>
           </label>
-          <input id="cPhone" type="tel" className={inputClass} placeholder="+91 00000 00000" {...register('phone')} />
+          <PhoneInput
+            id="cPhone"
+            country={country}
+            onCountryChange={(c) => syncPhone(national, c)}
+            value={national}
+            onChange={(v) => syncPhone(v, country)}
+            invalid={!!errors.phone}
+          />
+          <input type="hidden" {...register('phone')} />
           {errors.phone && <p className="mt-1 text-[11px] text-rose-500">{errors.phone.message}</p>}
         </div>
         <div>
@@ -119,9 +190,41 @@ export function ContactForm({ content }: ContactFormProps) {
           ))}
         </div>
 
+        <div>
+          <label className="flex items-start gap-2.5 text-[11.5px] leading-relaxed text-muted-foreground">
+            <input
+              type="checkbox"
+              className="cbx mt-0.5 shrink-0"
+              {...register('agree', { onChange: () => trigger('agree') })}
+            />
+            <span>
+              I agree to the{' '}
+              <Link href="/terms-and-conditions" target="_blank" className="font-semibold text-primary underline-offset-2 hover:underline">
+                Terms &amp; Conditions
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy-policy" target="_blank" className="font-semibold text-primary underline-offset-2 hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+          {errors.agree && <p className="mt-1 text-[11px] text-rose-500">{errors.agree.message}</p>}
+        </div>
+
+        {siteKey && (
+          <Turnstile
+            siteKey={siteKey}
+            options={{ size: 'flexible', theme: 'auto' }}
+            onSuccess={(t) => setCaptchaToken(t)}
+            onError={() => setCaptchaToken(null)}
+            onExpire={() => setCaptchaToken(null)}
+          />
+        )}
+
         <motion.button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (!!siteKey && !captchaToken)}
           className="!mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-card transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}

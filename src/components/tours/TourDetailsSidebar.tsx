@@ -3,9 +3,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, ShieldCheck, ArrowRight, ChevronDown, Calendar, Lock, Users, Car, BadgeCheck, Clock, type LucideIcon } from 'lucide-react';
+import { Star, ShieldCheck, ChevronDown, Calendar, Lock, Users, Car, BadgeCheck, Clock, type LucideIcon } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/brand';
 import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
+import { LeadForm } from '@/components/leads/LeadForm';
 
 interface TourDetailsSidebarProps {
   price: number;
@@ -15,6 +16,8 @@ interface TourDetailsSidebarProps {
   reviews: number;
   tourId: string;
   tourName: string;
+  /** Which lead forms to expose. Defaults to showing both. */
+  formMode?: 'BOOKING_ONLY' | 'INQUIRY_ONLY' | 'BOTH';
   bestTime: string;
   tourType: string;
   pickupDrop: string;
@@ -29,12 +32,17 @@ export function TourDetailsSidebar({
   reviews,
   tourId,
   tourName,
+  formMode = 'BOTH',
   bestTime,
   tourType,
   pickupDrop,
   helpPhone,
 }: TourDetailsSidebarProps) {
-  const [activeTab, setActiveTab] = useState<'inquiry' | 'book'>('inquiry');
+  const showInquiry = formMode !== 'BOOKING_ONLY';
+  const showBook = formMode !== 'INQUIRY_ONLY';
+  const [activeTab, setActiveTab] = useState<'inquiry' | 'book'>(
+    showInquiry ? 'inquiry' : 'book',
+  );
   const wa = useWhatsAppLink();
   const helpHref = wa(`Hi! I'd like help with the "${tourName}" Kashmir tour. Please assist.`);
 
@@ -92,100 +100,53 @@ export function TourDetailsSidebar({
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="mt-5 flex border-b border-border text-[14px] font-bold">
-          <button
-            onClick={() => setActiveTab('inquiry')}
-            className={`relative flex-1 pb-3 transition ${
-              activeTab === 'inquiry' ? 'text-primary' : 'text-muted-foreground'
-            }`}
-          >
-            Inquiry
-            {activeTab === 'inquiry' && (
-              <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('book')}
-            className={`relative flex-1 pb-3 transition ${
-              activeTab === 'book' ? 'text-primary' : 'text-muted-foreground'
-            }`}
-          >
-            Book
-            {activeTab === 'book' && (
-              <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
-            )}
-          </button>
-        </div>
+        {/* Tabs — only shown when both forms are enabled. */}
+        {showInquiry && showBook && (
+          <div className="mt-5 flex border-b border-border text-[14px] font-bold">
+            <button
+              onClick={() => setActiveTab('inquiry')}
+              className={`relative flex-1 pb-3 transition ${
+                activeTab === 'inquiry' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              Inquiry
+              {activeTab === 'inquiry' && (
+                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('book')}
+              className={`relative flex-1 pb-3 transition ${
+                activeTab === 'book' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              Book
+              {activeTab === 'book' && (
+                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
+              )}
+            </button>
+          </div>
+        )}
 
-        {/* Inquiry Form */}
-        <motion.form
-          className="mt-4 space-y-3.5"
+        {/* Inquiry Form — shared <LeadForm /> posting to /api/leads */}
+        {showInquiry && (
+        <motion.div
+          className="mt-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: activeTab === 'inquiry' ? 1 : 0 }}
           transition={{ duration: 0.3 }}
           style={{ display: activeTab === 'inquiry' ? 'block' : 'none' }}
         >
-          <input type="hidden" name="tour_id" value={tourId} />
-          <input type="hidden" name="tour_name" value={tourName} />
-
-          <div>
-            <label htmlFor="inqName" className="text-[12.5px] font-semibold">
-              Name <span className="text-badge-red">*</span>
-            </label>
-            <input
-              id="inqName"
-              name="name"
-              required
-              className="mt-1.5 w-full rounded-lg border border-border px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Enter your name"
-            />
-          </div>
-          <div>
-            <label htmlFor="inqPhone" className="text-[12.5px] font-semibold">
-              Phone <span className="text-badge-red">*</span>
-            </label>
-            <div className="mt-1.5 flex overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-              <span className="flex items-center gap-1 border-r border-border bg-muted px-3 text-[13px] font-semibold text-muted-foreground">
-                +91
-              </span>
-              <input
-                id="inqPhone"
-                name="phone"
-                type="tel"
-                required
-                className="w-full px-3.5 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/70"
-                placeholder="Enter your phone"
-              />
-            </div>
-          </div>
-          <div>
-            <label htmlFor="inqEmail" className="text-[12.5px] font-semibold">
-              Email <span className="font-medium text-muted-foreground">(optional)</span>
-            </label>
-            <input
-              id="inqEmail"
-              name="email"
-              type="email"
-              className="mt-1.5 w-full rounded-lg border border-border px-3.5 py-2.5 text-[13px] outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Enter your email"
-            />
-          </div>
-          <motion.button
-            type="submit"
-            className="!mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Send Inquiry
-            <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
-          </motion.button>
-          <p className="text-center text-[11px] text-muted-foreground">
-            Our local expert replies on WhatsApp within 30 minutes.
-          </p>
-        </motion.form>
+          <LeadForm
+            source="tour-detail"
+            context={{ tourName }}
+            buttonLabel="Send Inquiry"
+          />
+        </motion.div>
+        )}
 
         {/* Book Form */}
+        {showBook && (
         <motion.form
           className="mt-4 space-y-3.5"
           initial={{ opacity: 0 }}
@@ -288,6 +249,7 @@ export function TourDetailsSidebar({
             Secure checkout via Razorpay · ₹7,000 advance for 2 travellers
           </p>
         </motion.form>
+        )}
       </motion.div>
 
       {/* Trust List */}

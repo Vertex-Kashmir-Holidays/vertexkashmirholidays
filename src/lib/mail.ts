@@ -161,6 +161,10 @@ interface LeadNotificationData {
   travellers?: number;
   message?: string;
   source?: string;
+  /** Lead row id, for quick lookup in the CRM. */
+  leadId?: string;
+  /** Human-readable submission timestamp. */
+  submittedAt?: string;
 }
 
 export function leadNotificationText(data: LeadNotificationData): string {
@@ -175,6 +179,8 @@ export function leadNotificationText(data: LeadNotificationData): string {
   if (data.travellers) lines.push(`Travellers: ${data.travellers}`);
   if (data.source) lines.push(`Source: ${data.source}`);
   if (data.message) lines.push("", "Message:", data.message);
+  if (data.submittedAt) lines.push("", `Submitted: ${data.submittedAt}`);
+  if (data.leadId) lines.push(`Lead ID: ${data.leadId}`);
   return lines.join("\n");
 }
 
@@ -203,6 +209,8 @@ ${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
 ${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
 ${data.source ? detailRow("Source", data.source) : ""}
 ${messageRow}
+${data.submittedAt ? detailRow("Submitted", data.submittedAt) : ""}
+${data.leadId ? detailRow("Lead ID", data.leadId) : ""}
               </table>
             </td>
           </tr>`;

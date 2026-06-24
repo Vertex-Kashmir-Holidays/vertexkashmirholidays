@@ -1,9 +1,9 @@
 // src/components/sections/HeroSection.tsx
 'use client';
 
-import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
+import { LeadForm } from '@/components/leads/LeadForm';
 import { renderAccents } from '@/lib/accents';
 import type { HeroContentData, HeroSlideData, SiteStatData } from '@/types/home';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
@@ -271,66 +271,15 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
 
               <div className="shine"></div>
               <div className="pop relative z-10">
-                {content.formKicker && (
-                  <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-primary">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary"></span> {content.formKicker}
-                  </p>
-                )}
-
-                {content.formTitle && (
-                  <h3 className="h-display mt-3 text-[26px] font-bold text-foreground">{content.formTitle}</h3>
-                )}
-                {content.formSubtitle && (
-                  <p className="mt-1 text-[13px] text-muted-foreground">{content.formSubtitle}</p>
-                )}
-
-                <div className="mt-5 space-y-3 text-sm">
-                  <input
-                    aria-label="Full Name"
-                    autoComplete="name"
-                    className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
-                    placeholder="Full Name *"
-                  />
-                  <input
-                    aria-label="Phone"
-                    type="tel"
-                    autoComplete="tel"
-                    className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
-                    placeholder="Phone *"
-                  />
-                  <input
-                    aria-label="Email"
-                    type="email"
-                    autoComplete="email"
-                    className="w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2"
-                    placeholder="Email"
-                  />
-                  <button className="sweep w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110">
-                    {content.formButtonLabel ?? 'Request Free Itinerary →'}
-                  </button>
-                </div>
-
-                {(content.formAvatars.length > 0 || content.formNote) && (
-                  <div className="mt-4 flex items-center gap-3">
-                    {content.formAvatars.length > 0 && (
-                      <div className="flex -space-x-2">
-                        {content.formAvatars.map((avatar, i) => (
-                          <Image
-                            key={i}
-                            width={28}
-                            height={28}
-                            className="h-7 w-7 rounded-full border-2 border-card object-cover"
-                            src={avatar}
-                            alt=""
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {content.formNote && (
-                      <p className="text-[11px] text-muted-foreground">{content.formNote}</p>
-                    )}
-                  </div>
-                )}
+                <LeadForm
+                  source="home"
+                  kicker={content.formKicker}
+                  title={content.formTitle}
+                  subtitle={content.formSubtitle}
+                  buttonLabel={content.formButtonLabel}
+                  note={content.formNote}
+                  avatars={content.formAvatars}
+                />
               </div>
             </motion.div>
           </Tilt3D>
