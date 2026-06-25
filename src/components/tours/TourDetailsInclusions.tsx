@@ -52,7 +52,7 @@ export function TourDetailsInclusions({ inclusions, exclusions }: TourDetailsInc
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-badge-red text-white">
+              <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-red-500 text-white">
                 <X className="h-2.5 w-2.5" strokeWidth={3.5} />
               </span>
               {item}

@@ -2,7 +2,6 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import { Tilt3D } from '@/components/ui/3DTilt';
 import { LeadForm } from '@/components/leads/LeadForm';
 import { renderAccents } from '@/lib/accents';
 import type { HeroContentData, HeroSlideData, SiteStatData } from '@/types/home';
@@ -18,7 +17,6 @@ interface HeroSectionProps {
 
 export function HeroSection({ content, slides, stats }: HeroSectionProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [formPulse, setFormPulse] = useState(false);
   const embersRef = useRef<HTMLDivElement>(null);
   const flakesRef = useRef<HTMLDivElement>(null);
 
@@ -32,16 +30,6 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
 
     return () => clearInterval(interval);
   }, [slides.length]);
-
-  // Form pulse effect - subtle attention grabber
-  useEffect(() => {
-    const pulseInterval = setInterval(() => {
-      setFormPulse(true);
-      setTimeout(() => setFormPulse(false), 1500);
-    }, 8000);
-
-    return () => clearInterval(pulseInterval);
-  }, []);
 
   useEffect(() => {
     // Particles
@@ -117,8 +105,9 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
           )}
         </AnimatePresence>
 
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
+        {/* Overlay for text readability — vertical scrim on mobile (headline + form
+            stack), horizontal from lg up (two columns). */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/70 lg:bg-gradient-to-r lg:from-black/60 lg:via-black/30 lg:to-transparent"></div>
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-background to-transparent"></div>
 
         {/* Particles */}
@@ -215,74 +204,23 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
           )}
         </motion.div>
 
-        {/* Form with golden portal border only - everything else stays green */}
+        {/* Lead-capture card — same glass-cream chrome as every other page hero
+            (HeroLeadCard) so the home form reads consistently across the site. */}
         <motion.div
           initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: .9, x: 0 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="glass-cream w-full max-w-md justify-self-center rounded-3xl p-6 shadow-glass sm:p-7 lg:justify-self-end"
         >
-          <Tilt3D intensity={8}>
-            <motion.div
-              className="glass-deep relative rounded-3xl p-6 shadow-glass overflow-hidden"
-              style={{
-                position: 'relative',
-                borderRadius: '24px',
-              }}
-            >
-              {/* Primary golden portal border (CSS-animated, no re-render) */}
-              <div
-                className="portal-border absolute inset-0 rounded-3xl pointer-events-none"
-                style={{
-                  border: '6px solid transparent',
-                  borderRadius: '24px',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box',
-                  WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                }}
-              />
-
-              {/* Secondary golden glow layer - thicker and brighter */}
-              <div
-                className="portal-border absolute -inset-1 rounded-3xl pointer-events-none"
-                style={{
-                  border: '10px solid transparent',
-                  borderRadius: '28px',
-                  backgroundOrigin: 'border-box',
-                  backgroundClip: 'padding-box, border-box',
-                  WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                  filter: 'blur(6px)',
-                  opacity: 0.7,
-                }}
-              />
-
-              {/* Golden glow pulse around the form */}
-              <motion.div
-                className="absolute -inset-2 rounded-3xl bg-green-brand/20 blur-2xl"
-                animate={{
-                  opacity: formPulse ? 0.8 : 0.3,
-                  scale: formPulse ? 1.05 : 1,
-                }}
-                transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-              />
-
-              <div className="shine"></div>
-              <div className="pop relative z-10">
-                <LeadForm
-                  source="home"
-                  kicker={content.formKicker}
-                  title={content.formTitle}
-                  subtitle={content.formSubtitle}
-                  buttonLabel={content.formButtonLabel}
-                  note={content.formNote}
-                  avatars={content.formAvatars}
-                />
-              </div>
-            </motion.div>
-          </Tilt3D>
+          <LeadForm
+            source="home"
+            kicker={content.formKicker}
+            title={content.formTitle}
+            subtitle={content.formSubtitle}
+            buttonLabel={content.formButtonLabel}
+            note={content.formNote}
+            avatars={content.formAvatars}
+          />
         </motion.div>
       </div>
     </section>

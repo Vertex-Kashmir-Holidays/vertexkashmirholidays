@@ -753,16 +753,16 @@ function shortRef(bookingId: string): string {
   return bookingId.slice(-8).toUpperCase();
 }
 
-// Customer-portal links for the booking emails. All point to authenticated,
-// ownership-scoped account routes (session-secured); unauthenticated clicks are
-// bounced to /login by the middleware, so a forwarded email can never expose
-// another customer's booking.
+// Customer-portal links for the booking emails. Every link points to a
+// middleware-protected account page (never a raw API endpoint): unauthenticated
+// or forwarded clicks are bounced to /login, so a leaked email can never expose
+// another customer's booking — and the invoice/receipt PDFs download from inside
+// the booking page itself (the PDF is also attached to the email).
 function portalUrls(bookingId: string) {
   const base = siteUrl();
   return {
     login: `${base}/login`,
     view: `${base}/account/bookings/${bookingId}`,
-    invoice: `${base}/api/account/bookings/${bookingId}/invoice`,
     portal: `${base}/account/bookings`,
   };
 }
@@ -786,9 +786,9 @@ export function bookingPortalSectionHtml(bookingId: string): string {
                 <tr>
                   <td style="padding:18px 20px;font-family:Arial,Helvetica,sans-serif">
                     <p style="margin:0 0 4px;color:${BRAND};font-size:14px;font-weight:700">Your Customer Dashboard</p>
-                    <p style="margin:0 0 10px;color:#444444;font-size:12.5px;line-height:1.6">Manage your booking anytime from your customer dashboard — view status, payments and documents.</p>
+                    <p style="margin:0 0 10px;color:#444444;font-size:12.5px;line-height:1.6">Log in to manage your booking — view status, payments and download your invoice &amp; receipts securely.</p>
                     <p style="margin:0 0 12px;color:#666666;font-size:12.5px">Booking Reference: <strong style="color:#1a1a1a">${escapeHtml(ref)}</strong></p>
-                    ${btn(u.view, "View Booking", true)}${btn(u.invoice, "Download Invoice", false)}${btn(u.login, "Login to Account", false)}
+                    ${btn(u.view, "View Booking", true)}${btn(u.login, "Login to Account", false)}
                   </td>
                 </tr>
               </table>
@@ -801,10 +801,9 @@ export function bookingPortalSectionText(bookingId: string): string {
   return [
     "",
     "── Your Customer Dashboard ──",
-    "Manage your booking anytime from your customer dashboard.",
+    "Log in to manage your booking and download your invoice & receipts securely.",
     `Booking Reference: ${shortRef(bookingId)}`,
     `View Booking:     ${u.view}`,
-    `Download Invoice: ${u.invoice}`,
     `Login to Account: ${u.login}`,
   ].join("\n");
 }

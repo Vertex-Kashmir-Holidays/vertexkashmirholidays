@@ -36,8 +36,11 @@ interface LeadFormProps {
   className?: string;
 }
 
+// Match the country-aware PhoneInput (.input-wrap): solid card background,
+// the same input border, and an identical primary focus ring — so Name, Email
+// and Phone read as one consistent field set.
 const inputBase =
-  "w-full rounded-xl border border-border bg-foreground/[.04] px-4 py-3 text-[14px] text-foreground placeholder-foreground/45 outline-none ring-primary/60 transition focus:bg-foreground/10 focus:ring-2";
+  "w-full rounded-xl border border-input bg-card px-4 py-3 text-[14px] text-foreground placeholder-foreground/45 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25";
 
 export function LeadForm({
   source,

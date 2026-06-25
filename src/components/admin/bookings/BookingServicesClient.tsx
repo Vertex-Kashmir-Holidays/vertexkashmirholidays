@@ -142,6 +142,8 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
   // lock. Replaces the old window.confirm() so we never use a browser alert.
   const [dialog, setDialog] = useState<null | "email" | "confirm">(null);
   const [savingEmail, startSaveEmail] = useTransition();
+  // Edit booking details (guest contact + trip/amount) — esp. for direct bookings.
+  const [editOpen, setEditOpen] = useState(false);
 
   // Amount actually in effect for a row: the live (blurred) value if present, else
   // the persisted amount. Drafts default to 0 until edited.
@@ -308,6 +310,15 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
 
       {/* Summary */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="font-bold text-foreground text-sm">Booking Details</h3>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit Details
+          </button>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-xs">
           <Detail label="Customer" value={booking.lead?.name ?? booking.customer?.name ?? booking.guestName} sub={booking.lead?.phone ?? booking.guestPhone} />
           <Detail label="Email" value={email || "Not provided"} />
@@ -519,6 +530,159 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
           onConfirm={performLock}
         />
       )}
+
+      {editOpen && (
+        <EditDetailsModal
+          booking={booking}
+          locked={locked}
+          paidAmount={finance.paidAmount}
+          servicesTotal={finance.servicesTotal}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => { setEditOpen(false); router.refresh(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Edit booking details ──────────────────────────────────────────────────────
+// Correct the guest's contact details and (while services are unlocked) the trip
+// dates, traveller count and booking amount. Built primarily for direct/website
+// bookings, where these values come straight from the customer's checkout form.
+function EditDetailsModal({
+  booking,
+  locked,
+  paidAmount,
+  servicesTotal,
+  onClose,
+  onSaved,
+}: {
+  booking: BookingData;
+  locked: boolean;
+  paidAmount: number;
+  servicesTotal: number;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [guestName, setGuestName] = useState(booking.guestName);
+  const [guestPhone, setGuestPhone] = useState(booking.guestPhone);
+  const [guestEmail, setGuestEmail] = useState(booking.guestEmail ?? "");
+  const [travelDate, setTravelDate] = useState(booking.travelDate.slice(0, 10));
+  const [travellers, setTravellers] = useState(String(booking.travellers));
+  const [amount, setAmount] = useState(String(booking.amount));
+  const [saving, start] = useTransition();
+
+  // A reduced amount can't fall below what's already paid or the services total.
+  const amountFloor = Math.max(paidAmount, servicesTotal);
+
+  function submit() {
+    if (guestName.trim().length < 2) return toast.error("Enter the guest's name.");
+    if (guestPhone.trim().length < 6) return toast.error("Enter a valid phone number.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) return toast.error("Enter a valid email address.");
+
+    const payload: Record<string, unknown> = {
+      guestName: guestName.trim(),
+      guestPhone: guestPhone.trim(),
+      guestEmail: guestEmail.trim(),
+    };
+    // Trip + money fields only when unlocked (the server enforces the same rule).
+    if (!locked) {
+      if (!travelDate) return toast.error("Choose a travel date.");
+      const t = parseInt(travellers, 10);
+      if (!t || t < 1) return toast.error("Enter the number of travellers.");
+      const amt = parseFloat(amount);
+      if (Number.isNaN(amt) || amt < 0) return toast.error("Enter a valid amount.");
+      if (amt < amountFloor) return toast.error(`Amount can't be less than ${inr(amountFloor)} (already paid / services total).`);
+      payload.travelDate = travelDate;
+      payload.travellers = t;
+      payload.amount = amt;
+    }
+
+    start(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${booking.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const j = (await res.json().catch(() => ({}))) as { error?: unknown };
+        if (!res.ok) {
+          const msg = typeof j.error === "string" ? j.error : "Could not save the booking details.";
+          toast.error(msg);
+          return;
+        }
+        toast.success("Booking details updated.");
+        onSaved();
+      } catch {
+        toast.error("An error occurred.");
+      }
+    });
+  }
+
+  const fieldCls = "w-full px-2.5 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary disabled:opacity-60 disabled:cursor-not-allowed";
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div onClick={(e) => e.stopPropagation()} className="relative z-10 w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h4 className="font-display text-base font-bold text-foreground">Edit booking details</h4>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Guest name <span className="text-red-500">*</span></label>
+            <input value={guestName} onChange={(e) => setGuestName(e.target.value)} className={fieldCls} placeholder="Full name" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Phone <span className="text-red-500">*</span></label>
+              <input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} className={fieldCls} placeholder="+91 …" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Email <span className="text-red-500">*</span></label>
+              <input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} className={fieldCls} placeholder="customer@example.com" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Travel date</label>
+              <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} disabled={locked} className={fieldCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Travellers</label>
+              <input type="number" min={1} value={travellers} onChange={(e) => setTravellers(e.target.value)} disabled={locked} className={fieldCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Booking amount (₹)</label>
+            <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} disabled={locked} className={fieldCls} />
+            {!locked && amountFloor > 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">Minimum {inr(amountFloor)} (already paid / services total).</p>
+            )}
+          </div>
+
+          {locked && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px]">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-muted-foreground">Services are locked — travel date, travellers and amount can no longer be changed. Contact details remain editable.</p>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <button onClick={submit} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save changes
+            </button>
+            <button onClick={onClose} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

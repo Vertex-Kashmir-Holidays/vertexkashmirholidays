@@ -22,6 +22,7 @@ export const LEAD_SOURCES = [
   "tour-detail",
   "activities",
   "activity-detail",
+  "about",
   "contact",
   "campaign",
 ] as const;

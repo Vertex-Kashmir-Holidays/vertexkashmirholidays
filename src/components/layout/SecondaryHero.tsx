@@ -29,7 +29,7 @@ interface SecondaryHeroProps {
 
 export function SecondaryHero({ image, imageMobile, alt = '', children, aside }: SecondaryHeroProps) {
   return (
-    <section className="relative min-h-[360px] overflow-hidden bg-brand-dark">
+    <section className="relative overflow-hidden bg-brand-dark">
       {image && (
         <motion.div
           className="absolute inset-0"
@@ -39,19 +39,23 @@ export function SecondaryHero({ image, imageMobile, alt = '', children, aside }:
         >
           <picture className="block h-full w-full">
             {imageMobile && <source media="(max-width: 640px)" srcSet={imageMobile} />}
-            <img src={image} alt={alt} className="h-full w-full object-cover" />
+            <img src={image} alt={alt} className="h-full w-full object-cover object-center" />
           </picture>
         </motion.div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/45 to-transparent" />
+      {/* Scrim: vertical on mobile (content + card stack, so darken top→bottom for
+          readability), horizontal from lg up (two columns, so darken left→right
+          and let the photo breathe behind the card). */}
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/85 via-brand-dark/55 to-brand-dark/80 lg:bg-gradient-to-r lg:from-brand-dark/85 lg:via-brand-dark/45 lg:to-transparent" />
 
-      {/* min-h matches the section so short heroes still fill the band; the
-          flex column vertically centres content within the nav-cleared area. */}
-      <div className="relative mx-auto flex min-h-[360px] w-full max-w-[1300px] flex-col justify-center px-5 pb-12 pt-28 sm:px-6 sm:pb-14 sm:pt-32">
+      {/* Responsive min-height keeps a consistent band without crushing content on
+          small phones; the flex column vertically centres within the nav-cleared
+          area. */}
+      <div className="relative mx-auto flex min-h-[380px] w-full max-w-[1300px] flex-col justify-center px-5 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-32 lg:min-h-[460px]">
         {aside ? (
-          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_minmax(0,0.85fr)]">
-            <div>{children}</div>
-            <div className="lg:justify-self-end">{aside}</div>
+          <div className="grid items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
+            <div className="min-w-0">{children}</div>
+            <div className="w-full max-w-md justify-self-center lg:justify-self-end">{aside}</div>
           </div>
         ) : (
           children

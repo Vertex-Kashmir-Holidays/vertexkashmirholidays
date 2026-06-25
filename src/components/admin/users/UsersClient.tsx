@@ -289,7 +289,7 @@ export function UsersClient({
                                 onClick={() => handlePermanentDelete(u)}
                                 disabled={isPending || isSelf || lockedSuper}
                                 title="Delete permanently"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-destructive/40 text-destructive hover:bg-red-500 disabled:opacity-40"
                               >
                                 <Trash2 className="w-3.5 h-3.5" /> Forever
                               </button>
@@ -416,7 +416,7 @@ function DeleteModal({
                 type="button"
                 onClick={() => setConfirmPermanent(true)}
                 disabled={isPending}
-                className="w-full text-left rounded-xl border border-destructive/40 p-3 hover:bg-destructive/10 disabled:opacity-50"
+                className="w-full text-left rounded-xl border border-destructive/40 p-3 hover:bg-red-500 disabled:opacity-50"
               >
                 <span className="block text-sm font-semibold text-destructive">Permanent delete</span>
                 <span className="block text-[11px] text-muted-foreground mt-0.5">
@@ -443,7 +443,7 @@ function DeleteModal({
                 type="button"
                 onClick={onPermanent}
                 disabled={isPending}
-                className="px-4 py-2 text-sm font-semibold rounded-xl bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50"
+                className="px-4 py-2 text-sm font-semibold rounded-xl bg-red-500 text-white hover:bg-red-500 disabled:opacity-50"
               >
                 {isPending ? "Deleting…" : "Delete permanently"}
               </button>

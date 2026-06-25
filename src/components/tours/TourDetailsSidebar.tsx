@@ -92,7 +92,7 @@ export function TourDetailsSidebar({
         transition={{ duration: 0.5 }}
       >
         {discountPct ? (
-          <span className="rounded-md bg-badge-red px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white">
+          <span className="rounded-md bg-badge-green px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white">
             {discountPct}% OFF
           </span>
         ) : null}

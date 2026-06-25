@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Play } from 'lucide-react';
 import { renderMint } from '@/lib/accents';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import type { AboutHeroData } from '@/types/about';
 
 interface AboutHeroProps {
@@ -14,7 +15,12 @@ interface AboutHeroProps {
 
 export function AboutHero({ data }: AboutHeroProps) {
   return (
-    <SecondaryHero image={data.image} imageMobile={data.imageMobile} alt="Traveller overlooking a Kashmir valley">
+    <SecondaryHero
+      image={data.image}
+      imageMobile={data.imageMobile}
+      alt="Traveller overlooking a Kashmir valley"
+      aside={<HeroLeadCard source="about" />}
+    >
         <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
           <a href="/" className="transition hover:text-white">Home</a>
           <span>›</span>

@@ -114,7 +114,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourName, tourSlug, price,
                   <div className="flex items-end justify-between rounded-xl border border-border bg-muted px-4 py-3">
                     <div>
                       {discountPct ? (
-                        <span className="mb-1 inline-block rounded-md bg-badge-red px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-white">
+                        <span className="mb-1 inline-block rounded-md bg-red-500 px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-white">
                           {discountPct}% OFF
                         </span>
                       ) : null}
