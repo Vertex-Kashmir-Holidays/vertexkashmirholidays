@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import type { ContactHeroData, ContactHeroFeatureData } from '@/types/contact';
 
 interface ContactHeroProps {
@@ -12,7 +13,12 @@ interface ContactHeroProps {
 
 export function ContactHero({ data, features }: ContactHeroProps) {
   return (
-    <SecondaryHero image={data.image} imageMobile={data.imageMobile} alt="Houseboats on Dal Lake at dusk">
+    <SecondaryHero
+      image={data.image}
+      imageMobile={data.imageMobile}
+      alt="Houseboats on Dal Lake at dusk"
+      aside={<HeroLeadCard source="contact" />}
+    >
         <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
           <a href="/" className="transition hover:text-white">Home</a>
           <span>›</span>

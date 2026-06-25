@@ -21,7 +21,6 @@ interface AffordabilityWidgetProps {
 }
 
 export function AffordabilityWidget({ amount,
-  className,
   title = "EMI & payment options", }: AffordabilityWidgetProps) {
   const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
   const amountPaise = Math.round(amount * 100);
@@ -43,28 +42,28 @@ export function AffordabilityWidget({ amount,
   if (!key) return null;
 
  return (
-    <div className={className}>
+    <>
       <Script
         src="https://cdn.razorpay.com/widgets/affordability/affordability.js"
         strategy="afterInteractive"
         onLoad={initWidget}
       />
-      <motion.div
-          className="mt-14 mx-auto max-w-2xl"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-      {title && (
-        <p className="mb-4 text-center text-[12px] font-extrabold tracking-wider text-camp-accent">
-          {title}
-        </p>
-      )}
-        <div className="text-center" id="razorpay-affordability-widget" />
-      </div>
+     <motion.div
+        className="mt-14 mx-auto max-w-2xl"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+            {title && (
+              <p className="mb-4 text-center text-[13.5px] font-bold">
+                {title}
+              </p>
+            )}
+            <div className="text-center" id="razorpay-affordability-widget" />
+          </div>
       </motion.div>
-    </div>
+    </>
   );
 }

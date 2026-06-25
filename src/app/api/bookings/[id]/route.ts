@@ -14,6 +14,15 @@ const patchSchema = z.object({
   inclusions: z.array(z.string().trim().min(1).max(120)).optional(),
   // Customer email — required before services can be locked (invoice destination).
   guestEmail: z.string().trim().email("Enter a valid email address").max(200).optional(),
+  // ── Editable booking details (esp. for direct/website bookings) ──
+  // Contact info (name/phone/email) is always editable. Trip + money fields
+  // (travelDate/travellers/amount) feed the invoice, so they're blocked once
+  // services are locked — same rule as the services sheet.
+  guestName: z.string().trim().min(2, "Enter the guest's name").max(120).optional(),
+  guestPhone: z.string().trim().min(6, "Enter a valid phone number").max(20).optional(),
+  travelDate: z.string().trim().min(1).optional(),
+  travellers: z.coerce.number().int().positive().max(50).optional(),
+  amount: z.coerce.number().min(0).optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -44,6 +53,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       discountType: true,
       discountValue: true,
       payments: { select: { amount: true } },
+      services: { select: { amount: true } },
     },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -51,13 +61,39 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  const { status, discountType, discountValue, inclusions, guestEmail } = parsed.data;
+  const { status, discountType, discountValue, inclusions, guestEmail, guestName, guestPhone, travelDate, travellers, amount } = parsed.data;
 
-  // Discount and inclusions are part of the services sheet — blocked once locked.
-  // guestEmail is contact info (not a service field), so it stays editable.
-  const touchesServices = discountType !== undefined || discountValue !== undefined || inclusions !== undefined;
+  // Discount, inclusions, travel date, travellers and amount all feed the locked
+  // services sheet / emailed invoice — blocked once locked. Contact info
+  // (name/phone/email) stays editable at all times.
+  const touchesServices =
+    discountType !== undefined || discountValue !== undefined || inclusions !== undefined ||
+    travelDate !== undefined || travellers !== undefined || amount !== undefined;
   if (touchesServices && existing.servicesLocked) {
-    return NextResponse.json({ error: "Services are locked and cannot be changed." }, { status: 423 });
+    return NextResponse.json({ error: "Services are locked — travel, traveller and amount details can no longer be changed." }, { status: 423 });
+  }
+
+  // Parse + validate a new travel date when supplied.
+  let travel: Date | undefined;
+  if (travelDate !== undefined) {
+    travel = new Date(travelDate);
+    if (Number.isNaN(travel.getTime())) {
+      return NextResponse.json({ error: "Enter a valid travel date." }, { status: 422 });
+    }
+  }
+
+  // A reduced booking amount can never drop below what's already been paid or
+  // below the current services total (which the amount caps).
+  if (amount !== undefined) {
+    const paid = existing.payments.reduce((t, p) => t + p.amount, 0);
+    const servicesTotal = existing.services.reduce((t, s) => t + s.amount, 0);
+    const floor = Math.max(paid, servicesTotal);
+    if (amount < floor) {
+      return NextResponse.json(
+        { error: `Amount can't be less than ₹${floor.toLocaleString("en-IN")} (already paid / services total).` },
+        { status: 422 },
+      );
+    }
   }
 
   // ── Cancellation business rules (server-authoritative) ──
@@ -92,6 +128,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(discountValue !== undefined ? { discountValue } : {}),
       ...(inclusions !== undefined ? { inclusions: JSON.stringify(inclusions) } : {}),
       ...(guestEmail !== undefined ? { guestEmail } : {}),
+      ...(guestName !== undefined ? { guestName } : {}),
+      ...(guestPhone !== undefined ? { guestPhone } : {}),
+      ...(travel !== undefined ? { travelDate: travel } : {}),
+      ...(travellers !== undefined ? { travellers } : {}),
+      ...(amount !== undefined ? { amount } : {}),
     },
   });
   return NextResponse.json(updated);
