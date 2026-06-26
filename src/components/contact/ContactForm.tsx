@@ -17,6 +17,7 @@ import { toE164 } from '@/lib/auth/validation';
 import { nameField, phoneField } from '@/lib/leads/schema';
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
 import type { ContactFormContent } from '@/types/contact';
+import { trackLeadSubmit } from '@/lib/analytics';
 
 // Reuses the shared lead primitives (name sanitize + E.164 phone) so the
 // contact form validates identically to the rest of the site. Email is required
@@ -96,7 +97,8 @@ export function ContactForm({ content }: ContactFormProps) {
           return;
         }
         throw new Error(j.error ?? 'Request failed');
-      }
+      }  
+      trackLeadSubmit("contact");
       toast.success("Message sent! We'll reply within 2 hours.");
       reset();
       setNational('');

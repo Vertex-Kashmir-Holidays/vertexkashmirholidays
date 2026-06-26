@@ -83,7 +83,9 @@ function withLeadFacts(data: ItineraryData, lead: LeadItinerarySeed): ItineraryD
     preparedFor: f.preparedFor,
     travelDates: f.travelDates,
     travelers: f.travelers,
-    packageType: f.packageType,
+   // When category is null (direct booking), preserve the existing packageType so
+   // a tour-name seeded at creation isn't reset to "CUSTOM PACKAGE" on every sync.
+   packageType: lead.category ? f.packageType : (data.packageType || f.packageType),
     // Keep the info strip's Duration tile in sync with the cover.
     info: data.info.map((it) => (it.id === "info-1" ? { ...it, value: f.durationPlain } : it)),
   };

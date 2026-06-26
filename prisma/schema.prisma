@@ -297,6 +297,7 @@ model Booking {
   // Amounts are always derived server-side; this only records the choice.
   paymentOption   String?
   travelDate      DateTime
+  travelEndDate   DateTime?
   travellers      Int           @default(1)
   guestName       String
   guestEmail      String?

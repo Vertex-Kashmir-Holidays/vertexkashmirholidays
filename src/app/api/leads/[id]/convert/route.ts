@@ -105,6 +105,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         amount: bookingAmount,
         status: "PENDING",
         travelDate: lead.startDate ?? new Date(),
+        travelEndDate: lead.endDate ?? null,
         travellers: travellers > 0 ? travellers : 1,
         guestName: lead.name,
         guestEmail: lead.email,

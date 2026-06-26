@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { WhatsAppIcon } from '@/components/icons/brand';
+import { trackWhatsappClick } from '@/lib/analytics';
 
 interface ContactWhatsAppFloatProps {
   text: string;
@@ -15,6 +16,7 @@ export function ContactWhatsAppFloat({ text, href }: ContactWhatsAppFloatProps) 
     <Link
       href={href}
       target="_blank"
+      onClick={() => trackWhatsappClick('float')}
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-40 flex items-center gap-3"
       aria-label="Chat with us on WhatsApp"

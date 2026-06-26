@@ -94,7 +94,7 @@ export function PhoneInput({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Select country code"
+        aria-label={`Select country code, currently +${dial}`}
         className="ml-3.5 flex shrink-0 items-center gap-1.5 border-r border-border pr-3 text-[12.5px] font-semibold"
       >
         <span aria-hidden="true">{flagOf(country)}</span>

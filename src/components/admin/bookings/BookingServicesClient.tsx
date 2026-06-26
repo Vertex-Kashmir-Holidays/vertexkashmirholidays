@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,7 +11,9 @@ import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
 import { canEditDriver, type DriverDetails } from "@/lib/bookings/driver";
 import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
 
+
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
+
 
 interface Service {
   id: string;
@@ -26,6 +29,7 @@ interface Service {
   sortOrder: number;
 }
 
+
 interface Payment {
   id: string;
   amount: number;
@@ -37,6 +41,7 @@ interface Payment {
   gstAmount: number | null;
   createdAt: string;
 }
+
 
 interface BookingData {
   id: string;
@@ -52,7 +57,10 @@ interface BookingData {
   guestName: string;
   guestEmail: string | null;
   guestPhone: string;
+  address: string | null;
+  requirements: string | null;
   tourTitle: string | null;
+  isWebsiteBooking: boolean;
   customer: { name: string | null; email: string } | null;
   lead: { id: string; name: string; phone: string; email: string | null; assignedTo: { name: string | null; email: string } | null } | null;
   services: Service[];
@@ -60,8 +68,10 @@ interface BookingData {
   driver: DriverDetails | null;
 }
 
+
 type FieldKey = "name" | "location" | "nights" | "roomType" | "pickup" | "dropoff" | "timing" | "amount";
 interface FieldDef { key: FieldKey; label: string; type: "text" | "number"; }
+
 
 const SECTIONS: { kind: Kind; title: string; icon: typeof Hotel; addLabel: string; fields: FieldDef[] }[] = [
   {
@@ -101,10 +111,13 @@ const SECTIONS: { kind: Kind; title: string; icon: typeof Hotel; addLabel: strin
   },
 ];
 
+
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
+
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
 
 // "12 Jul 2026 – 18 Jul 2026" when an end date exists and differs, else the single date.
 function formatTravel(start: string, end: string | null): string {
@@ -113,10 +126,22 @@ function formatTravel(start: string, end: string | null): string {
   }
   return fmtDate(start);
 }
+// Booking details are editable only when travel is at least 2 full days away.
+function canEditDetails(travelDate: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const travel = new Date(travelDate);
+  travel.setHours(0, 0, 0, 0);
+  return (travel.getTime() - today.getTime()) / (1000 * 60 * 60 * 24) >= 2;
+}
+
+
 const inputCls =
   "w-full px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary disabled:opacity-60";
 
+
 let draftSeq = 0;
+
 
 export function BookingServicesClient({ booking, gstRates }: { booking: BookingData; gstRates: number[] }) {
   const router = useRouter();
@@ -144,11 +169,14 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
   const [savingEmail, startSaveEmail] = useTransition();
   // Edit booking details (guest contact + trip/amount) — esp. for direct bookings.
   const [editOpen, setEditOpen] = useState(false);
+  const canEdit = canEditDetails(booking.travelDate);
+
 
   // Amount actually in effect for a row: the live (blurred) value if present, else
   // the persisted amount. Drafts default to 0 until edited.
   const amountOf = (row: Service) =>
     liveAmounts[row.id] ?? row.amount;
+
 
   // Services as the finance calc sees them — persisted + drafts, with live amounts.
   const effectiveServices = useMemo(
@@ -156,6 +184,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [services, drafts, liveAmounts],
   );
+
 
   const finance = useMemo(
     () =>
@@ -169,10 +198,12 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     [booking.amount, discountType, discountValue, payments, effectiveServices],
   );
 
+
   // Record a row's amount on blur so totals react immediately.
   function setLiveAmount(id: string, amount: number) {
     setLiveAmounts((prev) => (prev[id] === amount ? prev : { ...prev, [id]: amount }));
   }
+
 
   function capError(amount: number, excludeId: string | null): string | null {
     const others = [...services, ...drafts]
@@ -184,12 +215,14 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     return null;
   }
 
+
   function addDraft(kind: Kind) {
     setDrafts((d) => [
       ...d,
       { id: `draft-${++draftSeq}`, kind, name: "", amount: 0, location: null, nights: null, roomType: null, pickup: null, dropoff: null, timing: null, sortOrder: services.length + d.length },
     ]);
   }
+
 
   // ── discount / inclusions persistence ──
   function saveBookingMeta(patch: Record<string, unknown>) {
@@ -212,9 +245,11 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     });
   }
 
+
   function saveDiscount() {
     saveBookingMeta({ discountType: discountType || null, discountValue: discountValue ? parseFloat(discountValue) : 0 });
   }
+
 
   function addInclusion() {
     const v = inclusionInput.trim();
@@ -230,8 +265,16 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     saveBookingMeta({ inclusions: next });
   }
 
+
   // ── lock services ──
   const [locking, startLock] = useTransition();
+
+
+  // At least one persisted HOTEL and one TRANSPORT row must exist before locking.
+  const hasHotel = services.some((s) => s.kind === "HOTEL");
+  const hasTransport = services.some((s) => s.kind === "TRANSPORT");
+  const canLock = hasHotel && hasTransport;
+
 
   // Open the lock flow: block on an over-cap total, then route to the email prompt
   // (when no customer email yet) or straight to the confirm dialog.
@@ -242,6 +285,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     }
     setDialog(email.trim() ? "confirm" : "email");
   }
+
 
   // Persist a newly entered customer email, then advance to the confirm step.
   function saveEmailAndContinue(value: string) {
@@ -266,6 +310,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
       }
     });
   }
+
 
   function performLock() {
     startLock(async () => {
@@ -293,31 +338,26 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     });
   }
 
-  return (
-    <div className="space-y-5 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="font-display font-extrabold text-foreground text-xl">Booking Services</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">Ref {booking.id.slice(-8).toUpperCase()}</p>
-        </div>
-        {locked && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-            <Lock className="w-4 h-4" /> Services locked
-          </span>
-        )}
-      </div>
 
+  return (
+    <div className="space-y-5">
       {/* Summary */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="font-bold text-foreground text-sm">Booking Details</h3>
-          <button
-            onClick={() => setEditOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Edit Details
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setEditOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit Details
+            </button>
+          )}
+          {!canEdit && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+              <Lock className="w-3.5 h-3.5" /> Editing closed
+            </span>
+          )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-xs">
           <Detail label="Customer" value={booking.lead?.name ?? booking.customer?.name ?? booking.guestName} sub={booking.lead?.phone ?? booking.guestPhone} />
@@ -328,10 +368,13 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
             <Detail label="Assignee" value={booking.lead.assignedTo.name ?? booking.lead.assignedTo.email} sub={booking.lead.assignedTo.name ? booking.lead.assignedTo.email : undefined} />
           )}
           <Detail label="Travel Dates" value={formatTravel(booking.travelDate, booking.travelEndDate)} sub={`${booking.travellers} traveller${booking.travellers === 1 ? "" : "s"}`} />
+          {booking.address && <Detail label="Address" value={booking.address} />}
+          {booking.requirements && <Detail label="Requirements" value={booking.requirements} />}
           <Detail label="Booking Amount" value={inr(finance.bookingAmount)} strong />
           <Detail label="Paid Amount" value={inr(finance.paidAmount)} strong />
           <Detail label="Balance" value={inr(finance.balance)} strong />
         </div>
+
 
         {/* Email is mandatory to lock services (invoice destination). */}
         {!email.trim() && !locked && (
@@ -351,6 +394,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         )}
       </div>
 
+
       {/* Service sections */}
       {SECTIONS.map((section) => {
         const persisted = services.filter((s) => s.kind === section.kind);
@@ -363,6 +407,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
               <h3 className="font-bold text-foreground text-sm flex items-center gap-2"><Icon className="w-4 h-4" /> {section.title}</h3>
               <span className="text-xs text-muted-foreground">Total: <span className="font-bold text-foreground">{inr(sectionTotal)}</span></span>
             </div>
+
 
             <div className="space-y-2">
               {persisted.length === 0 && sectionDrafts.length === 0 && (
@@ -395,6 +440,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
               ))}
             </div>
 
+
             {!locked && (
               <button
                 onClick={() => addDraft(section.kind)}
@@ -406,6 +452,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
           </div>
         );
       })}
+
 
       {/* Inclusions */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
@@ -437,6 +484,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         )}
       </div>
 
+
       {/* Discount + Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
@@ -462,6 +510,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
           )}
         </div>
 
+
         <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
           <h3 className="font-bold text-foreground text-sm mb-3">Price Summary</h3>
           <dl className="space-y-1.5 text-sm">
@@ -480,6 +529,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         </div>
       </div>
 
+
       {/* Payments ledger */}
       <PaymentsCard
         bookingId={booking.id}
@@ -491,13 +541,19 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         onRemoved={(pid) => setPayments((prev) => prev.filter((x) => x.id !== pid))}
       />
 
+
       {/* Lock CTA */}
       {!locked ? (
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end gap-2">
+          {!canLock && (
+            <p className="text-xs text-muted-foreground">
+              Add at least one{!hasHotel && !hasTransport ? " hotel and one cab" : !hasHotel ? " hotel" : " cab"} before locking.
+            </p>
+          )}
           <button
             onClick={openLock}
-            disabled={locking}
-            className="inline-flex items-center gap-2 text-sm font-bold bg-amber-600 text-white px-5 py-2.5 rounded-xl hover:bg-amber-700 disabled:opacity-50"
+            disabled={locking || !canLock}
+            className="inline-flex items-center gap-2 text-sm font-bold bg-amber-600 text-white px-5 py-2.5 rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {locking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
             Lock Services &amp; Email Summary
@@ -509,6 +565,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         </div>
       )}
 
+
       {/* Driver & vehicle — only once services are locked */}
       {locked && (
         <DriverSection
@@ -517,6 +574,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
           initialDriver={booking.driver}
         />
       )}
+
 
       {dialog && (
         <LockDialog
@@ -531,10 +589,13 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
         />
       )}
 
+
       {editOpen && (
         <EditDetailsModal
           booking={booking}
           locked={locked}
+          canEdit={canEdit}
+          isWebsiteBooking={booking.isWebsiteBooking}
           paidAmount={finance.paidAmount}
           servicesTotal={finance.servicesTotal}
           onClose={() => setEditOpen(false)}
@@ -545,6 +606,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
   );
 }
 
+
 // ── Edit booking details ──────────────────────────────────────────────────────
 // Correct the guest's contact details and (while services are unlocked) the trip
 // dates, traveller count and booking amount. Built primarily for direct/website
@@ -552,6 +614,8 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
 function EditDetailsModal({
   booking,
   locked,
+  canEdit,
+  isWebsiteBooking,
   paidAmount,
   servicesTotal,
   onClose,
@@ -559,6 +623,8 @@ function EditDetailsModal({
 }: {
   booking: BookingData;
   locked: boolean;
+  canEdit: boolean;
+  isWebsiteBooking: boolean;
   paidAmount: number;
   servicesTotal: number;
   onClose: () => void;
@@ -567,26 +633,42 @@ function EditDetailsModal({
   const [guestName, setGuestName] = useState(booking.guestName);
   const [guestPhone, setGuestPhone] = useState(booking.guestPhone);
   const [guestEmail, setGuestEmail] = useState(booking.guestEmail ?? "");
+  const [address, setAddress] = useState(booking.address ?? "");
+  const [requirements, setRequirements] = useState(booking.requirements ?? "");
   const [travelDate, setTravelDate] = useState(booking.travelDate.slice(0, 10));
+  const [travelEndDate, setTravelEndDate] = useState(
+    booking.travelEndDate ? booking.travelEndDate.slice(0, 10) : "",
+  );
   const [travellers, setTravellers] = useState(String(booking.travellers));
   const [amount, setAmount] = useState(String(booking.amount));
   const [saving, start] = useTransition();
 
+
+  const tripFieldsEditable = !locked && canEdit;
+
+
   // A reduced amount can't fall below what's already paid or the services total.
   const amountFloor = Math.max(paidAmount, servicesTotal);
+
 
   function submit() {
     if (guestName.trim().length < 2) return toast.error("Enter the guest's name.");
     if (guestPhone.trim().length < 6) return toast.error("Enter a valid phone number.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) return toast.error("Enter a valid email address.");
+    if (guestEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      return toast.error("Enter a valid email address.");
+    }
+
 
     const payload: Record<string, unknown> = {
       guestName: guestName.trim(),
       guestPhone: guestPhone.trim(),
-      guestEmail: guestEmail.trim(),
+      guestEmail: guestEmail.trim() || undefined,
+      address: address.trim() || null,
+      requirements: requirements.trim() || null,
     };
-    // Trip + money fields only when unlocked (the server enforces the same rule).
-    if (!locked) {
+
+
+    if (tripFieldsEditable) {
       if (!travelDate) return toast.error("Choose a travel date.");
       const t = parseInt(travellers, 10);
       if (!t || t < 1) return toast.error("Enter the number of travellers.");
@@ -594,9 +676,11 @@ function EditDetailsModal({
       if (Number.isNaN(amt) || amt < 0) return toast.error("Enter a valid amount.");
       if (amt < amountFloor) return toast.error(`Amount can't be less than ${inr(amountFloor)} (already paid / services total).`);
       payload.travelDate = travelDate;
+      payload.travelEndDate = travelEndDate || null;
       payload.travellers = t;
       payload.amount = amt;
     }
+
 
     start(async () => {
       try {
@@ -619,12 +703,14 @@ function EditDetailsModal({
     });
   }
 
+
   const fieldCls = "w-full px-2.5 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary disabled:opacity-60 disabled:cursor-not-allowed";
+
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div onClick={(e) => e.stopPropagation()} className="relative z-10 w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
+      <div onClick={(e) => e.stopPropagation()} className="relative z-10 w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
           <h4 className="font-display text-base font-bold text-foreground">Edit booking details</h4>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
@@ -642,35 +728,70 @@ function EditDetailsModal({
               <input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} className={fieldCls} placeholder="+91 …" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Email <span className="text-red-500">*</span></label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Email</label>
               <input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} className={fieldCls} placeholder="customer@example.com" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Travel date</label>
-              <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} disabled={locked} className={fieldCls} />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Travellers</label>
-              <input type="number" min={1} value={travellers} onChange={(e) => setTravellers(e.target.value)} disabled={locked} className={fieldCls} />
-            </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Address</label>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} className={fieldCls} placeholder="Billing / correspondence address" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Booking amount (₹)</label>
-            <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} disabled={locked} className={fieldCls} />
-            {!locked && amountFloor > 0 && (
-              <p className="mt-1 text-[11px] text-muted-foreground">Minimum {inr(amountFloor)} (already paid / services total).</p>
-            )}
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Special requirements</label>
+            <textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} rows={2} className={fieldCls} placeholder="Any dietary, accessibility or other requirements…" />
           </div>
 
-          {locked && (
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Start date</label>
+              <input type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} disabled={!tripFieldsEditable} className={fieldCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">End date</label>
+              <input
+                type="date"
+                value={travelEndDate}
+                onChange={(e) => setTravelEndDate(e.target.value)}
+                disabled={!tripFieldsEditable}
+                className={fieldCls}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Travellers</label>
+              <input type="number" min={1} value={travellers} onChange={(e) => setTravellers(e.target.value)} disabled={!tripFieldsEditable} className={fieldCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Booking amount (₹)</label>
+              <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} disabled={!tripFieldsEditable || isWebsiteBooking} className={fieldCls} />
+            </div>
+          </div>
+          {isWebsiteBooking && (
+            <div className="flex items-start gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-[11px]">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+              <p className="text-muted-foreground">Online booking — package price was fixed at checkout and cannot be changed.</p>
+            </div>
+          )}
+          {!tripFieldsEditable && amountFloor > 0 && locked && (
             <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px]">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
               <p className="text-muted-foreground">Services are locked — travel date, travellers and amount can no longer be changed. Contact details remain editable.</p>
             </div>
           )}
+          {!tripFieldsEditable && !locked && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px]">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-muted-foreground">Trip details cannot be changed within 2 days of travel. Contact details remain editable.</p>
+            </div>
+          )}
+          {tripFieldsEditable && !isWebsiteBooking && amountFloor > 0 && (
+            <p className="text-[11px] text-muted-foreground">Minimum amount: {inr(amountFloor)} (already paid / services total).</p>
+          )}
+
 
           <div className="flex items-center gap-2 pt-1">
             <button onClick={submit} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60">
@@ -686,6 +807,7 @@ function EditDetailsModal({
     </div>
   );
 }
+
 
 // ── Driver & vehicle section ──────────────────────────────────────────────────
 // Appears after services are locked. Staff can add the assigned driver/vehicle
@@ -706,9 +828,11 @@ function DriverSection({
   const [saving, startSave] = useTransition();
   const editable = canEditDriver(travelDate);
 
+
   const empty: DriverDetails = { driverName: "", driverPhone: "", vehicleNumber: "", vehicleName: "" };
   const [form, setForm] = useState<DriverDetails>(initialDriver ?? empty);
   const [sendEmail, setSendEmail] = useState(true);
+
 
   function openModal() {
     setForm(driver ?? empty);
@@ -716,11 +840,13 @@ function DriverSection({
     setOpen(true);
   }
 
+
   function submit() {
     if (form.driverName.trim().length < 2) return toast.error("Enter the driver's name.");
     if (!isValidPhone(form.driverPhone.trim(), "IN")) return toast.error(PHONE_MESSAGE);
     if (form.vehicleNumber.trim().length < 4) return toast.error("Enter the vehicle number.");
     if (form.vehicleName.trim().length < 2) return toast.error("Enter the vehicle name.");
+
 
     startSave(async () => {
       try {
@@ -756,7 +882,9 @@ function DriverSection({
     });
   }
 
+
   const fieldCls = "w-full px-2.5 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
+
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -779,6 +907,7 @@ function DriverSection({
         )}
       </div>
 
+
       {driver ? (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <DriverFact icon={UserRound} label="Driver" value={driver.driverName} />
@@ -794,9 +923,11 @@ function DriverSection({
         </p>
       )}
 
+
       {driver && !editable && (
         <p className="mt-3 text-[11px] text-muted-foreground">Editing is closed — driver details can only be changed up to one day before travel.</p>
       )}
+
 
       {open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -846,6 +977,7 @@ function DriverSection({
   );
 }
 
+
 function DriverFact({ icon: Icon, label, value }: { icon: typeof Car; label: string; value: string }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/30 p-3">
@@ -857,6 +989,7 @@ function DriverFact({ icon: Icon, label, value }: { icon: typeof Car; label: str
     </div>
   );
 }
+
 
 /**
  * Two-step lock dialog (replaces window.confirm):
@@ -885,6 +1018,7 @@ function LockDialog({
   const [value, setValue] = useState(initialEmail);
   const [error, setError] = useState<string | null>(null);
 
+
   function submitEmail(e: React.FormEvent) {
     e.preventDefault();
     const v = value.trim();
@@ -895,6 +1029,7 @@ function LockDialog({
     setError(null);
     onSaveEmail(v);
   }
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
@@ -962,6 +1097,7 @@ function LockDialog({
   );
 }
 
+
 function Detail({ label, value, sub, strong }: { label: string; value: string; sub?: string; strong?: boolean }) {
   return (
     <div>
@@ -972,6 +1108,7 @@ function Detail({ label, value, sub, strong }: { label: string; value: string; s
   );
 }
 
+
 function Row({ label, value, strong, muted }: { label: string; value: string; strong?: boolean; muted?: boolean }) {
   return (
     <div className="flex items-center justify-between">
@@ -981,7 +1118,9 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
   );
 }
 
+
 interface RowForm { name: string; location: string; nights: string; roomType: string; pickup: string; dropoff: string; timing: string; amount: string; }
+
 
 // Build the API payload + a stable snapshot string from the current form. The
 // snapshot lets us skip no-op saves (so blurring an unchanged field is free).
@@ -999,6 +1138,7 @@ function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
     sortOrder,
   };
 }
+
 
 function ServiceRow({
   bookingId,
@@ -1047,8 +1187,10 @@ function ServiceRow({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+
   const currentSnapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
   const isClean = !!serverId && currentSnapshot === savedSnapshot;
+
 
   // Auto-save the row whenever a field loses focus. No manual Save click needed:
   // a draft is POSTed on its first save and PATCHed thereafter. A name is the one
@@ -1059,9 +1201,11 @@ function ServiceRow({
     const snapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
     if (snapshot === savedSnapshot) return; // unchanged since last save
 
+
     const payload = buildPayload(record.kind, record.sortOrder, form);
     const err = capError(payload.amount, record.id);
     if (err) { setError(err); toast.error(err); return; }
+
 
     start(async () => {
       try {
@@ -1087,6 +1231,7 @@ function ServiceRow({
     });
   }
 
+
   // If the user kept typing while a save was in flight (auto-save is skipped while
   // pending to avoid a duplicate POST), flush the pending changes once the current
   // save settles — but never after an error (wait for the next blur to retry).
@@ -1096,6 +1241,7 @@ function ServiceRow({
     if (currentSnapshot !== savedSnapshot) autoSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pending]);
+
 
   function remove() {
     // A draft that was never persisted is just dropped locally; anything with a
@@ -1115,6 +1261,7 @@ function ServiceRow({
       }
     });
   }
+
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
@@ -1159,6 +1306,7 @@ function ServiceRow({
   );
 }
 
+
 function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdated, onRemoved }: { bookingId: string; payments: Payment[]; gstRates: number[]; balance: number; onAdded: (p: Payment) => void; onUpdated: (p: Payment) => void; onRemoved: (id: string) => void }) {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("PARTIAL");
@@ -1167,8 +1315,10 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
   const [note, setNote] = useState("");
   const [pending, start] = useTransition();
 
+
   // GST is only offered for non-cash methods (server enforces the same rule).
   const gstEligible = !isCashMethod(method);
+
 
   // Once the balance is cleared, there is nothing left to collect — hide the add
   // row and show a totals summary instead.
@@ -1176,6 +1326,7 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
   const totalReceived = payments.filter((p) => p.type !== "REFUND").reduce((t, p) => t + p.amount, 0);
   const refundedTotal = payments.filter((p) => p.type === "REFUND").reduce((t, p) => t + p.amount, 0);
   const gstTotal = payments.reduce((t, p) => t + (p.gstAmount ?? 0), 0);
+
 
   function add() {
     const amt = parseFloat(amount);
@@ -1217,6 +1368,7 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
     });
   }
 
+
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
       <h3 className="font-bold text-foreground text-sm mb-3 flex items-center gap-2"><Wallet className="w-4 h-4" /> Payments</h3>
@@ -1244,6 +1396,7 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
           </tbody>
         </table>
       </div>
+
 
       {fullyPaid ? (
         <div className="mt-4 border-t border-border pt-3 space-y-1.5">
@@ -1312,6 +1465,7 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
   );
 }
 
+
 function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bookingId: string; payment: Payment; gstRates: number[]; onUpdated: (p: Payment) => void; onRemoved: (id: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -1324,6 +1478,7 @@ function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bo
   const gstEligible = !isCashMethod(method);
   const date = new Date(payment.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" });
 
+
   function startEdit() {
     setAmount(String(payment.amount));
     setType(payment.type);
@@ -1332,6 +1487,7 @@ function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bo
     setNote(payment.note ?? "");
     setEditing(true);
   }
+
 
   function save() {
     const amt = parseFloat(amount);
@@ -1363,6 +1519,7 @@ function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bo
     });
   }
 
+
   function del() {
     start(async () => {
       try {
@@ -1379,6 +1536,7 @@ function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bo
       }
     });
   }
+
 
   if (editing) {
     return (
@@ -1422,6 +1580,7 @@ function PaymentRow({ bookingId, payment, gstRates, onUpdated, onRemoved }: { bo
       </tr>
     );
   }
+
 
   return (
     <tr>
