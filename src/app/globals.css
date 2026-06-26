@@ -18,7 +18,7 @@
   --card: 45 86% 97%;             /* #FEFBF2 */
   --card-foreground: 214 68% 14%;
   --muted: 43 55% 87%;            /* #F0E6CC */
-  --muted-foreground: 45 20% 35%; /* #6B6248 */
+  --muted-foreground: 45 20% 33%; /* darkened for WCAG AA contrast ≥4.5:1 */
   --border: 42 48% 82%;           /* #E7DABB */
   --input: 42 48% 82%;
   --ring: 43 49% 53%;             /* #C2A14E gold */
