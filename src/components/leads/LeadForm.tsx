@@ -19,6 +19,7 @@ import {
   type LeadContext,
   type LeadSourcePage,
 } from "@/lib/leads/schema";
+import { trackLeadSubmit } from "@/lib/analytics";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -138,6 +139,7 @@ export function LeadForm({
 
       setSentName(String(data.name).trim().split(/\s+/)[0] || "there");
       setSent(true);
+      trackLeadSubmit(source === "tour-detail" ? "tour_inquiry" : source === "contact" ? "contact" : "itinerary");
       reset();
       setNational("");
     } catch {
@@ -177,7 +179,7 @@ export function LeadForm({
         </p>
       )}
       {title && (
-        <h3 className="h-display mt-3 text-[24px] font-bold text-foreground">{title}</h3>
+        <h2 className="h-display mt-3 text-[24px] font-bold text-foreground">{title}</h2>
       )}
       {subtitle && <p className="mt-1 text-[13px] text-muted-foreground">{subtitle}</p>}
 

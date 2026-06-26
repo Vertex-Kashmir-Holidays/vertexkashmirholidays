@@ -352,7 +352,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
   }
 
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

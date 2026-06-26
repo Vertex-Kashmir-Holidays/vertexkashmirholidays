@@ -10,6 +10,7 @@ import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSet
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Menu, X, Home, ShoppingBag, MapPin, type LucideIcon } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/brand';
+import { trackWhatsappClick } from '@/lib/analytics';
 
 export function Navbar() {
   const { siteName } = useSiteSettings();
@@ -126,6 +127,7 @@ export function Navbar() {
             <Link
               href={planTripHref}
               target="_blank"
+              onClick={() => trackWhatsappClick('header')}
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
@@ -213,6 +215,7 @@ export function Navbar() {
           <Link
             href={planTripHref}
             target="_blank"
+            onClick={() => trackWhatsappClick('header_mobile')}
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full bg-primary px-5 py-3 shadow-xl ring-inner transition hover:brightness-110"
             style={{

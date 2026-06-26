@@ -15,9 +15,11 @@ interface ItineraryCoverProps {
   onImageChange: (src: string) => void;
   /** Lead-linked itineraries derive these fields from the lead — show as read-only. */
   readOnlyDerived?: boolean;
+ /** Website booking itineraries — total cost is fixed at checkout, show as read-only. */
+ lockCost?: boolean;
 }
 
-export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived = false }: ItineraryCoverProps) {
+export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived = false, lockCost = false }: ItineraryCoverProps) {
   return (
     <article className="page cover relative min-h-[640px] overflow-hidden rounded-xl bg-gradient-to-br from-[#0f261b] via-[#1a3a2a] to-[#0f261b] sm:min-h-[880px] md:min-h-[1160px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -116,10 +118,15 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
             </div>
           </div>
 
-          <div className="mt-7 rounded-xl bg-[hsl(158_46%_14%)]/85 py-5 text-center ring-1 ring-white/10 backdrop-blur">
-            <EditableField value={data.totalCost} onValueChange={(v) => onUpdate("totalCost", v)} className="font-serif text-center text-2xl font-bold text-white sm:text-3xl" />
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-white/70">TOTAL PACKAGE COST</p>
-          </div>
+       <div className="mt-7 rounded-xl bg-[hsl(158_46%_14%)]/85 py-5 text-center ring-1 ring-white/10 backdrop-blur">
+           {lockCost ? (
+             <p className="font-serif text-center text-2xl font-bold text-white sm:text-3xl">{data.totalCost}</p>
+           ) : (
+             <EditableField value={data.totalCost} onValueChange={(v) => onUpdate("totalCost", v)} className="font-serif text-center text-2xl font-bold text-white sm:text-3xl" />
+           )}
+           <p className="text-[11px] font-semibold tracking-[0.28em] text-white/70">TOTAL PACKAGE COST</p>
+         </div>
+
         </div>
       </div>
     </article>

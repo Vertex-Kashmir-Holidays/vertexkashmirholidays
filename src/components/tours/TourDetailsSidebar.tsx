@@ -8,6 +8,7 @@ import { Star, ShieldCheck, Calendar, Lock, Users, Car, BadgeCheck, Clock, Arrow
 import { WhatsAppIcon } from '@/components/icons/brand';
 import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import { LeadForm } from '@/components/leads/LeadForm';
+import { trackWhatsappClick, trackTourInquiry, trackBookingStarted } from '@/lib/analytics';
 
 interface TourDetailsSidebarProps {
   price: number;
@@ -61,6 +62,7 @@ export function TourDetailsSidebar({
   const advanceAmount = Math.round(price * (parseInt(bookPax, 10) || 2) * (ADVANCE_PCT / 100));
 
   function goToBooking() {
+    trackBookingStarted(tourName);
     const params = new URLSearchParams({ tour: tourSlug });
     if (bookDate) params.set('date', bookDate);
     if (bookPax) params.set('travellers', bookPax);
@@ -131,7 +133,7 @@ export function TourDetailsSidebar({
         {showInquiry && showBook && (
           <div className="mt-5 flex border-b border-border text-[14px] font-bold">
             <button
-              onClick={() => setActiveTab('inquiry')}
+             onClick={() => { setActiveTab('inquiry'); if (activeTab !== 'inquiry') trackTourInquiry(tourName); }}
               className={`relative flex-1 pb-3 transition ${
                 activeTab === 'inquiry' ? 'text-primary' : 'text-muted-foreground'
               }`}
@@ -259,6 +261,7 @@ export function TourDetailsSidebar({
         href={helpHref}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackWhatsappClick('tour_sidebar')}
         className="flex items-center gap-3.5 rounded-2xl bg-primary/10 p-5 transition hover:bg-primary/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

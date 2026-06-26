@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Lock, Calendar, ArrowRight, MessageSquare } from "lucide-react";
 import { LeadForm } from "@/components/leads/LeadForm";
+import { trackTourInquiry, trackBookingStarted } from "@/lib/analytics";
 
 interface BookingMobileBarProps {
   formMode?: "BOOKING_ONLY" | "INQUIRY_ONLY" | "BOTH";
@@ -56,7 +57,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourName, tourSlug, price,
         {showInquiry && (
           <button
             type="button"
-            onClick={() => setOpen("inquiry")}
+            onClick={() => { setOpen("inquiry"); trackTourInquiry(tourName); }}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3 text-[14px] font-bold text-primary"
           >
             <MessageSquare className="h-4 w-4" /> Inquiry
@@ -65,7 +66,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourName, tourSlug, price,
         {showBook && (
           <button
             type="button"
-            onClick={() => setOpen("book")}
+            onClick={() => { setOpen("book"); trackTourInquiry(tourName); }}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-card"
           >
             <Lock className="h-4 w-4" /> Book Now

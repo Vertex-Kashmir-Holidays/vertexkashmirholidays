@@ -70,7 +70,7 @@ export function ToursGridSection({
             <span>Filters</span>
           </button>
 
-          <label htmlFor="tours-sort" className="text-muted-foreground hidden sm:inline">Sort by:</label>
+        <label htmlFor="tours-sort" className="sr-only sm:not-sr-only sm:text-muted-foreground">Sort by:</label>
           <select
             id="tours-sort"
             value={sort}
