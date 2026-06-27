@@ -8,7 +8,7 @@ import { trackPackageView } from "@/lib/analytics";
 // 300 ms window is safely above the synchronous Strict Mode remount delay but well
 // below any realistic user navigation time, so genuine re-visits still fire.
 const recentFires = new Map<string, number>();
-const DEDUP_MS = 300;
+const DEDUP_MS = 3000;
 
 /**
 * Drop this into any RSC tour/package page to fire a package_view event on mount.
