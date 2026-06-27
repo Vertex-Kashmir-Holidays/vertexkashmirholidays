@@ -28,11 +28,15 @@ import {
   X,
   Map,
   Ticket,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
+import { ChatInbox } from "@/components/admin/ChatInbox";
+import { PresenceStatusPicker } from "@/components/admin/PresenceStatusPicker";
+import { PresenceHeartbeat } from "@/components/admin/connect/PresenceHeartbeat";
 import { cn } from "@/lib/utils";
 import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
 
@@ -45,6 +49,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   leads: Inbox,
   itinerary: Map,
   users: Users,
+  connect: MessageSquare,
   galleries: Images,
   blogs: FileText,
   home: Home,
@@ -257,10 +262,10 @@ export function AdminShell({ children, userName, userEmail, userImage, permissio
               View Site
             </Link>
             <ThemeToggle />
+            <ChatInbox />
             <NotificationBell />
-            <Link href="/admin/profile" title="My profile" className="transition hover:opacity-90">
-              <Avatar src={userImage} name={userName} className="w-8 h-8" />
-            </Link>
+            <PresenceStatusPicker userImage={userImage} userName={userName} />
+            <PresenceHeartbeat />
           </div>
         </header>
 

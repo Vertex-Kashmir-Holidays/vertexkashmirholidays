@@ -34,13 +34,18 @@ function contentSecurityPolicy(): string {
    "img-src 'self' data: blob: https: https://www.google-analytics.com https://www.googletagmanager.com",
    "font-src 'self' data: https://fonts.gstatic.com",
    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com`,
+   // meet.jit.si — Jitsi External API loader (external_api.js)
+   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://meet.jit.si https://*.jit.si`,
+   // meet.jit.si / *.jit.si — Jitsi conference iframe mounted by external_api.js
    // https://www.googletagmanager.com — noscript <iframe> fallback + GTM Preview debugger iframe
    // https://tagassistant.google.com   — GTM Preview / Tag Assistant debugger iframe
-   "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com",
+   "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si",
+   // wss://meet.jit.si / wss://*.jit.si — Jitsi XMPP-over-WebSocket signalling
    // tagassistant.google.com — GTM Preview XHR channel
    // analytics.google.com   — GA4 collect endpoint used by some regions / gtag versions
-   `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net${connectExtra}`,
+   `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si${connectExtra}`,
+   // blob: — Jitsi creates blob: URLs for local audio/video preview tracks
+   "media-src 'self' blob: https://meet.jit.si https://*.jit.si",
    "worker-src 'self' blob:",
  ].join("; ");
 }
@@ -59,8 +64,18 @@ const securityHeaders = [
  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
  { key: "X-Frame-Options", value: "SAMEORIGIN" },
  {
+   // camera / microphone / display-capture must be allowed for the Jitsi iframe
+   // (meet.jit.si) that external_api.js mounts.  All other sensitive features
+   // remain blocked.  The old camera=() / microphone=() blanket-blocked every
+   // iframe including Jitsi, making audio/video calls impossible.
    key: "Permissions-Policy",
-   value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+   value: [
+     'camera=(self "https://meet.jit.si")',
+     'microphone=(self "https://meet.jit.si")',
+     'display-capture=(self "https://meet.jit.si")',
+     "geolocation=()",
+     "browsing-topics=()",
+   ].join(", "),
  },
 ];
 

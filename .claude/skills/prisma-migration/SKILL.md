@@ -131,3 +131,65 @@ For any change to a public page, also run `yarn dev` and visually confirm the af
 **Seed overwrites admin-edited content.** The seed uses `upsert` with `update: {}` (empty) for legal pages and some content singletons — intentionally never overwriting admin edits. Do not change `update: {}` to a populated update block for these rows without explicit intent.
 
 **New model with a public-facing query missing `published: true`.** Any `findMany` on `Tour`, `Blog`, `Destination`, or `Campaign` in a public RSC or public API route must include `where: { published: true }`. Missing this exposes draft content to the public.
+
+
+---
+
+# Step 5 — Development vs Production Database Safety
+
+## Repository Context
+
+Vertex Kashmir Holidays uses TWO separate databases.
+
+### Development Database
+
+Used locally.
+
+Allowed:
+
+- prisma db push
+- prisma migrate dev
+- schema experiments
+
+### Production Database
+
+Used by:
+
+- Vercel Production
+- Live CRM
+- Live Customers
+- Bookings
+- Leads
+- Payments
+
+Never:
+
+- prisma migrate reset
+- DROP SCHEMA
+- destructive operations
+
+---
+
+## Mandatory Questions Before Editing schema.prisma
+
+Before changing any Prisma model, answer:
+
+1. Is this Development-only?
+2. Will this change reach Production?
+3. Does a migration need to be created?
+4. Does Production Neon need synchronization?
+5. Is Vercel deployment safe after this change?
+
+Do not continue until all questions are answered.
+
+---
+
+## Production Deployment Checklist
+
+If schema.prisma changed:
+
+### Verify
+
+```bash
+npx prisma migrate status
+```

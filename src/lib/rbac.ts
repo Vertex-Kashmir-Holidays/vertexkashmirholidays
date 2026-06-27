@@ -27,6 +27,7 @@ export const MODULES = [
   { key: "leads", label: "Leads", href: "/admin/leads" },
   { key: "itinerary", label: "Itineraries", href: "/admin/itinerary" },
   { key: "users", label: "Users", href: "/admin/users" },
+  { key: "connect", label: "Vertex Connect", href: "/admin/connect" },
   { key: "galleries", label: "Galleries", href: "/admin/galleries" },
   { key: "blogs", label: "Blogs", href: "/admin/blogs" },
   { key: "home", label: "Home Page", href: "/admin/home" },

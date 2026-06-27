@@ -86,6 +86,8 @@ export interface SaveUploadResult {
   url: string;
   /** The folder segment the file was stored under (slugified). */
   folder: string;
+  /** Cloudinary public_id — required for retention cleanup. null on local disk. */
+  publicId: string | null;
 }
 
 /**
@@ -113,7 +115,7 @@ async function saveToCloudinary(
 ): Promise<SaveUploadResult> {
   ensureCloudinaryConfig();
 
-  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+  const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: `${getCloudinaryRoot()}/${slug}`,
@@ -127,13 +129,13 @@ async function saveToCloudinary(
           reject(error ?? new Error("Cloudinary upload failed"));
           return;
         }
-        resolve(uploaded as { secure_url: string });
+        resolve(uploaded as { secure_url: string; public_id: string });
       },
     );
     stream.end(buffer);
   });
 
-  return { url: result.secure_url, folder: slug };
+  return { url: result.secure_url, folder: slug, publicId: result.public_id };
 }
 
 async function saveToLocalDisk(
@@ -145,5 +147,5 @@ async function saveToLocalDisk(
   const dir = path.join(process.cwd(), "public", "uploads", slug);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), buffer);
-  return { url: `/uploads/${slug}/${filename}`, folder: slug };
+  return { url: `/uploads/${slug}/${filename}`, folder: slug, publicId: null };
 }
