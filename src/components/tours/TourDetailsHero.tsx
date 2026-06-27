@@ -46,7 +46,32 @@ export function TourDetailsHero({
  const [currentImage, setCurrentImage] = useState(0);
  const [mounted, setMounted] = useState(false);
  const [isHovering, setIsHovering] = useState(false);
+ const [copied, setCopied] = useState(false);
  const timerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+ async function handleShare() {
+   const url = window.location.href;
+   if (navigator.share) {
+     await navigator.share({ title: tourName, url }).catch(() => {});
+     return;
+   }
+   // Clipboard API (HTTPS only; not available in all WebViews)
+   if (navigator.clipboard?.writeText) {
+     await navigator.clipboard.writeText(url).catch(() => {});
+   } else {
+     // execCommand fallback for older Android WebViews
+     const ta = document.createElement('textarea');
+     ta.value = url;
+     ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+     document.body.appendChild(ta);
+     ta.focus();
+     ta.select();
+     document.execCommand('copy');
+     document.body.removeChild(ta);
+   }
+   setCopied(true);
+   setTimeout(() => setCopied(false), 2000);
+ }
 
 
  useEffect(() => { setMounted(true); }, []);
@@ -110,9 +135,9 @@ export function TourDetailsHero({
      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-brand-dark/80 to-transparent"></div>
 
 
-     {/* Carousel Controls */}
+     {/* Carousel Controls — hidden on mobile; dots handle navigation there */}
      {images.length > 1 && (
-       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-between px-4">
+       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex justify-between px-4">
          <motion.button
            onClick={prevImage}
            className="grid h-11 w-11 place-items-center rounded-full bg-white/85 text-brand-ink shadow-card transition hover:bg-white"
@@ -176,11 +201,12 @@ export function TourDetailsHero({
              <Heart className="h-[18px] w-[18px]" strokeWidth={2} />
            </motion.button>
            <motion.button
+             onClick={handleShare}
              className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] font-semibold text-brand-ink shadow-card transition hover:brightness-95"
              whileHover={{ scale: 1.02 }}
              whileTap={{ scale: 0.98 }}
            >
-             Share
+             {copied ? 'Copied!' : 'Share'}
              <Share2 className="h-4 w-4" strokeWidth={2} />
            </motion.button>
          </div>
@@ -225,7 +251,7 @@ export function TourDetailsHero({
          >
            <span className="flex items-center gap-1.5">
              <Star className="h-4 w-4 text-amber-400" fill="currentColor" strokeWidth={0} />
-             {rating} ({reviews.toLocaleString()} reviews)
+             {rating} ({reviews.toLocaleString('en-IN')} reviews)
            </span>
            {happyLabel && (
              <>

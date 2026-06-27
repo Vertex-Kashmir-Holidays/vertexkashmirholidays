@@ -4,10 +4,11 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, Calendar, Link2 } from 'lucide-react';
+import { Clock, Calendar, Link2, Check } from 'lucide-react';
 import { WhatsAppIcon, FacebookIcon, TwitterIcon } from '@/components/icons/brand';
 import { imgSrc } from '@/lib/placeholder';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
+import { useState, useEffect } from 'react';
 
 interface BlogPostHeroProps {
   category: string | null;
@@ -34,6 +35,28 @@ export function BlogPostHero({
   date,
   crumbs,
 }: BlogPostHeroProps) {
+  const [shareUrl, setShareUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setShareUrl(window.location.href);
+  }, []);
+
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedTitle = encodeURIComponent(title);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(shareUrl).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const shareHref = {
+    WhatsApp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
+    Facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    X: `https://x.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+  } as Record<string, string>;
+
   return (
     <section className="relative overflow-hidden bg-brand-dark">
       <motion.div
@@ -133,10 +156,12 @@ export function BlogPostHero({
 
           <div className="flex items-center gap-2.5">
             <span className="text-[12.5px] font-semibold text-white/85">Share:</span>
-            {['WhatsApp', 'Facebook', 'X', 'Copy'].map((label, i) => (
+            {(['WhatsApp', 'Facebook', 'X'] as const).map((label) => (
               <motion.a
-                key={i}
-                href="#"
+                key={label}
+                href={shareUrl ? shareHref[label] : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label={`Share on ${label}`}
                 className="grid h-9 w-9 place-items-center rounded-full border border-white/35 text-white transition hover:bg-white hover:text-brand-ink"
                 whileHover={{ scale: 1.05 }}
@@ -145,9 +170,17 @@ export function BlogPostHero({
                 {label === 'WhatsApp' && <WhatsAppIcon className="h-4 w-4" />}
                 {label === 'Facebook' && <FacebookIcon className="h-4 w-4" />}
                 {label === 'X' && <TwitterIcon className="h-4 w-4" />}
-                {label === 'Copy' && <Link2 className="h-4 w-4" strokeWidth={2} />}
               </motion.a>
             ))}
+            <motion.button
+              onClick={handleCopy}
+              aria-label="Copy link"
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/35 text-white transition hover:bg-white hover:text-brand-ink"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {copied ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Link2 className="h-4 w-4" strokeWidth={2} />}
+            </motion.button>
           </div>
         </motion.div>
        </div>

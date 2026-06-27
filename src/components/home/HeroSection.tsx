@@ -1,8 +1,5 @@
-// src/components/sections/HeroSection.tsx
+// src/components/home/HeroSection.tsx
 'use client';
-
-
-
 
 import { ArrowRight } from 'lucide-react';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
@@ -13,17 +10,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
-
-
-
 interface HeroSectionProps {
 content: HeroContentData;
 slides: HeroSlideData[];
 stats: SiteStatData[];
 }
-
-
-
 
 export function HeroSection({ content, slides, stats }: HeroSectionProps) {
 const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -31,31 +22,15 @@ const [mounted, setMounted] = useState(false);
 const embersRef = useRef<HTMLDivElement>(null);
 const flakesRef = useRef<HTMLDivElement>(null);
 
-
-
-
 useEffect(() => { setMounted(true); }, []);
-
-
 useEffect(() => {
   if (slides.length < 2) return;
-
-
-
-
   // Rotate background every 10 seconds
   const interval = setInterval(() => {
     setCurrentImageIndex((prev) => (prev + 1) % slides.length);
   }, 10000);
-
-
-
-
   return () => clearInterval(interval);
 }, [slides.length]);
-
-
-
 
 useEffect(() => {
   // Particles
@@ -73,15 +48,9 @@ useEffect(() => {
     }
   };
 
-
-
-
   if (embersRef.current) createParticles(embersRef.current, 'ember', 16, true);
   if (flakesRef.current) createParticles(flakesRef.current, 'flake', 26, false);
 }, []);
-
-
-
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -94,9 +63,6 @@ const containerVariants = {
   },
 };
 
-
-
-
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
@@ -106,13 +72,7 @@ const itemVariants: Variants = {
   },
 };
 
-
-
-
 const currentSlide = slides[currentImageIndex];
-
-
-
 
 return (
   <section className="relative z-[2] min-h-[100svh] overflow-hidden bg-grain">
@@ -141,25 +101,15 @@ return (
         )}
       </AnimatePresence>
 
-
-
-
       {/* Overlay for text readability — vertical scrim on mobile (headline + form
           stack), horizontal from lg up (two columns). */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/70 lg:bg-gradient-to-r lg:from-black/60 lg:via-black/30 lg:to-transparent"></div>
       <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-background to-transparent"></div>
 
-
-
-
       {/* Particles */}
       <div id="embers" ref={embersRef} className="absolute inset-y-0 left-0 w-1/2"></div>
       <div id="flakes" ref={flakesRef} className="absolute inset-y-0 right-0 w-1/2"></div>
     </div>
-
-
-
-
     {/* Image indicator dots */}
     <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-1">
       {slides.map((_, index) => (
@@ -176,17 +126,15 @@ return (
       ))}
     </div>
 
-
-
-
     {/* Main content */}
-    <div className="relative z-[2] mx-auto grid min-h-[100svh] max-w-[1300px] items-center gap-6 px-4 pb-20 pt-32 sm:px-6 sm:gap-8 lg:gap-10 lg:grid-cols-[1.15fr_.85fr]">
+    <div className="relative z-[2] mx-auto grid w-full min-h-[100svh] max-w-[1300px] items-center gap-6 px-4 pb-20 pt-32 sm:px-6 sm:gap-8 lg:gap-10 lg:grid-cols-[1.15fr_.85fr]">
       <motion.div
         data-depth
         style={{ '--d': '0.7' } as React.CSSProperties}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
+        className="min-w-0"
       >
         {content.badge && (
           <motion.p
@@ -196,20 +144,12 @@ return (
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> {content.badge}
           </motion.p>
         )}
-
-
-
-
         <motion.h1
           variants={itemVariants}
           className="h-display text-[34px] font-extrabold text-white sm:text-[48px] lg:text-[64px]"
         >
           {renderAccents(content.title)}
         </motion.h1>
-
-
-
-
         {content.subtitle && (
           <motion.p
             variants={itemVariants}
@@ -218,10 +158,6 @@ return (
             {content.subtitle}
           </motion.p>
         )}
-
-
-
-
         <motion.div
           variants={itemVariants}
           className="mt-8 flex flex-wrap items-center gap-3"
@@ -244,10 +180,6 @@ return (
             </Link>
           )}
         </motion.div>
-
-
-
-
         {stats.length > 0 && (
           <motion.div
             variants={itemVariants}
@@ -265,10 +197,6 @@ return (
           </motion.div>
         )}
       </motion.div>
-
-
-
-
       {/* Lead-capture card — uses the shared HeroLeadCard component so the
           home hero form is visually identical to Tours/Destinations heroes. */}
       <HeroLeadCard

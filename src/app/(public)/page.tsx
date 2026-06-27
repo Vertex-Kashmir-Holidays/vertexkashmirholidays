@@ -18,6 +18,7 @@ import { UpdatesStrip } from "@/components/home/UpdatesStrip";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 import { WhyChooseSection } from "@/components/home/WhyChooseSection";
 import { getDisplayReviews } from "@/lib/reviews";
+import { getKashmirWeather } from "@/lib/weather";
 import type { OfferData, SectionHeading } from "@/types/home";
 
 // ISR: serve cached HTML and refresh in the background (admin edits appear
@@ -154,6 +155,13 @@ export default async function HomePage() {
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
   ]);
 
+  // Live weather for the updates strip — fetched in parallel but outside the
+  // main Promise.all so a weather API failure never blocks the page render.
+  const kashmirWeather = await getKashmirWeather();
+  const weatherTicker = kashmirWeather.map(
+    (w) => `🌡️ ${w.name} · ${w.temperature}°C — ${w.condition}`,
+  );
+
   const heading = (key: string): SectionHeading => {
     const s = sections.find((x) => x.key === key);
     return {
@@ -223,7 +231,7 @@ export default async function HomePage() {
           .filter((s) => s.section === "hero")
           .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
-      <UpdatesStrip items={tickerItems.map((t) => t.text)} />
+      <UpdatesStrip items={[...weatherTicker, ...tickerItems.map((t) => t.text)]} />
       <VideoReviewsSection
         heading={heading("videos")}
         videos={videos.map((v) => ({

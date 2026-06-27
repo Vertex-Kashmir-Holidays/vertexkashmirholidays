@@ -30,9 +30,15 @@ const SOCIAL_META: Record<
   twitter: { label: 'X', bg: 'bg-foreground', Icon: TwitterIcon },
 };
 
-const igImages = ['ig-shikara', 'ig-boat', 'ig-snow', 'ig-tulip'];
+const IG_COUNT = 4;
 
 export function ContactSocial({ content, socials }: ContactSocialProps) {
+  // Resolve Instagram href — prefer the social link, fall back to ctaHref
+  const igHref =
+    socials.find((s) => s.type === 'instagram')?.href ??
+    content.ctaHref ??
+    '#';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -65,15 +71,25 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
       )}
       {content.text && <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">{content.text}</p>}
       <div className="mt-4 grid grid-cols-4 gap-2">
-        {igImages.map((_s, i) => (
-          <a key={i} href={content.ctaHref ?? '#'} className="group relative block aspect-square overflow-hidden rounded-lg">
+        {Array.from({ length: IG_COUNT }, (_, i) => (
+          <a
+            key={i}
+            href={igHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View on Instagram"
+            className="group relative block aspect-square overflow-hidden rounded-lg"
+          >
             <Image
-              src={imgSrc()}
+              src={imgSrc(null)}
               alt=""
               fill
               sizes="(max-width: 768px) 25vw, 80px"
               className="object-cover transition duration-500 group-hover:scale-110"
             />
+            <span className="absolute inset-0 grid place-items-center bg-black/0 transition duration-300 group-hover:bg-black/40">
+              <InstagramIcon className="h-5 w-5 text-white opacity-0 transition duration-300 group-hover:opacity-100" />
+            </span>
           </a>
         ))}
       </div>

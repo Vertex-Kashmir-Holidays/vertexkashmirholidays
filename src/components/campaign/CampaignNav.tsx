@@ -25,7 +25,7 @@ export function CampaignNav({ ctaText, phone }: CampaignNavProps) {
   return (
     <header className="sticky top-0 z-50">
       <motion.nav
-        className={`mx-auto mt-3 flex max-w-[1300px] items-center justify-between rounded-2xl border px-5 py-3 transition-colors duration-300 ${
+        className={`mx-auto flex max-w-[1300px] items-center justify-between rounded-2xl border px-5 pb-3 transition-colors duration-300 ${
           scrolled
             ? 'border-white/10 bg-[hsl(202_50%_7%/0.88)] backdrop-blur-xl'
             : 'border-transparent bg-transparent'

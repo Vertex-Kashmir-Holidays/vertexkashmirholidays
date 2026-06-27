@@ -12,22 +12,26 @@ export type WhatsAppSource =
  | "footer_social"
  | "float"
  | "tour_sidebar"
- | "booking_help";
+ | "booking_help"
+ | "lead_form";
 
 
 export type AnalyticsEvent =
- | { event: "lead_submit"; lead_type: LeadType }
+ | { event: "lead_submit"; lead_type: LeadType; package_name?: string }
  | { event: "whatsapp_click"; source: WhatsAppSource }
  | { event: "phone_click" }
  | { event: "email_click" }
  | { event: "package_view"; package_name: string }
- | { event: "inquiry_started"; tour_name?: string }
- | { event: "booking_started"; package_name?: string };
+ | { event: "inquiry_started"; package_name?: string; tour_id?: string }
+ | { event: "booking_started"; package_name?: string }
+ | { event: "booking_completed"; booking_id: string; value: number; package_name: string };
 
 
 // Extend the global Window type so dataLayer is typed everywhere.
+// Optional modifier matches @next/third-parties/google ga.d.ts declaration
+// (TS2687 requires identical modifiers across all Window interface merges).
 declare global {
  interface Window {
-   dataLayer: Record<string, unknown>[];
+   dataLayer?: Record<string, unknown>[];
  }
 }

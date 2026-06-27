@@ -74,7 +74,7 @@ export function DestinationDetailTours({ name, tours }: DestinationDetailToursPr
       </div>
       <div className="snap-row scrollbar-none mt-5 flex gap-4 overflow-x-auto pb-1" id="tourRow">
         {tours.map((tour, i) => (
-          <div key={i} className="w-[180px] shrink-0 sm:w-[200px] lg:w-[280px]">
+          <div key={i} className="w-[calc(100vw-7rem)] shrink-0 sm:w-[220px] lg:w-[280px]">
             <TourCard key={i} tour={tour} index={i} variant="tours" />
           </div>
         ))}

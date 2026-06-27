@@ -22,6 +22,8 @@ export default async function PublicLayout({
         instagram: s.instagram,
         twitter: s.twitter,
         youtube: s.youtube,
+        googleReviews: s.googleReviews,
+        tripadvisor: s.tripadvisor,
       }
     : null;
 

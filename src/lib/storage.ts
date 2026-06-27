@@ -32,8 +32,12 @@ export const MEDIA_FOLDERS = [
 
 export const DEFAULT_FOLDER = "general";
 
-// Root Cloudinary folder so all of this site's media is grouped under one tree.
-const CLOUDINARY_ROOT = "vertexkashmir";
+// Root Cloudinary folder. Set CLOUDINARY_FOLDER in env to separate environments
+// (e.g. "vertex-kashmir/dev" vs "vertex-kashmir/prod"). Falls back to the legacy
+// root so existing uploads aren't orphaned if the var is missing.
+function getCloudinaryRoot(): string {
+  return process.env.CLOUDINARY_FOLDER?.trim() || "vertexkashmir";
+}
 
 /**
  * True when Cloudinary credentials are present. Supports either the single
@@ -112,7 +116,7 @@ async function saveToCloudinary(
   const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: `${CLOUDINARY_ROOT}/${slug}`,
+        folder: `${getCloudinaryRoot()}/${slug}`,
         // Let Cloudinary detect image vs video from the bytes.
         resource_type: "auto",
         // Unique public id; Cloudinary appends the correct extension itself.

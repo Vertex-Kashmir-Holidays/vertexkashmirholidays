@@ -313,6 +313,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
            discountPct={tour.discountPct ?? undefined}
            rating={tour.rating}
            reviews={tour.reviewCount}
+           tourId={tour.id}
            tourName={tour.title}
            tourSlug={tour.slug}
            formMode={tour.formMode}
@@ -329,6 +330,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
      {/* Mobile-only sticky Book / Inquiry CTAs (forms open in a bottom-sheet). */}
      <BookingMobileBar
        formMode={tour.formMode}
+       tourId={tour.id}
        tourName={tour.title}
        tourSlug={tour.slug}
        price={tour.priceFrom}

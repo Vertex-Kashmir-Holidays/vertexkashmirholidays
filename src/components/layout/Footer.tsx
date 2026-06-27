@@ -19,6 +19,8 @@ export interface FooterSettings {
  instagram: string | null;
  twitter: string | null;
  youtube: string | null;
+ googleReviews?: string | null;
+ tripadvisor?: string | null;
 }
 
 
@@ -169,9 +171,41 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
          </div>
        </div>
        <div className="border-t border-border py-5">
-         <p className="mx-auto max-w-[1300px] px-6 text-center text-[12px] text-muted-foreground">
-           © {new Date().getFullYear()} {siteName} · J&amp;K Tourism Licensed · Razorpay Secured Payments
-         </p>
+         <div className="mx-auto flex max-w-[1300px] flex-wrap items-center justify-between gap-4 px-6">
+           <p className="text-[12px] text-muted-foreground">
+             © {new Date().getFullYear()} {siteName} · J&amp;K Tourism Licensed · Razorpay Secured Payments
+           </p>
+           <div className="flex flex-wrap items-center gap-3">
+             {settings?.googleReviews && (
+               <a
+                 href={settings.googleReviews}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:border-primary hover:text-primary"
+               >
+                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
+                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/>
+                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="url(#gLogo)" opacity=".5"/>
+                   <defs><linearGradient id="gLogo" x1="2" y1="2" x2="22" y2="22"><stop stopColor="#EA4335"/><stop offset=".5" stopColor="#FBBC04"/><stop offset="1" stopColor="#34A853"/></linearGradient></defs>
+                 </svg>
+                 Google Reviews
+               </a>
+             )}
+             {settings?.tripadvisor && (
+               <a
+                 href={settings.tripadvisor}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:border-[#34E0A1] hover:text-[#00aa6c]"
+               >
+                 <svg className="h-3.5 w-3.5 text-[#00aa6c]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                   <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 4a6 6 0 1 1 0 12A6 6 0 0 1 12 6zm0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
+                 </svg>
+                 Tripadvisor
+               </a>
+             )}
+           </div>
+         </div>
        </div>
      </div>
    </footer>

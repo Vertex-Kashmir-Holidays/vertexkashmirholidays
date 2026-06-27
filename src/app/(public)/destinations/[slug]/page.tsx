@@ -270,6 +270,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
         region={region}
         image={heroImage}
         stats={stats}
+        weather={liveWeather}
       />
 
       <DestinationDetailTabs sections={TABS} />

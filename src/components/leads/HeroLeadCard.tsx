@@ -29,8 +29,8 @@ export function HeroLeadCard({
 }: HeroLeadCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className={`glass-cream w-full max-w-md rounded-3xl p-6 shadow-glass sm:p-7 ${className ?? ""}`}
     >

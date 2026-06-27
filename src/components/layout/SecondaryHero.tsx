@@ -53,9 +53,9 @@ export function SecondaryHero({ image, imageMobile, alt = '', children, aside }:
           area. */}
       <div className="relative mx-auto flex min-h-[380px] w-full max-w-[1300px] flex-col justify-center px-5 pb-12 pt-28 sm:px-6 sm:pb-16 sm:pt-32 lg:min-h-[460px]">
         {aside ? (
-          <div className="grid items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
+          <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
             <div className="min-w-0">{children}</div>
-            <div className="w-full max-w-md justify-self-center lg:justify-self-end">{aside}</div>
+            <div className="min-w-0 w-full max-w-md justify-self-center lg:justify-self-end">{aside}</div>
           </div>
         ) : (
           children

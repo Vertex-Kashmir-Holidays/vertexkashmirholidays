@@ -11,6 +11,7 @@ import { trackTourInquiry, trackBookingStarted } from "@/lib/analytics";
 
 interface BookingMobileBarProps {
  formMode?: "BOOKING_ONLY" | "INQUIRY_ONLY" | "BOTH";
+ tourId: string;
  tourName: string;
  tourSlug: string;
  /** Per-person price, used to show pricing inside the Book Now modal. */
@@ -30,7 +31,7 @@ const ADVANCE_PCT = 10;
 // bottom (per the tour's formMode) and open the relevant form in a bottom-sheet
 // modal. Hidden on lg+ where the sidebar is visible. Sits above the global mobile
 // nav bar, which is hidden on tour detail pages so this bar sits at bottom-0.
-export function BookingMobileBar({ formMode = "BOTH", tourName, tourSlug, price, oldPrice, discountPct }: BookingMobileBarProps) {
+export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug, price, oldPrice, discountPct }: BookingMobileBarProps) {
  const router = useRouter();
  const showInquiry = formMode !== "BOOKING_ONLY";
  const showBook = formMode !== "INQUIRY_ONLY";
@@ -64,7 +65,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourName, tourSlug, price,
        {showInquiry && (
          <button
            type="button"
-           onClick={() => { setOpen("inquiry"); trackTourInquiry(tourName); }}
+           onClick={() => { setOpen("inquiry"); trackTourInquiry(tourName, tourId); }}
            className="flex flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3 text-[14px] font-bold text-primary"
          >
            <MessageSquare className="h-4 w-4" /> Inquiry
@@ -117,7 +118,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourName, tourSlug, price,
 
 
              {open === "inquiry" ? (
-               <LeadForm source="tour-detail" context={{ tourName }} buttonLabel="Send Inquiry" />
+               <LeadForm source="tour-detail" context={{ tourId, tourName }} buttonLabel="Send Inquiry" />
              ) : (
                <div className="space-y-3.5">
                  {/* Price summary */}

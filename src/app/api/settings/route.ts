@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const patchSchema = z.object({
   siteName: z.string().min(1).optional(),
   siteTagline: z.string().optional().nullable(),
-  siteEmail: z.string().email().optional().nullable(),
+  siteEmail: z.union([z.string().email(), z.literal(""), z.null()]).optional(),
   sitePhone: z.string().optional().nullable(),
   siteAddress: z.string().optional().nullable(),
   whatsapp: z.string().optional().nullable(),
@@ -16,6 +16,8 @@ const patchSchema = z.object({
   instagram: z.string().optional().nullable(),
   twitter: z.string().optional().nullable(),
   youtube: z.string().optional().nullable(),
+  googleReviews: z.string().optional().nullable(),
+  tripadvisor: z.string().optional().nullable(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),

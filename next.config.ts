@@ -40,7 +40,7 @@ function contentSecurityPolicy(): string {
    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com",
    // tagassistant.google.com — GTM Preview XHR channel
    // analytics.google.com   — GA4 collect endpoint used by some regions / gtag versions
-   `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com${connectExtra}`,
+   `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net${connectExtra}`,
    "worker-src 'self' blob:",
  ].join("; ");
 }
@@ -93,6 +93,7 @@ const nextConfig: NextConfig = {
        pathname: "/**",
      },
    ],
+   qualities: [60, 75, 85]
  },
 };
 

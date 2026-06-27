@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { BookingCompletedEvent } from "@/components/booking/BookingCompletedEvent";
 
 export const metadata: Metadata = {
   title: "Booking Confirmed! — Vertex Kashmir Holidays",
@@ -99,6 +100,13 @@ export default async function BookingSuccessPage({
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-20">
+      {booking && (
+        <BookingCompletedEvent
+          bookingId={booking.id}
+          value={booking.amount}
+          packageName={booking.tour?.title ?? "Kashmir Tour"}
+        />
+      )}
       {/* ── Success banner ─────────────────────────────────────────────── */}
       <div className="bg-primary py-14">
         <div className="max-w-2xl mx-auto px-4 text-center">
