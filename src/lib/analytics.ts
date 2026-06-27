@@ -20,8 +20,8 @@ function push(payload: AnalyticsEvent): void {
 
 
 /** Fire after a lead form submits successfully — never on validation errors. */
-export function trackLeadSubmit(leadType: LeadType = "itinerary"): void {
- push({ event: "lead_submit", lead_type: leadType });
+export function trackLeadSubmit(leadType: LeadType = "itinerary", tourName?: string): void {
+ push({ event: "lead_submit", lead_type: leadType, ...(tourName ? { package_name: tourName } : {}) });
 }
 
 
@@ -50,12 +50,21 @@ export function trackPackageView(packageName: string): void {
 
 
 /** Fire when a user opens an inquiry modal / form tab. */
-export function trackTourInquiry(tourName?: string): void {
- push({ event: "inquiry_started", ...(tourName ? { tour_name: tourName } : {}) });
+export function trackTourInquiry(tourName?: string, tourId?: string): void {
+ push({
+   event: "inquiry_started",
+   ...(tourName ? { package_name: tourName } : {}),
+   ...(tourId  ? { tour_id:   tourId   } : {}),
+ });
 }
 
 
 /** Fire when a user initiates the booking checkout flow. */
 export function trackBookingStarted(packageName?: string): void {
  push({ event: "booking_started", ...(packageName ? { package_name: packageName } : {}) });
+}
+
+/** Fire once on the booking success page after payment is confirmed. */
+export function trackBookingCompleted(bookingId: string, value: number, packageName: string): void {
+ push({ event: "booking_completed", booking_id: bookingId, value, package_name: packageName });
 }

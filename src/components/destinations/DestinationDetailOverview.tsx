@@ -20,8 +20,7 @@ export function DestinationDetailOverview({ name, description, features }: Desti
       id="overview"
       className="rounded-2xl border border-border bg-card p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <h2 className="text-[21px] font-bold">About {name}</h2>
@@ -34,8 +33,7 @@ export function DestinationDetailOverview({ name, description, features }: Desti
             key={i}
             className="rounded-xl border border-border p-4 text-center transition hover:-translate-y-0.5 hover:shadow-soft"
             initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
           >
             <span className={`mx-auto grid h-12 w-12 place-items-center rounded-xl ${feature.color}`}>

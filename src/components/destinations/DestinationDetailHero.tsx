@@ -3,9 +3,10 @@
 
 import { motion } from 'framer-motion';
 import { imgSrc } from '@/lib/placeholder';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { LeadForm } from '@/components/leads/LeadForm';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
+import { Thermometer } from 'lucide-react';
 import Link from 'next/link';
+import type { LiveWeather } from '@/lib/weather';
 
 interface DestinationDetailHeroProps {
   name: string;
@@ -18,6 +19,7 @@ interface DestinationDetailHeroProps {
     label: string;
     icon: string;
   }[];
+  weather?: LiveWeather | null;
 }
 
 export function DestinationDetailHero({
@@ -27,6 +29,7 @@ export function DestinationDetailHero({
   region,
   image,
   stats,
+  weather,
 }: DestinationDetailHeroProps) {
   return (
     <section className="relative bg-brand-dark">
@@ -50,7 +53,7 @@ export function DestinationDetailHero({
           <span className="font-semibold text-white">{name}</span>
         </nav>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_300px]">
+        <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
           <div className="max-w-xl">
             <motion.span
               className="rounded-md bg-badge-green px-3 py-1.5 text-[10.5px] font-extrabold tracking-wide text-white shadow"
@@ -91,6 +94,16 @@ export function DestinationDetailHero({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
+              {/* Live weather chip — shown first when coordinates are available */}
+              {weather && (
+                <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-card">
+                  <Thermometer className="h-6 w-6 shrink-0 text-primary" strokeWidth={1.8} />
+                  <div className="leading-tight">
+                    <p className="text-[14px] font-extrabold">{weather.temperature}°C</p>
+                    <p className="text-[10.5px] text-muted-foreground">{weather.condition}</p>
+                  </div>
+                </div>
+              )}
               {stats.map((stat, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-card">
                   <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -105,31 +118,7 @@ export function DestinationDetailHero({
             </motion.div>
           </div>
 
-          {/* Planning Form */}
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="rounded-2xl bg-card p-5 shadow-card lg:absolute lg:inset-x-0 lg:top-0">
-              <h2 className="text-[19px] font-bold">Planning {name}?</h2>
-              <p className="mt-1 text-[12.5px] text-muted-foreground">Get expert help from our local team.</p>
-              <LeadForm
-                source="destination-detail"
-                context={{ destinationName: name }}
-                buttonLabel="Get a Free Itinerary"
-                className="mt-1"
-              />
-              <a
-                href="#"
-                className="mt-3.5 flex items-center justify-center gap-2 text-[13px] font-bold text-primary transition hover:underline"
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-                Chat on WhatsApp
-              </a>
-            </div>
-          </motion.div>
+          <HeroLeadCard source="destination-detail" context={{ destinationName: name }} />
         </div>
       </div>
     </section>

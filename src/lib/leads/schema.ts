@@ -67,6 +67,7 @@ export const emailField = z
 // ── Context (optional, page-dependent) ───────────────────────────────────────
 export const leadContextSchema = z.object({
   tourSlug: z.string().max(160).optional(),
+  tourId:   z.string().max(40).optional(),
   tourName: z.string().max(200).optional(),
   destinationSlug: z.string().max(160).optional(),
   destinationName: z.string().max(200).optional(),

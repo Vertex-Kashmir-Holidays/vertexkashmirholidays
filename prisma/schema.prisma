@@ -967,25 +967,27 @@ model Campaign {
 }
 
 model SiteSettings {
-  id          String   @id @default("singleton")
-  siteName    String   @default("Vertex Kashmir Holidays")
-  siteTagline String?
-  siteEmail   String?
-  sitePhone   String?
-  siteAddress String?
-  whatsapp    String?
-  facebook    String?
-  instagram   String?
-  twitter     String?
-  youtube     String?
-  metaTitle   String?
-  metaDesc    String?
-  ogImage     String?
+  id            String   @id @default("singleton")
+  siteName      String   @default("Vertex Kashmir Holidays")
+  siteTagline   String?
+  siteEmail     String?
+  sitePhone     String?
+  siteAddress   String?
+  whatsapp      String?
+  facebook      String?
+  instagram     String?
+  twitter       String?
+  youtube       String?
+  googleReviews String?
+  tripadvisor   String?
+  metaTitle     String?
+  metaDesc      String?
+  ogImage       String?
   // Configurable GST percentage options offered when recording non-cash payments,
   // stored as a JSON number array so they can change without a schema migration.
-  gstRates    String   @default("[5,16,18]")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  gstRates      String   @default("[5,16,18]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 enum Role {

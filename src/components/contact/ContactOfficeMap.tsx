@@ -56,6 +56,7 @@ export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
 
         <Link
           href={content.directionsUrl ?? '#'}
+          target='_blank'
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-[12.5px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
         >
           Get Directions on Google Maps

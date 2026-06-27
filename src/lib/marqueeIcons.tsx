@@ -11,6 +11,7 @@ import {
   Phone,
   Sailboat,
   Snowflake,
+  Thermometer,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -34,6 +35,8 @@ const MARQUEE_ICONS: Record<string, LucideIcon> = {
   '🚡': CableCar,
   '🏨': Hotel,
   '📸': Camera,
+  '🌡️': Thermometer,
+  '🌡': Thermometer,
 };
 
 // Matches a single leading emoji (incl. optional variation selector) plus any

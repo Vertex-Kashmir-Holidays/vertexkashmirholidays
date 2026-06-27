@@ -63,6 +63,7 @@ export function ContactReachCards({ heading, cards }: ContactReachCardsProps) {
               <p className="mt-2 flex-1 text-[11.5px] leading-relaxed text-muted-foreground">{card.subtitle}</p>
               <Link
                 href={card.href}
+                target='_blank'
                 className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-[11.5px] font-bold text-primary-foreground transition hover:brightness-110"
               >
                 {card.cta}

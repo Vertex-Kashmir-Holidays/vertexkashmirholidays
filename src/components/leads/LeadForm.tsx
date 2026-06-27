@@ -19,7 +19,9 @@ import {
   type LeadContext,
   type LeadSourcePage,
 } from "@/lib/leads/schema";
-import { trackLeadSubmit } from "@/lib/analytics";
+import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/analytics";
+import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { WhatsAppIcon } from "@/components/icons/brand";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -60,6 +62,8 @@ export function LeadForm({
   const [country, setCountry] = useState<CountryCode>("IN");
   const [national, setNational] = useState("");
 
+  const wa = useWhatsAppLink();
+
   // ── Anti-bot ───────────────────────────────────────────────────────────────
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -72,6 +76,7 @@ export function LeadForm({
     setValue,
     setError,
     trigger,
+    watch,
     formState: { errors, isSubmitting, isValid },
     reset,
   } = useForm<LeadInput>({
@@ -79,6 +84,19 @@ export function LeadForm({
     mode: "onChange",
     defaultValues: { name: "", phone: "", email: "", agree: false, source, context },
   });
+
+  // Build a WhatsApp pre-fill message from current form values + context.
+  const watchedName = watch("name");
+  const waMessage = (() => {
+    const first = (watchedName ?? "").trim().split(/\s+/)[0];
+    const greeting = first ? `Hi, I'm ${first}! ` : "Hi! ";
+    if (context?.tourName)
+      return `${greeting}I'd like more details about the "${context.tourName}" Kashmir tour. Please help.`;
+    if (context?.destinationName)
+      return `${greeting}I'd like to plan a trip to ${context.destinationName}. Can you help?`;
+    return `${greeting}I'd like to plan a Kashmir holiday. Can you help me?`;
+  })();
+  const waHref = wa(waMessage);
 
   // Keep the E.164 string (what the schema validates) in sync with the
   // country + national-number UI.
@@ -139,7 +157,12 @@ export function LeadForm({
 
       setSentName(String(data.name).trim().split(/\s+/)[0] || "there");
       setSent(true);
-      trackLeadSubmit(source === "tour-detail" ? "tour_inquiry" : source === "contact" ? "contact" : "itinerary");
+      const isTour = source === "tour-detail";
+      trackLeadSubmit(
+        isTour ? "tour_inquiry" : source === "contact" ? "contact" : "itinerary",
+        isTour ? context?.tourName : undefined,
+      );
+      if (isTour) trackTourInquiry(context?.tourName, context?.tourId);
       reset();
       setNational("");
     } catch {
@@ -148,6 +171,9 @@ export function LeadForm({
   };
 
   if (sent) {
+    const successWaHref = wa(
+      `Hi! I'm ${sentName}. I just submitted a travel inquiry on your website and wanted to connect on WhatsApp.`
+    );
     return (
       <div className={className}>
         <motion.div
@@ -166,6 +192,16 @@ export function LeadForm({
             Our local Kashmir expert will connect with you on WhatsApp shortly —
             usually within 30 minutes.
           </p>
+          <a
+            href={successWaHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackWhatsappClick("lead_form")}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 px-5 py-2.5 text-[13px] font-bold text-[#25D366] transition hover:bg-[#25D366]/20"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            Chat on WhatsApp now
+          </a>
         </motion.div>
       </div>
     );
@@ -314,6 +350,18 @@ export function LeadForm({
             </>
           )}
         </button>
+
+        {/* WhatsApp alternative CTA */}
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackWhatsappClick("lead_form")}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-[13px] font-bold transition hover:border-[#25D366] hover:text-[#25D366]"
+        >
+          <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
+          Or chat on WhatsApp
+        </a>
 
         {(avatars.length > 0 || note) && (
           <div className="flex items-center gap-3 pt-0.5">

@@ -44,7 +44,14 @@ export async function POST(req: NextRequest) {
   const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
   const type = isVideo ? "VIDEO" : "IMAGE";
 
-  const { url } = await saveUpload(buffer, { folder, ext });
+  let url: string;
+  try {
+    ({ url } = await saveUpload(buffer, { folder, ext }));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Upload failed";
+    console.error("[uploads] saveUpload error:", err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 
   // Register every upload in the central Gallery so it becomes reusable across
   // any module. Failure to register must not fail the upload — the file is

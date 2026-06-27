@@ -1,6 +1,4 @@
 "use client";
-
-
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +6,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { parseGstRates } from "@/lib/payments/gst";
-
 
 const schema = z.object({
  siteName: z.string().min(1, "Site name is required"),
@@ -27,9 +24,7 @@ const schema = z.object({
  gstRates: z.string().optional(),
 });
 
-
 type FormData = z.infer<typeof schema>;
-
 
 interface SiteSettings {
  siteName: string;
@@ -48,15 +43,12 @@ interface SiteSettings {
  gstRates: string;
 }
 
-
 interface Props {
  settings: SiteSettings;
 }
 
-
 const inputCls =
  "w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition";
-
 
 function Field({ label, name, register, textarea, placeholder, type = "text" }: {
  label: string;
@@ -78,10 +70,8 @@ function Field({ label, name, register, textarea, placeholder, type = "text" }: 
  );
 }
 
-
 export function SettingsForm({ settings }: Props) {
  const [isPending, startTransition] = useTransition();
-
 
  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
    resolver: zodResolver(schema),
@@ -103,7 +93,6 @@ export function SettingsForm({ settings }: Props) {
    },
  });
 
-
  function onSubmit(data: FormData) {
    const { gstRates, ...rest } = data;
    const rates = (gstRates ?? "")
@@ -111,7 +100,6 @@ export function SettingsForm({ settings }: Props) {
      .map((s) => parseFloat(s.trim()))
      .filter((n) => Number.isFinite(n) && n > 0 && n <= 100);
    const payload = { ...rest, gstRates: rates };
-
 
    startTransition(async () => {
      try {
@@ -128,12 +116,10 @@ export function SettingsForm({ settings }: Props) {
    });
  }
 
-
  return (
    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
      {/* Two-column grid — left: General + Social, right: Payments + SEO */}
      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-
 
        {/* ── LEFT COLUMN ── */}
        <div className="space-y-6">
@@ -154,7 +140,6 @@ export function SettingsForm({ settings }: Props) {
            <Field label="Address" name="siteAddress" register={register} textarea placeholder="Dal Lake Road, Srinagar, J&K 190001" />
          </div>
 
-
          {/* Social Media & Contacts */}
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <h3 className="font-bold text-foreground text-sm">Social Media &amp; Contacts</h3>
@@ -168,7 +153,6 @@ export function SettingsForm({ settings }: Props) {
          </div>
        </div>
 
-
        {/* ── RIGHT COLUMN ── */}
        <div className="space-y-6">
          {/* Payments / GST */}
@@ -180,7 +164,6 @@ export function SettingsForm({ settings }: Props) {
            </p>
          </div>
 
-
          {/* Default SEO */}
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <h3 className="font-bold text-foreground text-sm">Default SEO</h3>
@@ -191,7 +174,6 @@ export function SettingsForm({ settings }: Props) {
          </div>
        </div>
      </div>
-
 
      {/* CTA — centered below both columns */}
      <div className="flex justify-center pt-2">

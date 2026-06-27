@@ -1,4 +1,4 @@
-// src/components/sections/TourDetailsSidebar.tsx
+// src/components/tours/TourDetailsSidebar.tsx
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +16,7 @@ interface TourDetailsSidebarProps {
   discountPct?: number;
   rating: number;
   reviews: number;
+  tourId: string;
   tourName: string;
   /** Slug used to deep-link into the /booking checkout page. */
   tourSlug: string;
@@ -37,6 +38,7 @@ export function TourDetailsSidebar({
   discountPct,
   rating,
   reviews,
+  tourId,
   tourName,
   tourSlug,
   formMode = 'BOTH',
@@ -99,12 +101,12 @@ export function TourDetailsSidebar({
           </span>
         ) : null}
         <p className="mt-3 flex items-baseline gap-2">
-          <span className="text-[30px] font-extrabold leading-none">₹{price.toLocaleString()}</span>
+          <span className="text-[30px] font-extrabold leading-none">₹{price.toLocaleString('en-IN')}</span>
           <span className="text-[12px] font-medium text-muted-foreground">per person</span>
         </p>
         {oldPrice && (
           <p className="mt-1.5 text-[15px] font-semibold text-muted-foreground line-through">
-            ₹{oldPrice.toLocaleString()}
+            ₹{oldPrice.toLocaleString('en-IN')}
           </p>
         )}
 
@@ -115,7 +117,7 @@ export function TourDetailsSidebar({
           </p>
           <div className="leading-tight">
             <p className="text-[13px] font-bold">Excellent</p>
-            <p className="text-[11.5px] text-muted-foreground">{reviews.toLocaleString()} reviews</p>
+            <p className="text-[11.5px] text-muted-foreground">{reviews.toLocaleString('en-IN')} reviews</p>
           </div>
         </div>
 
@@ -133,7 +135,7 @@ export function TourDetailsSidebar({
         {showInquiry && showBook && (
           <div className="mt-5 flex border-b border-border text-[14px] font-bold">
             <button
-             onClick={() => { setActiveTab('inquiry'); if (activeTab !== 'inquiry') trackTourInquiry(tourName); }}
+             onClick={() => { setActiveTab('inquiry'); if (activeTab !== 'inquiry') trackTourInquiry(tourName, tourId); }}
               className={`relative flex-1 pb-3 transition ${
                 activeTab === 'inquiry' ? 'text-primary' : 'text-muted-foreground'
               }`}
@@ -168,7 +170,7 @@ export function TourDetailsSidebar({
         >
           <LeadForm
             source="tour-detail"
-            context={{ tourName }}
+            context={{ tourId, tourName }}
             buttonLabel="Send Inquiry"
           />
         </motion.div>
