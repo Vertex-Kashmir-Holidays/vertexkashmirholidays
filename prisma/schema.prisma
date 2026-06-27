@@ -32,6 +32,13 @@ model User {
   itinerariesEdited Itinerary[] @relation("ItineraryEditor")
   leadsAssigned Lead[]      @relation("LeadAssignee")
   notifications Notification[]
+  // ── Vertex Connect ────────────────────────────────────────────────────────
+  chatRoomsCreated    ChatRoom[]           @relation("ConnectRoomCreator")
+  chatMemberships     ChatMember[]         @relation("ConnectMemberships")
+  chatMessagesSent    ChatMessage[]        @relation("ConnectMessageSender")
+  presence            UserPresence?
+  meetingsCreated     Meeting[]            @relation("ConnectMeetingCreator")
+  meetingParticipants MeetingParticipant[] @relation("ConnectMeetingParticipants")
 
   @@index([email])
   @@index([deletedAt])
@@ -1080,3 +1087,130 @@ enum ItineraryStatus {
   SENT
   CONFIRMED
 }
+
+// ── Vertex Connect — Internal team communication ───────────────────────────────
+
+enum RoomType {
+  DIRECT
+  GROUP
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
+}
+
+enum PresenceStatus {
+  ONLINE
+  AWAY
+  BUSY
+  OFFLINE
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+}
+
+enum MeetingType {
+  AUDIO
+  VIDEO
+}
+
+model ChatRoom {
+  id          String        @id @default(cuid())
+  type        RoomType
+  name        String?
+  avatarUrl   String?
+  createdById String
+  createdBy   User          @relation("ConnectRoomCreator", fields: [createdById], references: [id])
+  members     ChatMember[]
+  messages    ChatMessage[]
+  meetings    Meeting[]
+  archivedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([archivedAt])
+  @@index([type])
+  @@index([createdById])
+}
+
+model ChatMember {
+  id         String     @id @default(cuid())
+  roomId     String
+  room       ChatRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User       @relation("ConnectMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  role       MemberRole @default(MEMBER)
+  lastReadAt DateTime?
+  joinedAt   DateTime   @default(now())
+  leftAt     DateTime?
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@index([roomId])
+}
+
+model ChatMessage {
+  id                 String    @id @default(cuid())
+  roomId             String
+  room               ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId           String
+  sender             User      @relation("ConnectMessageSender", fields: [senderId], references: [id])
+  body               String?
+  attachmentUrl      String?
+  attachmentPublicId String?
+  attachmentType     String?
+  attachmentName     String?
+  editedAt           DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+
+  @@index([roomId, createdAt])
+  @@index([createdAt])
+  @@index([senderId])
+}
+
+model UserPresence {
+  userId     String         @id
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     PresenceStatus @default(OFFLINE)
+  lastSeenAt DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model Meeting {
+  id           String               @id @default(cuid())
+  roomId       String?
+  room         ChatRoom?            @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  title        String
+  type         MeetingType          @default(AUDIO)
+  jitsiRoomId  String               @unique
+  createdById  String
+  createdBy    User                 @relation("ConnectMeetingCreator", fields: [createdById], references: [id])
+  endedAt      DateTime?
+  status       MeetingStatus        @default(ACTIVE)
+  participants MeetingParticipant[]
+  createdAt    DateTime             @default(now())
+
+  @@index([status])
+  @@index([createdById])
+  @@index([roomId])
+  @@index([createdAt])
+}
+
+model MeetingParticipant {
+  id        String    @id @default(cuid())
+  meetingId String
+  meeting   Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation("ConnectMeetingParticipants", fields: [userId], references: [id])
+  joinedAt  DateTime  @default(now())
+  leftAt    DateTime?
+
+  @@unique([meetingId, userId])
+  @@index([userId])
+}
+

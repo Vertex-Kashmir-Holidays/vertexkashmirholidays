@@ -45,8 +45,9 @@ export async function POST(req: NextRequest) {
   const type = isVideo ? "VIDEO" : "IMAGE";
 
   let url: string;
+  let publicId: string | null = null;
   try {
-    ({ url } = await saveUpload(buffer, { folder, ext }));
+    ({ url, publicId } = await saveUpload(buffer, { folder, ext }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Upload failed";
     console.error("[uploads] saveUpload error:", err);
@@ -66,5 +67,5 @@ export async function POST(req: NextRequest) {
     galleryId = null;
   }
 
-  return NextResponse.json({ url, type, id: galleryId }, { status: 201 });
+  return NextResponse.json({ url, type, id: galleryId, publicId }, { status: 201 });
 }
