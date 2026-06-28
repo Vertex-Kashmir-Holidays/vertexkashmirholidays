@@ -9,6 +9,7 @@ type Params = { params: Promise<{ id: string }> };
 const patchSchema = z.object({
   name: z.string().min(1).max(80).trim().optional(),
   avatarUrl: z.string().url().nullable().optional(),
+  archived: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -18,9 +19,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id: roomId } = await params;
 
   const room = await prisma.chatRoom.findUnique({ where: { id: roomId } });
-  if (!room || room.type !== "GROUP") {
-    return NextResponse.json({ error: "Group not found" }, { status: 404 });
-  }
+  if (!room) return NextResponse.json({ error: "Room not found" }, { status: 404 });
 
   const myMembership = await prisma.chatMember.findUnique({
     where: { roomId_userId: { roomId, userId: myId } },
@@ -28,15 +27,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!myMembership || myMembership.leftAt) {
     return NextResponse.json({ error: "Not a member" }, { status: 403 });
   }
-  if (myMembership.role !== "ADMIN") {
-    return NextResponse.json({ error: "Only group admins can update the group" }, { status: 403 });
-  }
 
   let body: z.infer<typeof patchSchema>;
   try {
     body = patchSchema.parse(await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  // Archive toggle — any member of any room type
+  if (body.archived !== undefined) {
+    const updated = await prisma.chatRoom.update({
+      where: { id: roomId },
+      data: { archivedAt: body.archived ? new Date() : null },
+      select: { id: true, archivedAt: true },
+    });
+    return NextResponse.json(updated);
+  }
+
+  // Name/avatar edits — group admins only
+  if (room.type !== "GROUP") {
+    return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  }
+  if (myMembership.role !== "ADMIN") {
+    return NextResponse.json({ error: "Only group admins can update the group" }, { status: 403 });
   }
 
   const updates: { name?: string; avatarUrl?: string | null } = {};
@@ -53,7 +67,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     select: { id: true, name: true, avatarUrl: true },
   });
 
-  // Notify all other members if the group was renamed
   if (body.name !== undefined && body.name !== room.name) {
     const otherMembers = await prisma.chatMember.findMany({
       where: { roomId, userId: { not: myId }, leftAt: null },

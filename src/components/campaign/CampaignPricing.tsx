@@ -110,7 +110,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
       {emiAmount > 0 && (
         <AffordabilityWidget
           amount={emiAmount}
-          title="No-cost & low-cost EMI available"
+          title="Easy EMI Available"
           className="mx-auto mt-10 max-w-xl"
         />
       )}

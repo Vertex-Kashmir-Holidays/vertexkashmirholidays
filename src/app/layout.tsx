@@ -68,6 +68,9 @@ export const metadata: Metadata = {
     images: ["/brand/kit/social/vertex-og-1200x630.png"],
   },
   // favicon.ico, icon.svg and apple-icon.png are auto-discovered from src/app.
+  ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
+    ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }
+    : {}),
 };
 
 

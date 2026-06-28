@@ -1,7 +1,9 @@
 "use client";
-import { useRef, useState, type KeyboardEvent } from "react";
-import { Paperclip, Send, X } from "lucide-react";
+import { useRef, useState, useEffect, type KeyboardEvent } from "react";
+import { Paperclip, Pencil, Send, Smile, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ConnectMessage } from "./hooks/useMessages";
+import { EmojiPicker } from "./EmojiPicker";
 
 const MAX_BYTES = 1 * 1024 * 1024; // 1 MB
 
@@ -9,6 +11,9 @@ interface Props {
   roomId: string;
   disabled?: boolean;
   onSent: (message: unknown) => void;
+  editingMessage?: ConnectMessage | null;
+  onCancelEdit?: () => void;
+  onEdited?: (message: unknown) => void;
 }
 
 interface UploadResult {
@@ -16,10 +21,11 @@ interface UploadResult {
   publicId: string | null;
 }
 
-export function MessageInput({ roomId, disabled, onSent }: Props) {
+export function MessageInput({ roomId, disabled, onSent, editingMessage, onCancelEdit, onEdited }: Props) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [attachment, setAttachment] = useState<{
     url: string;
     publicId: string | null;
@@ -28,6 +34,15 @@ export function MessageInput({ roomId, disabled, onSent }: Props) {
   } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Pre-fill textarea when entering edit mode
+  useEffect(() => {
+    if (editingMessage) {
+      setText(editingMessage.body ?? "");
+      textareaRef.current?.focus();
+    }
+  }, [editingMessage]);
 
   async function handleFile(file: File) {
     if (file.size > MAX_BYTES) {
@@ -55,8 +70,50 @@ export function MessageInput({ roomId, disabled, onSent }: Props) {
     }
   }
 
+  function insertEmoji(emoji: string) {
+    const ta = textareaRef.current;
+    if (!ta) {
+      setText((prev) => prev + emoji);
+      return;
+    }
+    const start = ta.selectionStart ?? text.length;
+    const end = ta.selectionEnd ?? text.length;
+    const next = text.slice(0, start) + emoji + text.slice(end);
+    setText(next);
+    // Restore cursor after emoji
+    requestAnimationFrame(() => {
+      ta.selectionStart = start + emoji.length;
+      ta.selectionEnd = start + emoji.length;
+      ta.focus();
+    });
+    setShowEmoji(false);
+  }
+
   async function send() {
     const trimmed = text.trim();
+
+    if (editingMessage) {
+      if (!trimmed) return;
+      setSending(true);
+      try {
+        const res = await fetch(`/api/connect/rooms/${roomId}/messages/${editingMessage.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body: trimmed }),
+        });
+        if (!res.ok) throw new Error("Edit failed");
+        const msg = await res.json();
+        onEdited?.(msg);
+        setText("");
+        onCancelEdit?.();
+      } catch {
+        alert("Failed to edit message. Please try again.");
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
     if (!trimmed && !attachment) return;
     setSending(true);
     try {
@@ -89,13 +146,40 @@ export function MessageInput({ roomId, disabled, onSent }: Props) {
       e.preventDefault();
       send();
     }
+    if (e.key === "Escape" && editingMessage) {
+      onCancelEdit?.();
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setText(e.target.value);
+    if (e.target.value && !editingMessage) {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        fetch(`/api/connect/rooms/${roomId}/typing`, { method: "POST" }).catch(() => {});
+      }, 500);
+    }
   }
 
   const busy = sending || uploading || disabled;
 
   return (
-    <div className="p-3 border-t border-border bg-background">
-      {attachment && (
+    <div className="relative">
+      {showEmoji && (
+        <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
+      )}
+      <div className="p-3 border-t border-border bg-background">
+      {editingMessage && (
+        <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs">
+          <Pencil className="w-3 h-3 text-primary shrink-0" />
+          <span className="flex-1 text-primary">Editing message</span>
+          <button onClick={onCancelEdit} className="text-muted-foreground hover:text-foreground">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {attachment && !editingMessage && (
         <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm">
           <Paperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <span className="truncate flex-1 text-xs">{attachment.name}</span>
@@ -109,26 +193,43 @@ export function MessageInput({ roomId, disabled, onSent }: Props) {
       )}
 
       <div className="flex items-end gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => fileRef.current?.click()}
-          className={cn(
-            "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
-            busy && "opacity-50 cursor-not-allowed",
-          )}
-          title="Attach file"
-        >
-          <Paperclip className="w-4 h-4" />
-        </button>
+        {!editingMessage && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => fileRef.current?.click()}
+            className={cn(
+              "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
+              busy && "opacity-50 cursor-not-allowed",
+            )}
+            title="Attach file"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+        )}
+        {!editingMessage && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setShowEmoji((v) => !v)}
+            className={cn(
+              "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
+              busy && "opacity-50 cursor-not-allowed",
+              showEmoji && "text-foreground bg-muted",
+            )}
+            title="Emoji"
+          >
+            <Smile className="w-4 h-4" />
+          </button>
+        )}
 
         <textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleChange}
           onKeyDown={onKeyDown}
           disabled={busy}
-          placeholder="Message… (Enter to send, Shift+Enter for new line)"
+          placeholder={editingMessage ? "Edit message… (Esc to cancel)" : "Message… (Enter to send, Shift+Enter for new line)"}
           rows={1}
           className={cn(
             "flex-1 resize-none rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-sm",
@@ -141,13 +242,13 @@ export function MessageInput({ roomId, disabled, onSent }: Props) {
 
         <button
           type="button"
-          disabled={busy || (!text.trim() && !attachment)}
+          disabled={busy || (!text.trim() && !attachment && !editingMessage)}
           onClick={send}
           className={cn(
             "p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0",
-            (busy || (!text.trim() && !attachment)) && "opacity-50 cursor-not-allowed",
+            (busy || (!text.trim() && !attachment && !editingMessage)) && "opacity-50 cursor-not-allowed",
           )}
-          title="Send"
+          title={editingMessage ? "Save edit" : "Send"}
         >
           <Send className="w-4 h-4" />
         </button>
@@ -164,6 +265,7 @@ export function MessageInput({ roomId, disabled, onSent }: Props) {
           e.target.value = "";
         }}
       />
+      </div>
     </div>
   );
 }

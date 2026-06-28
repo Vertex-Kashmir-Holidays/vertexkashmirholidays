@@ -3,6 +3,7 @@
 
 import { motion } from 'framer-motion';
 import { Logo } from '@/components/brand/Logo';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useEffect, useState } from 'react';
 
 interface CampaignNavProps {
@@ -47,6 +48,7 @@ export function CampaignNav({ ctaText, phone }: CampaignNavProps) {
               {phone}
             </a>
           )}
+          <ThemeToggle className="!border-white/20 !text-white hover:!bg-white/10" />
           <a
             href="#reserve"
             className="sweep rounded-full bg-accent-grad px-5 py-2.5 text-[13px] font-bold text-white ring-inner shadow-glow transition hover:scale-[1.03]"

@@ -20,6 +20,7 @@ export interface ConnectRoom {
   type: "DIRECT" | "GROUP";
   name: string | null;
   avatarUrl: string | null;
+  archivedAt: string | null;
   myRole: string;
   members: RoomMember[];
   messages: LastMessage[];
@@ -34,8 +35,13 @@ export function useRoomList(enabled = true) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/connect/rooms");
-      if (res.ok) setRooms(await res.json());
+      const [activeRes, archivedRes] = await Promise.all([
+        fetch("/api/connect/rooms"),
+        fetch("/api/connect/rooms?archived=true"),
+      ]);
+      const active: ConnectRoom[] = activeRes.ok ? await activeRes.json() : [];
+      const archived: ConnectRoom[] = archivedRes.ok ? await archivedRes.json() : [];
+      setRooms([...active, ...archived]);
     } catch {
       // best-effort
     } finally {
