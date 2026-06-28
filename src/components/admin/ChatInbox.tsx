@@ -53,6 +53,30 @@ export function ChatInbox() {
     return () => clearInterval(t);
   }, [load]);
 
+  // When the active chat room receives new messages, immediately mark its
+  // CHAT_* notifications as read so the icon badge doesn't accumulate.
+  useEffect(() => {
+    function onMarkRead(e: Event) {
+      const { roomId } = (e as CustomEvent<{ roomId: string }>).detail;
+      setAllItems((prev) => {
+        const toMark = prev
+          .filter((n) => n.type.startsWith("CHAT_") && !n.readAt && n.link?.includes(roomId))
+          .map((n) => n.id);
+        if (toMark.length === 0) return prev;
+        fetch("/api/notifications/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: toMark }),
+        }).catch(() => {});
+        return prev.map((n) =>
+          toMark.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n,
+        );
+      });
+    }
+    window.addEventListener("connect:mark-room-read", onMarkRead);
+    return () => window.removeEventListener("connect:mark-room-read", onMarkRead);
+  }, []);
+
   // Close on outside click
   useEffect(() => {
     function onDoc(e: MouseEvent) {

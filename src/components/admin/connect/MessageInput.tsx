@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState, useEffect, type KeyboardEvent } from "react";
+import { toast } from "sonner";
 import { Paperclip, Pencil, Send, Smile, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ConnectMessage } from "./hooks/useMessages";
@@ -46,7 +47,7 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
 
   async function handleFile(file: File) {
     if (file.size > MAX_BYTES) {
-      alert(`Attachments are limited to 1 MB. "${file.name}" is too large.`);
+      toast.error("File too large", { description: `"${file.name}" exceeds the 1 MB limit.` });
       return;
     }
     setUploading(true);
@@ -64,7 +65,7 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
         : "file";
       setAttachment({ url: data.url, publicId: data.publicId ?? null, name: file.name, type: attachType });
     } catch {
-      alert("Upload failed. Please try again.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -107,7 +108,7 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
         setText("");
         onCancelEdit?.();
       } catch {
-        alert("Failed to edit message. Please try again.");
+        toast.error("Failed to edit message. Please try again.");
       } finally {
         setSending(false);
       }
@@ -135,7 +136,7 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
       setAttachment(null);
       textareaRef.current?.focus();
     } catch {
-      alert("Failed to send message. Please try again.");
+      toast.error("Failed to send. Please try again.");
     } finally {
       setSending(false);
     }

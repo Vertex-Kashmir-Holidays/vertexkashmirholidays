@@ -169,7 +169,7 @@ function RoomButton({
                 {timeAgo(lastMsg.createdAt)}
               </span>
             )}
-            {room.unreadCount > 0 && (
+            {room.unreadCount > 0 && !isActive && (
               <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
                 {room.unreadCount > 99 ? "99+" : room.unreadCount}
               </span>

@@ -227,9 +227,7 @@ export function MessageBubble({ message, isOwn, selfSlug, onEdit, onDelete }: Pr
           )}
           {onDelete && (
             <button
-              onClick={() => {
-                if (confirm("Delete this message?")) onDelete(message.id);
-              }}
+              onClick={() => onDelete(message.id)}
               className="p-1 rounded text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
               title="Delete"
             >
