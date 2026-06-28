@@ -3,12 +3,14 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ArrowLeft, Users, Info, Phone, Video, Loader2, Search, Archive, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMessages } from "./hooks/useMessages";
+import { useNotificationSound } from "./hooks/useNotificationSound";
 import type { ConnectRoom } from "./hooks/useRoomList";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import { GroupInfoPanel } from "./GroupInfoPanel";
 import { ActiveMeetingBanner } from "./ActiveMeetingBanner";
 import { MeetingModal } from "./MeetingModal";
+import { ConfirmDialog } from "./ConfirmDialog";
 import type { ConnectMessage } from "./hooks/useMessages";
 import type { ActiveMeeting } from "./ActiveMeetingBanner";
 import type { PresenceMap, PresenceStatus } from "./hooks/usePresence";
@@ -95,6 +97,7 @@ function sameDay(a: string, b: string) {
 
 export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack, onRefresh }: Props) {
   const { messages, loading, hasMore, loadMore, appendOptimistic, updateMessage, typing } = useMessages(room.id);
+  const { playMention } = useNotificationSound();
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(0);
@@ -108,6 +111,8 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   const [searchResults, setSearchResults] = useState<ConnectMessage[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   const currentUserName =
     room.members.find((m) => m.userId === currentUserId)?.user.name ?? null;
@@ -120,7 +125,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
     fetch(`/api/connect/rooms/${room.id}/read`, { method: "POST" }).catch(() => {});
   }, [room.id]);
 
-  // Scroll to bottom when new messages arrive (only if already near bottom)
+  // Scroll to bottom + mention sound when new messages arrive
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -131,13 +136,22 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
     if (prevLen === 0) {
       bottomRef.current?.scrollIntoView({ behavior: "instant" });
     } else if (messages.length > prevLen) {
+      // Check if any new incoming message @mentions the current user
+      const newMsgs = messages.slice(prevLen);
+      const hasMention =
+        !!selfSlug &&
+        newMsgs.some(
+          (m) => m.senderId !== currentUserId && m.body?.toLowerCase().includes(`@${selfSlug}`),
+        );
+      if (hasMention) playMention();
+
       const distFromBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight;
       if (distFromBottom < 200) {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [messages]);
+  }, [messages, selfSlug, currentUserId, playMention]);
 
   function handleSent(msg: unknown) {
     appendOptimistic(msg as ConnectMessage);
@@ -150,7 +164,12 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
     setEditingMessage(msg);
   }, []);
 
-  const handleDelete = useCallback(async (messageId: string) => {
+  // Opens the delete dialog; actual API call happens in the ConfirmDialog onConfirm
+  const handleDelete = useCallback((messageId: string) => {
+    setConfirmDeleteId(messageId);
+  }, []);
+
+  const doDelete = useCallback(async (messageId: string) => {
     const res = await fetch(`/api/connect/rooms/${room.id}/messages/${messageId}`, {
       method: "DELETE",
     });
@@ -181,13 +200,16 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
 
   // ─── Archive ────────────────────────────────────────────────────────────────
 
-  const handleArchive = useCallback(async () => {
-    const isArchived = !!room.archivedAt;
-    if (!confirm(isArchived ? "Unarchive this conversation?" : "Archive this conversation?")) return;
+  const handleArchive = useCallback(() => {
+    setShowArchiveConfirm(true);
+  }, []);
+
+  const doArchive = useCallback(async () => {
+    setShowArchiveConfirm(false);
     await fetch(`/api/connect/rooms/${room.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archived: !isArchived }),
+      body: JSON.stringify({ archived: !room.archivedAt }),
     });
     await onRefresh?.();
   }, [room.id, room.archivedAt, onRefresh]);
@@ -531,6 +553,34 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
           onEndForAll={handleEndForAll}
         />
       )}
+
+      {/* Delete message confirmation */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete message?"
+        description="This message will be removed for everyone in the conversation."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => {
+          if (confirmDeleteId) doDelete(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      {/* Archive / unarchive confirmation */}
+      <ConfirmDialog
+        open={showArchiveConfirm}
+        title={room.archivedAt ? "Unarchive conversation?" : "Archive conversation?"}
+        description={
+          room.archivedAt
+            ? "This conversation will be moved back to your active chats."
+            : "This conversation will be hidden from your active chats. You can always unarchive it later."
+        }
+        confirmLabel={room.archivedAt ? "Unarchive" : "Archive"}
+        onConfirm={doArchive}
+        onCancel={() => setShowArchiveConfirm(false)}
+      />
     </>
   );
 }

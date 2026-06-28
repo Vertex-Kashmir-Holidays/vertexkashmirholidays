@@ -71,6 +71,10 @@ export function useMessages(roomId: string | null) {
       const { messages: updates, typing: t } = (await res.json()) as FetchResult;
       setTyping(t ?? []);
       if (updates.length === 0) return;
+      // Keep lastReadAt fresh while the room is open so the unread count stays zero
+      fetch(`/api/connect/rooms/${roomId}/read`, { method: "POST" }).catch(() => {});
+      // Signal ChatInbox to immediately clear stale notifications for this room
+      window.dispatchEvent(new CustomEvent("connect:mark-room-read", { detail: { roomId } }));
       setMessages((prev) => {
         const map = new Map(prev.map((m) => [m.id, m]));
         for (const msg of updates) {

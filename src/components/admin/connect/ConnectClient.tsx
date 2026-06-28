@@ -1,8 +1,9 @@
 "use client";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { MessageSquare } from "lucide-react";
 import { useRoomList } from "./hooks/useRoomList";
 import { usePresence } from "./hooks/usePresence";
+import { useNotificationSound } from "./hooks/useNotificationSound";
 import { RoomList } from "./RoomList";
 import { ChatView } from "./ChatView";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,31 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
   const { rooms, loading, refetch } = useRoomList();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId ?? null);
   const [showList, setShowList] = useState(!initialRoomId);
+  const { playMessage } = useNotificationSound();
+
+  // Track unread counts across polls to detect new background-room messages
+  const prevUnreadRef = useRef<Map<string, number>>(new Map());
+  const firstRunRef = useRef(true);
+  const selectedRoomIdRef = useRef(selectedRoomId);
+  useEffect(() => { selectedRoomIdRef.current = selectedRoomId; }, [selectedRoomId]);
+
+  useEffect(() => {
+    if (rooms.length === 0) return;
+    if (firstRunRef.current) {
+      firstRunRef.current = false;
+      prevUnreadRef.current = new Map(rooms.map((r) => [r.id, r.unreadCount]));
+      return;
+    }
+    const prev = prevUnreadRef.current;
+    for (const room of rooms) {
+      if (room.id === selectedRoomIdRef.current) continue; // user is actively reading this
+      if ((prev.get(room.id) ?? 0) < room.unreadCount) {
+        playMessage();
+        break; // one sound per poll tick
+      }
+    }
+    prevUnreadRef.current = new Map(rooms.map((r) => [r.id, r.unreadCount]));
+  }, [rooms, playMessage]);
 
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId) ?? null;
 
