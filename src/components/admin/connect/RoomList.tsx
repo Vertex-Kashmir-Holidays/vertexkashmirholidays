@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Users, MessageSquare, Plus } from "lucide-react";
+import { Users, MessageSquare, Plus, ChevronDown } from "lucide-react";
 import type { ConnectRoom } from "./hooks/useRoomList";
 import type { PresenceMap, PresenceStatus } from "./hooks/usePresence";
 import { NewGroupDialog } from "./NewGroupDialog";
@@ -112,6 +112,78 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
+function RoomButton({
+  room,
+  currentUserId,
+  selectedRoomId,
+  presenceMap,
+  onSelect,
+}: {
+  room: ConnectRoom;
+  currentUserId: string;
+  selectedRoomId: string | null;
+  presenceMap: PresenceMap;
+  onSelect: (roomId: string) => void;
+}) {
+  const avProps = roomAvatarProps(room, currentUserId);
+  const isActive = room.id === selectedRoomId;
+  const lastMsg = room.messages[0];
+
+  const dmPartnerId =
+    room.type === "DIRECT"
+      ? room.members.find((m) => m.userId !== currentUserId)?.userId
+      : undefined;
+  const dmPresence: PresenceStatus | undefined = dmPartnerId
+    ? (presenceMap[dmPartnerId] ?? "OFFLINE")
+    : undefined;
+
+  return (
+    <button
+      key={room.id}
+      onClick={() => onSelect(room.id)}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60",
+        isActive && "bg-muted",
+      )}
+    >
+      <div className="relative shrink-0">
+        <UserAvatar
+          {...avProps}
+          size={36}
+          presenceStatus={dmPresence}
+        />
+        {room.type === "GROUP" && !avProps.avatarUrl && (
+          <div className="absolute -bottom-0.5 -right-0.5 bg-card border border-border rounded-full p-0.5">
+            <Users className="w-2.5 h-2.5 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-sm font-medium truncate">
+            {roomDisplayName(room, currentUserId)}
+          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            {lastMsg && (
+              <span className="text-[10px] text-muted-foreground">
+                {timeAgo(lastMsg.createdAt)}
+              </span>
+            )}
+            {room.unreadCount > 0 && (
+              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                {room.unreadCount > 99 ? "99+" : room.unreadCount}
+              </span>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {lastMessagePreview(room)}
+        </p>
+      </div>
+    </button>
+  );
+}
+
 export function RoomList({
   rooms,
   loading,
@@ -124,6 +196,10 @@ export function RoomList({
   onGroupCreated,
 }: Props) {
   const [showNewGroup, setShowNewGroup] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const activeRooms = rooms.filter((r) => !r.archivedAt);
+  const archivedRooms = rooms.filter((r) => !!r.archivedAt);
 
   const others = staffUsers.filter((u) => u.id !== currentUserId);
   const existingDMTargets = new Set(
@@ -162,66 +238,46 @@ export function RoomList({
             </div>
           )}
 
-          {rooms.map((room) => {
-            const avProps = roomAvatarProps(room, currentUserId);
-            const isActive = room.id === selectedRoomId;
-            const lastMsg = room.messages[0];
+          {activeRooms.map((room) => (
+            <RoomButton
+              key={room.id}
+              room={room}
+              currentUserId={currentUserId}
+              selectedRoomId={selectedRoomId}
+              presenceMap={presenceMap}
+              onSelect={onSelect}
+            />
+          ))}
 
-            // Presence only for DM rooms
-            const dmPartnerId =
-              room.type === "DIRECT"
-                ? room.members.find((m) => m.userId !== currentUserId)?.userId
-                : undefined;
-            const dmPresence: PresenceStatus | undefined = dmPartnerId
-              ? (presenceMap[dmPartnerId] ?? "OFFLINE")
-              : undefined;
-
-            return (
+          {/* Archived section */}
+          {archivedRooms.length > 0 && (
+            <div>
               <button
-                key={room.id}
-                onClick={() => onSelect(room.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60",
-                  isActive && "bg-muted",
-                )}
+                onClick={() => setShowArchived((v) => !v)}
+                className="w-full px-4 pt-4 pb-1 flex items-center gap-2 text-left"
               >
-                <div className="relative shrink-0">
-                  <UserAvatar
-                    {...avProps}
-                    size={36}
-                    presenceStatus={dmPresence}
-                  />
-                  {room.type === "GROUP" && !avProps.avatarUrl && (
-                    <div className="absolute -bottom-0.5 -right-0.5 bg-card border border-border rounded-full p-0.5">
-                      <Users className="w-2.5 h-2.5 text-muted-foreground" />
-                    </div>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex-1">
+                  Archived ({archivedRooms.length})
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-3 h-3 text-muted-foreground transition-transform",
+                    showArchived && "rotate-180",
                   )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-medium truncate">
-                      {roomDisplayName(room, currentUserId)}
-                    </span>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {lastMsg && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {timeAgo(lastMsg.createdAt)}
-                        </span>
-                      )}
-                      {room.unreadCount > 0 && (
-                        <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                          {room.unreadCount > 99 ? "99+" : room.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {lastMessagePreview(room)}
-                  </p>
-                </div>
+                />
               </button>
-            );
-          })}
+              {showArchived && archivedRooms.map((room) => (
+                <RoomButton
+                  key={room.id}
+                  room={room}
+                  currentUserId={currentUserId}
+                  selectedRoomId={selectedRoomId}
+                  presenceMap={presenceMap}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
+          )}
 
           {/* New DM section */}
           {newDMCandidates.length > 0 && (

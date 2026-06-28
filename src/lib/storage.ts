@@ -138,6 +138,35 @@ async function saveToCloudinary(
   return { url: result.secure_url, folder: slug, publicId: result.public_id };
 }
 
+/**
+ * Delete a batch of assets from Cloudinary by public_id.
+ * Silently skips if Cloudinary is not configured (local dev).
+ * Returns the number of assets successfully deleted.
+ */
+export async function deleteFromCloudinary(publicIds: string[]): Promise<number> {
+  if (!publicIds.length || !isCloudinaryConfigured()) return 0;
+  ensureCloudinaryConfig();
+
+  // Cloudinary bulk delete accepts up to 100 ids per call.
+  const BATCH = 100;
+  let deleted = 0;
+  for (let i = 0; i < publicIds.length; i += BATCH) {
+    const batch = publicIds.slice(i, i + BATCH);
+    try {
+      // resource_type "image" covers images; raw covers PDFs/docs. Try both.
+      await Promise.allSettled([
+        cloudinary.api.delete_resources(batch, { resource_type: "image" }),
+        cloudinary.api.delete_resources(batch, { resource_type: "raw" }),
+        cloudinary.api.delete_resources(batch, { resource_type: "video" }),
+      ]);
+      deleted += batch.length;
+    } catch {
+      // best-effort — log but don't abort the retention job
+    }
+  }
+  return deleted;
+}
+
 async function saveToLocalDisk(
   buffer: Buffer,
   slug: string,

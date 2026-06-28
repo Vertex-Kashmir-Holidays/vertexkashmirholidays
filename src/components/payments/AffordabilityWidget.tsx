@@ -21,7 +21,7 @@ interface AffordabilityWidgetProps {
 }
 
 export function AffordabilityWidget({ amount,
-  title = "EMI & payment options", }: AffordabilityWidgetProps) {
+  title = "Easy EMI Available", }: AffordabilityWidgetProps) {
   const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
   const amountPaise = Math.round(amount * 100);
   const initialized = useRef(false);

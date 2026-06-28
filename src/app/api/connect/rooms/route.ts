@@ -3,13 +3,20 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const guard = await requirePermission("connect", "view");
   if (guard instanceof NextResponse) return guard;
   const userId = guard.user.id;
 
+  const { searchParams } = new URL(req.url);
+  const showArchived = searchParams.get("archived") === "true";
+
   const memberships = await prisma.chatMember.findMany({
-    where: { userId, leftAt: null, room: { archivedAt: null } },
+    where: {
+      userId,
+      leftAt: null,
+      room: { archivedAt: showArchived ? { not: null } : null },
+    },
     select: {
       lastReadAt: true,
       role: true,
@@ -19,6 +26,7 @@ export async function GET() {
           type: true,
           name: true,
           avatarUrl: true,
+          archivedAt: true,
           createdAt: true,
           updatedAt: true,
           members: {

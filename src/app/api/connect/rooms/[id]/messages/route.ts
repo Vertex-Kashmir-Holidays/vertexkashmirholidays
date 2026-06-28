@@ -22,6 +22,20 @@ const msgSelect = {
   sender: { select: { id: true, name: true, image: true } },
 } as const;
 
+async function getTypingMembers(roomId: string, userId: string) {
+  const fiveSecsAgo = new Date(Date.now() - 5_000);
+  const typingMembers = await prisma.chatMember.findMany({
+    where: {
+      roomId,
+      userId: { not: userId },
+      leftAt: null,
+      typingAt: { gt: fiveSecsAgo },
+    },
+    select: { user: { select: { id: true, name: true } } },
+  });
+  return typingMembers.map((m) => ({ id: m.user.id, name: m.user.name }));
+}
+
 export async function GET(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("connect", "view");
   if (guard instanceof NextResponse) return guard;
@@ -37,15 +51,39 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const { searchParams } = new URL(req.url);
   const before = searchParams.get("before");
-  const after = searchParams.get("after");
+  const since = searchParams.get("since");
 
-  if (after) {
+  if (since) {
+    const sinceDate = new Date(since);
     const messages = await prisma.chatMessage.findMany({
-      where: { roomId, deletedAt: null, createdAt: { gt: new Date(after) } },
+      where: {
+        roomId,
+        OR: [
+          { createdAt: { gt: sinceDate }, deletedAt: null },
+          { editedAt: { gt: sinceDate } },
+          { deletedAt: { gt: sinceDate } },
+        ],
+      },
       orderBy: { createdAt: "asc" },
       select: msgSelect,
     });
-    return NextResponse.json({ messages, hasMore: false });
+    const typing = await getTypingMembers(roomId, userId);
+    return NextResponse.json({ messages, hasMore: false, typing });
+  }
+
+  const q = searchParams.get("q")?.trim();
+  if (q) {
+    const results = await prisma.chatMessage.findMany({
+      where: {
+        roomId,
+        deletedAt: null,
+        body: { contains: q, mode: "insensitive" },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: msgSelect,
+    });
+    return NextResponse.json({ messages: results, hasMore: false, typing: [] });
   }
 
   const messages = await prisma.chatMessage.findMany({
@@ -63,7 +101,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (hasMore) messages.pop();
   messages.reverse();
 
-  return NextResponse.json({ messages, hasMore });
+  const typing = await getTypingMembers(roomId, userId);
+  return NextResponse.json({ messages, hasMore, typing });
 }
 
 // ─── Mention helpers ────────────────────────────────────────────────────────

@@ -25,52 +25,61 @@ export interface ConnectMessage {
 interface FetchResult {
   messages: ConnectMessage[];
   hasMore: boolean;
+  typing: Array<{ id: string; name: string | null }>;
 }
 
 export function useMessages(roomId: string | null) {
   const [messages, setMessages] = useState<ConnectMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const latestRef = useRef<string | null>(null);
+  const [typing, setTyping] = useState<Array<{ id: string; name: string | null }>>([]);
+  const lastPollTimeRef = useRef<Date>(new Date());
 
   useEffect(() => {
     if (!roomId) {
       setMessages([]);
       setLoading(false);
       setHasMore(false);
-      latestRef.current = null;
+      setTyping([]);
       return;
     }
     setLoading(true);
     setMessages([]);
-    latestRef.current = null;
 
     fetch(`/api/connect/rooms/${roomId}/messages`)
       .then((r) => r.json())
-      .then(({ messages: msgs, hasMore: hm }: FetchResult) => {
+      .then(({ messages: msgs, hasMore: hm, typing: t }: FetchResult) => {
         setMessages(msgs);
         setHasMore(hm);
-        if (msgs.length > 0) latestRef.current = msgs[msgs.length - 1].createdAt;
+        setTyping(t ?? []);
+        lastPollTimeRef.current = new Date();
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [roomId]);
 
-  // Poll for new messages every 3 s
+  // Poll for new/edited/deleted messages and typing state every 3 s
   const poll = useCallback(async () => {
-    if (!roomId || !latestRef.current) return;
+    if (!roomId) return;
+    const since = lastPollTimeRef.current;
+    lastPollTimeRef.current = new Date(); // advance cursor before fetch to avoid missing rapid updates
     try {
       const res = await fetch(
-        `/api/connect/rooms/${roomId}/messages?after=${encodeURIComponent(latestRef.current)}`,
+        `/api/connect/rooms/${roomId}/messages?since=${encodeURIComponent(since.toISOString())}`,
       );
       if (!res.ok) return;
-      const { messages: newMsgs } = (await res.json()) as FetchResult;
-      if (newMsgs.length === 0) return;
+      const { messages: updates, typing: t } = (await res.json()) as FetchResult;
+      setTyping(t ?? []);
+      if (updates.length === 0) return;
       setMessages((prev) => {
-        const ids = new Set(prev.map((m) => m.id));
-        return [...prev, ...newMsgs.filter((m) => !ids.has(m.id))];
+        const map = new Map(prev.map((m) => [m.id, m]));
+        for (const msg of updates) {
+          map.set(msg.id, msg); // replaces edited/deleted, appends new
+        }
+        return [...map.values()].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
       });
-      latestRef.current = newMsgs[newMsgs.length - 1].createdAt;
     } catch {
       // best-effort
     }
@@ -97,10 +106,17 @@ export function useMessages(roomId: string | null) {
   const appendOptimistic = useCallback((msg: ConnectMessage) => {
     setMessages((prev) => {
       if (prev.find((m) => m.id === msg.id)) return prev;
-      latestRef.current = msg.createdAt;
       return [...prev, msg];
     });
   }, []);
 
-  return { messages, loading, hasMore, loadMore, appendOptimistic };
+  const updateMessage = useCallback((updated: ConnectMessage) => {
+    setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+  }, []);
+
+  const removeMessage = useCallback((messageId: string) => {
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+  }, []);
+
+  return { messages, loading, hasMore, loadMore, appendOptimistic, updateMessage, removeMessage, typing };
 }

@@ -135,7 +135,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
       <div className="grid gap-7 lg:grid-cols-[252px_1fr]">
         <div className="space-y-5">
           {priceBounds.min > 0 && (
-            <AffordabilityWidget amount={priceBounds.min} title="EMI options — book on easy installments" />
+            <AffordabilityWidget amount={priceBounds.min} title="Easy EMI Available" />
           )}
           <ToursFiltersSidebar
           search={search}
