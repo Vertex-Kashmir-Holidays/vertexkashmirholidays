@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   let galleryId: string | null = null;
   try {
     const item = await prisma.gallery.create({
-      data: { url, type, category: folder, alt },
+      data: { url, publicId: publicId ?? null, type, category: folder, alt },
     });
     galleryId = item.id;
   } catch {

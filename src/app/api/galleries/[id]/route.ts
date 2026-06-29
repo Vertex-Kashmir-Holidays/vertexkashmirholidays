@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { deleteFromCloudinary } from "@/lib/storage";
 import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
@@ -30,8 +31,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("galleries", "delete");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.gallery.findUnique({ where: { id } });
+  const existing = await prisma.gallery.findUnique({ where: { id }, select: { id: true, publicId: true } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.gallery.delete({ where: { id } });
+  // Best-effort Cloudinary cleanup — row is already gone so we never block on this
+  if (existing.publicId) deleteFromCloudinary([existing.publicId]).catch(() => {});
   return NextResponse.json({ success: true });
 }

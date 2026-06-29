@@ -561,6 +561,7 @@ model BlogCategory {
 model Gallery {
   id        String   @id @default(cuid())
   url       String
+  publicId  String?  // Cloudinary public_id — null for local-disk uploads
   type      String   @default("IMAGE") // IMAGE | VIDEO
   alt       String?
   caption   String?
@@ -1129,6 +1130,7 @@ model ChatRoom {
   messages    ChatMessage[]
   meetings    Meeting[]
   archivedAt  DateTime?
+  directKey   String?       @unique // "minUserId:maxUserId" for DIRECT rooms; null for GROUP
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -1167,7 +1169,9 @@ model ChatMessage {
   attachmentName     String?
   editedAt           DateTime?
   deletedAt          DateTime?
+  reactions          String?   // JSON: Record<emoji, userId[]>, one reaction per user
   createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([roomId, createdAt])
   @@index([createdAt])

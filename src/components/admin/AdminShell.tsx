@@ -214,7 +214,7 @@ export function AdminShell({ children, userName, userEmail, userImage, permissio
   }));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0">
         <SidebarContent pathname={pathname} nav={nav} userName={userName} userEmail={userEmail} userImage={userImage} />
@@ -272,7 +272,7 @@ export function AdminShell({ children, userName, userEmail, userImage, permissio
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-5 lg:p-6" onClick={unlock}>
+        <main className="flex-1 overflow-y-auto p-5 lg:p-6">
           {children}
         </main>
       </div>

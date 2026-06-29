@@ -18,7 +18,9 @@ const msgSelect = {
   attachmentName: true,
   editedAt: true,
   deletedAt: true,
+  reactions: true,
   createdAt: true,
+  updatedAt: true,
   sender: { select: { id: true, name: true, image: true } },
 } as const;
 
@@ -62,6 +64,7 @@ export async function GET(req: NextRequest, { params }: Params) {
           { createdAt: { gt: sinceDate }, deletedAt: null },
           { editedAt: { gt: sinceDate } },
           { deletedAt: { gt: sinceDate } },
+          { updatedAt: { gt: sinceDate } }, // catches reaction changes
         ],
       },
       orderBy: { createdAt: "asc" },

@@ -19,7 +19,11 @@ export interface ConnectMessage {
   attachmentName: string | null;
   editedAt: string | null;
   deletedAt: string | null;
+  reactions: string | null; // JSON: Record<emoji, userId[]>
   createdAt: string;
+  updatedAt: string;
+  /** Client-only — never comes from the server. "sending" = optimistic, "sent" = API confirmed. */
+  _status?: "sending" | "sent";
 }
 
 interface FetchResult {
@@ -76,7 +80,9 @@ export function useMessages(roomId: string | null) {
       // Signal ChatInbox to immediately clear stale notifications for this room
       window.dispatchEvent(new CustomEvent("connect:mark-room-read", { detail: { roomId } }));
       setMessages((prev) => {
-        const map = new Map(prev.map((m) => [m.id, m]));
+        // Drop all optimistic ("pending-*") messages — confirmed ones come from the server
+        const confirmed = prev.filter((m) => !m.id.startsWith("pending-"));
+        const map = new Map(confirmed.map((m) => [m.id, m]));
         for (const msg of updates) {
           map.set(msg.id, msg); // replaces edited/deleted, appends new
         }
@@ -114,6 +120,17 @@ export function useMessages(roomId: string | null) {
     });
   }, []);
 
+  // Replace a pending optimistic message with the confirmed server message
+  const replaceOptimistic = useCallback((tempId: string, confirmed: ConnectMessage) => {
+    setMessages((prev) => {
+      const idx = prev.findIndex((m) => m.id === tempId);
+      if (idx === -1) return prev; // already cleaned up by poll — no-op
+      const next = [...prev];
+      next[idx] = confirmed;
+      return next;
+    });
+  }, []);
+
   const updateMessage = useCallback((updated: ConnectMessage) => {
     setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
   }, []);
@@ -122,5 +139,5 @@ export function useMessages(roomId: string | null) {
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
   }, []);
 
-  return { messages, loading, hasMore, loadMore, appendOptimistic, updateMessage, removeMessage, typing };
+  return { messages, loading, hasMore, loadMore, appendOptimistic, replaceOptimistic, updateMessage, removeMessage, typing };
 }

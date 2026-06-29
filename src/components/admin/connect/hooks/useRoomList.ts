@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 export interface RoomMember {
   userId: string;
   role: string;
+  lastReadAt: string | null;
   user: { id: string; name: string | null; image: string | null };
 }
 
