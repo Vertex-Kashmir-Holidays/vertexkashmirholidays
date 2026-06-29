@@ -109,6 +109,62 @@ export async function notifyLeadAssigned(
   }
 }
 
+/**
+ * Notify all SUPERADMIN, ADMIN, and SALES staff of a new direct website booking.
+ * Called once per booking from finalizeOnlinePayment (idempotency guaranteed by caller).
+ * Never throws.
+ */
+export async function notifyNewBooking(bookingId: string): Promise<void> {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        guestName: true,
+        guestPhone: true,
+        amount: true,
+        travelDate: true,
+        tour: { select: { title: true } },
+      },
+    });
+    if (!booking) return;
+
+    const staffUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ["SUPERADMIN", "ADMIN", "SALES"] },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (staffUsers.length === 0) return;
+
+    const tourTitle = booking.tour?.title ?? "Direct Booking";
+    const travelDate = booking.travelDate.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const amount = new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(booking.amount);
+
+    await Promise.all(
+      staffUsers.map((u) =>
+        createNotification({
+          userId: u.id,
+          type: "BOOKING_NEW",
+          title: "New booking received",
+          body: `${booking.guestName} · ${tourTitle} · ${amount} · Travel: ${travelDate}`,
+          link: `/admin/bookings/${bookingId}`,
+        }),
+      ),
+    );
+  } catch (err) {
+    console.error("[notifications] notifyNewBooking failed", err);
+  }
+}
+
 /** Notify a staff member that a lead has been reassigned away from them. */
 export async function notifyLeadUnassigned(
   assigneeId: string,
