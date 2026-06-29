@@ -14,6 +14,9 @@ interface Props {
   /** ms timestamp — any other member's lastReadAt. Used to show ✓✓ on own messages. */
   readUpTo?: number;
   currentUserId?: string;
+  /** False when the previous message is from the same sender (no date divider between them).
+      Hides the avatar and sender name to group consecutive messages visually. */
+  isFirstInGroup?: boolean;
   onReact?: (messageId: string, emoji: string) => void;
   onEdit?: (message: ConnectMessage) => void;
   onDelete?: (messageId: string) => void;
@@ -191,19 +194,19 @@ function Attachment({ url, type, name }: { url: string; type: string | null; nam
   );
 }
 
-function MessageStatus({ message, readUpTo }: { message: ConnectMessage; readUpTo: number }) {
+// isOwn=true → renders inside a primary-coloured bubble; use foreground-relative colours.
+function MessageStatus({ message, readUpTo, isOwn = false }: { message: ConnectMessage; readUpTo: number; isOwn?: boolean }) {
   if (message._status === "sending") {
-    // Renders below the bubble (page background), NOT inside it — use visible colours
-    return <Clock className="w-3 h-3 text-muted-foreground/70 shrink-0" />;
+    return <Clock className={cn("w-3 h-3 shrink-0", isOwn ? "text-primary-foreground/50" : "text-muted-foreground/60")} />;
   }
   const msgTime = new Date(message.createdAt).getTime();
   if (readUpTo > 0 && readUpTo >= msgTime) {
-    return <CheckCheck className="w-3.5 h-3.5 text-sky-500 shrink-0" />;
+    return <CheckCheck className={cn("w-3.5 h-3.5 shrink-0", isOwn ? "text-sky-200" : "text-sky-500")} />;
   }
-  return <Check className="w-3 h-3 text-muted-foreground/70 shrink-0" />;
+  return <Check className={cn("w-3 h-3 shrink-0", isOwn ? "text-primary-foreground/60" : "text-muted-foreground/60")} />;
 }
 
-export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentUserId = "", onReact, onEdit, onDelete }: Props) {
+export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentUserId = "", isFirstInGroup = true, onReact, onEdit, onDelete }: Props) {
   const { sender, body, attachmentUrl, attachmentType, attachmentName, createdAt, editedAt } = message;
 
   const emojiOnly = !!body && !attachmentUrl && isEmojiOnly(body);
@@ -213,9 +216,13 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
   if (message.deletedAt) {
     return (
       <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-        {!isOwn && <Avatar name={sender.name} image={sender.image} />}
+        {!isOwn && (
+          isFirstInGroup
+            ? <Avatar name={sender.name} image={sender.image} />
+            : <div className="w-7 shrink-0" />
+        )}
         <div className={cn("flex flex-col max-w-[72%]", isOwn && "items-end")}>
-          {!isOwn && (
+          {!isOwn && isFirstInGroup && (
             <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
               {sender.name ?? "Unknown"}
             </span>
@@ -237,14 +244,18 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
 
   return (
     <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-      {!isOwn && <Avatar name={sender.name} image={sender.image} />}
+      {!isOwn && (
+        isFirstInGroup
+          ? <Avatar name={sender.name} image={sender.image} />
+          : <div className="w-7 shrink-0" /> /* spacer keeps bubble indent consistent */
+      )}
 
       {/*
         'group' is on the COLUMN, not the outer row.
         Hover zone = bubble width only, not the full chat width.
       */}
       <div className={cn("group flex flex-col max-w-[72%]", isOwn && "items-end")}>
-        {!isOwn && (
+        {!isOwn && isFirstInGroup && (
           <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
             {sender.name ?? "Unknown"}
           </span>
@@ -253,8 +264,16 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
         {/* Bubble + absolute controls + superscript reaction pills */}
         <div className="relative">
           {emojiOnly ? (
-            <div className={cn("px-1 py-0.5 leading-none select-none", emojiSizeClass)}>
-              {body}
+            /* Emoji-only: same inline flex layout as text — emoji + time on one baseline-bottom row */
+            <div className="flex items-end gap-x-1.5 px-1 py-0.5 select-none">
+              <span className={cn("leading-none", emojiSizeClass)}>{body}</span>
+              <span className="flex-none inline-flex items-baseline gap-0.5 leading-none whitespace-nowrap pb-0.5">
+                {editedAt && (
+                  <span className="text-[10px] italic text-muted-foreground/60">edited·</span>
+                )}
+                <span className="text-[10px] text-muted-foreground/70">{formatTime(createdAt)}</span>
+                {isOwn && !message.deletedAt && <MessageStatus message={message} readUpTo={readUpTo} />}
+              </span>
             </div>
           ) : (
             <div
@@ -266,12 +285,45 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
               )}
             >
               {body && (
-                <p>
-                  <RichText body={body} selfSlug={selfSlug} isOwn={isOwn} />
+                /* flex items-end: text wraps in flex-1, time stays flex-none at the right,
+                   both bottom-edges aligned so time baseline sits at the last text line bottom */
+                <p className="flex items-end gap-x-2 leading-relaxed">
+                  <span className="flex-1 min-w-0 break-words">
+                    <RichText body={body} selfSlug={selfSlug} isOwn={isOwn} />
+                  </span>
+                  {!attachmentUrl && (
+                    <span className="flex-none inline-flex items-baseline gap-0.5 leading-none select-none whitespace-nowrap">
+                      {editedAt && (
+                        <span className={cn("text-[10px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>
+                          edited·
+                        </span>
+                      )}
+                      <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                        {formatTime(createdAt)}
+                      </span>
+                      {isOwn && !message.deletedAt && (
+                        <MessageStatus message={message} readUpTo={readUpTo} isOwn />
+                      )}
+                    </span>
+                  )}
                 </p>
               )}
               {attachmentUrl && (
-                <Attachment url={attachmentUrl} type={attachmentType} name={attachmentName} />
+                <>
+                  <Attachment url={attachmentUrl} type={attachmentType} name={attachmentName} />
+                  {/* Time below attachment (covers both attachment-only and body+attachment) */}
+                  <div className="flex justify-end items-baseline gap-0.5 mt-1 leading-none select-none">
+                    {editedAt && (
+                      <span className={cn("text-[10px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>edited·</span>
+                    )}
+                    <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                      {formatTime(createdAt)}
+                    </span>
+                    {isOwn && !message.deletedAt && (
+                      <MessageStatus message={message} readUpTo={readUpTo} isOwn />
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -357,24 +409,6 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
           </div>
         </div>
 
-        {/* Tick / clock — snug below bubble, left-aligned (start side of bubble) */}
-        {isOwn && !message.deletedAt && (
-          <div className="w-full flex justify-start pl-1 mt-1">
-            <MessageStatus message={message} readUpTo={readUpTo} />
-          </div>
-        )}
-
-        {/* Timestamp — mt-6 clears the absolute controls area without pushing ticks far away */}
-        <div className={cn("flex items-center gap-1 mt-6 px-1", isOwn && "flex-row-reverse")}>
-          <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-            {formatDate(createdAt)} {formatTime(createdAt)}
-          </span>
-          {editedAt && (
-            <span className="text-[10px] text-muted-foreground italic opacity-0 group-hover:opacity-100 transition-opacity">
-              edited
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );

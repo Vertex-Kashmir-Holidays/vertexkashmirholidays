@@ -542,7 +542,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
         )}
 
         {/* Message list */}
-        <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4">
           {searchResults !== null ? (
             <>
               <div className="text-xs text-muted-foreground py-2">
@@ -585,8 +585,9 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
               {messages.map((msg, i) => {
                 const prev = messages[i - 1];
                 const showDateDivider = !prev || !sameDay(prev.createdAt, msg.createdAt);
+                const isFirstInGroup = showDateDivider || !prev || prev.senderId !== msg.senderId;
                 return (
-                  <div key={msg.id}>
+                  <div key={msg.id} className={i === 0 ? "mt-0" : isFirstInGroup ? "mt-3" : "mt-1.5"}>
                     {showDateDivider && <DateDivider iso={msg.createdAt} />}
                     <MessageBubble
                       message={msg}
@@ -594,6 +595,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
                       selfSlug={selfSlug}
                       readUpTo={readUpTo}
                       currentUserId={currentUserId}
+                      isFirstInGroup={isFirstInGroup}
                       onReact={handleReact}
                       onEdit={msg.senderId === currentUserId ? handleEdit : undefined}
                       onDelete={handleDelete}
