@@ -26,7 +26,7 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
   const { rooms, loading, refetch } = useRoomList();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId ?? null);
   const [showList, setShowList] = useState(!initialRoomId);
-  const { playMessage } = useNotificationSound();
+  const { playMessage, unlock } = useNotificationSound();
 
   // Track unread counts across polls to detect new background-room messages
   const prevUnreadRef = useRef<Map<string, number>>(new Map());
@@ -69,9 +69,10 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
   const presenceMap: PresenceMap = usePresence(dmPartnerIds);
 
   const handleSelectRoom = useCallback((roomId: string) => {
+    unlock(); // user clicked → pre-authorize AudioContext for timer-triggered sounds
     setSelectedRoomId(roomId);
     setShowList(false);
-  }, []);
+  }, [unlock]);
 
   const handleStartDM = useCallback(
     async (userId: string) => {
@@ -99,7 +100,10 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
   );
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-border bg-card">
+    <div
+      className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-border bg-card"
+      onClick={unlock}
+    >
       {/* Sidebar */}
       <div
         className={cn(

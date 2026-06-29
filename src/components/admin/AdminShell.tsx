@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useNotificationSound } from "@/components/admin/connect/hooks/useNotificationSound";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -202,6 +203,7 @@ function SidebarContent({
 export function AdminShell({ children, userName, userEmail, userImage, permissions }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { unlock } = useNotificationSound();
   const pageTitle = pathname === "/admin/profile" ? "My Profile" : PAGE_TITLES[pathname] ?? "Admin";
 
   // Only show modules the current role may view.
@@ -270,7 +272,7 @@ export function AdminShell({ children, userName, userEmail, userImage, permissio
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-5 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-5 lg:p-6" onClick={unlock}>
           {children}
         </main>
       </div>

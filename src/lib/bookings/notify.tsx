@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
+import { notifyNewBooking } from "@/lib/notifications";
 import {
   sendMail,
   customerCredentialsHtml,
@@ -184,6 +185,7 @@ export async function finalizeOnlinePayment(
     console.error("[notify] customer link/credentials failed", err);
   }
 
+  await notifyNewBooking(bookingId);
   await sendBookingConfirmationEmail(bookingId, paidAmount, gatewayPaymentId);
   await sendPaymentInvoiceEmail(bookingId, ledgerPaymentId);
 }

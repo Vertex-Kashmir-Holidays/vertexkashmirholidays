@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNotificationSound } from "@/components/admin/connect/hooks/useNotificationSound";
 
 interface NotificationItem {
   id: string;
@@ -31,6 +33,12 @@ export function ChatInbox() {
   const [allItems, setAllItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const { playMention, playMessage, unlock } = useNotificationSound();
+
+  // Track unread notification IDs across polls to detect genuinely new arrivals
+  const seenUnreadIdsRef = useRef<Set<string>>(new Set());
+  const firstLoadRef = useRef(true);
 
   // All Connect-related notifications (CHAT_*) belong here.
   const items = allItems.filter((n) => n.type.startsWith("CHAT_"));
@@ -52,6 +60,33 @@ export function ChatInbox() {
     const t = setInterval(load, 60_000);
     return () => clearInterval(t);
   }, [load]);
+
+  // Detect new unread notifications and play the appropriate sound.
+  // Skip when the user is on the connect page — ConnectClient handles sounds there.
+  useEffect(() => {
+    const chatUnread = allItems.filter((n) => n.type.startsWith("CHAT_") && !n.readAt);
+
+    if (firstLoadRef.current) {
+      firstLoadRef.current = false;
+      seenUnreadIdsRef.current = new Set(chatUnread.map((n) => n.id));
+      return;
+    }
+
+    const newNotifs = chatUnread.filter((n) => !seenUnreadIdsRef.current.has(n.id));
+    seenUnreadIdsRef.current = new Set(chatUnread.map((n) => n.id));
+
+    if (newNotifs.length === 0) return;
+
+    // ConnectClient already plays sounds while the user is in the chat module
+    if (pathname.startsWith("/admin/connect")) return;
+
+    // CHAT_MENTION → prominent double-ping; CHAT_MESSAGE → soft single ping
+    if (newNotifs.some((n) => n.type === "CHAT_MENTION")) {
+      playMention();
+    } else {
+      playMessage();
+    }
+  }, [allItems, pathname, playMention, playMessage]);
 
   // When the active chat room receives new messages, immediately mark its
   // CHAT_* notifications as read so the icon badge doesn't accumulate.
@@ -87,6 +122,7 @@ export function ChatInbox() {
   }, []);
 
   async function toggle() {
+    unlock(); // user clicked → keep AudioContext authorized for future sounds
     const next = !open;
     setOpen(next);
     if (next && unread > 0) {
