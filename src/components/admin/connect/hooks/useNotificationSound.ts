@@ -1,10 +1,9 @@
 "use client";
 import { useCallback } from "react";
 
-// ─── Module-level singleton ───────────────────────────────────────────────────
-// One AudioContext for the entire browser session, shared across all hook
-// instances. This is intentional: ConnectClient and ChatView both call this
-// hook, and unlock() called in one must affect the context used by the other.
+// Module-level singleton shared across every hook instance.
+// ConnectClient, ChatView, ChatInbox, and NotificationBell all call this hook.
+// unlock() called in any one of them resumes the shared AudioContext for all.
 let audioCtx: AudioContext | null = null;
 
 function getCtx(): AudioContext | null {
@@ -22,18 +21,11 @@ function getCtx(): AudioContext | null {
   return audioCtx;
 }
 
-function beep(
-  ctx: AudioContext,
-  freq: number,
-  startAt: number,
-  dur: number,
-  vol: number,
-) {
+function beep(ctx: AudioContext, freq: number, startAt: number, dur: number, vol: number) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = "sine";
   osc.frequency.setValueAtTime(freq, startAt);
-  // Instant attack, natural exponential decay — bell-like
   gain.gain.setValueAtTime(vol, startAt);
   gain.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
   osc.connect(gain);
@@ -42,27 +34,20 @@ function beep(
   osc.stop(startAt + dur + 0.02);
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
-
 export function useNotificationSound() {
-  /**
-   * Call this inside a real user-gesture handler (click, keydown) to pre-
-   * authorize the AudioContext for subsequent timer-triggered playback.
-   * Browser autoplay policy blocks audio from polling callbacks, so we must
-   * unlock during an interaction first.
-   */
+  // Call during a user gesture (click) to pre-authorise the AudioContext.
+  // Browser autoplay policy blocks audio from timer/polling callbacks — the
+  // context must be resumed inside a real interaction event first.
   const unlock = useCallback(() => {
     try {
       const ctx = getCtx();
-      if (ctx && ctx.state === "suspended") {
-        ctx.resume().catch(() => {});
-      }
+      if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
     } catch {
       // not supported
     }
   }, []);
 
-  /** Two ascending pings — for @mentions or direct messages to you. */
+  /** Two ascending pings — @mentions or DMs directed at you. */
   const playMention = useCallback(() => {
     try {
       const ctx = getCtx();
@@ -75,7 +60,7 @@ export function useNotificationSound() {
     }
   }, []);
 
-  /** Single clean ping — for messages in rooms you're not currently viewing. */
+  /** Single clean ping — messages in rooms you're not currently viewing. */
   const playMessage = useCallback(() => {
     try {
       const ctx = getCtx();
@@ -86,18 +71,18 @@ export function useNotificationSound() {
     }
   }, []);
 
-  /** Descending two-tone chime — for system notifications (lead assigned, etc.). */
+  /** Descending two-tone chime — system notifications (lead assigned, new booking, etc.). */
   const playAlert = useCallback(() => {
     try {
       const ctx = getCtx();
       if (!ctx || ctx.state !== "running") return;
       const t = ctx.currentTime;
-      beep(ctx, 659.25, t, 0.28, 0.45);        // E5 — higher note first
-      beep(ctx, 523.25, t + 0.24, 0.32, 0.38); // C5 — descending, softer
+      beep(ctx, 659.25, t, 0.28, 0.45);        // E5
+      beep(ctx, 523.25, t + 0.24, 0.32, 0.38); // C5
     } catch {
       // best-effort
     }
   }, []);
 
-  return { playMention, playMessage, playAlert, unlock };
+  return { unlock, playMention, playMessage, playAlert };
 }

@@ -1,14 +1,20 @@
 "use client";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { FileText, ImageIcon, Pencil, Trash2, ImageOff } from "lucide-react";
+import { FileText, ImageIcon, Pencil, Trash2, ImageOff, Clock, Check, CheckCheck } from "lucide-react";
 import type { ConnectMessage } from "./hooks/useMessages";
+
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "👎"] as const;
 
 interface Props {
   message: ConnectMessage;
   isOwn: boolean;
   /** First word of the current user's display name, lowercased — used to accent self-mentions. */
   selfSlug?: string | null;
+  /** ms timestamp — any other member's lastReadAt. Used to show ✓✓ on own messages. */
+  readUpTo?: number;
+  currentUserId?: string;
+  onReact?: (messageId: string, emoji: string) => void;
   onEdit?: (message: ConnectMessage) => void;
   onDelete?: (messageId: string) => void;
 }
@@ -185,7 +191,19 @@ function Attachment({ url, type, name }: { url: string; type: string | null; nam
   );
 }
 
-export function MessageBubble({ message, isOwn, selfSlug, onEdit, onDelete }: Props) {
+function MessageStatus({ message, readUpTo }: { message: ConnectMessage; readUpTo: number }) {
+  if (message._status === "sending") {
+    // Renders below the bubble (page background), NOT inside it — use visible colours
+    return <Clock className="w-3 h-3 text-muted-foreground/70 shrink-0" />;
+  }
+  const msgTime = new Date(message.createdAt).getTime();
+  if (readUpTo > 0 && readUpTo >= msgTime) {
+    return <CheckCheck className="w-3.5 h-3.5 text-sky-500 shrink-0" />;
+  }
+  return <Check className="w-3 h-3 text-muted-foreground/70 shrink-0" />;
+}
+
+export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentUserId = "", onReact, onEdit, onDelete }: Props) {
   const { sender, body, attachmentUrl, attachmentType, attachmentName, createdAt, editedAt } = message;
 
   const emojiOnly = !!body && !attachmentUrl && isEmojiOnly(body);
@@ -194,7 +212,7 @@ export function MessageBubble({ message, isOwn, selfSlug, onEdit, onDelete }: Pr
 
   if (message.deletedAt) {
     return (
-      <div className={cn("flex items-end gap-2", isOwn && "flex-row-reverse")}>
+      <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
         {!isOwn && <Avatar name={sender.name} image={sender.image} />}
         <div className={cn("flex flex-col max-w-[72%]", isOwn && "items-end")}>
           {!isOwn && (
@@ -210,65 +228,144 @@ export function MessageBubble({ message, isOwn, selfSlug, onEdit, onDelete }: Pr
     );
   }
 
+  // Parse reactions once — used for both pills and the quick-react bar highlights
+  const reactionMap: Record<string, string[]> = (() => {
+    try { return message.reactions ? (JSON.parse(message.reactions) as Record<string, string[]>) : {}; }
+    catch { return {}; }
+  })();
+  const reactionEntries = Object.entries(reactionMap).filter(([, users]) => users.length > 0);
+
   return (
-    <div className={cn("flex items-end gap-2 group", isOwn && "flex-row-reverse")}>
+    <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
       {!isOwn && <Avatar name={sender.name} image={sender.image} />}
 
-      {isOwn && (onEdit || onDelete) && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 self-end mb-1 shrink-0">
-          {onEdit && body && (
-            <button
-              onClick={() => onEdit(message)}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title="Edit"
-            >
-              <Pencil className="w-3 h-3" />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={() => onDelete(message.id)}
-              className="p-1 rounded text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-              title="Delete"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      )}
-
-      <div className={cn("flex flex-col max-w-[72%]", isOwn && "items-end")}>
+      {/*
+        'group' is on the COLUMN, not the outer row.
+        Hover zone = bubble width only, not the full chat width.
+      */}
+      <div className={cn("group flex flex-col max-w-[72%]", isOwn && "items-end")}>
         {!isOwn && (
           <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
             {sender.name ?? "Unknown"}
           </span>
         )}
 
-        {emojiOnly ? (
-          <div className={cn("px-1 py-0.5 leading-none select-none", emojiSizeClass)}>
-            {body}
-          </div>
-        ) : (
+        {/* Bubble + absolute controls + superscript reaction pills */}
+        <div className="relative">
+          {emojiOnly ? (
+            <div className={cn("px-1 py-0.5 leading-none select-none", emojiSizeClass)}>
+              {body}
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words",
+                isOwn
+                  ? "bg-primary text-primary-foreground rounded-br-sm"
+                  : "bg-muted text-foreground rounded-bl-sm",
+              )}
+            >
+              {body && (
+                <p>
+                  <RichText body={body} selfSlug={selfSlug} isOwn={isOwn} />
+                </p>
+              )}
+              {attachmentUrl && (
+                <Attachment url={attachmentUrl} type={attachmentType} name={attachmentName} />
+              )}
+            </div>
+          )}
+
+          {/* Reaction pills — superscript at bubble bottom corner, always at same position.
+              Own/sender  → bottom-LEFT  (start side)
+              Other/recv  → bottom-RIGHT (end side)               */}
+          {reactionEntries.length > 0 && (
+            <div
+              className={cn(
+                "absolute -bottom-3 z-10 flex items-center gap-0.5",
+                isOwn ? "left-1.5" : "right-1.5",
+              )}
+            >
+              {reactionEntries.map(([emoji, users]) => (
+                <button
+                  key={emoji}
+                  onClick={() => onReact?.(message.id, emoji)}
+                  className={cn(
+                    "flex items-center gap-0.5 text-[11px] leading-none px-1.5 py-0.5 rounded-full border bg-background shadow-sm transition-colors",
+                    users.includes(currentUserId)
+                      ? "border-primary/50 text-primary"
+                      : "border-border text-muted-foreground hover:border-muted-foreground/50",
+                  )}
+                  title={users.includes(currentUserId) ? "Remove reaction" : "React"}
+                >
+                  {emoji}{users.length > 1 && <span className="font-semibold ml-0.5">{users.length}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Controls — absolute, always at the same position below the bubble.
+              opacity-0 / opacity-100 via group-hover so layout never shifts.
+              pointer-events-none until visible so invisible bar isn't accidentally clicked. */}
           <div
             className={cn(
-              "rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words",
-              isOwn
-                ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-muted text-foreground rounded-bl-sm",
+              "absolute top-full pt-1 z-20 flex items-center gap-1",
+              "opacity-0 group-hover:opacity-100 transition-opacity",
+              "pointer-events-none group-hover:pointer-events-auto",
+              isOwn ? "right-0" : "left-0",
             )}
           >
-            {body && (
-              <p>
-                <RichText body={body} selfSlug={selfSlug} isOwn={isOwn} />
-              </p>
+            {onReact && (
+              <div className="flex items-center gap-0.5 bg-background border border-border rounded-full shadow-sm px-1 py-0.5">
+                {QUICK_EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    onClick={() => onReact(message.id, e)}
+                    className={cn(
+                      "w-6 h-6 flex items-center justify-center rounded-full text-sm leading-none transition-colors",
+                      reactionMap[e]?.includes(currentUserId) ? "bg-primary/15" : "hover:bg-muted",
+                    )}
+                    title={reactionMap[e]?.includes(currentUserId) ? `Remove ${e}` : `React ${e}`}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
             )}
-            {attachmentUrl && (
-              <Attachment url={attachmentUrl} type={attachmentType} name={attachmentName} />
+            {isOwn && (onEdit || onDelete) && (
+              <div className="flex items-center gap-0.5 bg-background border border-border rounded-full shadow-sm px-1 py-0.5">
+                {onEdit && body && (
+                  <button
+                    onClick={() => onEdit(message)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(message.id)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             )}
+          </div>
+        </div>
+
+        {/* Tick / clock — snug below bubble, left-aligned (start side of bubble) */}
+        {isOwn && !message.deletedAt && (
+          <div className="w-full flex justify-start pl-1 mt-1">
+            <MessageStatus message={message} readUpTo={readUpTo} />
           </div>
         )}
 
-        <div className={cn("flex items-center gap-1 mt-0.5 px-1", isOwn && "flex-row-reverse")}>
+        {/* Timestamp — mt-6 clears the absolute controls area without pushing ticks far away */}
+        <div className={cn("flex items-center gap-1 mt-6 px-1", isOwn && "flex-row-reverse")}>
           <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
             {formatDate(createdAt)} {formatTime(createdAt)}
           </span>

@@ -50,7 +50,7 @@ export function NotificationBell() {
   // Initial load + light polling so newly assigned leads surface without a reload.
   useEffect(() => {
     load();
-    const t = setInterval(load, 60000);
+    const t = setInterval(load, 30_000);
     return () => clearInterval(t);
   }, [load]);
 

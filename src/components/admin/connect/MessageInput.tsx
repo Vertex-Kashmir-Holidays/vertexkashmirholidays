@@ -8,10 +8,20 @@ import { EmojiPicker } from "./EmojiPicker";
 
 const MAX_BYTES = 1 * 1024 * 1024; // 1 MB
 
+export interface SendingPayload {
+  tempId: string;
+  body: string | null;
+  attachmentUrl: string | null;
+  attachmentType: string | null;
+  attachmentName: string | null;
+}
+
 interface Props {
   roomId: string;
   disabled?: boolean;
-  onSent: (message: unknown) => void;
+  onSending?: (payload: SendingPayload) => void;
+  onSent: (message: unknown, tempId: string) => void;
+  onSendFailed?: (tempId: string) => void;
   editingMessage?: ConnectMessage | null;
   onCancelEdit?: () => void;
   onEdited?: (message: unknown) => void;
@@ -22,7 +32,7 @@ interface UploadResult {
   publicId: string | null;
 }
 
-export function MessageInput({ roomId, disabled, onSent, editingMessage, onCancelEdit, onEdited }: Props) {
+export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed, editingMessage, onCancelEdit, onEdited }: Props) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -116,7 +126,21 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
     }
 
     if (!trimmed && !attachment) return;
-    setSending(true);
+
+    // Optimistic: show message immediately without blocking the textarea
+    const tempId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    onSending?.({
+      tempId,
+      body: trimmed || null,
+      attachmentUrl: attachment?.url ?? null,
+      attachmentType: attachment?.type ?? null,
+      attachmentName: attachment?.name ?? null,
+    });
+    setText("");
+    setAttachment(null);
+    textareaRef.current?.focus();
+
+    setSending(true); // only disables the send button, not the textarea
     try {
       const res = await fetch(`/api/connect/rooms/${roomId}/messages`, {
         method: "POST",
@@ -131,11 +155,9 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
       });
       if (!res.ok) throw new Error("Send failed");
       const msg = await res.json();
-      onSent(msg);
-      setText("");
-      setAttachment(null);
-      textareaRef.current?.focus();
+      onSent(msg, tempId);
     } catch {
+      onSendFailed?.(tempId);
       toast.error("Failed to send. Please try again.");
     } finally {
       setSending(false);
@@ -162,7 +184,7 @@ export function MessageInput({ roomId, disabled, onSent, editingMessage, onCance
     }
   }
 
-  const busy = sending || uploading || disabled;
+  const busy = uploading || disabled; // "sending" no longer blocks the textarea
 
   return (
     <div className="relative">

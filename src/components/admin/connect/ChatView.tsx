@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ArrowLeft, Users, Info, Phone, Video, Loader2, Search, Archive, X } from "lucide-react";
+import { ArrowLeft, Users, Info, Phone, Video, Loader2, Search, Archive, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMessages } from "./hooks/useMessages";
 import { useNotificationSound } from "./hooks/useNotificationSound";
@@ -96,7 +96,7 @@ function sameDay(a: string, b: string) {
 }
 
 export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack, onRefresh }: Props) {
-  const { messages, loading, hasMore, loadMore, appendOptimistic, updateMessage, typing } = useMessages(room.id);
+  const { messages, loading, hasMore, loadMore, appendOptimistic, replaceOptimistic, updateMessage, removeMessage, typing } = useMessages(room.id);
   const { playMention } = useNotificationSound();
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +113,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   const [showSearch, setShowSearch] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false);
 
   const currentUserName =
     room.members.find((m) => m.userId === currentUserId)?.user.name ?? null;
@@ -153,9 +154,83 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
     }
   }, [messages, selfSlug, currentUserId, playMention]);
 
-  function handleSent(msg: unknown) {
-    appendOptimistic(msg as ConnectMessage);
+  // Compute the latest timestamp at which any OTHER member has read (for ✓✓ receipts)
+  const readUpTo = Math.max(
+    0,
+    ...room.members
+      .filter((m) => m.userId !== currentUserId && m.lastReadAt)
+      .map((m) => new Date(m.lastReadAt!).getTime()),
+  );
+
+  const currentUserMember = room.members.find((m) => m.userId === currentUserId);
+
+  function handleSending({ tempId, body, attachmentUrl, attachmentType, attachmentName }: import("./MessageInput").SendingPayload) {
+    appendOptimistic({
+      id: tempId,
+      roomId: room.id,
+      senderId: currentUserId,
+      sender: {
+        id: currentUserId,
+        name: currentUserMember?.user.name ?? null,
+        image: currentUserMember?.user.image ?? null,
+      },
+      body,
+      attachmentUrl,
+      attachmentPublicId: null,
+      attachmentType,
+      attachmentName,
+      editedAt: null,
+      deletedAt: null,
+      reactions: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      _status: "sending",
+    });
+  }
+
+  function handleSent(msg: unknown, tempId: string) {
+    replaceOptimistic(tempId, { ...(msg as ConnectMessage), _status: "sent" });
     fetch(`/api/connect/rooms/${room.id}/read`, { method: "POST" }).catch(() => {});
+  }
+
+  function handleSendFailed(tempId: string) {
+    removeMessage(tempId);
+  }
+
+  async function handleReact(messageId: string, emoji: string) {
+    // Optimistic: compute new reactions locally then confirm with server
+    const prev = messages.find((m) => m.id === messageId);
+    if (!prev) return;
+
+    const map: Record<string, string[]> = (() => {
+      try { return prev.reactions ? (JSON.parse(prev.reactions) as Record<string, string[]>) : {}; }
+      catch { return {}; }
+    })();
+
+    // Remove any existing reaction from this user
+    let oldEmoji: string | null = null;
+    for (const [e, users] of Object.entries(map)) {
+      if (users.includes(currentUserId)) { oldEmoji = e; break; }
+    }
+    if (oldEmoji) {
+      map[oldEmoji] = map[oldEmoji].filter((u) => u !== currentUserId);
+      if (map[oldEmoji].length === 0) delete map[oldEmoji];
+    }
+    if (oldEmoji !== emoji) {
+      map[emoji] = [...(map[emoji] ?? []), currentUserId];
+    }
+
+    updateMessage({ ...prev, reactions: Object.keys(map).length ? JSON.stringify(map) : null });
+
+    const res = await fetch(
+      `/api/connect/rooms/${room.id}/messages/${messageId}/react`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ emoji }) },
+    );
+    if (res.ok) {
+      updateMessage(await res.json() as ConnectMessage);
+    } else {
+      updateMessage(prev); // revert on error
+    }
   }
 
   // ─── Edit / Delete handlers ─────────────────────────────────────────────────
@@ -203,6 +278,14 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   const handleArchive = useCallback(() => {
     setShowArchiveConfirm(true);
   }, []);
+
+  // Delete chat for me — leaves the DM (sets leftAt) so it disappears from own list only
+  const doDeleteChat = useCallback(async () => {
+    setShowDeleteChatConfirm(false);
+    await fetch(`/api/connect/rooms/${room.id}/members/${currentUserId}`, { method: "DELETE" }).catch(() => {});
+    onRefresh?.();
+    onBack?.();
+  }, [room.id, currentUserId, onRefresh, onBack]);
 
   const doArchive = useCallback(async () => {
     setShowArchiveConfirm(false);
@@ -389,6 +472,15 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
             >
               <Archive className="w-4 h-4" />
             </button>
+            {room.type === "DIRECT" && (
+              <button
+                onClick={() => setShowDeleteChatConfirm(true)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                title="Delete chat for me"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {room.type === "GROUP" && (
@@ -500,6 +592,9 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
                       message={msg}
                       isOwn={msg.senderId === currentUserId}
                       selfSlug={selfSlug}
+                      readUpTo={readUpTo}
+                      currentUserId={currentUserId}
+                      onReact={handleReact}
                       onEdit={msg.senderId === currentUserId ? handleEdit : undefined}
                       onDelete={handleDelete}
                     />
@@ -523,7 +618,9 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
         {/* Input */}
         <MessageInput
           roomId={room.id}
+          onSending={handleSending}
           onSent={handleSent}
+          onSendFailed={handleSendFailed}
           editingMessage={editingMessage}
           onCancelEdit={() => setEditingMessage(null)}
           onEdited={handleEdited}
@@ -580,6 +677,17 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
         confirmLabel={room.archivedAt ? "Unarchive" : "Archive"}
         onConfirm={doArchive}
         onCancel={() => setShowArchiveConfirm(false)}
+      />
+
+      {/* Delete DM chat for me */}
+      <ConfirmDialog
+        open={showDeleteChatConfirm}
+        title="Delete chat for you?"
+        description="This conversation will be removed from your list. The other person will still see it. If they message you again, it will reappear."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={doDeleteChat}
+        onCancel={() => setShowDeleteChatConfirm(false)}
       />
     </>
   );

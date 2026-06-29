@@ -12,7 +12,7 @@ const editSchema = z.object({
 const msgSelect = {
   id: true, roomId: true, senderId: true, body: true,
   attachmentUrl: true, attachmentPublicId: true, attachmentType: true, attachmentName: true,
-  editedAt: true, deletedAt: true, createdAt: true,
+  editedAt: true, deletedAt: true, reactions: true, createdAt: true, updatedAt: true,
   sender: { select: { id: true, name: true, image: true } },
 } as const;
 
