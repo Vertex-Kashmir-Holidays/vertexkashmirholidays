@@ -99,7 +99,7 @@ const WATERMARK_FOLDERS = new Set([
 
 const WATERMARK_PATH = path.join(
   process.cwd(),
-  "public/brand/png/horizontal/vertex-horizontal-light-1600w.png",
+  "public/brand/png/horizontal/vertex-horizontal-dark-1600w.png",
 );
 const WATERMARK_WIDTH_RATIO = 0.22;
 const WATERMARK_OPACITY = 0.7;
@@ -151,7 +151,21 @@ export async function saveUpload(
   { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
-  const processedBuffer = buffer; // watermark paused
+  const shouldWatermark = isImage && WATERMARK_FOLDERS.has(slug);
+  let processedBuffer = buffer;
+  if (shouldWatermark) {
+    try {
+      processedBuffer = await Promise.race([
+        applyWatermark(buffer, ext),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000)
+        ),
+      ]);
+      console.log(`[upload] watermark applied (${ext}, folder=${slug})`);
+    } catch (err) {
+      console.error(`[upload] watermark skipped — ${err instanceof Error ? err.message : err}`);
+    }
+  }
 
   if (isCloudinaryConfigured()) {
     return saveToCloudinary(processedBuffer, slug);
