@@ -56,7 +56,7 @@ export function ImageField({
           Upload
           <input
             type="file"
-            accept="image/png,image/svg+xml,image/webp"
+            accept="image/jpeg,image/png,image/webp"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
           />

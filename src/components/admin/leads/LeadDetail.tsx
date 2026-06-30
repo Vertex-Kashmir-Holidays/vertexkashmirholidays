@@ -95,6 +95,8 @@ interface Lead {
   followUpAt: Date | string | null;
   status: LeadStatus;
   locked: boolean;
+  ipAddress: string | null;
+  userAgent: string | null;
   bookingId: string | null;
   booking: LinkedBooking | null;
   assignedToId: string | null;
@@ -113,18 +115,20 @@ interface StaffUser {
   email: string;
 }
 
+interface IpDuplicateLead {
+  id: string;
+  name: string;
+  createdAt: Date | string;
+}
+
 interface Props {
   lead: Lead;
   staffUsers: StaffUser[];
   canManageItinerary: boolean;
   isAdmin: boolean;
-  /**
-   * True when the current user may perform any lead operation: either the
-   * assignee, or an admin acting on a still-unassigned lead. Reassignment
-   * remains gated on `isAdmin` separately.
-   */
   canManage: boolean;
   gstRates: number[];
+  ipDuplicates: IpDuplicateLead[];
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -205,7 +209,7 @@ function activityLabel(a: Activity): string {
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
 
-export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canManage, gstRates }: Props) {
+export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canManage, gstRates, ipDuplicates }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const converted = lead.status === "CONVERTED";
@@ -494,6 +498,30 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <p className="text-muted-foreground mb-0.5">Source</p>
                 <p className="font-semibold text-foreground capitalize">{fmtSource(lead.source)}</p>
               </div>
+              {lead.ipAddress && (
+                <div>
+                  <p className="text-muted-foreground mb-0.5">IP Address</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-semibold text-foreground">{lead.ipAddress}</span>
+                    {ipDuplicates.length === 1 && (
+                      <Link
+                        href={`/admin/leads/${ipDuplicates[0].id}`}
+                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+                      >
+                        maybe duplicate
+                      </Link>
+                    )}
+                    {ipDuplicates.length > 1 && (
+                      <Link
+                        href={`/admin/leads?ip=${encodeURIComponent(lead.ipAddress!)}`}
+                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+                      >
+                        maybe duplicate ({ipDuplicates.length})
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-muted-foreground mb-0.5">Category</p>
                 <p className="font-semibold text-foreground capitalize">{fmtCategory(lead.category)}</p>

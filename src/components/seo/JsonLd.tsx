@@ -1,5 +1,7 @@
 // Server component — renders application/ld+json script tags.
 
+import { safeLdJson } from "@/lib/sanitize";
+
 interface JsonLdProps {
   data: Record<string, unknown>;
 }
@@ -8,7 +10,7 @@ export function JsonLd({ data }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeLdJson(data) }}
     />
   );
 }

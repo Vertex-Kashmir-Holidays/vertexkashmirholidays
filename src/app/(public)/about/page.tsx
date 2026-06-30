@@ -11,6 +11,7 @@ import { AboutStats } from '@/components/about/AboutStats';
 import { AboutStory } from '@/components/about/AboutStory';
 import { AboutTeam } from '@/components/about/AboutTeam';
 import { AboutValues } from '@/components/about/AboutValues';
+import { sanitizePressHtml } from '@/lib/sanitize';
 
 export const revalidate = 300;
 
@@ -114,7 +115,7 @@ export default async function AboutPage() {
           icon: j.icon,
         }))}
       />
-      <AboutPress label={content?.pressLabel ?? null} items={press.map((p) => p.html)} />
+      <AboutPress label={content?.pressLabel ?? null} items={press.map((p) => sanitizePressHtml(p.html))} />
       <AboutCTA
         data={{
           title: content?.ctaTitle ?? null,

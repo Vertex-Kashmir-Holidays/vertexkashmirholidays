@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, ExternalLink, Trash2, ChevronDown, Pencil, Users, CalendarClock, TrendingUp } from "lucide-react";
+import { Search, Plus, ExternalLink, Trash2, ChevronDown, Pencil, Users, CalendarClock, TrendingUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
@@ -52,6 +52,7 @@ interface Props {
   canEdit: boolean;
   canDelete: boolean;
   isAdmin: boolean;
+  initialIpFilter?: string;
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -91,7 +92,7 @@ function StatCard({ label, value, icon: Icon, accent }: { label: string; value: 
   );
 }
 
-export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCreate, canEdit, canDelete, isAdmin }: Props) {
+export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCreate, canEdit, canDelete, isAdmin, initialIpFilter }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -162,6 +163,21 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
         <StatCard label="Today's Follow-ups" value={stats.todayFollowUps} icon={CalendarClock} accent="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
         <StatCard label="Converted" value={stats.converted} icon={TrendingUp} accent="bg-green-500/10 text-green-600 dark:text-green-400" />
       </div>
+
+      {initialIpFilter && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-50/60 dark:bg-amber-900/10 px-4 py-2.5 text-xs">
+          <span className="font-semibold text-amber-800 dark:text-amber-300">
+            Showing leads from IP: <span className="font-mono">{initialIpFilter}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => { router.push("/admin/leads"); router.refresh(); }}
+            className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors font-semibold"
+          >
+            <X className="w-3.5 h-3.5" /> Clear filter
+          </button>
+        </div>
+      )}
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
         {/* Filter bar */}

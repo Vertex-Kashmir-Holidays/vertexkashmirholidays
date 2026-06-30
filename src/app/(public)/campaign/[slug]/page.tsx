@@ -7,6 +7,7 @@ import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
 import { getDisplayReviews } from '@/lib/reviews';
 import type { FooterSettings } from '@/components/layout/Footer';
+import { sanitizeInlineHtml } from '@/lib/sanitize';
 import type {
   CampaignActivity,
   CampaignBatch,
@@ -95,7 +96,7 @@ export default async function CampaignPage({ params }: PageProps) {
     particles: c.particles === 'embers' ? 'embers' : 'snow',
     name: c.name,
     badge: c.badge,
-    titleHtml: c.titleHtml,
+    titleHtml: sanitizeInlineHtml(c.titleHtml),
     sub: c.sub,
     heroImage: c.heroImage,
     heroImageMobile: c.heroImageMobile,
@@ -125,10 +126,10 @@ export default async function CampaignPage({ params }: PageProps) {
     batches: parse<CampaignBatch[]>(c.batches, []),
     inclusions: parse<string[]>(c.inclusions, []),
     exclusions: parse<string[]>(c.exclusions, []),
-    galleryTitle: c.galleryTitle,
+    galleryTitle: sanitizeInlineHtml(c.galleryTitle),
     gallery: parse<string[]>(c.gallery, []),
     testimonials,
-    faqsTitle: c.faqsTitle,
+    faqsTitle: sanitizeInlineHtml(c.faqsTitle),
     faqs: parse<CampaignFaq[]>(c.faqs, []),
     finalTitle: c.finalTitle,
     finalSub: c.finalSub,

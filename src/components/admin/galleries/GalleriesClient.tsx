@@ -317,7 +317,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
               <p className="text-[10px] text-muted-foreground">PNG · SVG · WebP (max 500 KB) • Video (max 10 MB)</p>
               <input
                 type="file"
-                accept="image/png,image/svg+xml,image/webp,video/*"
+                accept="image/jpeg,image/png,image/webp,video/*"
                 multiple
                 className="hidden"
                 disabled={uploading}

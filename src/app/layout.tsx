@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
-import { GoogleTagManager } from "@next/third-parties/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { GTMScript } from "@/components/providers/GTMScript";
 import "./globals.css";
 
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+const rawGtmId = process.env.NEXT_PUBLIC_GTM_ID ?? "";
+const GTM_ID = /^GTM-[A-Z0-9]+$/.test(rawGtmId) ? rawGtmId : null;
 
 
 const displayFont = Bricolage_Grotesque({
@@ -67,7 +69,6 @@ export const metadata: Metadata = {
       "Premium Kashmir tourism — honeymoon, family, adventure, luxury packages.",
     images: ["/brand/kit/social/vertex-og-1200x630.png"],
   },
-  // favicon.ico, icon.svg and apple-icon.png are auto-discovered from src/app.
   ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
     ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }
     : {}),
@@ -82,11 +83,13 @@ export const viewport: Viewport = {
 };
 
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -94,32 +97,34 @@ export default function RootLayout({
       className={`${displayFont.variable} ${sansFont.variable}`}
     >
       <head>
-        {/* Preconnect so the GTM/GA4 TCP handshake is already done before
-            afterInteractive fires. DNS-prefetch is the no-CORS fallback. */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
         <link rel="dns-prefetch" href="https://cdn.razorpay.com" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
+        {GTM_ID && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        )}
+
+        {GTM_ID && <GTMScript gtmId={GTM_ID} nonce={nonce} />}
+
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          nonce={nonce}
         >
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>
-
-        {/* GoogleTagManager injects two scripts with strategy="afterInteractive":
-            1. An inline bootstrap that initialises window.dataLayer and pushes
-               { gtm.start, event: "gtm.js" } — the signal GTM needs to start
-               firing tags (including the GA4 config tag for page_view).
-            2. The gtm.js container script itself.
-            It also renders the <noscript> iframe fallback for non-JS browsers.
-            This is the only correct Next.js App Router approach — it avoids the
-            DOM insertBefore race that breaks the raw snippet at hydration time. */}
-        {GTM_ID && <GoogleTagManager gtmId={GTM_ID} />}
       </body>
     </html>
   );
