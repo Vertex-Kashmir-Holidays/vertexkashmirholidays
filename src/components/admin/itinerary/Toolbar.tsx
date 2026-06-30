@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, RefreshCw, Download, Save, Loader2, ArrowLeft } from "lucide-react";
-import { useTheme } from "next-themes";
+import { RefreshCw, Download, Save, Loader2, ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { ItineraryStatus } from "@/types/itinerary";
 
 const STATUSES: ItineraryStatus[] = ["DRAFT", "SENT", "CONFIRMED"];
@@ -33,8 +33,6 @@ export function Toolbar({
   isExporting,
   canSave = true,
 }: ToolbarProps) {
-  const { theme, setTheme } = useTheme();
-
   return (
     <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 no-print">
       <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
@@ -61,9 +59,7 @@ export function Toolbar({
             ))}
           </select>
 
-          <Button variant="outline" size="sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Toggle theme">
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <ThemeToggle className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground" />
 
           <Button variant="outline" size="sm" onClick={onReset}>
             <RefreshCw className="mr-1 h-3.5 w-3.5" /> Reset

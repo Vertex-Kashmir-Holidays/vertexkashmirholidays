@@ -3,9 +3,15 @@ import { requireStaff } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { saveUpload, isCloudinaryConfigured } from "@/lib/storage";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;   // 5 MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024;  // 50 MB
+const MAX_IMAGE_SIZE = 500 * 1024;         // 500 KB
+const MAX_VIDEO_SIZE = 10 * 1024 * 1024;  // 10 MB
 const MAX_DOC_SIZE   = 5 * 1024 * 1024;   // 5 MB
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/svg+xml",
+  "image/webp",
+]);
 
 const DOCUMENT_TYPES = new Set([
   "application/pdf",
@@ -39,13 +45,13 @@ export async function POST(req: NextRequest) {
   const folder = (formData.get("folder") as string | null)?.trim() || "general";
   const alt    = (formData.get("alt") as string | null)?.trim() || null;
 
-  const isImage    = file.type.startsWith("image/");
+  const isImage    = ALLOWED_IMAGE_TYPES.has(file.type);
   const isVideo    = file.type.startsWith("video/");
   const isDocument = DOCUMENT_TYPES.has(file.type);
 
   if (!isImage && !isVideo && !isDocument) {
     return NextResponse.json(
-      { error: "Only image, video, or document files are allowed" },
+      { error: "Images must be PNG, SVG, or WebP. Videos and documents are also accepted." },
       { status: 400 },
     );
   }
@@ -53,7 +59,7 @@ export async function POST(req: NextRequest) {
   const maxSize = isVideo ? MAX_VIDEO_SIZE : isDocument ? MAX_DOC_SIZE : MAX_IMAGE_SIZE;
   if (file.size > maxSize) {
     return NextResponse.json(
-      { error: `File too large (max ${isVideo ? "50" : "5"} MB)` },
+      { error: `File too large (max ${isVideo ? "10 MB" : isDocument ? "5 MB" : "500 KB"})` },
       { status: 400 },
     );
   }

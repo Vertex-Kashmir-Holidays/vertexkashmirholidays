@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
 import { getDisplayReviews } from '@/lib/reviews';
+import type { FooterSettings } from '@/components/layout/Footer';
 import type {
   CampaignActivity,
   CampaignBatch,
@@ -54,12 +55,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CampaignPage({ params }: PageProps) {
   const { slug } = await params;
-  const c = await prisma.campaign.findUnique({ where: { slug } });
+  const [c, s, reviews] = await Promise.all([
+    prisma.campaign.findUnique({ where: { slug } }),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    getDisplayReviews(6),
+  ]);
   if (!c || !c.published) notFound();
+
+  const footerSettings: FooterSettings | null = s
+    ? {
+        siteName: s.siteName,
+        siteTagline: s.siteTagline,
+        siteEmail: s.siteEmail,
+        sitePhone: s.sitePhone,
+        siteAddress: s.siteAddress,
+        whatsapp: s.whatsapp,
+        facebook: s.facebook,
+        instagram: s.instagram,
+        twitter: s.twitter,
+        youtube: s.youtube,
+        googleReviews: s.googleReviews,
+        tripadvisor: s.tripadvisor,
+      }
+    : null;
 
   // Campaign "traveller stories" now pull from the global Review module rather
   // than a per-campaign JSON field — reviews are admin/customer managed.
-  const reviews = await getDisplayReviews(6);
   const testimonials: CampaignTestimonial[] = reviews.map((r) => ({
     image: r.avatar ?? '',
     name: r.name,
@@ -115,5 +136,5 @@ export default async function CampaignPage({ params }: PageProps) {
     finalNote: c.finalNote,
   };
 
-  return <CampaignPageClient campaign={data} />;
+  return <CampaignPageClient campaign={data} footerSettings={footerSettings} />;
 }

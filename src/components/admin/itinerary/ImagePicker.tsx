@@ -18,11 +18,17 @@ interface ImagePickerProps {
 interface GalleryAsset {
   id: string;
   url: string;
+  publicId: string | null;
   alt: string | null;
   category: string | null;
 }
 
 type Tab = "stock" | "gallery";
+type SourceFilter = "ALL" | "LOCAL" | "STOCK";
+
+function assetSource(item: GalleryAsset): "LOCAL" | "STOCK" {
+  return item.url.startsWith("/") ? "LOCAL" : "STOCK";
+}
 
 export function ImagePicker({ value, onChange, className, label = "Change image" }: ImagePickerProps) {
   const [open, setOpen] = useState(false);
@@ -36,6 +42,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [galleryPage, setGalleryPage] = useState(1);
   const [galleryPages, setGalleryPages] = useState(1);
+  const [gallerySource, setGallerySource] = useState<SourceFilter>("ALL");
 
   useEffect(() => setMounted(true), []);
 
@@ -57,6 +64,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
     setOpen(false);
     setTab("stock");
     setGalleryPage(1);
+    setGallerySource("ALL");
   }
 
   function select(src: string) {
@@ -151,7 +159,27 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                 </div>
               ) : (
                 <div className="mt-4 max-h-[55vh] overflow-y-auto">
-                  {galleryItems.length === 0 && !galleryLoading ? (
+                  {/* Source filter tabs */}
+                  <div className="mb-3 flex items-center gap-1.5 overflow-x-auto">
+                    {([
+                      { key: "ALL",   label: "All" },
+                      { key: "LOCAL", label: "💾 Local" },
+                      { key: "STOCK", label: "🌐 Stock / Cloudinary" },
+                    ] as const).map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setGallerySource(key)}
+                        className={cn(
+                          "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors",
+                          gallerySource === key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {galleryItems.filter((i) => gallerySource === "ALL" || assetSource(i) === gallerySource).length === 0 && !galleryLoading ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
                       <ImageIcon className="h-8 w-8" />
                       <p className="text-xs">No gallery images yet. Add some in the Gallery module.</p>
@@ -159,7 +187,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                   ) : (
                     <>
                       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                        {galleryItems.map((item) => (
+                        {galleryItems.filter((i) => gallerySource === "ALL" || assetSource(i) === gallerySource).map((item) => (
                           <button
                             key={item.id}
                             type="button"
@@ -198,7 +226,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
               )}
 
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <p className="text-xs text-muted-foreground">Or upload your own (max 5 MB).</p>
+                <p className="text-xs text-muted-foreground">Upload PNG, SVG or WebP (max 500 KB).</p>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
@@ -208,7 +236,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                   {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                   {uploading ? "Uploading…" : "Upload image"}
                 </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+                <input ref={fileRef} type="file" accept="image/png,image/svg+xml,image/webp" className="hidden" onChange={handleUpload} />
               </div>
             </div>
           </div>,

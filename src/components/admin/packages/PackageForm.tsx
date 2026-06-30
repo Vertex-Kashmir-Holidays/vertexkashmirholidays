@@ -220,7 +220,7 @@ function ImageUploadField({
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/svg+xml,image/webp"
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
