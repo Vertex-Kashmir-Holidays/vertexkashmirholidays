@@ -88,6 +88,15 @@ export interface SaveUploadResult {
   publicId: string | null;
 }
 
+const WATERMARK_FOLDERS = new Set([
+  "home",
+  "tours",
+  "destinations",
+  "blog",
+  "campaigns",
+  "itinerary",
+]);
+
 const WATERMARK_PATH = path.join(
   process.cwd(),
   "public/brand/png/horizontal/vertex-horizontal-light-1600w.png",
@@ -96,11 +105,16 @@ const WATERMARK_WIDTH_RATIO = 0.22;
 const WATERMARK_OPACITY = 0.7;
 const WATERMARK_MARGIN = 24;
 
-async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
-  const logoRaw = await readFile(WATERMARK_PATH);
-  const image = sharp(buffer);
-  const { width: imgW = 0, height: imgH = 0 } = await image.metadata();
+let _watermarkRaw: Buffer | null = null;
+async function getWatermarkRaw(): Promise<Buffer> {
+  if (!_watermarkRaw) _watermarkRaw = await readFile(WATERMARK_PATH);
+  return _watermarkRaw;
+}
 
+async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
+  const logoRaw = await getWatermarkRaw();
+
+  const { width: imgW = 0, height: imgH = 0 } = await sharp(buffer).metadata();
   if (imgW < 300 || imgH < 200) return buffer;
 
   const logoW = Math.max(80, Math.min(400, Math.round(imgW * WATERMARK_WIDTH_RATIO)));
@@ -126,7 +140,7 @@ async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
 
   const outputFormat = ext === "png" ? "png" : ext === "webp" ? "webp" : "jpeg";
 
-  return image
+  return sharp(buffer)
     .composite([{ input: logoBuffer, left, top, blend: "over" }])
     [outputFormat]({ quality: 88 })
     .toBuffer();
@@ -137,8 +151,14 @@ export async function saveUpload(
   { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
-  const processedBuffer = isImage
-    ? await applyWatermark(buffer, ext).catch(() => buffer)
+  const shouldWatermark = isImage && WATERMARK_FOLDERS.has(slug);
+  const processedBuffer = shouldWatermark
+    ? await Promise.race([
+        applyWatermark(buffer, ext),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("watermark timeout")), 8000)
+        ),
+      ]).catch(() => buffer)
     : buffer;
 
   if (isCloudinaryConfigured()) {
