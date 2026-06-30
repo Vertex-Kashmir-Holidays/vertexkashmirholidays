@@ -56,10 +56,11 @@ export function ImageField({
           Upload
           <input
             type="file"
-            accept="image/*"
+            accept="image/png,image/svg+xml,image/webp"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
           />
+          <span className="text-[10px] text-muted-foreground">PNG · SVG · WebP · max 500 KB</span>
         </label>
       </div>
       {value && (

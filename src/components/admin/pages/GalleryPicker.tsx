@@ -5,12 +5,19 @@ import { toast } from "sonner";
 import { Loader2, X, Search, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type SourceFilter = "ALL" | "LOCAL" | "STOCK";
+
 interface GalleryAsset {
   id: string;
   url: string;
+  publicId: string | null;
   type: string; // "IMAGE" | "VIDEO"
   alt: string | null;
   category: string | null;
+}
+
+function assetSource(item: GalleryAsset): "LOCAL" | "STOCK" {
+  return item.url.startsWith("/") ? "LOCAL" : "STOCK";
 }
 
 interface Props {
@@ -28,6 +35,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [q, setQ] = useState("");
+  const [source, setSource] = useState<SourceFilter>("ALL");
 
   // Load (or append) a page of gallery assets whenever the modal opens or the
   // page advances. Closing resets back to the first page.
@@ -36,6 +44,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
       setItems([]);
       setPage(1);
       setQ("");
+      setSource("ALL");
       return;
     }
     setLoading(true);
@@ -54,13 +63,14 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
   if (!open) return null;
 
   const needle = q.trim().toLowerCase();
-  const filtered = needle
-    ? items.filter(
-        (i) =>
-          (i.alt ?? "").toLowerCase().includes(needle) ||
-          (i.category ?? "").toLowerCase().includes(needle)
-      )
-    : items;
+  const filtered = items.filter((i) => {
+    if (source !== "ALL" && assetSource(i) !== source) return false;
+    if (!needle) return true;
+    return (
+      (i.alt ?? "").toLowerCase().includes(needle) ||
+      (i.category ?? "").toLowerCase().includes(needle)
+    );
+  });
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -73,6 +83,27 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Source tabs */}
+        <div className="mb-3 flex items-center gap-1.5 overflow-x-auto">
+          {([
+            { key: "ALL",   label: "All" },
+            { key: "LOCAL", label: "💾 Local" },
+            { key: "STOCK", label: "🌐 Stock / Cloudinary" },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSource(key)}
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors",
+                source === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80",
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="relative mb-4">

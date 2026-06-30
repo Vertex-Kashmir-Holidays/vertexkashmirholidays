@@ -21,13 +21,15 @@ import { CampaignStickyMobileCTA } from '@/components/campaign/CampaignStickyMob
 import { CampaignWhatsAppFloat } from '@/components/campaign/CampaignWhatsAppFloat';
 import { CampaignFilmModal } from '@/components/campaign/CampaignFilmModal';
 import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
+import { Footer, type FooterSettings } from '@/components/layout/Footer';
 import type { CampaignData } from '@/types/campaign';
 
 interface CampaignPageClientProps {
   campaign: CampaignData;
+  footerSettings?: FooterSettings | null;
 }
 
-export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
+export function CampaignPageClient({ campaign, footerSettings }: CampaignPageClientProps) {
   const [filmOpen, setFilmOpen] = useState(false);
 
   // Phone shown in the nav / hero / final CTA: this campaign's own number if
@@ -118,6 +120,8 @@ export function CampaignPageClient({ campaign }: CampaignPageClientProps) {
         <CampaignStickyMobileCTA price={campaign.tiers[0].price} cta={campaign.heroCta ?? 'Reserve'} />
       )}
       <CampaignWhatsAppFloat href={whatsappHref} />
+
+      <Footer settings={footerSettings} />
 
       {campaign.filmSrc && campaign.filmPoster && (
         <CampaignFilmModal

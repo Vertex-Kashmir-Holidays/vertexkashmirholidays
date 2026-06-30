@@ -113,7 +113,13 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 lg:flex">
-            <ThemeToggle />
+            <ThemeToggle 
+              className={`grid h-9 w-9 place-items-center rounded-full border transition ${
+                overHero
+                  ? 'border-white/30 text-white hover:bg-white hover:text-foreground'
+                  : 'border-foreground/20 text-foreground hover:bg-foreground hover:text-background'
+              }`}
+            />
             <Link
               href="/login"
               className={`grid h-9 w-9 place-items-center rounded-full border transition ${

@@ -24,7 +24,7 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       aria-label={mounted ? (isDark ? 'Switch to light mode' : 'Switch to dark mode') : 'Toggle color theme'}
       // title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-      className={`grid h-9 w-9 place-items-center rounded-full border border-foreground/20 text-foreground transition hover:bg-foreground/10 ${className}`}
+      className={className}
     >
       {/* Render a neutral icon until mounted to keep SSR/CSR markup stable */}
       {!mounted ? (

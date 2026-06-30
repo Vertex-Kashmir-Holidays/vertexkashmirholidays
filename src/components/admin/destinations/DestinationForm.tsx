@@ -229,7 +229,7 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
              <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                Upload
-               <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")} />
+               <input type="file" accept="image/png,image/svg+xml,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")} />
              </label>
            </div>
            {coverImage && (
