@@ -192,7 +192,7 @@ export function BookingForm({
       currency: order.currency,
       name: "Vertex Kashmir Holidays",
       description: `${tourTitle} — ${paymentOption === "ADVANCE" ? `${ADVANCE_PERCENT}% advance` : "full payment"}`,
-      image: "/brand/kit/png/icon/vertex-icon-512.png",
+      image: "/brand/png/icon/vertex-icon-512.png",
       order_id: order.orderId,
       prefill: { name, email, contact: phone },
       theme: { color: "#0BA45B" },

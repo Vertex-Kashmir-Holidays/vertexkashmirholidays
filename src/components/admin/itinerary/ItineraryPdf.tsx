@@ -18,9 +18,9 @@ import type { ItineraryData } from "@/types/itinerary";
 // these paths). The icon doubles as the faint per-page watermark; the
 // horizontal lockups are the primary logo — dark-bg (white text) variant for
 // the cover/thank-you pages, light-bg (dark text) variant for the body header.
-export const LOGO_SRC = "/brand/kit/png/icon/vertex-icon-512.png";
-export const LOGO_DARK_SRC = "/brand/kit/png/horizontal/vertex-horizontal-dark-1600w.png";
-export const LOGO_LIGHT_SRC = "/brand/kit/png/horizontal/vertex-horizontal-light-1600w.png";
+export const LOGO_SRC = "/brand/png/icon/vertex-icon-512.png";
+export const LOGO_DARK_SRC = "/brand/png/horizontal/vertex-horizontal-dark-1600w.png";
+export const LOGO_LIGHT_SRC = "/brand/png/horizontal/vertex-horizontal-light-1600w.png";
 
 // Every brand asset the PDF embeds — the export pipeline fetches each as a data
 // URL up-front so a missing one degrades gracefully instead of throwing.

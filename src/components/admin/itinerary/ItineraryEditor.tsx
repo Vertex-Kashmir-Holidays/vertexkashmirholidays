@@ -451,13 +451,13 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                <div className="flex items-center">
                  {/* eslint-disable-next-line @next/next/no-img-element */}
                  <img
-                   src="/brand/kit/png/horizontal/vertex-horizontal-light-1600w.png"
+                   src="/brand/png/horizontal/vertex-horizontal-light-1600w.png"
                    alt="Vertex Kashmir Holidays"
                    className="h-12 w-auto object-contain dark:hidden"
                  />
                  {/* eslint-disable-next-line @next/next/no-img-element */}
                  <img
-                   src="/brand/kit/png/horizontal/vertex-horizontal-dark-1600w.png"
+                   src="/brand/png/horizontal/vertex-horizontal-dark-1600w.png"
                    alt="Vertex Kashmir Holidays"
                    className="hidden h-12 w-auto object-contain dark:block"
                  />

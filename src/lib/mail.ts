@@ -950,7 +950,7 @@ export function bookingPortalSectionText(bookingId: string): string {
 * brand navy. Falls back gracefully to the wordmark if the image is blocked.
 */
 function brandHeader(): string {
- const logo = `${siteUrl()}/brand/kit/png/icon/vertex-icon-512.png`;
+ const logo = `${siteUrl()}/brand/png/icon/vertex-icon-512.png`;
  return `          <tr>
            <td style="padding:20px 28px;background:${BRAND};border-radius:14px 14px 0 0">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">

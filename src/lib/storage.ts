@@ -1,6 +1,6 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary, type UploadApiErrorResponse, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Media storage abstraction.
@@ -115,27 +115,29 @@ async function saveToCloudinary(
 ): Promise<SaveUploadResult> {
   ensureCloudinaryConfig();
 
-  const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: `${getCloudinaryRoot()}/${slug}`,
-        // Let Cloudinary detect image vs video from the bytes.
-        resource_type: "auto",
-        // Unique public id; Cloudinary appends the correct extension itself.
-        public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      },
-      (error, uploaded) => {
-        if (error || !uploaded) {
-          reject(error ?? new Error("Cloudinary upload failed"));
-          return;
-        }
-        resolve(uploaded as { secure_url: string; public_id: string });
-      },
-    );
+  const uploadOptions: UploadApiOptions = {
+    folder: `${getCloudinaryRoot()}/${slug}`,
+    resource_type: "auto",
+    public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  };
+
+  const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+    type CloudinaryCallback = (error: UploadApiErrorResponse | undefined, uploaded: UploadApiResponse | undefined) => void;
+    const cb: CloudinaryCallback = (error, uploaded) => {
+      if (error || !uploaded) {
+        reject(error ?? new Error("Cloudinary upload failed"));
+        return;
+      }
+      resolve(uploaded);
+    };
+    const stream = (cloudinary.uploader.upload_stream as unknown as (
+      cb: CloudinaryCallback,
+      opts: UploadApiOptions
+    ) => ReturnType<typeof cloudinary.uploader.upload_stream>)(cb, uploadOptions);
     stream.end(buffer);
   });
 
-  return { url: result.secure_url, folder: slug, publicId: result.public_id };
+  return { url: result.secure_url, folder: slug, publicId: result.public_id ?? null };
 }
 
 /**

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://vertexkashmirholidays.com";
 export const SITE_NAME = "Vertex Kashmir Holidays";
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/brand/kit/social/vertex-og-1200x630.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/brand/social/vertex-og-1200x630.png`;
 
 interface BuildMetadataOptions {
   title: string;
