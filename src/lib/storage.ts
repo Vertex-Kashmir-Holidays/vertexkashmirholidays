@@ -99,7 +99,7 @@ const WATERMARK_FOLDERS = new Set([
 
 const WATERMARK_PATH = path.join(
   process.cwd(),
-  "public/brand/png/horizontal/vertex-horizontal-light-1600w.png",
+  "public/brand/png/horizontal/vertex-horizontal-dark-1600w.png",
 );
 const WATERMARK_WIDTH_RATIO = 0.22;
 const WATERMARK_OPACITY = 0.7;
