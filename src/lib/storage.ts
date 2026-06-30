@@ -151,21 +151,7 @@ export async function saveUpload(
   { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
-  const shouldWatermark = isImage && WATERMARK_FOLDERS.has(slug);
-  let processedBuffer = buffer;
-  if (shouldWatermark) {
-    try {
-      processedBuffer = await Promise.race([
-        applyWatermark(buffer, ext),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000)
-        ),
-      ]);
-      console.log(`[upload] watermark applied (${ext}, folder=${slug})`);
-    } catch (err) {
-      console.error(`[upload] watermark skipped — ${err instanceof Error ? err.message : err}`);
-    }
-  }
+  const processedBuffer = buffer; // watermark paused
 
   if (isCloudinaryConfigured()) {
     return saveToCloudinary(processedBuffer, slug);
@@ -193,8 +179,8 @@ async function saveToCloudinary(
       uploadOptions,
       (error, uploaded) => {
         if (error || !uploaded) {
-          console.error("[upload] Cloudinary callback error:", error);
-          reject(error ?? new Error("Cloudinary upload failed"));
+          console.error("[upload] Cloudinary error:", JSON.stringify(error));
+          reject(new Error(error?.message ?? "Cloudinary upload failed"));
           return;
         }
         console.log(`[upload] Cloudinary ok → ${uploaded.secure_url}`);
