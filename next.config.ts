@@ -45,8 +45,8 @@ const securityHeaders = [
 
 
 const nextConfig: NextConfig = {
- // Don't advertise the framework.
  poweredByHeader: false,
+ serverExternalPackages: ["sharp"],
  async headers() {
    return [{ source: "/:path*", headers: securityHeaders }];
  },

@@ -55,7 +55,7 @@ export const metadata: Metadata = {
       "Curated Kashmir packages — honeymoon, family, adventure, luxury. Houseboat stays, Gondola, glacier treks.",
     images: [
       {
-        url: "/brand/kit/social/vertex-og-1200x630.png",
+        url: "/brand/social/vertex-og-1200x630.png",
         width: 1200,
         height: 630,
         alt: "Vertex Kashmir Holidays",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     title: "Vertex Kashmir Holidays",
     description:
       "Premium Kashmir tourism — honeymoon, family, adventure, luxury packages.",
-    images: ["/brand/kit/social/vertex-og-1200x630.png"],
+    images: ["/brand/social/vertex-og-1200x630.png"],
   },
   ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
     ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }

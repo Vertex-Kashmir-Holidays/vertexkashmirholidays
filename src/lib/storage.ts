@@ -1,6 +1,7 @@
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
-import { v2 as cloudinary } from "cloudinary";
+import sharp from "sharp";
+import { v2 as cloudinary, type UploadApiErrorResponse, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Media storage abstraction.
@@ -82,31 +83,89 @@ export function folderSlug(raw: string | null | undefined): string {
 }
 
 export interface SaveUploadResult {
-  /** Public URL (Cloudinary secure_url or site-relative /uploads/... path). */
   url: string;
-  /** The folder segment the file was stored under (slugified). */
   folder: string;
-  /** Cloudinary public_id — required for retention cleanup. null on local disk. */
   publicId: string | null;
 }
 
-/**
- * Persist an uploaded file's bytes and return its public URL.
- * @param buffer file contents
- * @param folder module/category the asset belongs to (slugified internally)
- * @param ext    file extension without the dot (already sanitised by caller)
- */
-export async function saveUpload(
-  buffer: Buffer,
-  { folder, ext }: { folder: string; ext: string },
-): Promise<SaveUploadResult> {
-  const slug = folderSlug(folder);
+const WATERMARK_FOLDERS = new Set([
+  "home",
+  "tours",
+  "destinations",
+  "blog",
+  "campaigns",
+  "itinerary",
+]);
 
-  if (isCloudinaryConfigured()) {
-    return saveToCloudinary(buffer, slug);
+const WATERMARK_PATH = path.join(
+  process.cwd(),
+  "public/brand/png/horizontal/vertex-horizontal-light-1600w.png",
+);
+const WATERMARK_WIDTH_RATIO = 0.22;
+const WATERMARK_OPACITY = 0.7;
+const WATERMARK_MARGIN = 24;
+
+let _watermarkRaw: Buffer | null = null;
+async function getWatermarkRaw(): Promise<Buffer> {
+  if (!_watermarkRaw) _watermarkRaw = await readFile(WATERMARK_PATH);
+  return _watermarkRaw;
+}
+
+async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
+  const logoRaw = await getWatermarkRaw();
+
+  const { width: imgW = 0, height: imgH = 0 } = await sharp(buffer).metadata();
+  if (imgW < 300 || imgH < 200) return buffer;
+
+  const logoW = Math.max(80, Math.min(400, Math.round(imgW * WATERMARK_WIDTH_RATIO)));
+
+  const { data: logoData, info: logoInfo } = await sharp(logoRaw)
+    .resize(logoW)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  for (let i = 3; i < logoData.length; i += 4) {
+    logoData[i] = Math.round(logoData[i] * WATERMARK_OPACITY);
   }
 
-  return saveToLocalDisk(buffer, slug, ext);
+  const logoBuffer = await sharp(logoData, {
+    raw: { width: logoInfo.width, height: logoInfo.height, channels: 4 },
+  })
+    .png()
+    .toBuffer();
+
+  const left = Math.max(0, imgW - logoInfo.width - WATERMARK_MARGIN);
+  const top = Math.max(0, imgH - logoInfo.height - WATERMARK_MARGIN);
+
+  const outputFormat = ext === "png" ? "png" : ext === "webp" ? "webp" : "jpeg";
+
+  return sharp(buffer)
+    .composite([{ input: logoBuffer, left, top, blend: "over" }])
+    [outputFormat]({ quality: 88 })
+    .toBuffer();
+}
+
+export async function saveUpload(
+  buffer: Buffer,
+  { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
+): Promise<SaveUploadResult> {
+  const slug = folderSlug(folder);
+  const shouldWatermark = isImage && WATERMARK_FOLDERS.has(slug);
+  const processedBuffer = shouldWatermark
+    ? await Promise.race([
+        applyWatermark(buffer, ext),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("watermark timeout")), 8000)
+        ),
+      ]).catch(() => buffer)
+    : buffer;
+
+  if (isCloudinaryConfigured()) {
+    return saveToCloudinary(processedBuffer, slug);
+  }
+
+  return saveToLocalDisk(processedBuffer, slug, ext);
 }
 
 async function saveToCloudinary(
@@ -115,27 +174,29 @@ async function saveToCloudinary(
 ): Promise<SaveUploadResult> {
   ensureCloudinaryConfig();
 
-  const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: `${getCloudinaryRoot()}/${slug}`,
-        // Let Cloudinary detect image vs video from the bytes.
-        resource_type: "auto",
-        // Unique public id; Cloudinary appends the correct extension itself.
-        public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      },
-      (error, uploaded) => {
-        if (error || !uploaded) {
-          reject(error ?? new Error("Cloudinary upload failed"));
-          return;
-        }
-        resolve(uploaded as { secure_url: string; public_id: string });
-      },
-    );
+  const uploadOptions: UploadApiOptions = {
+    folder: `${getCloudinaryRoot()}/${slug}`,
+    resource_type: "auto",
+    public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  };
+
+  const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+    type CloudinaryCallback = (error: UploadApiErrorResponse | undefined, uploaded: UploadApiResponse | undefined) => void;
+    const cb: CloudinaryCallback = (error, uploaded) => {
+      if (error || !uploaded) {
+        reject(error ?? new Error("Cloudinary upload failed"));
+        return;
+      }
+      resolve(uploaded);
+    };
+    const stream = (cloudinary.uploader.upload_stream as unknown as (
+      cb: CloudinaryCallback,
+      opts: UploadApiOptions
+    ) => ReturnType<typeof cloudinary.uploader.upload_stream>)(cb, uploadOptions);
     stream.end(buffer);
   });
 
-  return { url: result.secure_url, folder: slug, publicId: result.public_id };
+  return { url: result.secure_url, folder: slug, publicId: result.public_id ?? null };
 }
 
 /**

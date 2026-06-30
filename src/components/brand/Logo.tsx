@@ -20,8 +20,8 @@ interface LogoProps {
 //   variant="dark"  → navy wordmark (use on light surfaces)
 //   variant="light" → white wordmark (use on dark surfaces / hero photos)
 //   variant="auto"  → follows the active theme (navy in light, white in dark)
-const NAVY_LOCKUP = "/brand/kit/svg/vertex-logo-horizontal-light.svg";
-const WHITE_LOCKUP = "/brand/kit/svg/vertex-logo-horizontal-dark.svg";
+const NAVY_LOCKUP = "/brand/svg/vertex-logo-horizontal-light.svg";
+const WHITE_LOCKUP = "/brand/svg/vertex-logo-horizontal-dark.svg";
 
 export function Logo({ variant = "auto", className, href = "/" }: LogoProps) {
   const img = (src: string, extra?: string) => (

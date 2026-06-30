@@ -33,8 +33,8 @@ export function buildTravelAgency(opts?: {
     description:
       "Premium Kashmir tourism and booking platform — curated honeymoon, family, adventure and luxury packages.",
     url: siteUrl,
-    logo: `${siteUrl}/brand/kit/png/icon/vertex-icon-512.png`,
-    image: `${siteUrl}/brand/kit/social/vertex-og-1200x630.png`,
+    logo: `${siteUrl}/brand/png/icon/vertex-icon-512.png`,
+    image: `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     ...(opts?.email ? { email: opts.email } : {}),
     contactPoint: {
       "@type": "ContactPoint",
@@ -99,7 +99,7 @@ export function buildTouristTrip(tour: {
     "@type": "TouristTrip",
     name: tour.title,
     description: tour.description ?? tour.title,
-    image: tour.coverImage ?? `${siteUrl}/brand/kit/social/vertex-og-1200x630.png`,
+    image: tour.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/tours/${tour.slug}`,
     touristType: "General",
     itinerary: {
@@ -123,7 +123,7 @@ export function buildProduct(tour: {
     "@type": "Product",
     name: tour.title,
     description: tour.description ?? tour.title,
-    image: tour.coverImage ?? `${siteUrl}/brand/kit/social/vertex-og-1200x630.png`,
+    image: tour.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/tours/${tour.slug}`,
     offers: {
       "@type": "Offer",
@@ -190,7 +190,7 @@ export function buildBlogPosting(post: {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt ?? post.title,
-    image: post.coverImage ?? `${siteUrl}/brand/kit/social/vertex-og-1200x630.png`,
+    image: post.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/blog/${post.slug}`,
     author: {
       "@type": "Person",
@@ -199,7 +199,7 @@ export function buildBlogPosting(post: {
     publisher: {
       "@type": "Organization",
       name: "Vertex Kashmir Holidays",
-      logo: { "@type": "ImageObject", url: `${siteUrl}/brand/kit/png/icon/vertex-icon-512.png` },
+      logo: { "@type": "ImageObject", url: `${siteUrl}/brand/png/icon/vertex-icon-512.png` },
     },
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt?.toISOString(),
@@ -218,7 +218,7 @@ export function buildTouristDestination(dest: {
     "@type": "TouristDestination",
     name: dest.name,
     description: dest.description ?? dest.name,
-    image: dest.coverImage ?? `${siteUrl}/brand/kit/social/vertex-og-1200x630.png`,
+    image: dest.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/destinations/${dest.slug}`,
     touristType: "General",
     ...(dest.location ? { geo: { "@type": "GeoCoordinates", description: dest.location } } : {}),
