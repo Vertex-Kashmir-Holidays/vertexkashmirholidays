@@ -1,5 +1,6 @@
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
+import sharp from "sharp";
 import { v2 as cloudinary, type UploadApiErrorResponse, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -82,31 +83,69 @@ export function folderSlug(raw: string | null | undefined): string {
 }
 
 export interface SaveUploadResult {
-  /** Public URL (Cloudinary secure_url or site-relative /uploads/... path). */
   url: string;
-  /** The folder segment the file was stored under (slugified). */
   folder: string;
-  /** Cloudinary public_id — required for retention cleanup. null on local disk. */
   publicId: string | null;
 }
 
-/**
- * Persist an uploaded file's bytes and return its public URL.
- * @param buffer file contents
- * @param folder module/category the asset belongs to (slugified internally)
- * @param ext    file extension without the dot (already sanitised by caller)
- */
-export async function saveUpload(
-  buffer: Buffer,
-  { folder, ext }: { folder: string; ext: string },
-): Promise<SaveUploadResult> {
-  const slug = folderSlug(folder);
+const WATERMARK_PATH = path.join(
+  process.cwd(),
+  "public/brand/png/horizontal/vertex-horizontal-light-1600w.png",
+);
+const WATERMARK_WIDTH_RATIO = 0.22;
+const WATERMARK_OPACITY = 0.7;
+const WATERMARK_MARGIN = 24;
 
-  if (isCloudinaryConfigured()) {
-    return saveToCloudinary(buffer, slug);
+async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
+  const logoRaw = await readFile(WATERMARK_PATH);
+  const image = sharp(buffer);
+  const { width: imgW = 0, height: imgH = 0 } = await image.metadata();
+
+  if (imgW < 300 || imgH < 200) return buffer;
+
+  const logoW = Math.max(80, Math.min(400, Math.round(imgW * WATERMARK_WIDTH_RATIO)));
+
+  const { data: logoData, info: logoInfo } = await sharp(logoRaw)
+    .resize(logoW)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  for (let i = 3; i < logoData.length; i += 4) {
+    logoData[i] = Math.round(logoData[i] * WATERMARK_OPACITY);
   }
 
-  return saveToLocalDisk(buffer, slug, ext);
+  const logoBuffer = await sharp(logoData, {
+    raw: { width: logoInfo.width, height: logoInfo.height, channels: 4 },
+  })
+    .png()
+    .toBuffer();
+
+  const left = Math.max(0, imgW - logoInfo.width - WATERMARK_MARGIN);
+  const top = Math.max(0, imgH - logoInfo.height - WATERMARK_MARGIN);
+
+  const outputFormat = ext === "png" ? "png" : ext === "webp" ? "webp" : "jpeg";
+
+  return image
+    .composite([{ input: logoBuffer, left, top, blend: "over" }])
+    [outputFormat]({ quality: 88 })
+    .toBuffer();
+}
+
+export async function saveUpload(
+  buffer: Buffer,
+  { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
+): Promise<SaveUploadResult> {
+  const slug = folderSlug(folder);
+  const processedBuffer = isImage
+    ? await applyWatermark(buffer, ext).catch(() => buffer)
+    : buffer;
+
+  if (isCloudinaryConfigured()) {
+    return saveToCloudinary(processedBuffer, slug);
+  }
+
+  return saveToLocalDisk(processedBuffer, slug, ext);
 }
 
 async function saveToCloudinary(

@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   let url: string;
   let publicId: string | null = null;
   try {
-    ({ url, publicId } = await saveUpload(buffer, { folder, ext }));
+    ({ url, publicId } = await saveUpload(buffer, { folder, ext, isImage }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Upload failed";
     console.error("[uploads] saveUpload error:", err);
