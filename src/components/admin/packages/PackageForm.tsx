@@ -25,7 +25,7 @@ const itineraryDaySchema = z.object({
 });
 
 const listItemSchema = z.object({ value: z.string() });
-const galleryItemSchema = z.object({ url: z.string() });
+const galleryItemSchema = z.object({ url: z.string(), alt: z.string().default("") });
 const batchSchema = z.object({
   date: z.string().min(1, "Date required"),
   seats: z.number().int().min(1, "At least 1 seat"),
@@ -88,7 +88,7 @@ export interface PackageFormDefaults {
   itinerary?: { day: number; title: string; description: string }[];
   inclusions?: string[];
   exclusions?: string[];
-  gallery?: string[];
+  gallery?: { url: string; alt?: string }[];
   batches?: { date: string; seats: number; price: string; status: string }[];
   metaTitle?: string;
   metaDesc?: string;
@@ -300,7 +300,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       })),
       inclusions: toArrayField(defaults?.inclusions, (v) => ({ value: v as string })) as { value: string }[],
       exclusions: toArrayField(defaults?.exclusions, (v) => ({ value: v as string })) as { value: string }[],
-      gallery: toArrayField(defaults?.gallery, (v) => ({ url: v as string })) as { url: string }[],
+      gallery: (defaults?.gallery ?? []).map((g) => ({ url: g.url, alt: g.alt ?? "" })),
       batches: (defaults?.batches ?? []).map((b) => ({
         date: b.date,
         seats: b.seats,
@@ -343,7 +343,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       itinerary: JSON.stringify(data.itinerary),
       inclusions: JSON.stringify(data.inclusions.map((i) => i.value).filter(Boolean)),
       exclusions: JSON.stringify(data.exclusions.map((e) => e.value).filter(Boolean)),
-      gallery: JSON.stringify(data.gallery.map((g) => g.url).filter(Boolean)),
+      gallery: JSON.stringify(data.gallery.filter((g) => g.url).map((g) => ({ url: g.url, alt: g.alt }))),
       batches: JSON.stringify(data.batches),
       priceWas: data.priceWas || null,
       discountPct: data.discountPct || null,
@@ -647,7 +647,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
                 </button>
                 <button
                   type="button"
-                  onClick={() => addGalleryItem({ url: "" })}
+                  onClick={() => addGalleryItem({ url: "", alt: "" })}
                   className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Image
@@ -661,8 +661,8 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
                 {galleryFields.map((field, i) => {
                   const url = watch(`gallery.${i}.url`);
                   return (
-                    <div key={field.id} className="flex gap-2 items-center">
-                      <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-muted shrink-0">
+                    <div key={field.id} className="flex gap-2 items-start">
+                      <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-muted shrink-0 mt-0.5">
                         {url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={url} alt="" className="w-full h-full object-cover" />
@@ -670,8 +670,11 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
                           <ImageIcon className="w-4 h-4 text-muted-foreground/60 absolute inset-0 m-auto" />
                         )}
                       </div>
-                      <TextInput {...register(`gallery.${i}.url`)} type="url" placeholder="https://..." className="flex-1" />
-                      <button type="button" onClick={() => removeGalleryItem(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                      <div className="flex-1 space-y-1.5">
+                        <TextInput {...register(`gallery.${i}.url`)} type="url" placeholder="Image URL (https://...)" />
+                        <TextInput {...register(`gallery.${i}.alt`)} placeholder='Alt text — e.g. "Family shikara ride on Dal Lake"' className="text-xs" />
+                      </div>
+                      <button type="button" onClick={() => removeGalleryItem(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-0.5">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -684,7 +687,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
             open={galleryPickerOpen}
             type="IMAGE"
             title="Add images to this tour's gallery"
-            onSelect={(url) => addGalleryItem({ url })}
+            onSelect={(url) => addGalleryItem({ url, alt: "" })}
             onClose={() => setGalleryPickerOpen(false)}
           />
         </SectionCard>

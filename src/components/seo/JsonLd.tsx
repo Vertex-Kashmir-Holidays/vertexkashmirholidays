@@ -93,6 +93,8 @@ export function buildTouristTrip(tour: {
   coverImage?: string | null;
   duration: number;
   priceFrom: number;
+  touristType?: string | string[];
+  itineraryItems?: { position: number; name: string }[];
 }) {
   return {
     "@context": "https://schema.org",
@@ -101,10 +103,27 @@ export function buildTouristTrip(tour: {
     description: tour.description ?? tour.title,
     image: tour.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/tours/${tour.slug}`,
-    touristType: "General",
+    touristType: tour.touristType ?? "General",
     itinerary: {
       "@type": "ItemList",
       numberOfItems: tour.duration,
+      ...(tour.itineraryItems && tour.itineraryItems.length > 0
+        ? {
+            itemListElement: tour.itineraryItems.map((d) => ({
+              "@type": "ListItem",
+              position: d.position,
+              name: d.name,
+            })),
+          }
+        : {}),
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: tour.priceFrom,
+      availability: "https://schema.org/InStock",
+      seller: { "@id": `${siteUrl}/#organization` },
+      url: `${siteUrl}/tours/${tour.slug}`,
     },
   };
 }

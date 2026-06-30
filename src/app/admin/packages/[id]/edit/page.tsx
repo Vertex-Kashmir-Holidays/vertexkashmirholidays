@@ -43,7 +43,9 @@ export default async function EditPackagePage({ params }: Props) {
     itinerary: safeParse<{ day: number; title: string; description: string }[]>(tour.itinerary, []),
     inclusions: safeParse<string[]>(tour.inclusions, []),
     exclusions: safeParse<string[]>(tour.exclusions, []),
-    gallery: safeParse<string[]>(tour.gallery, []),
+    gallery: safeParse<unknown[]>(tour.gallery, []).map((item) =>
+      typeof item === "string" ? { url: item, alt: "" } : (item as { url: string; alt: string })
+    ),
     batches: safeParse<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []),
     metaTitle: tour.metaTitle ?? "",
     metaDesc: tour.metaDesc ?? "",
