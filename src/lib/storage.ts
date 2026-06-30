@@ -1,7 +1,7 @@
 import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
-import { v2 as cloudinary, type UploadApiErrorResponse, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
+import { v2 as cloudinary, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Media storage abstraction.
@@ -152,14 +152,20 @@ export async function saveUpload(
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
   const shouldWatermark = isImage && WATERMARK_FOLDERS.has(slug);
-  const processedBuffer = shouldWatermark
-    ? await Promise.race([
+  let processedBuffer = buffer;
+  if (shouldWatermark) {
+    try {
+      processedBuffer = await Promise.race([
         applyWatermark(buffer, ext),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("watermark timeout")), 8000)
+          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000)
         ),
-      ]).catch(() => buffer)
-    : buffer;
+      ]);
+      console.log(`[upload] watermark applied (${ext}, folder=${slug})`);
+    } catch (err) {
+      console.error(`[upload] watermark skipped — ${err instanceof Error ? err.message : err}`);
+    }
+  }
 
   if (isCloudinaryConfigured()) {
     return saveToCloudinary(processedBuffer, slug);
@@ -180,19 +186,21 @@ async function saveToCloudinary(
     public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   };
 
+  console.log(`[upload] → Cloudinary folder=${uploadOptions.folder} size=${buffer.length}b`);
+
   const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-    type CloudinaryCallback = (error: UploadApiErrorResponse | undefined, uploaded: UploadApiResponse | undefined) => void;
-    const cb: CloudinaryCallback = (error, uploaded) => {
-      if (error || !uploaded) {
-        reject(error ?? new Error("Cloudinary upload failed"));
-        return;
-      }
-      resolve(uploaded);
-    };
-    const stream = (cloudinary.uploader.upload_stream as unknown as (
-      cb: CloudinaryCallback,
-      opts: UploadApiOptions
-    ) => ReturnType<typeof cloudinary.uploader.upload_stream>)(cb, uploadOptions);
+    const stream = cloudinary.uploader.upload_stream(
+      uploadOptions,
+      (error, uploaded) => {
+        if (error || !uploaded) {
+          console.error("[upload] Cloudinary callback error:", error);
+          reject(error ?? new Error("Cloudinary upload failed"));
+          return;
+        }
+        console.log(`[upload] Cloudinary ok → ${uploaded.secure_url}`);
+        resolve(uploaded);
+      },
+    );
     stream.end(buffer);
   });
 
