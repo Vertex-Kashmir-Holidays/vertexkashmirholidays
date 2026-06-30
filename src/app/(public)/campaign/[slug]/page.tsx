@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
+import { JsonLd, buildBreadcrumbList, buildCampaignProduct, buildCampaignEvents, buildFAQPage } from '@/components/seo/JsonLd';
 import { getDisplayReviews } from '@/lib/reviews';
 import type { FooterSettings } from '@/components/layout/Footer';
 import { sanitizeInlineHtml } from '@/lib/sanitize';
@@ -137,5 +138,32 @@ export default async function CampaignPage({ params }: PageProps) {
     finalNote: c.finalNote,
   };
 
-  return <CampaignPageClient campaign={data} footerSettings={footerSettings} />;
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: "Home", url: SITE_URL },
+    { name: data.name, url: `${SITE_URL}/campaign/${data.slug}` },
+  ]);
+  const productLd = buildCampaignProduct({
+    name: data.name,
+    slug: data.slug,
+    sub: data.sub,
+    heroImage: data.heroImage,
+    tiers: data.tiers,
+    offerDeadline: data.offerDeadline,
+  });
+  const eventLds = buildCampaignEvents({
+    name: data.name,
+    slug: data.slug,
+    heroImage: data.heroImage,
+    batches: data.batches,
+  });
+
+  return (
+    <>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={productLd} />
+      {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
+      {data.faqs.length > 0 && <JsonLd data={buildFAQPage(data.faqs)} />}
+      <CampaignPageClient campaign={data} footerSettings={footerSettings} />
+    </>
+  );
 }

@@ -26,6 +26,12 @@ const itineraryDaySchema = z.object({
 
 const listItemSchema = z.object({ value: z.string() });
 const galleryItemSchema = z.object({ url: z.string() });
+const batchSchema = z.object({
+  date: z.string().min(1, "Date required"),
+  seats: z.number().int().min(1, "At least 1 seat"),
+  price: z.string().min(1, "Price required"),
+  status: z.enum(["open", "filling", "sold"]),
+});
 
 const nanToNull = z.preprocess(
   (v) => (v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v)) ? null : Number(v)),
@@ -54,6 +60,7 @@ const packageSchema = z.object({
   inclusions: z.array(listItemSchema).default([]),
   exclusions: z.array(listItemSchema).default([]),
   gallery: z.array(galleryItemSchema).default([]),
+  batches: z.array(batchSchema).default([]),
   metaTitle: z.string().default(""),
   metaDesc: z.string().default(""),
   ogImage: z.string().default(""),
@@ -82,6 +89,7 @@ export interface PackageFormDefaults {
   inclusions?: string[];
   exclusions?: string[];
   gallery?: string[];
+  batches?: { date: string; seats: number; price: string; status: string }[];
   metaTitle?: string;
   metaDesc?: string;
   ogImage?: string;
@@ -101,7 +109,8 @@ const SECTIONS = [
   { id: "basics", label: "Basic Info", num: "1" },
   { id: "pricing", label: "Pricing", num: "2" },
   { id: "itinerary", label: "Itinerary & Gallery", num: "3" },
-  { id: "seo", label: "SEO & Settings", num: "4" },
+  { id: "departures", label: "Departures", num: "4" },
+  { id: "seo", label: "SEO & Settings", num: "5" },
 ];
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -292,6 +301,12 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       inclusions: toArrayField(defaults?.inclusions, (v) => ({ value: v as string })) as { value: string }[],
       exclusions: toArrayField(defaults?.exclusions, (v) => ({ value: v as string })) as { value: string }[],
       gallery: toArrayField(defaults?.gallery, (v) => ({ url: v as string })) as { url: string }[],
+      batches: (defaults?.batches ?? []).map((b) => ({
+        date: b.date,
+        seats: b.seats,
+        price: b.price,
+        status: b.status as "open" | "filling" | "sold",
+      })),
       metaTitle: defaults?.metaTitle ?? "",
       metaDesc: defaults?.metaDesc ?? "",
       ogImage: defaults?.ogImage ?? "",
@@ -303,7 +318,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
   const { fields: inclusionFields, append: addInclusion, remove: removeInclusion } = useFieldArray({ control, name: "inclusions" });
   const { fields: exclusionFields, append: addExclusion, remove: removeExclusion } = useFieldArray({ control, name: "exclusions" });
   const { fields: galleryFields, append: addGalleryItem, remove: removeGalleryItem } = useFieldArray({ control, name: "gallery" });
-  // Gallery picker for appending existing media to the tour's gallery array.
+  const { fields: batchFields, append: addBatch, remove: removeBatch } = useFieldArray({ control, name: "batches" });
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
 
   // ── Auto-slug from title (new tours only) ──────────────────────────────────
@@ -329,6 +344,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       inclusions: JSON.stringify(data.inclusions.map((i) => i.value).filter(Boolean)),
       exclusions: JSON.stringify(data.exclusions.map((e) => e.value).filter(Boolean)),
       gallery: JSON.stringify(data.gallery.map((g) => g.url).filter(Boolean)),
+      batches: JSON.stringify(data.batches),
       priceWas: data.priceWas || null,
       discountPct: data.discountPct || null,
       activityIds,
@@ -673,8 +689,70 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
           />
         </SectionCard>
 
-        {/* 4. SEO & Settings */}
-        <SectionCard id="seo" title="4 · SEO & Settings">
+        {/* 4. Departures */}
+        <SectionCard id="departures" title="4 · Departures">
+          <div className="flex items-start justify-between gap-4">
+            <p className="text-xs text-muted-foreground max-w-prose">
+              Departure dates shown on the tour page. Each batch emits an Event schema — Google can display availability directly in search results.
+            </p>
+            <button
+              type="button"
+              onClick={() => addBatch({ date: "", seats: 10, price: "", status: "open" })}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Departure
+            </button>
+          </div>
+          {batchFields.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic text-center py-4">No departures yet — click &ldquo;Add Departure&rdquo; to add one.</p>
+          ) : (
+            <div className="space-y-3">
+              {batchFields.map((field, i) => (
+                <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 grid grid-cols-[1fr_80px_1fr_140px_36px] gap-3 items-start">
+                  <div>
+                    <FieldLabel>Date</FieldLabel>
+                    <TextInput {...register(`batches.${i}.date`)} type="date" />
+                    {errors.batches?.[i]?.date && <FieldError message={errors.batches[i]?.date?.message} />}
+                  </div>
+                  <div>
+                    <FieldLabel>Seats</FieldLabel>
+                    <TextInput {...register(`batches.${i}.seats`, { valueAsNumber: true })} type="number" min={1} />
+                    {errors.batches?.[i]?.seats && <FieldError message={errors.batches[i]?.seats?.message} />}
+                  </div>
+                  <div>
+                    <FieldLabel>Price</FieldLabel>
+                    <TextInput {...register(`batches.${i}.price`)} placeholder="e.g. ₹25,000" />
+                    {errors.batches?.[i]?.price && <FieldError message={errors.batches[i]?.price?.message} />}
+                  </div>
+                  <div>
+                    <FieldLabel>Status</FieldLabel>
+                    <select
+                      {...register(`batches.${i}.status`)}
+                      className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                    >
+                      <option value="open">Open</option>
+                      <option value="filling">Filling Fast</option>
+                      <option value="sold">Sold Out</option>
+                    </select>
+                  </div>
+                  <div className="pt-5">
+                    <button
+                      type="button"
+                      onClick={() => removeBatch(i)}
+                      className="p-1.5 rounded text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* 5. SEO & Settings */}
+        <SectionCard id="seo" title="5 · SEO & Settings">
           <div>
             <FieldLabel>Meta Title</FieldLabel>
             <TextInput {...register("metaTitle")} placeholder="SEO page title (60 chars ideal)" />

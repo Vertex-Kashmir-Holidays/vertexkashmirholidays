@@ -7,6 +7,7 @@ import {
  buildProduct,
  buildBreadcrumbList,
  buildFAQPage,
+ buildCampaignEvents,
 } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
@@ -128,6 +129,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const exclusions = parseJson<string[]>(tour.exclusions, []);
  const highlights = parseJson<string[]>(tour.highlights, []);
  const faqs = parseJson<{ question: string; answer: string }[]>(tour.faqs, []);
+ const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []);
  const rawItinerary = parseJson<
    { day: number; title: string; description?: string; image?: string }[]
  >(tour.itinerary, []);
@@ -213,7 +215,17 @@ export default async function TourDetailsPage({ params }: PageProps) {
    priceFrom: tour.priceFrom,
    rating: tour.rating,
    reviewCount: tour.reviewCount,
+   reviews: tour.reviews.map((r) => ({
+     name: r.name,
+     rating: r.rating,
+     body: r.body,
+     createdAt: r.createdAt,
+   })),
  });
+
+ const eventLds = batches.length > 0
+   ? buildCampaignEvents({ name: tour.title, slug: tour.slug, heroImage: tour.coverImage, batches })
+   : [];
 
 
  return (
@@ -221,6 +233,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
      <PackageViewTracker packageName={tour.title} />
      <JsonLd data={breadcrumbJsonLd} />
      <JsonLd data={productJsonLd} />
+     {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
 
 

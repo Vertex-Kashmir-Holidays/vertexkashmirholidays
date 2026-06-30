@@ -44,6 +44,7 @@ export default async function EditPackagePage({ params }: Props) {
     inclusions: safeParse<string[]>(tour.inclusions, []),
     exclusions: safeParse<string[]>(tour.exclusions, []),
     gallery: safeParse<string[]>(tour.gallery, []),
+    batches: safeParse<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []),
     metaTitle: tour.metaTitle ?? "",
     metaDesc: tour.metaDesc ?? "",
     ogImage: tour.ogImage ?? "",

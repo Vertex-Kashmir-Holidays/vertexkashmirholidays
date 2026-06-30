@@ -256,6 +256,8 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     description: dest.description ?? dest.excerpt,
     coverImage: dest.coverImage,
     location: dest.location,
+    latitude: dest.latitude,
+    longitude: dest.longitude,
   });
 
   return (

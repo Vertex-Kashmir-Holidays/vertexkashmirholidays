@@ -258,6 +258,7 @@ model Tour {
   bestTime     String?
   difficulty   String?
   faqs         String            @default("[]")
+  batches      String            @default("[]")
   happyCount   Int?
   highlights   String            @default("[]")
   pickupDrop   String?
