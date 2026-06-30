@@ -93,6 +93,8 @@ export function buildTouristTrip(tour: {
   coverImage?: string | null;
   duration: number;
   priceFrom: number;
+  touristType?: string | string[];
+  itineraryItems?: { position: number; name: string }[];
 }) {
   return {
     "@context": "https://schema.org",
@@ -101,10 +103,27 @@ export function buildTouristTrip(tour: {
     description: tour.description ?? tour.title,
     image: tour.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/tours/${tour.slug}`,
-    touristType: "General",
+    touristType: tour.touristType ?? "General",
     itinerary: {
       "@type": "ItemList",
       numberOfItems: tour.duration,
+      ...(tour.itineraryItems && tour.itineraryItems.length > 0
+        ? {
+            itemListElement: tour.itineraryItems.map((d) => ({
+              "@type": "ListItem",
+              position: d.position,
+              name: d.name,
+            })),
+          }
+        : {}),
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: tour.priceFrom,
+      availability: "https://schema.org/InStock",
+      seller: { "@id": `${siteUrl}/#organization` },
+      url: `${siteUrl}/tours/${tour.slug}`,
     },
   };
 }
@@ -117,6 +136,7 @@ export function buildProduct(tour: {
   priceFrom: number;
   rating?: number;
   reviewCount?: number;
+  reviews?: Array<{ name: string; rating: number; body: string; createdAt: Date }>;
 }) {
   return {
     "@context": "https://schema.org",
@@ -125,11 +145,13 @@ export function buildProduct(tour: {
     description: tour.description ?? tour.title,
     image: tour.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/tours/${tour.slug}`,
+    brand: { "@type": "Brand", name: "Vertex Kashmir Holidays" },
     offers: {
       "@type": "Offer",
       priceCurrency: "INR",
       price: tour.priceFrom,
       availability: "https://schema.org/InStock",
+      seller: { "@id": `${siteUrl}/#organization` },
       url: `${siteUrl}/tours/${tour.slug}`,
     },
     ...(tour.reviewCount && tour.reviewCount > 0
@@ -143,7 +165,122 @@ export function buildProduct(tour: {
           },
         }
       : {}),
+    ...(tour.reviews && tour.reviews.length > 0
+      ? {
+          review: tour.reviews.slice(0, 5).map((r) => ({
+            "@type": "Review",
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: r.rating,
+              bestRating: 5,
+              worstRating: 1,
+            },
+            author: { "@type": "Person", name: r.name },
+            reviewBody: r.body,
+            datePublished: r.createdAt.toISOString().split("T")[0],
+          })),
+        }
+      : {}),
   };
+}
+
+export function buildCampaignProduct(campaign: {
+  name: string;
+  slug: string;
+  sub?: string | null;
+  heroImage?: string | null;
+  tiers: Array<{ name: string; price: string; desc: string }>;
+  offerDeadline?: string | null;
+}) {
+  const parsePrice = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10);
+
+  const offers = campaign.tiers.length > 0
+    ? campaign.tiers.map((t) => {
+        const price = parsePrice(t.price);
+        return {
+          "@type": "Offer",
+          name: t.name,
+          description: t.desc,
+          priceCurrency: "INR",
+          ...(isNaN(price) ? {} : { price }),
+          availability: "https://schema.org/InStock",
+          seller: { "@id": `${siteUrl}/#organization` },
+          ...(campaign.offerDeadline
+            ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+            : {}),
+          url: `${siteUrl}/campaign/${campaign.slug}`,
+        };
+      })
+    : [
+        {
+          "@type": "Offer",
+          priceCurrency: "INR",
+          availability: "https://schema.org/InStock",
+          seller: { "@id": `${siteUrl}/#organization` },
+          ...(campaign.offerDeadline
+            ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+            : {}),
+          url: `${siteUrl}/campaign/${campaign.slug}`,
+        },
+      ];
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: campaign.name,
+    description: campaign.sub ?? campaign.name,
+    image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+    url: `${siteUrl}/campaign/${campaign.slug}`,
+    brand: { "@type": "Brand", name: "Vertex Kashmir Holidays" },
+    offers: offers.length === 1 ? offers[0] : offers,
+  };
+}
+
+export function buildCampaignEvents(campaign: {
+  name: string;
+  slug: string;
+  heroImage?: string | null;
+  batches: Array<{ date: string; seats: number; price: string; status: string }>;
+}) {
+  return campaign.batches
+    .filter((b) => b.date)
+    .map((b) => {
+      const price = parseInt(b.price.replace(/[^0-9]/g, ""), 10);
+      const availability =
+        b.status === "sold"
+          ? "https://schema.org/SoldOut"
+          : b.status === "filling"
+          ? "https://schema.org/LimitedAvailability"
+          : "https://schema.org/InStock";
+      return {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: campaign.name,
+        startDate: b.date,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        location: {
+          "@type": "Place",
+          name: "Kashmir, India",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Srinagar",
+            addressRegion: "Jammu & Kashmir",
+            addressCountry: "IN",
+          },
+        },
+        image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+        url: `${siteUrl}/campaign/${campaign.slug}`,
+        organizer: { "@id": `${siteUrl}/#organization` },
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "INR",
+          ...(isNaN(price) ? {} : { price }),
+          availability,
+          url: `${siteUrl}/campaign/${campaign.slug}`,
+        },
+      };
+    });
 }
 
 export function buildFAQPage(faqs: { question: string; answer: string }[]) {
@@ -212,7 +349,16 @@ export function buildTouristDestination(dest: {
   description?: string | null;
   coverImage?: string | null;
   location?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }) {
+  const geo =
+    dest.latitude != null && dest.longitude != null
+      ? { "@type": "GeoCoordinates", latitude: dest.latitude, longitude: dest.longitude }
+      : dest.location
+      ? { "@type": "GeoCoordinates", description: dest.location }
+      : undefined;
+
   return {
     "@context": "https://schema.org",
     "@type": "TouristDestination",
@@ -221,6 +367,6 @@ export function buildTouristDestination(dest: {
     image: dest.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/destinations/${dest.slug}`,
     touristType: "General",
-    ...(dest.location ? { geo: { "@type": "GeoCoordinates", description: dest.location } } : {}),
+    ...(geo ? { geo } : {}),
   };
 }

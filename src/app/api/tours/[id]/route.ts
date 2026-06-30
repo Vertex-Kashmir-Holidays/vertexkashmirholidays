@@ -18,6 +18,7 @@ const patchSchema = z.object({
   itinerary: z.string().optional(),
   inclusions: z.string().optional(),
   exclusions: z.string().optional(),
+  batches: z.string().optional(),
   priceFrom: z.coerce.number().positive().optional(),
   priceWas: z.coerce.number().positive().optional().nullable(),
   discountPct: z.coerce.number().int().min(0).max(100).optional().nullable(),

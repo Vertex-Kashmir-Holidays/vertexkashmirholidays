@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tours, destinations, blogs] = await Promise.all([
+  const [tours, destinations, blogs, campaigns, activities] = await Promise.all([
     prisma.tour.findMany({
       where: { published: true },
       select: { slug: true, updatedAt: true },
@@ -16,6 +16,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       orderBy: { updatedAt: "desc" },
     }),
     prisma.blog.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.campaign.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.activity.findMany({
       where: { published: true },
       select: { slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
@@ -55,5 +65,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...tourRoutes, ...destinationRoutes, ...blogRoutes];
+  const campaignRoutes: MetadataRoute.Sitemap = campaigns.map((c) => ({
+    url: `${SITE_URL}/campaign/${c.slug}`,
+    lastModified: c.updatedAt,
+    changeFrequency: "weekly",
+    priority: 0.85,
+  }));
+
+  const activityRoutes: MetadataRoute.Sitemap = activities.map((a) => ({
+    url: `${SITE_URL}/activities/${a.slug}`,
+    lastModified: a.updatedAt,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...tourRoutes,
+    ...campaignRoutes,
+    ...destinationRoutes,
+    ...activityRoutes,
+    ...blogRoutes,
+  ];
 }

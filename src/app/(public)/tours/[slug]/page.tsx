@@ -5,8 +5,10 @@ import { prisma } from "@/lib/prisma";
 import {
  JsonLd,
  buildProduct,
+ buildTouristTrip,
  buildBreadcrumbList,
  buildFAQPage,
+ buildCampaignEvents,
 } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
@@ -123,11 +125,15 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
 
  // ── Parse JSON fields ──────────────────────────────────────────────────────
- const gallery = parseJson<string[]>(tour.gallery, []);
+ type GalleryItem = { url: string; alt: string };
+ const gallery: GalleryItem[] = parseJson<unknown[]>(tour.gallery, []).map((item) =>
+   typeof item === "string" ? { url: item, alt: "" } : (item as GalleryItem)
+ );
  const inclusions = parseJson<string[]>(tour.inclusions, []);
  const exclusions = parseJson<string[]>(tour.exclusions, []);
  const highlights = parseJson<string[]>(tour.highlights, []);
  const faqs = parseJson<{ question: string; answer: string }[]>(tour.faqs, []);
+ const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []);
  const rawItinerary = parseJson<
    { day: number; title: string; description?: string; image?: string }[]
  >(tour.itinerary, []);
@@ -145,7 +151,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const categoryLabel = CATEGORY_LABEL[tour.category] ?? "Tour";
  const nights = Math.max(tour.duration - 1, 0);
  const durationLabel = `${nights}N / ${tour.duration}D`;
- const heroImages = [tour.coverImage, ...gallery].filter(
+ const heroImages = [tour.coverImage, ...gallery.map((g) => g.url)].filter(
    (img): img is string => Boolean(img),
  );
 
@@ -198,6 +204,13 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
 
  // ── Structured data (JSON-LD) ──────────────────────────────────────────────
+ const TOURIST_TYPE: Record<string, string[]> = {
+   HONEYMOON: ["Couples", "Honeymoon"],
+   FAMILY: ["Family", "Families with children"],
+   ADVENTURE: ["Adventure travelers", "Backpackers"],
+   LUXURY: ["Luxury travelers"],
+ };
+
  const breadcrumbJsonLd = buildBreadcrumbList([
    { name: "Home", url: SITE_URL },
    { name: "Tour Packages", url: `${SITE_URL}/tours` },
@@ -213,6 +226,27 @@ export default async function TourDetailsPage({ params }: PageProps) {
    priceFrom: tour.priceFrom,
    rating: tour.rating,
    reviewCount: tour.reviewCount,
+   reviews: tour.reviews.map((r) => ({
+     name: r.name,
+     rating: r.rating,
+     body: r.body,
+     createdAt: r.createdAt,
+   })),
+ });
+
+ const eventLds = batches.length > 0
+   ? buildCampaignEvents({ name: tour.title, slug: tour.slug, heroImage: tour.coverImage, batches })
+   : [];
+
+ const touristTripJsonLd = buildTouristTrip({
+   title: tour.title,
+   slug: tour.slug,
+   description: tour.excerpt ?? tour.description,
+   coverImage: tour.coverImage,
+   duration: tour.duration,
+   priceFrom: tour.priceFrom,
+   touristType: TOURIST_TYPE[tour.category] ?? "General",
+   itineraryItems: rawItinerary.map((d) => ({ position: d.day, name: d.title })),
  });
 
 
@@ -221,6 +255,8 @@ export default async function TourDetailsPage({ params }: PageProps) {
      <PackageViewTracker packageName={tour.title} />
      <JsonLd data={breadcrumbJsonLd} />
      <JsonLd data={productJsonLd} />
+     <JsonLd data={touristTripJsonLd} />
+     {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
 
 

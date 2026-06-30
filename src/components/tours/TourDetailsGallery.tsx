@@ -8,14 +8,19 @@ import { Images } from 'lucide-react';
 import { imgSrc } from '@/lib/placeholder';
 import { GalleryLightbox } from '@/components/ui/GalleryLightbox';
 
+interface GalleryItem {
+  url: string;
+  alt: string;
+}
+
 interface TourDetailsGalleryProps {
-  images: string[];
+  images: GalleryItem[];
 }
 
 export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  const lightboxImages = images.map(src => ({ src: imgSrc(src) }));
+  const lightboxImages = images.map((item) => ({ src: imgSrc(item.url), alt: item.alt || undefined }));
   const gridImages = images.slice(0, 8);
 
   return (
@@ -30,7 +35,7 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
       >
         <h2 className="text-[17px] font-bold">Photo Gallery</h2>
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {gridImages.map((img, i) => (
+          {gridImages.map((item, i) => (
             <motion.button
               key={i}
               type="button"
@@ -38,11 +43,11 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
               className="group relative block h-32 w-full overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3 }}
-              aria-label={`Open gallery at photo ${i + 1}`}
+              aria-label={item.alt || `Open gallery at photo ${i + 1}`}
             >
               <Image
-                src={imgSrc(img)}
-                alt={`Gallery photo ${i + 1}`}
+                src={imgSrc(item.url)}
+                alt={item.alt || `Gallery photo ${i + 1}`}
                 fill
                 sizes="(max-width: 768px) 50vw, 25vw"
                 className="object-cover transition duration-500 group-hover:scale-105"

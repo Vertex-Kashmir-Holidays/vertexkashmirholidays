@@ -20,9 +20,12 @@ interface Blog {
 
 interface Props {
   initialBlogs: Blog[];
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-export function BlogsClient({ initialBlogs }: Props) {
+export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -40,6 +43,7 @@ export function BlogsClient({ initialBlogs }: Props) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/blogs/${id}`, { method: "DELETE" });
+        if (res.status === 403) { toast.error("You don't have permission to delete posts. Contact your administrator."); return; }
         if (!res.ok) throw new Error();
         toast.success("Blog post deleted.");
         router.refresh();
@@ -59,6 +63,7 @@ export function BlogsClient({ initialBlogs }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ published: !published }),
         });
+        if (res.status === 403) { toast.error("You don't have permission to publish posts. Contact your administrator."); return; }
         if (!res.ok) throw new Error();
         toast.success(published ? "Blog unpublished." : "Blog published!");
         router.refresh();
@@ -75,13 +80,15 @@ export function BlogsClient({ initialBlogs }: Props) {
           <h2 className="font-display font-extrabold text-foreground text-xl">Blog Posts</h2>
           <p className="text-muted-foreground text-xs mt-0.5">Manage all blog content and articles</p>
         </div>
-        <Link
-          href="/admin/blogs/new"
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          New Post
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/blogs/new"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            New Post
+          </Link>
+        )}
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
@@ -131,10 +138,10 @@ export function BlogsClient({ initialBlogs }: Props) {
 
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleTogglePublish(blog.id, blog.published)}
-                        disabled={isPending}
+                        onClick={() => canEdit && handleTogglePublish(blog.id, blog.published)}
+                        disabled={isPending || !canEdit}
                         className="focus:outline-none"
-                        title={blog.published ? "Click to unpublish" : "Click to publish"}
+                        title={!canEdit ? "No permission to change status" : blog.published ? "Click to unpublish" : "Click to publish"}
                       >
                         {blog.published ? (
                           <span className="flex items-center gap-1 text-[10px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full hover:bg-green-500/15 transition-colors">
@@ -166,12 +173,19 @@ export function BlogsClient({ initialBlogs }: Props) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <Link href={`/admin/blogs/${blog.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Link>
-                          <button onClick={() => setConfirmDelete(blog.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canEdit && (
+                            <Link href={`/admin/blogs/${blog.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
+                          {canDelete && (
+                            <button onClick={() => setConfirmDelete(blog.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {!canEdit && !canDelete && (
+                            <span className="text-[10px] text-muted-foreground italic">View only</span>
+                          )}
                         </div>
                       )}
                     </td>

@@ -45,9 +45,12 @@ const PLACEHOLDER =
 
 interface PackagesClientProps {
   initialTours: Tour[];
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-export function PackagesClient({ initialTours }: PackagesClientProps) {
+export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: PackagesClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -67,6 +70,7 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/tours/${id}`, { method: "DELETE" });
+        if (res.status === 403) { toast.error("You don't have permission to delete packages. Contact your administrator."); return; }
         if (!res.ok) throw new Error("Delete failed");
         toast.success("Package deleted.");
         router.refresh();
@@ -88,13 +92,15 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
             Manage all packages, itineraries and pricing
           </p>
         </div>
-        <Link
-          href="/admin/packages/new"
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          New Package
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/packages/new"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            New Package
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -247,20 +253,27 @@ export function PackagesClient({ initialTours }: PackagesClientProps) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <Link
-                            href={`/admin/packages/${tour.id}/edit`}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Link>
-                          <button
-                            onClick={() => setConfirmDelete(tour.id)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canEdit && (
+                            <Link
+                              href={`/admin/packages/${tour.id}/edit`}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => setConfirmDelete(tour.id)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {!canEdit && !canDelete && (
+                            <span className="text-[10px] text-muted-foreground italic">View only</span>
+                          )}
                         </div>
                       )}
                     </td>

@@ -117,6 +117,10 @@ export function BlogForm({ defaults }: Props) {
           body: JSON.stringify(data),
         });
         if (!res.ok) {
+          if (res.status === 403) {
+            toast.error("You don't have permission to save blog posts. Contact your administrator.");
+            return;
+          }
           const err = await res.json() as { error?: string | Record<string, unknown> };
           const msg = typeof err.error === "string" ? err.error : "Save failed";
           toast.error(msg);

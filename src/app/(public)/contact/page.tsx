@@ -2,7 +2,7 @@
 
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { JsonLd } from '@/components/seo/JsonLd';
+import { JsonLd, buildTravelAgency } from '@/components/seo/JsonLd';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { ContactFAQs } from '@/components/contact/ContactFAQs';
 import { ContactForm } from '@/components/contact/ContactForm';
@@ -103,17 +103,21 @@ export default async function ContactPage() {
     .filter((x): x is [ContactSocialLink['type'], string] => Boolean(x && x[1]))
     .map(([type, href]) => ({ type, href }));
 
-  const contactPageJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ContactPage',
-    name: 'Contact Vertex Kashmir Holidays',
-    url: `${SITE_URL}/contact`,
-    description: 'Plan your Kashmir trip with local experts',
-  };
+  const organizationLd = buildTravelAgency({
+    telephone: phone,
+    email,
+    streetAddress: address,
+    sameAs: [
+      settings?.instagram,
+      settings?.facebook,
+      settings?.youtube,
+      settings?.twitter,
+    ].filter((s): s is string => Boolean(s)),
+  });
 
   return (
     <div className="bg-background text-foreground">
-      <JsonLd data={contactPageJsonLd} />
+      <JsonLd data={organizationLd} />
       <ContactHero
         data={{
           breadcrumb: content?.heroBreadcrumb ?? null,

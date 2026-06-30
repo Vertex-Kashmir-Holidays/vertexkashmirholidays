@@ -46,7 +46,7 @@ async function main() {
   const NONE: [boolean, boolean, boolean, boolean] = [false, false, false, false];
 
   const PERMISSION_DEFAULTS: Record<
-    "ADMIN" | "SALES" | "EDITOR",
+    "ADMIN" | "DEVELOPER" | "SALES" | "EDITOR",
     Record<string, [boolean, boolean, boolean, boolean]>
   > = {
     ADMIN: {
@@ -70,6 +70,28 @@ async function main() {
       seo: ALL,
       settings: ALL,
       roles: ALL,
+    },
+    DEVELOPER: {
+      dashboard: VIEW,
+      packages: ALL,
+      destinations: ALL,
+      activities: ALL,
+      bookings: VIEW,
+      leads: VIEW,
+      itinerary: ALL,
+      users: NONE,
+      connect: ALL,
+      galleries: ALL,
+      blogs: ALL,
+      home: ALL,
+      about: ALL,
+      contact: ALL,
+      legal: ALL,
+      campaigns: ALL,
+      reviews: VIEW_EDIT,
+      seo: ALL,
+      settings: ALL,
+      roles: NONE,
     },
     SALES: {
       dashboard: VIEW,

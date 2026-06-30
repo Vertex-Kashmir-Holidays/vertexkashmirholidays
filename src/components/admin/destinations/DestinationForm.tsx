@@ -123,6 +123,10 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
          body: JSON.stringify({ ...data, activityIds }),
        });
        if (!res.ok) {
+         if (res.status === 403) {
+           toast.error("You don't have permission to save destinations. Contact your administrator.");
+           return;
+         }
          const err = await res.json() as { error?: string | { fieldErrors?: Record<string, string[]> } };
          const msg = typeof err.error === "string" ? err.error : "Save failed";
          toast.error(msg);
