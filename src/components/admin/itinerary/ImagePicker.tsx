@@ -226,7 +226,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
               )}
 
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <p className="text-xs text-muted-foreground">Upload PNG, SVG or WebP (max 500 KB).</p>
+                <p className="text-xs text-muted-foreground">Upload JPG · PNG · WebP (max 500 KB).</p>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
@@ -236,7 +236,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                   {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                   {uploading ? "Uploading…" : "Upload image"}
                 </button>
-                <input ref={fileRef} type="file" accept="image/png,image/svg+xml,image/webp" className="hidden" onChange={handleUpload} />
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUpload} />
               </div>
             </div>
           </div>,

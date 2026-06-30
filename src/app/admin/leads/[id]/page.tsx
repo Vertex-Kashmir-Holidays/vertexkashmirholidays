@@ -59,10 +59,20 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
 
   if (!lead) notFound();
 
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "singleton" },
-    select: { gstRates: true },
-  });
+  const [ipDuplicates, settings] = await Promise.all([
+    lead.ipAddress
+      ? prisma.lead.findMany({
+          where: { ipAddress: lead.ipAddress, id: { not: lead.id } },
+          select: { id: true, name: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        })
+      : Promise.resolve([]),
+      prisma.siteSettings.findUnique({
+        where: { id: "singleton" },
+        select: { gstRates: true },
+      }),
+  ]);
   const gstRates = parseGstRates(settings?.gstRates);
 
   const role = session?.user?.role;
@@ -103,6 +113,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
         isAdmin={isAdmin}
         canManage={canManage}
         gstRates={gstRates}
+        ipDuplicates={ipDuplicates}
       />
     </div>
   );

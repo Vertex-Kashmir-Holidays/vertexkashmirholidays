@@ -8,13 +8,19 @@ import { LeadsClient } from "@/components/admin/leads/LeadsClient";
 export const metadata: Metadata = { title: "Leads — Admin" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminLeadsPage() {
+type PageProps = { searchParams: Promise<{ ip?: string }> };
+
+export default async function AdminLeadsPage({ searchParams }: PageProps) {
+  const { ip } = await searchParams;
+  const ipFilter = ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : undefined;
+
   const session = await auth();
   const role = (session?.user?.role ?? "ADMIN") as Role;
   const userId = session?.user?.id ?? "";
   const isAdminOrSuper = role === "SUPERADMIN" || role === "ADMIN";
 
   const scopeWhere = isAdminOrSuper ? {} : { assignedToId: userId };
+  const ipWhere = ipFilter ? { ipAddress: ipFilter } : {};
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -23,9 +29,9 @@ export default async function AdminLeadsPage() {
 
   const [leads, staffUsers, total, todayFollowUps, converted, canCreate, canEdit, canDelete] = await Promise.all([
     prisma.lead.findMany({
-      where: scopeWhere,
+      where: { ...scopeWhere, ...ipWhere },
       orderBy: { updatedAt: "desc" },
-      take: 200,
+      take: ipFilter ? undefined : 200,
       select: {
         id: true,
         name: true,
@@ -70,6 +76,7 @@ export default async function AdminLeadsPage() {
       canEdit={canEdit}
       canDelete={canDelete}
       isAdmin={isAdminOrSuper}
+      initialIpFilter={ipFilter}
     />
   );
 }

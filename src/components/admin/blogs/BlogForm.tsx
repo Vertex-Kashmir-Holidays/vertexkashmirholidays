@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2, Upload, Eye, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import sanitizeHtml from "sanitize-html";
 
 const schema = z.object({
   title: z.string().min(3, "Title is required"),
@@ -174,7 +175,7 @@ export function BlogForm({ defaults }: Props) {
             <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
               Upload
-              <input type="file" accept="image/png,image/svg+xml,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")} />
             </label>
           </div>
           {coverImage && (
@@ -212,7 +213,11 @@ export function BlogForm({ defaults }: Props) {
           {previewBody ? (
             <div
               className="prose prose-sm max-w-none min-h-[300px] p-4 border border-border rounded-xl bg-muted/50 text-sm text-foreground"
-              dangerouslySetInnerHTML={{ __html: bodyVal ?? "" }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(bodyVal ?? "", {
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "code", "figure", "figcaption"]),
+                allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, "*": ["class"], img: ["src", "alt", "title", "width", "height", "loading"] },
+                allowedSchemes: ["http", "https", "mailto", "tel"],
+              }) }}
             />
           ) : (
             <textarea
@@ -247,7 +252,7 @@ export function BlogForm({ defaults }: Props) {
               <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
                 <Upload className="w-3.5 h-3.5" />
                 Upload
-                <input type="file" accept="image/png,image/svg+xml,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "ogImage")} />
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "ogImage")} />
               </label>
             </div>
           </div>

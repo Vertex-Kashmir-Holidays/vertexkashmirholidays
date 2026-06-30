@@ -92,7 +92,9 @@ export async function rateLimit(
 
 /** Best-effort client IP from forwarding headers. */
 export function clientIp(req: Request): string {
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]?.trim() || "unknown";
-  return req.headers.get("x-real-ip")?.trim() || "unknown";
+  return "unknown";
 }

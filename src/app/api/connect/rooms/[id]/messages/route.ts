@@ -3,6 +3,20 @@ import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 
+const SITE_HOST = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vertexkashmirholidays.com").hostname; } catch { return "vertexkashmirholidays.com"; }
+})();
+
+function isValidAttachmentUrl(raw: string | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && (
+      u.hostname === "res.cloudinary.com" || u.hostname === SITE_HOST
+    );
+  } catch { return false; }
+}
+
 type Params = { params: Promise<{ id: string }> };
 
 const LIMIT = 50;
@@ -181,6 +195,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     attachmentName = json.attachmentName || undefined;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (attachmentUrl !== undefined && !isValidAttachmentUrl(attachmentUrl)) {
+    return NextResponse.json({ error: "Invalid attachment URL" }, { status: 400 });
   }
 
   if (!bodyText && !attachmentUrl) {

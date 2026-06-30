@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
@@ -59,8 +59,6 @@ const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   FULL: "Full",
 };
 
-// A booking may be cancelled only by an admin and only while PARTIALLY paid
-// (server enforces the same rule). A fully paid booking may instead be refunded.
 function canCancel(b: Booking, isAdmin: boolean): boolean {
   return isAdmin && b.paymentStatus === "PARTIAL" && b.status !== "CANCELLED" && b.status !== "REFUNDED";
 }
@@ -78,7 +76,6 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selected, setSelected] = useState<Booking | null>(null);
-  // Delete confirmation for the selected booking: which mode is being confirmed.
   const [confirmMode, setConfirmMode] = useState<null | "soft" | "permanent">(null);
 
   const filtered = initialBookings.filter((b) => {
@@ -95,6 +92,12 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
   });
 
   const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+
+  function closeModal() {
+    if (isPending) return;
+    setConfirmMode(null);
+    setSelected(null);
+  }
 
   function handleDelete(id: string, permanent: boolean) {
     startTransition(async () => {
@@ -115,7 +118,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
     });
   }
 
-  async function handleStatusChange(id: string, status: BookingStatus) {
+  function handleStatusChange(id: string, status: BookingStatus) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/bookings/${id}`, {
@@ -129,8 +132,8 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
           return;
         }
         toast.success(`Booking marked as ${status.toLowerCase()}.`);
-        router.refresh();
         setSelected(null);
+        router.refresh();
       } catch {
         toast.error("Failed to update booking status.");
       }
@@ -202,8 +205,8 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                   return (
                     <tr
                       key={b.id}
-                      onClick={() => { setConfirmMode(null); setSelected(selected?.id === b.id ? null : b); }}
-                      className={cn("hover:bg-muted/50 transition-colors cursor-pointer", selected?.id === b.id && "bg-primary/5 border-l-2 border-l-primary")}
+                      onClick={() => { setConfirmMode(null); setSelected(b); }}
+                      className="hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       <td className="px-4 py-3">
                         <span className="font-mono text-[10px] font-semibold text-foreground" title={b.id}>
@@ -286,89 +289,109 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
         />
       </div>
 
-      {/* Detail panel */}
+      {/* Booking detail modal */}
       {selected && (
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
-              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-card rounded-2xl border border-border shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 border-b border-border">
+              <div>
+                <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
+              </div>
+              <button
+                onClick={closeModal}
+                disabled={isPending}
+                className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <button onClick={() => { setConfirmMode(null); setSelected(null); }} className="text-muted-foreground hover:text-muted-foreground text-xs">✕ Close</button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-            <div><p className="text-muted-foreground mb-0.5">Guest</p><p className="font-semibold text-foreground">{selected.guestName}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Email</p><p className="font-semibold text-foreground">{selected.guestEmail ?? "—"}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Phone</p><p className="font-semibold text-foreground">{selected.guestPhone}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Tour</p><p className="font-semibold text-foreground">{selected.tour?.title ?? "Custom booking"}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Travel Date</p><p className="font-semibold text-foreground">{new Date(selected.travelDate).toLocaleDateString("en-IN")}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Travellers</p><p className="font-semibold text-foreground">{selected.travellers}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[10px]">{selected.razorpayPayId ?? "—"}</p></div>
-            <div>
-              <p className="text-muted-foreground mb-0.5">Status</p>
-              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
-            </div>
-            <div>
-              <p className="text-muted-foreground mb-0.5">Payment</p>
-              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
-            </div>
-            <div><p className="text-muted-foreground mb-0.5">Paid</p><p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p></div>
-            <div><p className="text-muted-foreground mb-0.5">Balance</p><p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p></div>
-          </div>
 
-          {/* Delete — admin only, server-enforced via requirePermission. */}
-          {canDelete && (
-            <div className="mt-5 border-t border-border pt-4">
-              {confirmMode === null ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground mr-1">Delete booking:</span>
-                  <button
-                    onClick={() => setConfirmMode("soft")}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Soft Delete
-                  </button>
-                  <button
-                    onClick={() => setConfirmMode("permanent")}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-300 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Permanent Delete
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5">
-                  <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 text-xs">
-                    <p className="font-semibold text-red-700 dark:text-red-300">
-                      {confirmMode === "permanent" ? "Permanently delete this booking?" : "Soft-delete this booking?"}
-                    </p>
-                    <p className="text-muted-foreground mt-0.5">
-                      {confirmMode === "permanent"
-                        ? "This removes the booking and all its payments and services. This cannot be undone."
-                        : "The booking is hidden from all listings and reports but retained and can be restored from the database."}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleDelete(selected.id, confirmMode === "permanent")}
-                      disabled={isPending}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                      Confirm
-                    </button>
-                    <button
-                      onClick={() => setConfirmMode(null)}
-                      className="text-[11px] font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
+            {/* Detail grid */}
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+              <div><p className="text-muted-foreground mb-0.5">Guest</p><p className="font-semibold text-foreground">{selected.guestName}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Email</p><p className="font-semibold text-foreground">{selected.guestEmail ?? "—"}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Phone</p><p className="font-semibold text-foreground">{selected.guestPhone}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Tour</p><p className="font-semibold text-foreground">{selected.tour?.title ?? "Custom booking"}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Travel Date</p><p className="font-semibold text-foreground">{new Date(selected.travelDate).toLocaleDateString("en-IN")}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Travellers</p><p className="font-semibold text-foreground">{selected.travellers}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Paid</p><p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Balance</p><p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[10px]">{selected.razorpayPayId ?? "—"}</p></div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Status</p>
+                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Payment</p>
+                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
+              </div>
             </div>
-          )}
+
+            {/* Delete section */}
+            {canDelete && (
+              <div className="px-6 pb-6 border-t border-border pt-4">
+                {confirmMode === null ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground mr-1">Delete booking:</span>
+                    <button
+                      onClick={() => setConfirmMode("soft")}
+                      disabled={isPending}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Soft Delete
+                    </button>
+                    <button
+                      onClick={() => setConfirmMode("permanent")}
+                      disabled={isPending}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-300 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Permanent Delete
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5">
+                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                    <div className="flex-1 text-xs">
+                      <p className="font-semibold text-red-700 dark:text-red-300">
+                        {confirmMode === "permanent" ? "Permanently delete this booking?" : "Soft-delete this booking?"}
+                      </p>
+                      <p className="text-muted-foreground mt-0.5">
+                        {confirmMode === "permanent"
+                          ? "This removes the booking and all its payments and services. This cannot be undone."
+                          : "The booking is hidden from all listings and reports but retained and can be restored from the database."}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleDelete(selected.id, confirmMode === "permanent")}
+                        disabled={isPending}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        {isPending ? "Deleting…" : "Confirm"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmMode(null)}
+                        disabled={isPending}
+                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

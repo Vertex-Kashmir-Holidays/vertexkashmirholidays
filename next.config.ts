@@ -15,47 +15,11 @@ const PLACEHOLDER_HOST = (() => {
 })();
 
 
-// Content-Security-Policy. Production is locked down to the origins the app
-// actually uses (Razorpay checkout, Cloudflare Turnstile, YouTube embeds,
-// Spline, Open-Meteo). Dev additionally allows the eval + websockets that React
-// Fast Refresh / Turbopack need, so `next dev` keeps working.
-function contentSecurityPolicy(): string {
- const isDev = process.env.NODE_ENV !== "production";
- const scriptExtra = isDev ? " 'unsafe-eval'" : "";
- const connectExtra = isDev ? " ws: http://localhost:*" : "";
-
-
- return [
-   "default-src 'self'",
-   "base-uri 'self'",
-   "object-src 'none'",
-   "frame-ancestors 'self'",
-   "form-action 'self'",
-   "img-src 'self' data: blob: https: https://www.google-analytics.com https://www.googletagmanager.com",
-   "font-src 'self' data: https://fonts.gstatic.com",
-   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-   // meet.jit.si — Jitsi External API loader (external_api.js)
-   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://meet.jit.si https://*.jit.si`,
-   // meet.jit.si / *.jit.si — Jitsi conference iframe mounted by external_api.js
-   // https://www.googletagmanager.com — noscript <iframe> fallback + GTM Preview debugger iframe
-   // https://tagassistant.google.com   — GTM Preview / Tag Assistant debugger iframe
-   "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si",
-   // wss://meet.jit.si / wss://*.jit.si — Jitsi XMPP-over-WebSocket signalling
-   // tagassistant.google.com — GTM Preview XHR channel
-   // analytics.google.com   — GA4 collect endpoint used by some regions / gtag versions
-   `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si${connectExtra}`,
-   // blob: — Jitsi creates blob: URLs for local audio/video preview tracks
-   "media-src 'self' blob: https://meet.jit.si https://*.jit.si",
-   "worker-src 'self' blob:",
- ].join("; ");
-}
-
-
-// Applied to every response by middleware-adjacent `headers()`. These are the
-// code-level hardening headers; anything host-level (e.g. forced HTTPS) is the
-// platform's job.
+// Security headers applied to every response via headers(). CSP is intentionally
+// absent here — it is set per-request with a fresh nonce in src/proxy.ts
+// (middleware) so that 'strict-dynamic' nonce-based enforcement works correctly.
+// A static CSP baked at build time cannot contain per-request nonces.
 const securityHeaders = [
- { key: "Content-Security-Policy", value: contentSecurityPolicy() },
  {
    key: "Strict-Transport-Security",
    value: "max-age=63072000; includeSubDomains; preload",
