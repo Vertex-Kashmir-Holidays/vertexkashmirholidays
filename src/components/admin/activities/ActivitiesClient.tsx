@@ -25,9 +25,12 @@ const PLACEHOLDER =
 
 interface Props {
   initialActivities: Activity[];
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-export function ActivitiesClient({ initialActivities }: Props) {
+export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -44,6 +47,7 @@ export function ActivitiesClient({ initialActivities }: Props) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/activities/${id}`, { method: "DELETE" });
+        if (res.status === 403) { toast.error("You don't have permission to delete activities. Contact your administrator."); return; }
         if (!res.ok) throw new Error("Delete failed");
         toast.success("Activity deleted.");
         router.refresh();
@@ -62,13 +66,15 @@ export function ActivitiesClient({ initialActivities }: Props) {
           <h2 className="font-display font-extrabold text-foreground text-xl">Activities</h2>
           <p className="text-muted-foreground text-xs mt-0.5">Things to do — linked to destinations and tours</p>
         </div>
-        <Link
-          href="/admin/activities/new"
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          New Activity
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/activities/new"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            New Activity
+          </Link>
+        )}
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
@@ -155,12 +161,19 @@ export function ActivitiesClient({ initialActivities }: Props) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <Link href={`/admin/activities/${a.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Link>
-                          <button onClick={() => setConfirmDelete(a.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Delete">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canEdit && (
+                            <Link href={`/admin/activities/${a.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
+                          {canDelete && (
+                            <button onClick={() => setConfirmDelete(a.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {!canEdit && !canDelete && (
+                            <span className="text-[10px] text-muted-foreground italic">View only</span>
+                          )}
                         </div>
                       )}
                     </td>

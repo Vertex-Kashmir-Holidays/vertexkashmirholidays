@@ -359,8 +359,12 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       body: JSON.stringify(payload),
     });
 
-    const json = (await res.json()) as { error?: unknown };
     if (!res.ok) {
+      if (res.status === 403) {
+        toast.error("You don't have permission to save packages. Contact your administrator.");
+        return;
+      }
+      const json = (await res.json()) as { error?: unknown };
       const msg = typeof json.error === "string" ? json.error : "Save failed";
       toast.error(msg);
       return;

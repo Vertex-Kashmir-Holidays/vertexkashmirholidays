@@ -31,8 +31,9 @@ interface Props {
   totalCount: number;
   pendingCount: number;
   tours: TourOption[];
-  /** Only admins may approve/reject (publish) reviews. */
   isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 // Draft used by both the "add" and "edit" modal. tourId only applies to new
@@ -66,7 +67,7 @@ function RatingInput({ value, onChange }: { value: number; onChange: (n: number)
   );
 }
 
-export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours, isAdmin }: Props) {
+export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours, isAdmin, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -94,6 +95,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
   const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
 
   async function handleApprove(id: string, approved: boolean) {
+    if (!canEdit) { toast.error("You don't have permission to approve reviews. Contact your administrator."); return; }
     startTransition(async () => {
       try {
         const res = await fetch(`/api/reviews/${id}`, {
@@ -101,6 +103,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ approved }),
         });
+        if (res.status === 403) { toast.error("You don't have permission to approve reviews. Contact your administrator."); return; }
         if (!res.ok) throw new Error();
         toast.success(approved ? "Review approved!" : "Review rejected.");
         router.refresh();
@@ -114,6 +117,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
     startTransition(async () => {
       try {
         const res = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
+        if (res.status === 403) { toast.error("You don't have permission to delete reviews. Contact your administrator."); return; }
         if (!res.ok) throw new Error();
         toast.success("Review deleted.");
         router.refresh();
@@ -293,7 +297,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
 
                   {/* Actions */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {isAdmin && (!review.approved ? (
+                    {isAdmin && canEdit && (!review.approved ? (
                       <button
                         onClick={() => handleApprove(review.id, true)}
                         disabled={isPending}
@@ -315,15 +319,17 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                       </button>
                     ))}
 
-                    <button
-                      onClick={() => openEdit(review)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      title="Edit"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => openEdit(review)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
 
-                    {confirmDelete === review.id ? (
+                    {canDelete && (confirmDelete === review.id ? (
                       <>
                         <button onClick={() => handleDelete(review.id)} disabled={isPending} className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1.5 rounded-lg transition-colors">
                           {isPending ? "…" : "Confirm"}
@@ -340,7 +346,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    )}
+                    ))}
                   </div>
                 </div>
               </div>

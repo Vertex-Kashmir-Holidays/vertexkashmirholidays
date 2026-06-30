@@ -31,9 +31,12 @@ interface Props {
   initialItems: GalleryItem[];
   totalCount: number;
   categories: string[];
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-export function GalleriesClient({ initialItems, totalCount, categories }: Props) {
+export function GalleriesClient({ initialItems, totalCount, categories, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -112,6 +115,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
     startTransition(async () => {
       try {
         const res = await fetch(`/api/galleries/${id}`, { method: "DELETE" });
+        if (res.status === 403) { toast.error("You don't have permission to delete media. Contact your administrator."); return; }
         if (!res.ok) throw new Error();
         toast.success("Image removed.");
         router.refresh();
@@ -131,6 +135,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ alt: item.alt, caption: item.caption, category: item.category }),
         });
+        if (res.status === 403) { toast.error("You don't have permission to edit media. Contact your administrator."); return; }
         if (!res.ok) throw new Error();
         toast.success("Saved.");
         setEditItem(null);
@@ -242,14 +247,16 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
                     >
                       {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
-                    <button
-                      onClick={() => setEditItem({ ...item })}
-                      className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
-                      title="Edit"
-                    >
-                      <Tag className="w-3.5 h-3.5" />
-                    </button>
-                    {confirmDelete === item.id ? (
+                    {canEdit && (
+                      <button
+                        onClick={() => setEditItem({ ...item })}
+                        className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
+                        title="Edit"
+                      >
+                        <Tag className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {canDelete && (confirmDelete === item.id ? (
                       <>
                         <button onClick={() => handleDelete(item.id)} disabled={isPending} className="w-7 h-7 rounded-lg bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -266,7 +273,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    )}
+                    ))}
                   </div>
                   {item.type === "VIDEO" && (
                     <span className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md pointer-events-none">
@@ -287,7 +294,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Upload */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
+          {canCreate && <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
             <h3 className="font-bold text-foreground text-sm">Upload Media</h3>
 
             <div>
@@ -324,7 +331,7 @@ export function GalleriesClient({ initialItems, totalCount, categories }: Props)
                 onChange={(e) => e.target.files && handleUpload(e.target.files)}
               />
             </label>
-          </div>
+          </div>}
 
           {/* Edit item */}
           {editItem && (

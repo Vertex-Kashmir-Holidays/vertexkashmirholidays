@@ -1,9 +1,9 @@
 // Edge-safe RBAC constants & helpers — NO prisma / next-auth server imports here,
 // so this module can be used inside middleware (src/proxy.ts) and auth.config.ts.
 
-export type Role = "SUPERADMIN" | "ADMIN" | "SALES" | "EDITOR" | "CUSTOMER";
+export type Role = "SUPERADMIN" | "ADMIN" | "DEVELOPER" | "SALES" | "EDITOR" | "CUSTOMER";
 
-export const STAFF_ROLES: Role[] = ["SUPERADMIN", "ADMIN", "SALES", "EDITOR"];
+export const STAFF_ROLES: Role[] = ["SUPERADMIN", "ADMIN", "DEVELOPER", "SALES", "EDITOR"];
 
 export function isStaff(role?: string | null): boolean {
   return !!role && STAFF_ROLES.includes(role as Role);
