@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { createSystemMessage } from "@/lib/connect/systemMessage";
 
 type Params = { params: Promise<{ meetingId: string }> };
 
@@ -15,6 +16,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: {
       id: true,
       status: true,
+      createdById: true,
+      roomId: true,
+      room: { select: { type: true } },
       participants: { where: { leftAt: null }, select: { userId: true } },
     },
   });
@@ -30,11 +34,25 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   // Auto-end when last active participant leaves
   const remainingOthers = meeting.participants.filter((p) => p.userId !== userId);
-  if (remainingOthers.length === 0) {
+  if (remainingOthers.length === 0 && meeting.roomId) {
     await prisma.meeting.update({
       where: { id: meetingId },
       data: { status: "ENDED", endedAt: new Date() },
     });
+
+    const roomType = meeting.room?.type;
+    if (roomType === "GROUP") {
+      await createSystemMessage(meeting.roomId, meeting.createdById, "Meeting ended");
+    } else if (roomType === "DIRECT") {
+      const allParticipants = await prisma.meetingParticipant.findMany({
+        where: { meetingId },
+        select: { userId: true },
+      });
+      const otherJoined = allParticipants.some((p) => p.userId !== meeting.createdById);
+      if (!otherJoined) {
+        await createSystemMessage(meeting.roomId, meeting.createdById, "Missed call");
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

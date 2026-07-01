@@ -23,8 +23,8 @@ function buildCsp(nonce: string): string {
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'self'",
-    "form-action 'self'",
-    "img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com",
+    "form-action 'self' https://www.facebook.com https://*.facebook.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://*.facebook.com https://www.google.co.in https://*.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net",
     "font-src 'self' data: https://fonts.gstatic.com",
     // Inline styles are required by Tailwind and third-party UI libraries.
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -36,18 +36,26 @@ function buildCsp(nonce: string): string {
     // CSP2 / legacy browser fallback (ignored by CSP3 browsers when strict-dynamic present):
     //   'unsafe-inline'   — allows inline scripts in browsers that don't honour nonces.
     //   host allowlists   — allows the named CDNs in browsers that don't support strict-dynamic.
-    `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://meet.jit.si https://*.jit.si`,
-    // meet.jit.si / *.jit.si — Jitsi conference iframe mounted by external_api.js
+    `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc`,
+    // meet.jit.si / *.jit.si — legacy Jitsi
+    // 8x8.vc / *.8x8.vc     — JaaS (8x8 Jitsi as a Service) conference iframe
     // googletagmanager.com   — noscript <iframe> fallback + GTM Preview debugger
     // tagassistant.google.com — GTM Preview / Tag Assistant debugger iframe
-    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si",
+    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://www.facebook.com https://*.facebook.com",
     // wss://meet.jit.si — Jitsi XMPP-over-WebSocket signalling
+    // wss://*.8x8.vc    — JaaS WebSocket signalling
     // tagassistant.google.com — GTM Preview XHR channel
     // analytics.google.com   — GA4 collect endpoint (some regions / gtag versions)
-    `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si${connectExtra}`,
-    // blob: — Jitsi creates blob: URLs for local audio/video preview tracks
-    "media-src 'self' blob: https://meet.jit.si https://*.jit.si",
-    "worker-src 'self' blob:",
+    // *.8x8.vc covers one subdomain level. JaaS also uses deeper subdomains
+    // (e.g. customer.api.jaas.8x8.vc) for AppID validation and branding.
+    // Without these entries the external_api.js fetch is CSP-blocked, which
+    // manifests as "browser not supported" inside the JaaS meeting iframe.
+    `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
+    // blob: — Jitsi/JaaS creates blob: URLs for local audio/video preview tracks
+    "media-src 'self' blob: data: https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc",
+    // JaaS loads web workers from its own domain — without this the WebRTC SDK
+    // fails its browser-capabilities check and shows "browser not supported".
+    "worker-src 'self' blob: https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc",
   ].join("; ");
 }
 

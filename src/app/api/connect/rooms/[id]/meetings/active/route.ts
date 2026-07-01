@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { createSystemMessage } from "@/lib/connect/systemMessage";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,6 +27,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       jitsiRoomId: true,
       createdById: true,
       createdAt: true,
+      room: { select: { type: true } },
       participants: {
         where: { leftAt: null },
         select: {
@@ -35,6 +37,30 @@ export async function GET(_req: NextRequest, { params }: Params) {
       },
     },
   });
+
+  // Auto-end orphaned meetings (all participants left without hitting the end route)
+  if (meeting && meeting.participants.length === 0) {
+    await prisma.meeting.update({
+      where: { id: meeting.id },
+      data: { status: "ENDED", endedAt: new Date() },
+    });
+
+    const roomType = meeting.room?.type;
+    if (roomType === "GROUP") {
+      await createSystemMessage(roomId, meeting.createdById, "Meeting ended");
+    } else if (roomType === "DIRECT") {
+      const allParticipants = await prisma.meetingParticipant.findMany({
+        where: { meetingId: meeting.id },
+        select: { userId: true },
+      });
+      const otherJoined = allParticipants.some((p) => p.userId !== meeting.createdById);
+      if (!otherJoined) {
+        await createSystemMessage(roomId, meeting.createdById, "Missed call");
+      }
+    }
+
+    return NextResponse.json(null);
+  }
 
   return NextResponse.json(meeting ?? null);
 }

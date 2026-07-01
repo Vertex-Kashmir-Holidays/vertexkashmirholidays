@@ -47,11 +47,21 @@ export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Auto-resize textarea to content height
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`;
+  }, [text]);
+
   // Pre-fill textarea when entering edit mode
   useEffect(() => {
     if (editingMessage) {
       setText(editingMessage.body ?? "");
       textareaRef.current?.focus();
+    } else {
+      setText("");
     }
   }, [editingMessage]);
 
@@ -112,13 +122,16 @@ export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ body: trimmed }),
         });
-        if (!res.ok) throw new Error("Edit failed");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({})) as { error?: string };
+          throw new Error(data.error ?? "Edit failed");
+        }
         const msg = await res.json();
         onEdited?.(msg);
         setText("");
         onCancelEdit?.();
-      } catch {
-        toast.error("Failed to edit message. Please try again.");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to edit message.");
       } finally {
         setSending(false);
       }
@@ -257,10 +270,10 @@ export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed
           className={cn(
             "flex-1 resize-none rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-sm",
             "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30",
-            "max-h-32 overflow-y-auto",
+            "overflow-y-auto",
             busy && "opacity-50 cursor-not-allowed",
           )}
-          style={{ minHeight: 40 }}
+          style={{ minHeight: 40, maxHeight: 200 }}
         />
 
         <button

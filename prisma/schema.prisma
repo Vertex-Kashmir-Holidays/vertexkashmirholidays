@@ -998,9 +998,11 @@ model SiteSettings {
   ogImage       String?
   // Configurable GST percentage options offered when recording non-cash payments,
   // stored as a JSON number array so they can change without a schema migration.
-  gstRates      String   @default("[5,16,18]")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  gstRates                 String   @default("[5,16,18]")
+  showAnnouncementBanner   Boolean  @default(false)
+  announcementMessage      String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 }
 
 enum Role {
@@ -1181,6 +1183,7 @@ model ChatMessage {
   editedAt           DateTime?
   deletedAt          DateTime?
   reactions          String?   // JSON: Record<emoji, userId[]>, one reaction per user
+  isSystem           Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

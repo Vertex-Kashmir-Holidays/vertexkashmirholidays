@@ -34,9 +34,10 @@ const securityHeaders = [
    // iframe including Jitsi, making audio/video calls impossible.
    key: "Permissions-Policy",
    value: [
-     'camera=(self "https://meet.jit.si")',
-     'microphone=(self "https://meet.jit.si")',
-     'display-capture=(self "https://meet.jit.si")',
+     'camera=(self "https://meet.jit.si" "https://8x8.vc" "https://*.8x8.vc")',
+     'microphone=(self "https://meet.jit.si" "https://8x8.vc" "https://*.8x8.vc")',
+     'display-capture=(self "https://meet.jit.si" "https://8x8.vc" "https://*.8x8.vc")',
+     'fullscreen=(self "https://8x8.vc" "https://*.8x8.vc")',
      "geolocation=()",
      "browsing-topics=()",
    ].join(", "),

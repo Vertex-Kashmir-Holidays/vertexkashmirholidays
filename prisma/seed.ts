@@ -143,7 +143,7 @@ async function main() {
     for (const [module, [canView, canCreate, canEdit, canDelete]] of Object.entries(modules)) {
       await prisma.rolePermission.upsert({
         where: { role_module: { role: role as Role, module } },
-        update: {},
+        update: { canView, canCreate, canEdit, canDelete },
         create: { role: role as Role, module, canView, canCreate, canEdit, canDelete },
       });
     }
