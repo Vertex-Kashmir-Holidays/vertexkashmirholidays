@@ -85,6 +85,7 @@ export default async function ToursPage() {
           priceFrom: t.priceFrom,
           priceWas: t.priceWas,
           category: t.category,
+          region: t.region,
           durationDays: t.duration,
         }))}
       />
