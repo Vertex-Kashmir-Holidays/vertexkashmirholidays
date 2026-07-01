@@ -106,6 +106,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   const [openMeeting, setOpenMeeting] = useState<OpenMeeting | null>(null);
   const [startingMeeting, setStartingMeeting] = useState<"AUDIO" | "VIDEO" | null>(null);
   const [meetingError, setMeetingError] = useState<string | null>(null);
+  const noAnswerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingMessage, setEditingMessage] = useState<ConnectMessage | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ConnectMessage[] | null>(null);
@@ -333,12 +334,20 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
           return;
         }
 
+        const newMeetingId = data.id;
         setOpenMeeting({
-          id: data.id,
+          id: newMeetingId,
           jitsiRoomId: data.jitsiRoomId,
           audioOnly: type === "AUDIO",
           isCreator: true,
         });
+        // Auto-end after 30s if nobody joins
+        if (noAnswerTimerRef.current) clearTimeout(noAnswerTimerRef.current);
+        noAnswerTimerRef.current = setTimeout(async () => {
+          noAnswerTimerRef.current = null;
+          await fetch(`/api/connect/meetings/${newMeetingId}/end`, { method: "POST" }).catch(() => {});
+          setOpenMeeting(null);
+        }, 30_000);
       } catch {
         setMeetingError("Failed to start meeting. Please try again.");
       } finally {
@@ -362,15 +371,21 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
 
   const handleLeave = useCallback(async () => {
     if (!openMeeting) return;
+    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
     await fetch(`/api/connect/meetings/${openMeeting.id}/leave`, { method: "POST" }).catch(() => {});
     setOpenMeeting(null);
   }, [openMeeting]);
 
   const handleEndForAll = useCallback(async () => {
     if (!openMeeting) return;
+    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
     await fetch(`/api/connect/meetings/${openMeeting.id}/end`, { method: "POST" }).catch(() => {});
     setOpenMeeting(null);
   }, [openMeeting]);
+
+  const handleAnswered = useCallback(() => {
+    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
+  }, []);
 
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -523,6 +538,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
         {/* Active meeting banner — polls independently */}
         <ActiveMeetingBanner
           roomId={room.id}
+          roomType={room.type}
           currentUserId={currentUserId}
           onJoin={handleJoinFromBanner}
           inMeeting={!!openMeeting}
@@ -650,6 +666,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
           isCreator={openMeeting.isCreator}
           onLeave={handleLeave}
           onEndForAll={handleEndForAll}
+          onAnswered={handleAnswered}
         />
       )}
 

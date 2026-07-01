@@ -1,28 +1,6 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { PhoneOff } from "lucide-react";
-
-// Minimal typings for the Jitsi External API (loaded dynamically from meet.jit.si)
-interface JitsiOptions {
-  roomName: string;
-  parentNode: HTMLElement;
-  width?: string | number;
-  height?: string | number;
-  configOverwrite?: Record<string, unknown>;
-  interfaceConfigOverwrite?: Record<string, unknown>;
-  userInfo?: { displayName?: string };
-}
-
-interface JitsiAPI {
-  addEventListener(event: string, handler: () => void): void;
-  dispose(): void;
-}
-
-declare global {
-  interface Window {
-    JitsiMeetExternalAPI?: new (domain: string, options: JitsiOptions) => JitsiAPI;
-  }
-}
+import { useEffect, useRef, useState } from "react";
+import { PhoneOff, Loader2 } from "lucide-react";
 
 interface Props {
   meetingId: string;
@@ -32,26 +10,90 @@ interface Props {
   isCreator: boolean;
   onLeave: () => void;
   onEndForAll: () => void;
+  onAnswered?: () => void;
+}
+
+interface TokenData {
+  jwt: string;
+  appId: string;
+}
+
+interface JitsiAPI {
+  addEventListeners: (listeners: Record<string, () => void>) => void;
+  getIFrame: () => HTMLIFrameElement;
+  dispose: () => void;
+}
+
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI?: {
+      new (domain: string, options: Record<string, unknown>): JitsiAPI;
+    };
+  }
 }
 
 export function MeetingModal({
+  meetingId,
   jitsiRoomId,
   displayName,
   audioOnly,
   isCreator,
   onLeave,
   onEndForAll,
+  onAnswered,
 }: Props) {
+  const [token, setToken] = useState<TokenData | null>(null);
+  const [tokenError, setTokenError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const answeredRef = useRef(false);
   const apiRef = useRef<JitsiAPI | null>(null);
 
+  // Fetch JaaS JWT
   useEffect(() => {
-    function init() {
-      if (!containerRef.current || !window.JitsiMeetExternalAPI) return;
+    fetch(`/api/connect/meetings/${meetingId}/token`)
+      .then((r) => r.json())
+      .then((data: { jwt?: string; appId?: string }) => {
+        if (data.jwt && data.appId) setToken({ jwt: data.jwt, appId: data.appId });
+        else setTokenError(true);
+      })
+      .catch(() => setTokenError(true));
+  }, [meetingId]);
 
-      const api = new window.JitsiMeetExternalAPI("meet.jit.si", {
-        roomName: jitsiRoomId,
+  // Poll participants every 3s to auto-close when meeting ends and fire onAnswered
+  useEffect(() => {
+    if (!token) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/connect/meetings/${meetingId}/participants`);
+        if (!res.ok) return;
+        const { active, count } = (await res.json()) as { active: boolean; count: number };
+        if (!active) {
+          clearInterval(id);
+          onLeave();
+          return;
+        }
+        if (!answeredRef.current && count > 1) {
+          answeredRef.current = true;
+          onAnswered?.();
+        }
+      } catch {
+        // best-effort
+      }
+    }, 3_000);
+    return () => clearInterval(id);
+  }, [token, meetingId, onLeave, onAnswered]);
+
+  // Mount JitsiMeetExternalAPI — mirrors the 8x8.vc demo HTML approach
+  useEffect(() => {
+    if (!token || !containerRef.current) return;
+
+    const initMeeting = () => {
+      if (!window.JitsiMeetExternalAPI || !containerRef.current) return;
+
+      const api = new window.JitsiMeetExternalAPI("8x8.vc", {
+        roomName: `${token.appId}/${jitsiRoomId}`,
         parentNode: containerRef.current,
+        jwt: token.jwt,
         width: "100%",
         height: "100%",
         configOverwrite: {
@@ -59,44 +101,85 @@ export function MeetingModal({
           startWithAudioMuted: false,
           disableDeepLinking: true,
           prejoinPageEnabled: false,
-          // Screen sharing is on by default in Jitsi
+          disableInviteFunctions: true,
+          desktopSharingEnabled: false,
         },
         interfaceConfigOverwrite: {
           SHOW_JITSI_WATERMARK: false,
           SHOW_WATERMARK_FOR_GUESTS: false,
-          SHOW_BRAND_WATERMARK: false,
-          DEFAULT_LOGO_URL: "",
           SHOW_CHROME_EXTENSION_BANNER: false,
-          TOOLBAR_ALWAYS_VISIBLE: true,
         },
-        userInfo: { displayName },
+        userInfo: { displayName, email: "" },
+      });
+
+      // Set allow attribute synchronously before the browser evaluates
+      // Permissions Policy — must happen before any getUserMedia call.
+      const iframe = api.getIFrame();
+      iframe.setAttribute("allow", "camera; microphone; autoplay; clipboard-write");
+      iframe.style.height = "100%";
+      iframe.style.width = "100%";
+
+      api.addEventListeners({
+        readyToClose: onLeave,
+        participantJoined: () => {
+          if (!answeredRef.current) {
+            answeredRef.current = true;
+            onAnswered?.();
+          }
+        },
       });
 
       apiRef.current = api;
-      // Jitsi fires readyToClose when user clicks the built-in hang-up button
-      api.addEventListener("readyToClose", onLeave);
-    }
+    };
 
     if (window.JitsiMeetExternalAPI) {
-      init();
+      initMeeting();
     } else {
       const script = document.createElement("script");
-      script.src = "https://meet.jit.si/external_api.js";
+      script.src = `https://8x8.vc/${token.appId}/external_api.js`;
       script.async = true;
-      script.onload = init;
+      script.onload = initMeeting;
+      script.onerror = () => setTokenError(true);
       document.head.appendChild(script);
     }
 
     return () => {
-      apiRef.current?.dispose();
+      apiRef.current?.dispose?.();
       apiRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jitsiRoomId]);
+  }, [token, jitsiRoomId, displayName, audioOnly, onLeave, onAnswered]);
+
+  if (tokenError) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-[#1e1e1e]">
+        <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-black/40 backdrop-blur-sm">
+          <button
+            onClick={onLeave}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+          >
+            <PhoneOff className="w-3.5 h-3.5" />
+            Close
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center text-red-400 text-sm">
+          Failed to connect to meeting. Please leave and try again.
+        </div>
+      </div>
+    );
+  }
+
+  if (!token) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e1e1e]">
+        <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+        <span className="ml-3 text-white/50 text-sm">Connecting…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#1e1e1e]">
-      {/* Minimal action strip — doesn't interfere with Jitsi's own toolbar */}
+      {/* Top bar */}
       <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-black/40 backdrop-blur-sm">
         {isCreator && (
           <button
@@ -115,8 +198,8 @@ export function MeetingModal({
         </button>
       </div>
 
-      {/* Jitsi mounts its iframe here — flex-1 gives it all remaining height */}
-      <div ref={containerRef} className="flex-1 min-h-0 w-full" />
+      {/* JaaS iframe fills remaining height */}
+      <div ref={containerRef} className="flex-1 min-h-0" />
     </div>
   );
 }

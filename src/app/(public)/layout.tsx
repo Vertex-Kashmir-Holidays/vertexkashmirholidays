@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
+import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import type { FooterSettings } from "@/components/layout/Footer";
 
 export default async function PublicLayout({
@@ -33,9 +34,12 @@ export default async function PublicLayout({
         siteName: s?.siteName ?? "Vertex Kashmir Holidays",
         whatsapp: s?.whatsapp ?? null,
         sitePhone: s?.sitePhone ?? null,
+        showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
+        announcementMessage: s?.announcementMessage ?? null,
       }}
     >
       <PublicChrome settings={settings}>{children}</PublicChrome>
+      <AnnouncementModal />
     </SiteSettingsProvider>
   );
 }

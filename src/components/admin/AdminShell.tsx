@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useNotificationSound } from "@/components/admin/connect/hooks/useNotificationSound";
+import { GlobalCallNotification } from "@/components/admin/connect/GlobalCallNotification";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -70,6 +71,7 @@ const PAGE_TITLES: Record<string, string> = Object.fromEntries(
 
 interface AdminShellProps {
   children: React.ReactNode;
+  userId: string;
   userName: string;
   userEmail: string;
   userImage: string | null;
@@ -200,7 +202,7 @@ function SidebarContent({
   );
 }
 
-export function AdminShell({ children, userName, userEmail, userImage, permissions }: AdminShellProps) {
+export function AdminShell({ children, userId, userName, userEmail, userImage, permissions }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { unlock } = useNotificationSound();
@@ -276,6 +278,11 @@ export function AdminShell({ children, userName, userEmail, userImage, permissio
           {children}
         </main>
       </div>
+
+      {/* Global incoming call notification — rings from any page in the admin */}
+      <Suspense>
+        <GlobalCallNotification currentUserId={userId} currentUserName={userName} />
+      </Suspense>
     </div>
   );
 }

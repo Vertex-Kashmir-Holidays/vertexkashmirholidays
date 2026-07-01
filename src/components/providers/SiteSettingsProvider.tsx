@@ -7,12 +7,16 @@ export interface SiteSettingsValue {
   siteName: string;
   whatsapp: string | null;
   sitePhone: string | null;
+  showAnnouncementBanner: boolean;
+  announcementMessage: string | null;
 }
 
 const DEFAULTS: SiteSettingsValue = {
   siteName: "Vertex Kashmir Holidays",
   whatsapp: null,
   sitePhone: null,
+  showAnnouncementBanner: false,
+  announcementMessage: null,
 };
 
 const Ctx = createContext<SiteSettingsValue>(DEFAULTS);

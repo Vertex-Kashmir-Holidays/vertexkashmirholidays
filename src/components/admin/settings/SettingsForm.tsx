@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { parseGstRates } from "@/lib/payments/gst";
+import { useState } from "react";
 
 const schema = z.object({
  siteName: z.string().min(1, "Site name is required"),
@@ -22,6 +23,8 @@ const schema = z.object({
  metaDesc: z.string().optional(),
  ogImage: z.string().optional(),
  gstRates: z.string().optional(),
+ showAnnouncementBanner: z.boolean().optional(),
+ announcementMessage: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -41,6 +44,8 @@ interface SiteSettings {
  metaDesc: string | null;
  ogImage: string | null;
  gstRates: string;
+ showAnnouncementBanner: boolean;
+ announcementMessage: string | null;
 }
 
 interface Props {
@@ -72,6 +77,7 @@ function Field({ label, name, register, textarea, placeholder, type = "text" }: 
 
 export function SettingsForm({ settings }: Props) {
  const [isPending, startTransition] = useTransition();
+ const [bannerEnabled, setBannerEnabled] = useState(settings.showAnnouncementBanner);
 
  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
    resolver: zodResolver(schema),
@@ -90,6 +96,8 @@ export function SettingsForm({ settings }: Props) {
      metaDesc: settings.metaDesc ?? "",
      ogImage: settings.ogImage ?? "",
      gstRates: parseGstRates(settings.gstRates).join(", "),
+     showAnnouncementBanner: settings.showAnnouncementBanner,
+     announcementMessage: settings.announcementMessage ?? "",
    },
  });
 
@@ -99,7 +107,7 @@ export function SettingsForm({ settings }: Props) {
      .split(",")
      .map((s) => parseFloat(s.trim()))
      .filter((n) => Number.isFinite(n) && n > 0 && n <= 100);
-   const payload = { ...rest, gstRates: rates };
+   const payload = { ...rest, gstRates: rates, showAnnouncementBanner: bannerEnabled };
 
    startTransition(async () => {
      try {
@@ -173,6 +181,46 @@ export function SettingsForm({ settings }: Props) {
            <Field label="Default OG Image URL" name="ogImage" register={register} placeholder="https://..." />
          </div>
        </div>
+     </div>
+
+     {/* Announcement Banner */}
+     <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+       <div className="flex items-center justify-between gap-4">
+         <div>
+           <h3 className="font-bold text-foreground text-sm">Announcement Banner</h3>
+           <p className="text-[11px] text-muted-foreground mt-0.5">
+             Shows a modal popup to visitors after 30 seconds. Once dismissed it won&apos;t reappear in the same session.
+           </p>
+         </div>
+         {/* Toggle */}
+         <button
+           type="button"
+           onClick={() => setBannerEnabled((v) => !v)}
+           className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${bannerEnabled ? "bg-emerald-500" : "bg-muted"}`}
+           role="switch"
+           aria-checked={bannerEnabled}
+         >
+           <span
+             className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${bannerEnabled ? "translate-x-5" : "translate-x-0"}`}
+           />
+         </button>
+       </div>
+       {bannerEnabled && (
+         <div>
+           <label className="block text-xs font-semibold text-muted-foreground mb-1">
+             Banner Message
+           </label>
+           <textarea
+             {...register("announcementMessage")}
+             rows={3}
+             placeholder="We're adding new tours. Contact us for a custom itinerary tailored just for you!"
+             className={`${inputCls} resize-none`}
+           />
+           <p className="text-[11px] text-muted-foreground mt-1">
+             Leave blank to use the default message.
+           </p>
+         </div>
+       )}
      </div>
 
      {/* CTA — centered below both columns */}

@@ -20,6 +20,7 @@ export interface ConnectMessage {
   editedAt: string | null;
   deletedAt: string | null;
   reactions: string | null; // JSON: Record<emoji, userId[]>
+  isSystem?: boolean;
   createdAt: string;
   updatedAt: string;
   /** Client-only — never comes from the server. "sending" = optimistic, "sent" = API confirmed. */

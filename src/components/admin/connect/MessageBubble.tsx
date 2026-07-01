@@ -111,7 +111,19 @@ function RichText({ body, selfSlug, isOwn }: { body: string; selfSlug?: string |
   return (
     <>
       {segments.map((seg, i) => {
-        if (seg.type === "text") return <React.Fragment key={i}>{seg.value}</React.Fragment>;
+        if (seg.type === "text") {
+          const lines = seg.value.split("\n");
+          return (
+            <React.Fragment key={i}>
+              {lines.map((line, j) => (
+                <React.Fragment key={j}>
+                  {j > 0 && <br />}
+                  {line}
+                </React.Fragment>
+              ))}
+            </React.Fragment>
+          );
+        }
         if (seg.type === "url") {
           const display = seg.href.length > 45 ? seg.href.slice(0, 42) + "…" : seg.href;
           return (
@@ -208,6 +220,24 @@ function MessageStatus({ message, readUpTo, isOwn = false }: { message: ConnectM
 
 export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentUserId = "", isFirstInGroup = true, onReact, onEdit, onDelete }: Props) {
   const { sender, body, attachmentUrl, attachmentType, attachmentName, createdAt, editedAt } = message;
+
+  if (message.isSystem) {
+    const isMissed = body?.toLowerCase().includes("missed");
+    return (
+      <div className="flex items-center gap-2 py-1 px-2">
+        <div className="flex-1 h-px bg-border/50" />
+        <span className={cn(
+          "text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
+          isMissed
+            ? "text-red-500 dark:text-red-400 bg-red-500/10"
+            : "text-muted-foreground bg-muted/60",
+        )}>
+          {isMissed ? "📞 " : ""}{body}
+        </span>
+        <div className="flex-1 h-px bg-border/50" />
+      </div>
+    );
+  }
 
   const emojiOnly = !!body && !attachmentUrl && isEmojiOnly(body);
   const emojiCount = emojiOnly ? countEmoji(body!) : 0;

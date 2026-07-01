@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <AdminShell
+      userId={session.user.id}
       userName={profile?.name ?? session.user.name ?? "Admin"}
       userEmail={session.user.email ?? ""}
       userImage={profile?.image ?? null}

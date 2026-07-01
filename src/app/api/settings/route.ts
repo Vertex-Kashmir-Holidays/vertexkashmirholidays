@@ -23,6 +23,8 @@ const patchSchema = z.object({
   ogImage: z.string().optional().nullable(),
   // Configurable GST percentage options (stored as a JSON number array string).
   gstRates: z.array(z.coerce.number().positive().max(100)).optional(),
+  showAnnouncementBanner: z.boolean().optional(),
+  announcementMessage: z.string().optional().nullable(),
 });
 
 export async function GET() {

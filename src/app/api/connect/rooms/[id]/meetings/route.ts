@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { createSystemMessage } from "@/lib/connect/systemMessage";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -92,18 +93,25 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Cryptographically random Jitsi room ID — hard to guess
   const jitsiRoomId = `vkh-${randomBytes(12).toString("hex")}`;
 
-  const meeting = await prisma.meeting.create({
-    data: {
-      roomId,
-      title: type === "VIDEO" ? "Video meeting" : "Audio meeting",
-      type,
-      jitsiRoomId,
-      createdById: userId,
-      status: "ACTIVE",
-      participants: { create: { userId, joinedAt: new Date() } },
-    },
-    select: meetingSelect,
-  });
+  const [meeting, room] = await Promise.all([
+    prisma.meeting.create({
+      data: {
+        roomId,
+        title: type === "VIDEO" ? "Video meeting" : "Audio meeting",
+        type,
+        jitsiRoomId,
+        createdById: userId,
+        status: "ACTIVE",
+        participants: { create: { userId, joinedAt: new Date() } },
+      },
+      select: meetingSelect,
+    }),
+    prisma.chatRoom.findUnique({ where: { id: roomId }, select: { type: true } }),
+  ]);
+
+  if (room?.type === "GROUP") {
+    await createSystemMessage(roomId, userId, "Meeting started");
+  }
 
   // Notify other room members
   const others = await prisma.chatMember.findMany({

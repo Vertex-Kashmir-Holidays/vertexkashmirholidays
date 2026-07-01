@@ -33,6 +33,7 @@ const msgSelect = {
   editedAt: true,
   deletedAt: true,
   reactions: true,
+  isSystem: true,
   createdAt: true,
   updatedAt: true,
   sender: { select: { id: true, name: true, image: true } },
