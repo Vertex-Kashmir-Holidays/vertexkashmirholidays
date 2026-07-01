@@ -109,6 +109,7 @@ export default async function HomePage() {
     tickerItems,
     videos,
     tours,
+    ladakhTours,
     whyItems,
     destinations,
     offers,
@@ -123,8 +124,16 @@ export default async function HomePage() {
     prisma.tickerItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.videoReview.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.tour.findMany({
-      where: { published: true },
+      where: { published: true, region: "KASHMIR" },
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
+      take: 4,
+      include: {
+        destinations: { include: { destination: { select: { name: true } } } },
+      },
+    }),
+    prisma.tour.findMany({
+      where: { published: true, region: "LADAKH" },
+      orderBy: [{ bestseller: "desc" }, { priceFrom: "asc" }],
       take: 4,
       include: {
         destinations: { include: { destination: { select: { name: true } } } },
@@ -279,6 +288,31 @@ export default async function HomePage() {
           coverImage: d.coverImage,
         }))}
       />
+      {ladakhTours.length > 0 && (
+        <PackagesSection
+          heading={{
+            kicker: "HIGH ALTITUDE ADVENTURES",
+            title: "Explore *Ladakh*",
+            subtitle: "Khardung La · Pangong Tso · Nubra Valley · Tso Moriri",
+            ctaLabel: "View All Ladakh Tours",
+            ctaHref: "/tours",
+          }}
+          tours={ladakhTours.map((t) => ({
+            id: t.id,
+            slug: t.slug,
+            title: t.title,
+            badge: t.badge,
+            badgeColor: t.badgeColor,
+            durationLabel: `${t.duration - 1}N / ${t.duration}D`,
+            places: t.destinations.map((d) => d.destination.name).join(", "),
+            image: t.coverImage,
+            rating: t.rating,
+            reviewCount: t.reviewCount,
+            priceFrom: t.priceFrom,
+            priceWas: t.priceWas,
+          }))}
+        />
+      )}
       <AboutSection
         heading={heading("about")}
         content={{

@@ -233,6 +233,7 @@ model Tour {
   excerpt      String?
   description  String?
   category     TourCategory
+  region       TourRegion        @default(KASHMIR)
   duration     Int
   coverImage   String?
   badge        String?
@@ -273,6 +274,7 @@ model Tour {
 
   @@index([slug])
   @@index([category])
+  @@index([region])
   @@index([published])
   @@index([bestseller])
 }
@@ -1015,6 +1017,11 @@ enum TourCategory {
   FAMILY
   ADVENTURE
   LUXURY
+}
+
+enum TourRegion {
+  KASHMIR
+  LADAKH
 }
 
 enum BookingStatus {

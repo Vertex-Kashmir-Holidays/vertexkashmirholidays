@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TourCategory } from "@prisma/client";
+import { PrismaClient, Role, TourCategory, TourRegion } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { LEGAL_PAGES } from "../src/lib/legal/content";
 
@@ -656,20 +656,24 @@ async function main() {
   });
   // ── Extra tours — give the listing real depth so filters & pagination work ──
   const EXTRA_TOURS: {
-    slug: string; title: string; category: TourCategory; duration: number;
+    slug: string; title: string; category: TourCategory; region: TourRegion; duration: number;
     priceFrom: number; priceWas: number; rating: number; reviewCount: number;
     badge: string; badgeColor: string; tagline: string; excerpt: string; destSlugs: string[];
   }[] = [
-    { slug: "kashmir-great-lakes-trek", title: "Kashmir Great Lakes Trek", category: TourCategory.ADVENTURE, duration: 8, priceFrom: 26500, priceWas: 31000, rating: 4.9, reviewCount: 0, badge: "TRENDING", badgeColor: "green", tagline: "Seven alpine lakes in eight days", excerpt: "The crown jewel of Himalayan treks — Vishansar, Krishnasar, Gadsar and more.", destSlugs: ["sonmarg", "gulmarg"] },
-    { slug: "winter-gulmarg-ski-week", title: "Winter Gulmarg Ski Week", category: TourCategory.ADVENTURE, duration: 6, priceFrom: 39000, priceWas: 46000, rating: 4.8, reviewCount: 0, badge: "WINTER", badgeColor: "blue", tagline: "Powder days on Apharwat", excerpt: "Six days of certified ski instruction, gear and gondola laps in Gulmarg.", destSlugs: ["gulmarg"] },
-    { slug: "srinagar-houseboat-getaway", title: "Srinagar Houseboat Getaway", category: TourCategory.FAMILY, duration: 4, priceFrom: 18500, priceWas: 22000, rating: 4.7, reviewCount: 0, badge: "POPULAR", badgeColor: "blue", tagline: "Dal Lake at its dreamiest", excerpt: "A short, soulful break of houseboats, gardens and shikara evenings.", destSlugs: ["srinagar"] },
-    { slug: "pahalgam-valley-explorer", title: "Pahalgam Valley Explorer", category: TourCategory.FAMILY, duration: 5, priceFrom: 23000, priceWas: 27500, rating: 4.6, reviewCount: 0, badge: "FAMILY", badgeColor: "green", tagline: "Meadows, rivers & pony trails", excerpt: "Betaab Valley, Aru and the Lidder — paced perfectly for families.", destSlugs: ["pahalgam"] },
-    { slug: "leh-ladakh-overland", title: "Leh–Ladakh Overland Expedition", category: TourCategory.ADVENTURE, duration: 9, priceFrom: 52000, priceWas: 61000, rating: 4.9, reviewCount: 0, badge: "EPIC", badgeColor: "orange", tagline: "High passes & moonscapes", excerpt: "Leh, Nubra dunes and the colour-shifting Pangong Lake across nine days.", destSlugs: ["leh", "nubra-valley", "pangong-lake"] },
-    { slug: "honeymoon-houseboat-romance", title: "Honeymoon Houseboat Romance", category: TourCategory.HONEYMOON, duration: 6, priceFrom: 42000, priceWas: 49000, rating: 4.9, reviewCount: 0, badge: "BESTSELLER", badgeColor: "orange", tagline: "Just the two of you", excerpt: "Candlelit decks, private shikaras and Gulmarg's meadows for two.", destSlugs: ["srinagar", "gulmarg", "pahalgam"] },
-    { slug: "doodhpathri-yusmarg-meadows", title: "Doodhpathri & Yusmarg Meadows", category: TourCategory.FAMILY, duration: 4, priceFrom: 16500, priceWas: 19500, rating: 4.5, reviewCount: 0, badge: "HIDDEN GEM", badgeColor: "green", tagline: "Kashmir's quiet meadows", excerpt: "Off-beat alpine meadows and milky streams away from the crowds.", destSlugs: ["doodhpathri", "yusmarg"] },
-    { slug: "sonmarg-glacier-adventure", title: "Sonmarg Glacier Adventure", category: TourCategory.ADVENTURE, duration: 5, priceFrom: 24500, priceWas: 28500, rating: 4.7, reviewCount: 0, badge: "ADVENTURE", badgeColor: "green", tagline: "Gateway to the glaciers", excerpt: "Thajiwas glacier, river rafting and high-meadow camps in Sonmarg.", destSlugs: ["sonmarg"] },
-    { slug: "gurez-valley-frontier", title: "Gurez Valley Frontier Trail", category: TourCategory.ADVENTURE, duration: 6, priceFrom: 31000, priceWas: 36000, rating: 4.8, reviewCount: 0, badge: "OFFBEAT", badgeColor: "blue", tagline: "Beyond the tourist trail", excerpt: "Log villages, the Kishanganga river and Habba Khatoon peak.", destSlugs: ["gurez-valley"] },
-    { slug: "grand-kashmir-luxury-circuit", title: "Grand Kashmir Luxury Circuit", category: TourCategory.LUXURY, duration: 8, priceFrom: 98000, priceWas: 115000, rating: 5.0, reviewCount: 0, badge: "LUXURY", badgeColor: "orange", tagline: "Kashmir without compromise", excerpt: "Heritage houseboats, butler service and private excursions across the valley.", destSlugs: ["srinagar", "gulmarg", "pahalgam", "sonmarg"] },
+    { slug: "kashmir-great-lakes-trek", title: "Kashmir Great Lakes Trek", category: TourCategory.ADVENTURE, region: TourRegion.KASHMIR, duration: 8, priceFrom: 26500, priceWas: 31000, rating: 4.9, reviewCount: 0, badge: "TRENDING", badgeColor: "green", tagline: "Seven alpine lakes in eight days", excerpt: "The crown jewel of Himalayan treks — Vishansar, Krishnasar, Gadsar and more.", destSlugs: ["sonmarg", "gulmarg"] },
+    { slug: "winter-gulmarg-ski-week", title: "Winter Gulmarg Ski Week", category: TourCategory.ADVENTURE, region: TourRegion.KASHMIR, duration: 6, priceFrom: 39000, priceWas: 46000, rating: 4.8, reviewCount: 0, badge: "WINTER", badgeColor: "blue", tagline: "Powder days on Apharwat", excerpt: "Six days of certified ski instruction, gear and gondola laps in Gulmarg.", destSlugs: ["gulmarg"] },
+    { slug: "srinagar-houseboat-getaway", title: "Srinagar Houseboat Getaway", category: TourCategory.FAMILY, region: TourRegion.KASHMIR, duration: 4, priceFrom: 18500, priceWas: 22000, rating: 4.7, reviewCount: 0, badge: "POPULAR", badgeColor: "blue", tagline: "Dal Lake at its dreamiest", excerpt: "A short, soulful break of houseboats, gardens and shikara evenings.", destSlugs: ["srinagar"] },
+    { slug: "pahalgam-valley-explorer", title: "Pahalgam Valley Explorer", category: TourCategory.FAMILY, region: TourRegion.KASHMIR, duration: 5, priceFrom: 23000, priceWas: 27500, rating: 4.6, reviewCount: 0, badge: "FAMILY", badgeColor: "green", tagline: "Meadows, rivers & pony trails", excerpt: "Betaab Valley, Aru and the Lidder — paced perfectly for families.", destSlugs: ["pahalgam"] },
+    { slug: "leh-ladakh-overland", title: "Leh–Ladakh Overland Expedition", category: TourCategory.ADVENTURE, region: TourRegion.LADAKH, duration: 9, priceFrom: 52000, priceWas: 61000, rating: 4.9, reviewCount: 0, badge: "EPIC", badgeColor: "orange", tagline: "High passes & moonscapes", excerpt: "Leh, Nubra dunes and the colour-shifting Pangong Lake across nine days.", destSlugs: ["leh", "nubra-valley", "pangong-lake"] },
+    { slug: "honeymoon-houseboat-romance", title: "Honeymoon Houseboat Romance", category: TourCategory.HONEYMOON, region: TourRegion.KASHMIR, duration: 6, priceFrom: 42000, priceWas: 49000, rating: 4.9, reviewCount: 0, badge: "BESTSELLER", badgeColor: "orange", tagline: "Just the two of you", excerpt: "Candlelit decks, private shikaras and Gulmarg's meadows for two.", destSlugs: ["srinagar", "gulmarg", "pahalgam"] },
+    { slug: "doodhpathri-yusmarg-meadows", title: "Doodhpathri & Yusmarg Meadows", category: TourCategory.FAMILY, region: TourRegion.KASHMIR, duration: 4, priceFrom: 16500, priceWas: 19500, rating: 4.5, reviewCount: 0, badge: "HIDDEN GEM", badgeColor: "green", tagline: "Kashmir's quiet meadows", excerpt: "Off-beat alpine meadows and milky streams away from the crowds.", destSlugs: ["doodhpathri", "yusmarg"] },
+    { slug: "sonmarg-glacier-adventure", title: "Sonmarg Glacier Adventure", category: TourCategory.ADVENTURE, region: TourRegion.KASHMIR, duration: 5, priceFrom: 24500, priceWas: 28500, rating: 4.7, reviewCount: 0, badge: "ADVENTURE", badgeColor: "green", tagline: "Gateway to the glaciers", excerpt: "Thajiwas glacier, river rafting and high-meadow camps in Sonmarg.", destSlugs: ["sonmarg"] },
+    { slug: "gurez-valley-frontier", title: "Gurez Valley Frontier Trail", category: TourCategory.ADVENTURE, region: TourRegion.KASHMIR, duration: 6, priceFrom: 31000, priceWas: 36000, rating: 4.8, reviewCount: 0, badge: "OFFBEAT", badgeColor: "blue", tagline: "Beyond the tourist trail", excerpt: "Log villages, the Kishanganga river and Habba Khatoon peak.", destSlugs: ["gurez-valley"] },
+    { slug: "grand-kashmir-luxury-circuit", title: "Grand Kashmir Luxury Circuit", category: TourCategory.LUXURY, region: TourRegion.KASHMIR, duration: 8, priceFrom: 98000, priceWas: 115000, rating: 5.0, reviewCount: 0, badge: "LUXURY", badgeColor: "orange", tagline: "Kashmir without compromise", excerpt: "Heritage houseboats, butler service and private excursions across the valley.", destSlugs: ["srinagar", "gulmarg", "pahalgam", "sonmarg"] },
+    { slug: "leh-ladakh-complete-adventure-6n-7d", title: "Leh–Ladakh Complete Adventure", category: TourCategory.ADVENTURE, region: TourRegion.LADAKH, duration: 7, priceFrom: 34999, priceWas: 41000, rating: 4.9, reviewCount: 0, badge: "BESTSELLER", badgeColor: "orange", tagline: "The ultimate Ladakh circuit", excerpt: "Magnetic Hill, Shanti Stupa, Khardung La, Nubra dunes and Pangong Tso — the complete Ladakh experience.", destSlugs: ["leh", "nubra-valley", "pangong-lake"] },
+    { slug: "leh-nubra-pangong-circuit-5n-6d", title: "Leh–Nubra–Pangong Circuit", category: TourCategory.ADVENTURE, region: TourRegion.LADAKH, duration: 6, priceFrom: 28999, priceWas: 34000, rating: 4.8, reviewCount: 0, badge: "BESTSELLER", badgeColor: "orange", tagline: "High passes, dunes & lakeside sunsets", excerpt: "Cross Khardung La into Nubra's sand dunes, then camp by the turquoise waters of Pangong Tso.", destSlugs: ["leh", "nubra-valley", "pangong-lake"] },
+    { slug: "ladakh-bike-expedition-9d", title: "Ladakh Bike Expedition", category: TourCategory.ADVENTURE, region: TourRegion.LADAKH, duration: 9, priceFrom: 39999, priceWas: 47000, rating: 4.9, reviewCount: 0, badge: "EPIC", badgeColor: "blue", tagline: "Manali to Leh on two wheels", excerpt: "Ride the world's highest motorable road — Manali to Leh via Rohtang, Baralacha La, Tanglang La and beyond.", destSlugs: ["leh", "nubra-valley", "pangong-lake"] },
+    { slug: "ultimate-ladakh-hanle-tso-moriri-8d", title: "Ultimate Ladakh — Hanle & Tso Moriri", category: TourCategory.ADVENTURE, region: TourRegion.LADAKH, duration: 8, priceFrom: 44999, priceWas: 53000, rating: 5.0, reviewCount: 0, badge: "OFFBEAT", badgeColor: "green", tagline: "Ladakh's unexplored south", excerpt: "Beyond the tourist trail — stargazing at Hanle, the serene Tso Moriri and the moonscape of Moreh Plains.", destSlugs: ["leh", "pangong-lake"] },
   ];
 
   for (const t of EXTRA_TOURS) {
@@ -677,6 +681,7 @@ async function main() {
     const common = {
       title: t.title,
       category: t.category,
+      region: t.region,
       duration: t.duration,
       priceFrom: t.priceFrom,
       priceWas: t.priceWas,
@@ -706,12 +711,12 @@ async function main() {
         { question: "Is this package customisable?", answer: "Yes — every itinerary is handcrafted. Add days, upgrade hotels or swap activities and your quote updates transparently." },
         { question: "What is the advance payment?", answer: "Just 10% to lock your dates. The balance is payable 7 days before the trip starts." },
       ]),
-      startCity: t.destSlugs.includes("leh") ? "Leh" : "Srinagar",
-      transport: "Private Cab",
-      difficulty: t.category === TourCategory.ADVENTURE ? "Moderate" : "Easy",
-      bestTime: "Apr – Oct",
-      tourType: "Private Tour",
-      pickupDrop: t.destSlugs.includes("leh") ? "Leh Airport" : "Srinagar Airport",
+      startCity: t.slug === "ladakh-bike-expedition-9d" ? "Manali" : t.destSlugs.includes("leh") ? "Leh" : "Srinagar",
+      transport: t.slug === "ladakh-bike-expedition-9d" ? "Royal Enfield / Self-Ride" : "Private Cab",
+      difficulty: t.slug === "ladakh-bike-expedition-9d" ? "Challenging" : t.category === TourCategory.ADVENTURE ? "Moderate" : "Easy",
+      bestTime: t.region === TourRegion.LADAKH ? "Jun – Sep" : "Apr – Oct",
+      tourType: t.slug === "ladakh-bike-expedition-9d" ? "Bike Expedition" : "Private Tour",
+      pickupDrop: t.slug === "ladakh-bike-expedition-9d" ? "Manali Bus Stand" : t.destSlugs.includes("leh") ? "Leh Airport" : "Srinagar Airport",
       happyCount: 1000 + t.reviewCount,
       metaTitle: `${t.title} — ${t.duration}-Day Kashmir Package | Vertex Kashmir Holidays`,
       metaDesc: `${t.excerpt} Starting ₹${t.priceFrom.toLocaleString("en-IN")}. Book with Vertex Kashmir Holidays.`,
@@ -1100,9 +1105,9 @@ async function main() {
     },
     {
       key: "offers",
-      kicker: "LIMITED-TIME OFFERS",
-      title: "Deals that melt *faster than snow*",
-      subtitle: "Monsoon window: June – September 2026",
+      kicker: "EXCLUSIVE CAMPAIGNS",
+      title: "Curated *departures* with fixed dates & prices",
+      subtitle: "Guaranteed departures · Group & solo-friendly · Limited seats per batch",
     },
     {
       key: "testimonials",

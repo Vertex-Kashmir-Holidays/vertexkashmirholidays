@@ -5,6 +5,7 @@ import type { HomeTourData } from './home';
 
 export interface TourListItemData extends HomeTourData {
   category: string; // TourCategory enum value: HONEYMOON | FAMILY | ADVENTURE | LUXURY
+  region: string;   // TourRegion enum value: KASHMIR | LADAKH
   durationDays: number;
 }
 

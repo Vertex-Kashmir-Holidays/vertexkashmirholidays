@@ -29,8 +29,15 @@ const PAGE_SIZE = 9;
 // Price slider granularity — each drag step moves the handle ₹1000.
 const PRICE_STEP = 1000;
 
+const REGION_TABS = [
+  { id: 'ALL', label: 'All Tours' },
+  { id: 'KASHMIR', label: 'Kashmir' },
+  { id: 'LADAKH', label: 'Ladakh' },
+] as const;
+
 export function ToursPageClient({ tours }: ToursPageClientProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [activeRegion, setActiveRegion] = useState<'ALL' | 'KASHMIR' | 'LADAKH'>('ALL');
   const [search, setSearch] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDurations, setSelectedDurations] = useState<string[]>([]);
@@ -39,14 +46,19 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
   const [sort, setSort] = useState<TourSortOption>('popular');
   const [page, setPage] = useState(1);
 
+  const regionFiltered = useMemo(
+    () => (activeRegion === 'ALL' ? tours : tours.filter((t) => t.region === activeRegion)),
+    [tours, activeRegion],
+  );
+
   const categories = useMemo(
     () =>
       Object.entries(CATEGORY_META).map(([id, meta]) => ({
         id,
         ...meta,
-        count: tours.filter((t) => t.category === id).length,
+        count: regionFiltered.filter((t) => t.category === id).length,
       })),
-    [tours],
+    [regionFiltered],
   );
 
   const durations = useMemo(
@@ -54,20 +66,20 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
       DURATION_BUCKETS.map((b) => ({
         id: b.id,
         label: b.label,
-        count: tours.filter((t) => t.durationDays >= b.min && t.durationDays <= b.max).length,
+        count: regionFiltered.filter((t) => t.durationDays >= b.min && t.durationDays <= b.max).length,
       })),
-    [tours],
+    [regionFiltered],
   );
 
   // Slider bounds snapped to the ₹1000 step so the handles land on clean values.
   const priceBounds = useMemo(() => {
-    if (tours.length === 0) return { min: 0, max: 0 };
-    const prices = tours.map((t) => t.priceFrom);
+    if (regionFiltered.length === 0) return { min: 0, max: 0 };
+    const prices = regionFiltered.map((t) => t.priceFrom);
     return {
       min: Math.floor(Math.min(...prices) / PRICE_STEP) * PRICE_STEP,
       max: Math.ceil(Math.max(...prices) / PRICE_STEP) * PRICE_STEP,
     };
-  }, [tours]);
+  }, [regionFiltered]);
 
   // Effective range: the user's selection, or the full bounds when untouched.
   const effectiveRange: [number, number] = priceRange ?? [priceBounds.min, priceBounds.max];
@@ -75,7 +87,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const [lo, hi] = priceRange ?? [priceBounds.min, priceBounds.max];
-    const result = tours.filter((t) => {
+    const result = regionFiltered.filter((t) => {
       const searchMatch =
         !q || t.title.toLowerCase().includes(q) || t.places.toLowerCase().includes(q);
       const categoryMatch =
@@ -97,7 +109,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
     if (sort === 'price-desc') result.sort((a, b) => b.priceFrom - a.priceFrom);
     if (sort === 'rating') result.sort((a, b) => b.rating - a.rating);
     return result;
-  }, [tours, search, selectedCategories, selectedDurations, sort, priceRange, priceBounds]);
+  }, [regionFiltered, search, selectedCategories, selectedDurations, sort, priceRange, priceBounds]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -130,8 +142,35 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
     setPage(1);
   };
 
+  const handleRegionChange = (region: typeof activeRegion) => {
+    setActiveRegion(region);
+    setSearch('');
+    setSelectedCategories([]);
+    setSelectedDurations([]);
+    setPriceRange(null);
+    setPage(1);
+  };
+
   return (
     <main className="mx-auto max-w-[1300px] px-6 py-10">
+      <div className="mb-7 flex gap-2">
+        {REGION_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleRegionChange(tab.id as typeof activeRegion)}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+              activeRegion === tab.id
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            {tab.label}
+            <span className="ml-2 text-xs opacity-70">
+              ({tab.id === 'ALL' ? tours.length : tours.filter((t) => t.region === tab.id).length})
+            </span>
+          </button>
+        ))}
+      </div>
       <div className="grid gap-7 lg:grid-cols-[252px_1fr]">
         <div className="space-y-5">
           {priceBounds.min > 0 && (

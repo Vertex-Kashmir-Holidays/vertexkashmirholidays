@@ -117,6 +117,7 @@ export function buildTouristTrip(tour: {
           }
         : {}),
     },
+    provider: { "@id": `${siteUrl}/#organization` },
     offers: {
       "@type": "Offer",
       priceCurrency: "INR",
