@@ -20,12 +20,12 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 
   return buildMetadata({
-    // No brand suffix — the root layout title template appends it.
     title: "Kashmir Tour Packages — Honeymoon, Family & Adventure Trips",
     description:
       section?.subtitle ??
       "Browse all Kashmir tour packages from Vertex Kashmir Holidays — honeymoon, family, adventure and luxury itineraries with Dal Lake houseboats, Gulmarg Gondola and glacier treks. Book online with local experts.",
     canonical: `${SITE_URL}/tours`,
+    ogImage: section?.ogImage ?? section?.heroImage ?? null,
   });
 }
 
@@ -68,6 +68,8 @@ export default async function ToursPage() {
           ctaLabel: section?.ctaLabel ?? null,
           ctaHref: section?.ctaHref ?? null,
         }}
+        heroImage={section?.heroImage ?? null}
+        heroImageMobile={section?.heroImageMobile ?? null}
         stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
       <ToursPageClient

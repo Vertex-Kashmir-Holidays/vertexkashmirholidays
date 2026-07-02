@@ -243,6 +243,7 @@ model Tour {
   inclusions   String            @default("[]")
   exclusions   String            @default("[]")
   priceFrom    Float
+  minPersons   Int      @default(1)
   priceWas     Float?
   discountPct  Int?
   bestseller   Boolean           @default(false)
@@ -548,6 +549,7 @@ model BlogContent {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   heroImageMobile       String?
+  ogImage               String?
 }
 
 model BlogCategory {
@@ -621,15 +623,18 @@ model HomeContent {
 }
 
 model HomeSection {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  kicker    String?
-  title     String?
-  subtitle  String?
-  ctaLabel  String?
-  ctaHref   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  key             String   @unique
+  kicker          String?
+  title           String?
+  subtitle        String?
+  ctaLabel        String?
+  ctaHref         String?
+  heroImage       String?  // desktop banner — gallery URL or absolute URL
+  heroImageMobile String?  // mobile banner (≤640 px)
+  ogImage         String?  // OG / social-share image for that listing page
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model HeroSlide {
@@ -753,6 +758,7 @@ model AboutContent {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   heroImageMobile       String?
+  ogImage               String?
 }
 
 model AboutStoryFeature {
@@ -869,6 +875,7 @@ model ContactContent {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   heroImageMobile    String?
+  ogImage            String?
 }
 
 model ContactHeroFeature {
