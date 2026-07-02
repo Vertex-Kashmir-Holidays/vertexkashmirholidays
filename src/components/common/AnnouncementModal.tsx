@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { Logo } from "@/components/brand/Logo";
 
 const STORAGE_KEY = "vkh_announcement_dismissed";
+const OPEN_DELAY_MS = 1.5 * 60 * 1000;
 
 export function AnnouncementModal() {
   const { showAnnouncementBanner, announcementMessage, whatsapp, sitePhone } =
     useSiteSettings();
   const buildWhatsApp = useWhatsAppLink();
   const [open, setOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!showAnnouncementBanner) return;
@@ -19,7 +23,7 @@ export function AnnouncementModal() {
     let t: ReturnType<typeof setTimeout>;
 
     const schedule = () => {
-      t = setTimeout(() => setOpen(true), 3_000);
+      t = setTimeout(() => setOpen(true), OPEN_DELAY_MS);
     };
 
     if (document.readyState === "complete") {
@@ -33,6 +37,51 @@ export function AnnouncementModal() {
       window.removeEventListener("load", schedule);
     };
   }, [showAnnouncementBanner]);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
+  // Focus the dialog on open so keyboard/AT users land inside it
+  useEffect(() => {
+    if (!open) return;
+    const id = setTimeout(() => closeRef.current?.focus(), 30);
+    return () => clearTimeout(id);
+  }, [open]);
+
+  // Escape to close + Tab focus-trap
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { dismiss(); return; }
+
+      if (e.key === "Tab") {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const focusable = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]),[href],[tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open]);
 
   function dismiss() {
     sessionStorage.setItem(STORAGE_KEY, "1");
@@ -56,30 +105,46 @@ export function AnnouncementModal() {
       onClick={dismiss}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Announcement"
         className="relative w-full sm:max-w-lg bg-white dark:bg-neutral-900 sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Hero banner */}
-        <div className="relative h-36 bg-gradient-to-br from-emerald-600 via-teal-500 to-cyan-500 overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10" />
-          <div className="absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/10" />
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full bg-white/10" />
+        {/* Hero banner — same cream/gold + navy scene as the brand placeholders (public/brand/placeholders), minus their baked-in wordmark text */}
+        <div className="relative h-36 bg-gradient-to-b from-[#FBF6EA] to-[#F0E6CD] dark:from-[#0B1F3A] dark:to-[#0A1A2E] overflow-hidden">
+          {/* Brand glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_70%_at_50%_35%,rgba(194,161,78,0.16),transparent_70%)] dark:bg-[radial-gradient(ellipse_60%_70%_at_50%_35%,rgba(11,164,91,0.14),transparent_70%)]" />
 
-          {/* Mountain silhouette SVG */}
+          {/* Mountain silhouette layers */}
           <svg
-            className="absolute bottom-0 left-0 w-full opacity-20"
+            className="absolute bottom-0 left-0 w-full"
             viewBox="0 0 400 60"
             preserveAspectRatio="none"
-            fill="white"
           >
-            <path d="M0 60 L60 20 L100 35 L160 5 L220 30 L280 10 L340 28 L400 15 L400 60 Z" />
+            <path
+              d="M0 44 L48 34 L88 41 L136 30 L184 39 L232 28 L280 38 L328 30 L368 39 L400 33 L400 60 L0 60 Z"
+              className="fill-[#E7DABB] dark:fill-[#16345C]"
+              opacity={0.65}
+            />
+            <path
+              d="M0 50 L40 43 L80 49 L120 41 L160 47 L200 38 L240 46 L288 40 L336 47 L376 42 L400 48 L400 60 L0 60 Z"
+              className="fill-[#D8C49A] dark:fill-[#1E3E69]"
+              opacity={0.9}
+            />
           </svg>
+
+          {/* Logo */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2">
+            <Logo variant="auto" href="" />
+          </div>
 
           {/* Close */}
           <button
+            ref={closeRef}
             onClick={dismiss}
-            className="absolute top-3 right-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+            className="absolute top-3 right-3 p-1.5 rounded-full bg-black/5 hover:bg-black/10 text-brand-navy dark:bg-white/15 dark:hover:bg-white/25 dark:text-white transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -88,7 +153,7 @@ export function AnnouncementModal() {
           {/* Wave emoji + headline */}
           <div className="absolute bottom-4 left-6">
             <p className="text-2xl mb-0.5">👋</p>
-            <h2 className="text-white font-extrabold text-xl leading-tight tracking-tight drop-shadow">
+            <h2 className="text-brand-navy dark:text-white font-extrabold text-xl leading-tight tracking-tight dark:drop-shadow">
               Welcome to Kashmir!
             </h2>
           </div>
@@ -112,7 +177,7 @@ export function AnnouncementModal() {
             <div className="text-2xl">🏔️</div>
             <div>
               <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">
-                Kashmir · Ladakh · Gulmarg · Pahalgam
+                Kashmir · Ladakh · Gulmarg · Pahalgam · Vaishno Devi
               </p>
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                 Custom itineraries · Group & private tours · Honeymoon packages
