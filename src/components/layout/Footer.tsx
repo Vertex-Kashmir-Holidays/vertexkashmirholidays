@@ -116,7 +116,7 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
                <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
              </li>
              <li>
-               <Link href="/offers" className="transition hover:text-primary">Special Offers</Link>
+               <Link href="/campaign" className="transition hover:text-primary">Special Offers</Link>
              </li>
              <li>
                <Link href="/blog" className="transition hover:text-primary">Travel Blog</Link>
