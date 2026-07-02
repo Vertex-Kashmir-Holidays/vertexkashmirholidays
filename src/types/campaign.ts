@@ -1,5 +1,19 @@
 // Serializable shapes passed from the campaign page (server) to its client sections.
 
+// Lightweight shape used by the public campaign listing grid (server → client).
+export interface CampaignListItemData {
+  id: string;
+  slug: string;
+  name: string;
+  sub: string | null;
+  badge: string | null;
+  image: string | null;
+  priceFrom: number | null;
+  priceWas: number | null;
+  offerText: string | null;
+  facts: string[];
+}
+
 export interface CampaignHighlight {
   image: string;
   emoji: string;
