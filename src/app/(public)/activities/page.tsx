@@ -10,28 +10,33 @@ import Link from "next/link";
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
+  const section = await prisma.homeSection.findUnique({ where: { key: "activitiesHero" } });
   return buildMetadata({
     title: "Things to Do in Kashmir — Activities & Experiences",
     description:
       "Discover the best things to do in Kashmir — shikara rides, Gulmarg gondola, trekking, skiing, river rafting and more. Handpicked activities by Vertex Kashmir Holidays.",
     canonical: `${SITE_URL}/activities`,
+    ogImage: section?.ogImage ?? section?.heroImage ?? null,
   });
 }
 
 export default async function ActivitiesPage() {
-  const activities = await prisma.activity.findMany({
-    where: { published: true },
-    orderBy: { sortOrder: "asc" },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      location: true,
-      duration: true,
-      price: true,
-      coverImage: true,
-    },
-  });
+  const [section, activities] = await Promise.all([
+    prisma.homeSection.findUnique({ where: { key: "activitiesHero" } }),
+    prisma.activity.findMany({
+      where: { published: true },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        location: true,
+        duration: true,
+        price: true,
+        coverImage: true,
+      },
+    }),
+  ]);
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
@@ -49,8 +54,8 @@ export default async function ActivitiesPage() {
       {activities.length > 0 && <JsonLd data={listJsonLd} />}
 
       <SecondaryHero
-        image="/hero/gulmarg-lg.webp"
-        imageMobile="/hero/gulmarg.webp"
+        image={section?.heroImage ?? "/hero/gulmarg-lg.webp"}
+        imageMobile={section?.heroImageMobile ?? "/hero/gulmarg.webp"}
         alt="Things to do in Kashmir"
         aside={<HeroLeadCard source="activities" buttonLabel="Plan My Activities" />}
       >

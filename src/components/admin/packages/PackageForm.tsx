@@ -47,6 +47,7 @@ const packageSchema = z.object({
   description: z.string().default(""),
   coverImage: z.string().default(""),
   priceFrom: z.number().positive("Price must be positive"),
+  minPersons: z.number().int().min(1).default(1),
   priceWas: nanToNull,
   discountPct: z.preprocess(
     (v) => (v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v)) ? null : Number(v)),
@@ -80,6 +81,7 @@ export interface PackageFormDefaults {
   description?: string;
   coverImage?: string;
   priceFrom?: number;
+  minPersons?: number;
   priceWas?: number | null;
   discountPct?: number | null;
   bestseller?: boolean;
@@ -288,6 +290,7 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
       description: defaults?.description ?? "",
       coverImage: defaults?.coverImage ?? "",
       priceFrom: defaults?.priceFrom ?? 0,
+      minPersons: defaults?.minPersons ?? 1,
       priceWas: defaults?.priceWas ?? null,
       discountPct: defaults?.discountPct ?? null,
       bestseller: defaults?.bestseller ?? false,
@@ -501,6 +504,11 @@ export function PackageForm({ defaults, activityOptions = [] }: PackageFormProps
               <FieldLabel required>Price From (₹)</FieldLabel>
               <TextInput {...register("priceFrom", { valueAsNumber: true })} type="number" min={0} placeholder="25000" />
               <FieldError message={errors.priceFrom?.message} />
+            </div>
+            <div>
+              <FieldLabel>Min. Persons</FieldLabel>
+              <TextInput {...register("minPersons", { valueAsNumber: true })} type="number" min={1} max={50} placeholder="1" />
+              <p className="text-[11px] text-muted-foreground mt-1">Minimum travellers required to book</p>
             </div>
             <div>
               <FieldLabel>Original Price (₹)</FieldLabel>

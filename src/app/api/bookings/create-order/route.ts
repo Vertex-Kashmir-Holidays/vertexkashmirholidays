@@ -11,7 +11,8 @@ import { logPaymentAudit } from "@/lib/bookings/audit";
 //   • A booking's travel date must be at least MIN_LEAD_DAYS away (lead time).
 //   • A customer's next tour can only start BOOKING_GAP_DAYS after an existing
 //     active booking's start date (trips are kept apart).
-const MIN_LEAD_DAYS = 7;
+const MIN_LEAD_DAYS = 4;
+const MAX_BOOKING_MONTHS = 6;
 const BOOKING_GAP_DAYS = 15;
 
 const fmtDate = (d: Date) =>
@@ -83,13 +84,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const latestTravel = new Date(todayStart);
+  latestTravel.setMonth(latestTravel.getMonth() + MAX_BOOKING_MONTHS);
+  if (travel > latestTravel) {
+    return NextResponse.json(
+      { error: `Travel date cannot be more than ${MAX_BOOKING_MONTHS} months from today.` },
+      { status: 422 },
+    );
+  }
+
   const tour = await prisma.tour.findUnique({
     where: { id: tourId },
-    select: { id: true, title: true, priceFrom: true, published: true },
+    select: { id: true, title: true, priceFrom: true, duration: true, minPersons: true, published: true },
   });
 
   if (!tour || !tour.published) {
     return NextResponse.json({ error: "Tour not found" }, { status: 404 });
+  }
+
+  if (travellers < tour.minPersons) {
+    return NextResponse.json(
+      { error: `This tour requires a minimum of ${tour.minPersons} traveller${tour.minPersons > 1 ? "s" : ""}.` },
+      { status: 422 },
+    );
   }
 
   // Duplicate-booking guard: block a second *paid/confirmed* booking for the same
@@ -128,15 +145,18 @@ export async function POST(req: NextRequest) {
       status: { in: ["CONFIRMED", "PAID"] },
       deletedAt: null,
     },
-    select: { travelDate: true },
+    select: { travelDate: true, tour: { select: { duration: true } } },
   });
   for (const b of activeBookings) {
-    const earliestNext = new Date(b.travelDate);
+    // Gap is measured from end of trip (travelDate + duration) not just start.
+    const tripEnd = new Date(b.travelDate);
+    tripEnd.setDate(tripEnd.getDate() + (b.tour?.duration ?? 1));
+    const earliestNext = new Date(tripEnd);
     earliestNext.setDate(earliestNext.getDate() + BOOKING_GAP_DAYS);
     if (travel >= b.travelDate && travel < earliestNext) {
       return NextResponse.json(
         {
-          error: `You already have a tour starting ${fmtDate(b.travelDate)}. To keep trips at least ${BOOKING_GAP_DAYS} days apart, your next booking can start from ${fmtDate(earliestNext)} onwards. Contact us if you need a different arrangement.`,
+          error: `You have an active trip ending ${fmtDate(tripEnd)}. Your next tour can start from ${fmtDate(earliestNext)} onwards (${BOOKING_GAP_DAYS} days after trip ends). Contact us if you need a different arrangement.`,
         },
         { status: 409 },
       );

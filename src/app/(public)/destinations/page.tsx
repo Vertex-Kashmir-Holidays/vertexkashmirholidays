@@ -11,38 +11,42 @@ import type { DestinationCardData } from '@/components/destinations/Destinations
 
 export const revalidate = 300;
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
+  const section = await prisma.homeSection.findUnique({ where: { key: 'destinationsHero' } });
   return buildMetadata({
     title: 'Kashmir Destinations — Gulmarg, Pahalgam, Srinagar & More',
     description:
       'Explore the most beautiful destinations in Kashmir & Ladakh with Vertex Kashmir Holidays — meadows, lakes, glaciers and high passes, with curated tour packages for each.',
     canonical: `${SITE_URL}/destinations`,
+    ogImage: section?.ogImage ?? section?.heroImage ?? null,
   });
 }
 
 export default async function DestinationsPage() {
-  const destinations = await prisma.destination.findMany({
-    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-    select: {
-      slug: true,
-      name: true,
-      tagline: true,
-      excerpt: true,
-      description: true,
-      coverImage: true,
-      altitude: true,
-      season: true,
-      region: true,
-      location: true,
-      _count: { select: { tours: { where: { tour: { published: true } } } } },
-    },
-  });
+  const [section, destinations] = await Promise.all([
+    prisma.homeSection.findUnique({ where: { key: 'destinationsHero' } }),
+    prisma.destination.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: {
+        slug: true,
+        name: true,
+        tagline: true,
+        excerpt: true,
+        description: true,
+        coverImage: true,
+        altitude: true,
+        season: true,
+        region: true,
+        location: true,
+        _count: { select: { tours: { where: { tour: { published: true } } } } },
+      },
+    }),
+  ]);
 
   const cards: DestinationCardData[] = destinations.map((d) => ({
     slug: d.slug,
     name: d.name,
     tagline: d.tagline,
-    // Cards want a short blurb — prefer the excerpt, fall back to description.
     description: d.excerpt ?? d.description,
     coverImage: d.coverImage,
     altitude: d.altitude,
@@ -53,7 +57,10 @@ export default async function DestinationsPage() {
 
   return (
     <div className="bg-background text-foreground">
-      <DestinationsHero />
+      <DestinationsHero
+        heroImage={section?.heroImage ?? null}
+        heroImageMobile={section?.heroImageMobile ?? null}
+      />
       <DestinationsBrowser destinations={cards} />
       <DestinationsCTABand />
       <DestinationsThingsToDo />

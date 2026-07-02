@@ -16,11 +16,13 @@ import { sanitizePressHtml } from '@/lib/sanitize';
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
+  const content = await prisma.aboutContent.findUnique({ where: { id: 'singleton' } });
   return buildMetadata({
     title: 'About Us — Local Kashmir Travel Experts',
     description:
       'Meet Vertex Kashmir Holidays — a Srinagar-based team crafting honest, handpicked Kashmir tours with zero middlemen, transparent pricing and 24/7 on-ground support.',
     canonical: `${SITE_URL}/about`,
+    ogImage: content?.ogImage ?? content?.heroImage ?? null,
   });
 }
 

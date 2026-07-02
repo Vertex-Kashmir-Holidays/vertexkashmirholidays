@@ -34,6 +34,7 @@ export default async function BookingPage({
         category: true,
         priceFrom: true,
         duration: true,
+        minPersons: true,
         coverImage: true,
       },
     }),
@@ -49,8 +50,29 @@ export default async function BookingPage({
 
   if (!tour) redirect("/tours");
 
+  // For logged-in customers, compute the earliest they can book based on their
+  // last active booking's end date + 15 days gap.
+  let earliestDateFromBooking: string | undefined;
+  if (session?.user?.email) {
+    const lastBooking = await prisma.booking.findFirst({
+      where: {
+        guestEmail: session.user.email.toLowerCase(),
+        status: { in: ["CONFIRMED", "PAID"] },
+        deletedAt: null,
+      },
+      orderBy: { travelDate: "desc" },
+      select: { travelDate: true, tour: { select: { duration: true } } },
+    });
+    if (lastBooking) {
+      const tripEnd = new Date(lastBooking.travelDate);
+      tripEnd.setDate(tripEnd.getDate() + (lastBooking.tour?.duration ?? 1));
+      tripEnd.setDate(tripEnd.getDate() + 15);
+      earliestDateFromBooking = tripEnd.toISOString().split("T")[0];
+    }
+  }
+
   const initialDate = date ?? "";
-  const initialTravellers = parseInt(travellers ?? "2", 10) || 2;
+  const initialTravellers = parseInt(travellers ?? "1", 10) || tour.minPersons;
   const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
 
   return (
@@ -111,8 +133,10 @@ export default async function BookingPage({
           priceFrom={tour.priceFrom}
           duration={tour.duration}
           coverImage={tour.coverImage}
+          minPersons={tour.minPersons}
           initialDate={initialDate}
           initialTravellers={initialTravellers}
+          earliestDateFromBooking={earliestDateFromBooking}
           whatsappNumber={whatsappNumber}
           defaultName={customer?.name ?? ""}
           defaultEmail={customer?.email ?? ""}

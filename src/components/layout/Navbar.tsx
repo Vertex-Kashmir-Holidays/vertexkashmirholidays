@@ -34,6 +34,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/tours', label: 'Tours' },
+    { href: '/campaign', label: 'Campaigns' },
     { href: '/destinations', label: 'Destinations' },
     { href: '/activities', label: 'Activities' },
     { href: '/about', label: 'About Us' },
@@ -55,7 +56,7 @@ export function Navbar() {
   // Pages that open with a full-bleed dark hero behind the navbar. Only on these
   // does the un-scrolled navbar go transparent with a white lockup; everywhere
   // else (booking, legal, etc.) it keeps the cream glass + ink/theme-aware logo.
-  const heroRoutes = ['/', '/tours', '/destinations', '/activities', '/about', '/blog', '/contact'];
+  const heroRoutes = ['/', '/tours', '/campaign', '/destinations', '/activities', '/about', '/blog', '/contact'];
   const hasHero =
     heroRoutes.includes(pathname) ||
     /^\/(tours|destinations|blog|activities)\/[^/]+$/.test(pathname);

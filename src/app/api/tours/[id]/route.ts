@@ -20,6 +20,7 @@ const patchSchema = z.object({
   exclusions: z.string().optional(),
   batches: z.string().optional(),
   priceFrom: z.coerce.number().positive().optional(),
+  minPersons: z.coerce.number().int().min(1).optional(),
   priceWas: z.coerce.number().positive().optional().nullable(),
   discountPct: z.coerce.number().int().min(0).max(100).optional().nullable(),
   bestseller: z.boolean().optional(),
