@@ -66,5 +66,12 @@ export function trackBookingStarted(packageName?: string): void {
 
 /** Fire once on the booking success page after payment is confirmed. */
 export function trackBookingCompleted(bookingId: string, value: number, packageName: string): void {
- push({ event: "booking_completed", booking_id: bookingId, value, package_name: packageName });
+ push({
+   event: "booking_completed",
+   booking_id: bookingId,
+   value,
+   currency: "INR",
+   package_name: packageName,
+   items: [{ item_name: packageName, price: value, quantity: 1 }],
+ });
 }

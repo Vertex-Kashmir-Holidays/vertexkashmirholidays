@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { PhoneOff, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PhoneOff, Loader2, Minimize2, Maximize2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   meetingId: string;
@@ -44,9 +45,18 @@ export function MeetingModal({
 }: Props) {
   const [token, setToken] = useState<TokenData | null>(null);
   const [tokenError, setTokenError] = useState(false);
+  const [answered, setAnswered] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const answeredRef = useRef(false);
   const apiRef = useRef<JitsiAPI | null>(null);
+
+  const handleAnswered = useCallback(() => {
+    if (answeredRef.current) return;
+    answeredRef.current = true;
+    setAnswered(true);
+    onAnswered?.();
+  }, [onAnswered]);
 
   // Fetch JaaS JWT
   useEffect(() => {
@@ -72,16 +82,13 @@ export function MeetingModal({
           onLeave();
           return;
         }
-        if (!answeredRef.current && count > 1) {
-          answeredRef.current = true;
-          onAnswered?.();
-        }
+        if (count > 1) handleAnswered();
       } catch {
         // best-effort
       }
     }, 3_000);
     return () => clearInterval(id);
-  }, [token, meetingId, onLeave, onAnswered]);
+  }, [token, meetingId, onLeave, handleAnswered]);
 
   // Mount JitsiMeetExternalAPI — mirrors the 8x8.vc demo HTML approach
   useEffect(() => {
@@ -102,7 +109,7 @@ export function MeetingModal({
           disableDeepLinking: true,
           prejoinPageEnabled: false,
           disableInviteFunctions: true,
-          desktopSharingEnabled: false,
+          desktopSharingEnabled: true,
         },
         interfaceConfigOverwrite: {
           SHOW_JITSI_WATERMARK: false,
@@ -115,18 +122,13 @@ export function MeetingModal({
       // Set allow attribute synchronously before the browser evaluates
       // Permissions Policy — must happen before any getUserMedia call.
       const iframe = api.getIFrame();
-      iframe.setAttribute("allow", "camera; microphone; autoplay; clipboard-write");
+      iframe.setAttribute("allow", "camera; microphone; autoplay; clipboard-write; display-capture");
       iframe.style.height = "100%";
       iframe.style.width = "100%";
 
       api.addEventListeners({
         readyToClose: onLeave,
-        participantJoined: () => {
-          if (!answeredRef.current) {
-            answeredRef.current = true;
-            onAnswered?.();
-          }
-        },
+        participantJoined: handleAnswered,
       });
 
       apiRef.current = api;
@@ -147,7 +149,7 @@ export function MeetingModal({
       apiRef.current?.dispose?.();
       apiRef.current = null;
     };
-  }, [token, jitsiRoomId, displayName, audioOnly, onLeave, onAnswered]);
+  }, [token, jitsiRoomId, displayName, audioOnly, onLeave, handleAnswered]);
 
   if (tokenError) {
     return (
@@ -178,10 +180,15 @@ export function MeetingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#1e1e1e]">
+    <div
+      className={cn(
+        "fixed z-50 flex flex-col bg-[#1e1e1e] transition-all",
+        minimized ? "bottom-4 right-4 w-72 h-44 rounded-xl overflow-hidden shadow-2xl" : "inset-0",
+      )}
+    >
       {/* Top bar */}
       <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-black/40 backdrop-blur-sm">
-        {isCreator && (
+        {!minimized && isCreator && (
           <button
             onClick={onEndForAll}
             className="text-xs px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800 transition-colors font-medium"
@@ -189,12 +196,21 @@ export function MeetingModal({
             End for all
           </button>
         )}
+        {answered && (
+          <button
+            onClick={() => setMinimized((m) => !m)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label={minimized ? "Expand call" : "Minimize call"}
+          >
+            {minimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
+          </button>
+        )}
         <button
           onClick={onLeave}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
         >
           <PhoneOff className="w-3.5 h-3.5" />
-          Leave
+          {!minimized && "Leave"}
         </button>
       </div>
 
