@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Upload, Loader2, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { uploadVideoDirect } from "@/lib/uploadVideoDirect";
 
 const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -24,13 +25,9 @@ export function VideoField({
   async function upload(file: File) {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", folder);
-      const res = await fetch("/api/uploads", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      onChange(data.url);
+      const result = await uploadVideoDirect(file, { folder });
+      if (!result.ok) throw new Error(result.error);
+      onChange(result.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
