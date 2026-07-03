@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, X, Search, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
 
 type SourceFilter = "ALL" | "LOCAL" | "STOCK";
 
@@ -36,6 +37,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
   const [pages, setPages] = useState(1);
   const [q, setQ] = useState("");
   const [source, setSource] = useState<SourceFilter>("ALL");
+  const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
 
   // Load (or append) a page of gallery assets whenever the modal opens or the
   // page advances. Closing resets back to the first page.
@@ -139,10 +141,25 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                     <video src={item.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.url} alt={item.alt ?? ""} className="h-full w-full object-cover" />
+                    <img
+                      src={item.url}
+                      alt={item.alt ?? ""}
+                      className="h-full w-full object-cover"
+                      onLoad={(e) => {
+                        const { naturalWidth, naturalHeight } = e.currentTarget;
+                        setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
+                      }}
+                    />
                   )}
                   {item.type === "VIDEO" && (
                     <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</span>
+                  )}
+                  {item.type !== "VIDEO" && dims[item.id] && (
+                    <ImageDimensionBadge
+                      width={dims[item.id].width}
+                      height={dims[item.id].height}
+                      className="absolute top-1 right-1"
+                    />
                   )}
                 </button>
               ))}

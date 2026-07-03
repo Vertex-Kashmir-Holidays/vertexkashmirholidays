@@ -3,8 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film, ImageOff } from "lucide-react";
+import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film, ImageOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
+import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
 
 type MediaType = "IMAGE" | "VIDEO";
 type SourceTab = "ALL" | "LOCAL" | "STOCK";
@@ -49,6 +51,8 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
   const [sourceTab, setSourceTab] = useState<SourceTab>("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set());
+  const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const filtered = initialItems.filter(
     (i) =>
@@ -57,11 +61,81 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
       (sourceTab === "ALL" || getSource(i) === sourceTab)
   );
 
+  // Lightbox only shows real, loadable images — videos and broken images are excluded,
+  // so indices here are independent of their position in `filtered`.
+  const viewableImages = filtered.filter((i) => i.type !== "VIDEO" && !brokenIds.has(i.id));
+  const lightboxImages = viewableImages.map((i) => ({
+    src: i.url,
+    alt: i.alt ?? undefined,
+    width: dims[i.id]?.width,
+    height: dims[i.id]?.height,
+  }));
+
+  const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
+
+  // Videos upload straight from the browser to Cloudinary (signed) instead of
+  // through our own /api/uploads route — Vercel hard-caps Serverless Function
+  // request bodies at ~4.5 MB, well under our 10 MB video limit, so anything
+  // over that would 413 if proxied through our server.
+  async function uploadVideoDirect(file: File): Promise<boolean> {
+    if (file.size > MAX_VIDEO_SIZE) {
+      toast.error("Video too large (max 10 MB).");
+      return false;
+    }
+
+    const signRes = await fetch("/api/uploads/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder: newCategory || "general" }),
+    });
+    if (!signRes.ok) {
+      const { error } = await signRes.json().catch(() => ({ error: "" }));
+      toast.error(error || "Couldn't prepare video upload.");
+      return false;
+    }
+    const { cloudName, apiKey, timestamp, signature, folder, publicId } = await signRes.json();
+
+    const cloudFd = new FormData();
+    cloudFd.append("file", file);
+    cloudFd.append("api_key", apiKey);
+    cloudFd.append("timestamp", String(timestamp));
+    cloudFd.append("signature", signature);
+    cloudFd.append("folder", folder);
+    cloudFd.append("public_id", publicId);
+    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+      method: "POST",
+      body: cloudFd,
+    });
+    if (!uploadRes.ok) {
+      toast.error("Video upload to Cloudinary failed.");
+      return false;
+    }
+    const uploaded = await uploadRes.json();
+
+    const galleryRes = await fetch("/api/galleries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: uploaded.secure_url,
+        publicId: uploaded.public_id,
+        type: "VIDEO",
+        category: newCategory || undefined,
+        alt: newAlt || undefined,
+      }),
+    });
+    return galleryRes.ok;
+  }
+
   async function handleUpload(files: FileList) {
     setUploading(true);
     let uploaded = 0;
     try {
       for (const file of Array.from(files)) {
+        if (file.type.startsWith("video/")) {
+          if (await uploadVideoDirect(file)) uploaded++;
+          continue;
+        }
+
         // The uploads route stores the file under the chosen category folder and
         // registers it in the Gallery in one step — no separate create needed.
         const fd = new FormData();
@@ -217,7 +291,18 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-4">
               {filtered.map((item) => (
-                <div key={item.id} className="relative group aspect-square rounded-xl overflow-hidden bg-muted">
+                <div
+                  key={item.id}
+                  className={cn(
+                    "relative group aspect-square rounded-xl overflow-hidden bg-muted",
+                    item.type !== "VIDEO" && !brokenIds.has(item.id) && "cursor-pointer",
+                  )}
+                  onClick={() => {
+                    if (item.type === "VIDEO" || brokenIds.has(item.id)) return;
+                    const idx = viewableImages.findIndex((i) => i.id === item.id);
+                    if (idx !== -1) setLightboxIndex(idx);
+                  }}
+                >
                   {item.type === "VIDEO" ? (
                     <video src={item.url} muted playsInline preload="metadata" className="w-full h-full object-cover" />
                   ) : brokenIds.has(item.id) ? (
@@ -232,14 +317,32 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                       alt={item.alt ?? ""}
                       className="w-full h-full object-cover"
                       onError={() => setBrokenIds((prev) => new Set([...prev, item.id]))}
+                      onLoad={(e) => {
+                        const { naturalWidth, naturalHeight } = e.currentTarget;
+                        setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
+                      }}
                     />
                   )}
-                  <div className={cn(
-                    "absolute inset-0 transition-all flex items-center justify-center gap-2",
-                    brokenIds.has(item.id)
-                      ? "bg-black/30 opacity-100" // always visible for broken images
-                      : "bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100",
-                  )}>
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "absolute inset-0 transition-all flex items-center justify-center gap-2",
+                      brokenIds.has(item.id)
+                        ? "bg-black/30 opacity-100" // always visible for broken images
+                        : "bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100",
+                    )}>
+                    {item.type !== "VIDEO" && !brokenIds.has(item.id) && (
+                      <button
+                        onClick={() => {
+                          const idx = viewableImages.findIndex((i) => i.id === item.id);
+                          if (idx !== -1) setLightboxIndex(idx);
+                        }}
+                        className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
+                        title="View full size"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleCopyUrl(item)}
                       className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
@@ -279,6 +382,13 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                     <span className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md pointer-events-none">
                       <Film className="w-2.5 h-2.5" /> VIDEO
                     </span>
+                  )}
+                  {dims[item.id] && (
+                    <ImageDimensionBadge
+                      width={dims[item.id].width}
+                      height={dims[item.id].height}
+                      className="absolute top-1.5 right-1.5"
+                    />
                   )}
                   {item.category && (
                     <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md">
@@ -383,6 +493,13 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
           )}
         </div>
       </div>
+
+      <GalleryLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex ?? 0}
+        open={lightboxIndex !== null}
+        onClose={() => setLightboxIndex(null)}
+      />
     </div>
   );
 }

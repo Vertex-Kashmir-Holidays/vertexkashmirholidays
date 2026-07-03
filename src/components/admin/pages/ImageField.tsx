@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Upload, Loader2, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
 
 const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -21,6 +22,9 @@ export function ImageField({
 }) {
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => setDims(null), [value]);
 
   async function upload(file: File) {
     setUploading(true);
@@ -66,7 +70,24 @@ export function ImageField({
         </label>
       </div>
       {value && (
-        <Image src={value} alt="" width={160} height={96} className="h-16 w-auto max-w-full rounded-lg border border-border object-cover" unoptimized />
+        <div className="relative inline-block">
+          <Image
+            key={value}
+            src={value}
+            alt=""
+            width={160}
+            height={96}
+            className="h-16 w-auto max-w-full rounded-lg border border-border object-cover"
+            unoptimized
+            onLoad={(e) => {
+              const { naturalWidth, naturalHeight } = e.currentTarget;
+              setDims({ width: naturalWidth, height: naturalHeight });
+            }}
+          />
+          {dims && (
+            <ImageDimensionBadge width={dims.width} height={dims.height} className="absolute top-1 right-1" />
+          )}
+        </div>
       )}
       <GalleryPicker open={pickerOpen} type="IMAGE" onSelect={onChange} onClose={() => setPickerOpen(false)} />
     </div>

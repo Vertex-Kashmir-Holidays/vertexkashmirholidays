@@ -6,6 +6,7 @@ import { ImageIcon, Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { STOCK_IMAGES } from "@/types/itinerary";
 import { cn } from "@/lib/utils";
+import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
 
 interface ImagePickerProps {
   value: string;
@@ -43,6 +44,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
   const [galleryPage, setGalleryPage] = useState(1);
   const [galleryPages, setGalleryPages] = useState(1);
   const [gallerySource, setGallerySource] = useState<SourceFilter>("ALL");
+  const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
 
   useEffect(() => setMounted(true), []);
 
@@ -150,7 +152,23 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                       )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.src} alt={img.label} className="h-20 w-full object-cover" loading="lazy" />
+                      <img
+                        src={img.src}
+                        alt={img.label}
+                        className="h-20 w-full object-cover"
+                        loading="lazy"
+                        onLoad={(e) => {
+                          const { naturalWidth, naturalHeight } = e.currentTarget;
+                          setDims((prev) => ({ ...prev, [img.src]: { width: naturalWidth, height: naturalHeight } }));
+                        }}
+                      />
+                      {dims[img.src] && (
+                        <ImageDimensionBadge
+                          width={dims[img.src].width}
+                          height={dims[img.src].height}
+                          className="absolute top-1 right-1"
+                        />
+                      )}
                       <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white">
                         {img.label}
                       </span>
@@ -199,7 +217,23 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                             title={item.alt ?? item.url}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.url} alt={item.alt ?? ""} className="h-20 w-full object-cover" loading="lazy" />
+                            <img
+                              src={item.url}
+                              alt={item.alt ?? ""}
+                              className="h-20 w-full object-cover"
+                              loading="lazy"
+                              onLoad={(e) => {
+                                const { naturalWidth, naturalHeight } = e.currentTarget;
+                                setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
+                              }}
+                            />
+                            {dims[item.id] && (
+                              <ImageDimensionBadge
+                                width={dims[item.id].width}
+                                height={dims[item.id].height}
+                                className="absolute top-1 right-1"
+                              />
+                            )}
                             {item.category && (
                               <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white">
                                 {item.category}

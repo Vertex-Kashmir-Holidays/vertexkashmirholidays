@@ -5,10 +5,14 @@ import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PLACEHOLDER_IMAGE } from '@/lib/placeholder';
+import { ImageDimensionBadge } from './ImageDimensionBadge';
 
 export interface LightboxImage {
   src: string;
   alt?: string;
+  /** Optional — when provided (e.g. by the admin gallery), shows a WxH/orientation badge. */
+  width?: number;
+  height?: number;
 }
 
 interface GalleryLightboxProps {
@@ -161,8 +165,8 @@ export function GalleryLightbox({
 
       {/* ── Controls (z-20, above image layer) ────────────────────────── */}
 
-      {/* Top bar: counter + close */}
-      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 py-3 sm:px-6">
+      {/* Bottom-center: counter + dimensions — standard lightbox placement */}
+      <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-center gap-2 px-4 py-4 sm:py-6">
         <span
           aria-live="polite"
           aria-atomic="true"
@@ -170,6 +174,13 @@ export function GalleryLightbox({
         >
           {current + 1} / {images.length}
         </span>
+        {image.width && image.height && (
+          <ImageDimensionBadge width={image.width} height={image.height} />
+        )}
+      </div>
+
+      {/* Top-right: close */}
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-end px-4 py-3 sm:px-6">
         <button
           ref={closeRef}
           onClick={onClose}
