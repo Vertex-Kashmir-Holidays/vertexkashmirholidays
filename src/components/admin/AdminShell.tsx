@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useNotificationSound } from "@/components/admin/connect/hooks/useNotificationSound";
 import { GlobalCallNotification } from "@/components/admin/connect/GlobalCallNotification";
+import { CallProvider } from "@/components/admin/connect/CallProvider";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -216,6 +217,7 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
   }));
 
   return (
+    <CallProvider currentUserId={userId} currentUserName={userName}>
     <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0">
@@ -281,8 +283,9 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
 
       {/* Global incoming call notification — rings from any page in the admin */}
       <Suspense>
-        <GlobalCallNotification currentUserId={userId} currentUserName={userName} />
+        <GlobalCallNotification currentUserId={userId} />
       </Suspense>
     </div>
+    </CallProvider>
   );
 }
