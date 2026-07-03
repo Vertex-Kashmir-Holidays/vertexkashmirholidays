@@ -20,7 +20,11 @@ interface TokenData {
 }
 
 interface JitsiAPI {
-  addEventListeners: (listeners: Record<string, () => void>) => void;
+  addEventListeners: (listeners: {
+    readyToClose?: () => void;
+    participantJoined?: () => void;
+    screenSharingStatusChanged?: (event: { on: boolean }) => void;
+  }) => void;
   getIFrame: () => HTMLIFrameElement;
   dispose: () => void;
 }
@@ -129,6 +133,12 @@ export function MeetingModal({
       api.addEventListeners({
         readyToClose: onLeave,
         participantJoined: handleAnswered,
+        // Auto-shrink to a corner box when screen sharing starts, so the
+        // presenter can navigate the CRM to pick what to show — mirrors
+        // the Teams/Zoom "sharing" behaviour. Restoring is manual (Maximize).
+        screenSharingStatusChanged: (e) => {
+          if (e.on) setMinimized(true);
+        },
       });
 
       apiRef.current = api;
