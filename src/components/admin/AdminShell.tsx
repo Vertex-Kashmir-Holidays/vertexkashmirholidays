@@ -60,6 +60,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   contact: Phone,
   legal: ScrollText,
   campaigns: Megaphone,
+  banners: Megaphone,
   reviews: Star,
   seo: Globe,
   settings: Settings,

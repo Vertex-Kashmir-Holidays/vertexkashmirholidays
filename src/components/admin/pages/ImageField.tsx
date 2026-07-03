@@ -41,17 +41,18 @@ export function ImageField({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Image URL" className={inputCls} />
+      {/* Controls wrap on narrow screens so nothing overflows at ≤360px. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Image URL" className={`${inputCls} min-w-0 flex-1 basis-[180px]`} />
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
+          className="flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
         >
           <Images className="h-4 w-4" />
           Gallery
         </button>
-        <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted">
+        <label className="flex min-h-[40px] shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted">
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           Upload
           <input
@@ -60,11 +61,12 @@ export function ImageField({
             className="hidden"
             onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
           />
-          <span className="text-[10px] text-muted-foreground">PNG · SVG · WebP · max 500 KB</span>
+          {/* Helper text hidden on the smallest screens to save width. */}
+          <span className="hidden text-[10px] text-muted-foreground sm:inline">PNG · SVG · WebP · max 500 KB</span>
         </label>
       </div>
       {value && (
-        <Image src={value} alt="" width={120} height={72} className="h-16 w-auto rounded-lg border border-border object-cover" unoptimized />
+        <Image src={value} alt="" width={160} height={96} className="h-16 w-auto max-w-full rounded-lg border border-border object-cover" unoptimized />
       )}
       <GalleryPicker open={pickerOpen} type="IMAGE" onSelect={onChange} onClose={() => setPickerOpen(false)} />
     </div>

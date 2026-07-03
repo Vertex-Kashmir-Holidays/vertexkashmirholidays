@@ -76,17 +76,17 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-card p-5 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between gap-3">
           <h4 className="font-display text-base font-bold text-foreground">
             {title ?? `Choose ${type === "VIDEO" ? "a video" : type === "IMAGE" ? "an image" : "media"} from gallery`}
           </h4>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+          <button onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Source tabs */}
-        <div className="mb-3 flex items-center gap-1.5 overflow-x-auto">
+        {/* Source tabs — wrap (never scroll) so pills/emoji are never clipped. */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {([
             { key: "ALL",   label: "All" },
             { key: "LOCAL", label: "💾 Local" },
@@ -97,7 +97,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
               type="button"
               onClick={() => setSource(key)}
               className={cn(
-                "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors",
+                "rounded-full px-3.5 py-1.5 text-xs font-bold leading-normal transition-colors",
                 source === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80",
               )}
             >

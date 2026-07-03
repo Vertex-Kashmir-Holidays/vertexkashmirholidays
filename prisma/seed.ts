@@ -43,6 +43,7 @@ async function main() {
   const ALL: [boolean, boolean, boolean, boolean] = [true, true, true, true];
   const VIEW: [boolean, boolean, boolean, boolean] = [true, false, false, false];
   const VIEW_EDIT: [boolean, boolean, boolean, boolean] = [true, false, true, false];
+  const VIEW_CREATE_EDIT: [boolean, boolean, boolean, boolean] = [true, true, true, false];
   const NONE: [boolean, boolean, boolean, boolean] = [false, false, false, false];
 
   const PERMISSION_DEFAULTS: Record<
@@ -66,6 +67,7 @@ async function main() {
       contact: ALL,
       legal: ALL,
       campaigns: ALL,
+      banners: ALL,
       reviews: ALL,
       seo: ALL,
       settings: ALL,
@@ -88,6 +90,7 @@ async function main() {
       contact: ALL,
       legal: ALL,
       campaigns: ALL,
+      banners: ALL,
       reviews: VIEW_EDIT,
       seo: ALL,
       settings: ALL,
@@ -110,6 +113,7 @@ async function main() {
       contact: NONE,
       legal: NONE,
       campaigns: NONE,
+      banners: VIEW_CREATE_EDIT,
       reviews: VIEW_EDIT,
       seo: NONE,
       settings: NONE,
@@ -132,6 +136,7 @@ async function main() {
       contact: ALL,
       legal: ALL,
       campaigns: ALL,
+      banners: VIEW_CREATE_EDIT,
       reviews: VIEW_EDIT,
       seo: ALL,
       settings: NONE,

@@ -268,7 +268,6 @@ export default async function DestinationDetailPage({ params }: PageProps) {
       <DestinationDetailHero
         name={dest.name}
         tagline={dest.tagline ?? ""}
-        description={dest.description ?? dest.excerpt ?? ""}
         region={region}
         image={heroImage}
         stats={stats}
