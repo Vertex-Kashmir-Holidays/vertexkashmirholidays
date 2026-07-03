@@ -251,7 +251,7 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
             ? <Avatar name={sender.name} image={sender.image} />
             : <div className="w-7 shrink-0" />
         )}
-        <div className={cn("flex flex-col max-w-[72%]", isOwn && "items-end")}>
+        <div className={cn("flex flex-col max-w-[85%] sm:max-w-[72%]", isOwn && "items-end")}>
           {!isOwn && isFirstInGroup && (
             <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
               {sender.name ?? "Unknown"}
@@ -284,7 +284,7 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
         'group' is on the COLUMN, not the outer row.
         Hover zone = bubble width only, not the full chat width.
       */}
-      <div className={cn("group flex flex-col max-w-[72%]", isOwn && "items-end")}>
+      <div className={cn("group flex flex-col max-w-[85%] sm:max-w-[72%]", isOwn && "items-end")}>
         {!isOwn && isFirstInGroup && (
           <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
             {sender.name ?? "Unknown"}
@@ -308,35 +308,33 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
           ) : (
             <div
               className={cn(
-                "rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words",
+                "rounded-2xl px-3.5 py-1 text-sm leading-relaxed break-words",
                 isOwn
                   ? "bg-primary text-primary-foreground rounded-br-sm"
                   : "bg-muted text-foreground rounded-bl-sm",
               )}
             >
               {body && (
-                /* flex items-end: text wraps in flex-1, time stays flex-none at the right,
-                   both bottom-edges aligned so time baseline sits at the last text line bottom */
-                <p className="flex items-end gap-x-2 leading-relaxed">
-                  <span className="flex-1 min-w-0 break-words">
-                    <RichText body={body} selfSlug={selfSlug} isOwn={isOwn} />
-                  </span>
-                  {!attachmentUrl && (
-                    <span className="flex-none inline-flex items-baseline gap-0.5 leading-none select-none whitespace-nowrap">
-                      {editedAt && (
-                        <span className={cn("text-[10px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>
-                          edited·
-                        </span>
-                      )}
-                      <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
-                        {formatTime(createdAt)}
-                      </span>
-                      {isOwn && !message.deletedAt && (
-                        <MessageStatus message={message} readUpTo={readUpTo} isOwn />
-                      )}
+                <p className="break-words leading-relaxed">
+                  <RichText body={body} selfSlug={selfSlug} isOwn={isOwn} />
+                </p>
+              )}
+              {body && !attachmentUrl && (
+                /* Time on its own line, right-aligned — keeps the bubble text using the
+                   full width instead of reserving a column for the timestamp. */
+                <div className="flex justify-end items-baseline gap-0.5 mt-0.5 leading-none select-none">
+                  {editedAt && (
+                    <span className={cn("text-[10px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>
+                      edited·
                     </span>
                   )}
-                </p>
+                  <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                    {formatTime(createdAt)}
+                  </span>
+                  {isOwn && !message.deletedAt && (
+                    <MessageStatus message={message} readUpTo={readUpTo} isOwn />
+                  )}
+                </div>
               )}
               {attachmentUrl && (
                 <>

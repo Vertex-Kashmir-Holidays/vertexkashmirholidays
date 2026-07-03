@@ -274,7 +274,7 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-5 lg:p-6">
+        <main className="flex-1 overflow-y-auto px-1 sm:px-5 py-1 sm:py-5 lg:p-6">
           {children}
         </main>
       </div>
