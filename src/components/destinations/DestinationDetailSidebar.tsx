@@ -23,37 +23,6 @@ interface DestinationDetailSidebarProps {
 export function DestinationDetailSidebar({ name, quickInfo, weather }: DestinationDetailSidebarProps) {
   return (
     <aside className="space-y-6 lg:sticky lg:top-6">
-      {/* Quick Info */}
-      <motion.div
-        className="rounded-2xl border border-border bg-card p-5 shadow-soft"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-[17px] font-bold">Quick Info</h2>
-        <ul className="mt-4 space-y-4">
-          {quickInfo.map((info, i) => (
-            <motion.li
-              key={i}
-              className="flex items-start gap-3"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={info.icon} />
-                </svg>
-              </span>
-              <div className="leading-snug">
-                <p className="text-[12.5px] font-bold">{info.label}</p>
-                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{info.value}</p>
-              </div>
-            </motion.li>
-          ))}
-        </ul>
-      </motion.div>
-
       {/* Weather */}
       <motion.div
         className="rounded-2xl border border-border bg-card p-5 shadow-soft"
@@ -95,6 +64,37 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
             <p className="mt-1 text-[13.5px] font-bold">{weather.feelsLike}°C</p>
           </div>
         </div>
+      </motion.div>
+
+      {/* Quick Info */}
+      <motion.div
+        className="rounded-2xl border border-border bg-card p-5 shadow-soft"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="text-[17px] font-bold">Quick Info</h2>
+        <ul className="mt-4 space-y-4">
+          {quickInfo.map((info, i) => (
+            <motion.li
+              key={i}
+              className="flex items-start gap-3"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={info.icon} />
+                </svg>
+              </span>
+              <div className="leading-snug">
+                <p className="text-[12.5px] font-bold">{info.label}</p>
+                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{info.value}</p>
+              </div>
+            </motion.li>
+          ))}
+        </ul>
       </motion.div>
     </aside>
   );

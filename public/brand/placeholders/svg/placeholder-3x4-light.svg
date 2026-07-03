@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+ <stop offset="0" stop-color="#FBF6EA"/><stop offset="1" stop-color="#F0E6CC"/></linearGradient>
+<radialGradient id="glow" cx="50%" cy="38%" r="55%">
+ <stop offset="0" stop-color="#C2A14E" stop-opacity="0.10"/><stop offset="1" stop-color="#C2A14E" stop-opacity="0"/></radialGradient>
+<filter id="mshadow" x="-40%" y="-40%" width="180%" height="180%">
+ <feDropShadow dx="0" dy="7.2" stdDeviation="14.4" flood-color="#000" flood-opacity="0.30"/></filter>
+</defs>
+<rect width="900" height="1200" fill="url(#bg)"/>
+<rect width="900" height="1200" fill="url(#glow)"/>
+<path d="M0.0,792.0 L0.0,672.0 L108.0,552.0 L198.0,636.0 L306.0,468.0 L414.0,600.0 L522.0,432.0 L630.0,576.0 L738.0,480.0 L828.0,612.0 L900.0,528.0 L900.0,792.0 L900.0,1200.0 L0.0,1200.0 Z" fill="#E7DABB" opacity="0.65"/>
+<path d="M0.0,876.0 L0.0,816.0 L90.0,696.0 L180.0,780.0 L270.0,660.0 L360.0,756.0 L450.0,612.0 L540.0,732.0 L648.0,636.0 L756.0,756.0 L846.0,672.0 L900.0,768.0 L900.0,876.0 L900.0,1200.0 L0.0,1200.0 Z" fill="#D8C49A" opacity="0.9"/>
+<g filter="url(#mshadow)" opacity="1.0"><path d="M364.5,360.0 L449.5,404.0 L436.8,495.0 Z" fill="#0A4DA2"/><path d="M535.5,360.0 L451.9,404.0 L463.5,495.0 Z" fill="#0BA45B"/></g>
+<text x="450" y="572" text-anchor="middle" font-family="sans-serif" font-size="40" letter-spacing="13.0" fill="#B8924A" font-weight="600">KASHMIR HOLIDAYS</text>
+</svg>

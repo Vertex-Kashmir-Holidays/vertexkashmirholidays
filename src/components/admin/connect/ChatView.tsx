@@ -9,7 +9,7 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import { GroupInfoPanel } from "./GroupInfoPanel";
 import { ActiveMeetingBanner } from "./ActiveMeetingBanner";
-import { MeetingModal } from "./MeetingModal";
+import { useCall } from "./CallProvider";
 import { ConfirmDialog } from "./ConfirmDialog";
 import type { ConnectMessage } from "./hooks/useMessages";
 import type { ActiveMeeting } from "./ActiveMeetingBanner";
@@ -43,13 +43,6 @@ interface Props {
   presenceMap?: PresenceMap;
   onBack?: () => void;
   onRefresh?: () => Promise<void>;
-}
-
-interface OpenMeeting {
-  id: string;
-  jitsiRoomId: string;
-  audioOnly: boolean;
-  isCreator: boolean;
 }
 
 function roomTitle(room: ConnectRoom, currentUserId: string): string {
@@ -102,11 +95,10 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   const containerRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(0);
 
+  const { openMeeting, startMeeting: startCall, joinMeeting } = useCall();
   const [showGroupInfo, setShowGroupInfo] = useState(false);
-  const [openMeeting, setOpenMeeting] = useState<OpenMeeting | null>(null);
   const [startingMeeting, setStartingMeeting] = useState<"AUDIO" | "VIDEO" | null>(null);
   const [meetingError, setMeetingError] = useState<string | null>(null);
-  const noAnswerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingMessage, setEditingMessage] = useState<ConnectMessage | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ConnectMessage[] | null>(null);
@@ -299,93 +291,27 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   }, [room.id, room.archivedAt, onRefresh]);
 
   // ─── Meeting actions ────────────────────────────────────────────────────────
+  // Actual call state/session lives in CallProvider (mounted once at AdminShell
+  // level) so it survives navigating away from this page — only the button
+  // loading/error UI is local to this component.
 
-  const startMeeting = useCallback(
+  const handleStartMeeting = useCallback(
     async (type: "AUDIO" | "VIDEO") => {
       setStartingMeeting(type);
       setMeetingError(null);
-      try {
-        const res = await fetch(`/api/connect/rooms/${room.id}/meetings`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type }),
-        });
-        const data = await res.json();
-
-        if (res.status === 409 && data.meetingId) {
-          // Active meeting already exists — join it instead
-          const joinRes = await fetch(`/api/connect/meetings/${data.meetingId}/join`, {
-            method: "POST",
-          });
-          if (joinRes.ok) {
-            const joinData = await joinRes.json();
-            setOpenMeeting({
-              id: data.meetingId,
-              jitsiRoomId: joinData.jitsiRoomId,
-              audioOnly: type === "AUDIO",
-              isCreator: false,
-            });
-          }
-          return;
-        }
-
-        if (!res.ok) {
-          setMeetingError(data.error ?? "Failed to start meeting");
-          return;
-        }
-
-        const newMeetingId = data.id;
-        setOpenMeeting({
-          id: newMeetingId,
-          jitsiRoomId: data.jitsiRoomId,
-          audioOnly: type === "AUDIO",
-          isCreator: true,
-        });
-        // Auto-end after 30s if nobody joins
-        if (noAnswerTimerRef.current) clearTimeout(noAnswerTimerRef.current);
-        noAnswerTimerRef.current = setTimeout(async () => {
-          noAnswerTimerRef.current = null;
-          await fetch(`/api/connect/meetings/${newMeetingId}/end`, { method: "POST" }).catch(() => {});
-          setOpenMeeting(null);
-        }, 30_000);
-      } catch {
-        setMeetingError("Failed to start meeting. Please try again.");
-      } finally {
-        setStartingMeeting(null);
-      }
+      const { error } = await startCall(room.id, type);
+      if (error) setMeetingError(error);
+      setStartingMeeting(null);
     },
-    [room.id],
+    [room.id, startCall],
   );
 
   const handleJoinFromBanner = useCallback(
     (meeting: ActiveMeeting, audioOnly: boolean) => {
-      setOpenMeeting({
-        id: meeting.id,
-        jitsiRoomId: meeting.jitsiRoomId,
-        audioOnly,
-        isCreator: meeting.createdById === currentUserId,
-      });
+      joinMeeting(meeting, audioOnly);
     },
-    [currentUserId],
+    [joinMeeting],
   );
-
-  const handleLeave = useCallback(async () => {
-    if (!openMeeting) return;
-    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
-    await fetch(`/api/connect/meetings/${openMeeting.id}/leave`, { method: "POST" }).catch(() => {});
-    setOpenMeeting(null);
-  }, [openMeeting]);
-
-  const handleEndForAll = useCallback(async () => {
-    if (!openMeeting) return;
-    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
-    await fetch(`/api/connect/meetings/${openMeeting.id}/end`, { method: "POST" }).catch(() => {});
-    setOpenMeeting(null);
-  }, [openMeeting]);
-
-  const handleAnswered = useCallback(() => {
-    if (noAnswerTimerRef.current) { clearTimeout(noAnswerTimerRef.current); noAnswerTimerRef.current = null; }
-  }, []);
 
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -450,7 +376,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
           {/* Meeting start buttons */}
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => startMeeting("AUDIO")}
+              onClick={() => handleStartMeeting("AUDIO")}
               disabled={!!startingMeeting || !!openMeeting}
               title="Start audio meeting"
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -462,7 +388,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
               )}
             </button>
             <button
-              onClick={() => startMeeting("VIDEO")}
+              onClick={() => handleStartMeeting("VIDEO")}
               disabled={!!startingMeeting || !!openMeeting}
               title="Start video meeting"
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -653,20 +579,6 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
           staffUsers={staffUsers}
           onClose={() => setShowGroupInfo(false)}
           onRefresh={async () => { await onRefresh?.(); }}
-        />
-      )}
-
-      {/* Meeting overlay — covers full viewport */}
-      {openMeeting && (
-        <MeetingModal
-          meetingId={openMeeting.id}
-          jitsiRoomId={openMeeting.jitsiRoomId}
-          displayName={currentUserName ?? "User"}
-          audioOnly={openMeeting.audioOnly}
-          isCreator={openMeeting.isCreator}
-          onLeave={handleLeave}
-          onEndForAll={handleEndForAll}
-          onAnswered={handleAnswered}
         />
       )}
 
