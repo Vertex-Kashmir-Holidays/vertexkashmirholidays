@@ -7,6 +7,7 @@ import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film, ImageOff, Eye } fro
 import { cn } from "@/lib/utils";
 import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
 import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
+import { uploadVideoDirect } from "@/lib/uploadVideoDirect";
 
 type MediaType = "IMAGE" | "VIDEO";
 type SourceTab = "ALL" | "LOCAL" | "STOCK";
@@ -71,68 +72,15 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
     height: dims[i.id]?.height,
   }));
 
-  const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
-
-  // Videos upload straight from the browser to Cloudinary (signed) instead of
-  // through our own /api/uploads route — Vercel hard-caps Serverless Function
-  // request bodies at ~4.5 MB, well under our 10 MB video limit, so anything
-  // over that would 413 if proxied through our server.
-  async function uploadVideoDirect(file: File): Promise<boolean> {
-    if (file.size > MAX_VIDEO_SIZE) {
-      toast.error("Video too large (max 10 MB).");
-      return false;
-    }
-
-    const signRes = await fetch("/api/uploads/sign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ folder: newCategory || "general" }),
-    });
-    if (!signRes.ok) {
-      const { error } = await signRes.json().catch(() => ({ error: "" }));
-      toast.error(error || "Couldn't prepare video upload.");
-      return false;
-    }
-    const { cloudName, apiKey, timestamp, signature, folder, publicId } = await signRes.json();
-
-    const cloudFd = new FormData();
-    cloudFd.append("file", file);
-    cloudFd.append("api_key", apiKey);
-    cloudFd.append("timestamp", String(timestamp));
-    cloudFd.append("signature", signature);
-    cloudFd.append("folder", folder);
-    cloudFd.append("public_id", publicId);
-    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
-      method: "POST",
-      body: cloudFd,
-    });
-    if (!uploadRes.ok) {
-      toast.error("Video upload to Cloudinary failed.");
-      return false;
-    }
-    const uploaded = await uploadRes.json();
-
-    const galleryRes = await fetch("/api/galleries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: uploaded.secure_url,
-        publicId: uploaded.public_id,
-        type: "VIDEO",
-        category: newCategory || undefined,
-        alt: newAlt || undefined,
-      }),
-    });
-    return galleryRes.ok;
-  }
-
   async function handleUpload(files: FileList) {
     setUploading(true);
     let uploaded = 0;
     try {
       for (const file of Array.from(files)) {
         if (file.type.startsWith("video/")) {
-          if (await uploadVideoDirect(file)) uploaded++;
+          const result = await uploadVideoDirect(file, { folder: newCategory, alt: newAlt });
+          if (!result.ok) toast.error(result.error);
+          else uploaded++;
           continue;
         }
 
