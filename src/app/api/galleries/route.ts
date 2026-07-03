@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
 
 const createSchema = z.object({
   url: z.string().min(1),
+  publicId: z.string().optional(),
   type: z.enum(["IMAGE", "VIDEO"]).optional(),
   alt: z.string().optional(),
   caption: z.string().optional(),

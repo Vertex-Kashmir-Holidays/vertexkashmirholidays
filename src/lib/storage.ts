@@ -40,6 +40,12 @@ function getCloudinaryRoot(): string {
   return process.env.CLOUDINARY_FOLDER?.trim() || "vertexkashmir";
 }
 
+/** Full Cloudinary folder path for a given module folder/category — shared by
+ *  the server-proxied upload path and the direct-from-browser signed upload. */
+export function cloudinaryUploadFolder(rawFolder: string): string {
+  return `${getCloudinaryRoot()}/${folderSlug(rawFolder)}`;
+}
+
 /**
  * True when Cloudinary credentials are present. Supports either the single
  * CLOUDINARY_URL (cloudinary://key:secret@cloud) or the three discrete vars.
@@ -54,7 +60,7 @@ export function isCloudinaryConfigured(): boolean {
 }
 
 let cloudinaryReady = false;
-function ensureCloudinaryConfig() {
+export function ensureCloudinaryConfig() {
   if (cloudinaryReady) return;
   // CLOUDINARY_URL is picked up automatically by the SDK; only configure the
   // discrete vars explicitly when the URL form is absent.
@@ -181,7 +187,7 @@ async function saveToCloudinary(
   ensureCloudinaryConfig();
 
   const uploadOptions: UploadApiOptions = {
-    folder: `${getCloudinaryRoot()}/${slug}`,
+    folder: cloudinaryUploadFolder(slug),
     resource_type: "auto",
     public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   };

@@ -50,9 +50,12 @@ function buildCsp(nonce: string): string {
     // (e.g. customer.api.jaas.8x8.vc) for AppID validation and branding.
     // Without these entries the external_api.js fetch is CSP-blocked, which
     // manifests as "browser not supported" inside the JaaS meeting iframe.
-    `connect-src 'self' https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
+    // api.cloudinary.com — direct browser→Cloudinary signed uploads (videos bypass
+    // our own server to avoid Vercel's ~4.5 MB Serverless Function body limit).
+    `connect-src 'self' https://api.cloudinary.com https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
     // blob: — Jitsi/JaaS creates blob: URLs for local audio/video preview tracks
-    "media-src 'self' blob: data: https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc",
+    // res.cloudinary.com — video review clips uploaded via the Gallery/Cloudinary flow
+    "media-src 'self' blob: data: https://res.cloudinary.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc",
     // JaaS loads web workers from its own domain — without this the WebRTC SDK
     // fails its browser-capabilities check and shows "browser not supported".
     "worker-src 'self' blob: https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc",
