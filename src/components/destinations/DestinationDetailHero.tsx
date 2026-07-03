@@ -11,7 +11,6 @@ import type { LiveWeather } from '@/lib/weather';
 interface DestinationDetailHeroProps {
   name: string;
   tagline: string;
-  description: string;
   region: string;
   image: string;
   stats: {
@@ -25,7 +24,6 @@ interface DestinationDetailHeroProps {
 export function DestinationDetailHero({
   name,
   tagline,
-  description,
   region,
   image,
   stats,
@@ -78,14 +76,6 @@ export function DestinationDetailHero({
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               {tagline}
-            </motion.p>
-            <motion.p
-              className="mt-5 max-w-sm text-[14px] leading-relaxed text-white/85"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              {description}
             </motion.p>
 
             <motion.div

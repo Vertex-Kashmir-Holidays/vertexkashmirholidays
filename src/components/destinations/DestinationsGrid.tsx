@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, type Variants } from 'framer-motion';
-import { Heart, Mountain, Calendar, ChevronDown } from 'lucide-react';
+import { Heart, Thermometer, Calendar, ChevronDown } from 'lucide-react';
 import { Tilt3D } from '@/components/ui/3DTilt';
 import { imgSrc } from '@/lib/placeholder';
 
@@ -15,7 +15,7 @@ export interface DestinationCardData {
   tagline: string | null;
   description: string | null;
   coverImage: string | null;
-  altitude: string | null;
+  temperature: number | null;
   season: string | null;
   region: string;
   tours: number;
@@ -94,12 +94,12 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
                   <h3 className="text-[17px] font-bold">{dest.name}</h3>
                   {dest.tagline && <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">{dest.tagline}</p>}
                   {dest.description && <p className="mt-2 min-h-[40px] text-[12.5px] leading-relaxed text-foreground/70">{dest.description}</p>}
-                  {(dest.altitude || dest.season) && (
+                  {(dest.temperature != null || dest.season) && (
                     <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[11.5px] font-semibold text-foreground/75">
-                      {dest.altitude && (
+                      {dest.temperature != null && (
                         <span className="flex items-center gap-1.5">
-                          <Mountain className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
-                          {dest.altitude}
+                          <Thermometer className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
+                          {dest.temperature}°C
                         </span>
                       )}
                       {dest.season && (

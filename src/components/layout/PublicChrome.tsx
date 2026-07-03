@@ -5,13 +5,17 @@ import { Footer, type FooterSettings } from '@/components/layout/Footer';
 import { Navbar } from '@/components/layout/Navbar';
 import { AuroraBackground } from '@/components/ui/AuroraBackground';
 import { PageTransition } from '@/components/layout/PageTransition';
+import { BannerStrip, type StripBannerData } from '@/components/public/BannerStrip';
+import { PromoBannerSlot, type SlotBanner } from '@/components/public/PromoBannerSlot';
 
 interface PublicChromeProps {
   children: React.ReactNode;
   settings: FooterSettings | null;
+  strip: StripBannerData | null;
+  promoBanners: SlotBanner[];
 }
 
-export function PublicChrome({ children, settings }: PublicChromeProps) {
+export function PublicChrome({ children, settings, strip, promoBanners }: PublicChromeProps) {
   const pathname = usePathname();
 
   // Campaign *detail* pages (/campaign/[slug]) are full-page microsites that
@@ -26,11 +30,15 @@ export function PublicChrome({ children, settings }: PublicChromeProps) {
 
   return (
     <>
+      {strip && <BannerStrip banner={strip} />}
       <AuroraBackground />
       <Navbar />
       <main className="min-h-screen bg-background text-foreground">
         <PageTransition>{children}</PageTransition>
       </main>
+      {/* PROMO banners for the current page (path-filtered). Placed just above
+          the footer so it's consistent site-wide and never fights a page hero. */}
+      <PromoBannerSlot banners={promoBanners} />
       <Footer settings={settings} />
     </>
   );

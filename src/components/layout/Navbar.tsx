@@ -18,12 +18,25 @@ export function Navbar() {
   const planTripHref = wa(`Hi ${siteName}! I'd like to plan my Kashmir trip. Please help me build a custom itinerary.`);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Whether a sticky BannerStrip currently occupies the top of the viewport. The
+  // navbar drops below it by the strip's height (top-9 / top-10) when present.
+  const [stripVisible, setStripVisible] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Sync with the BannerStrip: seed from the DOM on mount (the strip may already
+  // be rendered), then follow its show/dismiss events.
+  useEffect(() => {
+    setStripVisible(!!document.getElementById('vk-strip'));
+    const onStrip = (e: Event) =>
+      setStripVisible(Boolean((e as CustomEvent<{ visible: boolean }>).detail?.visible));
+    window.addEventListener('vk-strip', onStrip);
+    return () => window.removeEventListener('vk-strip', onStrip);
   }, []);
 
   // Close mobile menu when route changes
@@ -69,7 +82,11 @@ export function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 px-3 transition-all duration-500 sm:px-4 lg:px-0">
+      <header
+        className={`fixed inset-x-0 z-50 px-3 transition-all duration-500 sm:px-4 lg:px-0 ${
+          stripVisible ? 'top-8' : 'top-0'
+        }`}
+      >
         <nav
           className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-5 lg:px-6 ${
             overHero ? 'bg-transparent' : 'nav-pill-solid'

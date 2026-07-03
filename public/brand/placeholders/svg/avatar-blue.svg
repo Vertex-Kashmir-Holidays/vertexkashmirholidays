@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<defs><linearGradient id="gblue" x1="0" y1="0" x2="1" y2="1">
+ <stop offset="0" stop-color="#0A4DA2"/><stop offset="1" stop-color="#0A3C82"/></linearGradient>
+<clipPath id="cblue"><circle cx="100.0" cy="100.0" r="100.0"/></clipPath></defs>
+<g clip-path="url(#cblue)">
+ <rect width="200" height="200" fill="url(#gblue)"/>
+ <circle cx="100.0" cy="80" r="33" fill="rgba(248,241,221,0.92)"/>
+ <ellipse cx="100.0" cy="196" rx="64" ry="60" fill="rgba(248,241,221,0.92)"/>
+</g>
+<circle cx="100.0" cy="100.0" r="98.5" fill="none" stroke="#C2A14E" stroke-opacity="0.45" stroke-width="2.5"/>
+</svg>

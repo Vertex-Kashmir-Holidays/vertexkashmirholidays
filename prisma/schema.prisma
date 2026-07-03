@@ -1233,3 +1233,33 @@ model MeetingParticipant {
   @@index([userId])
 }
 
+// CMS-driven promotional banners. STRIP = thin full-width bar above the navbar
+// (one visible at a time); PROMO = full-bleed background-image banner with
+// overlaid text placed within page content areas. `pages` is a JSON string array
+// of page keys ("home","tours",…) or ["*"] for all pages.
+model Banner {
+  id             String     @id @default(cuid())
+  type           BannerType @default(STRIP)
+  title          String
+  body           String?
+  ctaLabel       String?
+  ctaUrl         String?
+  imageUrl       String? // PROMO desktop background image
+  imageMobileUrl String? // PROMO ≤640px background image (falls back to imageUrl)
+  pages          String     @default("[\"*\"]") // JSON string array: ["home","tours"] or ["*"] for all
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([type, isActive])
+  @@index([sortOrder])
+}
+
+enum BannerType {
+  STRIP // thin full-width bar above navbar — one visible at a time
+  PROMO // rich image+text card placed within page content areas
+}
+
