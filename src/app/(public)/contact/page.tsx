@@ -19,7 +19,10 @@ import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await prisma.siteSettings.findUnique({ where: { id: 'singleton' } });
+  const [settings, content] = await Promise.all([
+    prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
+    prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+  ]);
   return buildMetadata({
     title:
       settings?.metaTitle ??
@@ -27,6 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       'Get in touch with our Srinagar-based Kashmir experts for personalised tour packages. WhatsApp, email or call us for customised honeymoon, family and adventure itineraries.',
     canonical: `${SITE_URL}/contact`,
+    ogImage: content?.ogImage ?? content?.heroImage ?? null,
   });
 }
 

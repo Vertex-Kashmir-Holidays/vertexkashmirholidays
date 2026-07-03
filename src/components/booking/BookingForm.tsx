@@ -61,8 +61,8 @@ const PLACEHOLDER =
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
-// Minimum lead time for a booking (must match the server rule in create-order).
-const MIN_LEAD_DAYS = 7;
+const MIN_LEAD_DAYS = 4;
+const MAX_BOOKING_MONTHS = 6;
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -73,9 +73,11 @@ export interface BookingFormProps {
   tourCategory: string;
   priceFrom: number;
   duration: number;
+  minPersons?: number;
   coverImage: string | null;
   initialDate: string;
   initialTravellers: number;
+  earliestDateFromBooking?: string;
   whatsappNumber?: string;
   defaultName?: string;
   defaultEmail?: string;
@@ -90,9 +92,11 @@ export function BookingForm({
   tourCategory,
   priceFrom,
   duration,
+  minPersons = 1,
   coverImage,
   initialDate,
   initialTravellers,
+  earliestDateFromBooking,
   whatsappNumber = "919419000000",
   defaultName = "",
   defaultEmail = "",
@@ -101,15 +105,25 @@ export function BookingForm({
   const router = useRouter();
   const [step, setStep] = useState<Step>("idle");
   const [date, setDate] = useState(initialDate);
-  const [travellers, setTravellers] = useState(String(initialTravellers || 2));
+  const [travellers, setTravellers] = useState(String(Math.max(initialTravellers || 1, minPersons)));
   const [paymentOption, setPaymentOption] = useState<PaymentOption>("ADVANCE");
 
   const nights = duration - 1;
-  const count = parseInt(travellers, 10) || 2;
-  // Bookings require at least 7 days' lead time (server-enforced; mirrored here).
+  const count = parseInt(travellers, 10) || minPersons;
+
   const minBookingDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + MIN_LEAD_DAYS);
+    const leadDate = d.toISOString().split("T")[0];
+    // If customer has an active booking, floor is end-of-trip + 15 days
+    return earliestDateFromBooking && earliestDateFromBooking > leadDate
+      ? earliestDateFromBooking
+      : leadDate;
+  })();
+
+  const maxBookingDate = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + MAX_BOOKING_MONTHS);
     return d.toISOString().split("T")[0];
   })();
 
@@ -134,7 +148,11 @@ export function BookingForm({
       return;
     }
     if (date < minBookingDate) {
-      toast.error(`Please choose a travel date at least ${MIN_LEAD_DAYS} days from today.`);
+      toast.error(`Please choose a travel date on or after ${new Date(minBookingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`);
+      return;
+    }
+    if (date > maxBookingDate) {
+      toast.error(`Travel date cannot be more than ${MAX_BOOKING_MONTHS} months from today.`);
       return;
     }
 
@@ -369,11 +387,12 @@ export function BookingForm({
                     type="date"
                     value={date}
                     min={minBookingDate}
+                    max={maxBookingDate}
                     onChange={(e) => setDate(e.target.value)}
                     className={`${inputClass} pr-2 [color-scheme:light] dark:[color-scheme:dark]`}
                   />
                 </Field>
-                <Field label="Travellers" htmlFor="bf-travellers">
+                <Field label={`Travellers${minPersons > 1 ? ` (min. ${minPersons})` : ""}`} htmlFor="bf-travellers">
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <select
                     id="bf-travellers"
@@ -381,7 +400,7 @@ export function BookingForm({
                     onChange={(e) => setTravellers(e.target.value)}
                     className={`${inputClass} pr-2 appearance-none`}
                   >
-                    {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                    {Array.from({ length: 20 - minPersons + 1 }, (_, i) => i + minPersons).map((n) => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>

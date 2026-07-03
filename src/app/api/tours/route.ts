@@ -98,6 +98,7 @@ const createSchema = z.object({
   description: z.string().optional(),
   coverImage: z.string().optional(),
   priceFrom: z.coerce.number().positive(),
+  minPersons: z.coerce.number().int().min(1).optional(),
   priceWas: z.coerce.number().positive().optional().nullable(),
   discountPct: z.coerce.number().int().min(0).max(100).optional().nullable(),
   bestseller: z.boolean().optional(),

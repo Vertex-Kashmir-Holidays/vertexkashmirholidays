@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Phone, PhoneOff, Video, PhoneIncoming } from "lucide-react";
 import { useNotificationSound } from "./hooks/useNotificationSound";
-import { MeetingModal } from "./MeetingModal";
+import { useCall } from "./CallProvider";
 
 interface IncomingMeeting {
   id: string;
@@ -16,19 +16,11 @@ interface IncomingMeeting {
   participants: Array<{ userId: string; user: { id: string; name: string | null; image: string | null } }>;
 }
 
-interface OpenMeeting {
-  id: string;
-  jitsiRoomId: string;
-  audioOnly: boolean;
-  isCreator: boolean;
-}
-
 interface Props {
   currentUserId: string;
-  currentUserName: string;
 }
 
-export function GlobalCallNotification({ currentUserId, currentUserName }: Props) {
+export function GlobalCallNotification({ currentUserId }: Props) {
   const searchParams = useSearchParams();
   const currentRoomRef = useRef<string | null>(null);
 
@@ -36,14 +28,14 @@ export function GlobalCallNotification({ currentUserId, currentUserName }: Props
     currentRoomRef.current = searchParams.get("room");
   });
 
+  const { openMeeting, joinMeeting } = useCall();
   const [incoming, setIncoming] = useState<IncomingMeeting | null>(null);
   const [ringing, setRinging] = useState(false);
   const [joining, setJoining] = useState(false);
   const [ending, setEnding] = useState(false);
-  const [openMeeting, setOpenMeeting] = useState<OpenMeeting | null>(null);
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const prevIdRef = useRef<string | null>(null);
-  const openMeetingRef = useRef<OpenMeeting | null>(null);
+  const openMeetingRef = useRef(openMeeting);
   openMeetingRef.current = openMeeting;
 
   const { playRing, stopRing } = useNotificationSound();
@@ -105,12 +97,7 @@ export function GlobalCallNotification({ currentUserId, currentUserName }: Props
     try {
       const res = await fetch(`/api/connect/meetings/${incoming.id}/join`, { method: "POST" });
       if (res.ok) {
-        setOpenMeeting({
-          id: incoming.id,
-          jitsiRoomId: incoming.jitsiRoomId,
-          audioOnly,
-          isCreator: incoming.createdById === currentUserId,
-        });
+        joinMeeting(incoming, audioOnly);
         setIncoming(null);
       }
     } catch {
@@ -139,20 +126,6 @@ export function GlobalCallNotification({ currentUserId, currentUserName }: Props
     stopRing();
     setRinging(false);
     setDismissedId(incoming.id);
-  }
-
-  async function handleLeave() {
-    if (!openMeeting) return;
-    const mid = openMeeting.id;
-    setOpenMeeting(null);
-    await fetch(`/api/connect/meetings/${mid}/leave`, { method: "POST" }).catch(() => {});
-  }
-
-  async function handleEndForAll() {
-    if (!openMeeting) return;
-    const mid = openMeeting.id;
-    setOpenMeeting(null);
-    await fetch(`/api/connect/meetings/${mid}/end`, { method: "POST" }).catch(() => {});
   }
 
   // ── render ──────────────────────────────────────────────────────────────────
@@ -238,19 +211,6 @@ export function GlobalCallNotification({ currentUserId, currentUserName }: Props
             </div>
           </div>
         </div>
-      )}
-
-      {openMeeting && (
-        <MeetingModal
-          meetingId={openMeeting.id}
-          jitsiRoomId={openMeeting.jitsiRoomId}
-          displayName={currentUserName}
-          audioOnly={openMeeting.audioOnly}
-          isCreator={openMeeting.isCreator}
-          onLeave={handleLeave}
-          onEndForAll={handleEndForAll}
-          onAnswered={() => {}}
-        />
       )}
     </>
   );

@@ -97,6 +97,9 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "subtitle", label: "Subtitle", type: "textarea" },
     { key: "ctaLabel", label: "CTA label", type: "text" },
     { key: "ctaHref", label: "CTA link", type: "text" },
+    { key: "heroImage", label: "Hero image (desktop)", type: "image" },
+    { key: "heroImageMobile", label: "Hero image (mobile)", type: "image" },
+    { key: "ogImage", label: "OG / social image", type: "image" },
   ],
   // ── About ──
   aboutStoryFeatures: [

@@ -18,8 +18,9 @@ const GROUPS: ContentGroup[] = [
       { key: "heroBreadcrumb", label: "Breadcrumb", type: "text" },
       { key: "heroTitle", label: "Title", type: "text" },
       { key: "heroSubtitle", label: "Subtitle", type: "textarea" },
-      { key: "heroImage", label: "Hero image", type: "image" },
+      { key: "heroImage", label: "Hero image (desktop)", type: "image" },
       { key: "heroImageMobile", label: "Hero image (mobile)", type: "image" },
+      { key: "ogImage", label: "OG / social image", type: "image" },
     ],
   },
   {

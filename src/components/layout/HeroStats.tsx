@@ -4,9 +4,6 @@ import { motion, type Variants } from 'framer-motion';
 import { User, Users, Clock, Star, type LucideIcon } from 'lucide-react';
 import type { SiteStatData } from '@/types/home';
 
-// Shared secondary-hero stats strip (Tours, Campaigns, …). Kept in one place so
-// the icons, spacing, typography and stagger animation stay identical everywhere.
-
 // Decorative icons cycled across the DB-driven stats.
 const statIcons: LucideIcon[] = [User, Users, Clock, Star];
 
@@ -30,7 +27,11 @@ const itemVariants: Variants = {
   },
 };
 
-export function HeroStats({ stats }: { stats: SiteStatData[] }) {
+interface HeroStatsProps {
+  stats: SiteStatData[];
+}
+
+export function HeroStats({ stats }: HeroStatsProps) {
   if (stats.length === 0) return null;
 
   return (

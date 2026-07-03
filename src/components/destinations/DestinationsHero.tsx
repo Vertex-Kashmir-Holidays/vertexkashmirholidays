@@ -12,11 +12,16 @@ const badges: { t: string; s: string; Icon: LucideIcon }[] = [
   { t: 'Best Price', s: 'guaranteed', Icon: BadgeIndianRupee },
 ];
 
-export function DestinationsHero() {
+interface DestinationsHeroProps {
+  heroImage?: string | null;
+  heroImageMobile?: string | null;
+}
+
+export function DestinationsHero({ heroImage, heroImageMobile }: DestinationsHeroProps) {
   return (
     <SecondaryHero
-      image="/hero/srinagar-lg.webp"
-      imageMobile="/hero/srinagar.webp"
+      image={heroImage ?? '/hero/srinagar-lg.webp'}
+      imageMobile={heroImageMobile ?? '/hero/srinagar.webp'}
       alt="Dal Lake, Kashmir"
       aside={<HeroLeadCard source="destinations" />}
     >

@@ -11,13 +11,15 @@ import type { SectionHeading, SiteStatData } from '@/types/home';
 interface ToursHeroSectionProps {
   heading: SectionHeading;
   stats: SiteStatData[];
+  heroImage?: string | null;
+  heroImageMobile?: string | null;
 }
 
-export function ToursHeroSection({ heading, stats }: ToursHeroSectionProps) {
+export function ToursHeroSection({ heading, stats, heroImage, heroImageMobile }: ToursHeroSectionProps) {
   return (
     <SecondaryHero
-      image="/hero/gulmarg-lg.webp"
-      imageMobile="/hero/gulmarg.webp"
+      image={heroImage ?? "/hero/gulmarg-lg.webp"}
+      imageMobile={heroImageMobile ?? "/hero/gulmarg.webp"}
       alt="Kashmir valley"
       aside={<HeroLeadCard source="tours" buttonLabel="Get Tour Quotes" />}
     >
