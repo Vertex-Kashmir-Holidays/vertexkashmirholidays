@@ -294,6 +294,7 @@ export default async function HomePage() {
           coverImage: d.coverImage,
         }))}
       />
+      {/* Ladakh section temporarily disabled
       {ladakhTours.length > 0 && (
         <PackagesSection
           heading={{
@@ -319,6 +320,7 @@ export default async function HomePage() {
           }))}
         />
       )}
+      */}
       <AboutSection
         heading={heading("about")}
         content={{
