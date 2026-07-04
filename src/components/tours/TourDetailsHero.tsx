@@ -20,11 +20,18 @@ interface TourDetailsHeroProps {
  difficulty: string;
  tagline: string;
  badge: string;
+ badgeColor?: 'orange' | 'blue' | 'green';
  rating: number;
  reviews: number;
  happyLabel: string;
  images: string[];
 }
+
+const badgeCls = {
+ orange: 'bg-badge-orange',
+ blue: 'bg-badge-blue',
+ green: 'bg-badge-green',
+};
 
 
 export function TourDetailsHero({
@@ -38,6 +45,7 @@ export function TourDetailsHero({
  difficulty,
  tagline,
  badge,
+ badgeColor = 'green',
  rating,
  reviews,
  happyLabel,
@@ -216,7 +224,7 @@ export function TourDetailsHero({
        {/* Title Block */}
        <div className="mt-8 max-w-2xl sm:mt-12">
          <motion.span
-           className="rounded-md bg-badge-green px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white shadow"
+           className={`rounded-md ${badgeCls[badgeColor]} px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white shadow`}
            initial={{ x: -20, opacity: 0 }}
            animate={{ x: 0, opacity: 1 }}
            transition={{ duration: 0.5 }}

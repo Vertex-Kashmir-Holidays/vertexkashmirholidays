@@ -11,6 +11,7 @@ import {
  buildCampaignEvents,
 } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
+import { formatINR } from "@/lib/accents";
 import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
 import { TourDetailsHero } from "@/components/tours/TourDetailsHero";
@@ -20,11 +21,29 @@ import { TourDetailsOverview } from "@/components/tours/TourDetailsOverview";
 import { TourDetailsReviews } from "@/components/tours/TourDetailsReviews";
 import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
 import { TourDetailsTabs } from "@/components/tours/TourDetailsTabs";
+import { TourDetailsFitCheck } from "@/components/tours/TourDetailsFitCheck";
+import { TourDetailsHighlights } from "@/components/tours/TourDetailsHighlights";
+import { TourDetailsAccommodation } from "@/components/tours/TourDetailsAccommodation";
+import { TourDetailsMealsTransport } from "@/components/tours/TourDetailsMealsTransport";
+import { TourDetailsBudget } from "@/components/tours/TourDetailsBudget";
+import { TourDetailsTravelInfo } from "@/components/tours/TourDetailsTravelInfo";
+import { TourDetailsRelatedTours } from "@/components/tours/TourDetailsRelatedTours";
 import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
 import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
 import { PackageViewTracker } from "@/components/analytics/PackageViewTracker";
 import { ScrollToTopOnMount } from "@/components/layout/ScrollToTopOnMount";
+import {
+ parseJson,
+ parseItinerary,
+ parseStringList,
+ parseAccommodation,
+ parseBudgetRows,
+ parsePersonalExpenses,
+ parsePackingList,
+ parseImportantNotes,
+ parseRelatedTours,
+} from "@/lib/tours/content";
 
 
 export const revalidate = 300;
@@ -38,17 +57,13 @@ const CATEGORY_LABEL: Record<string, string> = {
  FAMILY: "Family",
  ADVENTURE: "Adventure",
  LUXURY: "Luxury",
+ BUDGET: "Budget",
+ GROUP: "Group",
+ PILGRIMAGE: "Pilgrimage",
+ PREMIUM: "Premium",
 };
 
-
-function parseJson<T>(raw: string | null | undefined, fallback: T): T {
- if (!raw) return fallback;
- try {
-   return JSON.parse(raw) as T;
- } catch {
-   return fallback;
- }
-}
+const BADGE_COLORS = ["orange", "blue", "green"] as const;
 
 
 async function getTour(slug: string) {
@@ -84,6 +99,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
      metaTitle: true,
      metaDesc: true,
      ogImage: true,
+     ogTitle: true,
+     ogDescription: true,
    },
  });
 
@@ -107,6 +124,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
      `${tour.title} — a curated Kashmir tour package by Vertex Kashmir Holidays.`,
    canonical: `${SITE_URL}/tours/${slug}`,
    ogImage: tour.ogImage ?? tour.coverImage ?? null,
+   ogTitle: tour.ogTitle,
+   ogDescription: tour.ogDescription,
  });
 }
 
@@ -130,14 +149,22 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const gallery: GalleryItem[] = parseJson<unknown[]>(tour.gallery, []).map((item) =>
    typeof item === "string" ? { url: item, alt: "" } : (item as GalleryItem)
  );
- const inclusions = parseJson<string[]>(tour.inclusions, []);
- const exclusions = parseJson<string[]>(tour.exclusions, []);
- const highlights = parseJson<string[]>(tour.highlights, []);
+ const inclusions = parseStringList(tour.inclusions);
+ const exclusions = parseStringList(tour.exclusions);
+ const highlights = parseStringList(tour.highlights);
  const faqs = parseJson<{ question: string; answer: string }[]>(tour.faqs, []);
  const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []);
- const rawItinerary = parseJson<
-   { day: number; title: string; description?: string; image?: string }[]
- >(tour.itinerary, []);
+ const rawItinerary = parseItinerary(tour.itinerary);
+
+ const perfectFor = parseStringList(tour.perfectFor);
+ const notIdealFor = parseStringList(tour.notIdealFor);
+ const accommodation = parseAccommodation(tour.accommodation);
+ const budgetBreakdown = parseBudgetRows(tour.budgetBreakdown);
+ const personalExpenses = parsePersonalExpenses(tour.personalExpenses);
+ const thingsToCarry = parsePackingList(tour.thingsToCarry);
+ const localTravelTips = parseStringList(tour.localTravelTips);
+ const importantNotes = parseImportantNotes(tour.importantNotes);
+ const relatedTourEntries = parseRelatedTours(tour.relatedTours);
 
 
  const itinerary = rawItinerary.map((d) => ({
@@ -145,7 +172,45 @@ export default async function TourDetailsPage({ params }: PageProps) {
    title: d.title,
    body: d.description ?? "",
    image: d.image,
+   meals: d.meals,
+   stay: d.stay,
+   travelTips: d.travelTips,
  }));
+
+
+ // ── Related tours (curated, editorial pairings) ────────────────────────────
+ const relatedTourRows = relatedTourEntries.length > 0
+   ? await prisma.tour.findMany({
+       where: { id: { in: relatedTourEntries.map((r) => r.tourId) }, published: true },
+       include: { destinations: { include: { destination: { select: { name: true } } } } },
+     })
+   : [];
+ const relatedTourById = new Map(relatedTourRows.map((t) => [t.id, t]));
+ const relatedTours = relatedTourEntries
+   .map((entry) => {
+     const t = relatedTourById.get(entry.tourId);
+     if (!t) return null;
+     return {
+       ctaSentence: entry.ctaSentence,
+       tour: {
+         badge: t.badge ?? CATEGORY_LABEL[t.category] ?? "Tour",
+         bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
+           ? (t.badgeColor as (typeof BADGE_COLORS)[number])
+           : ("green" as const),
+         image: t.coverImage ?? undefined,
+         detailHref: `/tours/${t.slug}`,
+         bookHref: `/booking?tour=${t.slug}`,
+         t: t.title,
+         d: `${Math.max(t.duration - 1, 0)}N / ${t.duration}D`,
+         places: t.destinations.map((d) => d.destination.name).join(", "),
+         r: t.rating.toFixed(1),
+         n: String(t.reviewCount),
+         old: t.priceWas ? formatINR(t.priceWas) : undefined,
+         p: formatINR(t.priceFrom),
+       },
+     };
+   })
+   .filter((x): x is NonNullable<typeof x> => x !== null);
 
 
  // ── Derived display values ─────────────────────────────────────────────────
@@ -194,13 +259,22 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const tabs = [
    { id: "overview", label: "Overview" },
    ...(itinerary.length ? [{ id: "itinerary", label: "Itinerary" }] : []),
+   ...(highlights.length ? [{ id: "highlights", label: "Highlights" }] : []),
    ...(inclusions.length || exclusions.length
      ? [{ id: "inclusions", label: "Inclusions" }]
      : []),
+   ...(accommodation.length ? [{ id: "accommodation", label: "Accommodation" }] : []),
+   ...(tour.meals || tour.transportDetail ? [{ id: "meals-transport", label: "Meals & Transport" }] : []),
+   ...(tour.bestTimeDetail || thingsToCarry.length || localTravelTips.length || importantNotes.length
+     ? [{ id: "travel-info", label: "Travel Info" }]
+     : []),
+   ...(perfectFor.length || notIdealFor.length ? [{ id: "fit", label: "Trip Fit" }] : []),
+   ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
+   ...(budgetBreakdown.length || personalExpenses.length ? [{ id: "budget", label: "Budget" }] : []),
    ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
    ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
    ...(reviews.length ? [{ id: "reviews", label: "Reviews" }] : []),
-   ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
+   ...(relatedTours.length ? [{ id: "related", label: "Related" }] : []),
  ];
 
 
@@ -273,6 +347,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
        difficulty={tour.difficulty ?? "Easy"}
        tagline={tour.tagline ?? tour.excerpt ?? ""}
        badge={tour.badge ?? categoryLabel}
+       badgeColor={(BADGE_COLORS as readonly string[]).includes(tour.badgeColor ?? "") ? (tour.badgeColor as (typeof BADGE_COLORS)[number]) : "green"}
        rating={tour.rating}
        reviews={tour.reviewCount}
        happyLabel={happyLabel}
@@ -289,7 +364,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
            <section id="overview">
              <TourDetailsOverview
                description={tour.description ?? tour.excerpt ?? ""}
-               chips={highlights}
+               whyItineraryWorks={tour.whyItineraryWorks ?? undefined}
              />
            </section>
 
@@ -301,6 +376,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
            )}
 
 
+           <div className="scroll-mt-16">
+             <TourDetailsHighlights highlights={highlights} />
+           </div>
+
+
            {(inclusions.length > 0 || exclusions.length > 0) && (
              <section id="inclusions" className="scroll-mt-16">
                <TourDetailsInclusions
@@ -309,6 +389,46 @@ export default async function TourDetailsPage({ params }: PageProps) {
                />
              </section>
            )}
+
+
+           <div className="scroll-mt-16">
+             <TourDetailsAccommodation accommodation={accommodation} image={tour.coverImage ?? undefined} />
+           </div>
+
+
+           <div className="scroll-mt-16">
+             <TourDetailsMealsTransport
+               meals={tour.meals ?? undefined}
+               transportDetail={tour.transportDetail ?? undefined}
+             />
+           </div>
+
+
+           <div className="scroll-mt-16">
+             <TourDetailsTravelInfo
+               bestTimeDetail={tour.bestTimeDetail ?? undefined}
+               thingsToCarry={thingsToCarry}
+               localTravelTips={localTravelTips}
+               importantNotes={importantNotes}
+             />
+           </div>
+
+
+           <div className="scroll-mt-16">
+             <TourDetailsFitCheck perfectFor={perfectFor} notIdealFor={notIdealFor} />
+           </div>
+
+
+           {faqs.length > 0 && (
+             <section id="faqs" className="scroll-mt-16">
+               <TourDetailsFAQs faqs={faqs} />
+             </section>
+           )}
+
+
+           <div className="scroll-mt-16">
+             <TourDetailsBudget budgetBreakdown={budgetBreakdown} personalExpenses={personalExpenses} />
+           </div>
 
 
            {things.length > 0 && (
@@ -335,11 +455,16 @@ export default async function TourDetailsPage({ params }: PageProps) {
            )}
 
 
-           {faqs.length > 0 && (
-             <section id="faqs" className="scroll-mt-16">
-               <TourDetailsFAQs faqs={faqs} />
-             </section>
-           )}
+           <div className="scroll-mt-16">
+             <TourDetailsRelatedTours
+               relatedTours={relatedTours}
+               whyVertexBlurb={tour.whyVertexBlurb ?? undefined}
+               ctaHeadline={tour.ctaHeadline ?? undefined}
+               ctaBody={tour.ctaBody ?? undefined}
+               tourName={tour.title}
+               tourSlug={tour.slug}
+             />
+           </div>
          </div>
 
 

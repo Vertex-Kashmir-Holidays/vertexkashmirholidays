@@ -23,3 +23,52 @@ export interface DurationOption {
   label: string;
   count: number;
 }
+
+// ── Tour Detail — extended content shapes ──────────────────────────────────
+// These mirror the JSON stored in the matching `Tour.<field>` string columns
+// (parsed/serialized via src/lib/tours/content.ts). Keeping the types here
+// means the admin form and the public page agree on one shape.
+
+export interface TourItineraryDay {
+  day: number;
+  title: string;
+  description?: string;
+  image?: string;
+  meals?: string;
+  stay?: string;
+  travelTips?: string;
+}
+
+export interface AccommodationEntry {
+  location: string;
+  description: string;
+}
+
+export interface BudgetRow {
+  category: string;
+  perPerson: string;
+  perFamily: string;
+  note?: string;
+}
+
+export interface PersonalExpenseRow {
+  activity: string;
+  cost: string;
+  mandatory: boolean;
+}
+
+export interface PackingItem {
+  item: string;
+  reason: string;
+  mandatory: boolean;
+}
+
+export interface ImportantNote {
+  text: string;
+  reviewNote?: string;
+}
+
+export interface RelatedTourEntry {
+  tourId: string;
+  ctaSentence: string;
+}
