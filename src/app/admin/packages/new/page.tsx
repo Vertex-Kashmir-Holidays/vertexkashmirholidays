@@ -9,7 +9,10 @@ export const metadata: Metadata = { title: "New Package — Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function NewPackagePage() {
-  const activities = await prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const [activities, otherTours] = await Promise.all([
+    prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+  ]);
   return (
     <div className="space-y-5">
       {/* Breadcrumb */}
@@ -28,7 +31,10 @@ export default async function NewPackagePage() {
         </p>
       </div>
 
-      <PackageForm activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))} />
+      <PackageForm
+        activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
+        relatedTourOptions={otherTours}
+      />
     </div>
   );
 }

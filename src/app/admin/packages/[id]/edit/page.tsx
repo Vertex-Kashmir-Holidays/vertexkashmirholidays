@@ -4,6 +4,17 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PackageForm } from "@/components/admin/packages/PackageForm";
+import {
+  parseJson,
+  parseItinerary,
+  parseStringList,
+  parseAccommodation,
+  parseBudgetRows,
+  parsePersonalExpenses,
+  parsePackingList,
+  parseImportantNotes,
+  parseRelatedTours,
+} from "@/lib/tours/content";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -13,15 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: tour ? `Edit: ${tour.title} — Admin` : "Edit Package — Admin" };
 }
 
-function safeParse<T>(json: string, fallback: T): T {
-  try { return JSON.parse(json) as T; } catch { return fallback; }
-}
-
 export default async function EditPackagePage({ params }: Props) {
   const { id } = await params;
-  const [tour, activities] = await Promise.all([
+  const [tour, activities, otherTours] = await Promise.all([
     prisma.tour.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
     prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.tour.findMany({ where: { id: { not: id } }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
   ]);
   if (!tour) notFound();
 
@@ -40,17 +48,48 @@ export default async function EditPackagePage({ params }: Props) {
     bestseller: tour.bestseller,
     published: tour.published,
     formMode: tour.formMode,
-    itinerary: safeParse<{ day: number; title: string; description: string }[]>(tour.itinerary, []),
-    inclusions: safeParse<string[]>(tour.inclusions, []),
-    exclusions: safeParse<string[]>(tour.exclusions, []),
-    gallery: safeParse<unknown[]>(tour.gallery, []).map((item) =>
+    itinerary: parseItinerary(tour.itinerary),
+    inclusions: parseStringList(tour.inclusions),
+    exclusions: parseStringList(tour.exclusions),
+    gallery: parseJson<unknown[]>(tour.gallery, []).map((item) =>
       typeof item === "string" ? { url: item, alt: "" } : (item as { url: string; alt: string })
     ),
-    batches: safeParse<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []),
+    batches: parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []),
     metaTitle: tour.metaTitle ?? "",
     metaDesc: tour.metaDesc ?? "",
     ogImage: tour.ogImage ?? "",
     activityIds: tour.activities.map((a) => a.activityId),
+    region: tour.region,
+    badge: tour.badge ?? "",
+    badgeColor: tour.badgeColor ?? "green",
+    tagline: tour.tagline ?? "",
+    bestTime: tour.bestTime ?? "",
+    difficulty: tour.difficulty ?? "",
+    startCity: tour.startCity ?? "",
+    pickupDrop: tour.pickupDrop ?? "",
+    transport: tour.transport ?? "",
+    tourType: tour.tourType ?? "",
+    happyCount: tour.happyCount,
+    highlights: parseStringList(tour.highlights),
+    faqs: parseJson<{ question: string; answer: string }[]>(tour.faqs, []),
+    perfectFor: parseStringList(tour.perfectFor),
+    notIdealFor: parseStringList(tour.notIdealFor),
+    whyItineraryWorks: tour.whyItineraryWorks ?? "",
+    accommodation: parseAccommodation(tour.accommodation),
+    meals: tour.meals ?? "",
+    transportDetail: tour.transportDetail ?? "",
+    budgetBreakdown: parseBudgetRows(tour.budgetBreakdown),
+    personalExpenses: parsePersonalExpenses(tour.personalExpenses),
+    bestTimeDetail: tour.bestTimeDetail ?? "",
+    thingsToCarry: parsePackingList(tour.thingsToCarry),
+    localTravelTips: parseStringList(tour.localTravelTips),
+    importantNotes: parseImportantNotes(tour.importantNotes),
+    whyVertexBlurb: tour.whyVertexBlurb ?? "",
+    ctaHeadline: tour.ctaHeadline ?? "",
+    ctaBody: tour.ctaBody ?? "",
+    ogTitle: tour.ogTitle ?? "",
+    ogDescription: tour.ogDescription ?? "",
+    relatedTours: parseRelatedTours(tour.relatedTours),
   };
 
   return (
@@ -79,7 +118,11 @@ export default async function EditPackagePage({ params }: Props) {
         </a>
       </div>
 
-      <PackageForm defaults={defaults} activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))} />
+      <PackageForm
+        defaults={defaults}
+        activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
+        relatedTourOptions={otherTours}
+      />
     </div>
   );
 }

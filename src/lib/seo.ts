@@ -10,6 +10,8 @@ interface BuildMetadataOptions {
   description: string;
   canonical?: string;
   ogImage?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
   ogType?: "website" | "article";
   publishedTime?: string;
   authors?: string[];
@@ -21,12 +23,16 @@ export function buildMetadata({
   description,
   canonical,
   ogImage,
+  ogTitle,
+  ogDescription,
   ogType = "website",
   publishedTime,
   authors,
   noindex,
 }: BuildMetadataOptions): Metadata {
   const image = ogImage && ogImage.startsWith("http") ? ogImage : ogImage ? `${SITE_URL}${ogImage}` : DEFAULT_OG_IMAGE;
+  const socialTitle = ogTitle ?? title;
+  const socialDescription = ogDescription ?? description;
 
   return {
     title,
@@ -34,19 +40,19 @@ export function buildMetadata({
     ...(canonical ? { alternates: { canonical } } : {}),
     ...(noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
-      title,
-      description,
+      title: socialTitle,
+      description: socialDescription,
       siteName: SITE_NAME,
       type: ogType,
       ...(canonical ? { url: canonical } : {}),
-      images: [{ url: image, width: 1200, height: 630, alt: title }],
+      images: [{ url: image, width: 1200, height: 630, alt: socialTitle }],
       ...(publishedTime ? { publishedTime } : {}),
       ...(authors ? { authors } : {}),
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: socialTitle,
+      description: socialDescription,
       images: [image],
     },
   };

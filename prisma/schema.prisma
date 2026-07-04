@@ -8,37 +8,37 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String?
-  email        String    @unique
-  phone        String?
-  image        String? // profile picture URL (customer-managed in /account/profile)
-  passwordHash String
-  role         Role      @default(CUSTOMER)
+  id                   String               @id @default(cuid())
+  name                 String?
+  email                String               @unique
+  phone                String?
+  image                String? // profile picture URL (customer-managed in /account/profile)
+  passwordHash         String
+  role                 Role                 @default(CUSTOMER)
   // Set true for accounts created with a system-generated temp password (e.g. from
   // lead conversion). Forces a password change on first login before any other
   // account access is allowed. Cleared once the customer sets their own password.
-  mustChangePassword Boolean @default(false)
+  mustChangePassword   Boolean              @default(false)
   // Sales incentive rate (percent) applied to a booking's PROFIT, not the booking
   // amount. Optional; only meaningful for SALES staff. Kept on the user so future
   // monthly salary/commission reports can compute payouts per salesperson.
   bookingConversionPct Float?
-  deletedAt    DateTime? // soft-delete marker; non-null = hidden + login blocked
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  bookings      Booking[]
-  reviews       Review[]
-  itineraries       Itinerary[] @relation("ItineraryOwner")
-  itinerariesEdited Itinerary[] @relation("ItineraryEditor")
-  leadsAssigned Lead[]      @relation("LeadAssignee")
-  notifications Notification[]
+  deletedAt            DateTime? // soft-delete marker; non-null = hidden + login blocked
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  bookings             Booking[]
+  reviews              Review[]
+  itineraries          Itinerary[]          @relation("ItineraryOwner")
+  itinerariesEdited    Itinerary[]          @relation("ItineraryEditor")
+  leadsAssigned        Lead[]               @relation("LeadAssignee")
+  notifications        Notification[]
   // ── Vertex Connect ────────────────────────────────────────────────────────
-  chatRoomsCreated    ChatRoom[]           @relation("ConnectRoomCreator")
-  chatMemberships     ChatMember[]         @relation("ConnectMemberships")
-  chatMessagesSent    ChatMessage[]        @relation("ConnectMessageSender")
-  presence            UserPresence?
-  meetingsCreated     Meeting[]            @relation("ConnectMeetingCreator")
-  meetingParticipants MeetingParticipant[] @relation("ConnectMeetingParticipants")
+  chatRoomsCreated     ChatRoom[]           @relation("ConnectRoomCreator")
+  chatMemberships      ChatMember[]         @relation("ConnectMemberships")
+  chatMessagesSent     ChatMessage[]        @relation("ConnectMessageSender")
+  presence             UserPresence?
+  meetingsCreated      Meeting[]            @relation("ConnectMeetingCreator")
+  meetingParticipants  MeetingParticipant[] @relation("ConnectMeetingParticipants")
 
   @@index([email])
   @@index([deletedAt])
@@ -63,29 +63,29 @@ model Notification {
 }
 
 model Itinerary {
-  id        String          @id @default(cuid())
-  title     String
-  status    ItineraryStatus @default(DRAFT)
-  data      Json
-  ownerId   String
-  owner     User            @relation("ItineraryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  id             String             @id @default(cuid())
+  title          String
+  status         ItineraryStatus    @default(DRAFT)
+  data           Json
+  ownerId        String
+  owner          User               @relation("ItineraryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   // Optional link to a CRM lead. @unique enforces a single current itinerary per
   // lead. Cascade so deleting a (non-converted) lead cleans up its itinerary.
-  leadId    String?         @unique
-  lead      Lead?           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId         String?            @unique
+  lead           Lead?              @relation(fields: [leadId], references: [id], onDelete: Cascade)
   // Optional link to a direct (website) booking — one current itinerary per
   // booking. Mutually exclusive with leadId in practice (a converted booking
   // uses its lead's itinerary). Cascade so deleting the booking cleans it up.
-  bookingId String?         @unique
-  booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId      String?            @unique
+  booking        Booking?           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   // Locked when the owning lead is converted — the final, immutable itinerary.
-  locked    Boolean         @default(false)
+  locked         Boolean            @default(false)
   // Last editor (creator is `owner`). SetNull so a deleted staff user is tolerated.
   lastEditedById String?
-  lastEditedBy   User?       @relation("ItineraryEditor", fields: [lastEditedById], references: [id], onDelete: SetNull)
-  history   ItineraryHistory[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  lastEditedBy   User?              @relation("ItineraryEditor", fields: [lastEditedById], references: [id], onDelete: SetNull)
+  history        ItineraryHistory[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@index([ownerId])
   @@index([status])
@@ -151,9 +151,9 @@ model RolePermission {
 }
 
 model Destination {
-  id          String            @id @default(cuid())
+  id          String                @id @default(cuid())
   name        String
-  slug        String            @unique
+  slug        String                @unique
   description String?
   excerpt     String?
   tagline     String?
@@ -166,13 +166,13 @@ model Destination {
   // Coordinates power the live weather widget (Open-Meteo).
   latitude    Float?
   longitude   Float?
-  isFeatured  Boolean           @default(false)
-  sortOrder   Int               @default(0)
+  isFeatured  Boolean               @default(false)
+  sortOrder   Int                   @default(0)
   metaTitle   String?
   metaDesc    String?
   ogImage     String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   tours       TourDestination[]
   activities  ActivityDestination[]
 
@@ -182,23 +182,23 @@ model Destination {
 // Things to do — a first-class admin entity linked many-to-many to destinations
 // and tours. Public listing/detail pages are planned but not built yet.
 model Activity {
-  id          String                @id @default(cuid())
-  name        String
-  slug        String                @unique
-  description String?
-  coverImage  String?
-  images      String                @default("[]") // JSON string array of image URLs
-  location    String?
-  icon        String? // emoji or short icon label
-  duration    String? // e.g. "2 hours", "Half day"
-  price       Float?
-  published   Boolean               @default(false)
-  sortOrder   Int                   @default(0)
-  metaTitle   String?
-  metaDesc    String?
-  ogImage     String?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  id           String                @id @default(cuid())
+  name         String
+  slug         String                @unique
+  description  String?
+  coverImage   String?
+  images       String                @default("[]") // JSON string array of image URLs
+  location     String?
+  icon         String? // emoji or short icon label
+  duration     String? // e.g. "2 hours", "Half day"
+  price        Float?
+  published    Boolean               @default(false)
+  sortOrder    Int                   @default(0)
+  metaTitle    String?
+  metaDesc     String?
+  ogImage      String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
   destinations ActivityDestination[]
   tours        ActivityTour[]
 
@@ -227,51 +227,70 @@ model ActivityTour {
 }
 
 model Tour {
-  id           String            @id @default(cuid())
-  title        String
-  slug         String            @unique
-  excerpt      String?
-  description  String?
-  category     TourCategory
-  region       TourRegion        @default(KASHMIR)
-  duration     Int
-  coverImage   String?
-  badge        String?
-  badgeColor   String?           @default("green")
-  gallery      String            @default("[]")
-  itinerary    String            @default("[]")
-  inclusions   String            @default("[]")
-  exclusions   String            @default("[]")
-  priceFrom    Float
-  minPersons   Int      @default(1)
-  priceWas     Float?
-  discountPct  Int?
-  bestseller   Boolean           @default(false)
-  rating       Float             @default(0)
-  reviewCount  Int               @default(0)
-  published    Boolean           @default(false)
+  id                String            @id @default(cuid())
+  title             String
+  slug              String            @unique
+  excerpt           String?
+  description       String?
+  category          TourCategory
+  region            TourRegion        @default(KASHMIR)
+  duration          Int
+  coverImage        String?
+  badge             String?
+  badgeColor        String?           @default("green")
+  gallery           String            @default("[]")
+  itinerary         String            @default("[]")
+  inclusions        String            @default("[]")
+  exclusions        String            @default("[]")
+  priceFrom         Float
+  minPersons        Int               @default(1)
+  priceWas          Float?
+  discountPct       Int?
+  bestseller        Boolean           @default(false)
+  rating            Float             @default(0)
+  reviewCount       Int               @default(0)
+  published         Boolean           @default(false)
   // Which lead-capture forms render on the public tour-detail page.
-  formMode     TourFormMode      @default(BOTH)
-  metaTitle    String?
-  metaDesc     String?
-  ogImage      String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  bestTime     String?
-  difficulty   String?
-  faqs         String            @default("[]")
-  batches      String            @default("[]")
-  happyCount   Int?
-  highlights   String            @default("[]")
-  pickupDrop   String?
-  startCity    String?
-  tagline      String?
-  tourType     String?
-  transport    String?
-  bookings     Booking[]
-  reviews      Review[]
-  destinations TourDestination[]
-  activities   ActivityTour[]
+  formMode          TourFormMode      @default(BOTH)
+  metaTitle         String?
+  metaDesc          String?
+  ogImage           String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  bestTime          String?
+  difficulty        String?
+  faqs              String            @default("[]")
+  batches           String            @default("[]")
+  happyCount        Int?
+  highlights        String            @default("[]")
+  pickupDrop        String?
+  startCity         String?
+  tagline           String?
+  tourType          String?
+  transport         String?
+  // ── Extended content (Markdown-sourced tour detail sections) ──────────────
+  perfectFor        String            @default("[]") // JSON string[]
+  notIdealFor       String            @default("[]") // JSON string[]
+  whyItineraryWorks String? // HTML
+  accommodation     String            @default("[]") // JSON AccommodationEntry[]
+  meals             String? // HTML
+  transportDetail   String? // HTML — detailed policy paragraph, distinct from the short `transport` quick-fact
+  budgetBreakdown   String            @default("[]") // JSON BudgetRow[]
+  personalExpenses  String            @default("[]") // JSON PersonalExpenseRow[]
+  bestTimeDetail    String? // HTML — detailed seasonal breakdown, distinct from the short `bestTime` quick-fact
+  thingsToCarry     String            @default("[]") // JSON PackingItem[]
+  localTravelTips   String            @default("[]") // JSON string[]
+  importantNotes    String            @default("[]") // JSON ImportantNote[]
+  whyVertexBlurb    String? // HTML
+  ctaHeadline       String?
+  ctaBody           String? // HTML
+  ogTitle           String?
+  ogDescription     String?
+  relatedTours      String            @default("[]") // JSON RelatedTourEntry[], max 4
+  bookings          Booking[]
+  reviews           Review[]
+  destinations      TourDestination[]
+  activities        ActivityTour[]
 
   @@index([slug])
   @@index([category])
@@ -293,23 +312,23 @@ model TourDestination {
 }
 
 model Booking {
-  id              String        @id @default(cuid())
+  id              String           @id @default(cuid())
   // Optional: lead-converted bookings have no tour and no Razorpay order.
   tourId          String?
   userId          String?
-  status          BookingStatus @default(PENDING)
-  razorpayOrderId String?       @unique
+  status          BookingStatus    @default(PENDING)
+  razorpayOrderId String?          @unique
   razorpayPayId   String?
   // Canonical total booking amount (negotiated amount for leads; package price
   // for direct website bookings). Financials always derive from this + payments.
   amount          Float
-  currency        String        @default("INR")
+  currency        String           @default("INR")
   // Customer's chosen online-payment option: "ADVANCE" (10% now) or "FULL".
   // Amounts are always derived server-side; this only records the choice.
   paymentOption   String?
   travelDate      DateTime
   travelEndDate   DateTime?
-  travellers      Int           @default(1)
+  travellers      Int              @default(1)
   guestName       String
   guestEmail      String?
   guestPhone      String
@@ -319,11 +338,11 @@ model Booking {
   requirements    String?
   // Discount applied to the booking total. type: "FLAT" | "PERCENT".
   discountType    String?
-  discountValue   Float         @default(0)
+  discountValue   Float            @default(0)
   // Free-form inclusion tags (e.g. Meals, Cab) stored as a JSON string array.
-  inclusions      String        @default("[]")
+  inclusions      String           @default("[]")
   // Once locked, services can no longer be added/edited/deleted.
-  servicesLocked  Boolean       @default(false)
+  servicesLocked  Boolean          @default(false)
   // Assigned driver/vehicle, added by staff after services are locked. Editable
   // only until one day before travelDate. driverAddedAt non-null = details exist.
   driverName      String?
@@ -334,10 +353,10 @@ model Booking {
   // Soft-delete marker. Non-null = hidden from all listings/reports but the row
   // (and its payments/services) is retained. Permanent delete removes the row.
   deletedAt       DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  tour            Tour?         @relation(fields: [tourId], references: [id])
-  user            User?         @relation(fields: [userId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tour            Tour?            @relation(fields: [tourId], references: [id])
+  user            User?            @relation(fields: [userId], references: [id])
   leads           Lead[]
   payments        BookingPayment[]
   services        BookingService[]
@@ -352,26 +371,26 @@ model Booking {
 // A single payment entry against a booking — the booking payment ledger.
 // Supports token/advance, partial, and final payments (any number of rows).
 model BookingPayment {
-  id           String      @id @default(cuid())
-  bookingId    String
-  booking      Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  amount       Float
-  type         PaymentType @default(PARTIAL)
-  method       String? // cash / upi / card / razorpay / bank …
-  reference    String? // gateway id, txn ref …
+  id               String      @id @default(cuid())
+  bookingId        String
+  booking          Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount           Float
+  type             PaymentType @default(PARTIAL)
+  method           String? // cash / upi / card / razorpay / bank …
+  reference        String? // gateway id, txn ref …
   // Razorpay record for online payments (null for staff-entered cash/UPI etc.).
   // `reference` holds the payment id; these hold the rest of the gateway record.
   gatewayOrderId   String?
   gatewaySignature String?
   metadata         String? // JSON blob of gateway metadata (method, bank, etc.)
-  note         String?
+  note             String?
   // GST applies only to non-cash payments and is optional. Both the selected
   // percent and the computed value are persisted so future booking-wise and
   // payment-wise GST reports need no recomputation. Null for cash / no GST.
-  gstPercent   Float?
-  gstAmount    Float?
-  recordedById String?
-  createdAt    DateTime    @default(now())
+  gstPercent       Float?
+  gstAmount        Float?
+  recordedById     String?
+  createdAt        DateTime    @default(now())
 
   @@index([bookingId])
   @@index([createdAt])
@@ -420,37 +439,37 @@ model PaymentAudit {
 }
 
 model Lead {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String
-  email        String?
-  source       LeadSource    @default(WEBSITE)
+  id               String         @id @default(cuid())
+  name             String
+  phone            String
+  email            String?
+  source           LeadSource     @default(WEBSITE)
   // Free-text page/campaign tag (home, tours, blog-detail, …). The LeadSource
   // enum captures the marketing channel; this captures which on-site form fired.
-  sourcePage   String?
-  category     LeadCategory?
-  adults       Int           @default(1)
-  children     Int?
-  startDate    DateTime?
-  endDate      DateTime?
-  attachments  String        @default("[]")
-  notes        String?
-  followUpAt   DateTime?
-  assignedToId String?
-  assignedTo   User?         @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  status       LeadStatus    @default(NEW)
+  sourcePage       String?
+  category         LeadCategory?
+  adults           Int            @default(1)
+  children         Int?
+  startDate        DateTime?
+  endDate          DateTime?
+  attachments      String         @default("[]")
+  notes            String?
+  followUpAt       DateTime?
+  assignedToId     String?
+  assignedTo       User?          @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  status           LeadStatus     @default(NEW)
   bookingId        String?
-  booking          Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  booking          Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   negotiatedAmount Float?
   tokenAmount      Float?
   // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
-  locked           Boolean       @default(false)
+  locked           Boolean        @default(false)
   ipAddress        String?
   userAgent        String?
-  createdAt        DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  activities   LeadActivity[]
-  itinerary    Itinerary?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  activities       LeadActivity[]
+  itinerary        Itinerary?
 
   @@index([status])
   @@index([source])
@@ -568,7 +587,7 @@ model BlogCategory {
 model Gallery {
   id        String   @id @default(cuid())
   url       String
-  publicId  String?  // Cloudinary public_id — null for local-disk uploads
+  publicId  String? // Cloudinary public_id — null for local-disk uploads
   type      String   @default("IMAGE") // IMAGE | VIDEO
   alt       String?
   caption   String?
@@ -630,9 +649,9 @@ model HomeSection {
   subtitle        String?
   ctaLabel        String?
   ctaHref         String?
-  heroImage       String?  // desktop banner — gallery URL or absolute URL
-  heroImageMobile String?  // mobile banner (≤640 px)
-  ogImage         String?  // OG / social-share image for that listing page
+  heroImage       String? // desktop banner — gallery URL or absolute URL
+  heroImageMobile String? // mobile banner (≤640 px)
+  ogImage         String? // OG / social-share image for that listing page
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -987,39 +1006,39 @@ model Campaign {
 }
 
 model SiteSettings {
-  id            String   @id @default("singleton")
-  siteName      String   @default("Vertex Kashmir Holidays")
-  siteTagline   String?
-  siteEmail     String?
-  sitePhone     String?
-  siteAddress   String?
-  whatsapp      String?
-  facebook      String?
-  instagram     String?
-  twitter       String?
-  youtube       String?
-  googleReviews String?
-  tripadvisor   String?
-  metaTitle     String?
-  metaDesc      String?
-  ogImage       String?
+  id                     String   @id @default("singleton")
+  siteName               String   @default("Vertex Kashmir Holidays")
+  siteTagline            String?
+  siteEmail              String?
+  sitePhone              String?
+  siteAddress            String?
+  whatsapp               String?
+  facebook               String?
+  instagram              String?
+  twitter                String?
+  youtube                String?
+  googleReviews          String?
+  tripadvisor            String?
+  metaTitle              String?
+  metaDesc               String?
+  ogImage                String?
   // Configurable GST percentage options offered when recording non-cash payments,
   // stored as a JSON number array so they can change without a schema migration.
-  gstRates                 String   @default("[5,16,18]")
-  showAnnouncementBanner   Boolean  @default(false)
-  announcementMessage      String?
+  gstRates               String   @default("[5,16,18]")
+  showAnnouncementBanner Boolean  @default(false)
+  announcementMessage    String?
   // Legal/business identity — distinct from the brand-level siteName/siteAddress
   // above. Used in JSON-LD, legal pages, and generated PDFs/itineraries so those
   // don't each hardcode their own (previously drifting) copy.
-  legalName         String?
-  tourismRegNumber  String?
-  addressLine1      String?
-  addressCity       String?
-  addressState      String?
-  addressPincode    String?
-  addressCountry    String?
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  legalName              String?
+  tourismRegNumber       String?
+  addressLine1           String?
+  addressCity            String?
+  addressState           String?
+  addressPincode         String?
+  addressCountry         String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
 enum Role {
@@ -1036,6 +1055,10 @@ enum TourCategory {
   FAMILY
   ADVENTURE
   LUXURY
+  BUDGET
+  GROUP
+  PILGRIMAGE
+  PREMIUM
 }
 
 enum TourRegion {
@@ -1199,7 +1222,7 @@ model ChatMessage {
   attachmentName     String?
   editedAt           DateTime?
   deletedAt          DateTime?
-  reactions          String?   // JSON: Record<emoji, userId[]>, one reaction per user
+  reactions          String? // JSON: Record<emoji, userId[]>, one reaction per user
   isSystem           Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -1264,12 +1287,12 @@ model Banner {
   imageUrl       String? // PROMO desktop background image
   imageMobileUrl String? // PROMO ≤640px background image (falls back to imageUrl)
   pages          String     @default("[\"*\"]") // JSON string array: ["home","tours"] or ["*"] for all
-  isActive  Boolean    @default(true)
-  sortOrder Int        @default(0)
-  startsAt  DateTime?
-  endsAt    DateTime?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  isActive       Boolean    @default(true)
+  sortOrder      Int        @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   @@index([type, isActive])
   @@index([sortOrder])
@@ -1279,4 +1302,3 @@ enum BannerType {
   STRIP // thin full-width bar above navbar — one visible at a time
   PROMO // rich image+text card placed within page content areas
 }
-

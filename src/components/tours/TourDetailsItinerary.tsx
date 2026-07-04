@@ -11,6 +11,9 @@ interface ItineraryDay {
   title: string;
   body: string;
   image?: string;
+  meals?: string;
+  stay?: string;
+  travelTips?: string;
 }
 
 interface TourDetailsItineraryProps {
@@ -95,9 +98,30 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-foreground/70">
-                      {day.body}
-                    </p>
+                    <div className="min-w-0 flex-1 space-y-2.5">
+                      <p className="text-[13px] leading-relaxed text-foreground/70">
+                        {day.body}
+                      </p>
+                      {(day.meals || day.stay) && (
+                        <div className="flex flex-wrap gap-2">
+                          {day.meals && (
+                            <span className="rounded-full bg-muted px-3 py-1 text-[11.5px] font-semibold text-foreground/70">
+                              🍽️ {day.meals}
+                            </span>
+                          )}
+                          {day.stay && (
+                            <span className="rounded-full bg-muted px-3 py-1 text-[11.5px] font-semibold text-foreground/70">
+                              🏨 {day.stay}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {day.travelTips && (
+                        <p className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-[12px] leading-relaxed text-foreground/65">
+                          <span className="font-bold">Travel Tip:</span> {day.travelTips}
+                        </p>
+                      )}
+                    </div>
                     {day.image && (
                       <Image
                         src={imgSrc(day.image)}

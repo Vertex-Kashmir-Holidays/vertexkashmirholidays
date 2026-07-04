@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 
 interface TourDetailsOverviewProps {
   description: string;
-  chips: string[];
+  whyItineraryWorks?: string;
 }
 
-export function TourDetailsOverview({ description, chips }: TourDetailsOverviewProps) {
+export function TourDetailsOverview({ description, whyItineraryWorks }: TourDetailsOverviewProps) {
   return (
     <motion.section
       id="overview"
@@ -21,19 +21,14 @@ export function TourDetailsOverview({ description, chips }: TourDetailsOverviewP
       <p className="mt-3 text-[13.5px] leading-relaxed text-foreground/75">
         {description}
       </p>
-      <div className="mt-5 flex flex-wrap gap-2.5">
-        {chips.map((chip, i) => (
-          <motion.span
-            key={i}
-            className="flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-[12.5px] font-semibold"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            {chip}
-          </motion.span>
-        ))}
-      </div>
+      {whyItineraryWorks && (
+        <div className="mt-5 rounded-xl border border-border bg-muted/50 p-4">
+          <h3 className="text-[13px] font-bold">Why This Itinerary Works</h3>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-foreground/75">
+            {whyItineraryWorks}
+          </p>
+        </div>
+      )}
     </motion.section>
   );
 }
