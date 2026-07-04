@@ -11,15 +11,15 @@ import { imgSrc } from '@/lib/placeholder';
 import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import type { OfferData, SectionHeading } from '@/types/home';
 
-interface OffersSectionProps {
+interface AdventureSectionProps {
   heading: SectionHeading;
   offers: OfferData[];
 }
 
-function DealCard({ offer, index }: { offer: OfferData; index: number }) {
+function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
   const wa = useWhatsAppLink();
   const whatsappHref = wa(
-    `Hi! I'm interested in your "${offer.title}" special campaign deal. Could you share availability and confirm the pricing?`,
+    `Hi! I'm interested in the "${offer.title}" adventure. Could you share availability and confirm the pricing?`,
   );
 
   const discountPct =
@@ -134,7 +134,7 @@ function DealCard({ offer, index }: { offer: OfferData; index: number }) {
                   href={offer.ctaHref ?? '#'}
                   className="flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 py-2.5 text-[12px] font-extrabold text-white transition-all hover:brightness-110 hover:shadow-gold"
                 >
-                  Grab Deal →
+                  Explore Adventure →
                 </Link>
               </motion.div>
             </div>
@@ -150,11 +150,11 @@ const containerVariants: Variants = {
   visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
 };
 
-export function OffersSection({ heading, offers }: OffersSectionProps) {
+export function AdventureSection({ heading, offers }: AdventureSectionProps) {
   if (offers.length === 0) return null;
 
   return (
-    <section id="offers" className="relative isolate z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section id="adventures" className="relative isolate z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div aria-hidden className="orb orb-gold absolute -left-16 top-10 -z-10 h-72 w-72" />
       <div aria-hidden className="orb orb-green absolute -right-10 bottom-0 -z-10 h-80 w-80" />
 
@@ -202,7 +202,7 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
         viewport={{ once: true }}
       >
         {offers.map((o, i) => (
-          <DealCard key={o.id} offer={o} index={i} />
+          <AdventureCard key={o.id} offer={o} index={i} />
         ))}
       </motion.div>
     </section>
