@@ -15,6 +15,7 @@ interface BlogPostHeroProps {
   title: string;
   excerpt: string | null;
   image: string;
+  imageMobile?: string | null;
   author: {
     name: string;
     role: string | null;
@@ -30,6 +31,7 @@ export function BlogPostHero({
   title,
   excerpt,
   image,
+  imageMobile,
   author,
   readTime,
   date,
@@ -65,7 +67,14 @@ export function BlogPostHero({
         animate={{ scale: 1 }}
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Image src={imgSrc(image)} alt={title} fill priority sizes="100vw" className="object-cover" />
+        {imageMobile ? (
+          <>
+            <Image src={imgSrc(imageMobile)} alt={title} fill priority sizes="100vw" className="object-cover sm:hidden" />
+            <Image src={imgSrc(image)} alt={title} fill priority sizes="100vw" className="hidden object-cover sm:block" />
+          </>
+        ) : (
+          <Image src={imgSrc(image)} alt={title} fill priority sizes="100vw" className="object-cover" />
+        )}
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/45 to-brand-dark/15"></div>
 

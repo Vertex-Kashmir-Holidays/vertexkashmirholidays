@@ -19,6 +19,7 @@ const schema = z.object({
  excerpt: z.string().optional(),
  description: z.string().optional(),
  coverImage: z.string().optional(),
+ coverImageMobile: z.string().optional(),
  altitude: z.string().optional(),
  season: z.string().optional(),
  region: z.string().optional(),
@@ -52,7 +53,7 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
  const router = useRouter();
  const [isPending, startTransition] = useTransition();
  const [uploading, setUploading] = useState(false);
- const [picker, setPicker] = useState<"coverImage" | "ogImage" | null>(null);
+ const [picker, setPicker] = useState<"coverImage" | "coverImageMobile" | "ogImage" | null>(null);
  const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
  const isEdit = !!defaults?.id;
 
@@ -72,6 +73,7 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
      excerpt: defaults?.excerpt ?? "",
      description: defaults?.description ?? "",
      coverImage: defaults?.coverImage ?? "",
+     coverImageMobile: defaults?.coverImageMobile ?? "",
      altitude: defaults?.altitude ?? "",
      season: defaults?.season ?? "",
      region: defaults?.region ?? "",
@@ -91,9 +93,10 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
 
 
  const coverImage = watch("coverImage");
+ const coverImageMobile = watch("coverImageMobile");
 
 
- async function uploadFile(file: File, field: "coverImage" | "ogImage") {
+ async function uploadFile(file: File, field: "coverImage" | "coverImageMobile" | "ogImage") {
    setUploading(true);
    try {
      const fd = new FormData();
@@ -240,6 +243,41 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
              <div className="relative h-40 rounded-xl overflow-hidden bg-muted">
                {/* eslint-disable-next-line @next/next/no-img-element */}
                <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
+             </div>
+           )}
+         </div>
+
+
+         {/* Cover Image (Mobile) */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div>
+             <h3 className="font-bold text-foreground text-sm">Cover Image (Mobile)</h3>
+             <p className="text-[11px] text-muted-foreground mt-0.5">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
+           </div>
+           <div className="flex gap-3">
+             <input
+               {...register("coverImageMobile")}
+               className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+               placeholder="https://... or /uploads/..."
+             />
+             <button
+               type="button"
+               onClick={() => setPicker("coverImageMobile")}
+               className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+             >
+               <Images className="w-3.5 h-3.5" />
+               Gallery
+             </button>
+             <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
+               {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+               Upload
+               <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImageMobile")} />
+             </label>
+           </div>
+           {coverImageMobile && (
+             <div className="relative h-40 w-40 mx-auto rounded-xl overflow-hidden bg-muted">
+               {/* eslint-disable-next-line @next/next/no-img-element */}
+               <img src={coverImageMobile} alt="Mobile cover preview" className="w-full h-full object-cover" />
              </div>
            )}
          </div>

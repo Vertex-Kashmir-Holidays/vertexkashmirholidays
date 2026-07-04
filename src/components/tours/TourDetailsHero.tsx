@@ -25,6 +25,8 @@ interface TourDetailsHeroProps {
  reviews: number;
  happyLabel: string;
  images: string[];
+ /** Mobile-cropped variant of images[0] (the cover image). Falls back to images[0] when absent. */
+ coverImageMobile?: string;
 }
 
 const badgeCls = {
@@ -50,6 +52,7 @@ export function TourDetailsHero({
  reviews,
  happyLabel,
  images = [],
+ coverImageMobile,
 }: TourDetailsHeroProps) {
  const [currentImage, setCurrentImage] = useState(0);
  const [mounted, setMounted] = useState(false);
@@ -128,14 +131,35 @@ export function TourDetailsHero({
            exit={{ opacity: 0 }}
            transition={{ duration: 0.7 }}
          >
-           <Image
-             src={imgSrc(images[currentImage])}
-             alt={tourName}
-             fill
-             priority
-             sizes="100vw"
-             className="object-cover"
-           />
+           {currentImage === 0 && coverImageMobile ? (
+             <>
+               <Image
+                 src={imgSrc(coverImageMobile)}
+                 alt={tourName}
+                 fill
+                 priority
+                 sizes="100vw"
+                 className="object-cover sm:hidden"
+               />
+               <Image
+                 src={imgSrc(images[currentImage])}
+                 alt={tourName}
+                 fill
+                 priority
+                 sizes="100vw"
+                 className="hidden object-cover sm:block"
+               />
+             </>
+           ) : (
+             <Image
+               src={imgSrc(images[currentImage])}
+               alt={tourName}
+               fill
+               priority
+               sizes="100vw"
+               className="object-cover"
+             />
+           )}
          </motion.div>
        </AnimatePresence>
      </div>

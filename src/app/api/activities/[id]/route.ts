@@ -15,6 +15,7 @@ const patchSchema = z.object({
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/).optional(),
   description: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
+  coverImageMobile: z.string().optional().nullable(),
   images: z.string().optional(),
   location: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),

@@ -32,6 +32,7 @@ type FormData = z.infer<typeof schema>;
 export interface ActivityDefaults extends Partial<FormData> {
  id?: string;
  coverImage?: string;
+ coverImageMobile?: string;
  images?: string; // JSON string array
  ogImage?: string;
  published?: boolean;
@@ -66,6 +67,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
 
 
  const [coverImage, setCoverImage] = useState(defaults?.coverImage ?? "");
+ const [coverImageMobile, setCoverImageMobile] = useState(defaults?.coverImageMobile ?? "");
  const [ogImage, setOgImage] = useState(defaults?.ogImage ?? "");
  const [images, setImages] = useState(defaults?.images ?? "[]");
  const [published, setPublished] = useState(defaults?.published ?? false);
@@ -109,7 +111,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
        const res = await fetch(url, {
          method,
          headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ ...data, coverImage, ogImage, images, published, destinationIds, tourIds }),
+         body: JSON.stringify({ ...data, coverImage, coverImageMobile, ogImage, images, published, destinationIds, tourIds }),
        });
        if (!res.ok) {
          const err = (await res.json()) as { error?: string };
@@ -181,6 +183,11 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Cover Image</label>
              <ImageField value={coverImage} onChange={setCoverImage} folder="activities" />
+           </div>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">Cover Image (Mobile)</label>
+             <p className="text-[11px] text-muted-foreground mb-1">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
+             <ImageField value={coverImageMobile} onChange={setCoverImageMobile} folder="activities" />
            </div>
            <SectionArrayEditor label="Gallery images" value={images} onChange={setImages} spec={{ kind: "scalar", type: "image" }} folder="activities" />
          </div>

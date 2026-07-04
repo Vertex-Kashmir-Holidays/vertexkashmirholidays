@@ -91,6 +91,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
       <SecondaryHero
         image={activity.coverImage ?? "/hero/gulmarg-lg.webp"}
+        imageMobile={activity.coverImageMobile}
         alt={activity.name}
         aside={<HeroLeadCard source="activity-detail" buttonLabel="Enquire Now" />}
       >

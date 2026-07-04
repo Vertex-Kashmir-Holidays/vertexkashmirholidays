@@ -16,6 +16,7 @@ const createSchema = z.object({
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
   description: z.string().optional(),
   coverImage: z.string().optional(),
+  coverImageMobile: z.string().optional(),
   images: z.string().optional(), // JSON string array
   location: z.string().optional(),
   icon: z.string().optional(),

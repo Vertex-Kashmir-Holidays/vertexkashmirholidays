@@ -270,6 +270,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
         tagline={dest.tagline ?? ""}
         region={region}
         image={heroImage}
+        imageMobile={dest.coverImageMobile}
         stats={stats}
         weather={liveWeather}
       />

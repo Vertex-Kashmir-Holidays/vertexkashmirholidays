@@ -72,6 +72,7 @@ const packageSchema = z.object({
   excerpt: z.string().default(""),
   description: z.string().default(""),
   coverImage: z.string().default(""),
+  coverImageMobile: z.string().default(""),
   priceFrom: z.number().positive("Price must be positive"),
   minPersons: z.number().int().min(1).default(1),
   priceWas: nanToNull,
@@ -111,6 +112,7 @@ const packageSchema = z.object({
   notIdealFor: z.array(listItemSchema).default([]),
   whyItineraryWorks: z.string().default(""),
   accommodation: z.array(accommodationItemSchema).default([]),
+  accommodationImage: z.string().default(""),
   meals: z.string().default(""),
   transportDetail: z.string().default(""),
   budgetBreakdown: z.array(budgetRowSchema).default([]),
@@ -140,6 +142,7 @@ export interface PackageFormDefaults {
   excerpt?: string;
   description?: string;
   coverImage?: string;
+  coverImageMobile?: string;
   priceFrom?: number;
   minPersons?: number;
   priceWas?: number | null;
@@ -173,6 +176,7 @@ export interface PackageFormDefaults {
   notIdealFor?: string[];
   whyItineraryWorks?: string;
   accommodation?: { location: string; description: string }[];
+  accommodationImage?: string;
   meals?: string;
   transportDetail?: string;
   budgetBreakdown?: { category: string; perPerson: string; perFamily: string; note?: string }[];
@@ -392,6 +396,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
       excerpt: defaults?.excerpt ?? "",
       description: defaults?.description ?? "",
       coverImage: defaults?.coverImage ?? "",
+      coverImageMobile: defaults?.coverImageMobile ?? "",
       priceFrom: defaults?.priceFrom ?? 0,
       minPersons: defaults?.minPersons ?? 1,
       priceWas: defaults?.priceWas ?? null,
@@ -437,6 +442,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
       notIdealFor: toArrayField(defaults?.notIdealFor, (v) => ({ value: v as string })) as { value: string }[],
       whyItineraryWorks: defaults?.whyItineraryWorks ?? "",
       accommodation: (defaults?.accommodation ?? []).map((a) => ({ location: a.location, description: a.description })),
+      accommodationImage: defaults?.accommodationImage ?? "",
       meals: defaults?.meals ?? "",
       transportDetail: defaults?.transportDetail ?? "",
       budgetBreakdown: (defaults?.budgetBreakdown ?? []).map((b) => ({
@@ -668,6 +674,13 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             onChange={(url) => setValue("coverImage", url)}
             label="Cover Image"
             hint="Recommended: 1600×900px. Paste a URL or upload a file."
+          />
+
+          <ImageUploadField
+            value={watch("coverImageMobile")}
+            onChange={(url) => setValue("coverImageMobile", url)}
+            label="Cover Image (Mobile)"
+            hint="Recommended: 800×1000px (portrait). Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image."
           />
         </SectionCard>
 
@@ -1195,6 +1208,13 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               </div>
             )}
           </div>
+
+          <ImageUploadField
+            value={watch("accommodationImage")}
+            onChange={(url) => setValue("accommodationImage", url)}
+            label="Accommodation Image"
+            hint="Recommended: 1200×900px. Shown alongside the Accommodation section on the tour page."
+          />
 
           <div>
             <FieldLabel>Meals</FieldLabel>

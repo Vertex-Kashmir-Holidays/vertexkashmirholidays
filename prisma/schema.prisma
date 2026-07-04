@@ -151,30 +151,31 @@ model RolePermission {
 }
 
 model Destination {
-  id          String                @id @default(cuid())
-  name        String
-  slug        String                @unique
-  description String?
-  excerpt     String?
-  tagline     String?
-  coverImage  String?
-  location    String?
+  id               String                @id @default(cuid())
+  name             String
+  slug             String                @unique
+  description      String?
+  excerpt          String?
+  tagline          String?
+  coverImage       String?
+  coverImageMobile String?
+  location         String?
   // Display facts shown on cards + detail page (free-form, admin-editable).
-  altitude    String? // e.g. "2,650 m"
-  season      String? // best season, e.g. "Apr – Oct"
-  region      String? // filter grouping, e.g. "Kashmir Valley" | "Ladakh"
+  altitude         String? // e.g. "2,650 m"
+  season           String? // best season, e.g. "Apr – Oct"
+  region           String? // filter grouping, e.g. "Kashmir Valley" | "Ladakh"
   // Coordinates power the live weather widget (Open-Meteo).
-  latitude    Float?
-  longitude   Float?
-  isFeatured  Boolean               @default(false)
-  sortOrder   Int                   @default(0)
-  metaTitle   String?
-  metaDesc    String?
-  ogImage     String?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  tours       TourDestination[]
-  activities  ActivityDestination[]
+  latitude         Float?
+  longitude        Float?
+  isFeatured       Boolean               @default(false)
+  sortOrder        Int                   @default(0)
+  metaTitle        String?
+  metaDesc         String?
+  ogImage          String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  tours            TourDestination[]
+  activities       ActivityDestination[]
 
   @@index([slug])
 }
@@ -182,25 +183,26 @@ model Destination {
 // Things to do — a first-class admin entity linked many-to-many to destinations
 // and tours. Public listing/detail pages are planned but not built yet.
 model Activity {
-  id           String                @id @default(cuid())
-  name         String
-  slug         String                @unique
-  description  String?
-  coverImage   String?
-  images       String                @default("[]") // JSON string array of image URLs
-  location     String?
-  icon         String? // emoji or short icon label
-  duration     String? // e.g. "2 hours", "Half day"
-  price        Float?
-  published    Boolean               @default(false)
-  sortOrder    Int                   @default(0)
-  metaTitle    String?
-  metaDesc     String?
-  ogImage      String?
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  destinations ActivityDestination[]
-  tours        ActivityTour[]
+  id               String                @id @default(cuid())
+  name             String
+  slug             String                @unique
+  description      String?
+  coverImage       String?
+  coverImageMobile String?
+  images           String                @default("[]") // JSON string array of image URLs
+  location         String?
+  icon             String? // emoji or short icon label
+  duration         String? // e.g. "2 hours", "Half day"
+  price            Float?
+  published        Boolean               @default(false)
+  sortOrder        Int                   @default(0)
+  metaTitle        String?
+  metaDesc         String?
+  ogImage          String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  destinations     ActivityDestination[]
+  tours            ActivityTour[]
 
   @@index([slug])
   @@index([published])
@@ -227,70 +229,72 @@ model ActivityTour {
 }
 
 model Tour {
-  id                String            @id @default(cuid())
-  title             String
-  slug              String            @unique
-  excerpt           String?
-  description       String?
-  category          TourCategory
-  region            TourRegion        @default(KASHMIR)
-  duration          Int
-  coverImage        String?
-  badge             String?
-  badgeColor        String?           @default("green")
-  gallery           String            @default("[]")
-  itinerary         String            @default("[]")
-  inclusions        String            @default("[]")
-  exclusions        String            @default("[]")
-  priceFrom         Float
-  minPersons        Int               @default(1)
-  priceWas          Float?
-  discountPct       Int?
-  bestseller        Boolean           @default(false)
-  rating            Float             @default(0)
-  reviewCount       Int               @default(0)
-  published         Boolean           @default(false)
+  id                 String            @id @default(cuid())
+  title              String
+  slug               String            @unique
+  excerpt            String?
+  description        String?
+  category           TourCategory
+  region             TourRegion        @default(KASHMIR)
+  duration           Int
+  coverImage         String?
+  coverImageMobile   String?
+  badge              String?
+  badgeColor         String?           @default("green")
+  gallery            String            @default("[]")
+  itinerary          String            @default("[]")
+  inclusions         String            @default("[]")
+  exclusions         String            @default("[]")
+  priceFrom          Float
+  minPersons         Int               @default(1)
+  priceWas           Float?
+  discountPct        Int?
+  bestseller         Boolean           @default(false)
+  rating             Float             @default(0)
+  reviewCount        Int               @default(0)
+  published          Boolean           @default(false)
   // Which lead-capture forms render on the public tour-detail page.
-  formMode          TourFormMode      @default(BOTH)
-  metaTitle         String?
-  metaDesc          String?
-  ogImage           String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  bestTime          String?
-  difficulty        String?
-  faqs              String            @default("[]")
-  batches           String            @default("[]")
-  happyCount        Int?
-  highlights        String            @default("[]")
-  pickupDrop        String?
-  startCity         String?
-  tagline           String?
-  tourType          String?
-  transport         String?
+  formMode           TourFormMode      @default(BOTH)
+  metaTitle          String?
+  metaDesc           String?
+  ogImage            String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  bestTime           String?
+  difficulty         String?
+  faqs               String            @default("[]")
+  batches            String            @default("[]")
+  happyCount         Int?
+  highlights         String            @default("[]")
+  pickupDrop         String?
+  startCity          String?
+  tagline            String?
+  tourType           String?
+  transport          String?
   // ── Extended content (Markdown-sourced tour detail sections) ──────────────
-  perfectFor        String            @default("[]") // JSON string[]
-  notIdealFor       String            @default("[]") // JSON string[]
-  whyItineraryWorks String? // HTML
-  accommodation     String            @default("[]") // JSON AccommodationEntry[]
-  meals             String? // HTML
-  transportDetail   String? // HTML — detailed policy paragraph, distinct from the short `transport` quick-fact
-  budgetBreakdown   String            @default("[]") // JSON BudgetRow[]
-  personalExpenses  String            @default("[]") // JSON PersonalExpenseRow[]
-  bestTimeDetail    String? // HTML — detailed seasonal breakdown, distinct from the short `bestTime` quick-fact
-  thingsToCarry     String            @default("[]") // JSON PackingItem[]
-  localTravelTips   String            @default("[]") // JSON string[]
-  importantNotes    String            @default("[]") // JSON ImportantNote[]
-  whyVertexBlurb    String? // HTML
-  ctaHeadline       String?
-  ctaBody           String? // HTML
-  ogTitle           String?
-  ogDescription     String?
-  relatedTours      String            @default("[]") // JSON RelatedTourEntry[], max 4
-  bookings          Booking[]
-  reviews           Review[]
-  destinations      TourDestination[]
-  activities        ActivityTour[]
+  perfectFor         String            @default("[]") // JSON string[]
+  notIdealFor        String            @default("[]") // JSON string[]
+  whyItineraryWorks  String? // HTML
+  accommodation      String            @default("[]") // JSON AccommodationEntry[]
+  accommodationImage String? // dedicated image for the Accommodation section, distinct from coverImage
+  meals              String? // HTML
+  transportDetail    String? // HTML — detailed policy paragraph, distinct from the short `transport` quick-fact
+  budgetBreakdown    String            @default("[]") // JSON BudgetRow[]
+  personalExpenses   String            @default("[]") // JSON PersonalExpenseRow[]
+  bestTimeDetail     String? // HTML — detailed seasonal breakdown, distinct from the short `bestTime` quick-fact
+  thingsToCarry      String            @default("[]") // JSON PackingItem[]
+  localTravelTips    String            @default("[]") // JSON string[]
+  importantNotes     String            @default("[]") // JSON ImportantNote[]
+  whyVertexBlurb     String? // HTML
+  ctaHeadline        String?
+  ctaBody            String? // HTML
+  ogTitle            String?
+  ogDescription      String?
+  relatedTours       String            @default("[]") // JSON RelatedTourEntry[], max 4
+  bookings           Booking[]
+  reviews            Review[]
+  destinations       TourDestination[]
+  activities         ActivityTour[]
 
   @@index([slug])
   @@index([category])
@@ -522,27 +526,28 @@ model Review {
 }
 
 model Blog {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  excerpt     String?
-  body        String?
-  coverImage  String?
-  author      String?
-  category    String?
-  readTime    Int?
-  published   Boolean   @default(false)
-  publishedAt DateTime?
-  metaTitle   String?
-  metaDesc    String?
-  ogImage     String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  authorImage String?
-  featured    Boolean   @default(false)
-  trending    Boolean   @default(false)
-  authorBio   String?
-  authorRole  String?
+  id               String    @id @default(cuid())
+  title            String
+  slug             String    @unique
+  excerpt          String?
+  body             String?
+  coverImage       String?
+  coverImageMobile String?
+  author           String?
+  category         String?
+  readTime         Int?
+  published        Boolean   @default(false)
+  publishedAt      DateTime?
+  metaTitle        String?
+  metaDesc         String?
+  ogImage          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  authorImage      String?
+  featured         Boolean   @default(false)
+  trending         Boolean   @default(false)
+  authorBio        String?
+  authorRole       String?
 
   @@index([slug])
   @@index([published])
