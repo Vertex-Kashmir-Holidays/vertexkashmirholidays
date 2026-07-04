@@ -132,6 +132,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         title={post.title}
         excerpt={post.excerpt}
         image={imgSrc(post.coverImage)}
+        imageMobile={post.coverImageMobile}
         author={{ name: post.author ?? 'Vertex Kashmir Holidays', role: post.authorRole, avatar }}
         readTime={post.readTime ? `${post.readTime} min read` : null}
         date={longDate(post.publishedAt)}

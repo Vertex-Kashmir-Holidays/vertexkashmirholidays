@@ -17,6 +17,7 @@ const createSchema = z.object({
   description: z.string().optional(),
   excerpt: z.string().optional(),
   coverImage: z.string().optional(),
+  coverImageMobile: z.string().optional(),
   location: z.string().optional(),
   altitude: z.string().optional(),
   season: z.string().optional(),

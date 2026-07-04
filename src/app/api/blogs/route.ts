@@ -11,6 +11,7 @@ const createSchema = z.object({
   excerpt: z.string().optional(),
   body: z.string().optional(),
   coverImage: z.string().optional(),
+  coverImageMobile: z.string().optional(),
   author: z.string().optional(),
   published: z.boolean().optional(),
   metaTitle: z.string().optional(),

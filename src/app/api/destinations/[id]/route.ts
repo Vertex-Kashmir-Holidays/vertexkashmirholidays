@@ -17,6 +17,7 @@ const patchSchema = z.object({
   description: z.string().optional().nullable(),
   excerpt: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
+  coverImageMobile: z.string().optional().nullable(),
   location: z.string().optional().nullable(),
   altitude: z.string().optional().nullable(),
   season: z.string().optional().nullable(),

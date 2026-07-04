@@ -13,6 +13,7 @@ interface DestinationDetailHeroProps {
   tagline: string;
   region: string;
   image: string;
+  imageMobile?: string | null;
   stats: {
     value: string;
     label: string;
@@ -26,19 +27,23 @@ export function DestinationDetailHero({
   tagline,
   region,
   image,
+  imageMobile,
   stats,
   weather,
 }: DestinationDetailHeroProps) {
   return (
     <section className="relative bg-brand-dark">
-      <motion.img
-        src={imgSrc(image)}
-        alt={name}
-        className="absolute inset-0 h-full w-full object-cover"
-        initial={{ scale: 1.1 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+      <picture>
+        {imageMobile && <source media="(max-width: 640px)" srcSet={imgSrc(imageMobile)} />}
+        <motion.img
+          src={imgSrc(image)}
+          alt={name}
+          className="absolute inset-0 h-full w-full object-cover"
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </picture>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/35 to-brand-dark/10"></div>
       <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent"></div>
 

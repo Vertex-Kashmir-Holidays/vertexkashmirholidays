@@ -92,13 +92,13 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
               <AnimatePresence>
                 {isOpen && (
                   <motion.div
-                    className="flex flex-wrap items-start gap-4 px-4 pb-4 md:flex-nowrap"
+                    className={`grid grid-cols-1 gap-4 px-4 pb-4 ${day.image ? 'md:grid-cols-[3fr_2fr]' : ''}`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="min-w-0 flex-1 space-y-2.5">
+                    <div className="min-w-0 space-y-2.5">
                       <p className="text-[13px] leading-relaxed text-foreground/70">
                         {day.body}
                       </p>
@@ -123,13 +123,15 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                       )}
                     </div>
                     {day.image && (
-                      <Image
-                        src={imgSrc(day.image)}
-                        alt=""
-                        width={140}
-                        height={88}
-                        className="h-[88px] w-[140px] shrink-0 rounded-lg object-cover"
-                      />
+                      <div className="relative h-48 w-full overflow-hidden rounded-lg md:h-auto md:min-h-[160px]">
+                        <Image
+                          src={imgSrc(day.image)}
+                          alt=""
+                          fill
+                          sizes="(max-width: 768px) 100vw, 40vw"
+                          className="object-cover"
+                        />
+                      </div>
                     )}
                   </motion.div>
                 )}

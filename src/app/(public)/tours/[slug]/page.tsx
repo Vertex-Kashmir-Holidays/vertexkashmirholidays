@@ -263,6 +263,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
    ...(inclusions.length || exclusions.length
      ? [{ id: "inclusions", label: "Inclusions" }]
      : []),
+   ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
    ...(accommodation.length ? [{ id: "accommodation", label: "Accommodation" }] : []),
    ...(tour.meals || tour.transportDetail ? [{ id: "meals-transport", label: "Meals & Transport" }] : []),
    ...(tour.bestTimeDetail || thingsToCarry.length || localTravelTips.length || importantNotes.length
@@ -271,7 +272,6 @@ export default async function TourDetailsPage({ params }: PageProps) {
    ...(perfectFor.length || notIdealFor.length ? [{ id: "fit", label: "Trip Fit" }] : []),
    ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
    ...(budgetBreakdown.length || personalExpenses.length ? [{ id: "budget", label: "Budget" }] : []),
-   ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
    ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
    ...(reviews.length ? [{ id: "reviews", label: "Reviews" }] : []),
    ...(relatedTours.length ? [{ id: "related", label: "Related" }] : []),
@@ -352,6 +352,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
        reviews={tour.reviewCount}
        happyLabel={happyLabel}
        images={heroImages}
+       coverImageMobile={tour.coverImageMobile ?? undefined}
      />
 
 
@@ -391,8 +392,15 @@ export default async function TourDetailsPage({ params }: PageProps) {
            )}
 
 
+           {things.length > 0 && (
+             <section id="things" className="scroll-mt-16 mt-6">
+               <ActivitiesShowcase title={`Things to Do on This Tour`} items={things} seeAllHref="/activities" />
+             </section>
+           )}
+
+
            <div className="scroll-mt-16">
-             <TourDetailsAccommodation accommodation={accommodation} image={tour.coverImage ?? undefined} />
+             <TourDetailsAccommodation accommodation={accommodation} image={tour.accommodationImage ?? tour.coverImage ?? undefined} />
            </div>
 
 
@@ -429,13 +437,6 @@ export default async function TourDetailsPage({ params }: PageProps) {
            <div className="scroll-mt-16">
              <TourDetailsBudget budgetBreakdown={budgetBreakdown} personalExpenses={personalExpenses} />
            </div>
-
-
-           {things.length > 0 && (
-             <section id="things" className="scroll-mt-16 mt-6">
-               <ActivitiesShowcase title={`Things to Do on This Tour`} items={things} seeAllHref="/activities" />
-             </section>
-           )}
 
 
            {gallery.length > 0 && (

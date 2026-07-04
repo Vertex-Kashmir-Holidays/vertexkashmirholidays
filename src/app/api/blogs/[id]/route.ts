@@ -11,6 +11,7 @@ const patchSchema = z.object({
   excerpt: z.string().optional().nullable(),
   body: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
+  coverImageMobile: z.string().optional().nullable(),
   author: z.string().optional().nullable(),
   published: z.boolean().optional(),
   publishedAt: z.string().optional().nullable(),

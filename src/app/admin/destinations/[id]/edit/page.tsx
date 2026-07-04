@@ -50,6 +50,7 @@ export default async function EditDestinationPage({ params }: Props) {
           excerpt: dest.excerpt ?? "",
           description: dest.description ?? "",
           coverImage: dest.coverImage ?? "",
+          coverImageMobile: dest.coverImageMobile ?? "",
           altitude: dest.altitude ?? "",
           season: dest.season ?? "",
           region: dest.region ?? "",
