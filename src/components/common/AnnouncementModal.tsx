@@ -152,21 +152,14 @@ export function AnnouncementModal() {
 
           {/* Wave emoji + headline */}
           <div className="absolute bottom-4 left-6">
-            <p className="text-2xl mb-0.5">👋</p>
             <h2 className="text-brand-navy dark:text-white font-extrabold text-xl leading-tight tracking-tight dark:drop-shadow">
-              Welcome to Kashmir!
+              <span className="text-5xl mb-0.5">👋</span> Welcome to Kashmir!
             </h2>
           </div>
         </div>
 
         {/* Body */}
         <div className="px-6 pt-5 pb-6 space-y-5">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Vertex Kashmir Holidays
-          </div>
-
           {/* Message */}
           <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
             {message}

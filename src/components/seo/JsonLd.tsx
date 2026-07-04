@@ -23,6 +23,12 @@ export function buildTravelAgency(opts?: {
   telephone?: string | null;
   email?: string | null;
   streetAddress?: string | null;
+  legalName?: string | null;
+  taxId?: string | null;
+  addressLocality?: string | null;
+  addressRegion?: string | null;
+  postalCode?: string | null;
+  addressCountry?: string | null;
   sameAs?: string[];
 }) {
   return {
@@ -30,6 +36,8 @@ export function buildTravelAgency(opts?: {
     "@type": "TravelAgency",
     "@id": `${siteUrl}/#organization`,
     name: "Vertex Kashmir Holidays",
+    ...(opts?.legalName ? { legalName: opts.legalName } : {}),
+    ...(opts?.taxId ? { taxID: opts.taxId } : {}),
     description:
       "Premium Kashmir tourism and booking platform — curated honeymoon, family, adventure and luxury packages.",
     url: siteUrl,
@@ -45,11 +53,11 @@ export function buildTravelAgency(opts?: {
     },
     address: {
       "@type": "PostalAddress",
-      streetAddress: opts?.streetAddress ?? "Residency Road",
-      addressLocality: "Srinagar",
-      addressRegion: "Jammu & Kashmir",
-      postalCode: "190001",
-      addressCountry: "IN",
+      streetAddress: opts?.streetAddress ?? "Katipora, Tangmarg",
+      addressLocality: opts?.addressLocality ?? "Baramulla",
+      addressRegion: opts?.addressRegion ?? "Jammu & Kashmir",
+      postalCode: opts?.postalCode ?? "193402",
+      addressCountry: opts?.addressCountry ?? "IN",
     },
     sameAs: opts?.sameAs ?? [],
   };
@@ -209,7 +217,7 @@ export function buildCampaignProduct(campaign: {
           ...(campaign.offerDeadline
             ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
             : {}),
-          url: `${siteUrl}/campaign/${campaign.slug}`,
+          url: `${siteUrl}/adventures/${campaign.slug}`,
         };
       })
     : [
@@ -221,7 +229,7 @@ export function buildCampaignProduct(campaign: {
           ...(campaign.offerDeadline
             ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
             : {}),
-          url: `${siteUrl}/campaign/${campaign.slug}`,
+          url: `${siteUrl}/adventures/${campaign.slug}`,
         },
       ];
 
@@ -231,7 +239,7 @@ export function buildCampaignProduct(campaign: {
     name: campaign.name,
     description: campaign.sub ?? campaign.name,
     image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
-    url: `${siteUrl}/campaign/${campaign.slug}`,
+    url: `${siteUrl}/adventures/${campaign.slug}`,
     brand: { "@type": "Brand", name: "Vertex Kashmir Holidays" },
     offers: offers.length === 1 ? offers[0] : offers,
   };
@@ -271,14 +279,14 @@ export function buildCampaignEvents(campaign: {
           },
         },
         image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
-        url: `${siteUrl}/campaign/${campaign.slug}`,
+        url: `${siteUrl}/adventures/${campaign.slug}`,
         organizer: { "@id": `${siteUrl}/#organization` },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",
           ...(isNaN(price) ? {} : { price }),
           availability,
-          url: `${siteUrl}/campaign/${campaign.slug}`,
+          url: `${siteUrl}/adventures/${campaign.slug}`,
         },
       };
     });

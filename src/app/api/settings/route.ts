@@ -25,6 +25,14 @@ const patchSchema = z.object({
   gstRates: z.array(z.coerce.number().positive().max(100)).optional(),
   showAnnouncementBanner: z.boolean().optional(),
   announcementMessage: z.string().optional().nullable(),
+  // Legal/business identity
+  legalName: z.string().optional().nullable(),
+  tourismRegNumber: z.string().optional().nullable(),
+  addressLine1: z.string().optional().nullable(),
+  addressCity: z.string().optional().nullable(),
+  addressState: z.string().optional().nullable(),
+  addressPincode: z.string().optional().nullable(),
+  addressCountry: z.string().optional().nullable(),
 });
 
 export async function GET() {

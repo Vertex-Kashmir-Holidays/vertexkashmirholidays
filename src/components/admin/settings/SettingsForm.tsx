@@ -25,6 +25,13 @@ const schema = z.object({
  gstRates: z.string().optional(),
  showAnnouncementBanner: z.boolean().optional(),
  announcementMessage: z.string().optional(),
+ legalName: z.string().optional(),
+ tourismRegNumber: z.string().optional(),
+ addressLine1: z.string().optional(),
+ addressCity: z.string().optional(),
+ addressState: z.string().optional(),
+ addressPincode: z.string().optional(),
+ addressCountry: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -46,6 +53,13 @@ interface SiteSettings {
  gstRates: string;
  showAnnouncementBanner: boolean;
  announcementMessage: string | null;
+ legalName: string | null;
+ tourismRegNumber: string | null;
+ addressLine1: string | null;
+ addressCity: string | null;
+ addressState: string | null;
+ addressPincode: string | null;
+ addressCountry: string | null;
 }
 
 interface Props {
@@ -98,6 +112,13 @@ export function SettingsForm({ settings }: Props) {
      gstRates: parseGstRates(settings.gstRates).join(", "),
      showAnnouncementBanner: settings.showAnnouncementBanner,
      announcementMessage: settings.announcementMessage ?? "",
+     legalName: settings.legalName ?? "",
+     tourismRegNumber: settings.tourismRegNumber ?? "",
+     addressLine1: settings.addressLine1 ?? "",
+     addressCity: settings.addressCity ?? "",
+     addressState: settings.addressState ?? "",
+     addressPincode: settings.addressPincode ?? "",
+     addressCountry: settings.addressCountry ?? "",
    },
  });
 
@@ -146,6 +167,27 @@ export function SettingsForm({ settings }: Props) {
              <Field label="Phone" name="sitePhone" register={register} placeholder="+91 94000 00000" />
            </div>
            <Field label="Address" name="siteAddress" register={register} textarea placeholder="Dal Lake Road, Srinagar, J&K 190001" />
+         </div>
+
+         {/* Legal & Registration — used in JSON-LD, legal pages, and generated PDFs/itineraries */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <h3 className="font-bold text-foreground text-sm">Legal &amp; Registration</h3>
+           <p className="text-[11px] text-muted-foreground -mt-2">
+             Official business identity — shown in legal pages, generated PDFs/itineraries, and structured SEO data. Separate from the brand name/address above.
+           </p>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <Field label="Legal Business Name" name="legalName" register={register} placeholder="Vertex Kashmir Tour & Travels" />
+             <Field label="Tourism Registration No." name="tourismRegNumber" register={register} placeholder="JKEA00001840" />
+           </div>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <Field label="Address Line 1" name="addressLine1" register={register} placeholder="Katipora, Tangmarg" />
+             <Field label="City / District" name="addressCity" register={register} placeholder="Baramulla" />
+           </div>
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+             <Field label="State" name="addressState" register={register} placeholder="Jammu & Kashmir" />
+             <Field label="Pincode" name="addressPincode" register={register} placeholder="193402" />
+             <Field label="Country" name="addressCountry" register={register} placeholder="India" />
+           </div>
          </div>
 
          {/* Social Media & Contacts */}

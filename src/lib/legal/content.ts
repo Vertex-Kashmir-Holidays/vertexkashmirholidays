@@ -21,7 +21,9 @@ export interface LegalPageDef {
 }
 
 const COMPANY = "Vertex Kashmir Holidays";
-const LEGAL_ENTITY = "Vertex Kashmir Tour & Travel";
+const LEGAL_ENTITY = "Vertex Kashmir Tour & Travels";
+const TOURISM_REG_NUMBER = "JKEA00001840";
+const BUSINESS_ADDRESS = "Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India";
 
 export const LEGAL_PAGES: LegalPageDef[] = [
   {
@@ -86,6 +88,9 @@ export const LEGAL_PAGES: LegalPageDef[] = [
 
 <h2>13. Contact Us</h2>
 <p>For any questions about these Terms, please reach us through the contact details listed on our <a href="/contact">Contact</a> page.</p>
+
+<h2>14. Company Information</h2>
+<p>${LEGAL_ENTITY} (trading as ${COMPANY})<br>J&amp;K Tourism Registration No. ${TOURISM_REG_NUMBER}<br>${BUSINESS_ADDRESS}</p>
 `,
   },
   {
@@ -143,6 +148,9 @@ export const LEGAL_PAGES: LegalPageDef[] = [
 
 <h2>11. Contact Us</h2>
 <p>If you have any questions about this Privacy Policy or how we handle your data, please reach out via our <a href="/contact">Contact</a> page.</p>
+
+<h2>12. Company Information</h2>
+<p>${LEGAL_ENTITY} (trading as ${COMPANY})<br>J&amp;K Tourism Registration No. ${TOURISM_REG_NUMBER}<br>${BUSINESS_ADDRESS}</p>
 `,
   },
   {
@@ -192,6 +200,9 @@ export const LEGAL_PAGES: LegalPageDef[] = [
 
 <h2>9. Contact Us</h2>
 <p>To request a cancellation or for any questions about refunds, please contact us through the details on our <a href="/contact">Contact</a> page. Our team will guide you through the process.</p>
+
+<h2>10. Company Information</h2>
+<p>${LEGAL_ENTITY} (trading as ${COMPANY})<br>J&amp;K Tourism Registration No. ${TOURISM_REG_NUMBER}<br>${BUSINESS_ADDRESS}</p>
 `,
   },
 ];

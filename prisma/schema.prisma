@@ -1008,6 +1008,16 @@ model SiteSettings {
   gstRates                 String   @default("[5,16,18]")
   showAnnouncementBanner   Boolean  @default(false)
   announcementMessage      String?
+  // Legal/business identity — distinct from the brand-level siteName/siteAddress
+  // above. Used in JSON-LD, legal pages, and generated PDFs/itineraries so those
+  // don't each hardcode their own (previously drifting) copy.
+  legalName         String?
+  tourismRegNumber  String?
+  addressLine1      String?
+  addressCity       String?
+  addressState      String?
+  addressPincode    String?
+  addressCountry    String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 }

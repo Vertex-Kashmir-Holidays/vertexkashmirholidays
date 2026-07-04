@@ -24,6 +24,7 @@ import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
 import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
 import { PackageViewTracker } from "@/components/analytics/PackageViewTracker";
+import { ScrollToTopOnMount } from "@/components/layout/ScrollToTopOnMount";
 
 
 export const revalidate = 300;
@@ -252,6 +253,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
  return (
    <div className="bg-background text-foreground">
+     <ScrollToTopOnMount />
      <PackageViewTracker packageName={tour.title} />
      <JsonLd data={breadcrumbJsonLd} />
      <JsonLd data={productJsonLd} />

@@ -1012,18 +1012,31 @@ async function main() {
     youtube: "https://www.youtube.com/@vertexkashmirholidays",
     twitter: "https://x.com/vertexkashmir",
   };
+  // New legal/business identity columns — every existing row currently has these
+  // as NULL (no admin has touched them yet), so it's safe to set them via update
+  // too, not just create.
+  const legalIdentity = {
+    legalName: "Vertex Kashmir Tour & Travels",
+    tourismRegNumber: "JKEA00001840",
+    addressLine1: "Katipora, Tangmarg",
+    addressCity: "Baramulla",
+    addressState: "Jammu & Kashmir",
+    addressPincode: "193402",
+    addressCountry: "India",
+  };
   await prisma.siteSettings.upsert({
     where: { id: "singleton" },
-    update: { ...siteSocials },
+    update: { ...siteSocials, ...legalIdentity },
     create: {
       id: "singleton",
       siteName: "Vertex Kashmir Holidays",
       siteTagline: "While the plains scorch, Kashmir is calling.",
       siteEmail: "hello@vertexkashmirholidays.com",
       sitePhone: "+91 94190 00000",
-      siteAddress: "Residency Road, Srinagar, Jammu & Kashmir 190001",
+      siteAddress: "Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India",
       whatsapp: "+919419000000",
       ...siteSocials,
+      ...legalIdentity,
       metaTitle: "Vertex Kashmir Holidays — Premium Kashmir Tourism & Booking",
       metaDesc:
         "Discover Kashmir with Vertex — curated honeymoon, family, adventure, and luxury packages. Houseboat stays, Gondola rides, glacier treks, and expert guides. Book online.",
@@ -1065,8 +1078,8 @@ async function main() {
       aboutImage1: PLACEHOLDER,
       aboutImage2: PLACEHOLDER,
       aboutCardEmoji: "🏔️",
-      aboutCardTitle: "Srinagar HQ",
-      aboutCardSubtitle: "Boulevard Road, Dal Gate",
+      aboutCardTitle: "Tangmarg HQ",
+      aboutCardSubtitle: "Katipora, Tangmarg",
       aboutRatingTitle: "★ 4.9 Google Rating",
       aboutRatingSubtitle: "1,800+ verified reviews",
     },
@@ -1110,7 +1123,7 @@ async function main() {
     },
     {
       key: "offers",
-      kicker: "EXCLUSIVE CAMPAIGNS",
+      kicker: "EXCLUSIVE ADVENTURES",
       title: "Curated *departures* with fixed dates & prices",
       subtitle: "Guaranteed departures · Group & solo-friendly · Limited seats per batch",
     },
@@ -1259,7 +1272,7 @@ async function main() {
       heroBreadcrumb: "Contact Us",
       heroTitle: "We're Here When You Need Us",
       heroSubtitle:
-        "Questions, custom trip requests, or just want local advice? Our team in Srinagar is ready to help you 24×7.",
+        "Questions, custom trip requests, or just want local advice? Our team in Kashmir is ready to help you 24×7.",
       heroImage: "/hero/lidder-reiver-lg.webp",
       heroImageMobile: "/hero/lidder-river.webp",
       reachKicker: "GET IN TOUCH",
@@ -1269,12 +1282,11 @@ async function main() {
       officeKicker: "VISIT OUR OFFICE",
       officeTitle: "Come Say Hello 👋",
       officeSubtitle: "We'd love to meet you in our hometown.",
-      officeName: "Head Office – Srinagar",
-      officeAddress:
-        "Boulevard Road, Near Dal Lake, Srinagar – 190001, Jammu & Kashmir, India",
+      officeName: "Head Office – Tangmarg",
+      officeAddress: "Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India",
       officeHours: "Mon – Sat: 10:00 AM – 6:00 PM IST\nSunday: 10:00 AM – 2:00 PM IST",
       officeMapLabel: "Vertex Kashmir Holidays",
-      officeMapSubLabel: "Boulevard Road, Srinagar",
+      officeMapSubLabel: "Katipora, Tangmarg",
       faqsKicker: "BEFORE YOU ASK...",
       faqsTitle: "Quick Answers",
       faqsCtaLabel: "View all FAQs",

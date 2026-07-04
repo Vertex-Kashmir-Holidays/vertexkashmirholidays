@@ -49,9 +49,9 @@ export function CampaignsList({ items, canDelete }: { items: CampaignRow[]; canD
                 {c.published ? "Published" : "Draft"}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">/campaign/{c.slug}</p>
+            <p className="text-xs text-muted-foreground">/adventures/{c.slug}</p>
           </div>
-          <Link href={`/campaign/${c.slug}`} target="_blank" className="text-muted-foreground hover:text-primary" aria-label="View live">
+          <Link href={`/adventures/${c.slug}`} target="_blank" className="text-muted-foreground hover:text-primary" aria-label="View live">
             <ExternalLink className="h-4 w-4" />
           </Link>
           <Link href={`/admin/campaigns/${c.id}`} className="text-muted-foreground hover:text-foreground" aria-label="Edit">

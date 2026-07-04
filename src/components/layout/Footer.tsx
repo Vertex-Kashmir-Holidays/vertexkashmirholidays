@@ -6,6 +6,7 @@ import { MapPin, Phone } from 'lucide-react';
 import { Logo } from '@/components/brand/Logo';
 import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon } from '@/components/icons/brand';
 import { trackWhatsappClick, trackPhoneClick, trackEmailClick } from '@/lib/analytics';
+import { formatBusinessAddress } from '@/lib/businessAddress';
 
 
 export interface FooterSettings {
@@ -21,6 +22,13 @@ export interface FooterSettings {
  youtube: string | null;
  googleReviews?: string | null;
  tripadvisor?: string | null;
+ legalName?: string | null;
+ tourismRegNumber?: string | null;
+ addressLine1?: string | null;
+ addressCity?: string | null;
+ addressState?: string | null;
+ addressPincode?: string | null;
+ addressCountry?: string | null;
 }
 
 
@@ -28,10 +36,10 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
  const siteName = settings?.siteName ?? 'Vertex Kashmir Holidays';
  const tagline =
    settings?.siteTagline ??
-   'Locally based in Srinagar. Handcrafted Kashmir holidays with zero middlemen, transparent pricing and 24/7 on-ground support.';
+   'Locally based in Kashmir. Handcrafted holidays with zero middlemen, transparent pricing and 24/7 on-ground support.';
  const phone = settings?.sitePhone ?? '+91 99999 00000';
  const email = settings?.siteEmail ?? 'hello@vertexkashmir.com';
- const address = settings?.siteAddress ?? 'Boulevard Road, Dal Gate, Srinagar 190001';
+ const address = formatBusinessAddress(settings) ?? settings?.siteAddress ?? 'Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India';
 
 
  // Build a WhatsApp click-to-chat link from the settings number (whatsapp →
@@ -116,7 +124,7 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
                <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
              </li>
              <li>
-               <Link href="/campaign" className="transition hover:text-primary">Special Offers</Link>
+               <Link href="/adventures" className="transition hover:text-primary">Adventures</Link>
              </li>
              <li>
                <Link href="/blog" className="transition hover:text-primary">Travel Blog</Link>
@@ -127,7 +135,7 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
            </ul>
          </div>
          <div>
-           <p className="text-sm font-bold text-foreground">Support</p>
+           <p className="text-sm font-bold text-foreground">Legals</p>
            <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
              <li>
                <Link href="/contact" className="transition hover:text-primary">Contact Us</Link>
@@ -170,10 +178,13 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
            </p>
          </div>
        </div>
-       <div className="border-t border-border py-5">
+       <div className="border-t border-border pt-5 pb-20 lg:pb-5">
          <div className="mx-auto flex max-w-[1300px] flex-wrap items-center justify-between gap-4 px-6">
-           <p className="text-[12px] text-muted-foreground">
-             © {new Date().getFullYear()} {siteName} · J&amp;K Tourism Licensed · Razorpay Secured Payments
+           <p className="text-[14px] text-muted-foreground">
+             © {new Date().getFullYear()} {siteName}
+             {settings?.legalName && settings.legalName !== siteName ? `, operated by ${settings.legalName}` : ''}
+             {settings?.tourismRegNumber ? ` · J&K Tourism Reg. ${settings.tourismRegNumber}` : ' · J&K Tourism Licensed'}
+             {' · '}Razorpay Secured Payments
            </p>
            <div className="flex flex-wrap items-center gap-3">
              {settings?.googleReviews && (
