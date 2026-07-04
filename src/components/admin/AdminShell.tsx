@@ -32,6 +32,7 @@ import {
   Map,
   Ticket,
   MessageSquare,
+  Flag,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -60,7 +61,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   contact: Phone,
   legal: ScrollText,
   campaigns: Megaphone,
-  banners: Megaphone,
+  banners: Flag,
   reviews: Star,
   seo: Globe,
   settings: Settings,
@@ -70,6 +71,18 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
 const PAGE_TITLES: Record<string, string> = Object.fromEntries(
   MODULES.map((m) => [m.href, m.label]),
 );
+
+// Sidebar section grouping — purely a display concern, layered on top of the
+// flat MODULES/permission system. `label: null` renders its items with no
+// section header (Dashboard/Connect up top).
+const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
+  { label: null, keys: ["dashboard", "connect"] },
+  { label: "Catalog", keys: ["destinations", "packages", "activities", "campaigns"] },
+  { label: "CRM", keys: ["leads", "itinerary", "bookings"] },
+  { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
+  { label: "Editorial", keys: ["blogs", "seo", "reviews"] },
+  { label: "Admin", keys: ["users", "settings", "roles"] },
+];
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -85,6 +98,11 @@ interface NavItem {
   href: string;
   label: string;
   Icon: LucideIcon;
+}
+
+interface NavGroup {
+  label: string | null;
+  items: NavItem[];
 }
 
 // Small circular avatar showing the user's picture, or their initial as a
@@ -111,14 +129,14 @@ function Avatar({ src, name, className }: { src: string | null; name: string; cl
 
 function SidebarContent({
   pathname,
-  nav,
+  navGroups,
   userName,
   userEmail,
   userImage,
   onClose,
 }: {
   pathname: string;
-  nav: NavItem[];
+  navGroups: NavGroup[];
   userName: string;
   userEmail: string;
   userImage: string | null;
@@ -137,26 +155,35 @@ function SidebarContent({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {nav.map(({ href, label, Icon }) => {
-          const isActive = pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
-              )}
-            >
-              <Icon className={cn("w-4.5 h-4.5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
-              {label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+        {navGroups.map((group, i) => (
+          <div key={group.label ?? `group-${i}`} className="space-y-0.5">
+            {group.label && (
+              <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                {group.label}
+              </p>
+            )}
+            {group.items.map(({ href, label, Icon }) => {
+              const isActive = pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  )}
+                >
+                  <Icon className={cn("w-4.5 h-4.5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Need Help card */}
@@ -210,19 +237,24 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
   const { unlock } = useNotificationSound();
   const pageTitle = pathname === "/admin/profile" ? "My Profile" : PAGE_TITLES[pathname] ?? "Admin";
 
-  // Only show modules the current role may view.
-  const nav: NavItem[] = MODULES.filter((m) => permissions[m.key]?.view).map((m) => ({
-    href: m.href,
-    label: m.label,
-    Icon: MODULE_ICONS[m.key],
-  }));
+  // Only show modules the current role may view, grouped into sidebar sections.
+  // A group is dropped entirely if none of its modules are visible to this role.
+  const navGroups: NavGroup[] = NAV_GROUPS.map((group) => ({
+    label: group.label,
+    items: group.keys
+      .filter((key) => permissions[key]?.view)
+      .map((key) => {
+        const mod = MODULES.find((m) => m.key === key)!;
+        return { href: mod.href, label: mod.label, Icon: MODULE_ICONS[key] };
+      }),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <CallProvider currentUserId={userId} currentUserName={userName}>
     <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-56 shrink-0">
-        <SidebarContent pathname={pathname} nav={nav} userName={userName} userEmail={userEmail} userImage={userImage} />
+        <SidebarContent pathname={pathname} navGroups={navGroups} userName={userName} userEmail={userEmail} userImage={userImage} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -235,7 +267,7 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
           <aside className="relative z-10 w-56 flex flex-col">
             <SidebarContent
               pathname={pathname}
-              nav={nav}
+              navGroups={navGroups}
               userName={userName}
               userEmail={userEmail}
               userImage={userImage}

@@ -15,7 +15,7 @@ interface CampaignCardProps {
 }
 
 export function CampaignCard({ campaign, index = 0 }: CampaignCardProps) {
-  const href = `/campaign/${campaign.slug}`;
+  const href = `/adventures/${campaign.slug}`;
 
   return (
     <motion.div

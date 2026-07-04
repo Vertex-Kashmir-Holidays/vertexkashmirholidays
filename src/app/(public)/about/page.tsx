@@ -12,6 +12,7 @@ import { AboutStory } from '@/components/about/AboutStory';
 import { AboutTeam } from '@/components/about/AboutTeam';
 import { AboutValues } from '@/components/about/AboutValues';
 import { sanitizePressHtml } from '@/lib/sanitize';
+import { formatBusinessAddress } from '@/lib/businessAddress';
 
 export const revalidate = 300;
 
@@ -20,14 +21,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: 'About Us — Local Kashmir Travel Experts',
     description:
-      'Meet Vertex Kashmir Holidays — a Srinagar-based team crafting honest, handpicked Kashmir tours with zero middlemen, transparent pricing and 24/7 on-ground support.',
+      'Meet Vertex Kashmir Holidays — a Kashmir-based team crafting honest, handpicked tours with zero middlemen, transparent pricing and 24/7 on-ground support.',
     canonical: `${SITE_URL}/about`,
     ogImage: content?.ogImage ?? content?.heroImage ?? null,
   });
 }
 
 export default async function AboutPage() {
-  const [content, storyFeatures, stats, values, team, journey, press] =
+  const [content, storyFeatures, stats, values, team, journey, press, settings] =
     await Promise.all([
       prisma.aboutContent.findUnique({ where: { id: 'singleton' } }),
       prisma.aboutStoryFeature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
@@ -36,7 +37,9 @@ export default async function AboutPage() {
       prisma.teamMember.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.journeyMilestone.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.pressLogo.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
     ]);
+  const businessAddress = formatBusinessAddress(settings) ?? settings?.siteAddress ?? null;
 
   return (
     <div className="bg-background text-foreground">
@@ -131,6 +134,15 @@ export default async function AboutPage() {
           emailHref: content?.ctaEmailHref ?? null,
         }}
       />
+      {(settings?.legalName || settings?.tourismRegNumber || businessAddress) && (
+        <p className="mx-auto max-w-[1300px] px-6 pb-10 text-center text-[11px] leading-relaxed text-muted-foreground">
+          {settings?.legalName && settings.legalName !== settings?.siteName
+            ? `"${settings?.siteName ?? 'Vertex Kashmir Holidays'}" is operated by ${settings.legalName}`
+            : settings?.siteName ?? 'Vertex Kashmir Holidays'}
+          {settings?.tourismRegNumber && ` · J&K Tourism Reg. No. ${settings.tourismRegNumber}`}
+          {businessAddress && ` · ${businessAddress}`}
+        </p>
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ function pageKeyFor(pathname: string): string {
   if (pathname.startsWith("/about")) return "about";
   if (pathname.startsWith("/contact")) return "contact";
   if (pathname.startsWith("/activities")) return "activities";
-  if (pathname.startsWith("/campaign")) return "campaigns";
+  if (pathname.startsWith("/adventures")) return "campaigns";
   return "other";
 }
 

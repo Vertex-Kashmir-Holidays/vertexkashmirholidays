@@ -45,14 +45,11 @@ export function Navbar() {
   }, [pathname]);
 
   const navLinks = [
-    { href: '/', label: 'Home' },
     { href: '/tours', label: 'Tours' },
-    { href: '/campaign', label: 'Campaigns' },
     { href: '/destinations', label: 'Destinations' },
-    { href: '/activities', label: 'Activities' },
-    { href: '/about', label: 'About Us' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/adventures', label: 'Adventures' },
+    { href: '/activities', label: 'Things To Do' },
+    { href: '/blog', label: 'Travel Stories' },
   ];
 
   const bottomNavLinks: { href: string; label: string; Icon: LucideIcon }[] = [
@@ -69,7 +66,7 @@ export function Navbar() {
   // Pages that open with a full-bleed dark hero behind the navbar. Only on these
   // does the un-scrolled navbar go transparent with a white lockup; everywhere
   // else (booking, legal, etc.) it keeps the cream glass + ink/theme-aware logo.
-  const heroRoutes = ['/', '/tours', '/campaign', '/destinations', '/activities', '/about', '/blog', '/contact'];
+  const heroRoutes = ['/', '/tours', '/adventures', '/destinations', '/activities', '/about', '/blog', '/contact'];
   const hasHero =
     heroRoutes.includes(pathname) ||
     /^\/(tours|destinations|blog|activities)\/[^/]+$/.test(pathname);
@@ -98,7 +95,7 @@ export function Navbar() {
 
           {/* Desktop Navigation — light-on-dark over the hero, ink once landed. */}
           <ul
-            className={`hidden items-center gap-7 text-[13px] font-medium lg:flex ${
+            className={`hidden items-center gap-7 text-[15px] font-medium lg:flex ${
               overHero ? 'text-white/80' : 'text-foreground/75'
             }`}
           >

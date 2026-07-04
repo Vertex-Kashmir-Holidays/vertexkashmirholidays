@@ -11,7 +11,7 @@ import { AboutSection } from "@/components/about/AboutSection";
 import { BlogSection } from "@/components/blog/BlogSection";
 import { DestinationsSection } from "@/components/destinations/DestinationsSection";
 import { HeroSection } from "@/components/home/HeroSection";
-import { OffersSection } from "@/components/home/OffersSection";
+import { AdventureSection } from "@/components/home/AdventureSection";
 import { PackagesSection } from "@/components/home/PackagesSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { UpdatesStrip } from "@/components/home/UpdatesStrip";
@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-// Map a published campaign onto the deal-card shape used by OffersSection.
+// Map a published campaign onto the adventure-card shape used by AdventureSection.
 // Pricing is derived from the campaign's cheapest pricing tier (tiers store
 // prices as "₹28,999"-style strings); HTML in `sub` is stripped for the blurb.
 type CampaignDeal = {
@@ -96,7 +96,7 @@ function campaignToDeal(c: CampaignDeal): OfferData {
     price,
     oldPrice,
     endsText,
-    ctaHref: `/campaign/${c.slug}`,
+    ctaHref: `/adventures/${c.slug}`,
   };
 }
 
@@ -200,7 +200,13 @@ export default async function HomePage() {
   const organizationJsonLd = buildTravelAgency({
     telephone: settings?.sitePhone,
     email: settings?.siteEmail,
-    streetAddress: settings?.siteAddress,
+    legalName: settings?.legalName,
+    taxId: settings?.tourismRegNumber,
+    streetAddress: settings?.addressLine1,
+    addressLocality: settings?.addressCity,
+    addressRegion: settings?.addressState,
+    postalCode: settings?.addressPincode,
+    addressCountry: settings?.addressCountry === "India" ? "IN" : settings?.addressCountry,
     sameAs,
   });
 
@@ -330,7 +336,7 @@ export default async function HomePage() {
           .filter((s) => s.section === "about")
           .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
-      <OffersSection
+      <AdventureSection
         heading={heading("offers")}
         offers={offers.map(campaignToDeal)}
       />

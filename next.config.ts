@@ -51,6 +51,16 @@ const nextConfig: NextConfig = {
  async headers() {
    return [{ source: "/:path*", headers: securityHeaders }];
  },
+ async redirects() {
+   // /campaign was renamed to /adventures (better reflects the seasonal
+   // adventure/offbeat content — Gurez Offbeat, LOC, trekking, skiing — and is
+   // stronger for Google/Meta search intent than the internal "campaign" term).
+   // Permanent redirect preserves SEO equity for already-indexed URLs.
+   return [
+     { source: "/campaign", destination: "/adventures", permanent: true },
+     { source: "/campaign/:slug*", destination: "/adventures/:slug*", permanent: true },
+   ];
+ },
  images: {
    // Serve modern formats; Next negotiates AVIF → WebP → original per browser.
    formats: ["image/avif", "image/webp"],

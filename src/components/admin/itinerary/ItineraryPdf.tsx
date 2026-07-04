@@ -13,6 +13,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
+import { PDF_CONTACT } from "@/lib/pdf/contact";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -39,15 +40,12 @@ const C = {
   white: "#ffffff",
 };
 
-// Single source of truth for company contact details, reused by the page
-// footer and the closing Thank-You page.
+// Company contact details, reused by the page footer and the closing
+// Thank-You page — sourced from the shared PDF_CONTACT (src/lib/pdf/assets.ts)
+// so this never drifts from the invoice PDF's copy again.
 const CONTACT = {
-  company: "Vertex Kashmir Tour & Travel",
-  reg: "J&K Tourism Registration number - JKTA0004560",
-  phone: "+91-7889577789 / +91-9682648388",
+  ...PDF_CONTACT,
   phonePrimary: "+91-7889577789", // single number for the compact page footer
-  address: "Tangmarg, Gulmarg, India - 193402",
-  email: "support@vertexkashmirholidays.com",
 };
 
 const s = StyleSheet.create({

@@ -18,11 +18,11 @@ interface PublicChromeProps {
 export function PublicChrome({ children, settings, strip, promoBanners }: PublicChromeProps) {
   const pathname = usePathname();
 
-  // Campaign *detail* pages (/campaign/[slug]) are full-page microsites that
+  // Adventure *detail* pages (/adventures/[slug]) are full-page microsites that
   // bring their own nav/footer — render them standalone without the global
-  // navbar, footer or aurora background. The /campaign listing page is a normal
+  // navbar, footer or aurora background. The /adventures listing page is a normal
   // public page and keeps the global chrome (like /tours).
-  const isStandalone = /^\/campaign\/[^/]+/.test(pathname ?? '');
+  const isStandalone = /^\/adventures\/[^/]+/.test(pathname ?? '');
 
   if (isStandalone) {
     return <>{children}</>;

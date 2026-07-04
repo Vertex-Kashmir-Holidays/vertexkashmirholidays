@@ -14,6 +14,7 @@ import { ContactSocial } from '@/components/contact/ContactSocial';
 import { ContactTestimonials } from '@/components/contact/ContactTestimonials';
 import { ContactWhatsAppFloat } from '@/components/contact/ContactWhatsAppFloat';
 import { getDisplayReviews } from '@/lib/reviews';
+import { formatBusinessAddress } from '@/lib/businessAddress';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
 export const revalidate = 300;
@@ -52,7 +53,7 @@ export default async function ContactPage() {
 
   const phone = settings?.sitePhone ?? null;
   const email = settings?.siteEmail ?? null;
-  const address = settings?.siteAddress ?? null;
+  const address = formatBusinessAddress(settings) ?? settings?.siteAddress ?? null;
   const whatsapp = settings?.whatsapp ?? phone ?? null;
   const directionsUrl =
     content?.directionsUrl ??
@@ -110,7 +111,13 @@ export default async function ContactPage() {
   const organizationLd = buildTravelAgency({
     telephone: phone,
     email,
-    streetAddress: address,
+    legalName: settings?.legalName,
+    taxId: settings?.tourismRegNumber,
+    streetAddress: settings?.addressLine1,
+    addressLocality: settings?.addressCity,
+    addressRegion: settings?.addressState,
+    postalCode: settings?.addressPincode,
+    addressCountry: settings?.addressCountry === 'India' ? 'IN' : settings?.addressCountry,
     sameAs: [
       settings?.instagram,
       settings?.facebook,
@@ -178,6 +185,9 @@ export default async function ContactPage() {
             directionsUrl,
             phone,
             email,
+            legalName: settings?.legalName ?? null,
+            tourismRegNumber: settings?.tourismRegNumber ?? null,
+            brandName: settings?.siteName ?? null,
           }}
           offices={offices.map((o) => ({
             id: o.id,

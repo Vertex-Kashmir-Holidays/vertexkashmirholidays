@@ -11,6 +11,7 @@ import { LeadTripSync } from "./LeadTripSync";
 import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
+import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf } from "@/lib/itinerary/export-pdf";
 import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
@@ -462,12 +463,12 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                    className="hidden h-12 w-auto object-contain dark:block"
                  />
                </div>
-               <p className="font-serif mt-4 text-xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">Vertex Kashmir Tour &amp; Travel</p>
-               <p className="text-sm text-mute dark:text-muted-foreground">J&amp;K Tourism Registration number - JKTA0004560</p>
+               <p className="font-serif mt-4 text-xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">{PDF_CONTACT.company}</p>
+               <p className="text-sm text-mute dark:text-muted-foreground">{PDF_CONTACT.reg}</p>
                <div className="mt-7 space-y-3 text-sm">
-                 <p className="flex items-center gap-3"><ItineraryIcon icon="support" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">+91-7889577789 · +91-9682648388</span></p>
-                 <p className="flex items-center gap-3"><ItineraryIcon icon="map-pin" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">Tangmarg, Gulmarg, India - 193402</span></p>
-                 <p className="flex items-center gap-3"><ItineraryIcon icon="calendar" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">support@vertexkashmirholidays.com</span></p>
+                 <p className="flex items-center gap-3"><ItineraryIcon icon="support" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.phone}</span></p>
+                 <p className="flex items-center gap-3"><ItineraryIcon icon="map-pin" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.address}</span></p>
+                 <p className="flex items-center gap-3"><ItineraryIcon icon="calendar" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.email}</span></p>
                </div>
              </div>
              <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white dark:bg-primary/20 sm:p-10">

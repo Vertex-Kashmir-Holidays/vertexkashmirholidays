@@ -54,6 +54,16 @@ export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
           )}
         </ul>
 
+        {(content.legalName || content.tourismRegNumber) && (
+          <p className="mt-5 text-[11px] leading-relaxed text-muted-foreground">
+            {content.legalName && content.legalName !== content.brandName
+              ? `"${content.brandName ?? 'Vertex Kashmir Holidays'}" is operated by ${content.legalName}`
+              : content.brandName ?? 'Vertex Kashmir Holidays'}
+            {content.tourismRegNumber && <br />}
+            {content.tourismRegNumber && `J&K Tourism Reg. No. ${content.tourismRegNumber}`}
+          </p>
+        )}
+
         <Link
           href={content.directionsUrl ?? '#'}
           target='_blank'

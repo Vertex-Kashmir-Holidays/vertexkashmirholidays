@@ -55,6 +55,9 @@ export interface ContactOfficeContent {
   directionsUrl: string | null;
   phone: string | null;
   email: string | null;
+  legalName: string | null;
+  tourismRegNumber: string | null;
+  brandName: string | null;
 }
 
 export interface ContactFaqData {

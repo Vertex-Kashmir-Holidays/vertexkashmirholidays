@@ -44,6 +44,13 @@ export default async function PublicLayout({
         youtube: s.youtube,
         googleReviews: s.googleReviews,
         tripadvisor: s.tripadvisor,
+        legalName: s.legalName,
+        tourismRegNumber: s.tourismRegNumber,
+        addressLine1: s.addressLine1,
+        addressCity: s.addressCity,
+        addressState: s.addressState,
+        addressPincode: s.addressPincode,
+        addressCountry: s.addressCountry,
       }
     : null;
 
