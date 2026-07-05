@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import {
-  JsonLd,
-  buildTravelAgency,
-  buildWebSite,
-  buildItemList,
-} from "@/components/seo/JsonLd";
+import { JsonLd, buildItemList } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { AboutSection } from "@/components/about/AboutSection";
 import { BlogSection } from "@/components/blog/BlogSection";
@@ -190,28 +185,8 @@ export default async function HomePage() {
   }
 
   // ── Structured data (JSON-LD) ────────────────────────────────────────────
-  const sameAs = [
-    settings?.facebook,
-    settings?.instagram,
-    settings?.twitter,
-    settings?.youtube,
-  ].filter((u): u is string => Boolean(u && u.startsWith("http")));
-
-  const organizationJsonLd = buildTravelAgency({
-    telephone: settings?.sitePhone,
-    email: settings?.siteEmail,
-    legalName: settings?.legalName,
-    taxId: settings?.tourismRegNumber,
-    streetAddress: settings?.addressLine1,
-    addressLocality: settings?.addressCity,
-    addressRegion: settings?.addressState,
-    postalCode: settings?.addressPincode,
-    addressCountry: settings?.addressCountry === "India" ? "IN" : settings?.addressCountry,
-    sameAs,
-  });
-
-  const webSiteJsonLd = buildWebSite();
-
+  // Organization + WebSite schema are injected sitewide in `(public)/layout.tsx`,
+  // not here — avoids duplicating the Organization node on every page.
   const packagesJsonLd = buildItemList(
     tours.map((t) => ({
       name: t.title,
@@ -222,8 +197,6 @@ export default async function HomePage() {
 
   return (
     <div className="bg-background text-foreground">
-      <JsonLd data={organizationJsonLd} />
-      <JsonLd data={webSiteJsonLd} />
       {tours.length > 0 && <JsonLd data={packagesJsonLd} />}
       <HeroSection
         content={{

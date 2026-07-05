@@ -144,7 +144,6 @@ export function buildProduct(tour: {
   coverImage?: string | null;
   priceFrom: number;
   rating?: number;
-  reviewCount?: number;
   reviews?: Array<{ name: string; rating: number; body: string; createdAt: Date }>;
 }) {
   return {
@@ -163,12 +162,15 @@ export function buildProduct(tour: {
       seller: { "@id": `${siteUrl}/#organization` },
       url: `${siteUrl}/tours/${tour.slug}`,
     },
-    ...(tour.reviewCount && tour.reviewCount > 0
+    // aggregateRating count always matches tour.reviews.length — the same
+    // array rendered in the visible Reviews section on this page — so the
+    // schema can never claim more reviews than are actually shown.
+    ...(tour.reviews && tour.reviews.length > 0
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
             ratingValue: tour.rating ?? 4.5,
-            reviewCount: tour.reviewCount,
+            reviewCount: tour.reviews.length,
             bestRating: 5,
             worstRating: 1,
           },

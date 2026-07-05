@@ -3,6 +3,7 @@ import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
 import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
+import { JsonLd, buildTravelAgency, buildWebSite } from "@/components/seo/JsonLd";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
 import type { FooterSettings } from "@/components/layout/Footer";
 
@@ -54,6 +55,27 @@ export default async function PublicLayout({
       }
     : null;
 
+  // Sitewide Organization + WebSite JSON-LD — injected once here (not per-page)
+  // so every public page's own JSON-LD graph can resolve the "@id" references
+  // used by Product/TouristTrip/BlogPosting/TouristDestination (seller/provider/
+  // organizer) on that same page.
+  const sameAs = [s?.facebook, s?.instagram, s?.twitter, s?.youtube, s?.tripadvisor, s?.googleReviews]
+    .filter((u): u is string => Boolean(u && u.startsWith("http")));
+
+  const organizationJsonLd = buildTravelAgency({
+    telephone: s?.sitePhone,
+    email: s?.siteEmail,
+    legalName: s?.legalName,
+    taxId: s?.tourismRegNumber,
+    streetAddress: s?.addressLine1,
+    addressLocality: s?.addressCity,
+    addressRegion: s?.addressState,
+    postalCode: s?.addressPincode,
+    addressCountry: s?.addressCountry === "India" ? "IN" : s?.addressCountry,
+    sameAs,
+  });
+  const webSiteJsonLd = buildWebSite();
+
   return (
     <SiteSettingsProvider
       value={{
@@ -64,6 +86,8 @@ export default async function PublicLayout({
         announcementMessage: s?.announcementMessage ?? null,
       }}
     >
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={webSiteJsonLd} />
       <PublicChrome
         settings={settings}
         promoBanners={promoBanners}

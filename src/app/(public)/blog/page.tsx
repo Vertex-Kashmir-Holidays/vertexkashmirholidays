@@ -3,6 +3,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
+import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
 import { BlogPageClient } from '@/components/blog/BlogPageClient';
 
 export const revalidate = 300;
@@ -50,7 +51,14 @@ export default async function BlogPage() {
 
   const countMap = new Map(counts.map((c) => [c.category, c._count._all]));
 
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: 'Home', url: SITE_URL },
+    { name: 'Blog', url: `${SITE_URL}/blog` },
+  ]);
+
   return (
+    <>
+    <JsonLd data={breadcrumbJsonLd} />
     <BlogPageClient
       content={{
         heroKicker: content?.heroKicker ?? null,
@@ -104,5 +112,6 @@ export default async function BlogPage() {
         dateLabel: dateLabel(b.publishedAt),
       }))}
     />
+    </>
   );
 }

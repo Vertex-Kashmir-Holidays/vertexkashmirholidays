@@ -300,7 +300,6 @@ export default async function TourDetailsPage({ params }: PageProps) {
    coverImage: tour.coverImage,
    priceFrom: tour.priceFrom,
    rating: tour.rating,
-   reviewCount: tour.reviewCount,
    reviews: tour.reviews.map((r) => ({
      name: r.name,
      rating: r.rating,
