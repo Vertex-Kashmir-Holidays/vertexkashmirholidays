@@ -344,11 +344,9 @@ export function buildBlogPosting(post: {
       "@type": "Person",
       name: post.author ?? "Vertex Kashmir Holidays",
     },
-    publisher: {
-      "@type": "Organization",
-      name: "Vertex Kashmir Holidays",
-      logo: { "@type": "ImageObject", url: `${siteUrl}/brand/png/icon/vertex-icon-512.png` },
-    },
+    // References the sitewide Organization node injected once in
+    // (public)/layout.tsx, instead of inlining a duplicate Organization object.
+    publisher: { "@id": `${siteUrl}/#organization` },
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt?.toISOString(),
   };

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, X, Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Trash2, X, Eye, EyeOff, Loader2, ExternalLink } from "lucide-react";
 import { getMeta, type FieldDef } from "@/lib/admin/pageFields";
 import { ImageField } from "@/components/admin/pages/ImageField";
 import { VideoField } from "@/components/admin/pages/VideoField";
@@ -20,6 +21,14 @@ interface Props {
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  /**
+   * Optional: URL template for a per-item "View" link (e.g. a category's
+   * filtered public listing). Any `{fieldKey}` token is replaced with the
+   * item's value for that field — e.g. "/blog?category={slug}". Must be a
+   * plain string (not a function) since this crosses the server/client
+   * component boundary as a prop.
+   */
+  viewHrefTemplate?: string;
 }
 
 const inputCls =
@@ -31,7 +40,17 @@ function toInput(value: unknown, type: FieldDef["type"]): string {
   return String(value);
 }
 
-export function ListEditor({ title, description, resource, fields, items, canCreate, canEdit, canDelete }: Props) {
+function buildViewHref(template: string, item: Item): string | null {
+  let missing = false;
+  const filled = template.replace(/\{(\w+)\}/g, (_m, key: string) => {
+    const value = item[key];
+    if (value == null || value === "") missing = true;
+    return String(value ?? "");
+  });
+  return missing ? null : filled;
+}
+
+export function ListEditor({ title, description, resource, fields, items, canCreate, canEdit, canDelete, viewHrefTemplate }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<Item | "new" | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -149,7 +168,9 @@ export function ListEditor({ title, description, resource, fields, items, canCre
         {items.length === 0 ? (
           <p className="px-5 py-6 text-center text-xs text-muted-foreground">No items yet.</p>
         ) : (
-          items.map((item) => (
+          items.map((item) => {
+            const viewHref = viewHrefTemplate ? buildViewHref(viewHrefTemplate, item) : null;
+            return (
             <div key={item.id} className="flex items-center gap-3 px-5 py-3">
               {meta.sortable && (
                 <span className="w-6 shrink-0 text-[11px] font-medium text-muted-foreground/60">{item.sortOrder ?? 0}</span>
@@ -164,6 +185,17 @@ export function ListEditor({ title, description, resource, fields, items, canCre
               </div>
               {meta.activatable && item.isActive === false && (
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Hidden</span>
+              )}
+              {viewHref && (
+                <Link
+                  href={viewHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary"
+                  aria-label="View"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
               )}
               {meta.activatable && canEdit && (
                 <button onClick={() => toggleActive(item)} className="text-muted-foreground hover:text-primary" aria-label="Toggle visibility">
@@ -189,7 +221,8 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                   </button>
                 ))}
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

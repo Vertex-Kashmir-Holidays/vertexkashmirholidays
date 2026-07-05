@@ -80,15 +80,23 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
           <h2 className="font-display font-extrabold text-foreground text-xl">Blog Posts</h2>
           <p className="text-muted-foreground text-xs mt-0.5">Manage all blog content and articles</p>
         </div>
-        {canCreate && (
+        <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/admin/blogs/new"
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+            href="/admin/blog-categories"
+            className="flex items-center gap-2 border border-border hover:bg-muted text-foreground text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            New Post
+            Manage Categories
           </Link>
-        )}
+          {canCreate && (
+            <Link
+              href="/admin/blogs/new"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25"
+            >
+              <Plus className="w-4 h-4" />
+              New Post
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">

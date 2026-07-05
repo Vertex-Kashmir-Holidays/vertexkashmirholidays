@@ -1,20 +1,34 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload, Eye, Images } from "lucide-react";
+import { Loader2, Upload, Eye, Images, Plus, Trash2, HelpCircle } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import sanitizeHtml from "sanitize-html";
+
+const relatedTourItemSchema = z.object({ tourId: z.string().optional(), ctaSentence: z.string().optional() });
+const faqItemSchema = z.object({ question: z.string().optional(), answer: z.string().optional() });
 
 const schema = z.object({
   title: z.string().min(3, "Title is required"),
   slug: z.string().min(3).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
   author: z.string().optional(),
+  authorRole: z.string().optional(),
+  authorBio: z.string().optional(),
+  authorImage: z.string().optional(),
+  category: z.string().optional(),
+  readTime: z.string().regex(/^\d*$/, "Numbers only").optional(),
+  featured: z.boolean().optional(),
+  trending: z.boolean().optional(),
+  relatedTours: z.array(relatedTourItemSchema).max(3, "Up to 3 related tours").optional(),
+  faqs: z.array(faqItemSchema).optional(),
   excerpt: z.string().optional(),
+  quickAnswer: z.string().optional(),
   body: z.string().optional(),
   coverImage: z.string().optional(),
   coverImageMobile: z.string().optional(),
@@ -22,30 +36,35 @@ const schema = z.object({
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
 interface Props {
   defaults?: Partial<FormData> & { id?: string };
+  categoryOptions?: { name: string; slug: string }[];
+  tourOptions?: { id: string; title: string }[];
 }
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-export function BlogForm({ defaults }: Props) {
+export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [previewBody, setPreviewBody] = useState(false);
   // Which field the gallery picker is currently feeding ("body" inserts an
   // <img> tag into the HTML content).
-  const [picker, setPicker] = useState<null | "coverImage" | "coverImageMobile" | "ogImage" | "body">(null);
+  const [picker, setPicker] = useState<null | "coverImage" | "coverImageMobile" | "ogImage" | "authorImage" | "body">(null);
   const isEdit = !!defaults?.id;
 
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     watch,
@@ -56,7 +75,17 @@ export function BlogForm({ defaults }: Props) {
       title: defaults?.title ?? "",
       slug: defaults?.slug ?? "",
       author: defaults?.author ?? "",
+      authorRole: defaults?.authorRole ?? "",
+      authorBio: defaults?.authorBio ?? "",
+      authorImage: defaults?.authorImage ?? "",
+      category: defaults?.category ?? "",
+      readTime: defaults?.readTime ?? "",
+      featured: defaults?.featured ?? false,
+      trending: defaults?.trending ?? false,
+      relatedTours: (defaults?.relatedTours ?? []).map((r) => ({ tourId: r.tourId, ctaSentence: r.ctaSentence })),
+      faqs: (defaults?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer })),
       excerpt: defaults?.excerpt ?? "",
+      quickAnswer: defaults?.quickAnswer ?? "",
       body: defaults?.body ?? "",
       coverImage: defaults?.coverImage ?? "",
       coverImageMobile: defaults?.coverImageMobile ?? "",
@@ -64,8 +93,13 @@ export function BlogForm({ defaults }: Props) {
       metaTitle: defaults?.metaTitle ?? "",
       metaDesc: defaults?.metaDesc ?? "",
       ogImage: defaults?.ogImage ?? "",
+      ogTitle: defaults?.ogTitle ?? "",
+      ogDescription: defaults?.ogDescription ?? "",
     },
   });
+
+  const { fields: relatedFields, append: addRelated, remove: removeRelated } = useFieldArray({ control, name: "relatedTours" });
+  const { fields: faqFields, append: addFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
 
   const titleVal = watch("title");
   useEffect(() => {
@@ -74,10 +108,13 @@ export function BlogForm({ defaults }: Props) {
 
   const coverImage = watch("coverImage");
   const coverImageMobile = watch("coverImageMobile");
+  const authorImage = watch("authorImage");
   const bodyVal = watch("body");
   const publishedVal = watch("published");
+  const featuredVal = watch("featured");
+  const trendingVal = watch("trending");
 
-  async function uploadFile(file: File, field: "coverImage" | "coverImageMobile" | "ogImage") {
+  async function uploadFile(file: File, field: "coverImage" | "coverImageMobile" | "ogImage" | "authorImage") {
     setUploading(true);
     try {
       const fd = new FormData();
@@ -110,6 +147,13 @@ export function BlogForm({ defaults }: Props) {
   }
 
   function onSubmit(data: FormData) {
+    const { readTime, relatedTours, faqs, ...rest } = data;
+    const payload = {
+      ...rest,
+      readTime: readTime ? Number(readTime) : undefined,
+      relatedTours: JSON.stringify((relatedTours ?? []).filter((r) => r.tourId && r.ctaSentence?.trim())),
+      faqs: JSON.stringify((faqs ?? []).filter((f) => f.question?.trim() || f.answer?.trim())),
+    };
     startTransition(async () => {
       try {
         const url = isEdit ? `/api/blogs/${defaults!.id}` : "/api/blogs";
@@ -117,7 +161,7 @@ export function BlogForm({ defaults }: Props) {
         const res = await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) {
           if (res.status === 403) {
@@ -164,9 +208,42 @@ export function BlogForm({ defaults }: Props) {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-muted-foreground">Category</label>
+                <Link
+                  href="/admin/blog-categories"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  + Add New
+                </Link>
+              </div>
+              <select {...register("category")} className="w-full px-3 py-2 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition">
+                <option value="">— No category —</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.slug} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Read Time (minutes)</label>
+              <input {...register("readTime")} inputMode="numeric" className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" placeholder="e.g. 8" />
+              {errors.readTime && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.readTime.message}</p>}
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">Excerpt</label>
             <textarea {...register("excerpt")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="Short description for cards and meta..." />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Quick Answer</label>
+            <p className="text-[11px] text-muted-foreground mb-1">Short direct-answer callout shown near the top of the article, right before the body. HTML is accepted. Leave the "## Quick Answer" heading out of the Body field below if you fill this in.</p>
+            <textarea {...register("quickAnswer")} rows={3} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="e.g. The best time to visit Kashmir is..." />
           </div>
         </div>
 
@@ -219,6 +296,45 @@ export function BlogForm({ defaults }: Props) {
           )}
         </div>
 
+        {/* Author */}
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <div>
+            <h3 className="font-bold text-foreground text-sm">Author</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Shown on the public "About the Author" card and the article byline.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Author Role</label>
+              <input {...register("authorRole")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Local Travel Expert" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Author Bio</label>
+            <textarea {...register("authorBio")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="Short bio shown on the author card..." />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Author Image</label>
+            <div className="flex gap-3">
+              <input {...register("authorImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
+              <button type="button" onClick={() => setPicker("authorImage")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+                <Images className="w-3.5 h-3.5" />
+                Gallery
+              </button>
+              <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                Upload
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "authorImage")} />
+              </label>
+            </div>
+            {authorImage && (
+              <div className="relative mt-3 h-20 w-20 rounded-full overflow-hidden bg-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={authorImage} alt="Author preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Body */}
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -263,6 +379,95 @@ export function BlogForm({ defaults }: Props) {
           <p className="text-[10px] text-muted-foreground">HTML is rendered as-is on the public blog page.</p>
         </div>
 
+        {/* Related Tours */}
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-foreground text-sm">Related Tours</h3>
+            {relatedFields.length < 3 && (
+              <button
+                type="button"
+                onClick={() => addRelated({ tourId: "", ctaSentence: "" })}
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Related Tour
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-2">Up to 3 curated pairings shown at the end of the article. Each links to a tour with a custom &ldquo;why it fits&rdquo; sentence — not an automatic feed.</p>
+          {relatedFields.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">No related tours added yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {relatedFields.map((field, i) => (
+                <div key={field.id} className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-1 sm:grid-cols-[1fr_2fr_32px] gap-2 items-start">
+                  <select
+                    {...register(`relatedTours.${i}.tourId`)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                  >
+                    <option value="">Select a tour…</option>
+                    {tourOptions.map((t) => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                  <input
+                    {...register(`relatedTours.${i}.ctaSentence`)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                    placeholder='Why it fits — e.g. "Planning a comfortable family vacation?"'
+                  />
+                  <button type="button" onClick={() => removeRelated(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors justify-self-start sm:mt-2">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* FAQs */}
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-foreground text-sm">FAQs</h3>
+            <button
+              type="button"
+              onClick={() => addFaq({ question: "", answer: "" })}
+              className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add FAQ
+            </button>
+          </div>
+          {faqFields.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">No FAQs added yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {faqFields.map((field, i) => (
+                <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                  <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-2.5" />
+                  <div className="flex-1 space-y-2">
+                    <input
+                      {...register(`faqs.${i}.question`)}
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                      placeholder="Question — e.g. Is Kashmir safe for a honeymoon trip?"
+                    />
+                    <textarea
+                      {...register(`faqs.${i}.answer`)}
+                      rows={2}
+                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
+                      placeholder="Answer..."
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFaq(i)}
+                    className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* SEO */}
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <h3 className="font-bold text-foreground text-sm">SEO</h3>
@@ -289,6 +494,16 @@ export function BlogForm({ defaults }: Props) {
               </label>
             </div>
           </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Title</label>
+            <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
+            <input {...register("ogTitle")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Description</label>
+            <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
+            <textarea {...register("ogDescription")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" />
+          </div>
         </div>
       </form>
 
@@ -301,6 +516,17 @@ export function BlogForm({ defaults }: Props) {
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
               {publishedVal ? "Published" : "Draft"}
             </span>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-border">
+            <label className="flex items-center justify-between text-xs font-semibold text-foreground cursor-pointer">
+              Featured
+              <input type="checkbox" {...register("featured")} className="h-4 w-4 accent-primary" />
+            </label>
+            <label className="flex items-center justify-between text-xs font-semibold text-foreground cursor-pointer">
+              Trending
+              <input type="checkbox" {...register("trending")} className="h-4 w-4 accent-primary" />
+            </label>
           </div>
 
           <div className="space-y-2 pt-2 border-t border-border">

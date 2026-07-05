@@ -13,7 +13,7 @@ interface Delegate {
 }
 
 // Which page module (RBAC permission key) owns each resource.
-export type PageModule = "home" | "about" | "contact";
+export type PageModule = "home" | "about" | "contact" | "blogs";
 
 const RESOURCE_MODULE: Record<keyof typeof FIELD_DEFS, PageModule> = {
   heroSlides: "home",
@@ -33,6 +33,7 @@ const RESOURCE_MODULE: Record<keyof typeof FIELD_DEFS, PageModule> = {
   contactPromiseItems: "contact",
   contactFaqs: "contact",
   contactOffices: "contact",
+  blogCategories: "blogs",
 };
 
 interface ResourceDef {
@@ -60,6 +61,7 @@ const DELEGATES: Record<keyof typeof FIELD_DEFS, Delegate> = {
   contactPromiseItems: prisma.contactPromiseItem as unknown as Delegate,
   contactFaqs: prisma.contactFaq as unknown as Delegate,
   contactOffices: prisma.contactOffice as unknown as Delegate,
+  blogCategories: prisma.blogCategory as unknown as Delegate,
 };
 
 export const RESOURCES: Record<string, ResourceDef> = Object.fromEntries(

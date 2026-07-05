@@ -4,15 +4,21 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
-import { JsonLd, buildBreadcrumbList, buildBlogPosting } from '@/components/seo/JsonLd';
+import { JsonLd, buildBreadcrumbList, buildBlogPosting, buildFAQPage } from '@/components/seo/JsonLd';
 import { formatINR } from '@/lib/accents';
 import { imgSrc } from '@/lib/placeholder';
 import { BlogPostBody } from '@/components/blog/BlogPostBody';
+import { BlogPostFAQs } from '@/components/blog/BlogPostFAQs';
+import { BlogPostQuickAnswer } from '@/components/blog/BlogPostQuickAnswer';
 import { BlogPostHero } from '@/components/blog/BlogPostHero';
 import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
 import { BlogPostSidebar } from '@/components/blog/BlogPostSidebar';
+import { TourDetailsRelatedTours } from '@/components/tours/TourDetailsRelatedTours';
+import { parseRelatedTours, parseJson } from '@/lib/tours/content';
 
 export const revalidate = 300;
+
+const BADGE_COLORS = ['orange', 'blue', 'green'] as const;
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -52,6 +58,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       metaTitle: true,
       metaDesc: true,
       ogImage: true,
+      ogTitle: true,
+      ogDescription: true,
       published: true,
     },
   });
@@ -73,6 +81,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       `${post.title} — a Kashmir travel guide by Vertex Kashmir Holidays.`,
     canonical: `${SITE_URL}/blog/${slug}`,
     ogImage: post.ogImage ?? post.coverImage ?? null,
+    ogTitle: post.ogTitle ?? null,
+    ogDescription: post.ogDescription ?? null,
   });
 }
 
@@ -112,9 +122,50 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const { html, toc } = withHeadingIds(post.body);
 
+  const faqs = parseJson<{ question: string; answer: string }[]>(post.faqs, []);
+
+  // Curated related-tours (editorial pairings), same convention as Tour.relatedTours.
+  const relatedTourEntries = parseRelatedTours(post.relatedTours);
+  const relatedTourRows = relatedTourEntries.length > 0
+    ? await prisma.tour.findMany({
+        where: { id: { in: relatedTourEntries.map((r) => r.tourId) }, published: true },
+        include: { destinations: { include: { destination: { select: { name: true } } } } },
+      })
+    : [];
+  const relatedTourById = new Map(relatedTourRows.map((t) => [t.id, t]));
+  const curatedRelatedTours = relatedTourEntries
+    .map((entry) => {
+      const t = relatedTourById.get(entry.tourId);
+      if (!t) return null;
+      return {
+        ctaSentence: entry.ctaSentence,
+        tour: {
+          badge: t.badge ?? 'Tour Package',
+          bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? '')
+            ? (t.badgeColor as (typeof BADGE_COLORS)[number])
+            : ('green' as const),
+          image: t.coverImage ?? undefined,
+          detailHref: `/tours/${t.slug}`,
+          bookHref: `/booking?tour=${t.slug}`,
+          t: t.title,
+          d: `${Math.max(t.duration - 1, 0)}N / ${t.duration}D`,
+          places: t.destinations.map((d) => d.destination.name).join(', '),
+          r: t.rating.toFixed(1),
+          n: String(t.reviewCount),
+          old: t.priceWas ? formatINR(t.priceWas) : undefined,
+          p: formatINR(t.priceFrom),
+        },
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
   const avatar = imgSrc(post.authorImage);
 
-  const fullToc = [...toc, ...(tour ? [{ label: 'Related Tours', href: '#tourCard' }] : [])];
+  const fullToc = [
+    ...toc,
+    ...(faqs.length > 0 ? [{ label: 'FAQs', href: '#faqs' }] : []),
+    ...(tour ? [{ label: 'Related Tours', href: '#tourCard' }] : []),
+  ];
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: 'Home', url: SITE_URL },
@@ -126,6 +177,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={buildBlogPosting(post)} />
       <JsonLd data={breadcrumbJsonLd} />
+      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
 
       <BlogPostHero
         category={post.category}
@@ -148,7 +200,16 @@ export default async function BlogPostPage({ params }: PageProps) {
       <main className="mx-auto max-w-[1300px] px-6 py-10">
         <div className="grid items-start gap-9 lg:grid-cols-[1fr_280px]">
           <article className="min-w-0">
+            <BlogPostQuickAnswer html={post.quickAnswer} />
             <BlogPostBody html={html} />
+            <BlogPostFAQs faqs={faqs} />
+            {curatedRelatedTours.length > 0 && (
+              <TourDetailsRelatedTours
+                relatedTours={curatedRelatedTours}
+                tourName={post.title}
+                tourSlug={post.slug}
+              />
+            )}
             <BlogPostRelated
               posts={related.map((b) => ({
                 id: b.id,
@@ -170,6 +231,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               role: post.authorRole,
               bio: post.authorBio,
               avatar,
+              href: post.author ? `/blog/author/${slugify(post.author)}` : undefined,
             }}
             relatedTour={
               tour

@@ -1,4 +1,4 @@
-// src/components/sections/TourDetailsFAQs.tsx
+// src/components/blog/BlogPostFAQs.tsx
 'use client';
 
 import { useState } from 'react';
@@ -9,23 +9,25 @@ interface FAQ {
   answer: string;
 }
 
-interface TourDetailsFAQsProps {
+interface BlogPostFAQsProps {
   faqs: FAQ[];
 }
 
-export function TourDetailsFAQs({ faqs }: TourDetailsFAQsProps) {
+export function BlogPostFAQs({ faqs }: BlogPostFAQsProps) {
   const [openIndex, setOpenIndex] = useState<number>(-1);
+
+  if (faqs.length === 0) return null;
 
   return (
     <motion.section
       id="faqs"
-      className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+      className="mt-10 scroll-mt-28 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">FAQs</h2>
+      <h2 className="text-[17px] font-bold">Frequently Asked Questions</h2>
       <div className="mt-4 divide-y divide-border">
         {faqs.map((faq, i) => {
           const isOpen = openIndex === i;
@@ -34,7 +36,8 @@ export function TourDetailsFAQs({ faqs }: TourDetailsFAQsProps) {
             <div key={i} className="py-3.5">
               <button
                 onClick={() => setOpenIndex(isOpen ? -1 : i)}
-                className="flex w-full cursor-pointer items-center justify-between gap-4 text-[13.5px] font-bold"
+                aria-expanded={isOpen}
+                className="flex w-full cursor-pointer items-center justify-between gap-4 text-left text-[13.5px] font-bold"
               >
                 {faq.question}
                 <motion.svg

@@ -355,7 +355,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
      />
 
 
-     <main className="mx-auto max-w-[1300px] px-6 pt-6 pb-28 lg:pb-6">
+     <main className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-3 sm:pt-6 pb-28 lg:pb-6">
        <TourDetailsTabs sections={tabs} />
 
 

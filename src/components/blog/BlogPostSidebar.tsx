@@ -14,6 +14,7 @@ interface BlogPostSidebarProps {
     role: string | null;
     bio: string | null;
     avatar: string;
+    href?: string;
   };
   relatedTour?: {
     label: string;
@@ -174,7 +175,11 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
             className="h-14 w-14 shrink-0 rounded-full object-cover"
           />
           <div>
-            <p className="text-[14px] font-bold">{author.name}</p>
+            {author.href ? (
+              <Link href={author.href} className="text-[14px] font-bold transition hover:text-primary">{author.name}</Link>
+            ) : (
+              <p className="text-[14px] font-bold">{author.name}</p>
+            )}
             {author.role && <p className="text-[11.5px] font-semibold text-primary">{author.role}</p>}
             {author.bio && <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{author.bio}</p>}
             <div className="mt-3 flex gap-2">
