@@ -13,11 +13,23 @@ const patchSchema = z.object({
   coverImage: z.string().optional().nullable(),
   coverImageMobile: z.string().optional().nullable(),
   author: z.string().optional().nullable(),
+  authorRole: z.string().optional().nullable(),
+  authorBio: z.string().optional().nullable(),
+  authorImage: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  readTime: z.coerce.number().int().min(0).optional().nullable(),
+  featured: z.boolean().optional(),
+  trending: z.boolean().optional(),
+  relatedTours: z.string().optional(),
+  faqs: z.string().optional(),
+  quickAnswer: z.string().optional().nullable(),
   published: z.boolean().optional(),
   publishedAt: z.string().optional().nullable(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
+  ogTitle: z.string().optional().nullable(),
+  ogDescription: z.string().optional().nullable(),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {

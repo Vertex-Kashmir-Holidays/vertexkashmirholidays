@@ -13,10 +13,22 @@ const createSchema = z.object({
   coverImage: z.string().optional(),
   coverImageMobile: z.string().optional(),
   author: z.string().optional(),
+  authorRole: z.string().optional(),
+  authorBio: z.string().optional(),
+  authorImage: z.string().optional(),
+  category: z.string().optional(),
+  readTime: z.coerce.number().int().min(0).optional(),
+  featured: z.boolean().optional(),
+  trending: z.boolean().optional(),
+  relatedTours: z.string().optional(),
+  faqs: z.string().optional(),
+  quickAnswer: z.string().optional(),
   published: z.boolean().optional(),
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {

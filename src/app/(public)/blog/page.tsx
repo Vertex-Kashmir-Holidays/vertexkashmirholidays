@@ -24,7 +24,10 @@ const dateLabel = (d: Date | null) =>
     ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
 
-export default async function BlogPage() {
+type PageProps = { searchParams: Promise<{ category?: string }> };
+
+export default async function BlogPage({ searchParams }: PageProps) {
+  const { category: categorySlug } = await searchParams;
   const [content, blogs, categories, counts] = await Promise.all([
     prisma.blogContent.findUnique({ where: { id: 'singleton' } }),
     prisma.blog.findMany({
@@ -51,6 +54,12 @@ export default async function BlogPage() {
 
   const countMap = new Map(counts.map((c) => [c.category, c._count._all]));
 
+  // Resolve the ?category=<slug> query param (used by category "View" links
+  // and blog-post breadcrumbs) to the display name BlogPageClient filters by.
+  const initialCategory = categorySlug
+    ? categories.find((c) => c.slug === categorySlug)?.name ?? 'All'
+    : 'All';
+
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: 'Home', url: SITE_URL },
     { name: 'Blog', url: `${SITE_URL}/blog` },
@@ -60,6 +69,7 @@ export default async function BlogPage() {
     <>
     <JsonLd data={breadcrumbJsonLd} />
     <BlogPageClient
+      initialCategory={initialCategory}
       content={{
         heroKicker: content?.heroKicker ?? null,
         heroTitle: content?.heroTitle ?? null,

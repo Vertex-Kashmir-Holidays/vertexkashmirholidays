@@ -548,6 +548,18 @@ model Blog {
   trending         Boolean   @default(false)
   authorBio        String?
   authorRole       String?
+  // Curated pairings — { tourId: string; ctaSentence: string }[] — same shape
+  // and convention as Tour.relatedTours. Not an automatic "more like this" feed.
+  relatedTours     String    @default("[]")
+  // { question: string; answer: string }[] — same shape and convention as Tour.faqs.
+  faqs             String    @default("[]")
+  // Short HTML paragraph rendered in a callout card near the top of the
+  // article, right before the body — the featured-snippet-style "Quick Answer".
+  quickAnswer      String?
+  // Independent OG/Twitter overrides — same convention as Tour.ogTitle/ogDescription.
+  // buildMetadata() falls back to metaTitle/metaDesc when these are absent.
+  ogTitle          String?
+  ogDescription    String?
 
   @@index([slug])
   @@index([published])

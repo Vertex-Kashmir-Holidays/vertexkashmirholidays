@@ -25,6 +25,7 @@ interface BlogPageClientProps {
   chips: BlogChipData[];
   categories: BlogCategoryData[];
   trending: BlogTrendingData[];
+  initialCategory?: string;
 }
 
 export function BlogPageClient({
@@ -34,8 +35,9 @@ export function BlogPageClient({
   chips,
   categories,
   trending,
+  initialCategory = 'All',
 }: BlogPageClientProps) {
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
@@ -65,7 +67,7 @@ export function BlogPageClient({
   return (
     <div className="bg-background text-foreground">
       <BlogHero content={content} onSearch={handleSearch} />
-      <BlogCategoryChips chips={chips} onCategoryChange={handleCategoryChange} />
+      <BlogCategoryChips chips={chips} onCategoryChange={handleCategoryChange} initialActive={initialCategory} />
 
       <main className="mx-auto max-w-[1300px] px-6 py-9">
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_280px]">

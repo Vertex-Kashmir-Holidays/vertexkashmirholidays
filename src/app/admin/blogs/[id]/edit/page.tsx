@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { BlogForm } from "@/components/admin/blogs/BlogForm";
+import { parseRelatedTours, parseJson } from "@/lib/tours/content";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -13,9 +14,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: blog ? `Edit: ${blog.title} — Admin` : "Edit Blog Post — Admin" };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function EditBlogPage({ params }: Props) {
   const { id } = await params;
-  const blog = await prisma.blog.findUnique({ where: { id } });
+  const [blog, categories, tours] = await Promise.all([
+    prisma.blog.findUnique({ where: { id } }),
+    prisma.blogCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, select: { name: true, slug: true } }),
+    prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+  ]);
   if (!blog) notFound();
 
   return (
@@ -44,7 +51,17 @@ export default async function EditBlogPage({ params }: Props) {
           title: blog.title,
           slug: blog.slug,
           author: blog.author ?? "",
+          authorRole: blog.authorRole ?? "",
+          authorBio: blog.authorBio ?? "",
+          authorImage: blog.authorImage ?? "",
+          category: blog.category ?? "",
+          readTime: blog.readTime != null ? String(blog.readTime) : "",
+          featured: blog.featured,
+          trending: blog.trending,
+          relatedTours: parseRelatedTours(blog.relatedTours),
+          faqs: parseJson<{ question: string; answer: string }[]>(blog.faqs, []),
           excerpt: blog.excerpt ?? "",
+          quickAnswer: blog.quickAnswer ?? "",
           body: blog.body ?? "",
           coverImage: blog.coverImage ?? "",
           coverImageMobile: blog.coverImageMobile ?? "",
@@ -52,7 +69,11 @@ export default async function EditBlogPage({ params }: Props) {
           metaTitle: blog.metaTitle ?? "",
           metaDesc: blog.metaDesc ?? "",
           ogImage: blog.ogImage ?? "",
+          ogTitle: blog.ogTitle ?? "",
+          ogDescription: blog.ogDescription ?? "",
         }}
+        categoryOptions={categories}
+        tourOptions={tours}
       />
     </div>
   );

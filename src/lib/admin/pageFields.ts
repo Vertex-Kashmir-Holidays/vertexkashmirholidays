@@ -149,6 +149,12 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "address", label: "Address", type: "textarea", required: true },
     { key: "hours", label: "Hours", type: "text", required: true },
   ],
+  // ── Blog ──
+  blogCategories: [
+    { key: "name", label: "Name", type: "text", required: true },
+    { key: "slug", label: "Slug", type: "text", required: true, placeholder: "e.g. travel-tips" },
+    { key: "icon", label: "Icon (emoji)", type: "text" },
+  ],
 };
 
 export type ResourceKey = keyof typeof FIELD_DEFS;

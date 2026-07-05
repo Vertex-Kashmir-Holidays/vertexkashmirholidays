@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { BlogForm } from "@/components/admin/blogs/BlogForm";
 
 export const metadata: Metadata = { title: "New Blog Post — Admin" };
+export const dynamic = "force-dynamic";
 
-export default function NewBlogPage() {
+export default async function NewBlogPage() {
+  const [categories, tours] = await Promise.all([
+    prisma.blogCategory.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { name: true, slug: true },
+    }),
+    prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+  ]);
+
   return (
     <div className="space-y-5">
       <nav>
@@ -19,7 +30,7 @@ export default function NewBlogPage() {
         <h2 className="font-display font-extrabold text-foreground text-xl">New Blog Post</h2>
         <p className="text-muted-foreground text-xs mt-0.5">Write a new article for the Kashmir blog</p>
       </div>
-      <BlogForm />
+      <BlogForm categoryOptions={categories} tourOptions={tours} />
     </div>
   );
 }

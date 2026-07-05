@@ -8,10 +8,11 @@ import type { BlogChipData } from '@/types/blog';
 interface BlogCategoryChipsProps {
   chips: BlogChipData[];
   onCategoryChange: (category: string) => void;
+  initialActive?: string;
 }
 
-export function BlogCategoryChips({ chips, onCategoryChange }: BlogCategoryChipsProps) {
-  const [activeChip, setActiveChip] = useState('All');
+export function BlogCategoryChips({ chips, onCategoryChange, initialActive = 'All' }: BlogCategoryChipsProps) {
+  const [activeChip, setActiveChip] = useState(initialActive);
 
   // "All" is always first; the rest come from the DB-driven categories.
   const allChips: BlogChipData[] = [{ name: 'All', slug: 'all', icon: '' }, ...chips];
