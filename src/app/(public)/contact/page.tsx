@@ -2,7 +2,6 @@
 
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { JsonLd, buildTravelAgency } from '@/components/seo/JsonLd';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { ContactFAQs } from '@/components/contact/ContactFAQs';
 import { ContactForm } from '@/components/contact/ContactForm';
@@ -108,27 +107,11 @@ export default async function ContactPage() {
     .filter((x): x is [ContactSocialLink['type'], string] => Boolean(x && x[1]))
     .map(([type, href]) => ({ type, href }));
 
-  const organizationLd = buildTravelAgency({
-    telephone: phone,
-    email,
-    legalName: settings?.legalName,
-    taxId: settings?.tourismRegNumber,
-    streetAddress: settings?.addressLine1,
-    addressLocality: settings?.addressCity,
-    addressRegion: settings?.addressState,
-    postalCode: settings?.addressPincode,
-    addressCountry: settings?.addressCountry === 'India' ? 'IN' : settings?.addressCountry,
-    sameAs: [
-      settings?.instagram,
-      settings?.facebook,
-      settings?.youtube,
-      settings?.twitter,
-    ].filter((s): s is string => Boolean(s)),
-  });
+  // Organization schema is injected sitewide in `(public)/layout.tsx` — not
+  // duplicated here.
 
   return (
     <div className="bg-background text-foreground">
-      <JsonLd data={organizationLd} />
       <ContactHero
         data={{
           breadcrumb: content?.heroBreadcrumb ?? null,

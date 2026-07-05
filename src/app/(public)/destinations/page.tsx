@@ -3,6 +3,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
+import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
 import { getLiveWeather } from '@/lib/weather';
 import { DestinationsBrowser } from '@/components/destinations/DestinationsBrowser';
 import { DestinationsCTABand } from '@/components/destinations/DestinationsCTABand';
@@ -68,8 +69,14 @@ export default async function DestinationsPage() {
     }),
   );
 
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: 'Home', url: SITE_URL },
+    { name: 'Destinations', url: `${SITE_URL}/destinations` },
+  ]);
+
   return (
     <div className="bg-background text-foreground">
+      <JsonLd data={breadcrumbJsonLd} />
       <DestinationsHero
         heroImage={section?.heroImage ?? null}
         heroImageMobile={section?.heroImageMobile ?? null}

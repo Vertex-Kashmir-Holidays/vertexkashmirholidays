@@ -19,6 +19,8 @@ const schema = z.object({
  instagram: z.string().optional(),
  twitter: z.string().optional(),
  youtube: z.string().optional(),
+ tripadvisor: z.string().optional(),
+ googleReviews: z.string().optional(),
  metaTitle: z.string().optional(),
  metaDesc: z.string().optional(),
  ogImage: z.string().optional(),
@@ -47,6 +49,8 @@ interface SiteSettings {
  instagram: string | null;
  twitter: string | null;
  youtube: string | null;
+ tripadvisor: string | null;
+ googleReviews: string | null;
  metaTitle: string | null;
  metaDesc: string | null;
  ogImage: string | null;
@@ -106,6 +110,8 @@ export function SettingsForm({ settings }: Props) {
      instagram: settings.instagram ?? "",
      twitter: settings.twitter ?? "",
      youtube: settings.youtube ?? "",
+     tripadvisor: settings.tripadvisor ?? "",
+     googleReviews: settings.googleReviews ?? "",
      metaTitle: settings.metaTitle ?? "",
      metaDesc: settings.metaDesc ?? "",
      ogImage: settings.ogImage ?? "",
@@ -199,6 +205,8 @@ export function SettingsForm({ settings }: Props) {
              <Field label="Instagram URL" name="instagram" register={register} placeholder="https://instagram.com/..." />
              <Field label="Twitter/X URL" name="twitter" register={register} placeholder="https://twitter.com/..." />
              <Field label="YouTube URL" name="youtube" register={register} placeholder="https://youtube.com/..." />
+             <Field label="Tripadvisor URL" name="tripadvisor" register={register} placeholder="https://www.tripadvisor.in/..." />
+             <Field label="Google Business Profile / Reviews URL" name="googleReviews" register={register} placeholder="https://g.page/r/..." />
            </div>
          </div>
        </div>
