@@ -12,7 +12,7 @@ export function TourDetailsOverview({ description, whyItineraryWorks }: TourDeta
   return (
     <motion.section
       id="overview"
-      className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft"
+      className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

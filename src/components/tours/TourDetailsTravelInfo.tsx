@@ -25,7 +25,7 @@ export function TourDetailsTravelInfo({
   if (!hasBestTime && !hasCarry && !hasTips && !hasNotes) return null;
 
   return (
-    <section id="travel-info" className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="travel-info" className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Travel Information</h2>
       <div className="mt-4 space-y-3">
         {hasBestTime && (

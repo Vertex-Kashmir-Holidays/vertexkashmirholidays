@@ -16,7 +16,7 @@ export function TourDetailsBudget({ budgetBreakdown, personalExpenses }: TourDet
   if (!hasBudget && !hasExpenses) return null;
 
   return (
-    <section id="budget" className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="budget" className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Budget</h2>
       <div className="mt-4 space-y-3">
         {hasBudget && (

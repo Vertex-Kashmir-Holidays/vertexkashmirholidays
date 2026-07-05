@@ -17,7 +17,7 @@ export function TourDetailsAccommodation({ accommodation, image }: TourDetailsAc
   return (
     <motion.section
       id="accommodation"
-      className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-soft"
+      className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
