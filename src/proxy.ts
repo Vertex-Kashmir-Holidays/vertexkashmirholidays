@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
+import { isInternalRoute } from "@/lib/internalRoutes";
 
 const { auth } = NextAuth(authConfig);
 
@@ -74,6 +75,11 @@ export default auth(function middleware(req: NextRequest) {
   // headers().get("x-nonce") without re-computing or exposing it in markup.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
+
+  // Forward whether this request is under an internal (staff-only) route so
+  // the root layout can skip injecting GTM entirely for /admin/* — analytics
+  // must never initialize there. See src/lib/internalRoutes.ts.
+  requestHeaders.set("x-analytics-disabled", isInternalRoute(req.nextUrl.pathname) ? "1" : "0");
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

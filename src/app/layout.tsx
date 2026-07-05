@@ -88,7 +88,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // Set by middleware for /admin/* — GTM must never load there. See
+  // src/lib/internalRoutes.ts and src/proxy.ts.
+  const analyticsDisabled = requestHeaders.get("x-analytics-disabled") === "1";
 
   return (
     <html
@@ -102,7 +106,7 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://cdn.razorpay.com" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        {GTM_ID && (
+        {GTM_ID && !analyticsDisabled && (
           <noscript>
             <iframe
               src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
@@ -113,7 +117,7 @@ export default async function RootLayout({
           </noscript>
         )}
 
-        {GTM_ID && <GTMScript gtmId={GTM_ID} nonce={nonce} />}
+        {GTM_ID && !analyticsDisabled && <GTMScript gtmId={GTM_ID} nonce={nonce} />}
 
         <ThemeProvider
           attribute="class"

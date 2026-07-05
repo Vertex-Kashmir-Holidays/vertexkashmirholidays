@@ -6,10 +6,22 @@
 
 
 import type { AnalyticsEvent, LeadType, WhatsAppSource } from "@/types/analytics";
+import { isInternalRoute } from "@/lib/internalRoutes";
 
 
 function push(payload: AnalyticsEvent): void {
  if (typeof window === "undefined") return;
+ // Defense-in-depth: GTM never loads on internal routes (see src/proxy.ts and
+ // src/app/layout.tsx), so this dataLayer push would be a no-op anyway. This
+ // guard just makes that explicit at the single choke point every track*
+ // function flows through, in case a future admin component ever calls one.
+ if (isInternalRoute(window.location.pathname)) {
+   if (process.env.NODE_ENV === "development") {
+     // eslint-disable-next-line no-console
+     console.log("[Analytics] suppressed on internal route", payload);
+   }
+   return;
+ }
  window.dataLayer = window.dataLayer || [];
  window.dataLayer.push(payload as unknown as Record<string, unknown>);
  if (process.env.NODE_ENV === "development") {
