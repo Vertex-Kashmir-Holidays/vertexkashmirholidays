@@ -1,10 +1,10 @@
 // src/components/sections/DestinationDetailThingsToDo.tsx
 'use client';
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { ArrowRight, ChevronRight, Clock } from 'lucide-react';
 import { imgSrc } from '@/lib/placeholder';
+import { motion } from 'framer-motion';
+import { ArrowRight, ChevronRight, Clock } from 'lucide-react';
+import Image from 'next/image';
 
 interface ThingToDo {
   id: string;
@@ -32,7 +32,7 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
   return (
     <motion.section
       id="things"
-      className="rounded-2xl border border-border bg-card p-6 shadow-soft"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

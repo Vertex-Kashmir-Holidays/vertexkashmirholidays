@@ -1,8 +1,8 @@
 // src/components/activities/ActivityRelatedDestinations.tsx
+import { imgSrc } from '@/lib/placeholder';
+import { MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
 
 interface RelatedDestination {
   slug: string;
@@ -21,7 +21,7 @@ export function ActivityRelatedDestinations({ destinations }: ActivityRelatedDes
   if (destinations.length === 0) return null;
 
   return (
-    <section id="where-to-experience" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="where-to-experience" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Where to Experience This</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {destinations.map((d) => (

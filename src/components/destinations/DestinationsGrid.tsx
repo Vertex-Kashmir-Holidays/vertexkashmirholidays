@@ -49,7 +49,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
   };
 
   return (
-    <div className="mx-auto max-w-[1300px] px-6 pt-8">
+    <div className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-8">
       <motion.div
         className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4"
         variants={containerVariants}

@@ -197,7 +197,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         ]}
       />
 
-      <main className="mx-auto max-w-[1300px] px-6 py-10">
+      <main className="mx-auto max-w-[1300px] px-3 sm:px-6 py-10">
         <div className="grid items-start gap-9 lg:grid-cols-[1fr_280px]">
           <article className="min-w-0">
             <BlogPostQuickAnswer html={post.quickAnswer} />

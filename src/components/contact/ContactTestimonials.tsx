@@ -1,11 +1,11 @@
 // src/components/contact/ContactTestimonials.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star } from 'lucide-react';
 import type { ContactSectionHeading, ContactTestimonialData } from '@/types/contact';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Star } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 interface ContactTestimonialsProps {
   heading: ContactSectionHeading;
@@ -36,7 +36,7 @@ export function ContactTestimonials({ heading, testimonials }: ContactTestimonia
     >
       <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
       <h2 className="h-display mt-2 font-display text-[22px] font-bold">{heading.title}</h2>
-      <div className="mt-5 rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <div className="mt-5 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}

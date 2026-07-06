@@ -15,10 +15,14 @@ interface DestinationDetailTabsProps {
 export function DestinationDetailTabs({ sections }: DestinationDetailTabsProps) {
   const [activeTab, setActiveTab] = useState(sections[0].id);
 
+  // Combined height of the fixed navbar + this sticky tabs bar, so the
+  // scroll-spy threshold and scroll-to target both clear the same overlap.
+  const STICKY_OFFSET = 160;
+
   useEffect(() => {
     const handleScroll = () => {
       const sectionElements = sections.map((s) => document.getElementById(s.id));
-      const scrollPosition = window.scrollY + 150;
+      const scrollPosition = window.scrollY + STICKY_OFFSET;
 
       for (let i = sectionElements.length - 1; i >= 0; i--) {
         const el = sectionElements[i];
@@ -38,14 +42,14 @@ export function DestinationDetailTabs({ sections }: DestinationDetailTabsProps) 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      const top = element.getBoundingClientRect().top + window.scrollY - 20;
+      const top = element.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
       window.scrollTo({ top, behavior: 'smooth' });
       setActiveTab(id);
     }
   };
 
   return (
-    <div className="relative z-20 -mt-10">
+    <div className="sticky top-24 z-40 -mt-10 shadow-sm">
       <div className="mx-auto max-w-[1300px] px-6">
         <nav
           className="scrollbar-none flex w-fit max-w-full gap-2 overflow-x-auto rounded-t-2xl bg-card px-4 pt-3 shadow-soft"

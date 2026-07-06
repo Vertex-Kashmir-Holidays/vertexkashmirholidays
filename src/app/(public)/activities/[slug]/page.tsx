@@ -1,35 +1,35 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
-import { buildMetadata, SITE_URL } from "@/lib/seo";
-import {
-  JsonLd,
-  buildBreadcrumbList,
-  buildTouristAttraction,
-  buildImageObjectList,
-  buildFAQPage,
-} from "@/components/seo/JsonLd";
-import { SecondaryHero } from "@/components/layout/SecondaryHero";
-import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
-import { imgSrc } from "@/lib/placeholder";
-import { formatINR } from "@/lib/accents";
-import { parseJson } from "@/lib/tours/content";
-import { ActivityQuickFacts } from "@/components/activities/ActivityQuickFacts";
-import { ActivityWhyExperience } from "@/components/activities/ActivityWhyExperience";
-import { ActivityHighlights } from "@/components/activities/ActivityHighlights";
 import { ActivityBestTime } from "@/components/activities/ActivityBestTime";
+import { ActivityDetailTabs } from "@/components/activities/ActivityDetailTabs";
 import { ActivityDifficulty } from "@/components/activities/ActivityDifficulty";
-import { ActivitySuitableFor } from "@/components/activities/ActivitySuitableFor";
-import { ActivityPricingGuide } from "@/components/activities/ActivityPricingGuide";
-import { ActivitySafetyTips } from "@/components/activities/ActivitySafetyTips";
-import { ActivityWhatToCarry } from "@/components/activities/ActivityWhatToCarry";
+import { ActivityHighlights } from "@/components/activities/ActivityHighlights";
 import { ActivityNearby } from "@/components/activities/ActivityNearby";
+import { ActivityPricingGuide } from "@/components/activities/ActivityPricingGuide";
+import { ActivityQuickFacts } from "@/components/activities/ActivityQuickFacts";
 import { ActivityRelatedDestinations } from "@/components/activities/ActivityRelatedDestinations";
-import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
-import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
+import { ActivitySafetyTips } from "@/components/activities/ActivitySafetyTips";
+import { ActivitySuitableFor } from "@/components/activities/ActivitySuitableFor";
+import { ActivityWhatToCarry } from "@/components/activities/ActivityWhatToCarry";
+import { ActivityWhyExperience } from "@/components/activities/ActivityWhyExperience";
 import { DestinationDetailTours, type DestinationTour } from "@/components/destinations/DestinationDetailTours";
 import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRelatedBlogs";
+import { SecondaryHero } from "@/components/layout/SecondaryHero";
+import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
+import {
+  buildBreadcrumbList,
+  buildFAQPage,
+  buildImageObjectList,
+  buildTouristAttraction,
+  JsonLd,
+} from "@/components/seo/JsonLd";
+import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
+import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
+import { formatINR } from "@/lib/accents";
+import { prisma } from "@/lib/prisma";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import { parseJson } from "@/lib/tours/content";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export const revalidate = 300;
 
@@ -208,7 +208,17 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         </h1>
       </SecondaryHero>
 
-      <main className="mx-auto max-w-[1100px] space-y-6 px-6 py-10">
+      <main className="mx-auto max-w-[1100px] space-y-6 px-3 sm:px-6 py-10">
+        <ActivityDetailTabs
+          sections={[
+            { id: "overview", label: "Overview" },
+            ...(activityHighlights.length ? [{ id: "highlights", label: "Highlights" }] : []),
+            ...(activity.pricingGuide ? [{ id: "pricing-guide", label: "Pricing" }] : []),
+            ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
+            ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
+          ]}
+        />
+
         {/* 2. Quick Facts */}
         <ActivityQuickFacts
           location={activity.location}
@@ -219,7 +229,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* 3. Overview */}
         {activity.description && (
-          <section id="overview" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+          <section id="overview" className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
             <h2 className="text-[17px] font-bold">About this experience</h2>
             <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-foreground/85">
               {activity.description}

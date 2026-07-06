@@ -1,6 +1,6 @@
 // src/components/activities/ActivityQuickFacts.tsx
-import { MapPin, Clock, BadgeIndianRupee, Gauge } from 'lucide-react';
 import { formatINR } from '@/lib/accents';
+import { BadgeIndianRupee, Clock, Gauge, MapPin } from 'lucide-react';
 
 interface ActivityQuickFactsProps {
   location: string | null;
@@ -21,7 +21,7 @@ export function ActivityQuickFacts({ location, duration, price, difficulty }: Ac
   if (facts.length === 0) return null;
 
   return (
-    <section id="quick-facts" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="quick-facts" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {facts.map((f, i) => (
           <div key={i} className="flex items-center gap-3">

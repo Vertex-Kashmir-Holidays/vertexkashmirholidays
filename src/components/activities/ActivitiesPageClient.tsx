@@ -62,7 +62,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
   };
 
   return (
-    <main className="mx-auto max-w-[1300px] px-6 py-10">
+    <main className="mx-auto max-w-[1300px] px-3 sm:px-6 py-10">
       <div className="grid gap-7 lg:grid-cols-[252px_1fr]">
         {/* Filters */}
         <aside className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft">
