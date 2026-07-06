@@ -27,6 +27,18 @@ const patchSchema = z.object({
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
+  whyVisit: z.string().optional(),
+  topAttractions: z.string().optional(),
+  bestTimeDetail: z.string().optional().nullable(),
+  howToReach: z.string().optional().nullable(),
+  whereToStay: z.string().optional().nullable(),
+  localFood: z.string().optional(),
+  shopping: z.string().optional(),
+  travelTips: z.string().optional(),
+  faqs: z.string().optional(),
+  relatedBlogIds: z.string().optional(),
+  ogTitle: z.string().optional().nullable(),
+  ogDescription: z.string().optional().nullable(),
   activityIds: z.array(z.string()).optional(),
 });
 

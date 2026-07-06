@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DestinationForm } from "@/components/admin/destinations/DestinationForm";
+import { parseJson } from "@/lib/tours/content";
+import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } from "@/lib/destinations/content";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -17,9 +19,10 @@ export const dynamic = "force-dynamic";
 
 export default async function EditDestinationPage({ params }: Props) {
   const { id } = await params;
-  const [dest, activities] = await Promise.all([
+  const [dest, activities, blogs] = await Promise.all([
     prisma.destination.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
     prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.blog.findMany({ where: { published: true }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
   ]);
   if (!dest) notFound();
 
@@ -56,12 +59,25 @@ export default async function EditDestinationPage({ params }: Props) {
           region: dest.region ?? "",
           latitude: dest.latitude != null ? String(dest.latitude) : "",
           longitude: dest.longitude != null ? String(dest.longitude) : "",
+          whyVisit: parseStringList(dest.whyVisit),
+          topAttractions: parseTopAttractions(dest.topAttractions),
+          bestTimeDetail: dest.bestTimeDetail ?? "",
+          howToReach: dest.howToReach ?? "",
+          whereToStay: dest.whereToStay ?? "",
+          localFood: parseFoodOrShop(dest.localFood),
+          shopping: parseFoodOrShop(dest.shopping),
+          travelTips: parseStringList(dest.travelTips),
+          faqs: parseJson<{ question: string; answer: string }[]>(dest.faqs, []),
           metaTitle: dest.metaTitle ?? "",
           metaDesc: dest.metaDesc ?? "",
           ogImage: dest.ogImage ?? "",
+          ogTitle: dest.ogTitle ?? "",
+          ogDescription: dest.ogDescription ?? "",
           activityIds: dest.activities.map((a) => a.activityId),
+          relatedBlogIds: parseIdList(dest.relatedBlogIds),
         }}
         activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
+        blogOptions={blogs.map((b) => ({ id: b.id, label: b.title }))}
       />
     </div>
   );

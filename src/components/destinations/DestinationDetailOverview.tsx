@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 interface DestinationDetailOverviewProps {
   name: string;
   description: string;
-  features: {
+  features?: {
     title: string;
     description: string;
     icon: string;
@@ -14,7 +14,7 @@ interface DestinationDetailOverviewProps {
   }[];
 }
 
-export function DestinationDetailOverview({ name, description, features }: DestinationDetailOverviewProps) {
+export function DestinationDetailOverview({ name, description, features = [] }: DestinationDetailOverviewProps) {
   return (
     <motion.section
       id="overview"
@@ -27,6 +27,7 @@ export function DestinationDetailOverview({ name, description, features }: Desti
       <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-foreground/75">
         {description}
       </p>
+      {features.length > 0 && (
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {features.map((feature, i) => (
           <motion.div
@@ -46,6 +47,7 @@ export function DestinationDetailOverview({ name, description, features }: Desti
           </motion.div>
         ))}
       </div>
+      )}
     </motion.section>
   );
 }

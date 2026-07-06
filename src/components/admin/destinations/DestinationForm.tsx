@@ -3,13 +3,20 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload, Images } from "lucide-react";
+import { Loader2, Upload, Images, Plus, Trash2, HelpCircle } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
+import { stringifyList } from "@/lib/tours/content";
+
+
+const listItemSchema = z.object({ value: z.string() });
+const topAttractionItemSchema = z.object({ name: z.string().default(""), description: z.string().default("") });
+const foodOrShopItemSchema = z.object({ name: z.string().default(""), description: z.string().default("") });
+const faqItemSchema = z.object({ question: z.string().default(""), answer: z.string().default("") });
 
 
 const schema = z.object({
@@ -25,18 +32,62 @@ const schema = z.object({
  region: z.string().optional(),
  latitude: z.string().regex(/^-?\d*\.?\d*$/, "Numbers only").optional(),
  longitude: z.string().regex(/^-?\d*\.?\d*$/, "Numbers only").optional(),
+ whyVisit: z.array(listItemSchema).default([]),
+ topAttractions: z.array(topAttractionItemSchema).default([]),
+ bestTimeDetail: z.string().optional(),
+ howToReach: z.string().optional(),
+ whereToStay: z.string().optional(),
+ localFood: z.array(foodOrShopItemSchema).default([]),
+ shopping: z.array(foodOrShopItemSchema).default([]),
+ travelTips: z.array(listItemSchema).default([]),
+ faqs: z.array(faqItemSchema).default([]),
  metaTitle: z.string().optional(),
  metaDesc: z.string().optional(),
  ogImage: z.string().optional(),
+ ogTitle: z.string().optional(),
+ ogDescription: z.string().optional(),
 });
 
 
 type FormData = z.infer<typeof schema>;
 
 
+export interface DestinationFormDefaults {
+ id?: string;
+ name?: string;
+ slug?: string;
+ location?: string;
+ excerpt?: string;
+ description?: string;
+ coverImage?: string;
+ coverImageMobile?: string;
+ altitude?: string;
+ season?: string;
+ region?: string;
+ latitude?: string;
+ longitude?: string;
+ whyVisit?: string[];
+ topAttractions?: { name: string; description: string }[];
+ bestTimeDetail?: string;
+ howToReach?: string;
+ whereToStay?: string;
+ localFood?: { name: string; description: string }[];
+ shopping?: { name: string; description: string }[];
+ travelTips?: string[];
+ faqs?: { question: string; answer: string }[];
+ metaTitle?: string;
+ metaDesc?: string;
+ ogImage?: string;
+ ogTitle?: string;
+ ogDescription?: string;
+ activityIds?: string[];
+ relatedBlogIds?: string[];
+}
+
 interface Props {
- defaults?: Partial<FormData> & { id?: string; activityIds?: string[] };
+ defaults?: DestinationFormDefaults;
  activityOptions?: LinkOption[];
+ blogOptions?: LinkOption[];
 }
 
 
@@ -49,23 +100,25 @@ const inputCls =
  "w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition";
 
 
-export function DestinationForm({ defaults, activityOptions = [] }: Props) {
+export function DestinationForm({ defaults, activityOptions = [], blogOptions = [] }: Props) {
  const router = useRouter();
  const [isPending, startTransition] = useTransition();
  const [uploading, setUploading] = useState(false);
  const [picker, setPicker] = useState<"coverImage" | "coverImageMobile" | "ogImage" | null>(null);
  const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
+ const [relatedBlogIds, setRelatedBlogIds] = useState<string[]>(defaults?.relatedBlogIds ?? []);
  const isEdit = !!defaults?.id;
 
 
  const {
    register,
+   control,
    handleSubmit,
    setValue,
    watch,
    formState: { errors },
  } = useForm<FormData>({
-   resolver: zodResolver(schema),
+   resolver: zodResolver(schema) as any,
    defaultValues: {
      name: defaults?.name ?? "",
      slug: defaults?.slug ?? "",
@@ -79,11 +132,30 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
      region: defaults?.region ?? "",
      latitude: defaults?.latitude ?? "",
      longitude: defaults?.longitude ?? "",
+     whyVisit: (defaults?.whyVisit ?? []).map((v) => ({ value: v })),
+     topAttractions: (defaults?.topAttractions ?? []).map((a) => ({ name: a.name, description: a.description })),
+     bestTimeDetail: defaults?.bestTimeDetail ?? "",
+     howToReach: defaults?.howToReach ?? "",
+     whereToStay: defaults?.whereToStay ?? "",
+     localFood: (defaults?.localFood ?? []).map((f) => ({ name: f.name, description: f.description })),
+     shopping: (defaults?.shopping ?? []).map((s) => ({ name: s.name, description: s.description })),
+     travelTips: (defaults?.travelTips ?? []).map((v) => ({ value: v })),
+     faqs: (defaults?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer })),
      metaTitle: defaults?.metaTitle ?? "",
      metaDesc: defaults?.metaDesc ?? "",
      ogImage: defaults?.ogImage ?? "",
+     ogTitle: defaults?.ogTitle ?? "",
+     ogDescription: defaults?.ogDescription ?? "",
    },
  });
+
+
+ const { fields: whyVisitFields, append: addWhyVisit, remove: removeWhyVisit } = useFieldArray({ control, name: "whyVisit" });
+ const { fields: attractionFields, append: addAttraction, remove: removeAttraction } = useFieldArray({ control, name: "topAttractions" });
+ const { fields: foodFields, append: addFood, remove: removeFood } = useFieldArray({ control, name: "localFood" });
+ const { fields: shopFields, append: addShop, remove: removeShop } = useFieldArray({ control, name: "shopping" });
+ const { fields: tipFields, append: addTip, remove: removeTip } = useFieldArray({ control, name: "travelTips" });
+ const { fields: faqFields, append: addFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
 
 
  const nameVal = watch("name");
@@ -116,6 +188,18 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
 
 
  function onSubmit(data: FormData) {
+   const { whyVisit, topAttractions, localFood, shopping, travelTips, faqs, ...rest } = data;
+   const payload = {
+     ...rest,
+     whyVisit: stringifyList(whyVisit.map((v) => v.value).filter(Boolean)),
+     topAttractions: stringifyList(topAttractions.filter((a) => a.name.trim() || a.description.trim())),
+     localFood: stringifyList(localFood.filter((f) => f.name.trim() || f.description.trim())),
+     shopping: stringifyList(shopping.filter((s) => s.name.trim() || s.description.trim())),
+     travelTips: stringifyList(travelTips.map((v) => v.value).filter(Boolean)),
+     faqs: stringifyList(faqs.filter((f) => f.question.trim() || f.answer.trim())),
+     activityIds,
+     relatedBlogIds: stringifyList(relatedBlogIds),
+   };
    startTransition(async () => {
      try {
        const url = isEdit ? `/api/destinations/${defaults!.id}` : "/api/destinations";
@@ -123,7 +207,7 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
        const res = await fetch(url, {
          method,
          headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ ...data, activityIds }),
+         body: JSON.stringify(payload),
        });
        if (!res.ok) {
          if (res.status === 403) {
@@ -281,6 +365,186 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
              </div>
            )}
          </div>
+
+
+         {/* Why Visit */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div className="flex items-center justify-between">
+             <h3 className="font-bold text-foreground text-sm">Why Visit</h3>
+             <button type="button" onClick={() => addWhyVisit({ value: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+               <Plus className="w-3.5 h-3.5" /> Add Reason
+             </button>
+           </div>
+           <div className="space-y-2">
+             {whyVisitFields.map((field, i) => (
+               <div key={field.id} className="flex gap-2 items-center">
+                 <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                 <input {...register(`whyVisit.${i}.value`)} className={`${inputCls} flex-1`} placeholder="e.g. Alpine meadows blooming with wildflowers in spring" />
+                 <button type="button" onClick={() => removeWhyVisit(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                   <Trash2 className="w-4 h-4" />
+                 </button>
+               </div>
+             ))}
+             {whyVisitFields.length === 0 && <p className="text-xs text-muted-foreground py-2">No reasons added yet.</p>}
+           </div>
+         </div>
+
+
+         {/* Top Attractions */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div className="flex items-center justify-between">
+             <h3 className="font-bold text-foreground text-sm">Top Attractions</h3>
+             <button type="button" onClick={() => addAttraction({ name: "", description: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+               <Plus className="w-3.5 h-3.5" /> Add Attraction
+             </button>
+           </div>
+           {attractionFields.length === 0 ? (
+             <p className="text-xs text-muted-foreground py-2">No attractions added yet.</p>
+           ) : (
+             <div className="space-y-3">
+               {attractionFields.map((field, i) => (
+                 <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                   <div className="flex-1 space-y-2">
+                     <input {...register(`topAttractions.${i}.name`)} className={inputCls} placeholder="Attraction name — e.g. Betaab Valley" />
+                     <textarea {...register(`topAttractions.${i}.description`)} rows={2} className={`${inputCls} resize-none`} placeholder="Short description..." />
+                   </div>
+                   <button type="button" onClick={() => removeAttraction(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5">
+                     <Trash2 className="w-4 h-4" />
+                   </button>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
+
+
+         {/* Best Time / How to Reach / Where to Stay */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <h3 className="font-bold text-foreground text-sm">Planning Detail</h3>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">Best Time to Visit — Detail</label>
+             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted. Full seasonal breakdown — the short Best Season field above stays for the sidebar quick-fact.</p>
+             <textarea {...register("bestTimeDetail")} rows={4} className={`${inputCls} resize-none`} placeholder="Season-by-season breakdown..." />
+           </div>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">How to Reach</label>
+             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <textarea {...register("howToReach")} rows={4} className={`${inputCls} resize-none`} placeholder="Air / road / rail directions..." />
+           </div>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">Where to Stay</label>
+             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <textarea {...register("whereToStay")} rows={4} className={`${inputCls} resize-none`} placeholder="Hotel / stay category guidance..." />
+           </div>
+         </div>
+
+
+         {/* Local Food */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div className="flex items-center justify-between">
+             <h3 className="font-bold text-foreground text-sm">Local Food</h3>
+             <button type="button" onClick={() => addFood({ name: "", description: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+               <Plus className="w-3.5 h-3.5" /> Add Item
+             </button>
+           </div>
+           {foodFields.length === 0 ? (
+             <p className="text-xs text-muted-foreground py-2">No local food items yet.</p>
+           ) : (
+             <div className="space-y-3">
+               {foodFields.map((field, i) => (
+                 <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                   <div className="flex-1 space-y-2">
+                     <input {...register(`localFood.${i}.name`)} className={inputCls} placeholder="Dish / place — e.g. Wazwan" />
+                     <textarea {...register(`localFood.${i}.description`)} rows={2} className={`${inputCls} resize-none`} placeholder="Short description..." />
+                   </div>
+                   <button type="button" onClick={() => removeFood(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5">
+                     <Trash2 className="w-4 h-4" />
+                   </button>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
+
+
+         {/* Shopping */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div className="flex items-center justify-between">
+             <h3 className="font-bold text-foreground text-sm">Shopping</h3>
+             <button type="button" onClick={() => addShop({ name: "", description: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+               <Plus className="w-3.5 h-3.5" /> Add Item
+             </button>
+           </div>
+           {shopFields.length === 0 ? (
+             <p className="text-xs text-muted-foreground py-2">No shopping items yet.</p>
+           ) : (
+             <div className="space-y-3">
+               {shopFields.map((field, i) => (
+                 <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                   <div className="flex-1 space-y-2">
+                     <input {...register(`shopping.${i}.name`)} className={inputCls} placeholder="Item / market — e.g. Pashmina shawls" />
+                     <textarea {...register(`shopping.${i}.description`)} rows={2} className={`${inputCls} resize-none`} placeholder="Short description..." />
+                   </div>
+                   <button type="button" onClick={() => removeShop(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5">
+                     <Trash2 className="w-4 h-4" />
+                   </button>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
+
+
+         {/* Travel Tips */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div className="flex items-center justify-between">
+             <h3 className="font-bold text-foreground text-sm">Travel Tips</h3>
+             <button type="button" onClick={() => addTip({ value: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+               <Plus className="w-3.5 h-3.5" /> Add Tip
+             </button>
+           </div>
+           <div className="space-y-2">
+             {tipFields.map((field, i) => (
+               <div key={field.id} className="flex gap-2 items-center">
+                 <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                 <input {...register(`travelTips.${i}.value`)} className={`${inputCls} flex-1`} placeholder="e.g. Carry a postpaid SIM — prepaid connections don't work in J&K" />
+                 <button type="button" onClick={() => removeTip(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                   <Trash2 className="w-4 h-4" />
+                 </button>
+               </div>
+             ))}
+             {tipFields.length === 0 && <p className="text-xs text-muted-foreground py-2">No tips added yet.</p>}
+           </div>
+         </div>
+
+
+         {/* FAQs */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div className="flex items-center justify-between">
+             <h3 className="font-bold text-foreground text-sm">FAQs</h3>
+             <button type="button" onClick={() => addFaq({ question: "", answer: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+               <Plus className="w-3.5 h-3.5" /> Add FAQ
+             </button>
+           </div>
+           {faqFields.length === 0 ? (
+             <p className="text-xs text-muted-foreground py-2">No FAQs added yet.</p>
+           ) : (
+             <div className="space-y-3">
+               {faqFields.map((field, i) => (
+                 <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                   <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-2.5" />
+                   <div className="flex-1 space-y-2">
+                     <input {...register(`faqs.${i}.question`)} className={inputCls} placeholder="Question — e.g. Is Gulmarg safe for families?" />
+                     <textarea {...register(`faqs.${i}.answer`)} rows={2} className={`${inputCls} resize-none`} placeholder="Answer..." />
+                   </div>
+                   <button type="button" onClick={() => removeFaq(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5">
+                     <Trash2 className="w-4 h-4" />
+                   </button>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
        </div>
 
 
@@ -293,6 +557,16 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
              <p className="text-[11px] text-muted-foreground mt-0.5">Activities shown on this destination&apos;s page. Manage activities in the Activities module.</p>
            </div>
            <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
+         </div>
+
+
+         {/* Related Blogs */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <div>
+             <h3 className="font-bold text-foreground text-sm">Related Blogs</h3>
+             <p className="text-[11px] text-muted-foreground mt-0.5">Curated editorial links shown at the end of this destination&apos;s page. Not an automatic feed — manage blog posts in the Blogs module.</p>
+           </div>
+           <LinkChecklist title="Blog Posts" options={blogOptions} value={relatedBlogIds} onChange={setRelatedBlogIds} />
          </div>
 
 
@@ -320,6 +594,16 @@ export function DestinationForm({ defaults, activityOptions = [] }: Props) {
                  Gallery
                </button>
              </div>
+           </div>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Title</label>
+             <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
+             <input {...register("ogTitle")} className={inputCls} />
+           </div>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Description</label>
+             <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
+             <textarea {...register("ogDescription")} rows={2} className={`${inputCls} resize-none`} />
            </div>
          </div>
        </div>

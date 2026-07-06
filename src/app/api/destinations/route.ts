@@ -27,6 +27,18 @@ const createSchema = z.object({
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),
+  whyVisit: z.string().optional(),
+  topAttractions: z.string().optional(),
+  bestTimeDetail: z.string().optional(),
+  howToReach: z.string().optional(),
+  whereToStay: z.string().optional(),
+  localFood: z.string().optional(),
+  shopping: z.string().optional(),
+  travelTips: z.string().optional(),
+  faqs: z.string().optional(),
+  relatedBlogIds: z.string().optional(),
+  ogTitle: z.string().optional(),
+  ogDescription: z.string().optional(),
   activityIds: z.array(z.string()).optional(),
 });
 
