@@ -73,6 +73,10 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
   }));
 
   async function handleUpload(files: FileList) {
+    if (!newCategory.trim()) {
+      toast.error("Please enter a category before uploading.");
+      return;
+    }
     setUploading(true);
     let uploaded = 0;
     try {
@@ -88,7 +92,7 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
         // registers it in the Gallery in one step — no separate create needed.
         const fd = new FormData();
         fd.append("file", file);
-        if (newCategory) fd.append("folder", newCategory);
+        fd.append("folder", newCategory);
         if (newAlt) fd.append("alt", newAlt);
         const res = await fetch("/api/uploads", { method: "POST", body: fd });
         if (!res.ok) {
@@ -356,12 +360,15 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
             <h3 className="font-bold text-foreground text-sm">Upload Media</h3>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Default Category</label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Default Category <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
                 placeholder="e.g. Landscapes, Food..."
+                required
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
               />
             </div>
@@ -376,16 +383,23 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
               />
             </div>
 
-            <label className={cn("flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border rounded-xl cursor-pointer transition-colors hover:border-primary hover:bg-primary/5", uploading && "opacity-50 pointer-events-none")}>
+            <label
+              className={cn(
+                "flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border rounded-xl transition-colors",
+                uploading || !newCategory.trim() ? "opacity-50 pointer-events-none" : "cursor-pointer hover:border-primary hover:bg-primary/5",
+              )}
+            >
               {uploading ? <Loader2 className="w-6 h-6 text-primary animate-spin" /> : <Upload className="w-6 h-6 text-muted-foreground" />}
-              <p className="text-xs font-semibold text-muted-foreground">{uploading ? "Uploading..." : "Click to select files"}</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                {uploading ? "Uploading..." : !newCategory.trim() ? "Enter a category above to enable upload" : "Click to select files"}
+              </p>
               <p className="text-[10px] text-muted-foreground">PNG · SVG · WebP (max 500 KB) • Video (max 10 MB)</p>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,video/*"
                 multiple
                 className="hidden"
-                disabled={uploading}
+                disabled={uploading || !newCategory.trim()}
                 onChange={(e) => e.target.files && handleUpload(e.target.files)}
               />
             </label>
