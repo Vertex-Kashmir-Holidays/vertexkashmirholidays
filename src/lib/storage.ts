@@ -94,7 +94,11 @@ export interface SaveUploadResult {
   publicId: string | null;
 }
 
-const WATERMARK_FOLDERS = new Set([
+// Opt-out: every image upload is watermarked by default (Gallery, Activities,
+// and any custom Gallery category included) unless its folder is explicitly
+// listed here. Keeps new modules watermarked automatically instead of relying
+// on this list being kept in sync with every module added later.
+const NO_WATERMARK_FOLDERS = new Set([
   "home",
   "tours",
   "destinations",
@@ -157,7 +161,7 @@ export async function saveUpload(
   { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
-  const shouldWatermark = isImage && WATERMARK_FOLDERS.has(slug);
+  const shouldWatermark = isImage && !NO_WATERMARK_FOLDERS.has(slug);
   let processedBuffer = buffer;
   if (shouldWatermark) {
     try {
