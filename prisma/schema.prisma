@@ -206,26 +206,44 @@ model Destination {
 // Things to do — a first-class admin entity linked many-to-many to destinations
 // and tours. Public listing/detail pages are planned but not built yet.
 model Activity {
-  id               String                @id @default(cuid())
-  name             String
-  slug             String                @unique
-  description      String?
-  coverImage       String?
-  coverImageMobile String?
-  images           String                @default("[]") // JSON string array of image URLs
-  location         String?
-  icon             String? // emoji or short icon label
-  duration         String? // e.g. "2 hours", "Half day"
-  price            Float?
-  published        Boolean               @default(false)
-  sortOrder        Int                   @default(0)
-  metaTitle        String?
-  metaDesc         String?
-  ogImage          String?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  destinations     ActivityDestination[]
-  tours            ActivityTour[]
+  id                 String                @id @default(cuid())
+  name               String
+  slug               String                @unique
+  description        String?
+  coverImage         String?
+  coverImageMobile   String?
+  images             String                @default("[]") // JSON string array of image URLs
+  location           String?
+  icon               String? // emoji or short icon label
+  duration           String? // e.g. "2 hours", "Half day"
+  price              Float?
+  published          Boolean               @default(false)
+  sortOrder          Int                   @default(0)
+  // HTML — richer "Why Experience This" blurb; `description` above stays as the short Overview text.
+  whyExperience      String?
+  // { name: string; description: string }[]
+  activityHighlights String                @default("[]")
+  // HTML — season/time-of-day breakdown.
+  bestTime           String?
+  // Short label, e.g. "Very Easy", "Moderate".
+  difficulty         String?
+  // string[] — who this activity suits.
+  suitableFor        String                @default("[]")
+  // HTML — ticket/pricing policy, inclusions/exclusions.
+  pricingGuide       String?
+  // string[]
+  safetyTips         String                @default("[]")
+  // string[]
+  whatToCarry        String                @default("[]")
+  // { question: string; answer: string }[] — same convention as Tour.faqs / Blog.faqs.
+  faqs               String                @default("[]")
+  metaTitle          String?
+  metaDesc           String?
+  ogImage            String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  destinations       ActivityDestination[]
+  tours              ActivityTour[]
 
   @@index([slug])
   @@index([published])
