@@ -169,6 +169,29 @@ model Destination {
   longitude        Float?
   isFeatured       Boolean               @default(false)
   sortOrder        Int                   @default(0)
+  // string[] — short bullet reasons to visit.
+  whyVisit         String                @default("[]")
+  // { name: string; description: string }[]
+  topAttractions   String                @default("[]")
+  // Full seasonal writeup (HTML); `season` above stays as the short sidebar fact.
+  bestTimeDetail   String?
+  // HTML — air/road/rail directions.
+  howToReach       String?
+  // HTML — hotel/stay category guidance, same convention as Tour.accommodation.
+  whereToStay      String?
+  // { name: string; description: string }[]
+  localFood        String                @default("[]")
+  // { name: string; description: string }[]
+  shopping         String                @default("[]")
+  // string[] — numbered practical tips.
+  travelTips       String                @default("[]")
+  // { question: string; answer: string }[] — same convention as Tour.faqs / Blog.faqs.
+  faqs             String                @default("[]")
+  // Curated editorial links to Blog rows — string[] of Blog ids, no automatic matching.
+  relatedBlogIds   String                @default("[]")
+  // Independent OG/Twitter overrides — buildMetadata() already supports these params.
+  ogTitle          String?
+  ogDescription    String?
   metaTitle        String?
   metaDesc         String?
   ogImage          String?

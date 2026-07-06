@@ -9,7 +9,10 @@ export const metadata: Metadata = { title: "New Destination — Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function NewDestinationPage() {
-  const activities = await prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const [activities, blogs] = await Promise.all([
+    prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.blog.findMany({ where: { published: true }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
+  ]);
   return (
     <div className="space-y-5">
       <nav>
@@ -23,7 +26,10 @@ export default async function NewDestinationPage() {
         <h2 className="font-display font-extrabold text-foreground text-xl">Add Destination</h2>
         <p className="text-muted-foreground text-xs mt-0.5">Create a new destination for Kashmir tours</p>
       </div>
-      <DestinationForm activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))} />
+      <DestinationForm
+        activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
+        blogOptions={blogs.map((b) => ({ id: b.id, label: b.title }))}
+      />
     </div>
   );
 }

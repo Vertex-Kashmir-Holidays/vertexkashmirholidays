@@ -11,6 +11,7 @@ import type { BlogArticleData } from '@/types/blog';
 
 interface BlogPostRelatedProps {
   posts: BlogArticleData[];
+  title?: string;
 }
 
 // Saturated category badges read well on both themes; the brand category
@@ -25,7 +26,7 @@ const badgeColor: Record<string, string> = {
   News: 'bg-teal-600',
 };
 
-export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
+export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelatedProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
 
@@ -71,7 +72,7 @@ export function BlogPostRelated({ posts }: BlogPostRelatedProps) {
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[20px] font-bold">Keep Reading</h2>
+        <h2 className="text-[20px] font-bold">{title}</h2>
         {posts.length > itemsPerView && (
           <div className="flex gap-2">
             <motion.button

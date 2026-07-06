@@ -9,8 +9,11 @@ import {
   JsonLd,
   buildBreadcrumbList,
   buildTouristDestination,
+  buildFAQPage,
 } from "@/components/seo/JsonLd";
 import { formatINR } from "@/lib/accents";
+import { parseJson } from "@/lib/tours/content";
+import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } from "@/lib/destinations/content";
 import { DestinationDetailGallery } from "@/components/destinations/DestinationDetailGallery";
 import { DestinationDetailHero } from "@/components/destinations/DestinationDetailHero";
 import { DestinationDetailOverview } from "@/components/destinations/DestinationDetailOverview";
@@ -21,6 +24,18 @@ import {
   DestinationDetailTours,
   type DestinationTour,
 } from "@/components/destinations/DestinationDetailTours";
+import { DestinationWhyVisit } from "@/components/destinations/DestinationWhyVisit";
+import { DestinationTopAttractions } from "@/components/destinations/DestinationTopAttractions";
+import { DestinationBestTime } from "@/components/destinations/DestinationBestTime";
+import { DestinationHowToReach } from "@/components/destinations/DestinationHowToReach";
+import { DestinationWhereToStay } from "@/components/destinations/DestinationWhereToStay";
+import { DestinationLocalFood } from "@/components/destinations/DestinationLocalFood";
+import { DestinationShopping } from "@/components/destinations/DestinationShopping";
+import { DestinationTravelTips } from "@/components/destinations/DestinationTravelTips";
+import { DestinationFAQs } from "@/components/destinations/DestinationFAQs";
+import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRelatedBlogs";
+import { DestinationNearby } from "@/components/destinations/DestinationNearby";
+import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
 
 export const revalidate = 300;
 
@@ -46,34 +61,6 @@ const TABS = [
   { id: "things", label: "Things to Do", icon: ICON.bolt },
   { id: "tours", label: "Tours", icon: ICON.package },
   { id: "gallery", label: "Gallery", icon: ICON.camera },
-];
-
-// Generic, destination-agnostic highlights (no DB backing yet).
-const FEATURES = [
-  {
-    title: "Scenic Beauty",
-    description: "Breathtaking landscapes in every season",
-    icon: "M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4 M12 13a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z",
-    color: "text-sky-600 bg-sky-50",
-  },
-  {
-    title: "Adventure",
-    description: "Trekking, skiing and outdoor thrills",
-    icon: "m4 20 16-6 M17 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4 M8 9l4 3-1 5 M12 12l4 1 2-3",
-    color: "text-blue-600 bg-blue-50",
-  },
-  {
-    title: "Flower Meadows",
-    description: "Blooming valleys in spring & summer",
-    icon: "M12 8a3 3 0 1 0-3-3 M12 8a3 3 0 1 1 3-3 M12 8v9 M8 21h8 M7 13c2 0 3 1 3 1m7-1c-2 0-3 1-3 1",
-    color: "text-emerald-600 bg-emerald-50",
-  },
-  {
-    title: "Local Culture",
-    description: "Warm hospitality and rich heritage",
-    icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20",
-    color: "text-teal-600 bg-emerald-50",
-  },
 ];
 
 async function getDestination(slug: string) {
@@ -118,6 +105,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       metaTitle: true,
       metaDesc: true,
       ogImage: true,
+      ogTitle: true,
+      ogDescription: true,
     },
   });
 
@@ -139,6 +128,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       `${dest.name} — a curated Kashmir destination by Vertex Kashmir Holidays.`,
     canonical: `${SITE_URL}/destinations/${slug}`,
     ogImage: dest.ogImage ?? dest.coverImage ?? null,
+    ogTitle: dest.ogTitle ?? null,
+    ogDescription: dest.ogDescription ?? null,
   });
 }
 
@@ -147,6 +138,74 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   const dest = await getDestination(slug);
 
   if (!dest) notFound();
+
+  const relatedBlogIds = parseIdList(dest.relatedBlogIds);
+
+  const [nearbyRaw, relatedBlogsRaw] = await Promise.all([
+    prisma.destination.findMany({
+      where: {
+        slug: { not: dest.slug },
+        ...(dest.region ? { region: dest.region } : {}),
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: 4,
+      select: {
+        slug: true,
+        name: true,
+        tagline: true,
+        excerpt: true,
+        description: true,
+        coverImage: true,
+        season: true,
+        region: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        _count: { select: { tours: { where: { tour: { published: true } } } } },
+      },
+    }),
+    relatedBlogIds.length > 0
+      ? prisma.blog.findMany({
+          where: { id: { in: relatedBlogIds }, published: true },
+          select: { id: true, slug: true, title: true, excerpt: true, coverImage: true, category: true, publishedAt: true, readTime: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const nearbyDestinations: DestinationCardData[] = await Promise.all(
+    nearbyRaw.map(async (d) => {
+      const weather =
+        d.latitude != null && d.longitude != null ? await getLiveWeather(d.latitude, d.longitude) : null;
+      return {
+        slug: d.slug,
+        name: d.name,
+        tagline: d.tagline,
+        description: d.excerpt ?? d.description,
+        coverImage: d.coverImage,
+        temperature: weather?.temperature ?? null,
+        season: d.season,
+        region: d.region ?? (/ladakh/i.test(d.location ?? "") ? "Ladakh" : "Kashmir Valley"),
+        tours: d._count.tours,
+      };
+    }),
+  );
+
+  const shortDate = (d: Date | null) =>
+    d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+
+  const relatedBlogs = relatedBlogIds
+    .map((id) => relatedBlogsRaw.find((b) => b.id === id))
+    .filter((b): b is NonNullable<typeof b> => Boolean(b))
+    .map((b) => ({
+      id: b.id,
+      slug: b.slug,
+      title: b.title,
+      excerpt: b.excerpt,
+      coverImage: b.coverImage,
+      category: b.category,
+      dateLabel: shortDate(b.publishedAt),
+      readTime: b.readTime,
+    }));
 
   // ── Display facts: prefer explicit DB fields, fall back to deriving from
   // `location` for older records that predate the dedicated columns. ──────────
@@ -243,6 +302,14 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     feelsLike: 16,
   };
 
+  // ── Finalized content (string-encoded JSON columns) ───────────────────────
+  const whyVisit = parseStringList(dest.whyVisit);
+  const topAttractions = parseTopAttractions(dest.topAttractions);
+  const localFood = parseFoodOrShop(dest.localFood);
+  const shopping = parseFoodOrShop(dest.shopping);
+  const travelTips = parseStringList(dest.travelTips);
+  const faqs = parseJson<{ question: string; answer: string }[]>(dest.faqs, []);
+
   // ── Structured data (JSON-LD) ─────────────────────────────────────────────
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
@@ -264,6 +331,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={destinationJsonLd} />
+      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
 
       <DestinationDetailHero
         name={dest.name}
@@ -281,16 +349,41 @@ export default async function DestinationDetailPage({ params }: PageProps) {
         <div className="mx-auto max-w-[1300px] px-6 pt-8">
           <div className="grid items-start gap-7 lg:grid-cols-[1fr_300px]">
             <div className="min-w-0 space-y-7">
+              {/* 3. Overview */}
               <DestinationDetailOverview
                 name={dest.name}
                 description={dest.description ?? dest.excerpt ?? ""}
-                features={FEATURES}
               />
+              {/* 4. Why Visit */}
+              <DestinationWhyVisit name={dest.name} reasons={whyVisit} />
+              {/* 5. Top Attractions */}
+              <DestinationTopAttractions name={dest.name} attractions={topAttractions} />
+              {/* 6. Best Time to Visit (Live Weather stays parallel in the sidebar) */}
+              <DestinationBestTime html={dest.bestTimeDetail} />
+              {/* 8. How to Reach */}
+              <DestinationHowToReach html={dest.howToReach} />
+              {/* 9. Where to Stay */}
+              <DestinationWhereToStay html={dest.whereToStay} />
+              {/* 10. Local Food */}
+              <DestinationLocalFood items={localFood} />
+              {/* 11. Shopping */}
+              <DestinationShopping items={shopping} />
+              {/* 12. Travel Tips */}
+              <DestinationTravelTips tips={travelTips} />
+              {/* 13. Things To Do (existing ActivitiesShowcase) */}
               <ActivitiesShowcase title={`Things to Do in ${dest.name}`} items={things} seeAllHref="/activities" />
+              {/* 14. Nearby Destinations */}
+              <DestinationNearby destinations={nearbyDestinations} />
+              {/* 15. Gallery */}
+              <DestinationDetailGallery name={dest.name} images={gallery} />
+              {/* 16. FAQs */}
+              <DestinationFAQs faqs={faqs} />
+              {/* 17. Related Blogs */}
+              <DestinationRelatedBlogs posts={relatedBlogs} />
+              {/* 18. Related Tours */}
               {destinationTours.length > 0 && (
                 <DestinationDetailTours name={dest.name} tours={destinationTours} />
               )}
-              <DestinationDetailGallery name={dest.name} images={gallery} />
             </div>
 
             <DestinationDetailSidebar
