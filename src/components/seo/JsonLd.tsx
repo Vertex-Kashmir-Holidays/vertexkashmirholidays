@@ -379,3 +379,32 @@ export function buildTouristDestination(dest: {
     ...(geo ? { geo } : {}),
   };
 }
+
+export function buildTouristAttraction(activity: {
+  name: string;
+  slug: string;
+  description?: string | null;
+  coverImage?: string | null;
+  location?: string | null;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TouristAttraction",
+    name: activity.name,
+    description: activity.description ?? activity.name,
+    image: activity.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+    url: `${siteUrl}/activities/${activity.slug}`,
+    ...(activity.location
+      ? { touristType: "General", geo: { "@type": "GeoCoordinates", description: activity.location } }
+      : {}),
+    provider: { "@id": `${siteUrl}/#organization` },
+  };
+}
+
+export function buildImageObjectList(images: string[]) {
+  return images.map((url) => ({
+    "@context": "https://schema.org",
+    "@type": "ImageObject",
+    contentUrl: url,
+  }));
+}

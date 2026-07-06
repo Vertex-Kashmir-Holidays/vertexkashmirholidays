@@ -21,6 +21,10 @@ const schema = z.object({
  icon: z.string().optional(),
  duration: z.string().optional(),
  price: z.string().regex(/^\d*\.?\d*$/, "Numbers only").optional(),
+ whyExperience: z.string().optional(),
+ bestTime: z.string().optional(),
+ difficulty: z.string().optional(),
+ pricingGuide: z.string().optional(),
  metaTitle: z.string().optional(),
  metaDesc: z.string().optional(),
 });
@@ -34,6 +38,11 @@ export interface ActivityDefaults extends Partial<FormData> {
  coverImage?: string;
  coverImageMobile?: string;
  images?: string; // JSON string array
+ activityHighlights?: string; // JSON string array
+ suitableFor?: string; // JSON string array
+ safetyTips?: string; // JSON string array
+ whatToCarry?: string; // JSON string array
+ faqs?: string; // JSON string array
  ogImage?: string;
  published?: boolean;
  destinationIds?: string[];
@@ -70,6 +79,11 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
  const [coverImageMobile, setCoverImageMobile] = useState(defaults?.coverImageMobile ?? "");
  const [ogImage, setOgImage] = useState(defaults?.ogImage ?? "");
  const [images, setImages] = useState(defaults?.images ?? "[]");
+ const [activityHighlights, setActivityHighlights] = useState(defaults?.activityHighlights ?? "[]");
+ const [suitableFor, setSuitableFor] = useState(defaults?.suitableFor ?? "[]");
+ const [safetyTips, setSafetyTips] = useState(defaults?.safetyTips ?? "[]");
+ const [whatToCarry, setWhatToCarry] = useState(defaults?.whatToCarry ?? "[]");
+ const [faqs, setFaqs] = useState(defaults?.faqs ?? "[]");
  const [published, setPublished] = useState(defaults?.published ?? false);
  const [destinationIds, setDestinationIds] = useState<string[]>(defaults?.destinationIds ?? []);
  const [tourIds, setTourIds] = useState<string[]>(defaults?.tourIds ?? []);
@@ -91,6 +105,10 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
      icon: defaults?.icon ?? "",
      duration: defaults?.duration ?? "",
      price: defaults?.price ?? "",
+     whyExperience: defaults?.whyExperience ?? "",
+     bestTime: defaults?.bestTime ?? "",
+     difficulty: defaults?.difficulty ?? "",
+     pricingGuide: defaults?.pricingGuide ?? "",
      metaTitle: defaults?.metaTitle ?? "",
      metaDesc: defaults?.metaDesc ?? "",
    },
@@ -111,7 +129,21 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
        const res = await fetch(url, {
          method,
          headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ ...data, coverImage, coverImageMobile, ogImage, images, published, destinationIds, tourIds }),
+         body: JSON.stringify({
+           ...data,
+           coverImage,
+           coverImageMobile,
+           ogImage,
+           images,
+           activityHighlights,
+           suitableFor,
+           safetyTips,
+           whatToCarry,
+           faqs,
+           published,
+           destinationIds,
+           tourIds,
+         }),
        });
        if (!res.ok) {
          const err = (await res.json()) as { error?: string };
@@ -165,10 +197,16 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
                <input {...register("duration")} className={inputCls} placeholder="e.g. 2 hours" />
              </div>
            </div>
-           <div>
-             <label className="block text-xs font-semibold text-muted-foreground mb-1">Price (₹)</label>
-             <input {...register("price")} inputMode="decimal" className={`${inputCls} font-mono`} placeholder="e.g. 1500" />
-             {errors.price && <p className="text-[10px] text-red-500 mt-1">{errors.price.message}</p>}
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <div>
+               <label className="block text-xs font-semibold text-muted-foreground mb-1">Price (₹)</label>
+               <input {...register("price")} inputMode="decimal" className={`${inputCls} font-mono`} placeholder="e.g. 1500" />
+               {errors.price && <p className="text-[10px] text-red-500 mt-1">{errors.price.message}</p>}
+             </div>
+             <div>
+               <label className="block text-xs font-semibold text-muted-foreground mb-1">Difficulty</label>
+               <input {...register("difficulty")} className={inputCls} placeholder="e.g. Very Easy, Moderate" />
+             </div>
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Description</label>
@@ -190,6 +228,62 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
              <ImageField value={coverImageMobile} onChange={setCoverImageMobile} folder="activities" />
            </div>
            <SectionArrayEditor label="Gallery images" value={images} onChange={setImages} spec={{ kind: "scalar", type: "image" }} folder="activities" />
+         </div>
+
+         {/* Experience Content */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <h3 className="font-bold text-foreground text-sm">Experience Content</h3>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">Why Experience This</label>
+             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <textarea {...register("whyExperience")} rows={4} className={`${inputCls} resize-none`} placeholder="What makes this experience worth doing..." />
+           </div>
+           <SectionArrayEditor
+             label="Activity Highlights"
+             value={activityHighlights}
+             onChange={setActivityHighlights}
+             spec={{ kind: "object", fields: [
+               { key: "name", label: "Name" },
+               { key: "description", label: "Description", type: "textarea" },
+             ] }}
+           />
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">Best Time</label>
+             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <textarea {...register("bestTime")} rows={4} className={`${inputCls} resize-none`} placeholder="Season / time-of-day breakdown..." />
+           </div>
+           <SectionArrayEditor
+             label="Suitable For"
+             value={suitableFor}
+             onChange={setSuitableFor}
+             spec={{ kind: "scalar" }}
+           />
+         </div>
+
+         {/* Pricing & Safety */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <h3 className="font-bold text-foreground text-sm">Pricing &amp; Safety</h3>
+           <div>
+             <label className="block text-xs font-semibold text-muted-foreground mb-1">Pricing Guide</label>
+             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted. Ticket/pricing policy, inclusions, exclusions.</p>
+             <textarea {...register("pricingGuide")} rows={5} className={`${inputCls} resize-none`} placeholder="Ticket & pricing guide..." />
+           </div>
+           <SectionArrayEditor label="Safety Tips" value={safetyTips} onChange={setSafetyTips} spec={{ kind: "scalar" }} />
+           <SectionArrayEditor label="What to Carry" value={whatToCarry} onChange={setWhatToCarry} spec={{ kind: "scalar" }} />
+         </div>
+
+         {/* FAQs */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <h3 className="font-bold text-foreground text-sm">FAQs</h3>
+           <SectionArrayEditor
+             label="FAQs"
+             value={faqs}
+             onChange={setFaqs}
+             spec={{ kind: "object", fields: [
+               { key: "question", label: "Question" },
+               { key: "answer", label: "Answer", type: "textarea" },
+             ] }}
+           />
          </div>
        </div>
 

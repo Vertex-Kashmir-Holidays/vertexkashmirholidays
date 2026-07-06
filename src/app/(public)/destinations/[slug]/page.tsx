@@ -358,6 +358,10 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               <DestinationWhyVisit name={dest.name} reasons={whyVisit} />
               {/* 5. Top Attractions */}
               <DestinationTopAttractions name={dest.name} attractions={topAttractions} />
+              {/* Featured Tours — moved here, right after Top Attractions */}
+              {destinationTours.length > 0 && (
+                <DestinationDetailTours name={dest.name} tours={destinationTours} />
+              )}
               {/* 6. Best Time to Visit (Live Weather stays parallel in the sidebar) */}
               <DestinationBestTime html={dest.bestTimeDetail} />
               {/* 8. How to Reach */}
@@ -380,10 +384,6 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               <DestinationFAQs faqs={faqs} />
               {/* 17. Related Blogs */}
               <DestinationRelatedBlogs posts={relatedBlogs} />
-              {/* 18. Related Tours */}
-              {destinationTours.length > 0 && (
-                <DestinationDetailTours name={dest.name} tours={destinationTours} />
-              )}
             </div>
 
             <DestinationDetailSidebar
