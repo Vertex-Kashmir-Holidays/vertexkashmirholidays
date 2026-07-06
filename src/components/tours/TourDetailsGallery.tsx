@@ -15,12 +15,15 @@ interface GalleryItem {
 
 interface TourDetailsGalleryProps {
   images: GalleryItem[];
+  /** Omit the built-in top margin — for callers that already control spacing
+   * (e.g. a grid row where this card must align flush with its sibling). */
+  noTopMargin?: boolean;
 }
 
 // Same 3-visible carousel mechanics as ActivitiesShowcase / DestinationDetailGallery.
 // Shared by the Tour and Activity detail pages. Clicking any thumbnail still
 // opens the full GalleryLightbox at that exact image.
-export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
+export function TourDetailsGallery({ images, noTopMargin }: TourDetailsGalleryProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
@@ -54,7 +57,7 @@ export function TourDetailsGallery({ images }: TourDetailsGalleryProps) {
     <>
       <motion.section
         id="gallery"
-        className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+        className={`${noTopMargin ? '' : 'mt-6'} rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft`}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}

@@ -227,55 +227,59 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           difficulty={activity.difficulty}
         />
 
-        {/* 3. Overview */}
-        {activity.description && (
-          <section id="overview" className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-            <h2 className="text-[17px] font-bold">About this experience</h2>
-            <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-foreground/85">
-              {activity.description}
-            </p>
+        {/* 3 + 4. Overview & Why Experience This — merged into one card */}
+        {(activity.description || activity.whyExperience) && (
+          <section id="overview" className="mt-6 space-y-5 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+            {activity.description && (
+              <div>
+                <h2 className="text-[17px] font-bold">About this experience</h2>
+                <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-foreground/85">
+                  {activity.description}
+                </p>
+              </div>
+            )}
+            {activity.whyExperience && (
+              <ActivityWhyExperience name={activity.name} html={activity.whyExperience} bare />
+            )}
           </section>
         )}
-
-        {/* 4. Why Experience This */}
-        <ActivityWhyExperience name={activity.name} html={activity.whyExperience} />
 
         {/* 5. Activity Highlights */}
         <ActivityHighlights highlights={activityHighlights} />
 
-        {/* 6. Best Time */}
-        <ActivityBestTime html={activity.bestTime} />
+        {/* 6 + 8 + 9. Best Time | Difficulty + Suitable For */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ActivityBestTime html={activity.bestTime} />
+          <div className="space-y-4">
+            <ActivityDifficulty difficulty={activity.difficulty} />
+            <ActivitySuitableFor items={suitableFor} />
+          </div>
+        </div>
 
         {/* 7. Duration — already surfaced in Quick Facts above */}
-
-        {/* 8. Difficulty */}
-        <ActivityDifficulty difficulty={activity.difficulty} />
-
-        {/* 9. Suitable For */}
-        <ActivitySuitableFor items={suitableFor} />
 
         {/* 10. Pricing Guide */}
         <ActivityPricingGuide html={activity.pricingGuide} />
 
-        {/* 11. Safety Tips */}
-        <ActivitySafetyTips tips={safetyTips} />
-
-        {/* 12. What to Carry */}
-        <ActivityWhatToCarry items={whatToCarry} />
+        {/* 11 + 12. Safety Tips | What to Carry */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ActivitySafetyTips tips={safetyTips} />
+          <ActivityWhatToCarry items={whatToCarry} />
+        </div>
 
         {/* Featured Tours — moved here, right before Gallery */}
         {relatedTours.length > 0 && <DestinationDetailTours name={activity.name} tours={relatedTours} />}
 
-        {/* 13. Gallery */}
-        {gallery.length > 0 && (
-          <TourDetailsGallery images={gallery.map((src) => ({ url: src, alt: activity.name }))} />
-        )}
+        {/* 13 + 16. Gallery (60%) | Where to Experience This (40%) */}
+        <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
+          {gallery.length > 0 && (
+            <TourDetailsGallery images={gallery.map((src) => ({ url: src, alt: activity.name }))} noTopMargin />
+          )}
+          <ActivityRelatedDestinations destinations={relatedDestinations} />
+        </div>
 
         {/* 15. Nearby Activities */}
         <ActivityNearby activities={nearbyActivities} />
-
-        {/* 16. Where to Experience This (Destinations) */}
-        <ActivityRelatedDestinations destinations={relatedDestinations} />
 
         {/* 18. Related Blogs */}
         <DestinationRelatedBlogs posts={relatedBlogs} />

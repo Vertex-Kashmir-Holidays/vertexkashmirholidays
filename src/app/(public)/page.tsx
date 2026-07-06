@@ -7,6 +7,7 @@ import { BlogSection } from "@/components/blog/BlogSection";
 import { DestinationsSection } from "@/components/destinations/DestinationsSection";
 import { HeroSection } from "@/components/home/HeroSection";
 import { AdventureSection } from "@/components/home/AdventureSection";
+import { ActivitiesCarousel } from "@/components/activities/ActivitiesCarousel";
 import { PackagesSection } from "@/components/home/PackagesSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { UpdatesStrip } from "@/components/home/UpdatesStrip";
@@ -108,6 +109,7 @@ export default async function HomePage() {
     whyItems,
     destinations,
     offers,
+    activities,
     reviews,
     blogs,
     settings,
@@ -147,6 +149,13 @@ export default async function HomePage() {
       orderBy: { createdAt: "desc" },
       take: 3,
       select: { id: true, slug: true, name: true, badge: true, sub: true, heroImage: true, offerText: true, offerSeats: true, offerDeadline: true, tiers: true },
+    }),
+    // Homepage "Popular Things to Do" carousel — 4 handpicked activities.
+    prisma.activity.findMany({
+      where: { published: true },
+      orderBy: { sortOrder: "asc" },
+      take: 4,
+      select: { id: true, slug: true, name: true, location: true, coverImage: true, duration: true, price: true },
     }),
     // Approved customer reviews power the "what travellers say" section — the
     // admin Review module is the single source of truth (no CMS testimonials).
@@ -311,10 +320,27 @@ export default async function HomePage() {
           .filter((s) => s.section === "about")
           .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
+      {/* Adventures section temporarily disabled
       <AdventureSection
         heading={heading("offers")}
         offers={offers.map(campaignToDeal)}
       />
+      */}
+      <div className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+        <ActivitiesCarousel
+          title="Popular Things to Do in Kashmir"
+          seeAllHref="/activities"
+          items={activities.map((a) => ({
+            id: a.id,
+            slug: a.slug,
+            name: a.name,
+            location: a.location,
+            duration: a.duration,
+            price: a.price,
+            image: a.coverImage,
+          }))}
+        />
+      </div>
       <TestimonialsSection
         heading={heading("testimonials")}
         testimonials={reviews}

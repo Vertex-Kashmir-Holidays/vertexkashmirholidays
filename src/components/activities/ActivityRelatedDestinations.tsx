@@ -23,7 +23,7 @@ export function ActivityRelatedDestinations({ destinations }: ActivityRelatedDes
   return (
     <section id="where-to-experience" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Where to Experience This</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4">
         {destinations.map((d) => (
           <Link
             key={d.slug}
