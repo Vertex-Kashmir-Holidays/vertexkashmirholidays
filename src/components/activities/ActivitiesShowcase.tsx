@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { imgSrc } from '@/lib/placeholder';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Clock, ArrowRight } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
+import { useEffect, useState } from 'react';
 
 export interface ShowcaseActivity {
   id: string;
@@ -58,7 +58,7 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
   return (
     <motion.section
       id="things"
-      className="rounded-2xl border border-border bg-card p-6 shadow-soft"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

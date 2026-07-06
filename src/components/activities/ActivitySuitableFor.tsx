@@ -9,7 +9,7 @@ export function ActivitySuitableFor({ items }: ActivitySuitableForProps) {
   if (items.length === 0) return null;
 
   return (
-    <section id="suitable-for" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="suitable-for" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Suitable For</h2>
       <div className="mt-4 flex flex-wrap gap-2">
         {items.map((item, i) => (

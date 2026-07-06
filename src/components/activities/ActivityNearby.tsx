@@ -12,7 +12,7 @@ export function ActivityNearby({ activities }: ActivityNearbyProps) {
   if (activities.length === 0) return null;
 
   return (
-    <section id="nearby-activities" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="nearby-activities" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Nearby Activities</h2>
       <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {activities.map((a, i) => (

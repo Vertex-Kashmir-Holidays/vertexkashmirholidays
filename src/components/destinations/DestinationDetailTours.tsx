@@ -1,8 +1,8 @@
 // src/components/sections/DestinationDetailTours.tsx
 'use client';
 
-import { motion } from 'framer-motion';
 import { TourCard } from '@/components/ui/TourCard';
+import { motion } from 'framer-motion';
 
 export interface DestinationTour {
   badge: string;
@@ -42,7 +42,7 @@ export function DestinationDetailTours({ name, tours }: DestinationDetailToursPr
   return (
     <motion.section
       id="tours"
-      className="rounded-2xl border border-border bg-card p-6 shadow-soft"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

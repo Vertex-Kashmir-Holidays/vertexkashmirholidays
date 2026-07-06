@@ -1,11 +1,11 @@
 // src/components/destinations/DestinationNearby.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DestinationCard } from '@/components/destinations/DestinationCard';
 import type { DestinationCardData } from '@/components/destinations/DestinationsGrid';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface DestinationNearbyProps {
   destinations: DestinationCardData[];
@@ -43,7 +43,7 @@ export function DestinationNearby({ destinations }: DestinationNearbyProps) {
   const visibleDestinations = destinations.slice(currentIndex, currentIndex + itemsPerView);
 
   return (
-    <section id="nearby" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="nearby" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <div className="flex items-center justify-between">
         <h2 className="text-[17px] font-bold">Nearby Destinations</h2>
         {destinations.length > itemsPerView && (

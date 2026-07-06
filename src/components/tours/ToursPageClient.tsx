@@ -152,7 +152,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
   };
 
   return (
-    <main className="mx-auto max-w-[1300px] px-6 py-10">
+    <main className="mx-auto max-w-[1300px] px-3 sm:px-6 py-10">
       <div className="mb-7 flex gap-2">
         {REGION_TABS.map((tab) => (
           <button

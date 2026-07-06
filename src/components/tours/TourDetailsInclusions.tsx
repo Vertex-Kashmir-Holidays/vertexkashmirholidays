@@ -19,7 +19,7 @@ export function TourDetailsInclusions({ inclusions, exclusions }: TourDetailsInc
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <div className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
         <h2 className="text-[17px] font-bold">Inclusions</h2>
         <ul className="mt-4 space-y-3 text-[13px] text-foreground/80">
           {inclusions.map((item, i) => (
@@ -40,7 +40,7 @@ export function TourDetailsInclusions({ inclusions, exclusions }: TourDetailsInc
         </ul>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <div className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
         <h2 className="text-[17px] font-bold">Exclusions</h2>
         <ul className="mt-4 space-y-3 text-[13px] text-foreground/80">
           {exclusions.map((item, i) => (

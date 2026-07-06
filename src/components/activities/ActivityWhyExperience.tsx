@@ -22,7 +22,7 @@ export function ActivityWhyExperience({ name, html }: ActivityWhyExperienceProps
   if (!clean.trim()) return null;
 
   return (
-    <section id="why-experience" className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <section id="why-experience" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <h2 className="text-[17px] font-bold">Why Experience {name}</h2>
       <div
         className="mt-3 text-[13.5px] leading-relaxed text-foreground/75 [&_a]:font-semibold [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline [&_strong]:font-bold [&_strong]:text-foreground [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5"

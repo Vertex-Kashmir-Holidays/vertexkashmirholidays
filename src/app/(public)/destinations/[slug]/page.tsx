@@ -346,7 +346,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
       <DestinationDetailTabs sections={TABS} />
 
       <main className="relative z-10 bg-background pb-16">
-        <div className="mx-auto max-w-[1300px] px-6 pt-8">
+        <div className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-8">
           <div className="grid items-start gap-7 lg:grid-cols-[1fr_300px]">
             <div className="min-w-0 space-y-7">
               {/* 3. Overview */}

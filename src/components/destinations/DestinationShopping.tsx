@@ -19,7 +19,7 @@ export function DestinationShopping({ items }: DestinationShoppingProps) {
   return (
     <motion.section
       id="shopping"
-      className="rounded-2xl border border-border bg-card p-6 shadow-soft"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

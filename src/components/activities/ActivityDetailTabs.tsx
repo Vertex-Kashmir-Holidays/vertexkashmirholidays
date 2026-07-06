@@ -1,26 +1,28 @@
-// src/components/sections/TourDetailsTabs.tsx
+// src/components/activities/ActivityDetailTabs.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-interface TourDetailsTabsProps {
+interface ActivityDetailTabsProps {
   sections: {
     id: string;
     label: string;
   }[];
 }
 
-export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
-  const [activeTab, setActiveTab] = useState(sections[0].id);
+// Same sticky-below-navbar tabs bar as TourDetailsTabs / DestinationDetailTabs.
+export function ActivityDetailTabs({ sections }: ActivityDetailTabsProps) {
+  const [activeTab, setActiveTab] = useState(sections[0]?.id ?? '');
 
   // Combined height of the fixed navbar + this sticky tabs bar, so the
   // scroll-spy threshold and scroll-to target both clear the same overlap.
   const STICKY_OFFSET = 160;
 
   useEffect(() => {
+    if (sections.length === 0) return;
+
     const handleScroll = () => {
-      // Scroll spy - find which section is in view
       const sectionElements = sections.map((s) => document.getElementById(s.id));
       const scrollPosition = window.scrollY + STICKY_OFFSET;
 
@@ -48,18 +50,18 @@ export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
     }
   };
 
+  if (sections.length === 0) return null;
+
   return (
     <div className="sticky top-24 z-40 border-b border-border bg-card shadow-sm">
-      <div className="mx-auto max-w-[1180px] px-6">
+      <div className="mx-auto max-w-[1100px] px-6">
         <div className="scrollbar-none flex gap-7 overflow-x-auto py-3 text-[14px] font-semibold text-muted-foreground">
           {sections.map((section) => (
             <motion.button
               key={section.id}
               onClick={() => scrollToSection(section.id)}
               className={`relative whitespace-nowrap pb-1 transition-colors ${
-                activeTab === section.id
-                  ? 'text-primary'
-                  : 'hover:text-foreground'
+                activeTab === section.id ? 'text-primary' : 'hover:text-foreground'
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -68,7 +70,7 @@ export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
               {activeTab === section.id && (
                 <motion.span
                   className="absolute inset-x-0 -bottom-[1px] h-[2.5px] rounded-full bg-primary"
-                  layoutId="activeTab"
+                  layoutId="activeActivityTab"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
