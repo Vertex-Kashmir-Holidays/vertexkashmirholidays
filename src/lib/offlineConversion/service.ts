@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { OfflineConversionPlatform } from "@prisma/client";
+import type { OfflineConversion, OfflineConversionPlatform } from "@prisma/client";
 import { pickAttribution, type AttributionData } from "@/lib/attribution";
 import type { ConversionEvent, PlatformAdapter } from "./types";
 import { googleAdapter } from "./adapters/google";
@@ -27,8 +27,15 @@ function platformsFor(attribution: AttributionData): OfflineConversionPlatform[]
 
 /**
  * Enqueue offline-conversion upload rows for a just-converted Lead (sales-
- * assisted journey). Idempotent — the (leadId, platform) unique constraint
- * means calling this twice for the same lead is a no-op via skipDuplicates.
+ * assisted journey), then attempt each one immediately. Idempotent — the
+ * (leadId, platform) unique constraint means calling this twice for the same
+ * lead is a no-op via skipDuplicates.
+ *
+ * There is no scheduled cron sweep on the current Vercel plan (Hobby doesn't
+ * support the frequency this needs), so enqueue time is the only trigger —
+ * processRow() is called here directly instead of waiting for processPending().
+ * A row that fails keeps whatever PENDING/FAILED state processRow() already
+ * leaves it in; nothing re-attempts it until the cron is reinstated on Pro.
  */
 export async function enqueueForLead(leadId: string): Promise<void> {
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
@@ -40,11 +47,20 @@ export async function enqueueForLead(leadId: string): Promise<void> {
     data: platforms.map((platform) => ({ leadId, platform })),
     skipDuplicates: true,
   });
+
+  const rows = await prisma.offlineConversion.findMany({
+    where: { leadId, platform: { in: platforms }, status: "PENDING" },
+  });
+  for (const row of rows) {
+    await processRow(row);
+  }
 }
 
 /**
  * Enqueue offline-conversion upload rows for a directly-paid website Booking
- * (no Lead involved). Idempotent, same guarantee as enqueueForLead.
+ * (no Lead involved), then attempt each one immediately. Same guarantees as
+ * enqueueForLead — see its comment for why processing happens here rather
+ * than via a cron sweep.
  */
 export async function enqueueForBooking(bookingId: string): Promise<void> {
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
@@ -56,6 +72,13 @@ export async function enqueueForBooking(bookingId: string): Promise<void> {
     data: platforms.map((platform) => ({ bookingId, platform })),
     skipDuplicates: true,
   });
+
+  const rows = await prisma.offlineConversion.findMany({
+    where: { bookingId, platform: { in: platforms }, status: "PENDING" },
+  });
+  for (const row of rows) {
+    await processRow(row);
+  }
 }
 
 /**
@@ -97,7 +120,56 @@ async function buildEvent(row: { leadId: string | null; bookingId: string | null
   return null;
 }
 
-/** Processes up to `limit` pending/retryable rows. Called by the offline-conversions cron route. */
+/**
+ * Attempts one queue row: builds its event, sends via the matching adapter,
+ * and persists the outcome. Shared by the immediate enqueue-time attempt
+ * (enqueueForLead/enqueueForBooking) and processPending() (the cron sweep —
+ * currently unregistered on Hobby, kept intact for when Pro is available).
+ */
+async function processRow(row: OfflineConversion): Promise<"sent" | "failed"> {
+  const adapter = ADAPTERS[row.platform];
+  const event = await buildEvent(row);
+
+  if (!event || !adapter.isConfigured()) {
+    await prisma.offlineConversion.update({
+      where: { id: row.id },
+      data: {
+        status: "FAILED",
+        attempts: { increment: 1 },
+        lastError: !event ? "Originating Lead/Booking no longer exists" : `${row.platform} adapter not configured`,
+      },
+    });
+    return "failed";
+  }
+
+  const result = await adapter.send(event);
+  if (result.success) {
+    await prisma.offlineConversion.update({
+      where: { id: row.id },
+      data: {
+        status: "SENT",
+        attempts: { increment: 1 },
+        sentAt: new Date(),
+        platformResponse: result.response ? JSON.stringify(result.response) : undefined,
+        lastError: null,
+      },
+    });
+    return "sent";
+  }
+
+  await prisma.offlineConversion.update({
+    where: { id: row.id },
+    data: { status: "FAILED", attempts: { increment: 1 }, lastError: result.error ?? "Unknown error" },
+  });
+  return "failed";
+}
+
+/**
+ * Processes up to `limit` pending/retryable rows. Called by the offline-
+ * conversions cron route — not currently scheduled on the Vercel Hobby plan
+ * (see vercel.json), so today this only runs if invoked manually. Kept fully
+ * intact so re-adding the cron entry on Pro requires no implementation change.
+ */
 export async function processPending(limit = 50): Promise<{ processed: number; sent: number; failed: number }> {
   const rows = await prisma.offlineConversion.findMany({
     where: {
@@ -111,42 +183,9 @@ export async function processPending(limit = 50): Promise<{ processed: number; s
   let failed = 0;
 
   for (const row of rows) {
-    const adapter = ADAPTERS[row.platform];
-    const event = await buildEvent(row);
-
-    if (!event || !adapter.isConfigured()) {
-      await prisma.offlineConversion.update({
-        where: { id: row.id },
-        data: {
-          status: "FAILED",
-          attempts: { increment: 1 },
-          lastError: !event ? "Originating Lead/Booking no longer exists" : `${row.platform} adapter not configured`,
-        },
-      });
-      failed++;
-      continue;
-    }
-
-    const result = await adapter.send(event);
-    if (result.success) {
-      await prisma.offlineConversion.update({
-        where: { id: row.id },
-        data: {
-          status: "SENT",
-          attempts: { increment: 1 },
-          sentAt: new Date(),
-          platformResponse: result.response ? JSON.stringify(result.response) : undefined,
-          lastError: null,
-        },
-      });
-      sent++;
-    } else {
-      await prisma.offlineConversion.update({
-        where: { id: row.id },
-        data: { status: "FAILED", attempts: { increment: 1 }, lastError: result.error ?? "Unknown error" },
-      });
-      failed++;
-    }
+    const outcome = await processRow(row);
+    if (outcome === "sent") sent++;
+    else failed++;
   }
 
   return { processed: rows.length, sent, failed };
