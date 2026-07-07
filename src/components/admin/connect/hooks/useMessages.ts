@@ -63,7 +63,8 @@ export function useMessages(roomId: string | null) {
       .finally(() => setLoading(false));
   }, [roomId]);
 
-  // Poll for new/edited/deleted messages and typing state every 3 s
+  // Poll for new/edited/deleted messages and typing state every 30s. Only
+  // runs while a room is open (roomId non-null) — never outside Vertex Connect.
   const poll = useCallback(async () => {
     if (!roomId) return;
     const since = lastPollTimeRef.current;
@@ -98,7 +99,11 @@ export function useMessages(roomId: string | null) {
 
   useEffect(() => {
     if (!roomId) return;
-    const id = setInterval(poll, 3_000);
+    // Opening a room already triggered the immediate full fetch above; this
+    // interval only starts the recurring poll from here, and its cleanup
+    // (clearInterval) fires automatically the moment the room/Connect page
+    // unmounts — no separate teardown logic needed.
+    const id = setInterval(poll, 30_000);
     return () => clearInterval(id);
   }, [roomId, poll]);
 

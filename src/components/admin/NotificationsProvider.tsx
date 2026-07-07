@@ -42,7 +42,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  useVisibilityAwarePolling(load, 30_000);
+  useVisibilityAwarePolling(load, 60_000);
 
   const markReadAwait = useCallback(async (ids: string[]) => {
     if (ids.length === 0) return;
