@@ -57,7 +57,7 @@ export function ActiveMeetingBanner({ roomId, roomType, currentUserId, onJoin, i
 
   useEffect(() => {
     poll();
-    const id = setInterval(poll, 3_000);
+    const id = setInterval(poll, 60_000);
     return () => clearInterval(id);
   }, [poll]);
 

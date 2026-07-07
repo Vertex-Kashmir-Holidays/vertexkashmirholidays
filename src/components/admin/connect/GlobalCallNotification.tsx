@@ -6,14 +6,11 @@ import { useNotificationSound } from "./hooks/useNotificationSound";
 import { useVisibilityAwarePolling } from "./hooks/useVisibilityAwarePolling";
 import { useCall } from "./CallProvider";
 
-// Visible-tab cadence. Widened from the original 3s — an extra couple of
-// seconds before an incoming-call ring is imperceptible to a human, but this
-// poll runs unconditionally on every admin page for every staff session, so
-// the interval dominates total request volume. Slows further (not fully
-// paused) while the tab is hidden, since a ringing call must still be
-// detected in the background — see useVisibilityAwarePolling.
-const POLL_INTERVAL_MS = 6_000;
-const HIDDEN_POLL_INTERVAL_MS = 20_000;
+// Incoming calls are the one Connect feature that must be reliable from
+// anywhere in the CRM, so this stays flat at 10s regardless of tab
+// visibility (no slower "hidden" cadence) — everything else in Connect polls
+// at 60s instead. See useVisibilityAwarePolling for the shared mechanism.
+const POLL_INTERVAL_MS = 10_000;
 
 interface IncomingMeeting {
   id: string;
@@ -88,7 +85,11 @@ export function GlobalCallNotification({ currentUserId }: Props) {
     }
   }, [playRing, stopRing]);
 
-  useVisibilityAwarePolling(poll, POLL_INTERVAL_MS, HIDDEN_POLL_INTERVAL_MS);
+  // Suspended while the current user is already in a meeting — that state is
+  // owned by MeetingModal/CallProvider, and there's no need to keep checking
+  // for a *different* incoming call while one is already active. Resumes
+  // automatically (and fires immediately) the moment openMeeting clears.
+  useVisibilityAwarePolling(poll, POLL_INTERVAL_MS, POLL_INTERVAL_MS, !openMeeting);
 
   useEffect(() => {
     return () => stopRing();

@@ -53,7 +53,7 @@ export function useRoomList(enabled = true) {
   useEffect(() => {
     if (!enabled) return;
     load();
-    const id = setInterval(load, 10_000);
+    const id = setInterval(load, 60_000);
     return () => clearInterval(id);
   }, [enabled, load]);
 
