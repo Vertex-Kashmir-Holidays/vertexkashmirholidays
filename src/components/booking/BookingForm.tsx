@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
+import { readAttributionClient } from "@/lib/attribution";
 
 // ── Razorpay window type ────────────────────────────────────────────────────
 
@@ -181,6 +182,7 @@ export function BookingForm({
           travelDate: date,
           travellers: count,
           paymentOption,
+          attribution: readAttributionClient(),
         }),
       });
 

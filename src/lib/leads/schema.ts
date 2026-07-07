@@ -8,6 +8,7 @@
 
 import { z } from "zod";
 import { isValidE164 } from "@/lib/auth/validation";
+import { attributionSchema } from "@/lib/attribution";
 
 // ── Source page tags ─────────────────────────────────────────────────────────
 // Distinct per-placement identifier stored on Lead.sourcePage for campaign
@@ -88,6 +89,8 @@ export const leadInputSchema = z.object({
   }),
   source: z.enum(LEAD_SOURCES),
   context: leadContextSchema.optional(),
+  // First-touch marketing attribution captured client-side (src/lib/attribution.ts).
+  attribution: attributionSchema.optional(),
 });
 
 export type LeadInput = z.input<typeof leadInputSchema>;

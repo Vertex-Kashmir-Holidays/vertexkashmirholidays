@@ -3,7 +3,17 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Phone, PhoneOff, Video, PhoneIncoming } from "lucide-react";
 import { useNotificationSound } from "./hooks/useNotificationSound";
+import { useVisibilityAwarePolling } from "./hooks/useVisibilityAwarePolling";
 import { useCall } from "./CallProvider";
+
+// Visible-tab cadence. Widened from the original 3s — an extra couple of
+// seconds before an incoming-call ring is imperceptible to a human, but this
+// poll runs unconditionally on every admin page for every staff session, so
+// the interval dominates total request volume. Slows further (not fully
+// paused) while the tab is hidden, since a ringing call must still be
+// detected in the background — see useVisibilityAwarePolling.
+const POLL_INTERVAL_MS = 6_000;
+const HIDDEN_POLL_INTERVAL_MS = 20_000;
 
 interface IncomingMeeting {
   id: string;
@@ -78,14 +88,11 @@ export function GlobalCallNotification({ currentUserId }: Props) {
     }
   }, [playRing, stopRing]);
 
+  useVisibilityAwarePolling(poll, POLL_INTERVAL_MS, HIDDEN_POLL_INTERVAL_MS);
+
   useEffect(() => {
-    poll();
-    const id = setInterval(poll, 3_000);
-    return () => {
-      clearInterval(id);
-      stopRing();
-    };
-  }, [poll, stopRing]);
+    return () => stopRing();
+  }, [stopRing]);
 
   // ── handlers ────────────────────────────────────────────────────────────────
 

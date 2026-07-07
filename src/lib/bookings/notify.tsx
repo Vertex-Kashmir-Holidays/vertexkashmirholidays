@@ -22,6 +22,7 @@ import {
   type InvoiceService,
 } from "@/lib/mail";
 import { renderBookingSummaryPdf, renderPaymentReceiptPdf, bookingRef } from "@/lib/bookings/invoice-pdf";
+import { enqueueForBooking } from "@/lib/offlineConversion/service";
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -188,6 +189,14 @@ export async function finalizeOnlinePayment(
   await notifyNewBooking(bookingId);
   await sendBookingConfirmationEmail(bookingId, paidAmount, gatewayPaymentId);
   await sendPaymentInvoiceEmail(bookingId, ledgerPaymentId);
+
+  // Direct-booking journey (no Lead involved) — queue offline-conversion
+  // uploads for any platform this booking has a click ID for.
+  try {
+    await enqueueForBooking(bookingId);
+  } catch (err) {
+    console.error("[notify] offline conversion enqueue failed (payment recorded):", bookingId, err);
+  }
 }
 
 /**

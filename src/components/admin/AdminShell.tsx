@@ -39,6 +39,7 @@ import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ChatInbox } from "@/components/admin/ChatInbox";
+import { NotificationsProvider } from "@/components/admin/NotificationsProvider";
 import { PresenceStatusPicker } from "@/components/admin/PresenceStatusPicker";
 import { PresenceHeartbeat } from "@/components/admin/connect/PresenceHeartbeat";
 import { cn } from "@/lib/utils";
@@ -250,6 +251,7 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
   })).filter((group) => group.items.length > 0);
 
   return (
+    <NotificationsProvider>
     <CallProvider currentUserId={userId} currentUserName={userName}>
     <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
       {/* Desktop sidebar */}
@@ -320,5 +322,6 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
       </Suspense>
     </div>
     </CallProvider>
+    </NotificationsProvider>
   );
 }

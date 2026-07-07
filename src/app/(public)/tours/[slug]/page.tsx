@@ -1,5 +1,6 @@
 // src/app/(public)/tours/[slug]/page.tsx
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
@@ -66,7 +67,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 const BADGE_COLORS = ["orange", "blue", "green"] as const;
 
 
-async function getTour(slug: string) {
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getTour = cache(async (slug: string) => {
  return prisma.tour.findFirst({
    where: { slug, published: true },
    include: {
@@ -84,25 +87,12 @@ async function getTour(slug: string) {
      },
    },
  });
-}
+});
 
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
  const { slug } = await params;
- const tour = await prisma.tour.findFirst({
-   where: { slug, published: true },
-   select: {
-     title: true,
-     excerpt: true,
-     description: true,
-     coverImage: true,
-     metaTitle: true,
-     metaDesc: true,
-     ogImage: true,
-     ogTitle: true,
-     ogDescription: true,
-   },
- });
+ const tour = await getTour(slug);
 
 
  if (!tour) {

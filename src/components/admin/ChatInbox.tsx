@@ -1,19 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface NotificationItem {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  link: string | null;
-  readAt: string | null;
-  createdAt: string;
-}
+import { useNotificationsFeed } from "@/components/admin/NotificationsProvider";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -27,8 +18,8 @@ function timeAgo(iso: string): string {
 }
 
 export function ChatInbox() {
+  const { items: allItems, markReadAwait, markReadOptimistic } = useNotificationsFeed();
   const [open, setOpen] = useState(false);
-  const [allItems, setAllItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -36,46 +27,19 @@ export function ChatInbox() {
   const items = allItems.filter((n) => n.type.startsWith("CHAT_"));
   const unread = items.filter((n) => !n.readAt).length;
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch("/api/notifications", { cache: "no-store" });
-      if (!res.ok) return;
-      const j = (await res.json()) as { items: NotificationItem[]; unreadCount: number };
-      setAllItems(j.items);
-    } catch {
-      /* best-effort */
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 30_000);
-    return () => clearInterval(t);
-  }, [load]);
-
   // When the active chat room receives new messages, immediately mark its
   // CHAT_* notifications as read so the icon badge doesn't accumulate.
   useEffect(() => {
     function onMarkRead(e: Event) {
       const { roomId } = (e as CustomEvent<{ roomId: string }>).detail;
-      setAllItems((prev) => {
-        const toMark = prev
-          .filter((n) => n.type.startsWith("CHAT_") && !n.readAt && n.link?.includes(roomId))
-          .map((n) => n.id);
-        if (toMark.length === 0) return prev;
-        fetch("/api/notifications/read", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: toMark }),
-        }).catch(() => {});
-        return prev.map((n) =>
-          toMark.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n,
-        );
-      });
+      const toMark = allItems
+        .filter((n) => n.type.startsWith("CHAT_") && !n.readAt && n.link?.includes(roomId))
+        .map((n) => n.id);
+      markReadOptimistic(toMark);
     }
     window.addEventListener("connect:mark-room-read", onMarkRead);
     return () => window.removeEventListener("connect:mark-room-read", onMarkRead);
-  }, []);
+  }, [allItems, markReadOptimistic]);
 
   // Close on outside click
   useEffect(() => {
@@ -93,14 +57,7 @@ export function ChatInbox() {
       setLoading(true);
       try {
         const unreadIds = items.filter((n) => !n.readAt).map((n) => n.id);
-        await fetch("/api/notifications/read", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: unreadIds }),
-        });
-        setAllItems((prev) =>
-          prev.map((n) => (unreadIds.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n)),
-        );
+        await markReadAwait(unreadIds);
       } catch {
         /* ignore */
       } finally {

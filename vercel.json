@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/connect-retention",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/offline-conversions",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

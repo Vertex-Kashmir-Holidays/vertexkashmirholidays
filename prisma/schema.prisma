@@ -398,6 +398,24 @@ model Booking {
   // Soft-delete marker. Non-null = hidden from all listings/reports but the row
   // (and its payments/services) is retained. Permanent delete removes the row.
   deletedAt       DateTime?
+  ipAddress       String?
+  userAgent       String?
+  // ── Marketing attribution — only ever set on DIRECT website bookings (no
+  // Lead involved). Lead-converted bookings instead get these copied verbatim
+  // from their originating Lead at conversion time (never captured twice).
+  // Same shared field list/schema as Lead — see src/lib/attribution.ts.
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  gclid           String?
+  gbraid          String?
+  wbraid          String?
+  fbclid          String?
+  msclkid         String?
+  landingPage     String?
+  referrer        String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   tour            Tour?            @relation(fields: [tourId], references: [id])
@@ -406,6 +424,7 @@ model Booking {
   payments        BookingPayment[]
   services        BookingService[]
   itinerary       Itinerary?
+  offlineConversions OfflineConversion[]
 
   @@index([status])
   @@index([tourId])
@@ -511,10 +530,27 @@ model Lead {
   locked           Boolean        @default(false)
   ipAddress        String?
   userAgent        String?
+  // ── Marketing attribution — captured once at submission, permanent from then
+  // on. See src/lib/attribution.ts (single shared field list/schema). Copied
+  // verbatim onto Booking at conversion time (src/app/api/leads/[id]/convert) —
+  // never re-derived or duplicated as separate logic.
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  gclid            String?
+  gbraid           String?
+  wbraid           String?
+  fbclid           String?
+  msclkid          String?
+  landingPage      String?
+  referrer         String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   activities       LeadActivity[]
   itinerary        Itinerary?
+  offlineConversions OfflineConversion[]
 
   @@index([status])
   @@index([source])
@@ -525,6 +561,48 @@ model Lead {
   // Public-form dedupe looks up the most recent lead by normalized phone/email.
   @@index([phone])
   @@index([email])
+}
+
+enum OfflineConversionPlatform {
+  GOOGLE
+  META
+  MICROSOFT
+}
+
+enum OfflineConversionStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// Sync-only queue for uploading a Lead/Booking conversion to an ad platform's
+// offline-conversion API. Deliberately does NOT duplicate Lead/Booking data —
+// attribution is read live from the linked record at upload time (see
+// src/lib/offlineConversion/service.ts). Exactly one of leadId/bookingId is
+// set per row, mirroring the existing Itinerary.leadId/bookingId pattern.
+model OfflineConversion {
+  id               String                    @id @default(cuid())
+  leadId           String?
+  lead             Lead?                     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  bookingId        String?
+  booking          Booking?                  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  platform         OfflineConversionPlatform
+  status           OfflineConversionStatus   @default(PENDING)
+  attempts         Int                       @default(0)
+  lastError        String?
+  // Raw platform API response, stored as a JSON string (same convention as
+  // every other JSON column in this schema — see .claude/rules/prisma-db.md).
+  platformResponse String?
+  sentAt           DateTime?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  // Postgres treats NULLs as distinct, so each unique constraint only bites on
+  // the journey it applies to — a Lead-sourced row and a Booking-sourced row
+  // never collide with each other.
+  @@unique([leadId, platform])
+  @@unique([bookingId, platform])
+  @@index([status])
 }
 
 model LeadActivity {

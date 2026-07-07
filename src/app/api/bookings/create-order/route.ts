@@ -6,6 +6,8 @@ import { auth } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { computeChargeable, round2, type PaymentOption } from "@/lib/bookings/finance";
 import { logPaymentAudit } from "@/lib/bookings/audit";
+import { attributionSchema } from "@/lib/attribution";
+import { buildAttributionCreateInput } from "@/lib/attribution.server";
 
 // Booking business rules:
 //   • A booking's travel date must be at least MIN_LEAD_DAYS away (lead time).
@@ -29,6 +31,9 @@ const orderSchema = z.object({
   paymentOption: z.enum(["ADVANCE", "FULL"]).default("FULL"),
   address: z.string().trim().max(300).optional(),
   requirements: z.string().trim().max(1000).optional(),
+  // Direct-booking journey: no Lead exists, so attribution is captured here
+  // directly (see src/lib/attribution.ts).
+  attribution: attributionSchema.optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -63,6 +68,7 @@ export async function POST(req: NextRequest) {
     paymentOption,
     address,
     requirements,
+    attribution,
   } = parsed.data;
 
   const emailNorm = guestEmail.trim().toLowerCase();
@@ -216,6 +222,7 @@ export async function POST(req: NextRequest) {
       address: address || null,
       requirements: requirements || null,
       status: "PENDING",
+      ...buildAttributionCreateInput(attribution, req),
     },
     select: { id: true },
   });

@@ -1,19 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface NotificationItem {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  link: string | null;
-  readAt: string | null;
-  createdAt: string;
-}
+import { useNotificationsFeed } from "@/components/admin/NotificationsProvider";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -27,32 +18,14 @@ function timeAgo(iso: string): string {
 }
 
 export function NotificationBell() {
+  const { items: allItems, markReadAwait } = useNotificationsFeed();
   const [open, setOpen] = useState(false);
-  const [allItems, setAllItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   // All Connect-related notifications (CHAT_*) live in ChatInbox — exclude them here.
   const items = allItems.filter((n) => !n.type.startsWith("CHAT_"));
   const unread = items.filter((n) => !n.readAt).length;
-
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch("/api/notifications", { cache: "no-store" });
-      if (!res.ok) return;
-      const j = (await res.json()) as { items: NotificationItem[]; unreadCount: number };
-      setAllItems(j.items);
-    } catch {
-      /* best-effort polling — ignore transient errors */
-    }
-  }, []);
-
-  // Initial load + light polling so newly assigned leads surface without a reload.
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 30_000);
-    return () => clearInterval(t);
-  }, [load]);
 
   // Close on outside click.
   useEffect(() => {
@@ -71,14 +44,7 @@ export function NotificationBell() {
       setLoading(true);
       try {
         const unreadIds = items.filter((n) => !n.readAt).map((n) => n.id);
-        await fetch("/api/notifications/read", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: unreadIds }),
-        });
-        setAllItems((prev) =>
-          prev.map((n) => (unreadIds.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n)),
-        );
+        await markReadAwait(unreadIds);
       } catch {
         /* ignore */
       } finally {
