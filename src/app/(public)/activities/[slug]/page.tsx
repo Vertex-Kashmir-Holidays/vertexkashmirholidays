@@ -30,6 +30,7 @@ import { parseJson } from "@/lib/tours/content";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 export const revalidate = 300;
 
@@ -37,7 +38,9 @@ type PageProps = { params: Promise<{ slug: string }> };
 
 const BADGE_COLORS = ["orange", "blue", "green"] as const;
 
-async function getActivity(slug: string) {
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getActivity = cache(async (slug: string) => {
   return prisma.activity.findFirst({
     where: { slug, published: true },
     include: {
@@ -58,14 +61,11 @@ async function getActivity(slug: string) {
       },
     },
   });
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const activity = await prisma.activity.findFirst({
-    where: { slug, published: true },
-    select: { name: true, description: true, coverImage: true, metaTitle: true, metaDesc: true, ogImage: true },
-  });
+  const activity = await getActivity(slug);
 
   if (!activity) {
     return buildMetadata({

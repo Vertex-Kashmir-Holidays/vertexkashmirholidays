@@ -1,5 +1,6 @@
 // src/app/(public)/destinations/[slug]/page.tsx
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
@@ -63,7 +64,9 @@ const TABS = [
   { id: "gallery", label: "Gallery", icon: ICON.camera },
 ];
 
-async function getDestination(slug: string) {
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getDestination = cache(async (slug: string) => {
   return prisma.destination.findUnique({
     where: { slug },
     include: {
@@ -90,25 +93,11 @@ async function getDestination(slug: string) {
       },
     },
   });
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const dest = await prisma.destination.findUnique({
-    where: { slug },
-    select: {
-      name: true,
-      tagline: true,
-      excerpt: true,
-      description: true,
-      coverImage: true,
-      metaTitle: true,
-      metaDesc: true,
-      ogImage: true,
-      ogTitle: true,
-      ogDescription: true,
-    },
-  });
+  const dest = await getDestination(slug);
 
   if (!dest) {
     return buildMetadata({

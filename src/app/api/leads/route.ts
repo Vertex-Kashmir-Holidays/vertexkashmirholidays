@@ -10,7 +10,8 @@ import { checkBotSignals } from "@/lib/security/formGuard";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
-import { LeadSource, LeadStatus } from "@prisma/client";
+import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
+import { LeadStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -34,16 +35,6 @@ const DUPLICATE_WINDOW_DAYS = 15;
 // header, defeating header-injection attempts.
 function stripHeader(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();
-}
-
-// Map arbitrary source strings from public forms to the LeadSource enum.
-function resolveSource(raw?: string): LeadSource {
-  const s = (raw ?? "").toLowerCase();
-  if (s.includes("google")) return LeadSource.GOOGLE_ADS;
-  if (s.includes("meta") || s.includes("facebook") || s.includes("instagram")) return LeadSource.META_ADS;
-  if (s === "referral") return LeadSource.REFERRAL;
-  if (s === "manual") return LeadSource.MANUAL;
-  return LeadSource.WEBSITE;
 }
 
 // Admin: list leads with pagination, optional filters, and role-scoped access.
@@ -199,7 +190,7 @@ export async function POST(req: NextRequest) {
   // Whitelist: read ONLY these fields. `agree` is guaranteed true by the schema
   // (mandatory consent); it is not persisted. Anything else the client sent was
   // already stripped by the object schema.
-  const { name, phone, email, message, source, context, travelDate, travellers } =
+  const { name, phone, email, message, source, context, travelDate, travellers, attribution } =
     parsed.data;
 
   // Context-supplied date/travellers fill in when the top-level fields are absent.
@@ -269,11 +260,12 @@ export async function POST(req: NextRequest) {
       name,
       phone,
       email: email || undefined,
-      source: resolveSource(source),
+      source: deriveChannel(attribution),
       sourcePage,
       adults: effectiveTravellers ?? 1,
       startDate: effectiveDate ? new Date(effectiveDate) : undefined,
       notes: composeNotes(message, context),
+      ...buildAttributionCreateInput(attribution, req),
     },
   });
 

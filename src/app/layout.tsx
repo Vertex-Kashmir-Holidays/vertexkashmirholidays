@@ -4,6 +4,7 @@ import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { GTMScript } from "@/components/providers/GTMScript";
+import { AttributionCapture } from "@/components/providers/AttributionCapture";
 import { SITE_NAME } from "@/lib/seo";
 import "./globals.css";
 
@@ -108,6 +109,7 @@ export default async function RootLayout({
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} Blog`} href="/rss.xml" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
+        <AttributionCapture />
         {GTM_ID && !analyticsDisabled && (
           <noscript>
             <iframe

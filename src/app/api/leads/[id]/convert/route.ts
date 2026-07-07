@@ -5,6 +5,8 @@ import { requirePermission } from "@/lib/permissions";
 import { resolveLeadCustomer } from "@/lib/bookings/customer";
 import { sendCustomerCredentialsEmail } from "@/lib/bookings/notify";
 import { resolveGst } from "@/lib/payments/gst";
+import { pickAttribution } from "@/lib/attribution";
+import { enqueueForLead } from "@/lib/offlineConversion/service";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +112,9 @@ export async function POST(req: NextRequest, { params }: Params) {
         guestName: lead.name,
         guestEmail: lead.email,
         guestPhone: lead.phone,
+        // Attribution is captured once, at Lead creation — copied verbatim
+        // here rather than re-derived, per src/lib/attribution.ts.
+        ...pickAttribution(lead),
         payments: {
           create: {
             amount: tokenAmount,
@@ -155,6 +160,14 @@ export async function POST(req: NextRequest, { params }: Params) {
   // and we have an email to send them to. Never blocks/fails the conversion.
   if (result.created && lead.email && result.tempPassword) {
     await sendCustomerCredentialsEmail(lead.email, lead.name, result.tempPassword);
+  }
+
+  // Best-effort: queue offline-conversion uploads for any platform this lead
+  // has a click ID for. Never blocks/fails the conversion.
+  try {
+    await enqueueForLead(id);
+  } catch (err) {
+    console.error("[leads/convert] offline conversion enqueue failed (lead converted):", id, err);
   }
 
   return NextResponse.json({ bookingId: result.bookingId }, { status: 201 });

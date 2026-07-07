@@ -1,6 +1,7 @@
 // src/app/(public)/blog/[slug]/page.tsx
 
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
@@ -47,22 +48,15 @@ function withHeadingIds(html: string | null): {
   return { html: out, toc };
 }
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getBlogPost = cache(async (slug: string) => {
+  return prisma.blog.findUnique({ where: { slug } });
+});
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await prisma.blog.findUnique({
-    where: { slug },
-    select: {
-      title: true,
-      excerpt: true,
-      coverImage: true,
-      metaTitle: true,
-      metaDesc: true,
-      ogImage: true,
-      ogTitle: true,
-      ogDescription: true,
-      published: true,
-    },
-  });
+  const post = await getBlogPost(slug);
 
   if (!post || !post.published) {
     return buildMetadata({
@@ -89,7 +83,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const post = await prisma.blog.findUnique({ where: { slug } });
+  const post = await getBlogPost(slug);
   if (!post || !post.published) notFound();
 
   const [relatedRaw, tour] = await Promise.all([
