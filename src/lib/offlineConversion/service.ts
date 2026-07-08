@@ -88,7 +88,7 @@ export async function enqueueForBooking(bookingId: string): Promise<void> {
  * that implements "Lead-based bookings use Lead attribution; direct bookings
  * use Booking attribution."
  */
-async function buildEvent(row: { leadId: string | null; bookingId: string | null }): Promise<ConversionEvent | null> {
+async function buildEvent(row: { id: string; leadId: string | null; bookingId: string | null }): Promise<ConversionEvent | null> {
   if (row.leadId) {
     const lead = await prisma.lead.findUnique({ where: { id: row.leadId } });
     if (!lead) return null;
@@ -101,6 +101,7 @@ async function buildEvent(row: { leadId: string | null; bookingId: string | null
       phone: lead.phone,
       ipAddress: lead.ipAddress ?? undefined,
       userAgent: lead.userAgent ?? undefined,
+      dedupeKey: row.id,
     };
   }
   if (row.bookingId) {
@@ -115,6 +116,7 @@ async function buildEvent(row: { leadId: string | null; bookingId: string | null
       phone: booking.guestPhone,
       ipAddress: booking.ipAddress ?? undefined,
       userAgent: booking.userAgent ?? undefined,
+      dedupeKey: row.id,
     };
   }
   return null;
@@ -162,6 +164,18 @@ async function processRow(row: OfflineConversion): Promise<"sent" | "failed"> {
     data: { status: "FAILED", attempts: { increment: 1 }, lastError: result.error ?? "Unknown error" },
   });
   return "failed";
+}
+
+/**
+ * Retries exactly one queue row by id, regardless of its current status or
+ * attempt count — used by the admin Offline Conversions module's manual
+ * "Retry" action. Thin wrapper around the existing processRow(); adds no new
+ * send/build/update logic of its own.
+ */
+export async function retryRow(id: string): Promise<"sent" | "failed" | "not_found"> {
+  const row = await prisma.offlineConversion.findUnique({ where: { id } });
+  if (!row) return "not_found";
+  return processRow(row);
 }
 
 /**

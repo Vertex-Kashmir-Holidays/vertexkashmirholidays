@@ -1595,8 +1595,8 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
         </div>
       </div>
 
-      {/* Mobile bottom actions */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex gap-3 z-40">
+      {/* Mobile bottom actions — bottom-20 clears the fixed bottom tab bar (MobileBottomTabs) */}
+      <div className="lg:hidden fixed bottom-20 left-0 right-0 bg-card border-t border-border p-4 flex gap-3 z-40">
         <Button
           type="button"
           onClick={() => handleSave(false)}

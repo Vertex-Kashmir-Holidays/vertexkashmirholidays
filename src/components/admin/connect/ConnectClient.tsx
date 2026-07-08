@@ -99,9 +99,11 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
     [refetch],
   );
 
+  // Mobile subtracts extra height for the fixed bottom tab bar (MobileBottomTabs)
+  // + the matching pb-20 clearance on <main> — desktop (lg:) is unchanged.
   return (
     <div
-      className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-border bg-card"
+      className="flex h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-border bg-card"
       onClick={unlock}
     >
       {/* Sidebar */}

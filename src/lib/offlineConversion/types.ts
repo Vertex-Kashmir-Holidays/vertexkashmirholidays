@@ -13,6 +13,12 @@ export interface ConversionEvent {
   phone?: string;
   ipAddress?: string;
   userAgent?: string;
+  /**
+   * Stable idempotency key for the queue row (its own id). Optional — only
+   * the Google adapter uses it today (as order_id, for platform-side dedup
+   * on top of our own DB-level unique constraint). Meta/Microsoft ignore it.
+   */
+  dedupeKey?: string;
 }
 
 export interface PlatformAdapterResult {

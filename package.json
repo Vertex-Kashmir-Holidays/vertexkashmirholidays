@@ -11,7 +11,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "google-ads:refresh-token": "tsx scripts/generate-google-ads-refresh-token.ts",
+    "google-ads:create-conversion-action": "tsx scripts/create-google-conversion-action.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

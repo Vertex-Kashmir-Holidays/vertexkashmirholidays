@@ -33,6 +33,7 @@ import {
   Ticket,
   MessageSquare,
   Flag,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -40,6 +41,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ChatInbox } from "@/components/admin/ChatInbox";
 import { NotificationsProvider } from "@/components/admin/NotificationsProvider";
+import { MobileBottomTabs } from "@/components/admin/MobileBottomTabs";
 import { PresenceStatusPicker } from "@/components/admin/PresenceStatusPicker";
 import { PresenceHeartbeat } from "@/components/admin/connect/PresenceHeartbeat";
 import { cn } from "@/lib/utils";
@@ -62,6 +64,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   contact: Phone,
   legal: ScrollText,
   campaigns: Megaphone,
+  offlineConversions: Target,
   banners: Flag,
   reviews: Star,
   seo: Globe,
@@ -80,6 +83,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
   { label: null, keys: ["dashboard", "connect"] },
   { label: "Catalog", keys: ["destinations", "packages", "activities", "campaigns"] },
   { label: "CRM", keys: ["leads", "itinerary", "bookings"] },
+  { label: "Marketing", keys: ["offlineConversions"] },
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
   { label: "Editorial", keys: ["blogs", "seo", "reviews"] },
   { label: "Admin", keys: ["users", "settings", "roles"] },
@@ -310,11 +314,14 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto px-1 sm:px-5 py-1 sm:py-5 lg:p-6">
+        {/* Page content — extra bottom padding on mobile so content clears the fixed bottom tab bar */}
+        <main className="flex-1 overflow-y-auto px-1 sm:px-5 pt-1 sm:pt-5 pb-20 lg:p-6">
           {children}
         </main>
       </div>
+
+      {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
+      <MobileBottomTabs pathname={pathname} permissions={permissions} />
 
       {/* Global incoming call notification — rings from any page in the admin */}
       <Suspense>

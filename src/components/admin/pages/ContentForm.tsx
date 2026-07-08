@@ -100,7 +100,8 @@ export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
       ))}
 
       {canEdit && (
-        <div className="sticky bottom-4 flex justify-end">
+        // bottom-20 on mobile clears the fixed bottom tab bar (MobileBottomTabs); lg: restores the original offset
+        <div className="sticky bottom-20 lg:bottom-4 flex justify-end">
           <button
             onClick={save}
             disabled={busy}
