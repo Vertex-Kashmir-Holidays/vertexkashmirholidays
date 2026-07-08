@@ -145,7 +145,6 @@ export function TourDetailsHero({
                  src={imgSrc(images[currentImage])}
                  alt={tourName}
                  fill
-                 priority
                  sizes="100vw"
                  className="hidden object-cover sm:block"
                />
@@ -255,25 +254,21 @@ export function TourDetailsHero({
          >
            {badge}
          </motion.span>
-         <motion.h1
-           className="h-display mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[44px]"
-           initial={{ y: 20, opacity: 0 }}
-           animate={{ y: 0, opacity: 1 }}
-           transition={{ duration: 0.6, delay: 0.1 }}
+         <h1
+           className="hero-reveal h-display mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[44px]"
+           style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
          >
            {tourName}
            <br />
            {duration}
-         </motion.h1>
+         </h1>
          {tagline && (
-           <motion.p
-             className="mt-4 text-[15px] font-medium text-white/90"
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             transition={{ duration: 0.6, delay: 0.2 }}
+           <p
+             className="hero-reveal mt-4 text-[15px] font-medium text-white/90"
+             style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
            >
              {tagline}
-           </motion.p>
+           </p>
          )}
          <motion.p
            className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] font-semibold text-white"

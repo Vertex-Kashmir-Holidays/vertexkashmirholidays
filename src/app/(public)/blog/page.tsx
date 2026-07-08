@@ -1,6 +1,7 @@
 // src/app/(public)/blog/page.tsx
 
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
@@ -24,10 +25,7 @@ const dateLabel = (d: Date | null) =>
     ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
 
-type PageProps = { searchParams: Promise<{ category?: string }> };
-
-export default async function BlogPage({ searchParams }: PageProps) {
-  const { category: categorySlug } = await searchParams;
+export default async function BlogPage() {
   const [content, blogs, categories, counts] = await Promise.all([
     prisma.blogContent.findUnique({ where: { id: 'singleton' } }),
     prisma.blog.findMany({
@@ -54,12 +52,6 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
   const countMap = new Map(counts.map((c) => [c.category, c._count._all]));
 
-  // Resolve the ?category=<slug> query param (used by category "View" links
-  // and blog-post breadcrumbs) to the display name BlogPageClient filters by.
-  const initialCategory = categorySlug
-    ? categories.find((c) => c.slug === categorySlug)?.name ?? 'All'
-    : 'All';
-
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: 'Home', url: SITE_URL },
     { name: 'Blog', url: `${SITE_URL}/blog` },
@@ -68,8 +60,11 @@ export default async function BlogPage({ searchParams }: PageProps) {
   return (
     <>
     <JsonLd data={breadcrumbJsonLd} />
+    {/* BlogPageClient reads ?category= itself via useSearchParams() — that
+        hook requires a Suspense boundary on a statically-rendered page (see
+        BlogPageClient.tsx for why this moved off the server). */}
+    <Suspense>
     <BlogPageClient
-      initialCategory={initialCategory}
       content={{
         heroKicker: content?.heroKicker ?? null,
         heroTitle: content?.heroTitle ?? null,
@@ -122,6 +117,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
         dateLabel: dateLabel(b.publishedAt),
       }))}
     />
+    </Suspense>
     </>
   );
 }

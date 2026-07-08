@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { imgSrc } from '@/lib/placeholder';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import { Thermometer } from 'lucide-react';
@@ -33,17 +34,21 @@ export function DestinationDetailHero({
 }: DestinationDetailHeroProps) {
   return (
     <section className="relative bg-brand-dark">
-      <picture>
-        {imageMobile && <source media="(max-width: 640px)" srcSet={imgSrc(imageMobile)} />}
-        <motion.img
-          src={imgSrc(image)}
-          alt={name}
-          className="absolute inset-0 h-full w-full object-cover"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </picture>
+      <motion.div
+        className="absolute inset-0"
+        initial={{ scale: 1.1 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {imageMobile ? (
+          <>
+            <Image src={imgSrc(imageMobile)} alt={name} fill priority sizes="100vw" className="object-cover sm:hidden" />
+            <Image src={imgSrc(image)} alt={name} fill sizes="100vw" className="hidden object-cover sm:block" />
+          </>
+        ) : (
+          <Image src={imgSrc(image)} alt={name} fill priority sizes="100vw" className="object-cover" />
+        )}
+      </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/35 to-brand-dark/10"></div>
       <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent"></div>
 
@@ -66,22 +71,18 @@ export function DestinationDetailHero({
             >
               {region}
             </motion.span>
-            <motion.h1
-              className="mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-[64px] lg:leading-none"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+            <h1
+              className="hero-reveal mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-[64px] lg:leading-none"
+              style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
             >
               {name}
-            </motion.h1>
-            <motion.p
-              className="mt-2 text-xl font-bold text-white sm:text-2xl lg:text-[30px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+            </h1>
+            <p
+              className="hero-reveal mt-2 text-xl font-bold text-white sm:text-2xl lg:text-[30px]"
+              style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
             >
               {tagline}
-            </motion.p>
+            </p>
 
             <motion.div
               className="mt-8 flex flex-wrap gap-3"

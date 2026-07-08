@@ -162,23 +162,19 @@ export function CampaignHero({
             </motion.span>
           )}
           {titleHTML && (
-            <motion.h1
-              className="h-display mt-6 max-w-2xl text-[42px] font-extrabold text-white sm:text-[58px]"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+            <h1
+              className="hero-reveal h-display mt-6 max-w-2xl text-[42px] font-extrabold text-white sm:text-[58px]"
+              style={{ '--hr-y': '30px', '--hr-delay': '0.1s' } as React.CSSProperties}
               dangerouslySetInnerHTML={{ __html: titleHTML }}
             />
           )}
           {sub && (
-            <motion.p
-              className="mt-6 max-w-md text-[15px] leading-relaxed text-white/75"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+            <p
+              className="hero-reveal mt-6 max-w-md text-[15px] leading-relaxed text-white/75"
+              style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
             >
               {sub}
-            </motion.p>
+            </p>
           )}
 
           {facts.length > 0 && (

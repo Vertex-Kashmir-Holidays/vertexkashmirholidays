@@ -13,7 +13,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "google-ads:refresh-token": "tsx scripts/generate-google-ads-refresh-token.ts",
-    "google-ads:create-conversion-action": "tsx scripts/create-google-conversion-action.ts"
+    "google-ads:create-conversion-action": "tsx scripts/create-google-conversion-action.ts",
+    "lhci": "lhci autorun"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -68,6 +69,8 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@lhci/cli": "^0.15.1",
+    "@next/bundle-analyzer": "^16.2.10",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^24",
     "@types/nodemailer": "^7",

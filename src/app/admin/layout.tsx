@@ -1,10 +1,18 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStaff } from "@/lib/rbac";
 import { getRolePermissions } from "@/lib/permissions";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
+// GTM must never load here — this route group is intentionally the only one
+// of the four (public / admin / account / login) that doesn't render
+// <SiteAnalytics>. This layout already calls auth() (fully dynamic on every
+// request regardless), so reading the CSP nonce via headers() here costs
+// nothing extra.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
@@ -12,21 +20,32 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/login");
   }
 
-  const [permissions, profile] = await Promise.all([
+  const [permissions, profile, requestHeaders] = await Promise.all([
     getRolePermissions(session.user.role),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, image: true } }),
+    headers(),
   ]);
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   return (
-    <AdminShell
-      userId={session.user.id}
-      userName={profile?.name ?? session.user.name ?? "Admin"}
-      userEmail={session.user.email ?? ""}
-      userImage={profile?.image ?? null}
-      role={session.user.role}
-      permissions={permissions}
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      nonce={nonce}
     >
-      {children}
-    </AdminShell>
+      <AdminShell
+        userId={session.user.id}
+        userName={profile?.name ?? session.user.name ?? "Admin"}
+        userEmail={session.user.email ?? ""}
+        userImage={profile?.image ?? null}
+        role={session.user.role}
+        permissions={permissions}
+      >
+        {children}
+      </AdminShell>
+      <Toaster richColors position="top-right" />
+    </ThemeProvider>
   );
 }

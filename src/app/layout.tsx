@@ -1,16 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
-import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { GTMScript } from "@/components/providers/GTMScript";
 import { AttributionCapture } from "@/components/providers/AttributionCapture";
 import { SITE_NAME } from "@/lib/seo";
 import "./globals.css";
-
-
-const rawGtmId = process.env.NEXT_PUBLIC_GTM_ID ?? "";
-const GTM_ID = /^GTM-[A-Z0-9]+$/.test(rawGtmId) ? rawGtmId : null;
 
 
 const displayFont = Bricolage_Grotesque({
@@ -85,17 +77,20 @@ export const viewport: Viewport = {
 };
 
 
-export default async function RootLayout({
+// No headers()/cookies() call anywhere in this file — that's deliberate. Every
+// route in the app renders this layout, so any dynamic API call here would
+// force full dynamic rendering everywhere, defeating ISR on public pages (see
+// the perf audit). ThemeProvider, GTMScript and Toaster — all of which used to
+// live here and need a per-request CSP nonce — now live in each route group's
+// own layout instead: src/app/(public)/layout.tsx (no nonce, static CSP),
+// src/app/admin/layout.tsx, src/app/account/layout.tsx and
+// src/app/login/layout.tsx (all already dynamic via auth(), so reading the
+// nonce there costs nothing extra).
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const requestHeaders = await headers();
-  const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  // Set by middleware for /admin/* — GTM must never load there. See
-  // src/lib/internalRoutes.ts and src/proxy.ts.
-  const analyticsDisabled = requestHeaders.get("x-analytics-disabled") === "1";
-
   return (
     <html
       lang="en"
@@ -110,29 +105,7 @@ export default async function RootLayout({
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <AttributionCapture />
-        {GTM_ID && !analyticsDisabled && (
-          <noscript>
-            <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-              height="0"
-              width="0"
-              style={{ display: "none", visibility: "hidden" }}
-            />
-          </noscript>
-        )}
-
-        {GTM_ID && !analyticsDisabled && <GTMScript gtmId={GTM_ID} nonce={nonce} />}
-
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          nonce={nonce}
-        >
-          {children}
-          <Toaster richColors position="top-right" />
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );

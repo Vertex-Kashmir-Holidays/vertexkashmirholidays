@@ -40,6 +40,20 @@ import type { DestinationCardData } from "@/components/destinations/Destinations
 
 export const revalidate = 300;
 
+// Without this, Next.js has no known slug list to pre-render and falls back
+// to fully dynamic rendering on every request regardless of `revalidate`
+// (confirmed via build output: this route stayed ƒ even after ISR was
+// restored on the rest of the public site). The catalog is small (single
+// digits), so pre-rendering all of them at build time is cheap; any
+// destination added after a deploy is rendered on its first request and
+// cached from then on.
+export async function generateStaticParams() {
+  const destinations = await prisma.destination.findMany({
+    select: { slug: true },
+  });
+  return destinations.map((d) => ({ slug: d.slug }));
+}
+
 type PageProps = { params: Promise<{ slug: string }> };
 
 const BADGE_COLORS = ["orange", "blue", "green"] as const;

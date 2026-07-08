@@ -26,22 +26,18 @@ export function AboutHero({ data }: AboutHeroProps) {
           <span>›</span>
           <span className="font-semibold text-white">{data.breadcrumb}</span>
         </nav>
-        <motion.h1
-          className="h-display mt-4 font-display text-3xl font-bold leading-[1.12] text-white sm:text-4xl lg:text-[52px]"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+        <h1
+          className="hero-reveal h-display mt-4 font-display text-3xl font-bold leading-[1.12] text-white sm:text-4xl lg:text-[52px]"
+          style={{ '--hr-y': '30px', '--hr-delay': '0.1s' } as React.CSSProperties}
         >
           {renderMint(data.title)}
-        </motion.h1>
-        <motion.p
-          className="mt-6 max-w-md text-[14.5px] leading-relaxed text-white/85"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+        </h1>
+        <p
+          className="hero-reveal mt-6 max-w-md text-[14.5px] leading-relaxed text-white/85"
+          style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {data.subtitle}
-        </motion.p>
+        </p>
         <motion.div
           className="mt-8 flex flex-wrap items-center gap-3.5"
           initial={{ opacity: 0, y: 20 }}

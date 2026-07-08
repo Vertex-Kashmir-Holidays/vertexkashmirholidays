@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -50,21 +51,32 @@ export function PromoBannerCard({
         (stacked ? (
           // Preview mobile: show the mobile image explicitly (media queries can't
           // react to the narrow preview frame on a desktop viewport).
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={mobileSrc ?? desktopSrc}
+          <Image
+            src={mobileSrc ?? desktopSrc!}
             alt={b.title}
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            fill
+            sizes="100vw"
+            className="object-cover object-center"
           />
         ) : (
-          <picture className="absolute inset-0 block h-full w-full">
-            {mobileSrc && <source media="(max-width: 640px)" srcSet={mobileSrc} />}
-            <img
-              src={desktopSrc ?? mobileSrc}
+          <>
+            {mobileSrc && (
+              <Image
+                src={mobileSrc}
+                alt={b.title}
+                fill
+                sizes="100vw"
+                className="object-cover object-center sm:hidden"
+              />
+            )}
+            <Image
+              src={desktopSrc ?? mobileSrc!}
               alt={b.title}
-              className="h-full w-full object-cover object-center"
+              fill
+              sizes="100vw"
+              className={`object-cover object-center ${mobileSrc ? "hidden sm:block" : ""}`}
             />
-          </picture>
+          </>
         ))}
 
       {/* Scrim for legibility — bottom-up on mobile, left-to-right on desktop. */}

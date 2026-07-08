@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BlogArticlesGrid } from '@/components/blog/BlogArticlesGrid';
 import { BlogCategoryChips } from '@/components/blog/BlogCategoryChips';
 import { BlogFeaturedStory } from '@/components/blog/BlogFeaturedStory';
@@ -25,7 +26,6 @@ interface BlogPageClientProps {
   chips: BlogChipData[];
   categories: BlogCategoryData[];
   trending: BlogTrendingData[];
-  initialCategory?: string;
 }
 
 export function BlogPageClient({
@@ -35,8 +35,16 @@ export function BlogPageClient({
   chips,
   categories,
   trending,
-  initialCategory = 'All',
 }: BlogPageClientProps) {
+  // Read client-side (not via the page's searchParams prop) so this page can
+  // stay statically rendered — reading searchParams server-side forces the
+  // whole route dynamic on every request regardless of `revalidate`.
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get('category');
+  const initialCategory = categorySlug
+    ? (categories.find((c) => c.slug === categorySlug)?.name ?? 'All')
+    : 'All';
+
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);

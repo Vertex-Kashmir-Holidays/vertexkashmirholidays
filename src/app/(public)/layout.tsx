@@ -1,6 +1,9 @@
+import { Toaster } from "sonner";
 import { prisma } from "@/lib/prisma";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
 import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
 import { JsonLd, buildTravelAgency, buildWebSite } from "@/components/seo/JsonLd";
@@ -77,35 +80,44 @@ export default async function PublicLayout({
   const webSiteJsonLd = buildWebSite();
 
   return (
-    <SiteSettingsProvider
-      value={{
-        siteName: s?.siteName ?? "Vertex Kashmir Holidays",
-        whatsapp: s?.whatsapp ?? null,
-        sitePhone: s?.sitePhone ?? null,
-        showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
-        announcementMessage: s?.announcementMessage ?? null,
-      }}
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
     >
-      <JsonLd data={organizationJsonLd} />
-      <JsonLd data={webSiteJsonLd} />
-      <PublicChrome
-        settings={settings}
-        promoBanners={promoBanners}
-        strip={
-          strip
-            ? {
-                id: strip.id,
-                title: strip.title,
-                body: strip.body,
-                ctaLabel: strip.ctaLabel,
-                ctaUrl: strip.ctaUrl,
-              }
-            : null
-        }
+      <SiteAnalytics />
+      <SiteSettingsProvider
+        value={{
+          siteName: s?.siteName ?? "Vertex Kashmir Holidays",
+          whatsapp: s?.whatsapp ?? null,
+          sitePhone: s?.sitePhone ?? null,
+          showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
+          announcementMessage: s?.announcementMessage ?? null,
+        }}
       >
-        {children}
-      </PublicChrome>
-      <AnnouncementModal />
-    </SiteSettingsProvider>
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={webSiteJsonLd} />
+        <PublicChrome
+          settings={settings}
+          promoBanners={promoBanners}
+          strip={
+            strip
+              ? {
+                  id: strip.id,
+                  title: strip.title,
+                  body: strip.body,
+                  ctaLabel: strip.ctaLabel,
+                  ctaUrl: strip.ctaUrl,
+                }
+              : null
+          }
+        >
+          {children}
+        </PublicChrome>
+        <AnnouncementModal />
+      </SiteSettingsProvider>
+      <Toaster richColors position="top-right" />
+    </ThemeProvider>
   );
 }

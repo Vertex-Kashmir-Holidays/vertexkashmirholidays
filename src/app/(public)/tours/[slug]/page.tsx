@@ -49,6 +49,19 @@ import {
 
 export const revalidate = 300;
 
+// Without this, Next.js has no known slug list to pre-render and falls back
+// to fully dynamic rendering on every request regardless of `revalidate`
+// (confirmed via build output: this route stayed ƒ even after ISR was
+// restored on the rest of the public site). The catalog is small (single
+// digits), so pre-rendering all of them at build time is cheap; any tour
+// added after a deploy is rendered on its first request and cached from then on.
+export async function generateStaticParams() {
+  const tours = await prisma.tour.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return tours.map((t) => ({ slug: t.slug }));
+}
 
 type PageProps = { params: Promise<{ slug: string }> };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -37,10 +38,35 @@ export function SecondaryHero({ image, imageMobile, alt = '', children, aside }:
           animate={{ scale: 1 }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <picture className="block h-full w-full">
-            {imageMobile && <source media="(max-width: 640px)" srcSet={imageMobile} />}
-            <img src={image} alt={alt} className="h-full w-full object-cover object-center" />
-          </picture>
+          {imageMobile ? (
+            <>
+              <Image
+                src={imageMobile}
+                alt={alt}
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover object-center sm:hidden"
+              />
+              <Image
+                src={image}
+                alt={alt}
+                fill
+                priority
+                sizes="100vw"
+                className="hidden object-cover object-center sm:block"
+              />
+            </>
+          ) : (
+            <Image
+              src={image}
+              alt={alt}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-center"
+            />
+          )}
         </motion.div>
       )}
       {/* Scrim: vertical on mobile (content + card stack, so darken top→bottom for

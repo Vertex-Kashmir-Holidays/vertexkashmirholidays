@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const withAnalyzer = withBundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
 
 
 // Host of the branded placeholder image (env-driven so it follows the
@@ -88,4 +91,4 @@ const nextConfig: NextConfig = {
 };
 
 
-export default nextConfig;
+export default withAnalyzer(nextConfig);
