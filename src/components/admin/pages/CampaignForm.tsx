@@ -226,7 +226,8 @@ export function CampaignForm({ initial, canEdit }: { initial: CampaignRecord | n
       </div>
 
       {canEdit && (
-        <div className="sticky bottom-4 flex justify-end">
+        // bottom-20 on mobile clears the fixed bottom tab bar (MobileBottomTabs); lg: restores the original offset
+        <div className="sticky bottom-20 lg:bottom-4 flex justify-end">
           <button onClick={save} disabled={busy} className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:brightness-110 disabled:opacity-60">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isNew ? "Create campaign" : "Save changes"}
