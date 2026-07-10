@@ -10,6 +10,9 @@ import {
 
 // ── Email domain allowlist ───────────────────────────────────────────────────
 
+/** The company's own email domain — staff accounts, never a Google sign-in target. */
+export const COMPANY_EMAIL_DOMAIN = "vertexkashmirholidays.com";
+
 /** Public providers we accept registrations from. Everything else is blocked. */
 export const ALLOWED_EMAIL_DOMAINS = [
   // Google
@@ -28,7 +31,7 @@ export const ALLOWED_EMAIL_DOMAINS = [
   // Rediffmail
   "rediffmail.com",
   // Company
-  "vertexkashmirholidays.com",
+  COMPANY_EMAIL_DOMAIN,
 ] as const;
 
 /** True when the email's domain is in {@link ALLOWED_EMAIL_DOMAINS}. */
@@ -37,6 +40,17 @@ export function isAllowedEmailDomain(email: string): boolean {
   return (
     !!domain && (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(domain)
   );
+}
+
+/**
+ * True for public-provider domains only — excludes the company domain. Google
+ * sign-in is a customer convenience login, never a staff auth path, so it must
+ * never accept @{@link COMPANY_EMAIL_DOMAIN} even though that domain is allowed
+ * for ordinary (password) registration.
+ */
+export function isAllowedGoogleDomain(email: string): boolean {
+  const domain = email.split("@")[1]?.toLowerCase().trim();
+  return !!domain && domain !== COMPANY_EMAIL_DOMAIN && isAllowedEmailDomain(email);
 }
 
 // Generic, non-enumerating message — we deliberately do NOT list every allowed

@@ -28,22 +28,18 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
         >
           {content.heroKicker}
         </motion.p>
-        <motion.h1
-          className="mt-4 text-3xl font-bold leading-tight text-white sm:text-[38px] lg:text-[42px]"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+        <h1
+          className="hero-reveal mt-4 text-3xl font-bold leading-tight text-white sm:text-[38px] lg:text-[42px]"
+          style={{ '--hr-y': '30px', '--hr-delay': '0.1s' } as React.CSSProperties}
         >
           {content.heroTitle}
-        </motion.h1>
-        <motion.p
-          className="mt-3 text-[14.5px] text-white/90"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+        </h1>
+        <p
+          className="hero-reveal mt-3 text-[14.5px] text-white/90"
+          style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {content.heroSubtitle}
-        </motion.p>
+        </p>
         <motion.label
           className="mt-7 flex w-full max-w-[350px] items-center gap-3 rounded-lg bg-card px-4 py-3 shadow-card"
           initial={{ opacity: 0, y: 20 }}

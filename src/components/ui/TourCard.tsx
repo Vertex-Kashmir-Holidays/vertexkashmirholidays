@@ -74,7 +74,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
     >
       <Tilt3D intensity={isHome ? 8 : 6}>
         <article
-          className={`group flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
+          className={`sweep-hover group flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
             isHome
               ? 'bg-gradient-to-br from-foreground/[0.05] to-transparent backdrop-blur-sm border border-border rounded-3xl shadow-card hover:shadow-green-glow/20'
               : 'border border-border bg-card shadow-soft hover:shadow-primary/10'

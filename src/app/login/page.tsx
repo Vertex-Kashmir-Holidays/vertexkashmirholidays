@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { isStaff } from '@/lib/rbac';
 import { AuthScreen } from '@/components/auth/AuthScreen';
@@ -13,5 +14,10 @@ export default async function LoginPage() {
     redirect(isStaff(session.user.role) ? '/admin/dashboard' : '/account');
   }
 
-  return <AuthScreen />;
+  // Google One Tap injects its own <script> tag client-side, which needs this
+  // request's CSP nonce to be trusted (see proxy.ts's nonce-based CSP).
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+
+  return <AuthScreen nonce={nonce} />;
 }

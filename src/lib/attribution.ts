@@ -59,11 +59,15 @@ export function pickAttribution(record: Partial<Record<AttributionField, string 
   return out;
 }
 
-// ── Client-side capture (first-touch, permanent) ────────────────────────────
-// One JSON cookie, written once per browser and never overwritten — later
-// visits/campaigns don't reset it. Read back by LeadForm/BookingForm at submit
-// time and sent as part of the request body (never trust a client-forged
-// cookie server-side beyond normal Zod validation — same as any form field).
+// ── Client-side capture (first-touch, with click-id upgrade) ────────────────
+// One JSON cookie. landingPage/referrer/UTMs are first-touch and never
+// overwritten. Click-id fields (gclid/fbclid/etc.) that are still empty may
+// be filled in by a later visit — without this, a returning visitor who
+// clicks a fresh Google/Meta ad after already having an attribution cookie
+// would never get that click id captured, silently breaking offline
+// conversion sync. Read back by LeadForm/BookingForm at submit time and sent
+// as part of the request body (never trust a client-forged cookie
+// server-side beyond normal Zod validation — same as any form field).
 
 const COOKIE_NAME = "vkh_attribution";
 const COOKIE_MAX_AGE_DAYS = 90; // matches typical ad-platform click attribution windows
@@ -83,30 +87,57 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-/** Call once on app load. No-ops on internal (/admin) routes and if already captured. */
+function parseAttributionCookie(raw: string | null): AttributionData {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as AttributionData;
+  } catch {
+    return {};
+  }
+}
+
+/** Call once on app load. No-ops on internal (/admin) routes. */
 export function captureAttributionClient(): void {
   if (typeof window === "undefined") return;
   if (isInternalRoute(window.location.pathname)) return;
-  if (readCookie(COOKIE_NAME)) return; // first-touch already recorded
+
+  const existingRaw = readCookie(COOKIE_NAME);
+  const existing = parseAttributionCookie(existingRaw);
 
   const params = new URLSearchParams(window.location.search);
-  const data: AttributionData = {};
+  const incoming: AttributionData = {};
 
   for (const key of CLICK_ID_PARAMS) {
     const value = params.get(key);
-    if (value) data[key as AttributionField] = value;
+    if (value) incoming[key as AttributionField] = value;
   }
   for (const [param, field] of Object.entries(UTM_PARAM_MAP)) {
     const value = params.get(param);
-    if (value) data[field] = value;
+    if (value) incoming[field] = value;
   }
-  data.landingPage = window.location.href;
-  if (document.referrer) data.referrer = document.referrer;
 
-  if (Object.keys(data).length === 0) return;
+  if (!existingRaw) {
+    // First-touch only: landingPage/referrer are never captured again after this.
+    incoming.landingPage = window.location.href;
+    if (document.referrer) incoming.referrer = document.referrer;
+  }
+
+  // Merge: keep every first-touch value already recorded; only fill in fields
+  // that are still empty (lets a click id from a later ad click "upgrade"
+  // the cookie without resetting landingPage/UTMs from the original visit).
+  let changed = false;
+  const merged: AttributionData = { ...existing };
+  for (const field of ATTRIBUTION_FIELDS) {
+    if (!merged[field] && incoming[field]) {
+      merged[field] = incoming[field];
+      changed = true;
+    }
+  }
+
+  if (!changed) return;
 
   const maxAge = COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
-  document.cookie = `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(data))}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(merged))}; path=/; max-age=${maxAge}; SameSite=Lax`;
 }
 
 /** Reads the first-touch attribution captured for this browser, if any. */

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { LeadForm } from "@/components/leads/LeadForm";
 import type { LeadContext, LeadSourcePage } from "@/lib/leads/schema";
 
@@ -28,11 +27,9 @@ export function HeroLeadCard({
   className,
 }: HeroLeadCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className={`glass-cream w-full max-w-md rounded-3xl p-6 shadow-glass sm:p-7 ${className ?? ""}`}
+    <div
+      className={`hero-reveal sweep glass-cream w-full max-w-md rounded-3xl p-6 shadow-glass sm:p-7 ${className ?? ""}`}
+      style={{ "--hr-y": "16px", "--hr-delay": "0.4s", "--hr-duration": "0.7s" } as React.CSSProperties}
     >
       <LeadForm
         source={source}
@@ -42,6 +39,6 @@ export function HeroLeadCard({
         subtitle={subtitle}
         buttonLabel={buttonLabel}
       />
-    </motion.div>
+    </div>
   );
 }

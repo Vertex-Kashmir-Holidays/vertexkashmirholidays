@@ -34,7 +34,7 @@ export const metaAdapter: PlatformAdapter = {
       userData.fbc = `fb.1.${Math.floor(event.conversionTime.getTime() / 1000)}.${event.attribution.fbclid}`;
     }
 
-    const body = {
+    const body: Record<string, unknown> = {
       data: [
         {
           event_name: "Purchase",
@@ -48,6 +48,11 @@ export const metaAdapter: PlatformAdapter = {
         },
       ],
     };
+    // Set only while actively testing in Events Manager's Test Events tab —
+    // Meta excludes test_event_code-tagged events from real reporting/optimization.
+    if (process.env.META_CAPI_TEST_EVENT_CODE) {
+      body.test_event_code = process.env.META_CAPI_TEST_EVENT_CODE;
+    }
 
     try {
       const res = await fetch(

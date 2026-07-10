@@ -13,10 +13,23 @@ import type { BlogArticleData } from '@/types/blog';
 
 export const revalidate = 300;
 
-type PageProps = { params: Promise<{ slug: string }> };
-
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// Without this, Next.js has no known slug list to pre-render and falls back
+// to fully dynamic rendering on every request regardless of `revalidate`.
+export async function generateStaticParams() {
+  const rows = await prisma.blog.findMany({
+    where: { published: true, author: { not: null } },
+    select: { author: true },
+    distinct: ['author'],
+  });
+  const slugs = new Set<string>();
+  for (const r of rows) if (r.author) slugs.add(slugify(r.author));
+  return [...slugs].map((slug) => ({ slug }));
+}
+
+type PageProps = { params: Promise<{ slug: string }> };
 
 const shortDate = (d: Date | null) =>
   d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;

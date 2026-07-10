@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/account/ProfileForm";
@@ -8,8 +9,11 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountProfilePage() {
   const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
   const user = await prisma.user.findUnique({
-    where: { id: session!.user.id },
+    where: { id: session.user.id },
     select: { name: true, email: true, image: true },
   });
 
@@ -17,8 +21,8 @@ export default async function AccountProfilePage() {
     <div className="space-y-5">
       <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">Profile</h1>
       <ProfileForm
-        initialName={user?.name ?? session!.user.name ?? ""}
-        email={user?.email ?? session!.user.email ?? ""}
+        initialName={user?.name ?? session.user.name ?? ""}
+        email={user?.email ?? session.user.email ?? ""}
         initialImage={user?.image ?? ""}
       />
     </div>

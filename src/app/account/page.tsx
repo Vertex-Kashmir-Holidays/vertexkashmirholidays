@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CalendarDays, CreditCard, MapPin, ArrowRight } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -12,10 +13,16 @@ const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR",
 
 export default async function AccountOverviewPage() {
   const session = await auth();
+  // AccountLayout already redirects unauthenticated visitors to /login, but
+  // this page must not assume that guard always ran first (e.g. a session
+  // that expires between the layout and page auth() calls).
+  if (!session?.user) {
+    redirect("/login");
+  }
   const now = new Date();
   // A customer's bookings = linked to their account OR made as a guest with their
   // verified login email.
-  const scope = customerBookingWhere(session!.user.id, session!.user.email);
+  const scope = customerBookingWhere(session.user.id, session.user.email);
 
   const [bookings, payments] = await Promise.all([
     prisma.booking.findMany({
@@ -46,7 +53,7 @@ export default async function AccountOverviewPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
-          Welcome back, {session!.user.name ?? "Traveller"} 👋
+          Welcome back, {session.user.name ?? "Traveller"} 👋
         </h1>
         <p className="text-sm text-muted-foreground">Here&apos;s a quick look at your trips with us.</p>
       </div>

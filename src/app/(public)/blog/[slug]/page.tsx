@@ -19,6 +19,19 @@ import { parseRelatedTours, parseJson } from '@/lib/tours/content';
 
 export const revalidate = 300;
 
+// Without this, Next.js has no known slug list to pre-render and falls back
+// to fully dynamic rendering on every request regardless of `revalidate`.
+// The catalog is small, so pre-rendering all of them at build time is cheap;
+// any post added after a deploy is rendered on its first request and cached
+// from then on.
+export async function generateStaticParams() {
+  const blogs = await prisma.blog.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return blogs.map((b) => ({ slug: b.slug }));
+}
+
 const BADGE_COLORS = ['orange', 'blue', 'green'] as const;
 
 type PageProps = { params: Promise<{ slug: string }> };

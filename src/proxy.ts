@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
-import { isInternalRoute } from "@/lib/internalRoutes";
 
 const { auth } = NextAuth(authConfig);
 
@@ -13,10 +12,12 @@ function generateNonce(): string {
   return btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(""));
 }
 
-function buildCsp(nonce: string): string {
+// Directives shared byte-for-byte between the nonce-based CSP (/admin,
+// /account, /login) and the static CSP (public pages) — only script-src
+// differs between the two, so this is the single source of truth for
+// everything else to avoid the two policies drifting apart.
+function sharedCspDirectives(): string[] {
   const isDev = process.env.NODE_ENV !== "production";
-  // 'unsafe-eval' is required by React Fast Refresh / Turbopack in dev only.
-  const scriptExtra = isDev ? " 'unsafe-eval'" : "";
   const connectExtra = isDev ? " ws: http://localhost:*" : "";
 
   return [
@@ -28,21 +29,15 @@ function buildCsp(nonce: string): string {
     "img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://*.facebook.com https://www.google.co.in https://*.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net",
     "font-src 'self' data: https://fonts.gstatic.com",
     // Inline styles are required by Tailwind and third-party UI libraries.
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    // Nonce-based CSP (CSP3):
-    //   'nonce-...'       — trusts only scripts that carry this per-request nonce.
-    //   'strict-dynamic'  — propagates that trust to scripts dynamically created by
-    //                       nonced scripts (covers GTM tags, Razorpay checkout.js,
-    //                       Jitsi external_api.js, Turnstile, Next.js chunk loader).
-    // CSP2 / legacy browser fallback (ignored by CSP3 browsers when strict-dynamic present):
-    //   'unsafe-inline'   — allows inline scripts in browsers that don't honour nonces.
-    //   host allowlists   — allows the named CDNs in browsers that don't support strict-dynamic.
-    `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc`,
+    // accounts.google.com — Google One Tap injects its own <link rel="stylesheet">
+    // for the prompt UI (separate from the iframe it also renders).
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
     // meet.jit.si / *.jit.si — legacy Jitsi
     // 8x8.vc / *.8x8.vc     — JaaS (8x8 Jitsi as a Service) conference iframe
     // googletagmanager.com   — noscript <iframe> fallback + GTM Preview debugger
     // tagassistant.google.com — GTM Preview / Tag Assistant debugger iframe
-    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://www.facebook.com https://*.facebook.com",
+    // accounts.google.com    — Google One Tap's prompt UI renders in its own iframe
+    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://www.facebook.com https://*.facebook.com https://accounts.google.com",
     // wss://meet.jit.si — Jitsi XMPP-over-WebSocket signalling
     // wss://*.8x8.vc    — JaaS WebSocket signalling
     // tagassistant.google.com — GTM Preview XHR channel
@@ -53,38 +48,119 @@ function buildCsp(nonce: string): string {
     // manifests as "browser not supported" inside the JaaS meeting iframe.
     // api.cloudinary.com — direct browser→Cloudinary signed uploads (videos bypass
     // our own server to avoid Vercel's ~4.5 MB Serverless Function body limit).
-    `connect-src 'self' https://api.cloudinary.com https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
+    // accounts.google.com — Google One Tap's client library calls this for
+    // credential issuance and session status checks.
+    `connect-src 'self' https://api.cloudinary.com https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://accounts.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
     // blob: — Jitsi/JaaS creates blob: URLs for local audio/video preview tracks
     // res.cloudinary.com — video review clips uploaded via the Gallery/Cloudinary flow
     "media-src 'self' blob: data: https://res.cloudinary.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc",
     // JaaS loads web workers from its own domain — without this the WebRTC SDK
     // fails its browser-capabilities check and shows "browser not supported".
     "worker-src 'self' blob: https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc",
-  ].join("; ");
+  ];
 }
 
-// Auth.js v5 handler pattern: runs the NextAuth auth check for all matched
-// routes, then calls our middleware function. For protected routes (/admin,
-// /account) the authorized callback in auth.config.ts gates access before
-// this handler is reached; for public routes it returns true immediately.
-export default auth(function middleware(req: NextRequest) {
+// The explicit script host allowlist. Under the nonce+strict-dynamic CSP this
+// list is only a CSP2/legacy-browser fallback (strict-dynamic propagates
+// trust to anything a nonced script creates, regardless of host). Under the
+// static CSP (no nonce, no strict-dynamic) this list is the *only* thing that
+// allows these scripts to run, so it must be complete.
+const SCRIPT_HOSTS =
+  "https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc https://accounts.google.com";
+
+function buildCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV !== "production";
+  // 'unsafe-eval' is required by React Fast Refresh / Turbopack in dev only.
+  const scriptExtra = isDev ? " 'unsafe-eval'" : "";
+
+  const directives = sharedCspDirectives();
+  // Nonce-based CSP (CSP3):
+  //   'nonce-...'       — trusts only scripts that carry this per-request nonce.
+  //   'strict-dynamic'  — propagates that trust to scripts dynamically created by
+  //                       nonced scripts (covers GTM tags, Razorpay checkout.js,
+  //                       Jitsi external_api.js, Turnstile, Next.js chunk loader).
+  // CSP2 / legacy browser fallback (ignored by CSP3 browsers when strict-dynamic present):
+  //   'unsafe-inline'   — allows inline scripts in browsers that don't honour nonces.
+  //   host allowlists   — allows the named CDNs in browsers that don't support strict-dynamic.
+  directives.push(
+    `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} ${SCRIPT_HOSTS}`,
+  );
+  return directives.join("; ");
+}
+
+// Static CSP for public pages — no nonce, since generating one requires
+// reading it back via headers() in a layout, which forces that route to full
+// dynamic rendering (confirmed via the perf audit: this was defeating every
+// public page's ISR cache). Without 'strict-dynamic' to propagate trust,
+// 'self' + 'unsafe-inline' + the explicit SCRIPT_HOSTS allowlist do the work
+// instead. Same effective allowlist as the nonce-based CSP, just enforced
+// differently — no third-party script that worked before is newly blocked.
+function buildStaticCsp(): string {
+  const isDev = process.env.NODE_ENV !== "production";
+  const scriptExtra = isDev ? " 'unsafe-eval'" : "";
+
+  const directives = sharedCspDirectives();
+  directives.push(`script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} ${SCRIPT_HOSTS}`);
+  return directives.join("; ");
+}
+
+// Nonce-based security headers for routes that need session awareness
+// (/admin, /account, /login, /api) — forwards the nonce via a request header
+// so the relevant layout can read it via headers() to pass to ThemeProvider /
+// GTMScript. Only these routes pay the dynamic-rendering cost of headers().
+function withNonceCsp(req: NextRequest): NextResponse {
   const nonce = generateNonce();
   const csp = buildCsp(nonce);
 
-  // Forward the nonce on the request so server components can read it via
-  // headers().get("x-nonce") without re-computing or exposing it in markup.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
-
-  // Forward whether this request is under an internal (staff-only) route so
-  // the root layout can skip injecting GTM entirely for /admin/* — analytics
-  // must never initialize there. See src/lib/internalRoutes.ts.
-  requestHeaders.set("x-analytics-disabled", isInternalRoute(req.nextUrl.pathname) ? "1" : "0");
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   return response;
-});
+}
+
+// Static security headers for public pages — no nonce generated, no request
+// header forwarded, so the (public) layout never needs to call headers() and
+// stays eligible for ISR/static rendering.
+function withStaticCsp(): NextResponse {
+  const response = NextResponse.next();
+  response.headers.set("Content-Security-Policy", buildStaticCsp());
+  return response;
+}
+
+// Auth.js v5 handler pattern: runs the NextAuth auth check, then calls our
+// middleware function. The authorized callback in auth.config.ts only gates
+// /admin and /account (everything else returns true immediately) — but
+// auth()'s own session/CSRF-cookie machinery runs on *every* request it
+// wraps, which sets Set-Cookie even for anonymous visitors. A response with
+// Set-Cookie can't be treated as cacheable, so this was forcing every public
+// page to a full dynamic SSR render on every request, bypassing each page's
+// own `revalidate` ISR window entirely (confirmed via the perf audit: every
+// public page returned Cache-Control: private, no-store, x-vercel-cache: MISS).
+//
+// Fix: only route /admin, /account, /api, and /login through auth() — the
+// routes that actually need session awareness. Every other route (the public
+// ISR pages) skips NextAuth entirely and gets the static CSP instead, so
+// neither Set-Cookie nor a forced headers() read stands between it and ISR.
+// This does not change access control at all: the authorized() callback
+// already treated every non-admin/account path as unconditionally allowed,
+// so no route's gating behavior changes.
+const authMiddleware = auth((req) => withNonceCsp(req as NextRequest));
+
+export default function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const needsAuth =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/account") ||
+    pathname.startsWith("/api") ||
+    pathname === "/login";
+
+  if (needsAuth) {
+    return (authMiddleware as (req: NextRequest) => ReturnType<typeof withNonceCsp>)(req);
+  }
+  return withStaticCsp();
+}
 
 // Match all routes except Next.js internal static assets and image optimisation
 // endpoints. The 'missing' clause skips RSC prefetch requests (they're not HTML

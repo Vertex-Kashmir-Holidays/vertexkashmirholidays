@@ -70,7 +70,7 @@ export function BlogPostHero({
         {imageMobile ? (
           <>
             <Image src={imgSrc(imageMobile)} alt={title} fill priority sizes="100vw" className="object-cover sm:hidden" />
-            <Image src={imgSrc(image)} alt={title} fill priority sizes="100vw" className="hidden object-cover sm:block" />
+            <Image src={imgSrc(image)} alt={title} fill sizes="100vw" className="hidden object-cover sm:block" />
           </>
         ) : (
           <Image src={imgSrc(image)} alt={title} fill priority sizes="100vw" className="object-cover" />
@@ -107,24 +107,20 @@ export function BlogPostHero({
           </motion.span>
         )}
 
-        <motion.h1
-          className="mt-4 max-w-2xl font-display text-3xl font-bold leading-[1.15] text-white sm:text-[38px] lg:text-[46px]"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+        <h1
+          className="hero-reveal mt-4 max-w-2xl font-display text-3xl font-bold leading-[1.15] text-white sm:text-[38px] lg:text-[46px]"
+          style={{ '--hr-y': '30px', '--hr-delay': '0.1s' } as React.CSSProperties}
         >
           {title}
-        </motion.h1>
+        </h1>
 
         {excerpt && (
-          <motion.p
-            className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-white/90"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+          <p
+            className="hero-reveal mt-4 max-w-xl text-[14.5px] leading-relaxed text-white/90"
+            style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
           >
             {excerpt}
-          </motion.p>
+          </p>
         )}
 
         <motion.div

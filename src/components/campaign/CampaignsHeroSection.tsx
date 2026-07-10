@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
@@ -30,22 +29,18 @@ export function CampaignsHeroSection({ title, subtitle, stats }: CampaignsHeroSe
 
       {/* Title Block */}
       <div className="mt-6">
-        <motion.h1
-          className="h-display text-3xl font-bold text-white sm:text-4xl lg:text-[44px]"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+        <h1
+          className="hero-reveal h-display text-3xl font-bold text-white sm:text-4xl lg:text-[44px]"
+          style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
         >
           {title}
-        </motion.h1>
-        <motion.p
-          className="mt-3 max-w-xl text-[15px] text-white/85"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+        </h1>
+        <p
+          className="hero-reveal mt-3 max-w-xl text-[15px] text-white/85"
+          style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {subtitle}
-        </motion.p>
+        </p>
       </div>
 
       {/* Stats */}

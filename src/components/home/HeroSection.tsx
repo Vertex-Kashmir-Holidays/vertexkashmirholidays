@@ -144,22 +144,23 @@ return (
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> {content.badge}
           </motion.p>
         )}
-        <motion.h1
-          variants={itemVariants}
-          className="h-display text-[34px] font-extrabold text-white sm:text-[48px] lg:text-[64px]"
+        <h1
+          className="hero-reveal h-display text-[34px] font-extrabold text-white sm:text-[48px] lg:text-[64px]"
+          style={{ '--hr-y': '30px', '--hr-delay': '0.3s' } as React.CSSProperties}
         >
           {renderAccents(content.title)}
-        </motion.h1>
+        </h1>
         {content.subtitle && (
-          <motion.p
-            variants={itemVariants}
-            className="mt-6 max-w-md text-[15px] leading-relaxed text-white/70"
+          <p
+            className="hero-reveal mt-6 max-w-md text-[15px] leading-relaxed text-white/70"
+            style={{ '--hr-delay': '0.4s' } as React.CSSProperties}
           >
             {content.subtitle}
-          </motion.p>
+          </p>
         )}
         <motion.div
           variants={itemVariants}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
           className="mt-8 flex flex-wrap items-center gap-3"
         >
           {content.ctaPrimaryLabel && (
@@ -183,6 +184,7 @@ return (
         {stats.length > 0 && (
           <motion.div
             variants={itemVariants}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
             className="mt-10 grid max-w-md grid-cols-4 divide-x divide-white/10 rounded-2xl glass py-4 text-center"
           >
             {stats.map((stat, i) => (

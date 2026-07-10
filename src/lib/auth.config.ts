@@ -6,6 +6,15 @@ export const authConfig = {
     signIn: "/login",
   },
 
+  // Derive the OAuth callback/cookie host from the actual incoming request
+  // rather than a static AUTH_URL/NEXTAUTH_URL env var. Vercel auto-enables
+  // this in production (hence Google sign-in only ever misbehaved locally) —
+  // but this repo's .env also sets NEXTAUTH_URL to the beta domain (it's the
+  // fallback base URL for transactional email links in src/lib/mail.ts) while
+  // AUTH_URL is localhost, and Auth.js has no principled way to reconcile two
+  // conflicting canonical URLs. trustHost sidesteps that entirely for auth.
+  trustHost: true,
+
   session: {
     strategy: "jwt",
   },

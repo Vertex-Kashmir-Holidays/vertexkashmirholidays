@@ -31,22 +31,18 @@ export function DestinationsHero({ heroImage, heroImageMobile }: DestinationsHer
         <span className="font-semibold text-white">Destinations</span>
       </nav>
 
-      <motion.h1
-        className="mt-7 max-w-xl text-4xl font-bold leading-[1.15] text-white lg:text-[42px]"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      <h1
+        className="hero-reveal mt-7 max-w-xl text-4xl font-bold leading-[1.15] text-white lg:text-[42px]"
+        style={{ '--hr-y': '20px' } as React.CSSProperties}
       >
         Explore the breathtaking destinations of Kashmir
-      </motion.h1>
-      <motion.p
-        className="mt-5 max-w-md text-[15px] leading-relaxed text-white/85"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
+      </h1>
+      <p
+        className="hero-reveal mt-5 max-w-md text-[15px] leading-relaxed text-white/85"
+        style={{ '--hr-delay': '0.1s' } as React.CSSProperties}
       >
         From snow-capped peaks to serene valleys and crystal clear lakes – discover paradise on earth.
-      </motion.p>
+      </p>
 
       <motion.div
         className="mt-8 flex flex-wrap gap-3.5"

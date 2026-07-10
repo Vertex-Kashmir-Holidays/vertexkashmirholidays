@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Script from "next/script";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -25,6 +25,29 @@ export function AffordabilityWidget({ amount,
   const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
   const amountPaise = Math.round(amount * 100);
   const initialized = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Gates loading affordability.js (and the third-party cookies it sets)
+  // until the widget is actually about to scroll into view — visitors who
+  // never scroll this far never load it at all.
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (!key || shouldLoad) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [key, shouldLoad]);
 
   function initWidget() {
     if (initialized.current || !key) return;
@@ -36,20 +59,24 @@ export function AffordabilityWidget({ amount,
   // Covers the case where the script was already loaded on a prior navigation
   // and won't fire onLoad again (Next.js deduplicates scripts by src).
   useEffect(() => {
-    initWidget();
-  });
+    if (shouldLoad) initWidget();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldLoad, key, amountPaise]);
 
   if (!key) return null;
 
  return (
     <>
-      <Script
-        src="https://cdn.razorpay.com/widgets/affordability/affordability.js"
-        strategy="afterInteractive"
-        onLoad={initWidget}
-      />
+      {shouldLoad && (
+        <Script
+          src="https://cdn.razorpay.com/widgets/affordability/affordability.js"
+          strategy="afterInteractive"
+          onLoad={initWidget}
+        />
+      )}
      <motion.div
-        className="mt-14 mx-auto max-w-2xl"
+        ref={containerRef}
+        className="mt-6 mx-auto max-w-2xl"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
