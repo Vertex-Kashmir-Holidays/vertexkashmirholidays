@@ -12,6 +12,7 @@ export type WhatsAppSource =
  | "footer_social"
  | "float"
  | "tour_sidebar"
+ | "tour_customize_banner"
  | "booking_help"
  | "lead_form";
 

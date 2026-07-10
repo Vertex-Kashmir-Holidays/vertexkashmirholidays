@@ -21,12 +21,20 @@ export {
 // ── Policy constants ─────────────────────────────────────────────────────────
 
 export const OTP_LENGTH = 6;
-export const OTP_TTL_MS = 10 * 60 * 1000; // OTP valid for 10 minutes
+export const OTP_TTL_MS = 10 * 60 * 1000; // registration OTP valid for 10 minutes
+export const RESET_OTP_TTL_MS = 5 * 60 * 1000; // password-reset OTP valid for 5 minutes
 export const RESEND_COOLDOWN_MS = 60 * 1000; // min 60s between code requests
 export const MAX_VERIFY_ATTEMPTS = 5; // wrong-code attempts before lockout
 
 export const OTP_TTL_MINUTES = OTP_TTL_MS / 60_000;
+export const RESET_OTP_TTL_MINUTES = RESET_OTP_TTL_MS / 60_000;
 export const RESEND_COOLDOWN_SECONDS = RESEND_COOLDOWN_MS / 1_000;
+
+// How long a verified reset session (the resetToken from verify-otp) stays
+// usable for the follow-up "set new password" call. Same window as the OTP
+// itself — short enough that a stale, verified-but-abandoned session can't
+// be used to change a password long after the fact.
+export const RESET_TOKEN_TTL_MS = RESET_OTP_TTL_MS;
 
 // ── OTP generation & hashing ─────────────────────────────────────────────────
 

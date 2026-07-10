@@ -28,7 +28,7 @@ export function HeroLeadCard({
 }: HeroLeadCardProps) {
   return (
     <div
-      className={`hero-reveal glass-cream w-full max-w-md rounded-3xl p-6 shadow-glass sm:p-7 ${className ?? ""}`}
+      className={`hero-reveal sweep glass-cream w-full max-w-md rounded-3xl p-6 shadow-glass sm:p-7 ${className ?? ""}`}
       style={{ "--hr-y": "16px", "--hr-delay": "0.4s", "--hr-duration": "0.7s" } as React.CSSProperties}
     >
       <LeadForm

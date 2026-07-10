@@ -29,6 +29,7 @@ import { TourDetailsMealsTransport } from "@/components/tours/TourDetailsMealsTr
 import { TourDetailsBudget } from "@/components/tours/TourDetailsBudget";
 import { TourDetailsTravelInfo } from "@/components/tours/TourDetailsTravelInfo";
 import { TourDetailsRelatedTours } from "@/components/tours/TourDetailsRelatedTours";
+import { TourCustomizationBanner } from "@/components/tours/TourCustomizationBanner";
 import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
 import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
@@ -361,8 +362,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
      <main className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-3 sm:pt-6 pb-28 lg:pb-6">
        <TourDetailsTabs sections={tabs} />
 
+       <div className="mt-6">
+         <TourCustomizationBanner tourName={tour.title} />
+       </div>
 
-       <div className="grid items-start gap-7 lg:grid-cols-[1fr_320px] mt-6">
+       <div className="grid items-start gap-7 lg:grid-cols-[1fr_320px]">
          <div className="min-w-0">
            <section id="overview">
              <TourDetailsOverview

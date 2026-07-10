@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { sendMail, otpVerificationHtml, otpVerificationText } from "@/lib/mail";
+import { sendMail, passwordResetOtpHtml, passwordResetOtpText } from "@/lib/mail";
+import { isStaff } from "@/lib/rbac";
 import {
-  OTP_TTL_MS,
-  OTP_TTL_MINUTES,
+  RESET_OTP_TTL_MS,
+  RESET_OTP_TTL_MINUTES,
   RESEND_COOLDOWN_MS,
   RESEND_COOLDOWN_SECONDS,
   cleanupExpiredOtps,
@@ -14,36 +14,24 @@ import {
   hashOtp,
   rateLimit,
 } from "@/lib/auth/otp";
-import {
-  EMAIL_FORMAT_MESSAGE,
-  PASSWORD_MESSAGE,
-  PHONE_MESSAGE,
-  PUBLIC_DOMAINS_GENERIC_MESSAGE,
-  isAllowedEmailDomain,
-  isValidE164,
-  isValidPassword,
-} from "@/lib/auth/validation";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 
 export const dynamic = "force-dynamic";
 
 const requestSchema = z.object({
-  name: z.string().trim().min(1, "Please enter your full name.").max(100),
-  email: z.string().trim().email(EMAIL_FORMAT_MESSAGE).max(200),
-  // Client sends an E.164 number (e.g. +919876543210) validated per country.
-  phone: z.string().trim().refine(isValidE164, PHONE_MESSAGE),
-  password: z.string().max(100).refine(isValidPassword, PASSWORD_MESSAGE),
+  email: z.string().trim().email("Please enter a valid email address").max(200),
   // Optional Turnstile token (verified only when TURNSTILE_SECRET_KEY is set).
   turnstileToken: z.string().optional(),
 });
 
-// Step 1 of registration: validate inputs, enforce domain allowlist + anti-spam,
-// and email a one-time code. The account is NOT created here — only a pending
-// EmailOtp row (with the password already hashed) is stored.
+// Step 1 of the forgot-password flow: identify the account by email only (the
+// new password is not collected until after the OTP is verified — see
+// verify-otp and reset-password). Staff accounts are never reset here (they
+// are reset by another admin via /api/users/[id]).
 export async function POST(req: NextRequest) {
   try {
     // Coarse per-IP throttle: at most 10 code requests / 10 min from one IP.
-    if (!rateLimit(`otp-req:${clientIp(req)}`, 10, 10 * 60 * 1000)) {
+    if (!rateLimit(`reset-otp-req:${clientIp(req)}`, 10, 10 * 60 * 1000)) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 },
@@ -59,10 +47,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const name = parsed.data.name;
     const email = parsed.data.email.toLowerCase();
-    const phone = parsed.data.phone;
-    const { password } = parsed.data;
 
     // CAPTCHA (enforced only when TURNSTILE_SECRET_KEY is configured).
     const captchaOk = await verifyTurnstile(parsed.data.turnstileToken, clientIp(req));
@@ -73,19 +58,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!isAllowedEmailDomain(email)) {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user || user.deletedAt) {
       return NextResponse.json(
-        { error: PUBLIC_DOMAINS_GENERIC_MESSAGE },
-        { status: 400 },
+        { error: "No account exists with this email address." },
+        { status: 404 },
       );
     }
 
-    // Already a real account? Don't start a verification flow.
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    // Staff passwords are only reset by another admin (users:edit permission),
+    // never through this self-service flow.
+    if (isStaff(user.role)) {
       return NextResponse.json(
-        { error: "An account with this email already exists." },
-        { status: 409 },
+        { error: "This account can't be reset here. Please contact an administrator." },
+        { status: 403 },
       );
     }
 
@@ -109,51 +96,43 @@ export async function POST(req: NextRequest) {
 
     const code = generateOtp();
     const codeHash = await hashOtp(code);
-    const passwordHash = await bcrypt.hash(password, 12);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + OTP_TTL_MS);
+    const expiresAt = new Date(now.getTime() + RESET_OTP_TTL_MS);
 
-    // Upsert resets attempts and lastSentAt, so a fresh code always starts clean.
+    // Upsert resets attempts/verifiedAt/resetTokenHash, so a fresh code always
+    // starts a clean verification state.
     await prisma.emailOtp.upsert({
       where: { email },
       create: {
         email,
         codeHash,
-        purpose: "REGISTER",
-        name,
-        passwordHash,
-        phone,
+        purpose: "RESET",
         expiresAt,
         lastSentAt: now,
         attempts: 0,
       },
       update: {
         codeHash,
-        purpose: "REGISTER",
-        name,
-        passwordHash,
-        phone,
+        purpose: "RESET",
         expiresAt,
         lastSentAt: now,
         attempts: 0,
+        verifiedAt: null,
+        resetTokenHash: null,
       },
     });
 
-    // Only report success if the SMTP server actually accepted the message. If
-    // sending fails (transport error or no accepted recipient), drop the pending
-    // row so the user can retry immediately instead of hitting the cooldown.
+    // Only report success if the SMTP server actually accepted the message.
     try {
-      // Recipient is the email the visitor is registering with — never the admin
-      // address. MAIL_TO_ADMIN is only for admin notifications (see inquiries).
       const result = await sendMail({
         to: email,
-        subject: "Your Vertex Kashmir Holidays verification code",
-        html: otpVerificationHtml({ name, code, ttlMinutes: OTP_TTL_MINUTES }),
-        text: otpVerificationText({ name, code, ttlMinutes: OTP_TTL_MINUTES }),
+        subject: "Your Vertex Kashmir Holidays password reset code",
+        html: passwordResetOtpHtml({ name: user.name ?? "there", code, ttlMinutes: RESET_OTP_TTL_MINUTES }),
+        text: passwordResetOtpText({ name: user.name ?? "there", code, ttlMinutes: RESET_OTP_TTL_MINUTES }),
       });
 
       if (!result.delivered) {
-        console.error("[request-otp] email not delivered", {
+        console.error("[forgot-password/request-otp] email not delivered", {
           email,
           skipped: result.skipped,
           rejected: result.rejected,
@@ -166,7 +145,7 @@ export async function POST(req: NextRequest) {
         );
       }
     } catch (sendErr) {
-      console.error("[request-otp] sendMail threw:", sendErr);
+      console.error("[forgot-password/request-otp] sendMail threw:", sendErr);
       await prisma.emailOtp.delete({ where: { email } }).catch(() => {});
       return NextResponse.json(
         { error: "Could not send the verification code. Please try again." },
@@ -175,11 +154,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, cooldown: RESEND_COOLDOWN_SECONDS },
+      { success: true, cooldown: RESEND_COOLDOWN_SECONDS, ttlMinutes: RESET_OTP_TTL_MINUTES },
       { status: 200 },
     );
   } catch (err) {
-    console.error("[request-otp] error:", err);
+    console.error("[forgot-password/request-otp] error:", err);
     return NextResponse.json(
       { error: "Could not send the verification code. Please try again." },
       { status: 500 },

@@ -267,10 +267,53 @@ body {
 .snap-row::-webkit-scrollbar { display:none; }
 .snap-row > * { scroll-snap-align:start; }
 
-/* Sweep shine */
+/* Sweep shine — a light-theme card is pale, so a white highlight (the dark-theme
+   treatment) all but disappears on it; light theme instead gets a navy-grey streak
+   that reads against the pale background.
+   The streak is wide (60% of the card) with a gentle 5-stop bell-curve gradient
+   (soft rise, soft fall) rather than a single sharp color stop — a single stop
+   reads as a hard, thick line; the wider soft curve reads as a diffuse glow.
+   It animates via `transform` (not `left`) so it runs on the compositor thread
+   instead of costing layout/paint every frame — safe to use on many elements at
+   once (e.g. a grid of tour cards), not just one-off banners.
+   `left:-65%` only sets the streak's static starting position; translateX moves
+   it from there. Since translateX% is relative to the streak's OWN width (60%
+   of the card), 300% = (115% - -65%) / 60% of container travel. */
 .sweep { position:relative; overflow:hidden; }
-.sweep::after { content:""; position:absolute; top:0; bottom:0; left:-40%; width:35%; transform:skewX(-18deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); animation:sweep 4.5s ease-in-out infinite; }
-@keyframes sweep { 0%,55%{left:-40%} 85%,100%{left:130%} }
+.sweep::after {
+  content:"";
+  position:absolute;
+  top:0; bottom:0; left:-65%; width:60%;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent 0%,rgba(30,41,59,.05) 30%,rgba(30,41,59,.13) 50%,rgba(30,41,59,.05) 70%,transparent 100%);
+  transform:translateX(0%) skewX(-6deg);
+  animation:sweep 6s ease-in-out infinite;
+}
+.dark .sweep::after { background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%,transparent 100%); }
+/* For cards that are always dark regardless of the site theme (e.g. the
+   campaign hero's navy reserve-form card) — forces the light-theme streak too. */
+.sweep-on-dark::after { background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%,transparent 100%); }
+@keyframes sweep { 0%,55% { transform:translateX(0%) skewX(-6deg); } 85%,100% { transform:translateX(300%) skewX(-6deg); } }
+
+/* Sweep-on-hover — same streak, same 6s speed as the ambient `.sweep` (kept
+   identical on purpose so every sweep across the site reads at the same
+   pace), but only animates while hovered/focused, and is fully inert (no
+   running animation, opacity:0) at rest. Meant for repeated grid elements
+   (tour cards) where an always-on infinite sweep on every card at once would
+   be wasteful; this costs nothing until a user actually interacts with a
+   specific card. */
+.sweep-hover { position:relative; overflow:hidden; }
+.sweep-hover::after {
+  content:"";
+  position:absolute;
+  top:0; bottom:0; left:-65%; width:60%;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent 0%,rgba(30,41,59,.05) 30%,rgba(30,41,59,.13) 50%,rgba(30,41,59,.05) 70%,transparent 100%);
+  transform:translateX(0%) skewX(-6deg);
+  opacity:0;
+}
+.dark .sweep-hover::after { background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%,transparent 100%); }
+.sweep-hover:hover::after, .sweep-hover:focus-within::after { opacity:1; animation:sweep 6s ease-in-out 1; }
 
 /* Hero heading/lead-text reveal — CSS-driven so this text paints in the
    initial server-rendered HTML instead of waiting on client JS hydration

@@ -240,7 +240,7 @@ export function CampaignHero({
 
         <div id="reserve" className="scroll-mt-28">
           <motion.div
-            className="relative rounded-3xl border border-white/12 bg-[hsl(202_50%_8%/0.6)] p-6 shadow-glass backdrop-blur-xl"
+            className="sweep sweep-on-dark relative rounded-3xl border border-white/12 bg-[hsl(202_50%_8%/0.6)] p-6 shadow-glass backdrop-blur-xl"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}

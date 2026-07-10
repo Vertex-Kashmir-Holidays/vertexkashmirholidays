@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ChevronLeft, MapPin, Car, Ticket, Package, CalendarDays, Users, FileText, Download } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -42,11 +42,14 @@ type PageProps = { params: Promise<{ id: string }> };
 export default async function AccountBookingDetailPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
 
   // Scope strictly to the authenticated customer (by account or their verified
   // email) — never another user's booking.
   const booking = await prisma.booking.findFirst({
-    where: { id, ...customerBookingWhere(session!.user.id, session!.user.email) },
+    where: { id, ...customerBookingWhere(session.user.id, session.user.email) },
     include: {
       tour: { select: { title: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },

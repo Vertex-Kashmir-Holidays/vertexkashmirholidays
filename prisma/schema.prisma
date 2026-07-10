@@ -109,27 +109,44 @@ model ItineraryHistory {
   @@index([createdAt])
 }
 
-// Pending email-verification record for account registration. A row is created
-// when a visitor requests a sign-up OTP; the account is NOT created in `User`
-// until the OTP is verified. One pending row per email (email is unique) — a
-// re-request upserts. The OTP is stored hashed (codeHash), never in plaintext,
-// and the chosen password is stored already-bcrypt-hashed (passwordHash) so no
-// plaintext credentials are ever persisted. Expired rows are cleaned up on each
-// request/verify call (see src/lib/auth/otp.ts → cleanupExpiredOtps).
+// Pending email-verification record for account registration AND for the
+// forgot-password flow (distinguished by `purpose`). A row is created when a
+// visitor requests an OTP.
+//
+// REGISTER: the account is NOT created in `User` until the OTP is verified
+// (passwordHash/name/phone hold the pending account's data).
+//
+// RESET: identity must be proven BEFORE a new password is ever collected, so
+// this is a 3-step flow — request code -> verify code -> set new password.
+// Verifying the code does not yet touch `User`; it stamps `verifiedAt` and
+// issues a one-time `resetTokenHash` (bcrypt hash of a random token returned to
+// the client once). The follow-up "set new password" call must present that
+// token, proving it's the same browser session that completed the OTP step,
+// before `User.passwordHash` is updated. The row is deleted once the password
+// is actually changed (or expires). Expired rows are cleaned up on each
+// request/verify call (see src/lib/auth/otp.ts -> cleanupExpiredOtps).
 model EmailOtp {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  codeHash     String // bcrypt hash of the 6-digit OTP
-  name         String // pending account display name
-  passwordHash String // pending account password (already bcrypt-hashed)
-  phone        String? // collected at sign-up; copied to User on verification
-  attempts     Int      @default(0) // failed verification attempts
-  expiresAt    DateTime // OTP expiry (now + 10 minutes)
-  lastSentAt   DateTime @default(now()) // drives the 60s resend cooldown
-  createdAt    DateTime @default(now())
+  id             String     @id @default(cuid())
+  email          String     @unique
+  codeHash       String // bcrypt hash of the 6-digit OTP
+  purpose        OtpPurpose @default(REGISTER)
+  name           String? // pending account display name (REGISTER only)
+  passwordHash   String? // pending account password, already bcrypt-hashed (REGISTER only)
+  phone          String? // collected at sign-up; copied to User on verification (REGISTER only)
+  attempts       Int        @default(0) // failed verification attempts
+  expiresAt      DateTime // OTP code expiry
+  lastSentAt     DateTime   @default(now()) // drives the 60s resend cooldown
+  createdAt      DateTime   @default(now())
+  verifiedAt     DateTime? // RESET only: set once the OTP code is verified
+  resetTokenHash String? // RESET only: bcrypt hash of the one-time token issued after OTP verification
 
   @@index([email])
   @@index([expiresAt])
+}
+
+enum OtpPurpose {
+  REGISTER
+  RESET
 }
 
 model NewsletterSubscriber {

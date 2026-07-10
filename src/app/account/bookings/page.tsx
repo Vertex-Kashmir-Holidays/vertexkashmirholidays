@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -28,8 +29,11 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
 
 export default async function AccountBookingsPage() {
   const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
   const rows = await prisma.booking.findMany({
-    where: customerBookingWhere(session!.user.id, session!.user.email),
+    where: customerBookingWhere(session.user.id, session.user.email),
     orderBy: { createdAt: "desc" },
     include: {
       tour: { select: { title: true, slug: true, coverImage: true } },

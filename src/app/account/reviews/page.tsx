@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { REVIEWABLE_BOOKING_STATUSES } from "@/lib/reviews";
@@ -9,7 +10,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AccountReviewsPage() {
   const session = await auth();
-  const userId = session!.user.id;
+  if (!session?.user) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
 
   const [reviews, bookings] = await Promise.all([
     prisma.review.findMany({
