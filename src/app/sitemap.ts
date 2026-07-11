@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { SITE_URL } from "@/lib/seo";
+import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tours, destinations, blogs, campaigns, activities] = await Promise.all([
+  const [tours, destinations, blogs, campaigns, activities, tourCategoryRows] = await Promise.all([
     prisma.tour.findMany({
       where: { published: true },
       select: { slug: true, updatedAt: true },
@@ -30,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
     }),
+    prisma.tour.groupBy({ by: ["category"], where: { published: true }, _count: true, _max: { updatedAt: true } }),
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -38,8 +40,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/adventures`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${SITE_URL}/destinations`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
+    { url: `${SITE_URL}/reviews`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/terms-and-conditions`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/privacy-policy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/refund-and-cancellation`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
@@ -80,9 +84,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const tourCategoryRoutes: MetadataRoute.Sitemap = tourCategoryRows
+    .filter((c) => c._count > 0)
+    .map((c) => ({
+      url: `${SITE_URL}/tours/category/${TOUR_CATEGORY_META[c.category].slug}`,
+      lastModified: c._max.updatedAt ?? new Date(),
+      changeFrequency: "weekly",
+      priority: 0.75,
+    }));
+
   return [
     ...staticRoutes,
     ...tourRoutes,
+    ...tourCategoryRoutes,
     ...campaignRoutes,
     ...destinationRoutes,
     ...activityRoutes,

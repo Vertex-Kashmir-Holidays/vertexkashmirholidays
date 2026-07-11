@@ -19,7 +19,7 @@ export interface ContentGroup {
 }
 
 interface Props {
-  contentKey: "home" | "about" | "contact" | "blogs";
+  contentKey: "home" | "about" | "contact" | "blogs" | "reviews";
   groups: ContentGroup[];
   initial: Record<string, unknown> | null;
   canEdit: boolean;

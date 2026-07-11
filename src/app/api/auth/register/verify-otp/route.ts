@@ -4,10 +4,9 @@ import { prisma } from "@/lib/prisma";
 import {
   MAX_VERIFY_ATTEMPTS,
   cleanupExpiredOtps,
-  clientIp,
-  rateLimit,
   verifyOtpHash,
 } from "@/lib/auth/otp";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +21,8 @@ const verifySchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     // Per-IP throttle on verification to slow brute-forcing across emails.
-    if (!rateLimit(`otp-verify:${clientIp(req)}`, 30, 10 * 60 * 1000)) {
+    const ipLimit = await rateLimit(`otp-verify:${clientIp(req)}`, 30, "10 m");
+    if (!ipLimit.success) {
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
         { status: 429 },

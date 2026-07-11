@@ -21,6 +21,10 @@ const schema = z.object({
  youtube: z.string().optional(),
  tripadvisor: z.string().optional(),
  googleReviews: z.string().optional(),
+ googleBusinessProfile: z.string().optional(),
+ googlePlaceId: z.string().optional(),
+ tripadvisorHeroWidgetEmbed: z.string().optional(),
+ tripadvisorRatingWidgetEmbed: z.string().optional(),
  metaTitle: z.string().optional(),
  metaDesc: z.string().optional(),
  ogImage: z.string().optional(),
@@ -51,6 +55,10 @@ interface SiteSettings {
  youtube: string | null;
  tripadvisor: string | null;
  googleReviews: string | null;
+ googleBusinessProfile: string | null;
+ googlePlaceId: string | null;
+ tripadvisorHeroWidgetEmbed: string | null;
+ tripadvisorRatingWidgetEmbed: string | null;
  metaTitle: string | null;
  metaDesc: string | null;
  ogImage: string | null;
@@ -112,6 +120,10 @@ export function SettingsForm({ settings }: Props) {
      youtube: settings.youtube ?? "",
      tripadvisor: settings.tripadvisor ?? "",
      googleReviews: settings.googleReviews ?? "",
+     googleBusinessProfile: settings.googleBusinessProfile ?? "",
+     googlePlaceId: settings.googlePlaceId ?? "",
+     tripadvisorHeroWidgetEmbed: settings.tripadvisorHeroWidgetEmbed ?? "",
+     tripadvisorRatingWidgetEmbed: settings.tripadvisorRatingWidgetEmbed ?? "",
      metaTitle: settings.metaTitle ?? "",
      metaDesc: settings.metaDesc ?? "",
      ogImage: settings.ogImage ?? "",
@@ -206,8 +218,60 @@ export function SettingsForm({ settings }: Props) {
              <Field label="Twitter/X URL" name="twitter" register={register} placeholder="https://twitter.com/..." />
              <Field label="YouTube URL" name="youtube" register={register} placeholder="https://youtube.com/..." />
              <Field label="Tripadvisor URL" name="tripadvisor" register={register} placeholder="https://www.tripadvisor.in/..." />
-             <Field label="Google Business Profile / Reviews URL" name="googleReviews" register={register} placeholder="https://g.page/r/..." />
+             <Field label="Google Reviews Link" name="googleReviews" register={register} placeholder="https://g.page/r/... or share link" />
+             <Field
+               label="Google Business Profile / Maps URL"
+               name="googleBusinessProfile"
+               register={register}
+               placeholder="https://maps.app.goo.gl/... or Google Maps listing URL"
+             />
            </div>
+           <p className="text-[11px] text-muted-foreground -mt-2">
+             The canonical Google Maps/Business Profile listing URL — distinct from the reviews link above. Used to
+             connect your website to your existing Business Profile in Google&apos;s structured data.
+           </p>
+         </div>
+
+         {/* Live Reviews Integration (/reviews page) */}
+         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+           <h3 className="font-bold text-foreground text-sm">Live Reviews Integration</h3>
+           <p className="text-xs text-muted-foreground -mt-2">
+             Powers the live Google &amp; Tripadvisor sections on the /reviews page.
+           </p>
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <Field
+               label="Google Place ID"
+               name="googlePlaceId"
+               register={register}
+               placeholder="ChIJ..."
+             />
+           </div>
+           <p className="text-[11px] text-muted-foreground -mt-2">
+             Find this with Google&apos;s{" "}
+             <a
+               href="https://developers.google.com/maps/documentation/places/web-service/place-id"
+               target="_blank"
+               rel="noopener noreferrer"
+               className="underline hover:text-primary"
+             >
+               Place ID Finder
+             </a>
+             . Requires <code className="rounded bg-muted px-1">GOOGLE_PLACES_API_KEY</code> to be set on the server.
+           </p>
+           <Field
+             label="Tripadvisor hero widget embed code"
+             name="tripadvisorHeroWidgetEmbed"
+             register={register}
+             textarea
+             placeholder="Paste a compact Tripadvisor widget (e.g. Social Button Bubbles) for the reviews page hero..."
+           />
+           <Field
+             label="Tripadvisor rating widget embed code"
+             name="tripadvisorRatingWidgetEmbed"
+             register={register}
+             textarea
+             placeholder="Paste a rating-only Tripadvisor widget (e.g. Ratings Only Narrow) for the stats row..."
+           />
          </div>
        </div>
 

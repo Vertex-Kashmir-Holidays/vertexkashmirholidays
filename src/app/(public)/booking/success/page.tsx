@@ -5,12 +5,13 @@ import {
   CheckCircle2,
   Mail,
   FileText,
-  Share2,
   ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { BookingCompletedEvent } from "@/components/booking/BookingCompletedEvent";
+import { ShareTripButton } from "@/components/booking/ShareTripButton";
+import { SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Booking Confirmed! — Vertex Kashmir Holidays",
@@ -95,8 +96,9 @@ export default async function BookingSuccessPage({
       sub: "Chat with our team",
       href: `https://wa.me/${whatsappNumber}?text=${waText}`,
     },
-    { Icon: Share2, label: "Share Your Trip", sub: "Tell your friends", href: null as string | null },
   ];
+
+  const shareUrl = booking?.tour?.slug ? `${SITE_URL}/tours/${booking.tour.slug}` : SITE_URL;
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-20">
@@ -211,6 +213,7 @@ export default async function BookingSuccessPage({
               </div>
             );
           })}
+          <ShareTripButton tourTitle={booking?.tour?.title ?? "Kashmir Tour"} shareUrl={shareUrl} />
         </div>
 
         {/* ── What happens next ─────────────────────────────────────────── */}

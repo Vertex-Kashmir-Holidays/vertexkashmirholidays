@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { renderAccents } from '@/lib/accents';
 import type { SectionHeading, TestimonialData } from '@/types/home';
 
@@ -29,7 +30,14 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
             {renderAccents(heading.title)}
           </h2>
         </div>
-        <div className="rv flex gap-2" style={{ '--rd': '0.16s' } as React.CSSProperties}>
+        <div className="rv flex items-center gap-3" style={{ '--rd': '0.16s' } as React.CSSProperties}>
+          <Link
+            href="/reviews"
+            className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline"
+          >
+            View all reviews
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+          </Link>
           <button
             onClick={() => scroll('prev')}
             aria-label="Previous testimonials"

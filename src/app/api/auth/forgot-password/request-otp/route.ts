@@ -9,11 +9,10 @@ import {
   RESEND_COOLDOWN_MS,
   RESEND_COOLDOWN_SECONDS,
   cleanupExpiredOtps,
-  clientIp,
   generateOtp,
   hashOtp,
-  rateLimit,
 } from "@/lib/auth/otp";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +30,8 @@ const requestSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     // Coarse per-IP throttle: at most 10 code requests / 10 min from one IP.
-    if (!rateLimit(`reset-otp-req:${clientIp(req)}`, 10, 10 * 60 * 1000)) {
+    const ipLimit = await rateLimit(`reset-otp-req:${clientIp(req)}`, 10, "10 m");
+    if (!ipLimit.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 },

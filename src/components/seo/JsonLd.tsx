@@ -63,6 +63,48 @@ export function buildTravelAgency(opts?: {
   };
 }
 
+// Augments the SAME organization entity buildTravelAgency() declares (matching
+// @id — JSON-LD graph nodes with an identical @id are merged by Google's
+// parser across separate <script> blocks on one page) rather than redeclaring
+// the whole entity a second time. The public layout already injects the base
+// buildTravelAgency() on every page; only /reviews — the one page where
+// reviews are actually visible on-page, a requirement of this markup, not
+// just a nicety — adds this supplement.
+//
+// TravelAgency is a LocalBusiness subtype, one of the types Google's
+// structured-data guidelines treat as eligible for aggregateRating/review
+// markup (unlike a bare Organization, which their "self-serving reviews"
+// policy restricts).
+export function buildOrganizationReviews(opts: {
+  aggregateRating?: { ratingValue: number; reviewCount: number } | null;
+  reviews?: { author: string; rating: number; body: string; datePublished: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@id": `${siteUrl}/#organization`,
+    ...(opts.aggregateRating && opts.aggregateRating.reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: opts.aggregateRating.ratingValue,
+            reviewCount: opts.aggregateRating.reviewCount,
+          },
+        }
+      : {}),
+    ...(opts.reviews && opts.reviews.length > 0
+      ? {
+          review: opts.reviews.map((r) => ({
+            "@type": "Review",
+            author: { "@type": "Person", name: r.author },
+            reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+            reviewBody: r.body,
+            datePublished: r.datePublished,
+          })),
+        }
+      : {}),
+  };
+}
+
 export function buildWebSite() {
   return {
     "@context": "https://schema.org",

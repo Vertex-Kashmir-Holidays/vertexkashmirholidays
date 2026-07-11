@@ -1,6 +1,7 @@
 "use client";
 
 import { LeadForm } from "@/components/leads/LeadForm";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 import type { LeadContext, LeadSourcePage } from "@/lib/leads/schema";
 
 interface HeroLeadCardProps {
@@ -26,6 +27,7 @@ export function HeroLeadCard({
   buttonLabel,
   className,
 }: HeroLeadCardProps) {
+  const { formAvatars } = useSiteSettings();
   return (
     <div
       className={`hero-reveal sweep glass-cream w-full max-w-md rounded-3xl p-6 shadow-glass sm:p-7 ${className ?? ""}`}
@@ -38,6 +40,7 @@ export function HeroLeadCard({
         title={title}
         subtitle={subtitle}
         buttonLabel={buttonLabel}
+        avatars={formAvatars}
       />
     </div>
   );

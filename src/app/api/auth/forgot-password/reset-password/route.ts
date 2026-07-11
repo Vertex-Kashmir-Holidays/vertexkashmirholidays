@@ -3,8 +3,9 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { isStaff } from "@/lib/rbac";
-import { RESET_TOKEN_TTL_MS, clientIp, rateLimit } from "@/lib/auth/otp";
+import { RESET_TOKEN_TTL_MS } from "@/lib/auth/otp";
 import { PASSWORD_MESSAGE, isValidPassword } from "@/lib/auth/validation";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,8 @@ const resetSchema = z
 // this browser session already completed the OTP step for this email.
 export async function POST(req: NextRequest) {
   try {
-    if (!rateLimit(`reset-password:${clientIp(req)}`, 20, 10 * 60 * 1000)) {
+    const ipLimit = await rateLimit(`reset-password:${clientIp(req)}`, 20, "10 m");
+    if (!ipLimit.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 },

@@ -3,10 +3,18 @@
 
 import Link from 'next/link';
 import { MapPin, Phone } from 'lucide-react';
+import type { TourCategory } from '@prisma/client';
 import { Logo } from '@/components/brand/Logo';
 import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon } from '@/components/icons/brand';
 import { trackWhatsappClick, trackPhoneClick, trackEmailClick } from '@/lib/analytics';
 import { formatBusinessAddress } from '@/lib/businessAddress';
+import { TOUR_CATEGORY_META } from '@/lib/tours/categories';
+
+// The three category sitelinks we actively want Google to pick up. Rendered
+// only if that category actually has a published tour (checked via
+// `tourCategories`, passed down from the public layout) — never links to a
+// page that would 404.
+const PRIORITY_CATEGORIES: TourCategory[] = ['HONEYMOON', 'FAMILY', 'GROUP'];
 
 
 export interface FooterSettings {
@@ -32,11 +40,9 @@ export interface FooterSettings {
 }
 
 
-export function Footer({ settings }: { settings?: FooterSettings | null }) {
+export function Footer({ settings, tourCategories = [] }: { settings?: FooterSettings | null; tourCategories?: TourCategory[] }) {
+ const priorityCategoryLinks = PRIORITY_CATEGORIES.filter((c) => tourCategories.includes(c));
  const siteName = settings?.siteName ?? 'Vertex Kashmir Holidays';
- const tagline =
-   settings?.siteTagline ??
-   'Locally based in Kashmir. Handcrafted holidays with zero middlemen, transparent pricing and 24/7 on-ground support.';
  const phone = settings?.sitePhone ?? '+91 99999 00000';
  const email = settings?.siteEmail ?? 'hello@vertexkashmir.com';
  const address = formatBusinessAddress(settings) ?? settings?.siteAddress ?? 'Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India';
@@ -92,7 +98,10 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
        <div className="mx-auto grid max-w-[1300px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
          <div>
            <Logo variant="auto" href="/" className="h-9" />
-           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">{tagline}</p>
+           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+             Operated by Vertex Kashmir Tour &amp; Travels — locals, not just planners. We live here and explore daily.
+             Honest pricing, real experiences, unforgettable memories.
+           </p>
            <div className="mt-5 flex gap-2.5">
              {settings?.instagram && (
                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
@@ -117,20 +126,18 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
          <div>
            <p className="text-sm font-bold text-foreground">Explore</p>
            <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
-             <li>
-               <Link href="/tours" className="transition hover:text-primary">Tour Packages</Link>
-             </li>
+             {priorityCategoryLinks.map((c) => (
+               <li key={c}>
+                 <Link href={`/tours/category/${TOUR_CATEGORY_META[c].slug}`} className="transition hover:text-primary">
+                   {TOUR_CATEGORY_META[c].pageTitle}
+                 </Link>
+               </li>
+             ))}
              <li>
                <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
              </li>
              <li>
-               <Link href="/adventures" className="transition hover:text-primary">Adventures</Link>
-             </li>
-             <li>
-               <Link href="/blog" className="transition hover:text-primary">Travel Blog</Link>
-             </li>
-             <li>
-               <Link href="/about" className="transition hover:text-primary">About Us</Link>
+               <Link href="/reviews" className="transition hover:text-primary">Customer Reviews</Link>
              </li>
            </ul>
          </div>
@@ -138,10 +145,10 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
            <p className="text-sm font-bold text-foreground">Legals</p>
            <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
              <li>
-               <Link href="/contact" className="transition hover:text-primary">Contact Us</Link>
+               <Link href="/about" className="transition hover:text-primary">About Us</Link>
              </li>
              <li>
-               <Link href="/contact#faqs" className="transition hover:text-primary">FAQs</Link>
+               <Link href="/contact" className="transition hover:text-primary">Contact Us</Link>
              </li>
              <li>
                <Link href="/refund-and-cancellation" className="transition hover:text-primary">Refund &amp; Cancellation</Link>
@@ -156,19 +163,11 @@ export function Footer({ settings }: { settings?: FooterSettings | null }) {
          </div>
          <div>
            <p className="text-sm font-bold text-foreground">Get valley updates</p>
-           <p className="mt-3 text-[13px] text-muted-foreground">Snow alerts, new treks &amp; flash deals. One email a month.</p>
-           <div className="mt-4 flex overflow-hidden rounded-full border border-border bg-foreground/[.04] p-1">
-             <input
-               type="email"
-               aria-label="Email address for newsletter"
-               autoComplete="email"
-               className="w-full bg-transparent px-4 text-sm text-foreground placeholder-foreground/40 outline-none"
-               placeholder="Email address"
-             />
-             <button className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground ring-inner">
-               Subscribe
-             </button>
-           </div>
+           <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
+             <li><Link href="/blog" className="transition hover:text-primary">Travel Blog</Link></li>
+             <li><Link href="/faq" className="transition hover:text-primary">FAQs</Link></li>
+             <li><Link href="/adventures" className="transition hover:text-primary">Adventures</Link></li>
+           </ul>
            <p className="mt-5 text-[12px] leading-relaxed text-muted-foreground">
              <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> {address}
              <br />

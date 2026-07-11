@@ -13,6 +13,15 @@ export function isCustomer(role?: string | null): boolean {
   return role === "CUSTOMER";
 }
 
+// Roles required to enroll in and pass TOTP MFA (src/app/admin/mfa). The
+// highest-blast-radius roles only — a phished password for either is a
+// full-CRM-access event, unlike SALES/EDITOR/DEVELOPER.
+export const MFA_REQUIRED_ROLES: Role[] = ["SUPERADMIN", "ADMIN"];
+
+export function requiresMfa(role?: string | null): boolean {
+  return !!role && MFA_REQUIRED_ROLES.includes(role as Role);
+}
+
 export const ACTIONS = ["view", "create", "edit", "delete"] as const;
 export type Action = (typeof ACTIONS)[number];
 

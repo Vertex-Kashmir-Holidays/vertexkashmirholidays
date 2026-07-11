@@ -158,6 +158,13 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const highlights = parseStringList(tour.highlights);
  const faqs = parseJson<{ question: string; answer: string }[]>(tour.faqs, []);
  const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []);
+ // Real, admin-entered scarcity — already captured for Event schema, now also
+ // surfaced to visitors. Only ever shown when a staff member has actually
+ // marked a departure "filling"; never fabricated.
+ const today = new Date().toISOString().split("T")[0];
+ const nextDeparture = batches
+   .filter((b) => b.date >= today)
+   .sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
  const rawItinerary = parseItinerary(tour.itinerary);
 
  const perfectFor = parseStringList(tour.perfectFor);
@@ -487,6 +494,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
            tourName={tour.title}
            tourSlug={tour.slug}
            formMode={tour.formMode}
+           nextDeparture={nextDeparture}
            bestTime={tour.bestTime ?? "Apr – Oct"}
            tourType={tour.tourType ?? "Private Tour"}
            pickupDrop={tour.pickupDrop ?? `${tour.startCity ?? "Srinagar"} Airport`}

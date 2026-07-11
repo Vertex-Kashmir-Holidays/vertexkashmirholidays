@@ -145,10 +145,15 @@ return (
           </motion.p>
         )}
         <h1
-          className="hero-reveal h-display text-[34px] font-extrabold text-white sm:text-[48px] lg:text-[64px]"
+          className="hero-reveal h-display font-extrabold text-white"
           style={{ '--hr-y': '30px', '--hr-delay': '0.3s' } as React.CSSProperties}
         >
-          {renderAccents(content.title)}
+            <span className="hero-brand mb-2 block whitespace-nowrap text-[13px] font-bold tracking-wide text-white/85 sm:mb-2.5 sm:text-[17px] lg:mb-3 lg:text-[20px]">
+              Vertex Kashmir Holidays
+            </span>
+            <span className="hero-tagline block text-[30px] leading-[1.1] sm:text-[48px] lg:text-[64px]">
+              {renderAccents(content.title)}
+            </span>
         </h1>
         {content.subtitle && (
           <p
