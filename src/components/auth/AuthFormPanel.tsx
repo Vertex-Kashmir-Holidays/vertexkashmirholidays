@@ -237,8 +237,11 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
       return;
     }
 
-    router.push(destination());
-    router.refresh();
+    // A hard navigation (not router.push) so the middleware's next request
+    // definitely sees the fresh session cookie — same reason the MFA and
+    // forced-password-change flows use window.location.assign instead of a
+    // soft client-side navigation.
+    window.location.assign(destination());
   }
 
   // Step 1 — validate the form and request an email OTP. The account is NOT
@@ -320,8 +323,11 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
       return;
     }
 
-    router.push(destination());
-    router.refresh();
+    // A hard navigation (not router.push) so the middleware's next request
+    // definitely sees the fresh session cookie — same reason the MFA and
+    // forced-password-change flows use window.location.assign instead of a
+    // soft client-side navigation.
+    window.location.assign(destination());
   }
 
   // Resend a fresh code (subject to the 60s cooldown enforced server-side).
@@ -515,8 +521,11 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
       return;
     }
 
-    router.push(destination());
-    router.refresh();
+    // A hard navigation (not router.push) so the middleware's next request
+    // definitely sees the fresh session cookie — same reason the MFA and
+    // forced-password-change flows use window.location.assign instead of a
+    // soft client-side navigation.
+    window.location.assign(destination());
   }
 
   const oauthButtons = (
