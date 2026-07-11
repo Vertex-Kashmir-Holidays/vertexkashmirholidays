@@ -13,7 +13,6 @@ import {
   buildFAQPage,
 } from "@/components/seo/JsonLd";
 import { formatINR } from "@/lib/accents";
-import { parseJson } from "@/lib/tours/content";
 import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } from "@/lib/destinations/content";
 import { DestinationDetailGallery } from "@/components/destinations/DestinationDetailGallery";
 import { DestinationDetailHero } from "@/components/destinations/DestinationDetailHero";
@@ -33,7 +32,7 @@ import { DestinationWhereToStay } from "@/components/destinations/DestinationWhe
 import { DestinationLocalFood } from "@/components/destinations/DestinationLocalFood";
 import { DestinationShopping } from "@/components/destinations/DestinationShopping";
 import { DestinationTravelTips } from "@/components/destinations/DestinationTravelTips";
-import { DestinationFAQs } from "@/components/destinations/DestinationFAQs";
+import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRelatedBlogs";
 import { DestinationNearby } from "@/components/destinations/DestinationNearby";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
@@ -104,6 +103,12 @@ const getDestination = cache(async (slug: string) => {
             select: { id: true, slug: true, name: true, description: true, coverImage: true, duration: true },
           },
         },
+      },
+      // Centralized FAQ module.
+      relatedFaqs: {
+        where: { status: "PUBLISHED" },
+        orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
+        select: { id: true, question: true, shortAnswer: true, slug: true },
       },
     },
   });
@@ -311,7 +316,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   const localFood = parseFoodOrShop(dest.localFood);
   const shopping = parseFoodOrShop(dest.shopping);
   const travelTips = parseStringList(dest.travelTips);
-  const faqs = parseJson<{ question: string; answer: string }[]>(dest.faqs, []);
+  const faqs = dest.relatedFaqs;
 
   // ── Structured data (JSON-LD) ─────────────────────────────────────────────
   const breadcrumbJsonLd = buildBreadcrumbList([
@@ -334,7 +339,9 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={destinationJsonLd} />
-      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
+      {faqs.length > 0 && (
+        <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />
+      )}
 
       <DestinationDetailHero
         name={dest.name}
@@ -384,7 +391,14 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               {/* 15. Gallery */}
               <DestinationDetailGallery name={dest.name} images={gallery} />
               {/* 16. FAQs */}
-              <DestinationFAQs faqs={faqs} />
+              {faqs.length > 0 && (
+                <section className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+                  <h2 className="text-[17px] font-bold">FAQs</h2>
+                  <div className="mt-4">
+                    <FaqPreviewList faqs={faqs} />
+                  </div>
+                </section>
+              )}
               {/* 17. Related Blogs */}
               <DestinationRelatedBlogs posts={relatedBlogs} />
             </div>

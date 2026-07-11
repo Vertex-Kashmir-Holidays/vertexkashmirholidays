@@ -105,6 +105,78 @@ export function buildOrganizationReviews(opts: {
   };
 }
 
+const SCHEMA_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// Formats Google Places' "HHMM" time strings (e.g. "0900") into schema.org's
+// expected "HH:MM" format.
+function formatSchemaTime(hhmm: string) {
+  return `${hhmm.slice(0, 2)}:${hhmm.slice(2)}`;
+}
+
+// Same "augment the existing @id, never redeclare" pattern as
+// buildOrganizationReviews above — only added on /contact, the one page
+// where the office location and hours are actually visible.
+export function buildOrganizationLocation(opts: {
+  geo?: { lat: number; lng: number } | null;
+  openingHours?: { day: number; open: string; close: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@id": `${siteUrl}/#organization`,
+    ...(opts.geo
+      ? { geo: { "@type": "GeoCoordinates", latitude: opts.geo.lat, longitude: opts.geo.lng } }
+      : {}),
+    ...(opts.openingHours && opts.openingHours.length > 0
+      ? {
+          openingHoursSpecification: opts.openingHours.map((p) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: `https://schema.org/${SCHEMA_DAYS[p.day]}`,
+            opens: formatSchemaTime(p.open),
+            closes: formatSchemaTime(p.close),
+          })),
+        }
+      : {}),
+  };
+}
+
+// Distinct WebPage-subtype node describing the Contact page itself — not a
+// duplicate of the Organization entity. Per Google's own documented pattern:
+// a ContactPage's contact channels are linked via mainEntity → ContactPoint,
+// reflecting the one real channel this business actually offers rather than
+// inventing separate sales/support lines that don't exist.
+export function buildContactPage(opts: { telephone?: string | null; email?: string | null }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    mainEntity: {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      ...(opts.telephone ? { telephone: opts.telephone } : {}),
+      ...(opts.email ? { email: opts.email } : {}),
+      areaServed: "IN",
+      availableLanguage: ["English", "Hindi"],
+    },
+  };
+}
+
+// Same "augment the existing @id" pattern — only added on /about, where the
+// team is actually visible. `founder` is detected from the team's own role
+// text (contains "Founder"), not asserted separately, so it can never drift
+// from what the page itself shows.
+export function buildOrganizationPeople(opts: {
+  founder?: { name: string; jobTitle: string } | null;
+  employees?: { name: string; jobTitle: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@id": `${siteUrl}/#organization`,
+    ...(opts.founder ? { founder: { "@type": "Person", name: opts.founder.name, jobTitle: opts.founder.jobTitle } } : {}),
+    ...(opts.employees && opts.employees.length > 0
+      ? { employee: opts.employees.map((e) => ({ "@type": "Person", name: e.name, jobTitle: e.jobTitle })) }
+      : {}),
+  };
+}
+
 export function buildWebSite() {
   return {
     "@context": "https://schema.org",

@@ -3,7 +3,7 @@ import { z } from "zod";
 // JSON-string fields (stored as String in the DB, defaulting to "[]").
 export const CAMPAIGN_JSON_FIELDS = [
   "facts", "strip", "stats", "highlights", "activities", "itinerary",
-  "tiers", "batches", "inclusions", "exclusions", "gallery", "faqs",
+  "tiers", "batches", "inclusions", "exclusions", "gallery",
 ] as const;
 
 // Plain nullable string fields.

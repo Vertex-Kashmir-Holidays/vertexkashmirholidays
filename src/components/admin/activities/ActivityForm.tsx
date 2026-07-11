@@ -42,7 +42,6 @@ export interface ActivityDefaults extends Partial<FormData> {
  suitableFor?: string; // JSON string array
  safetyTips?: string; // JSON string array
  whatToCarry?: string; // JSON string array
- faqs?: string; // JSON string array
  ogImage?: string;
  published?: boolean;
  destinationIds?: string[];
@@ -83,7 +82,6 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
  const [suitableFor, setSuitableFor] = useState(defaults?.suitableFor ?? "[]");
  const [safetyTips, setSafetyTips] = useState(defaults?.safetyTips ?? "[]");
  const [whatToCarry, setWhatToCarry] = useState(defaults?.whatToCarry ?? "[]");
- const [faqs, setFaqs] = useState(defaults?.faqs ?? "[]");
  const [published, setPublished] = useState(defaults?.published ?? false);
  const [destinationIds, setDestinationIds] = useState<string[]>(defaults?.destinationIds ?? []);
  const [tourIds, setTourIds] = useState<string[]>(defaults?.tourIds ?? []);
@@ -139,7 +137,6 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            suitableFor,
            safetyTips,
            whatToCarry,
-           faqs,
            published,
            destinationIds,
            tourIds,
@@ -272,19 +269,6 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            <SectionArrayEditor label="What to Carry" value={whatToCarry} onChange={setWhatToCarry} spec={{ kind: "scalar" }} />
          </div>
 
-         {/* FAQs */}
-         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
-           <h3 className="font-bold text-foreground text-sm">FAQs</h3>
-           <SectionArrayEditor
-             label="FAQs"
-             value={faqs}
-             onChange={setFaqs}
-             spec={{ kind: "object", fields: [
-               { key: "question", label: "Question" },
-               { key: "answer", label: "Answer", type: "textarea" },
-             ] }}
-           />
-         </div>
        </div>
 
 

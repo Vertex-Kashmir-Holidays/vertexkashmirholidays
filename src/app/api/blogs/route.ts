@@ -21,7 +21,6 @@ const createSchema = z.object({
   featured: z.boolean().optional(),
   trending: z.boolean().optional(),
   relatedTours: z.string().optional(),
-  faqs: z.string().optional(),
   quickAnswer: z.string().optional(),
   published: z.boolean().optional(),
   metaTitle: z.string().optional(),

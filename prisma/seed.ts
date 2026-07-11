@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TourCategory, TourRegion } from "@prisma/client";
+import { PrismaClient, Role, TourCategory, TourRegion, FaqStatus, FaqPlacement } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { LEGAL_PAGES } from "../src/lib/legal/content";
 
@@ -338,12 +338,6 @@ async function main() {
       "🌸 Betaab Valley",
       "🍽️ Candlelight Dinner",
     ]),
-    faqs: JSON.stringify([
-      { question: "Is this package customisable?", answer: "Yes — every itinerary is handcrafted. Add days, upgrade hotels, or swap activities and your quote updates transparently." },
-      { question: "What is the advance payment?", answer: "Just 10% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay." },
-      { question: "Is the Gulmarg Gondola included?", answer: "Yes — both Phase 1 (Kongdori) and Phase 2 (Apharwat Peak) Gondola tickets are included in this package." },
-      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 10% advance is held as credit for 12 months." },
-    ]),
     startCity: "Srinagar",
     transport: "Private Cab",
     difficulty: "Easy",
@@ -421,12 +415,6 @@ async function main() {
       "🐴 Pony Rides",
       "🏡 Houseboat Stay",
     ]),
-    faqs: JSON.stringify([
-      { question: "Is this package suitable for young children?", answer: "Absolutely — the itinerary is gently paced with family suites, and our drivers carry child-friendly extras. We tailor activities to your kids' ages." },
-      { question: "What is the advance payment?", answer: "Just 10% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay." },
-      { question: "Is the Gondola included?", answer: "Gondola Phase 1 (Kongdori) tickets are included for every family member. Phase 2 to Apharwat is an optional add-on." },
-      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 10% advance is held as credit for 12 months." },
-    ]),
     startCity: "Srinagar",
     transport: "Spacious SUV",
     difficulty: "Easy",
@@ -501,12 +489,6 @@ async function main() {
       "🚠 Apharwat Summit",
       "🚵 Mountain Biking",
       "🧗 Certified Guides",
-    ]),
-    faqs: JSON.stringify([
-      { question: "How fit do I need to be?", answer: "You should be comfortable walking 5–6 hours a day at altitude. We share a preparation guide on booking and our guides set a steady, safe pace." },
-      { question: "Is camping equipment provided?", answer: "Yes — tents, sleeping bags and mats are included on all trek days. You only bring personal trekking gear and clothing." },
-      { question: "Are the treks guided?", answer: "Every trekking day is led by a certified local mountain guide, with a first-aid kit and emergency support throughout." },
-      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 10% advance is held as credit for 12 months." },
     ]),
     startCity: "Srinagar",
     transport: "Private Vehicle",
@@ -586,12 +568,6 @@ async function main() {
       "🚠 Private Gondola Cabin",
       "🍽️ Wazwan Tasting Menu",
       "🧣 Bespoke Pashmina",
-    ]),
-    faqs: JSON.stringify([
-      { question: "What makes this a luxury package?", answer: "A restored Maharaja-era cedar houseboat, a personal butler, private shikara on call 24/7, private Gondola cabin, and a bespoke Pashmina — every detail is arranged before you arrive." },
-      { question: "What is the advance payment?", answer: "Just 10% to lock your dates. The balance is payable 7 days before the trip starts, securely via Razorpay." },
-      { question: "Is the experience private?", answer: "Entirely. All transfers, dining and excursions are private to your party, hosted by a dedicated personal host." },
-      { question: "What is the cancellation policy?", answer: "Free cancellation up to 15 days before departure. Between 7–15 days, the 10% advance is held as credit for 12 months." },
     ]),
     startCity: "Srinagar",
     transport: "Luxury Vehicle",
@@ -716,10 +692,6 @@ async function main() {
           description: "Curated sightseeing, leisure and local experiences with your private guide.",
         })),
       ),
-      faqs: JSON.stringify([
-        { question: "Is this package customisable?", answer: "Yes — every itinerary is handcrafted. Add days, upgrade hotels or swap activities and your quote updates transparently." },
-        { question: "What is the advance payment?", answer: "Just 10% to lock your dates. The balance is payable 7 days before the trip starts." },
-      ]),
       startCity: t.slug === "ladakh-bike-expedition-9d" ? "Manali" : t.destSlugs.includes("leh") ? "Leh" : "Srinagar",
       transport: t.slug === "ladakh-bike-expedition-9d" ? "Royal Enfield / Self-Ride" : "Private Cab",
       difficulty: t.slug === "ladakh-bike-expedition-9d" ? "Challenging" : t.category === TourCategory.ADVENTURE ? "Moderate" : "Easy",
@@ -1137,6 +1109,11 @@ async function main() {
       title: "12,000 travellers can't be wrong",
     },
     {
+      key: "faqs",
+      kicker: "QUESTIONS",
+      title: "Frequently Asked",
+    },
+    {
       key: "blogs",
       kicker: "FROM THE JOURNAL",
       title: "Stories & guides from the valley",
@@ -1332,17 +1309,37 @@ async function main() {
   });
   console.log("✓ ContactPromiseItems");
 
-  await prisma.contactFaq.deleteMany();
-  await prisma.contactFaq.createMany({
-    data: [
-      { question: "How soon will I get a reply?", answer: "Within 2 hours on WhatsApp and email during working hours — usually much faster.", sortOrder: 0 },
-      { question: "Can you create a custom itinerary?", answer: "Absolutely. Every trip we plan is built from scratch around your dates, pace and budget.", sortOrder: 1 },
-      { question: "Do you charge for itinerary planning?", answer: "No. Planning and advice are 100% free — you only pay when you book.", sortOrder: 2 },
-      { question: "How do I book a trip with Vertex Kashmir?", answer: "Share your details, approve your itinerary, then lock dates with a 10% advance via Razorpay.", sortOrder: 3 },
-      { question: "Is it safe to travel to Kashmir in 2026?", answer: "Yes — tourist areas are welcoming and well-connected. Our on-ground team is with you 24×7.", sortOrder: 4 },
-    ],
+  // Centralized FAQ module (replaces the old ContactFaq table).
+  const generalFaqCategory = await prisma.faqCategory.upsert({
+    where: { slug: "general" },
+    create: { name: "General", slug: "general", sortOrder: 0, isActive: true },
+    update: {},
   });
-  console.log("✓ ContactFaqs");
+  const seedFaqs: { question: string; answer: string; sortOrder: number; placements: FaqPlacement[] }[] = [
+    { question: "How soon will I get a reply?", answer: "Within 2 hours on WhatsApp and email during working hours — usually much faster.", sortOrder: 0, placements: [FaqPlacement.CONTACT, FaqPlacement.FAQ] },
+    { question: "Can you create a custom itinerary?", answer: "Absolutely. Every trip we plan is built from scratch around your dates, pace and budget.", sortOrder: 1, placements: [FaqPlacement.CONTACT, FaqPlacement.FAQ] },
+    { question: "Do you charge for itinerary planning?", answer: "No. Planning and advice are 100% free — you only pay when you book.", sortOrder: 2, placements: [FaqPlacement.CONTACT, FaqPlacement.FAQ] },
+    { question: "How do I book a trip with Vertex Kashmir?", answer: "Share your details, approve your itinerary, then lock dates with a 10% advance via Razorpay.", sortOrder: 3, placements: [FaqPlacement.CONTACT, FaqPlacement.FAQ] },
+    { question: "Is it safe to travel to Kashmir in 2026?", answer: "Yes — tourist areas are welcoming and well-connected. Our on-ground team is with you 24×7.", sortOrder: 4, placements: [FaqPlacement.CONTACT, FaqPlacement.ABOUT, FaqPlacement.FAQ] },
+  ];
+  for (const f of seedFaqs) {
+    const slug = f.question.toLowerCase().replace(/[^a-z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
+    await prisma.faq.upsert({
+      where: { slug },
+      create: {
+        question: f.question,
+        shortAnswer: f.answer,
+        answer: f.answer,
+        slug,
+        categoryId: generalFaqCategory.id,
+        status: FaqStatus.PUBLISHED,
+        sortOrder: f.sortOrder,
+        placements: f.placements,
+      },
+      update: {},
+    });
+  }
+  console.log("✓ Faqs");
 
   await prisma.contactOffice.deleteMany();
   await prisma.contactOffice.createMany({
@@ -1463,13 +1460,6 @@ async function main() {
         ),
       ),
       faqsTitle: 'Questions, <span class="grad-accent-text italic">answered</span>',
-      faqs: JSON.stringify([
-        { question: "I've never skied. Is this really for me?", answer: "Yes — 80% of every batch are first-timers. Day 1 starts with how to wear boots. By day 4 you'll be doing controlled runs." },
-        { question: "What fitness level do I need?", answer: "If you can climb 3 flights of stairs, you're fine. Skiing here is technique-led, not endurance-led." },
-        { question: "What about clothes?", answer: "Ski jacket, pants, gloves, helmet and goggles are included. Bring thermals and woollen socks." },
-        { question: "Is January too cold?", answer: "It's -5 to -12°C — but that's the best snow. Hotels are heated and the gear keeps you warm on the slopes." },
-        { question: "Cancellation policy?", answer: "Free cancellation 15+ days out. Within 7–15 days your 10% advance converts to a 12-month credit." },
-      ]),
       finalTitle: "The powder doesn't wait. Neither do these batches.",
       finalSub: "Lock your seat with ₹5,800 today — pay the rest a week before departure.",
       finalCta: "Reserve My Seat",
@@ -1519,10 +1509,6 @@ async function main() {
         { name: "Premium", price: "₹29,999", old: "₹34,999", tag: "MOST POPULAR", desc: "Houseboat + hotel split", feats: ["1N houseboat + 2N hotel", "Breakfast & dinner", "Private shikara evening", "Mughal gardens tour"] },
       ]),
       faqsTitle: "Questions, answered",
-      faqs: JSON.stringify([
-        { question: "When exactly do the tulips bloom?", answer: "Typically late March to mid-April. We track the bloom forecast and advise the best dates each season." },
-        { question: "What is the advance payment?", answer: "10% to lock your dates; the balance is due a week before travel." },
-      ]),
       finalTitle: "The bloom window is short. Don't miss it.",
       finalSub: "Reserve with 10% today — pay the rest a week before you fly.",
       finalCta: "Book My Tulip Trip",
@@ -1571,10 +1557,6 @@ async function main() {
         { name: "Comfort", price: "₹64,999", old: "₹72,999", tag: "MOST POPULAR", desc: "Upgraded stays + private 4x4", feats: ["Premium hotels in Leh", "Private 4x4 transfers", "Pangong lake-view camp", "Trip photographer"] },
       ]),
       faqsTitle: "Questions, answered",
-      faqs: JSON.stringify([
-        { question: "How do you handle altitude?", answer: "The route is built around gradual acclimatisation, with rest days in Leh and oxygen plus a medical kit on every batch." },
-        { question: "What is the advance payment?", answer: "10% to lock your dates; the balance is due a week before departure." },
-      ]),
       finalTitle: "The passes are open for a few short months.",
       finalSub: "Reserve with 10% today — small groups fill quickly.",
       finalCta: "Join the Expedition",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { JsonLd, buildItemList, buildWebSite } from "@/components/seo/JsonLd";
+import { JsonLd, buildItemList, buildWebSite, buildFAQPage } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { AboutSection } from "@/components/about/AboutSection";
 import { BlogSection } from "@/components/blog/BlogSection";
@@ -13,7 +13,9 @@ import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { UpdatesStrip } from "@/components/home/UpdatesStrip";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 import { WhyChooseSection } from "@/components/home/WhyChooseSection";
+import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { getDisplayReviews } from "@/lib/reviews";
+import { getFaqsForPlacement } from "@/lib/faqs";
 import { getKashmirWeather } from "@/lib/weather";
 import type { OfferData, SectionHeading } from "@/types/home";
 
@@ -113,6 +115,7 @@ export default async function HomePage() {
     reviews,
     blogs,
     settings,
+    faqs,
   ] = await Promise.all([
     prisma.homeContent.findUnique({ where: { id: "singleton" } }),
     prisma.homeSection.findMany(),
@@ -167,6 +170,8 @@ export default async function HomePage() {
       take: 3,
     }),
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    // Centralized FAQ module — same Faq pool /about, /contact and /faq draw from.
+    getFaqsForPlacement("HOME"),
   ]);
 
   // Live weather for the updates strip — fetched in parallel but outside the
@@ -207,11 +212,14 @@ export default async function HomePage() {
     })),
     "Featured Kashmir Tour Packages",
   );
+  // Short answers only — matches what FaqPreviewList actually renders below.
+  const faqJsonLd = faqs.length > 0 ? buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer }))) : null;
 
   return (
     <div className="bg-background text-foreground">
       <JsonLd data={webSiteJsonLd} />
       {tours.length > 0 && <JsonLd data={packagesJsonLd} />}
+      {faqJsonLd && <JsonLd data={faqJsonLd} />}
       <HeroSection
         content={{
           badge: content?.heroBadge ?? null,
@@ -350,6 +358,17 @@ export default async function HomePage() {
         heading={heading("testimonials")}
         testimonials={reviews}
       />
+      {faqs.length > 0 && (
+        <section className="mx-auto max-w-[1300px] px-4 py-14 sm:px-6">
+          <div className="text-center">
+            <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading("faqs").kicker ?? 'QUESTIONS'}</p>
+            <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">{heading("faqs").title ?? 'Frequently Asked'}</h2>
+          </div>
+          <div className="mt-8">
+            <FaqPreviewList faqs={faqs} columns={2} />
+          </div>
+        </section>
+      )}
       <BlogSection
         heading={heading("blogs")}
         blogs={blogs.map((b) => ({

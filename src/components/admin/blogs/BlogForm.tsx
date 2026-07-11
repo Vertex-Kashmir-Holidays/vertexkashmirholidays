@@ -7,12 +7,11 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload, Eye, Images, Plus, Trash2, HelpCircle } from "lucide-react";
+import { Loader2, Upload, Eye, Images, Plus, Trash2 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import sanitizeHtml from "sanitize-html";
 
 const relatedTourItemSchema = z.object({ tourId: z.string().optional(), ctaSentence: z.string().optional() });
-const faqItemSchema = z.object({ question: z.string().optional(), answer: z.string().optional() });
 
 const schema = z.object({
   title: z.string().min(3, "Title is required"),
@@ -26,7 +25,6 @@ const schema = z.object({
   featured: z.boolean().optional(),
   trending: z.boolean().optional(),
   relatedTours: z.array(relatedTourItemSchema).max(3, "Up to 3 related tours").optional(),
-  faqs: z.array(faqItemSchema).optional(),
   excerpt: z.string().optional(),
   quickAnswer: z.string().optional(),
   body: z.string().optional(),
@@ -83,7 +81,6 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
       featured: defaults?.featured ?? false,
       trending: defaults?.trending ?? false,
       relatedTours: (defaults?.relatedTours ?? []).map((r) => ({ tourId: r.tourId, ctaSentence: r.ctaSentence })),
-      faqs: (defaults?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer })),
       excerpt: defaults?.excerpt ?? "",
       quickAnswer: defaults?.quickAnswer ?? "",
       body: defaults?.body ?? "",
@@ -99,7 +96,6 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
   });
 
   const { fields: relatedFields, append: addRelated, remove: removeRelated } = useFieldArray({ control, name: "relatedTours" });
-  const { fields: faqFields, append: addFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
 
   const titleVal = watch("title");
   useEffect(() => {
@@ -147,12 +143,11 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
   }
 
   function onSubmit(data: FormData) {
-    const { readTime, relatedTours, faqs, ...rest } = data;
+    const { readTime, relatedTours, ...rest } = data;
     const payload = {
       ...rest,
       readTime: readTime ? Number(readTime) : undefined,
       relatedTours: JSON.stringify((relatedTours ?? []).filter((r) => r.tourId && r.ctaSentence?.trim())),
-      faqs: JSON.stringify((faqs ?? []).filter((f) => f.question?.trim() || f.answer?.trim())),
     };
     startTransition(async () => {
       try {
@@ -415,51 +410,6 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
                     placeholder='Why it fits — e.g. "Planning a comfortable family vacation?"'
                   />
                   <button type="button" onClick={() => removeRelated(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors justify-self-start sm:mt-2">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* FAQs */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-foreground text-sm">FAQs</h3>
-            <button
-              type="button"
-              onClick={() => addFaq({ question: "", answer: "" })}
-              className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add FAQ
-            </button>
-          </div>
-          {faqFields.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-2">No FAQs added yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {faqFields.map((field, i) => (
-                <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
-                  <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-2.5" />
-                  <div className="flex-1 space-y-2">
-                    <input
-                      {...register(`faqs.${i}.question`)}
-                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
-                      placeholder="Question — e.g. Is Kashmir safe for a honeymoon trip?"
-                    />
-                    <textarea
-                      {...register(`faqs.${i}.answer`)}
-                      rows={2}
-                      className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
-                      placeholder="Answer..."
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFaq(i)}
-                    className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
-                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>

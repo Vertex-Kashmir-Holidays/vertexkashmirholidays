@@ -8,7 +8,7 @@ import type { ParsedTripadvisorWidget } from "@/lib/reviews/tripadvisorWidget";
 // consistent frame (and the "View on Tripadvisor" link) around it.
 export function TripadvisorRatingCard({ widget, profileUrl }: { widget: ParsedTripadvisorWidget; profileUrl?: string | null }) {
   return (
-    <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-6 text-center shadow-soft sm:w-64 sm:shrink-0">
+    <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-6 text-center shadow-soft sm:min-w-0 sm:flex-1 sm:basis-0">
       {/* Sized to the widget's real measured content (136x108px, confirmed
           by rendering it and reading the actual DOM rect, not guessed) —
           h-16 was too short and clipped it awkwardly since part of its

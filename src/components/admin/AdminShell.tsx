@@ -34,6 +34,7 @@ import {
   MessageSquare,
   Flag,
   Target,
+  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -59,6 +60,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   connect: MessageSquare,
   galleries: Images,
   blogs: FileText,
+  faqs: HelpCircle,
   home: Home,
   about: Info,
   contact: Phone,

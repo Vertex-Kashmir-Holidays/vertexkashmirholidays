@@ -1,9 +1,11 @@
 // src/app/(public)/contact/page.tsx
 
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
-import { ContactFAQs } from '@/components/contact/ContactFAQs';
+import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { ContactHero } from '@/components/contact/ContactHero';
 import { ContactOfficeMap } from '@/components/contact/ContactOfficeMap';
@@ -13,8 +15,10 @@ import { ContactSocial } from '@/components/contact/ContactSocial';
 import { ContactTestimonials } from '@/components/contact/ContactTestimonials';
 import { ContactWhatsAppFloat } from '@/components/contact/ContactWhatsAppFloat';
 import { getDisplayReviews } from '@/lib/reviews';
+import { getGooglePlaceHoursAndLocation } from '@/lib/reviews/googlePlaces';
+import { getFaqsForPlacement } from '@/lib/faqs';
 import { formatBusinessAddress } from '@/lib/businessAddress';
-import { JsonLd, buildBreadcrumbList, buildFAQPage } from '@/components/seo/JsonLd';
+import { JsonLd, buildBreadcrumbList, buildFAQPage, buildOrganizationLocation, buildContactPage } from '@/components/seo/JsonLd';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
 export const revalidate = 300;
@@ -44,12 +48,21 @@ export default async function ContactPage() {
       prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
       prisma.contactHeroFeature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.contactPromiseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-      prisma.contactFaq.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+      // Centralized FAQ module — same Faq pool /about and /faq draw from.
+      getFaqsForPlacement('CONTACT'),
       prisma.contactOffice.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
       // Approved customer reviews (admin-managed) replace CMS testimonials here.
       getDisplayReviews(8),
     ]);
+
+  // Google Business Profile is the single source of truth for business hours
+  // whenever it's reachable — the CMS field below only serves as a fallback
+  // if the API/key is unavailable. This is the same object Task 7's
+  // openingHoursSpecification schema reads from, so the visible text and the
+  // schema can never disagree.
+  const { hours: googleHours, location: googleLocation } = await getGooglePlaceHoursAndLocation(settings?.googlePlaceId);
+  const officeHours = googleHours ? googleHours.weekdayText.join('\n') : (content?.officeHours ?? null);
 
   const phone = settings?.sitePhone ?? null;
   const email = settings?.siteEmail ?? null;
@@ -57,6 +70,7 @@ export default async function ContactPage() {
   const whatsapp = settings?.whatsapp ?? phone ?? null;
   const directionsUrl =
     content?.directionsUrl ??
+    settings?.googleBusinessProfile ??
     (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : '#');
 
   // Reach cards built from real SiteSettings contact channels.
@@ -114,12 +128,22 @@ export default async function ContactPage() {
     { name: 'Home', url: SITE_URL },
     { name: 'Contact', url: `${SITE_URL}/contact` },
   ]);
-  const faqJsonLd = faqs.length > 0 ? buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.answer }))) : null;
+  // Short answers only — matches what's actually rendered below.
+  const faqJsonLd = faqs.length > 0 ? buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer }))) : null;
+  // Augments the sitewide Organization node with geo/hours — only meaningful
+  // here, where the office location is actually shown on-page.
+  const organizationLocationJsonLd = buildOrganizationLocation({
+    geo: googleLocation,
+    openingHours: googleHours?.periods,
+  });
+  const contactPageJsonLd = buildContactPage({ telephone: phone, email });
 
   return (
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       {faqJsonLd && <JsonLd data={faqJsonLd} />}
+      <JsonLd data={organizationLocationJsonLd} />
+      <JsonLd data={contactPageJsonLd} />
       <ContactHero
         data={{
           breadcrumb: content?.heroBreadcrumb ?? null,
@@ -170,7 +194,7 @@ export default async function ContactPage() {
             subtitle: content?.officeSubtitle ?? null,
             name: content?.officeName ?? null,
             address: content?.officeAddress ?? address,
-            hours: content?.officeHours ?? null,
+            hours: officeHours,
             mapLabel: content?.officeMapLabel ?? null,
             mapSubLabel: content?.officeMapSubLabel ?? null,
             directionsUrl,
@@ -179,6 +203,7 @@ export default async function ContactPage() {
             legalName: settings?.legalName ?? null,
             tourismRegNumber: settings?.tourismRegNumber ?? null,
             brandName: settings?.siteName ?? null,
+            placeId: settings?.googlePlaceId ?? null,
           }}
           offices={offices.map((o) => ({
             id: o.id,
@@ -189,12 +214,21 @@ export default async function ContactPage() {
         />
 
         <section className="mt-14 grid gap-10 lg:grid-cols-[1fr_1.15fr_1fr]">
-          <ContactFAQs
-            heading={{ kicker: content?.faqsKicker ?? null, title: content?.faqsTitle ?? null }}
-            faqs={faqs.map((f) => ({ id: f.id, question: f.question, answer: f.answer }))}
-            ctaLabel={content?.faqsCtaLabel ?? null}
-            ctaHref={content?.faqsCtaHref ?? null}
-          />
+          {faqs.length > 0 && (
+            <div>
+              <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
+              <h2 className="h-display mt-2 font-display text-[22px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
+              <div className="mt-5">
+                <FaqPreviewList faqs={faqs} />
+              </div>
+              {content?.faqsCtaLabel && (
+                <Link href={content.faqsCtaHref ?? '/faq'} className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline">
+                  {content.faqsCtaLabel}
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+                </Link>
+              )}
+            </div>
+          )}
           <ContactTestimonials
             heading={{
               kicker: content?.testimonialsKicker ?? null,

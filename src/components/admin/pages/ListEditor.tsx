@@ -35,6 +35,7 @@ const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
 function toInput(value: unknown, type: FieldDef["type"]): string {
+  if (type === "boolean") return value ? "true" : "false";
   if (value == null) return "";
   if (type === "date") return new Date(value as string).toISOString().slice(0, 10);
   return String(value);
@@ -88,6 +89,10 @@ export function ListEditor({ title, description, resource, fields, items, canCre
     if (meta.activatable) payload.isActive = active;
     for (const f of fields) {
       const v = form[f.key];
+      if (f.type === "boolean") {
+        payload[f.key] = v === "true";
+        continue;
+      }
       if (v === "" || v == null) {
         if (f.required) {
           toast.error(`${f.label} is required.`);
@@ -248,6 +253,13 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                     <ImageField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} folder={resource} />
                   ) : f.type === "video" ? (
                     <VideoField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} folder={resource} />
+                  ) : f.type === "boolean" ? (
+                    <input
+                      type="checkbox"
+                      checked={form[f.key] === "true"}
+                      onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.checked ? "true" : "false" }))}
+                      className="h-4 w-4 accent-primary"
+                    />
                   ) : f.type === "textarea" ? (
                     <textarea
                       rows={3}

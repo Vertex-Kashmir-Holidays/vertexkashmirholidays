@@ -39,6 +39,7 @@ export const MODULES = [
   { key: "connect", label: "Vertex Connect", href: "/admin/connect" },
   { key: "galleries", label: "Galleries", href: "/admin/galleries" },
   { key: "blogs", label: "Blogs", href: "/admin/blogs" },
+  { key: "faqs", label: "FAQs", href: "/admin/faqs" },
   { key: "home", label: "Home Page", href: "/admin/home" },
   { key: "about", label: "About Page", href: "/admin/about" },
   { key: "contact", label: "Contact Page", href: "/admin/contact" },

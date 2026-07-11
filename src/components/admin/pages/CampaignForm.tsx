@@ -23,7 +23,6 @@ const SECTION_SPECS: Record<string, { label: string; description?: string; spec:
   inclusions: { label: "Inclusions", spec: { kind: "scalar", type: "text" } },
   exclusions: { label: "Exclusions", spec: { kind: "scalar", type: "text" } },
   gallery: { label: "Gallery images", spec: { kind: "scalar", type: "image" } },
-  faqs: { label: "FAQs", spec: { kind: "object", fields: [{ key: "question", label: "Question" }, { key: "answer", label: "Answer", type: "textarea" }] } },
 };
 
 type FieldType = "text" | "textarea" | "image" | "date";

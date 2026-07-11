@@ -47,6 +47,8 @@ model User {
   presence             UserPresence?
   meetingsCreated      Meeting[]            @relation("ConnectMeetingCreator")
   meetingParticipants  MeetingParticipant[] @relation("ConnectMeetingParticipants")
+  faqsCreated          Faq[]                @relation("FaqCreatedBy")
+  faqsUpdated          Faq[]                @relation("FaqUpdatedBy")
 
   @@index([email])
   @@index([deletedAt])
@@ -224,8 +226,9 @@ model Destination {
   shopping         String                @default("[]")
   // string[] — numbered practical tips.
   travelTips       String                @default("[]")
-  // { question: string; answer: string }[] — same convention as Tour.faqs / Blog.faqs.
-  faqs             String                @default("[]")
+  // Centralized FAQ module — replaces the legacy `faqs` JSON column (removed
+  // in the Phase 6 cleanup once every page verified its cutover).
+  relatedFaqs      Faq[]
   // Curated editorial links to Blog rows — string[] of Blog ids, no automatic matching.
   relatedBlogIds   String                @default("[]")
   // Independent OG/Twitter overrides — buildMetadata() already supports these params.
@@ -274,8 +277,7 @@ model Activity {
   safetyTips         String                @default("[]")
   // string[]
   whatToCarry        String                @default("[]")
-  // { question: string; answer: string }[] — same convention as Tour.faqs / Blog.faqs.
-  faqs               String                @default("[]")
+  relatedFaqs        Faq[]
   metaTitle          String?
   metaDesc           String?
   ogImage            String?
@@ -342,7 +344,7 @@ model Tour {
   updatedAt          DateTime          @updatedAt
   bestTime           String?
   difficulty         String?
-  faqs               String            @default("[]")
+  relatedFaqs        Faq[]
   batches            String            @default("[]")
   happyCount         Int?
   highlights         String            @default("[]")
@@ -709,8 +711,7 @@ model Blog {
   // Curated pairings — { tourId: string; ctaSentence: string }[] — same shape
   // and convention as Tour.relatedTours. Not an automatic "more like this" feed.
   relatedTours     String    @default("[]")
-  // { question: string; answer: string }[] — same shape and convention as Tour.faqs.
-  faqs             String    @default("[]")
+  relatedFaqs      Faq[]
   // Short HTML paragraph rendered in a callout card near the top of the
   // article, right before the body — the featured-snippet-style "Quick Answer".
   quickAnswer      String?
@@ -940,6 +941,8 @@ model AboutContent {
   journeyKicker         String?
   journeyTitle          String?
   pressLabel            String?
+  faqsKicker            String?
+  faqsTitle             String?
   ctaTitle              String?
   ctaSubtitle           String?
   ctaImage              String?
@@ -982,6 +985,22 @@ model AboutStat {
 }
 
 model AboutValue {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String
+  icon      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Future-ready additional certifications/awards shown alongside the primary
+// J&K Tourism registration (which lives on SiteSettings, not here — not
+// duplicated) in the About page's Licenses & Certifications section.
+model Certification {
   id        String   @id @default(cuid())
   title     String
   subtitle  String
@@ -1110,16 +1129,79 @@ model ContactPromiseItem {
   @@index([isActive, sortOrder])
 }
 
-model ContactFaq {
-  id        String   @id @default(cuid())
-  question  String
-  answer    String
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum FaqStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// Fixed, singleton site sections a FAQ can be pinned to — distinct from the
+// many-to-many entity relations below (Tour/Destination/Blog/Campaign/Activity),
+// which cover "attached to one or more specific records" rather than "shown on
+// one specific page." FAQ = also listed in the main /faq browse index — the
+// single knowledge-base page where every published FAQ's full answer lives,
+// expandable inline (no separate per-question page).
+enum FaqPlacement {
+  HOME
+  ABOUT
+  CONTACT
+  FAQ
+  REVIEWS
+}
+
+model FaqCategory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  faqs        Faq[]
 
   @@index([isActive, sortOrder])
+}
+
+// Single source of truth for all FAQ content sitewide. Placement on fixed
+// sections is the `placements` array; placement on specific Tours/Destinations/
+// Blogs/Campaigns/Activities is a real many-to-many relation — a FAQ exists
+// exactly once and is referenced everywhere it's relevant, never duplicated.
+model Faq {
+  id             String         @id @default(cuid())
+  question       String
+  // Rendered on every page except this FAQ's own detail page — Homepage, Tour,
+  // Destination, About, Contact all show only this, never `answer`, so their
+  // FAQPage JSON-LD (built from the same data) never claims content that isn't
+  // actually visible on that page.
+  shortAnswer    String
+  // Full explanation — rendered (and schema-marked) only on /faq/[slug].
+  answer         String
+  slug           String         @unique
+  categoryId     String
+  category       FaqCategory    @relation(fields: [categoryId], references: [id])
+  status         FaqStatus      @default(DRAFT)
+  featured       Boolean        @default(false)
+  placements     FaqPlacement[]
+  sortOrder      Int            @default(0)
+  // Freshness/trust signal — several answers reference time-sensitive facts
+  // (ticket booking rules, hospital names, road conditions). Optional; not
+  // auto-updated by editing the answer, since a typo fix isn't a re-verification.
+  lastReviewedAt DateTime?
+  createdById    String?
+  createdBy      User?          @relation("FaqCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById    String?
+  updatedBy      User?          @relation("FaqUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tours          Tour[]
+  destinations   Destination[]
+  blogs          Blog[]
+  campaigns      Campaign[]
+  activities     Activity[]
+
+  @@index([status, categoryId, sortOrder])
 }
 
 model ContactOffice {
@@ -1176,7 +1258,7 @@ model Campaign {
   galleryTitle    String?
   gallery         String    @default("[]")
   faqsTitle       String?
-  faqs            String    @default("[]")
+  relatedFaqs     Faq[]
   finalTitle      String?
   finalSub        String?
   finalCta        String?
@@ -1231,6 +1313,11 @@ model SiteSettings {
   // don't each hardcode their own (previously drifting) copy.
   legalName                    String?
   tourismRegNumber             String?
+  // Issuing authority for tourismRegNumber (e.g. "Department of Tourism,
+  // Government of Jammu & Kashmir") — admin-entered rather than assumed, since
+  // only the business owner can confirm the exact official wording. Shown on
+  // About's Licenses & Certifications section only when populated.
+  tourismRegAuthority          String?
   addressLine1                 String?
   addressCity                  String?
   addressState                 String?

@@ -58,12 +58,8 @@ export interface ContactOfficeContent {
   legalName: string | null;
   tourismRegNumber: string | null;
   brandName: string | null;
-}
-
-export interface ContactFaqData {
-  id: string;
-  question: string;
-  answer: string;
+  /** Google Place ID for the real map embed — falls back to the decorative illustration when absent. */
+  placeId: string | null;
 }
 
 export interface ContactTestimonialData {

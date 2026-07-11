@@ -8,12 +8,20 @@ import type { ContactOfficeContent, ContactOfficeData } from '@/types/contact';
 
 interface ContactOfficeMapProps {
   content: ContactOfficeContent;
+  // Accepted for backwards compatibility with the parent's fetch, but the
+  // "Other Offices" card is currently hidden (single-office business) —
+  // intentionally unused below rather than removing the data plumbing.
   offices: ContactOfficeData[];
 }
 
-export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
+// Client-safe, HTTP-referrer-restricted key for the Maps Embed API — distinct
+// from the server-only GOOGLE_PLACES_API_KEY, which must never reach the
+// client (it has no referrer restriction and is used for billed API calls).
+const mapEmbedKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
+
+export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
   return (
-    <section className="mt-14 grid items-start gap-7 lg:grid-cols-[250px_1fr_240px]">
+    <section className="mt-14 grid items-start gap-7 lg:grid-cols-[40%_60%]">
       {/* Office info */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -74,7 +82,10 @@ export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
         </Link>
       </motion.div>
 
-      {/* Map (decorative illustration) */}
+      {/* Map — real Google Maps embed when a Place ID + embed key are
+          configured; falls back to the decorative illustration below
+          otherwise (never breaks the page, matches how the rest of the
+          Google integrations on this site degrade gracefully). */}
       <motion.div
         className="relative h-[330px] overflow-hidden rounded-2xl border border-border shadow-soft lg:h-[360px]"
         initial={{ opacity: 0, scale: 0.95 }}
@@ -82,6 +93,16 @@ export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
       >
+        {mapEmbedKey && content.placeId ? (
+          <iframe
+            src={`https://www.google.com/maps/embed/v1/place?key=${mapEmbedKey}&q=place_id:${content.placeId}`}
+            className="h-full w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title={`Map showing the location of ${content.brandName ?? 'Vertex Kashmir Holidays'}`}
+            aria-label={`Map showing the location of ${content.brandName ?? 'Vertex Kashmir Holidays'}`}
+          />
+        ) : (
         <svg viewBox="0 0 700 400" className="h-full w-full" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map showing the Vertex Kashmir Holidays head office">
           <rect width="700" height="400" fill="hsl(40 25% 95%)" />
           <ellipse cx="640" cy="120" rx="90" ry="70" fill="hsl(120 25% 86%)" />
@@ -118,42 +139,18 @@ export function ContactOfficeMap({ content, offices }: ContactOfficeMapProps) {
             <circle cx="0" cy="3" r="6" fill="#fff" />
           </g>
         </svg>
-        {content.mapLabel && (
+        )}
+        {/* This callout is positioned to match the illustration's fixed pin
+            coordinates — only meaningful over the SVG fallback, not the real
+            embed (Google places its own marker). */}
+        {!mapEmbedKey || !content.placeId ? content.mapLabel && (
           <div className="absolute left-[26%] top-[18%] rounded-xl bg-card px-4 py-3 shadow-card">
             <p className="text-[12.5px] font-bold">{content.mapLabel}</p>
             {content.mapSubLabel && <p className="text-[11px] text-muted-foreground">{content.mapSubLabel}</p>}
             <span className="absolute -bottom-1.5 left-8 h-3 w-3 rotate-45 bg-card" />
           </div>
-        )}
+        ) : null}
       </motion.div>
-
-      {/* Other offices */}
-      {offices.length > 0 && (
-        <motion.div
-          className="rounded-2xl border border-border bg-muted p-5"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <p className="text-[11.5px] font-bold tracking-[0.18em] text-foreground/80">OTHER OFFICES</p>
-          <ul className="mt-4 space-y-5 text-[12px]">
-            {offices.map((office) => (
-              <li key={office.id} className="flex items-start gap-2.5">
-                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <div className="leading-snug">
-                  <p className="text-[12.5px] font-bold">{office.name}</p>
-                  <p className="mt-0.5 text-muted-foreground">{office.address}</p>
-                  <p className="mt-0.5 text-muted-foreground">{office.hours}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-      )}
     </section>
   );
 }

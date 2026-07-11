@@ -32,6 +32,7 @@ const patchSchema = z.object({
   // Legal/business identity
   legalName: z.string().optional().nullable(),
   tourismRegNumber: z.string().optional().nullable(),
+  tourismRegAuthority: z.string().optional().nullable(),
   addressLine1: z.string().optional().nullable(),
   addressCity: z.string().optional().nullable(),
   addressState: z.string().optional().nullable(),

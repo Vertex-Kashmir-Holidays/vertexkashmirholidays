@@ -2,8 +2,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
 import type { CampaignFaq } from '@/types/campaign';
+import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
 
 interface CampaignFAQProps {
   title: string | null;
@@ -23,16 +23,8 @@ export function CampaignFAQ({ title, faqs }: CampaignFAQProps) {
           dangerouslySetInnerHTML={{ __html: title }}
         />
       )}
-      <div className="mt-9 space-y-3">
-        {faqs.map((faq, i) => (
-          <details key={i} className="glass rounded-2xl px-5 py-4">
-            <summary className="flex cursor-pointer items-center justify-between gap-4 text-[13.5px] font-bold text-foreground">
-              {faq.question}
-              <ChevronDown className="chev h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.4} />
-            </summary>
-            <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{faq.answer}</p>
-          </details>
-        ))}
+      <div className="mt-9">
+        <FaqPreviewList faqs={faqs} />
       </div>
     </section>
   );

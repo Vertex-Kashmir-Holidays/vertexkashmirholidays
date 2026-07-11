@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, Upload, Loader2, Eye,
   GripVertical, ImageIcon, X, Images,
-  CheckCircle2, XCircle, Save, Star, HelpCircle,
+  CheckCircle2, XCircle, Save, Star,
 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
@@ -30,7 +30,6 @@ const itineraryDaySchema = z.object({
 });
 
 const listItemSchema = z.object({ value: z.string() });
-const faqItemSchema = z.object({ question: z.string().default(""), answer: z.string().default("") });
 const galleryItemSchema = z.object({ url: z.string(), alt: z.string().default("") });
 const batchSchema = z.object({
   date: z.string().min(1, "Date required"),
@@ -107,7 +106,6 @@ const packageSchema = z.object({
     z.number().int().min(0).nullable(),
   ),
   highlights: z.array(listItemSchema).default([]),
-  faqs: z.array(faqItemSchema).default([]),
   perfectFor: z.array(listItemSchema).default([]),
   notIdealFor: z.array(listItemSchema).default([]),
   whyItineraryWorks: z.string().default(""),
@@ -171,7 +169,6 @@ export interface PackageFormDefaults {
   tourType?: string;
   happyCount?: number | null;
   highlights?: string[];
-  faqs?: { question: string; answer: string }[];
   perfectFor?: string[];
   notIdealFor?: string[];
   whyItineraryWorks?: string;
@@ -212,7 +209,7 @@ const SECTIONS = [
   { id: "itinerary", label: "Itinerary & Gallery", num: "3" },
   { id: "departures", label: "Departures", num: "4" },
   { id: "details", label: "Trip Details", num: "5" },
-  { id: "content", label: "Highlights & FAQs", num: "6" },
+  { id: "content", label: "Highlights", num: "6" },
   { id: "fit", label: "Trip Fit", num: "7" },
   { id: "logistics", label: "Trip Logistics", num: "8" },
   { id: "budget", label: "Budget & Planning", num: "9" },
@@ -437,7 +434,6 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
       tourType: defaults?.tourType ?? "",
       happyCount: defaults?.happyCount ?? null,
       highlights: toArrayField(defaults?.highlights, (v) => ({ value: v as string })) as { value: string }[],
-      faqs: (defaults?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer })),
       perfectFor: toArrayField(defaults?.perfectFor, (v) => ({ value: v as string })) as { value: string }[],
       notIdealFor: toArrayField(defaults?.notIdealFor, (v) => ({ value: v as string })) as { value: string }[],
       whyItineraryWorks: defaults?.whyItineraryWorks ?? "",
@@ -480,7 +476,6 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
   const { fields: galleryFields, append: addGalleryItem, remove: removeGalleryItem } = useFieldArray({ control, name: "gallery" });
   const { fields: batchFields, append: addBatch, remove: removeBatch } = useFieldArray({ control, name: "batches" });
   const { fields: highlightFields, append: addHighlight, remove: removeHighlight } = useFieldArray({ control, name: "highlights" });
-  const { fields: faqFields, append: addFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
   const { fields: perfectForFields, append: addPerfectFor, remove: removePerfectFor } = useFieldArray({ control, name: "perfectFor" });
   const { fields: notIdealForFields, append: addNotIdealFor, remove: removeNotIdealFor } = useFieldArray({ control, name: "notIdealFor" });
   const { fields: accommodationFields, append: addAccommodation, remove: removeAccommodation } = useFieldArray({ control, name: "accommodation" });
@@ -517,7 +512,6 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
       gallery: JSON.stringify(data.gallery.filter((g) => g.url).map((g) => ({ url: g.url, alt: g.alt }))),
       batches: JSON.stringify(data.batches),
       highlights: JSON.stringify(data.highlights.map((h) => h.value).filter(Boolean)),
-      faqs: JSON.stringify(data.faqs.filter((f) => f.question.trim() || f.answer.trim())),
       perfectFor: stringifyList(data.perfectFor.map((p) => p.value).filter(Boolean)),
       notIdealFor: stringifyList(data.notIdealFor.map((n) => n.value).filter(Boolean)),
       accommodation: stringifyList(data.accommodation.filter((a) => a.location.trim() || a.description.trim())),
@@ -1047,8 +1041,8 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           </div>
         </SectionCard>
 
-        {/* 6. Highlights & FAQs */}
-        <SectionCard id="content" title="6 · Highlights & FAQs">
+        {/* 6. Highlights */}
+        <SectionCard id="content" title="6 · Highlights">
           <div>
             <div className="flex items-center justify-between mb-3">
               <FieldLabel>Highlights</FieldLabel>
@@ -1076,40 +1070,6 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <FieldLabel>FAQs</FieldLabel>
-              <button
-                type="button"
-                onClick={() => addFaq({ question: "", answer: "" })}
-                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add FAQ
-              </button>
-            </div>
-            {faqFields.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">No FAQs added yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {faqFields.map((field, i) => (
-                  <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
-                    <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-2.5" />
-                    <div className="flex-1 space-y-2">
-                      <TextInput {...register(`faqs.${i}.question`)} placeholder="Question — e.g. Is this package customisable?" />
-                      <TextArea {...register(`faqs.${i}.answer`)} rows={2} placeholder="Answer..." />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFaq(i)}
-                      className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </SectionCard>
 
         {/* 7. Trip Fit */}

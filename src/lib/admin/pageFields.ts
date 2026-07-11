@@ -117,6 +117,11 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "subtitle", label: "Subtitle", type: "textarea", required: true },
     { key: "icon", label: "Icon", type: "text", required: true },
   ],
+  certifications: [
+    { key: "title", label: "Title", type: "text", required: true, placeholder: "e.g. ISO 9001 Certified" },
+    { key: "subtitle", label: "Subtitle", type: "textarea", required: true },
+    { key: "icon", label: "Icon", type: "text", required: true },
+  ],
   teamMembers: [
     { key: "name", label: "Name", type: "text", required: true },
     { key: "role", label: "Role", type: "text", required: true },
@@ -140,10 +145,6 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "subtitle", label: "Subtitle", type: "text", required: true },
     { key: "icon", label: "Icon", type: "text", required: true },
   ],
-  contactFaqs: [
-    { key: "question", label: "Question", type: "text", required: true },
-    { key: "answer", label: "Answer", type: "textarea", required: true },
-  ],
   contactOffices: [
     { key: "name", label: "Name", type: "text", required: true },
     { key: "address", label: "Address", type: "textarea", required: true },
@@ -153,6 +154,13 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
   blogCategories: [
     { key: "name", label: "Name", type: "text", required: true },
     { key: "slug", label: "Slug", type: "text", required: true, placeholder: "e.g. travel-tips" },
+    { key: "icon", label: "Icon (emoji)", type: "text" },
+  ],
+  // ── FAQ ──
+  faqCategories: [
+    { key: "name", label: "Name", type: "text", required: true },
+    { key: "slug", label: "Slug", type: "text", required: true, placeholder: "e.g. trip-planning" },
+    { key: "description", label: "Description", type: "textarea" },
     { key: "icon", label: "Icon (emoji)", type: "text" },
   ],
 };

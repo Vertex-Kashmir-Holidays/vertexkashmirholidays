@@ -1,19 +1,28 @@
 // src/app/(public)/about/page.tsx
 
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { AboutCTA } from '@/components/about/AboutCTA';
+import { AboutCertifications } from '@/components/about/AboutCertifications';
 import { AboutHero } from '@/components/about/AboutHero';
 import { AboutJourney } from '@/components/about/AboutJourney';
 import { AboutPress } from '@/components/about/AboutPress';
+import { AboutReviews } from '@/components/about/AboutReviews';
 import { AboutStats } from '@/components/about/AboutStats';
 import { AboutStory } from '@/components/about/AboutStory';
 import { AboutTeam } from '@/components/about/AboutTeam';
 import { AboutValues } from '@/components/about/AboutValues';
+import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
 import { sanitizePressHtml } from '@/lib/sanitize';
 import { formatBusinessAddress } from '@/lib/businessAddress';
-import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
+import { getApprovedReviewsPage, getReviewStats } from '@/lib/reviews';
+import { getGooglePlaceRating } from '@/lib/reviews/googlePlaces';
+import { parseTripadvisorWidget } from '@/lib/reviews/tripadvisorWidget';
+import { getFaqsForPlacement } from '@/lib/faqs';
+import { JsonLd, buildBreadcrumbList, buildFAQPage, buildOrganizationPeople } from '@/components/seo/JsonLd';
 
 export const revalidate = 300;
 
@@ -29,27 +38,50 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage() {
-  const [content, storyFeatures, stats, values, team, journey, press, settings] =
+  const [content, storyFeatures, stats, values, certifications, team, journey, press, settings, { items: reviews }, reviewStats, aboutFaqs] =
     await Promise.all([
       prisma.aboutContent.findUnique({ where: { id: 'singleton' } }),
       prisma.aboutStoryFeature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.aboutStat.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.aboutValue.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+      prisma.certification.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.teamMember.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.journeyMilestone.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.pressLogo.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
+      // Compact reuse of the same review infrastructure /reviews and /contact
+      // already use — no new collection system, just a smaller slice of it.
+      getApprovedReviewsPage({ page: 1, perPage: 3 }),
+      getReviewStats(),
+      // Centralized FAQ module — same Faq pool /contact and /faq draw from,
+      // filtered to whichever entries an admin placed on ABOUT.
+      getFaqsForPlacement('ABOUT'),
     ]);
   const businessAddress = formatBusinessAddress(settings) ?? settings?.siteAddress ?? null;
+  const googleRating = await getGooglePlaceRating(settings?.googlePlaceId);
+  const tripadvisorRatingWidget = parseTripadvisorWidget(settings?.tripadvisorRatingWidgetEmbed);
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: 'Home', url: SITE_URL },
     { name: 'About Us', url: `${SITE_URL}/about` },
   ]);
+  // Augments the sitewide Organization node — detected from the team's own
+  // role text (contains "Founder"), never asserted separately, so it can't
+  // drift from what the page itself shows.
+  const founder = team.find((m) => /founder/i.test(m.role));
+  const organizationPeopleJsonLd = buildOrganizationPeople({
+    founder: founder ? { name: founder.name, jobTitle: founder.role } : null,
+    employees: team.filter((m) => m.id !== founder?.id).map((m) => ({ name: m.name, jobTitle: m.role })),
+  });
+  // Short answers only — matches what FaqPreviewList actually renders below.
+  const faqJsonLd =
+    aboutFaqs.length > 0 ? buildFAQPage(aboutFaqs.map((f) => ({ question: f.question, answer: f.shortAnswer }))) : null;
 
   return (
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
+      {team.length > 0 && <JsonLd data={organizationPeopleJsonLd} />}
+      {faqJsonLd && <JsonLd data={faqJsonLd} />}
       <AboutHero
         data={{
           breadcrumb: content?.heroBreadcrumb ?? null,
@@ -99,6 +131,19 @@ export default async function AboutPage() {
           icon: v.icon,
         }))}
       />
+      <AboutCertifications
+        licenses={{
+          businessName: settings?.legalName ?? settings?.siteName ?? null,
+          registrationNumber: settings?.tourismRegNumber ?? null,
+          authority: settings?.tourismRegAuthority ?? null,
+        }}
+        certifications={certifications.map((c) => ({
+          id: c.id,
+          title: c.title,
+          subtitle: c.subtitle,
+          icon: c.icon,
+        }))}
+      />
       <AboutTeam
         heading={{
           kicker: content?.teamKicker ?? null,
@@ -128,6 +173,27 @@ export default async function AboutPage() {
         }))}
       />
       <AboutPress label={content?.pressLabel ?? null} items={press.map((p) => sanitizePressHtml(p.html))} />
+      {aboutFaqs.length > 0 && (
+        <section className="mx-auto max-w-[1300px] px-6 py-14">
+          <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
+          <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
+          <div className="mt-6">
+            <FaqPreviewList faqs={aboutFaqs} columns={2} />
+          </div>
+          <Link href="/faq" className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
+            View all FAQs
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+          </Link>
+        </section>
+      )}
+      <AboutReviews
+        googleRating={googleRating}
+        googleProfileUrl={settings?.googleReviews ?? null}
+        tripadvisorWidget={tripadvisorRatingWidget}
+        tripadvisorProfileUrl={settings?.tripadvisor ?? null}
+        siteStats={reviewStats}
+        reviews={reviews}
+      />
       <AboutCTA
         data={{
           title: content?.ctaTitle ?? null,

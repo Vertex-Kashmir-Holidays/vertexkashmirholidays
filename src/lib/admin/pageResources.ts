@@ -13,7 +13,7 @@ interface Delegate {
 }
 
 // Which page module (RBAC permission key) owns each resource.
-export type PageModule = "home" | "about" | "contact" | "blogs";
+export type PageModule = "home" | "about" | "contact" | "blogs" | "faqs";
 
 const RESOURCE_MODULE: Record<keyof typeof FIELD_DEFS, PageModule> = {
   heroSlides: "home",
@@ -26,14 +26,15 @@ const RESOURCE_MODULE: Record<keyof typeof FIELD_DEFS, PageModule> = {
   aboutStoryFeatures: "about",
   aboutStats: "about",
   aboutValues: "about",
+  certifications: "about",
   teamMembers: "about",
   journeyMilestones: "about",
   pressLogos: "about",
   contactHeroFeatures: "contact",
   contactPromiseItems: "contact",
-  contactFaqs: "contact",
   contactOffices: "contact",
   blogCategories: "blogs",
+  faqCategories: "faqs",
 };
 
 interface ResourceDef {
@@ -54,14 +55,15 @@ const DELEGATES: Record<keyof typeof FIELD_DEFS, Delegate> = {
   aboutStoryFeatures: prisma.aboutStoryFeature as unknown as Delegate,
   aboutStats: prisma.aboutStat as unknown as Delegate,
   aboutValues: prisma.aboutValue as unknown as Delegate,
+  certifications: prisma.certification as unknown as Delegate,
   teamMembers: prisma.teamMember as unknown as Delegate,
   journeyMilestones: prisma.journeyMilestone as unknown as Delegate,
   pressLogos: prisma.pressLogo as unknown as Delegate,
   contactHeroFeatures: prisma.contactHeroFeature as unknown as Delegate,
   contactPromiseItems: prisma.contactPromiseItem as unknown as Delegate,
-  contactFaqs: prisma.contactFaq as unknown as Delegate,
   contactOffices: prisma.contactOffice as unknown as Delegate,
   blogCategories: prisma.blogCategory as unknown as Delegate,
+  faqCategories: prisma.faqCategory as unknown as Delegate,
 };
 
 export const RESOURCES: Record<string, ResourceDef> = Object.fromEntries(

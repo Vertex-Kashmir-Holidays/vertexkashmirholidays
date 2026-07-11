@@ -13,7 +13,7 @@ import {
 } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { formatINR } from "@/lib/accents";
-import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
+import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
 import { TourDetailsHero } from "@/components/tours/TourDetailsHero";
 import { TourDetailsInclusions } from "@/components/tours/TourDetailsInclusions";
@@ -99,6 +99,12 @@ const getTour = cache(async (slug: string) => {
        where: { activity: { published: true } },
        include: { activity: { select: { id: true, slug: true, name: true, description: true, coverImage: true, duration: true } } },
      },
+     // Centralized FAQ module.
+     relatedFaqs: {
+       where: { status: "PUBLISHED" },
+       orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
+       select: { id: true, question: true, shortAnswer: true, slug: true },
+     },
    },
  });
 });
@@ -156,7 +162,8 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const inclusions = parseStringList(tour.inclusions);
  const exclusions = parseStringList(tour.exclusions);
  const highlights = parseStringList(tour.highlights);
- const faqs = parseJson<{ question: string; answer: string }[]>(tour.faqs, []);
+ // Only shortAnswer is ever selected/rendered here; the full answer is on /faq.
+ const faqs = tour.relatedFaqs;
  const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []);
  // Real, admin-entered scarcity — already captured for Event schema, now also
  // surfaced to visitors. Only ever shown when a staff member has actually
@@ -343,7 +350,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
      <JsonLd data={productJsonLd} />
      <JsonLd data={touristTripJsonLd} />
      {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
-     {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
+     {/* Short answer only — matches what's actually rendered on this page;
+         the full answer's schema lives on each FAQ's own /faq/[slug] page. */}
+     {faqs.length > 0 && (
+       <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />
+     )}
 
 
      <TourDetailsHero
@@ -441,8 +452,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
 
            {faqs.length > 0 && (
-             <section id="faqs" className="scroll-mt-16">
-               <TourDetailsFAQs faqs={faqs} />
+             <section id="faqs" className="scroll-mt-16 mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+               <h2 className="text-[17px] font-bold">FAQs</h2>
+               <div className="mt-4">
+                 <FaqPreviewList faqs={faqs} />
+               </div>
              </section>
            )}
 

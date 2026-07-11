@@ -32,7 +32,6 @@ const createSchema = z.object({
   pricingGuide: z.string().optional(),
   safetyTips: z.string().optional(),
   whatToCarry: z.string().optional(),
-  faqs: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
   ogImage: z.string().optional(),

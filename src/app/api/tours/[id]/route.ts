@@ -43,7 +43,6 @@ const patchSchema = z.object({
   tourType: z.string().optional().nullable(),
   happyCount: z.coerce.number().int().min(0).optional().nullable(),
   highlights: z.string().optional(),
-  faqs: z.string().optional(),
   perfectFor: z.string().optional(),
   notIdealFor: z.string().optional(),
   whyItineraryWorks: z.string().optional().nullable(),
