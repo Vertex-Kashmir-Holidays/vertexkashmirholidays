@@ -14,6 +14,7 @@ import { ContactTestimonials } from '@/components/contact/ContactTestimonials';
 import { ContactWhatsAppFloat } from '@/components/contact/ContactWhatsAppFloat';
 import { getDisplayReviews } from '@/lib/reviews';
 import { formatBusinessAddress } from '@/lib/businessAddress';
+import { JsonLd, buildBreadcrumbList, buildFAQPage } from '@/components/seo/JsonLd';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
 export const revalidate = 300;
@@ -109,9 +110,16 @@ export default async function ContactPage() {
 
   // Organization schema is injected sitewide in `(public)/layout.tsx` — not
   // duplicated here.
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: 'Home', url: SITE_URL },
+    { name: 'Contact', url: `${SITE_URL}/contact` },
+  ]);
+  const faqJsonLd = faqs.length > 0 ? buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.answer }))) : null;
 
   return (
     <div className="bg-background text-foreground">
+      <JsonLd data={breadcrumbJsonLd} />
+      {faqJsonLd && <JsonLd data={faqJsonLd} />}
       <ContactHero
         data={{
           breadcrumb: content?.heroBreadcrumb ?? null,

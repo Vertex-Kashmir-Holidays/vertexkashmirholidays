@@ -25,6 +25,7 @@ const siteUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  applicationName: "Vertex Kashmir Holidays",
   title: {
     template: "%s | Vertex Kashmir Holidays",
     default: "Vertex Kashmir Holidays — Premium Kashmir Tourism & Booking",

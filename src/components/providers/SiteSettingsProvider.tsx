@@ -9,6 +9,8 @@ export interface SiteSettingsValue {
   sitePhone: string | null;
   showAnnouncementBanner: boolean;
   announcementMessage: string | null;
+  /** Real customer photos used as social-proof avatars next to lead forms sitewide. */
+  formAvatars: string[];
 }
 
 const DEFAULTS: SiteSettingsValue = {
@@ -17,6 +19,7 @@ const DEFAULTS: SiteSettingsValue = {
   sitePhone: null,
   showAnnouncementBanner: false,
   announcementMessage: null,
+  formAvatars: [],
 };
 
 const Ctx = createContext<SiteSettingsValue>(DEFAULTS);

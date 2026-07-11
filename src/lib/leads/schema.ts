@@ -26,6 +26,9 @@ export const LEAD_SOURCES = [
   "about",
   "contact",
   "campaign",
+  "reviews",
+  "tour-category",
+  "faq",
 ] as const;
 
 export type LeadSourcePage = (typeof LEAD_SOURCES)[number];

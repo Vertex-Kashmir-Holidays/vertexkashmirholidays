@@ -26,12 +26,23 @@ function sharedCspDirectives(): string[] {
     "object-src 'none'",
     "frame-ancestors 'self'",
     "form-action 'self' https://www.facebook.com https://*.facebook.com",
-    "img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://*.facebook.com https://www.google.co.in https://*.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net",
-    "font-src 'self' data: https://fonts.gstatic.com",
+    // static.tacdn.com / *.tripadvisor.com / *.tripadvisor.in — TripAdvisor's
+    // live widget badge (/reviews page) loads its own logo/branding images
+    // from these hosts.
+    "img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://*.facebook.com https://www.google.co.in https://*.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://static.tacdn.com https://*.tripadvisor.com https://*.tripadvisor.in",
+    // static.tacdn.com — TripAdvisor's live widget CSS (/reviews page) declares
+    // its own @font-face rules pointing at custom webfonts on this host.
+    "font-src 'self' data: https://fonts.gstatic.com https://static.tacdn.com",
     // Inline styles are required by Tailwind and third-party UI libraries.
     // accounts.google.com — Google One Tap injects its own <link rel="stylesheet">
     // for the prompt UI (separate from the iframe it also renders).
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
+    // static.tacdn.com — TripAdvisor's live widget (/reviews page) injects its
+    // own <link rel="stylesheet"> for the badge's visual styling (confirmed by
+    // fetching the widget's actual script source — it calls
+    // document.createStyleSheet/creates a <link> pointing at
+    // static.tacdn.com/css2/... — without this host the script runs but the
+    // badge renders completely unstyled).
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://static.tacdn.com",
     // meet.jit.si / *.jit.si — legacy Jitsi
     // 8x8.vc / *.8x8.vc     — JaaS (8x8 Jitsi as a Service) conference iframe
     // googletagmanager.com   — noscript <iframe> fallback + GTM Preview debugger
@@ -65,8 +76,18 @@ function sharedCspDirectives(): string[] {
 // trust to anything a nonced script creates, regardless of host). Under the
 // static CSP (no nonce, no strict-dynamic) this list is the *only* thing that
 // allows these scripts to run, so it must be complete.
+// TripAdvisor's live reviews widget (/reviews page) loads a chain of scripts
+// across several hosts, fully traced by fetching each script's actual source
+// server-side rather than guessing from CSP errors one at a time:
+//   www.jscache.com/wejs?...
+//     -> www.tripadvisor.in/WidgetEmbed-excellent?... (creates a <link> for
+//        static.tacdn.com CSS — see style-src — and a <script> for:)
+//       -> static.tacdn.com/js3/build/concat/widget/cdswidgets_min-*.js
+//          (end of the chain — only creates an <a>, no further hosts)
+// www.tripadvisor.com is also allowed since one variant of the first hop
+// creates a script pointing there instead of tripadvisor.in directly.
 const SCRIPT_HOSTS =
-  "https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc https://accounts.google.com";
+  "https://*.razorpay.com https://challenges.cloudflare.com https://*.spline.design https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://*.jaas.8x8.vc https://accounts.google.com https://www.jscache.com https://www.tripadvisor.com https://www.tripadvisor.in https://static.tacdn.com";
 
 function buildCsp(nonce: string): string {
   const isDev = process.env.NODE_ENV !== "production";

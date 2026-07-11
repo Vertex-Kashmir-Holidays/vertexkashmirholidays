@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Star, ShieldCheck, Calendar, Lock, Users, Car, BadgeCheck, Clock, ArrowRight, type LucideIcon } from 'lucide-react';
+import { Star, ShieldCheck, Calendar, Lock, Users, Car, BadgeCheck, Clock, ArrowRight, Flame, type LucideIcon } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/brand';
 import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
 import { LeadForm } from '@/components/leads/LeadForm';
@@ -22,6 +22,8 @@ interface TourDetailsSidebarProps {
   tourSlug: string;
   /** Which lead forms to expose. Defaults to showing both. */
   formMode?: 'BOOKING_ONLY' | 'INQUIRY_ONLY' | 'BOTH';
+  /** Nearest upcoming departure, if any batches are configured. Only rendered as urgency when status is 'filling' — never fabricated. */
+  nextDeparture?: { date: string; seats: number; status: string } | null;
   bestTime: string;
   tourType: string;
   pickupDrop: string;
@@ -42,6 +44,7 @@ export function TourDetailsSidebar({
   tourName,
   tourSlug,
   formMode = 'BOTH',
+  nextDeparture,
   bestTime,
   tourType,
   pickupDrop,
@@ -75,10 +78,12 @@ export function TourDetailsSidebar({
   const helpHref = wa(`Hi! I'd like help with the "${tourName}" Kashmir tour. Please assist.`);
 
   const trustItems: { t: string; s?: string; Icon: LucideIcon }[] = [
-    { t: 'Lowest Price Guarantee', Icon: BadgeCheck },
+    { t: 'Transparent Pricing', s: 'No hidden charges', Icon: BadgeCheck },
     { t: 'Secure Payments', s: 'Powered by Razorpay', Icon: Lock },
     { t: 'Free Cancellation', s: 'T&C Apply', Icon: Clock },
   ];
+
+  const isFilling = nextDeparture?.status === 'filling' && nextDeparture.seats > 0;
 
   const infoCards: { t: string; s: string; Icon: LucideIcon }[] = [
     { t: 'Best Time to Visit', s: bestTime, Icon: Calendar },
@@ -127,6 +132,16 @@ export function TourDetailsSidebar({
             Book with {ADVANCE_PCT}% advance to lock your dates
           </p>
         </div>
+
+        {isFilling && nextDeparture && (
+          <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-orange-500/10 px-4 py-3 text-orange-700 dark:text-orange-400">
+            <Flame className="h-5 w-5 shrink-0" strokeWidth={2} />
+            <p className="text-[12px] font-semibold leading-snug">
+              Filling fast — only {nextDeparture.seats} seats left for{' '}
+              {new Date(nextDeparture.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            </p>
+          </div>
+        )}
 
         {/* Forms area — hidden on mobile (the sticky BookingMobileBar + modal
             handle phones); shown inline from lg up. */}

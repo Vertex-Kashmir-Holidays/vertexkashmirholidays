@@ -13,6 +13,7 @@ import { AboutTeam } from '@/components/about/AboutTeam';
 import { AboutValues } from '@/components/about/AboutValues';
 import { sanitizePressHtml } from '@/lib/sanitize';
 import { formatBusinessAddress } from '@/lib/businessAddress';
+import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
 
 export const revalidate = 300;
 
@@ -41,8 +42,14 @@ export default async function AboutPage() {
     ]);
   const businessAddress = formatBusinessAddress(settings) ?? settings?.siteAddress ?? null;
 
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: 'Home', url: SITE_URL },
+    { name: 'About Us', url: `${SITE_URL}/about` },
+  ]);
+
   return (
     <div className="bg-background text-foreground">
+      <JsonLd data={breadcrumbJsonLd} />
       <AboutHero
         data={{
           breadcrumb: content?.heroBreadcrumb ?? null,

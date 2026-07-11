@@ -1,0 +1,95 @@
+"use client";
+
+import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { Loader2, ShieldCheck } from "lucide-react";
+
+const inputClass =
+  "mt-1.5 w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
+
+export function MfaChallengeForm() {
+  const { update } = useSession();
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/admin/mfa/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Incorrect code. Please try again.");
+        setVerifying(false);
+        return;
+      }
+
+      // Same reason as the forced-password-change flow: a hard reload ensures
+      // the middleware sees the refreshed JWT immediately.
+      await update({ mfaPending: false });
+      window.location.assign("/admin/dashboard");
+    } catch {
+      setVerifying(false);
+      toast.error("Something went wrong. Please try again.");
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="mb-4 flex items-center gap-2 text-primary">
+          <ShieldCheck className="h-5 w-5" />
+          <h2 className="font-display font-bold text-foreground">
+            {useRecoveryCode ? "Enter a recovery code" : "Enter your code"}
+          </h2>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-foreground" htmlFor="mfa-challenge-code">
+            {useRecoveryCode ? "Recovery code" : "6-digit code"}
+          </label>
+          <input
+            id="mfa-challenge-code"
+            inputMode={useRecoveryCode ? "text" : "numeric"}
+            autoComplete="one-time-code"
+            maxLength={useRecoveryCode ? 14 : 6}
+            value={code}
+            onChange={(e) =>
+              setCode(
+                useRecoveryCode
+                  ? e.target.value.toUpperCase().slice(0, 14)
+                  : e.target.value.replace(/\D/g, "").slice(0, 6),
+              )
+            }
+            className={`${inputClass} text-center tracking-[0.3em]`}
+            placeholder={useRecoveryCode ? "XXXX-XXXX-XXXX" : "------"}
+            autoFocus
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setUseRecoveryCode((v) => !v);
+            setCode("");
+          }}
+          className="mt-3 text-xs font-semibold text-primary hover:underline"
+        >
+          {useRecoveryCode ? "Use your authenticator app instead" : "Use a recovery code instead"}
+        </button>
+      </div>
+      <button
+        type="submit"
+        disabled={verifying || (useRecoveryCode ? code.length < 14 : code.length !== 6)}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {verifying && <Loader2 className="h-4 w-4 animate-spin" />}
+        Verify &amp; continue
+      </button>
+    </form>
+  );
+}

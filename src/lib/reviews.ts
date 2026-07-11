@@ -61,3 +61,92 @@ export async function getDisplayReviews(limit = 12): Promise<ReviewDisplay[]> {
     rating: r.rating,
   }));
 }
+
+// ── Dedicated /reviews page ──────────────────────────────────────────────────
+// Same Review model + `approved` filter as getDisplayReviews above — this is a
+// directly-rendered public RSC page (like /tours, /blog), not a public API
+// endpoint, so simple offset pagination via a `?page=` query param is the
+// right fit rather than the cursor pattern used for public API routes.
+
+export type ReviewListItem = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  rating: number;
+  body: string;
+  createdAt: Date;
+  tourTitle: string | null;
+  tourSlug: string | null;
+};
+
+export async function getApprovedReviewsPage(opts: {
+  page: number;
+  perPage: number;
+  rating?: number;
+}): Promise<{ items: ReviewListItem[]; total: number }> {
+  const where = {
+    approved: true,
+    ...(opts.rating ? { rating: opts.rating } : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (opts.page - 1) * opts.perPage,
+      take: opts.perPage,
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        rating: true,
+        body: true,
+        createdAt: true,
+        tour: { select: { title: true, slug: true } },
+        user: { select: { image: true } },
+      },
+    }),
+    prisma.review.count({ where }),
+  ]);
+
+  return {
+    items: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      avatar: r.avatar ?? r.user?.image ?? null,
+      rating: r.rating,
+      body: r.body,
+      createdAt: r.createdAt,
+      tourTitle: r.tour?.title ?? null,
+      tourSlug: r.tour?.slug ?? null,
+    })),
+    total,
+  };
+}
+
+export type ReviewStats = {
+  average: number;
+  total: number;
+  distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+};
+
+/** Average rating, total count, and the 1–5 star breakdown — one groupBy query. */
+export async function getReviewStats(): Promise<ReviewStats> {
+  const grouped = await prisma.review.groupBy({
+    by: ["rating"],
+    where: { approved: true },
+    _count: true,
+  });
+
+  const distribution: ReviewStats["distribution"] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let total = 0;
+  let sum = 0;
+  for (const g of grouped) {
+    const rating = g.rating as 1 | 2 | 3 | 4 | 5;
+    distribution[rating] = g._count;
+    total += g._count;
+    sum += rating * g._count;
+  }
+
+  return { average: total > 0 ? Math.round((sum / total) * 10) / 10 : 0, total, distribution };
+}

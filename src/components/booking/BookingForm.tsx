@@ -23,6 +23,8 @@ import {
   Check,
   Wallet,
   CreditCard,
+  Star,
+  Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
@@ -76,6 +78,11 @@ export interface BookingFormProps {
   duration: number;
   minPersons?: number;
   coverImage: string | null;
+  rating?: number;
+  reviewCount?: number;
+  /** Nearest applicable departure's status/seats, when real batch data exists. Only rendered when status is 'filling'. */
+  departureStatus?: string | null;
+  departureSeats?: number | null;
   initialDate: string;
   initialTravellers: number;
   earliestDateFromBooking?: string;
@@ -95,6 +102,10 @@ export function BookingForm({
   duration,
   minPersons = 1,
   coverImage,
+  rating = 0,
+  reviewCount = 0,
+  departureStatus = null,
+  departureSeats = null,
   initialDate,
   initialTravellers,
   earliestDateFromBooking,
@@ -287,9 +298,24 @@ export function BookingForm({
               </span>
             </div>
             <div className="p-5">
-              <h3 className="font-display font-bold text-foreground text-base leading-snug mb-3">
+              <h3 className="font-display font-bold text-foreground text-base leading-snug mb-2">
                 {tourTitle}
               </h3>
+              {rating > 0 && reviewCount > 0 && (
+                <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground mb-3">
+                  <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" strokeWidth={0} />
+                  {rating.toFixed(1)}
+                  <span className="font-normal">· {reviewCount.toLocaleString("en-IN")} reviews</span>
+                </p>
+              )}
+              {departureStatus === "filling" && departureSeats != null && departureSeats > 0 && (
+                <div className="mb-3 flex items-center gap-2 rounded-lg bg-orange-500/10 px-3 py-2 text-orange-700 dark:text-orange-400">
+                  <Flame className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
+                  <p className="text-xs font-semibold leading-snug">
+                    Filling fast — only {departureSeats} seats left for this date
+                  </p>
+                </div>
+              )}
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Duration</dt>
@@ -339,7 +365,7 @@ export function BookingForm({
           <div className="bg-muted rounded-xl p-4 space-y-2.5">
             {[
               { Icon: ShieldCheck, text: "100% secure payment via Razorpay" },
-              { Icon: BadgeCheck, text: "Best price guarantee — we match any lower rate" },
+              { Icon: BadgeCheck, text: "Transparent pricing — no hidden charges" },
               { Icon: Lock, text: "Your data is encrypted and never shared" },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-center gap-2 text-xs text-muted-foreground">

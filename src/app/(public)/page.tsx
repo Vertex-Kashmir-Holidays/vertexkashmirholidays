@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { JsonLd, buildItemList } from "@/components/seo/JsonLd";
+import { JsonLd, buildItemList, buildWebSite } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { AboutSection } from "@/components/about/AboutSection";
 import { BlogSection } from "@/components/blog/BlogSection";
@@ -159,7 +159,8 @@ export default async function HomePage() {
     }),
     // Approved customer reviews power the "what travellers say" section — the
     // admin Review module is the single source of truth (no CMS testimonials).
-    getDisplayReviews(12),
+    // Capped at 4 — the full list lives on /reviews (linked via "View all").
+    getDisplayReviews(4),
     prisma.blog.findMany({
       where: { published: true },
       orderBy: { publishedAt: "desc" },
@@ -194,8 +195,11 @@ export default async function HomePage() {
   }
 
   // ── Structured data (JSON-LD) ────────────────────────────────────────────
-  // Organization + WebSite schema are injected sitewide in `(public)/layout.tsx`,
-  // not here — avoids duplicating the Organization node on every page.
+  // Organization schema is injected sitewide in `(public)/layout.tsx` — not
+  // duplicated here. WebSite schema is homepage-only per Google's structured
+  // data guidelines (it's the "preferred site name" signal), so it lives here
+  // and nowhere else.
+  const webSiteJsonLd = buildWebSite();
   const packagesJsonLd = buildItemList(
     tours.map((t) => ({
       name: t.title,
@@ -206,6 +210,7 @@ export default async function HomePage() {
 
   return (
     <div className="bg-background text-foreground">
+      <JsonLd data={webSiteJsonLd} />
       {tours.length > 0 && <JsonLd data={packagesJsonLd} />}
       <HeroSection
         content={{

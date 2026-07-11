@@ -18,6 +18,10 @@ const patchSchema = z.object({
   // Admin-set password reset (e.g. the employee forgot theirs). When provided,
   // it is re-hashed and the user is forced to change it on next login.
   password: z.string().min(8, "Password must be at least 8 characters").max(100).optional(),
+  // Lockout escape hatch: clears the target's TOTP secret + recovery codes,
+  // forcing re-enrollment on their next login (e.g. lost device AND lost
+  // recovery codes). No-op if MFA wasn't enabled.
+  resetMfa: z.boolean().optional(),
 });
 
 /** Edit a user's profile fields and/or role. */
@@ -46,8 +50,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Cannot change your own role" }, { status: 400 });
   }
 
-  // Only a SUPERADMIN may grant SUPERADMIN access or modify another superadmin.
-  const touchesSuperadmin = data.role === "SUPERADMIN" || existing.role === "SUPERADMIN";
+  // Only a SUPERADMIN may grant SUPERADMIN access, modify another superadmin,
+  // or reset a superadmin's MFA.
+  const touchesSuperadmin =
+    data.role === "SUPERADMIN" || existing.role === "SUPERADMIN";
   if (touchesSuperadmin && session.user?.role !== "SUPERADMIN") {
     return NextResponse.json(
       { error: "Only a Super Admin can manage Super Admin access" },
@@ -56,6 +62,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   try {
+    if (data.resetMfa) {
+      await prisma.mfaRecoveryCode.deleteMany({ where: { userId: id } });
+    }
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
@@ -67,6 +77,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(data.password
           ? { passwordHash: await bcrypt.hash(data.password, 12), mustChangePassword: true }
           : {}),
+        ...(data.resetMfa ? { mfaSecret: null, mfaEnabledAt: null } : {}),
       },
       select: { id: true, name: true, email: true, phone: true, role: true, bookingConversionPct: true },
     });

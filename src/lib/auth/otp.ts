@@ -67,33 +67,6 @@ export async function cleanupExpiredOtps(): Promise<void> {
   }
 }
 
-// ── Lightweight in-memory rate limiter ───────────────────────────────────────
-//
-// Defence-in-depth on top of the per-email cooldown enforced in the DB. Keyed by
-// IP+purpose. Note: in-memory state is per-instance and resets on redeploy, so
-// the DB cooldown remains the authoritative anti-spam guard.
-
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-/** Returns false when `key` has exceeded `limit` requests within `windowMs`. */
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const entry = hits.get(key);
-
-  if (!entry || entry.resetAt <= now) {
-    hits.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (entry.count >= limit) return false;
-
-  entry.count += 1;
-  return true;
-}
-
-/** Extracts a best-effort client IP from forwarding headers. */
-export function clientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]?.trim() || "unknown";
-  return req.headers.get("x-real-ip")?.trim() || "unknown";
-}
+// Rate limiting for these OTP routes uses the shared Upstash-backed limiter in
+// src/lib/ratelimit.ts (durable across serverless instances), not a
+// per-process limiter defined here.

@@ -23,6 +23,14 @@ model User {
   // amount. Optional; only meaningful for SALES staff. Kept on the user so future
   // monthly salary/commission reports can compute payouts per salesperson.
   bookingConversionPct Float?
+  // TOTP MFA — mandatory for SUPERADMIN/ADMIN (see src/lib/rbac.ts requiresMfa).
+  // mfaSecret is AES-256-GCM ciphertext (src/lib/security/mfaCrypto.ts), never
+  // the plaintext base32 secret — verification needs it back, so it's encrypted
+  // rather than hashed. mfaEnabledAt null = not yet enrolled/confirmed; a
+  // freshly-(re)generated pending secret is stored here before confirmation too.
+  mfaSecret            String?
+  mfaEnabledAt         DateTime?
+  recoveryCodes        MfaRecoveryCode[]
   deletedAt            DateTime? // soft-delete marker; non-null = hidden + login blocked
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
@@ -42,6 +50,20 @@ model User {
 
   @@index([email])
   @@index([deletedAt])
+}
+
+// One-time recovery codes for staff TOTP MFA — issued once at enrollment
+// confirmation, bcrypt-hashed like passwordHash/EmailOtp.codeHash. usedAt
+// non-null means the code is burned and can never be reused.
+model MfaRecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 // In-app notification for a staff user (e.g. a lead being assigned/reassigned).
@@ -374,73 +396,73 @@ model TourDestination {
 }
 
 model Booking {
-  id              String           @id @default(cuid())
+  id                 String              @id @default(cuid())
   // Optional: lead-converted bookings have no tour and no Razorpay order.
-  tourId          String?
-  userId          String?
-  status          BookingStatus    @default(PENDING)
-  razorpayOrderId String?          @unique
-  razorpayPayId   String?
+  tourId             String?
+  userId             String?
+  status             BookingStatus       @default(PENDING)
+  razorpayOrderId    String?             @unique
+  razorpayPayId      String?
   // Canonical total booking amount (negotiated amount for leads; package price
   // for direct website bookings). Financials always derive from this + payments.
-  amount          Float
-  currency        String           @default("INR")
+  amount             Float
+  currency           String              @default("INR")
   // Customer's chosen online-payment option: "ADVANCE" (10% now) or "FULL".
   // Amounts are always derived server-side; this only records the choice.
-  paymentOption   String?
-  travelDate      DateTime
-  travelEndDate   DateTime?
-  travellers      Int              @default(1)
-  guestName       String
-  guestEmail      String?
-  guestPhone      String
+  paymentOption      String?
+  travelDate         DateTime
+  travelEndDate      DateTime?
+  travellers         Int                 @default(1)
+  guestName          String
+  guestEmail         String?
+  guestPhone         String
   // Customer-supplied billing address + free-text custom requirements (direct
   // website bookings). Optional; lead-converted bookings leave these null.
-  address         String?
-  requirements    String?
+  address            String?
+  requirements       String?
   // Discount applied to the booking total. type: "FLAT" | "PERCENT".
-  discountType    String?
-  discountValue   Float            @default(0)
+  discountType       String?
+  discountValue      Float               @default(0)
   // Free-form inclusion tags (e.g. Meals, Cab) stored as a JSON string array.
-  inclusions      String           @default("[]")
+  inclusions         String              @default("[]")
   // Once locked, services can no longer be added/edited/deleted.
-  servicesLocked  Boolean          @default(false)
+  servicesLocked     Boolean             @default(false)
   // Assigned driver/vehicle, added by staff after services are locked. Editable
   // only until one day before travelDate. driverAddedAt non-null = details exist.
-  driverName      String?
-  driverPhone     String?
-  vehicleNumber   String?
-  vehicleName     String?
-  driverAddedAt   DateTime?
+  driverName         String?
+  driverPhone        String?
+  vehicleNumber      String?
+  vehicleName        String?
+  driverAddedAt      DateTime?
   // Soft-delete marker. Non-null = hidden from all listings/reports but the row
   // (and its payments/services) is retained. Permanent delete removes the row.
-  deletedAt       DateTime?
-  ipAddress       String?
-  userAgent       String?
+  deletedAt          DateTime?
+  ipAddress          String?
+  userAgent          String?
   // ── Marketing attribution — only ever set on DIRECT website bookings (no
   // Lead involved). Lead-converted bookings instead get these copied verbatim
   // from their originating Lead at conversion time (never captured twice).
   // Same shared field list/schema as Lead — see src/lib/attribution.ts.
-  utmSource       String?
-  utmMedium       String?
-  utmCampaign     String?
-  utmTerm         String?
-  utmContent      String?
-  gclid           String?
-  gbraid          String?
-  wbraid          String?
-  fbclid          String?
-  msclkid         String?
-  landingPage     String?
-  referrer        String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  tour            Tour?            @relation(fields: [tourId], references: [id])
-  user            User?            @relation(fields: [userId], references: [id])
-  leads           Lead[]
-  payments        BookingPayment[]
-  services        BookingService[]
-  itinerary       Itinerary?
+  utmSource          String?
+  utmMedium          String?
+  utmCampaign        String?
+  utmTerm            String?
+  utmContent         String?
+  gclid              String?
+  gbraid             String?
+  wbraid             String?
+  fbclid             String?
+  msclkid            String?
+  landingPage        String?
+  referrer           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tour               Tour?               @relation(fields: [tourId], references: [id])
+  user               User?               @relation(fields: [userId], references: [id])
+  leads              Lead[]
+  payments           BookingPayment[]
+  services           BookingService[]
+  itinerary          Itinerary?
   offlineConversions OfflineConversion[]
 
   @@index([status])
@@ -520,53 +542,53 @@ model PaymentAudit {
 }
 
 model Lead {
-  id               String         @id @default(cuid())
-  name             String
-  phone            String
-  email            String?
-  source           LeadSource     @default(WEBSITE)
+  id                 String              @id @default(cuid())
+  name               String
+  phone              String
+  email              String?
+  source             LeadSource          @default(WEBSITE)
   // Free-text page/campaign tag (home, tours, blog-detail, …). The LeadSource
   // enum captures the marketing channel; this captures which on-site form fired.
-  sourcePage       String?
-  category         LeadCategory?
-  adults           Int            @default(1)
-  children         Int?
-  startDate        DateTime?
-  endDate          DateTime?
-  attachments      String         @default("[]")
-  notes            String?
-  followUpAt       DateTime?
-  assignedToId     String?
-  assignedTo       User?          @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  status           LeadStatus     @default(NEW)
-  bookingId        String?
-  booking          Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  negotiatedAmount Float?
-  tokenAmount      Float?
+  sourcePage         String?
+  category           LeadCategory?
+  adults             Int                 @default(1)
+  children           Int?
+  startDate          DateTime?
+  endDate            DateTime?
+  attachments        String              @default("[]")
+  notes              String?
+  followUpAt         DateTime?
+  assignedToId       String?
+  assignedTo         User?               @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  status             LeadStatus          @default(NEW)
+  bookingId          String?
+  booking            Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  negotiatedAmount   Float?
+  tokenAmount        Float?
   // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
-  locked           Boolean        @default(false)
-  ipAddress        String?
-  userAgent        String?
+  locked             Boolean             @default(false)
+  ipAddress          String?
+  userAgent          String?
   // ── Marketing attribution — captured once at submission, permanent from then
   // on. See src/lib/attribution.ts (single shared field list/schema). Copied
   // verbatim onto Booking at conversion time (src/app/api/leads/[id]/convert) —
   // never re-derived or duplicated as separate logic.
-  utmSource        String?
-  utmMedium        String?
-  utmCampaign      String?
-  utmTerm          String?
-  utmContent       String?
-  gclid            String?
-  gbraid           String?
-  wbraid           String?
-  fbclid           String?
-  msclkid          String?
-  landingPage      String?
-  referrer         String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  activities       LeadActivity[]
-  itinerary        Itinerary?
+  utmSource          String?
+  utmMedium          String?
+  utmCampaign        String?
+  utmTerm            String?
+  utmContent         String?
+  gclid              String?
+  gbraid             String?
+  wbraid             String?
+  fbclid             String?
+  msclkid            String?
+  landingPage        String?
+  referrer           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  activities         LeadActivity[]
+  itinerary          Itinerary?
   offlineConversions OfflineConversion[]
 
   @@index([status])
@@ -1010,6 +1032,18 @@ model PressLogo {
   @@index([isActive, sortOrder])
 }
 
+model ReviewsContent {
+  id              String   @id @default("singleton")
+  heroBreadcrumb  String?
+  heroTitle       String?
+  heroSubtitle    String?
+  heroImage       String?
+  heroImageMobile String?
+  ogImage         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model ContactContent {
   id                 String   @id @default("singleton")
   heroBreadcrumb     String?
@@ -1159,39 +1193,51 @@ model Campaign {
 }
 
 model SiteSettings {
-  id                     String   @id @default("singleton")
-  siteName               String   @default("Vertex Kashmir Holidays")
-  siteTagline            String?
-  siteEmail              String?
-  sitePhone              String?
-  siteAddress            String?
-  whatsapp               String?
-  facebook               String?
-  instagram              String?
-  twitter                String?
-  youtube                String?
-  googleReviews          String?
-  tripadvisor            String?
-  metaTitle              String?
-  metaDesc               String?
-  ogImage                String?
+  id                           String   @id @default("singleton")
+  siteName                     String   @default("Vertex Kashmir Holidays")
+  siteTagline                  String?
+  siteEmail                    String?
+  sitePhone                    String?
+  siteAddress                  String?
+  whatsapp                     String?
+  facebook                     String?
+  instagram                    String?
+  twitter                      String?
+  youtube                      String?
+  googleReviews                String?
+  tripadvisor                  String?
+  // Canonical Google Business Profile / Maps listing URL — a stronger
+  // same-entity signal than the googleReviews share-link above, included in
+  // the TravelAgency schema's sameAs array (src/app/(public)/layout.tsx).
+  googleBusinessProfile        String?
+  // Live review integrations for the /reviews page — googlePlaceId feeds the
+  // Places API lookup (src/lib/reviews/googlePlaces.ts). The two TripAdvisor
+  // fields hold raw embed snippets pasted from TripAdvisor's own widget
+  // generator (parsed at render time — see src/lib/reviews/tripadvisorWidget.ts),
+  // one per placement since each uses a different widget type/size.
+  googlePlaceId                String?
+  tripadvisorHeroWidgetEmbed   String?
+  tripadvisorRatingWidgetEmbed String?
+  metaTitle                    String?
+  metaDesc                     String?
+  ogImage                      String?
   // Configurable GST percentage options offered when recording non-cash payments,
   // stored as a JSON number array so they can change without a schema migration.
-  gstRates               String   @default("[5,16,18]")
-  showAnnouncementBanner Boolean  @default(false)
-  announcementMessage    String?
+  gstRates                     String   @default("[5,16,18]")
+  showAnnouncementBanner       Boolean  @default(false)
+  announcementMessage          String?
   // Legal/business identity — distinct from the brand-level siteName/siteAddress
   // above. Used in JSON-LD, legal pages, and generated PDFs/itineraries so those
   // don't each hardcode their own (previously drifting) copy.
-  legalName              String?
-  tourismRegNumber       String?
-  addressLine1           String?
-  addressCity            String?
-  addressState           String?
-  addressPincode         String?
-  addressCountry         String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  legalName                    String?
+  tourismRegNumber             String?
+  addressLine1                 String?
+  addressCity                  String?
+  addressState                 String?
+  addressPincode               String?
+  addressCountry               String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 }
 
 enum Role {

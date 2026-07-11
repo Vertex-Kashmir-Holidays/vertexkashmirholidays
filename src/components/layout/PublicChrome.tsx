@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import type { TourCategory } from '@prisma/client';
 import { Footer, type FooterSettings } from '@/components/layout/Footer';
 import { Navbar } from '@/components/layout/Navbar';
 import { AuroraBackground } from '@/components/ui/AuroraBackground';
@@ -13,9 +14,10 @@ interface PublicChromeProps {
   settings: FooterSettings | null;
   strip: StripBannerData | null;
   promoBanners: SlotBanner[];
+  tourCategories: TourCategory[];
 }
 
-export function PublicChrome({ children, settings, strip, promoBanners }: PublicChromeProps) {
+export function PublicChrome({ children, settings, strip, promoBanners, tourCategories }: PublicChromeProps) {
   const pathname = usePathname();
 
   // Adventure *detail* pages (/adventures/[slug]) are full-page microsites that
@@ -39,7 +41,7 @@ export function PublicChrome({ children, settings, strip, promoBanners }: Public
       {/* PROMO banners for the current page (path-filtered). Placed just above
           the footer so it's consistent site-wide and never fights a page hero. */}
       <PromoBannerSlot banners={promoBanners} />
-      <Footer settings={settings} />
+      <Footer settings={settings} tourCategories={tourCategories} />
     </>
   );
 }

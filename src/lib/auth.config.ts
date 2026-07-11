@@ -1,5 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
-import { isStaff, type Role } from "@/lib/rbac";
+import { isStaff, requiresMfa, type Role } from "@/lib/rbac";
 
 export const authConfig = {
   pages: {
@@ -35,9 +35,16 @@ export const authConfig = {
       if (!auth?.user) return false;
 
       if (isAdminPath) {
-        if (isStaff(role)) return true;
-        // Logged-in customer trying to reach the admin panel → send to their area.
-        return Response.redirect(new URL("/account", nextUrl.origin));
+        if (!isStaff(role)) {
+          // Logged-in customer trying to reach the admin panel → send to their area.
+          return Response.redirect(new URL("/account", nextUrl.origin));
+        }
+        // SUPERADMIN/ADMIN must clear the TOTP challenge (enroll or verify)
+        // before reaching anything else in the admin panel.
+        if (auth.user.mfaPending && pathname !== "/admin/mfa") {
+          return Response.redirect(new URL("/admin/mfa", nextUrl.origin));
+        }
+        return true;
       }
 
       // isAccountPath: any authenticated user may access their account area, but a
@@ -54,19 +61,24 @@ export const authConfig = {
         token.role = user.role;
         token.id = user.id;
         token.mustChangePassword = user.mustChangePassword ?? false;
+        // Derived purely from role, not from whether they've enrolled yet —
+        // an unenrolled SUPERADMIN/ADMIN is still "pending" (forced to the
+        // enroll view of /admin/mfa); an enrolled one is "pending" until they
+        // pass the challenge. Both cases start true on every fresh sign-in.
+        token.mfaPending = requiresMfa(user.role);
       }
 
-      // After the customer sets a new password the client calls update() so the
-      // JWT (and thus the middleware gate) immediately reflects the cleared flag.
-      if (
-        trigger === "update" &&
-        session &&
-        typeof session === "object" &&
-        "mustChangePassword" in session
-      ) {
-        token.mustChangePassword = Boolean(
-          (session as { mustChangePassword?: unknown }).mustChangePassword,
-        );
+      // After the customer sets a new password, or staff clear their MFA
+      // challenge, the client calls update() so the JWT (and thus the
+      // middleware gate) immediately reflects the cleared flag.
+      if (trigger === "update" && session && typeof session === "object") {
+        const patch = session as { mustChangePassword?: unknown; mfaPending?: unknown };
+        if ("mustChangePassword" in patch) {
+          token.mustChangePassword = Boolean(patch.mustChangePassword);
+        }
+        if ("mfaPending" in patch) {
+          token.mfaPending = Boolean(patch.mfaPending);
+        }
       }
 
       return token;
@@ -77,6 +89,7 @@ export const authConfig = {
         session.user.role = token.role as Role;
         session.user.id = token.id as string;
         session.user.mustChangePassword = Boolean(token.mustChangePassword);
+        session.user.mfaPending = Boolean(token.mfaPending);
       }
 
       return session;
