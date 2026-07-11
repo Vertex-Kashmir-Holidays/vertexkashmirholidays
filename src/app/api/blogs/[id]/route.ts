@@ -21,7 +21,6 @@ const patchSchema = z.object({
   featured: z.boolean().optional(),
   trending: z.boolean().optional(),
   relatedTours: z.string().optional(),
-  faqs: z.string().optional(),
   quickAnswer: z.string().optional().nullable(),
   published: z.boolean().optional(),
   publishedAt: z.string().optional().nullable(),

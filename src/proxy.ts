@@ -48,7 +48,8 @@ function sharedCspDirectives(): string[] {
     // googletagmanager.com   — noscript <iframe> fallback + GTM Preview debugger
     // tagassistant.google.com — GTM Preview / Tag Assistant debugger iframe
     // accounts.google.com    — Google One Tap's prompt UI renders in its own iframe
-    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://www.facebook.com https://*.facebook.com https://accounts.google.com",
+    // www.google.com          — Google Maps Embed API iframe on /contact
+    "frame-src 'self' https://*.razorpay.com https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://my.spline.design https://www.googletagmanager.com https://tagassistant.google.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc https://www.facebook.com https://*.facebook.com https://accounts.google.com https://www.google.com",
     // wss://meet.jit.si — Jitsi XMPP-over-WebSocket signalling
     // wss://*.8x8.vc    — JaaS WebSocket signalling
     // tagassistant.google.com — GTM Preview XHR channel

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DestinationForm } from "@/components/admin/destinations/DestinationForm";
-import { parseJson } from "@/lib/tours/content";
 import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } from "@/lib/destinations/content";
 
 type Props = { params: Promise<{ id: string }> };
@@ -67,7 +66,6 @@ export default async function EditDestinationPage({ params }: Props) {
           localFood: parseFoodOrShop(dest.localFood),
           shopping: parseFoodOrShop(dest.shopping),
           travelTips: parseStringList(dest.travelTips),
-          faqs: parseJson<{ question: string; answer: string }[]>(dest.faqs, []),
           metaTitle: dest.metaTitle ?? "",
           metaDesc: dest.metaDesc ?? "",
           ogImage: dest.ogImage ?? "",

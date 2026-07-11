@@ -72,7 +72,6 @@ export default async function EditPackagePage({ params }: Props) {
     tourType: tour.tourType ?? "",
     happyCount: tour.happyCount,
     highlights: parseStringList(tour.highlights),
-    faqs: parseJson<{ question: string; answer: string }[]>(tour.faqs, []),
     perfectFor: parseStringList(tour.perfectFor),
     notIdealFor: parseStringList(tour.notIdealFor),
     whyItineraryWorks: tour.whyItineraryWorks ?? "",

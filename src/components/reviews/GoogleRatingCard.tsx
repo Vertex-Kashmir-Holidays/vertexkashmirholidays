@@ -8,7 +8,7 @@ import { GoogleMark } from "@/components/reviews/GoogleMark";
 // Google review-cards section).
 export function GoogleRatingCard({ data, profileUrl }: { data: GooglePlaceRating; profileUrl?: string | null }) {
   return (
-    <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-6 text-center shadow-soft sm:w-64 sm:shrink-0">
+    <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-6 text-center shadow-soft sm:min-w-0 sm:flex-1 sm:basis-0">
       <GoogleMark className="h-6 w-6 shrink-0" />
       <p className="font-display text-4xl font-bold text-foreground">{data.rating.toFixed(1)}</p>
       <div className="flex gap-0.5 text-amber-400" aria-hidden="true">

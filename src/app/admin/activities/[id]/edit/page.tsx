@@ -61,7 +61,6 @@ export default async function EditActivityPage({ params }: Props) {
           pricingGuide: activity.pricingGuide ?? "",
           safetyTips: activity.safetyTips ?? "[]",
           whatToCarry: activity.whatToCarry ?? "[]",
-          faqs: activity.faqs ?? "[]",
           ogImage: activity.ogImage ?? "",
           metaTitle: activity.metaTitle ?? "",
           metaDesc: activity.metaDesc ?? "",

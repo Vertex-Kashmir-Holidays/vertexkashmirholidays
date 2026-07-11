@@ -46,6 +46,19 @@ export interface AboutValueData {
   icon: string;
 }
 
+export interface CertificationData {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+}
+
+export interface LicensesData {
+  businessName: string | null;
+  registrationNumber: string | null;
+  authority: string | null;
+}
+
 export interface TeamMemberData {
   id: string;
   name: string;

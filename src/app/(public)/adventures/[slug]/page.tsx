@@ -13,7 +13,6 @@ import type {
   CampaignActivity,
   CampaignBatch,
   CampaignData,
-  CampaignFaq,
   CampaignHighlight,
   CampaignItineraryItem,
   CampaignTestimonial,
@@ -58,7 +57,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CampaignPage({ params }: PageProps) {
   const { slug } = await params;
   const [c, s, reviews] = await Promise.all([
-    prisma.campaign.findUnique({ where: { slug } }),
+    prisma.campaign.findUnique({
+      where: { slug },
+      include: {
+        relatedFaqs: {
+          where: { status: 'PUBLISHED' },
+          orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
+          select: { id: true, question: true, shortAnswer: true, slug: true },
+        },
+      },
+    }),
     prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
     getDisplayReviews(6),
   ]);
@@ -131,7 +139,7 @@ export default async function CampaignPage({ params }: PageProps) {
     gallery: parse<string[]>(c.gallery, []),
     testimonials,
     faqsTitle: sanitizeInlineHtml(c.faqsTitle),
-    faqs: parse<CampaignFaq[]>(c.faqs, []),
+    faqs: c.relatedFaqs,
     finalTitle: c.finalTitle,
     finalSub: c.finalSub,
     finalCta: c.finalCta,
@@ -162,7 +170,7 @@ export default async function CampaignPage({ params }: PageProps) {
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={productLd} />
       {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
-      {data.faqs.length > 0 && <JsonLd data={buildFAQPage(data.faqs)} />}
+      {data.faqs.length > 0 && <JsonLd data={buildFAQPage(data.faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
       <CampaignPageClient campaign={data} footerSettings={footerSettings} />
     </>
   );

@@ -31,7 +31,6 @@ const patchSchema = z.object({
   pricingGuide: z.string().optional().nullable(),
   safetyTips: z.string().optional(),
   whatToCarry: z.string().optional(),
-  faqs: z.string().optional(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),

@@ -21,7 +21,7 @@ import {
   buildTouristAttraction,
   JsonLd,
 } from "@/components/seo/JsonLd";
-import { TourDetailsFAQs } from "@/components/tours/TourDetailsFAQs";
+import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
 import { formatINR } from "@/lib/accents";
 import { prisma } from "@/lib/prisma";
@@ -58,6 +58,11 @@ const getActivity = cache(async (slug: string) => {
             select: { id: true, slug: true, name: true, tagline: true, coverImage: true, relatedBlogIds: true },
           },
         },
+      },
+      relatedFaqs: {
+        where: { status: "PUBLISHED" },
+        orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
+        select: { id: true, question: true, shortAnswer: true, slug: true },
       },
     },
   });
@@ -97,7 +102,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   const suitableFor = parseJson<string[]>(activity.suitableFor, []);
   const safetyTips = parseJson<string[]>(activity.safetyTips, []);
   const whatToCarry = parseJson<string[]>(activity.whatToCarry, []);
-  const faqs = parseJson<{ question: string; answer: string }[]>(activity.faqs, []);
+  const faqs = activity.relatedFaqs;
 
   const relatedDestinations = activity.destinations.map((d) => d.destination);
 
@@ -188,7 +193,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={attractionJsonLd} />
       {gallery.length > 0 && buildImageObjectList(gallery).map((img, i) => <JsonLd key={i} data={img} />)}
-      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
+      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
 
       <SecondaryHero
         image={activity.coverImage ?? "/hero/gulmarg-lg.webp"}
@@ -285,7 +290,14 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         <DestinationRelatedBlogs posts={relatedBlogs} />
 
         {/* 14. FAQs — moved to last */}
-        <TourDetailsFAQs faqs={faqs} />
+        {faqs.length > 0 && (
+          <section id="faqs" className="scroll-mt-16 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+            <h2 className="text-[17px] font-bold">FAQs</h2>
+            <div className="mt-4">
+              <FaqPreviewList faqs={faqs} />
+            </div>
+          </section>
+        )}
 
         {/* 19. Final CTA — already surfaced via the Hero's HeroLeadCard ("Enquire Now") */}
       </main>

@@ -9,13 +9,13 @@ import { JsonLd, buildBreadcrumbList, buildBlogPosting, buildFAQPage } from '@/c
 import { formatINR } from '@/lib/accents';
 import { imgSrc } from '@/lib/placeholder';
 import { BlogPostBody } from '@/components/blog/BlogPostBody';
-import { BlogPostFAQs } from '@/components/blog/BlogPostFAQs';
+import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
 import { BlogPostQuickAnswer } from '@/components/blog/BlogPostQuickAnswer';
 import { BlogPostHero } from '@/components/blog/BlogPostHero';
 import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
 import { BlogPostSidebar } from '@/components/blog/BlogPostSidebar';
 import { TourDetailsRelatedTours } from '@/components/tours/TourDetailsRelatedTours';
-import { parseRelatedTours, parseJson } from '@/lib/tours/content';
+import { parseRelatedTours } from '@/lib/tours/content';
 
 export const revalidate = 300;
 
@@ -64,7 +64,16 @@ function withHeadingIds(html: string | null): {
 // Wrapped in React's cache() so generateMetadata() and the page component
 // share one query per request instead of each fetching this row separately.
 const getBlogPost = cache(async (slug: string) => {
-  return prisma.blog.findUnique({ where: { slug } });
+  return prisma.blog.findUnique({
+    where: { slug },
+    include: {
+      relatedFaqs: {
+        where: { status: 'PUBLISHED' },
+        orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
+        select: { id: true, question: true, shortAnswer: true, slug: true },
+      },
+    },
+  });
 });
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -129,7 +138,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const { html, toc } = withHeadingIds(post.body);
 
-  const faqs = parseJson<{ question: string; answer: string }[]>(post.faqs, []);
+  const faqs = post.relatedFaqs;
 
   // Curated related-tours (editorial pairings), same convention as Tour.relatedTours.
   const relatedTourEntries = parseRelatedTours(post.relatedTours);
@@ -184,7 +193,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={buildBlogPosting(post)} />
       <JsonLd data={breadcrumbJsonLd} />
-      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs)} />}
+      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
 
       <BlogPostHero
         category={post.category}
@@ -209,7 +218,14 @@ export default async function BlogPostPage({ params }: PageProps) {
           <article className="min-w-0">
             <BlogPostQuickAnswer html={post.quickAnswer} />
             <BlogPostBody html={html} />
-            <BlogPostFAQs faqs={faqs} />
+            {faqs.length > 0 && (
+              <section id="faqs" className="scroll-mt-16 mt-8 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+                <h2 className="text-[17px] font-bold">FAQs</h2>
+                <div className="mt-4">
+                  <FaqPreviewList faqs={faqs} />
+                </div>
+              </section>
+            )}
             {curatedRelatedTours.length > 0 && (
               <TourDetailsRelatedTours
                 relatedTours={curatedRelatedTours}

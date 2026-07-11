@@ -50,6 +50,8 @@ const GROUPS: ContentGroup[] = [
       { key: "journeyKicker", label: "Journey kicker", type: "text" },
       { key: "journeyTitle", label: "Journey title", type: "text" },
       { key: "pressLabel", label: "Press label", type: "text" },
+      { key: "faqsKicker", label: "FAQs kicker", type: "text" },
+      { key: "faqsTitle", label: "FAQs title", type: "text" },
     ],
   },
   {
@@ -81,11 +83,12 @@ export default async function AdminAboutPage() {
   const perms = { canCreate, canEdit, canDelete };
   const order = [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }];
 
-  const [content, storyFeatures, stats, values, team, journey, press] = await Promise.all([
+  const [content, storyFeatures, stats, values, certs, team, journey, press] = await Promise.all([
     prisma.aboutContent.findUnique({ where: { id: "singleton" } }),
     prisma.aboutStoryFeature.findMany({ orderBy: order }),
     prisma.aboutStat.findMany({ orderBy: order }),
     prisma.aboutValue.findMany({ orderBy: order }),
+    prisma.certification.findMany({ orderBy: order }),
     prisma.teamMember.findMany({ orderBy: order }),
     prisma.journeyMilestone.findMany({ orderBy: order }),
     prisma.pressLogo.findMany({ orderBy: order }),
@@ -99,6 +102,7 @@ export default async function AdminAboutPage() {
         <ListEditor title="Story Features" resource="aboutStoryFeatures" fields={FIELD_DEFS.aboutStoryFeatures} items={storyFeatures} {...perms} />
         <ListEditor title="Stats" resource="aboutStats" fields={FIELD_DEFS.aboutStats} items={stats} {...perms} />
         <ListEditor title="Values" resource="aboutValues" fields={FIELD_DEFS.aboutValues} items={values} {...perms} />
+        <ListEditor title="Certifications (additional, beyond the J&K Tourism registration shown automatically)" resource="certifications" fields={FIELD_DEFS.certifications} items={certs} {...perms} />
         <ListEditor title="Team Members" resource="teamMembers" fields={FIELD_DEFS.teamMembers} items={team} {...perms} />
         <ListEditor title="Journey Milestones" resource="journeyMilestones" fields={FIELD_DEFS.journeyMilestones} items={journey} {...perms} />
         <ListEditor title="Press Logos" resource="pressLogos" fields={FIELD_DEFS.pressLogos} items={press} {...perms} />

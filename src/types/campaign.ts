@@ -56,8 +56,10 @@ export interface CampaignTestimonial {
 }
 
 export interface CampaignFaq {
+  id: string;
   question: string;
-  answer: string;
+  shortAnswer: string;
+  slug: string;
 }
 
 // Fully-parsed campaign passed to the client page wrapper.

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { BlogForm } from "@/components/admin/blogs/BlogForm";
-import { parseRelatedTours, parseJson } from "@/lib/tours/content";
+import { parseRelatedTours } from "@/lib/tours/content";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -59,7 +59,6 @@ export default async function EditBlogPage({ params }: Props) {
           featured: blog.featured,
           trending: blog.trending,
           relatedTours: parseRelatedTours(blog.relatedTours),
-          faqs: parseJson<{ question: string; answer: string }[]>(blog.faqs, []),
           excerpt: blog.excerpt ?? "",
           quickAnswer: blog.quickAnswer ?? "",
           body: blog.body ?? "",

@@ -1,7 +1,7 @@
 // src/app/(public)/reviews/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Star, ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList, buildOrganizationReviews } from "@/components/seo/JsonLd";
@@ -10,11 +10,10 @@ import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { ReviewsHero } from "@/components/reviews/ReviewsHero";
 import { getGooglePlaceRating } from "@/lib/reviews/googlePlaces";
 import { GoogleRatingBadge } from "@/components/reviews/GoogleRatingBadge";
-import { GoogleRatingCard } from "@/components/reviews/GoogleRatingCard";
 import { SiteRatingBadge } from "@/components/reviews/SiteRatingBadge";
 import { parseTripadvisorWidget } from "@/lib/reviews/tripadvisorWidget";
 import { TripadvisorWidget } from "@/components/reviews/TripadvisorWidget";
-import { TripadvisorRatingCard } from "@/components/reviews/TripadvisorRatingCard";
+import { RatingSummaryRow } from "@/components/reviews/RatingSummaryRow";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 
 export const revalidate = 300;
@@ -126,42 +125,13 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
         {(stats.total > 0 || googleRating || tripadvisorRatingWidget) && (
           <>
             <h2 className="sr-only">Review ratings summary — Google, Tripadvisor and Vertex Kashmir Holidays</h2>
-            <div className="mx-auto mt-8 flex max-w-4xl flex-col items-stretch gap-4 sm:flex-row sm:justify-center">
-            {googleRating && <GoogleRatingCard data={googleRating} profileUrl={settings?.googleReviews} />}
-            {stats.total > 0 && (
-              <div className="flex min-w-0 flex-1 flex-col items-center gap-6 rounded-2xl border border-border bg-card p-6 shadow-soft sm:max-w-2xl sm:flex-row sm:gap-10">
-                <div className="shrink-0 text-center">
-                  <p className="font-display text-5xl font-bold text-foreground">{stats.average.toFixed(1)}</p>
-                  <div className="mt-1.5 flex justify-center gap-0.5 text-amber-400">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4" strokeWidth={0} fill={i < Math.round(stats.average) ? "currentColor" : "none"} />
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-[12px] text-muted-foreground">
-                    {stats.total.toLocaleString("en-IN")} review{stats.total === 1 ? "" : "s"}
-                  </p>
-                </div>
-                <div className="w-full min-w-0 flex-1 space-y-1.5">
-                  {RATINGS.map((star) => {
-                    const count = stats.distribution[star];
-                    const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-                    return (
-                      <div key={star} className="flex items-center gap-2.5 text-[12px]">
-                        <span className="w-9 shrink-0 font-semibold text-foreground">{star}★</span>
-                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                          <span className="block h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
-                        </span>
-                        <span className="w-8 shrink-0 text-right text-muted-foreground">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {tripadvisorRatingWidget && (
-              <TripadvisorRatingCard widget={tripadvisorRatingWidget} profileUrl={settings?.tripadvisor} />
-            )}
-            </div>
+            <RatingSummaryRow
+              googleRating={googleRating}
+              googleProfileUrl={settings?.googleReviews}
+              tripadvisorWidget={tripadvisorRatingWidget}
+              tripadvisorProfileUrl={settings?.tripadvisor}
+              stats={stats}
+            />
           </>
         )}
 

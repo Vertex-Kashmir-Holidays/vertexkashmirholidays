@@ -7,7 +7,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload, Images, Plus, Trash2, HelpCircle } from "lucide-react";
+import { Loader2, Upload, Images, Plus, Trash2 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
 import { stringifyList } from "@/lib/tours/content";
@@ -16,8 +16,6 @@ import { stringifyList } from "@/lib/tours/content";
 const listItemSchema = z.object({ value: z.string() });
 const topAttractionItemSchema = z.object({ name: z.string().default(""), description: z.string().default("") });
 const foodOrShopItemSchema = z.object({ name: z.string().default(""), description: z.string().default("") });
-const faqItemSchema = z.object({ question: z.string().default(""), answer: z.string().default("") });
-
 
 const schema = z.object({
  name: z.string().min(2, "Name is required"),
@@ -40,7 +38,6 @@ const schema = z.object({
  localFood: z.array(foodOrShopItemSchema).default([]),
  shopping: z.array(foodOrShopItemSchema).default([]),
  travelTips: z.array(listItemSchema).default([]),
- faqs: z.array(faqItemSchema).default([]),
  metaTitle: z.string().optional(),
  metaDesc: z.string().optional(),
  ogImage: z.string().optional(),
@@ -74,7 +71,6 @@ export interface DestinationFormDefaults {
  localFood?: { name: string; description: string }[];
  shopping?: { name: string; description: string }[];
  travelTips?: string[];
- faqs?: { question: string; answer: string }[];
  metaTitle?: string;
  metaDesc?: string;
  ogImage?: string;
@@ -140,7 +136,6 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
      localFood: (defaults?.localFood ?? []).map((f) => ({ name: f.name, description: f.description })),
      shopping: (defaults?.shopping ?? []).map((s) => ({ name: s.name, description: s.description })),
      travelTips: (defaults?.travelTips ?? []).map((v) => ({ value: v })),
-     faqs: (defaults?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer })),
      metaTitle: defaults?.metaTitle ?? "",
      metaDesc: defaults?.metaDesc ?? "",
      ogImage: defaults?.ogImage ?? "",
@@ -155,7 +150,6 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
  const { fields: foodFields, append: addFood, remove: removeFood } = useFieldArray({ control, name: "localFood" });
  const { fields: shopFields, append: addShop, remove: removeShop } = useFieldArray({ control, name: "shopping" });
  const { fields: tipFields, append: addTip, remove: removeTip } = useFieldArray({ control, name: "travelTips" });
- const { fields: faqFields, append: addFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
 
 
  const nameVal = watch("name");
@@ -188,7 +182,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
 
 
  function onSubmit(data: FormData) {
-   const { whyVisit, topAttractions, localFood, shopping, travelTips, faqs, ...rest } = data;
+   const { whyVisit, topAttractions, localFood, shopping, travelTips, ...rest } = data;
    const payload = {
      ...rest,
      whyVisit: stringifyList(whyVisit.map((v) => v.value).filter(Boolean)),
@@ -196,7 +190,6 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
      localFood: stringifyList(localFood.filter((f) => f.name.trim() || f.description.trim())),
      shopping: stringifyList(shopping.filter((s) => s.name.trim() || s.description.trim())),
      travelTips: stringifyList(travelTips.map((v) => v.value).filter(Boolean)),
-     faqs: stringifyList(faqs.filter((f) => f.question.trim() || f.answer.trim())),
      activityIds,
      relatedBlogIds: stringifyList(relatedBlogIds),
    };
@@ -515,35 +508,6 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
              ))}
              {tipFields.length === 0 && <p className="text-xs text-muted-foreground py-2">No tips added yet.</p>}
            </div>
-         </div>
-
-
-         {/* FAQs */}
-         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
-           <div className="flex items-center justify-between">
-             <h3 className="font-bold text-foreground text-sm">FAQs</h3>
-             <button type="button" onClick={() => addFaq({ question: "", answer: "" })} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
-               <Plus className="w-3.5 h-3.5" /> Add FAQ
-             </button>
-           </div>
-           {faqFields.length === 0 ? (
-             <p className="text-xs text-muted-foreground py-2">No FAQs added yet.</p>
-           ) : (
-             <div className="space-y-3">
-               {faqFields.map((field, i) => (
-                 <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
-                   <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-2.5" />
-                   <div className="flex-1 space-y-2">
-                     <input {...register(`faqs.${i}.question`)} className={inputCls} placeholder="Question — e.g. Is Gulmarg safe for families?" />
-                     <textarea {...register(`faqs.${i}.answer`)} rows={2} className={`${inputCls} resize-none`} placeholder="Answer..." />
-                   </div>
-                   <button type="button" onClick={() => removeFaq(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5">
-                     <Trash2 className="w-4 h-4" />
-                   </button>
-                 </div>
-               ))}
-             </div>
-           )}
          </div>
        </div>
 
