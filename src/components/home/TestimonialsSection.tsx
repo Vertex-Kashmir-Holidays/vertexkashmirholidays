@@ -58,8 +58,11 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
         {testimonials.map((t, i) => (
           <article key={t.id} className="rv glass relative w-[300px] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card" style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}>
             <p className="font-display text-5xl leading-none text-primary/50">"</p>
-            <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{t.quote}</p>
-            <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
+            <p className="mt-2 line-clamp-3 text-[14px] leading-relaxed text-muted-foreground">{t.quote}</p>
+            <Link href="/reviews" className="mt-1 inline-block text-[12.5px] font-bold text-primary hover:underline">
+              Show more
+            </Link>
+            <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
                 <Image src={t.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" unoptimized />
               )}

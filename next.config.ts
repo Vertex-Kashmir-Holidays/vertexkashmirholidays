@@ -62,6 +62,18 @@ const nextConfig: NextConfig = {
    return [
      { source: "/campaign", destination: "/adventures", permanent: true },
      { source: "/campaign/:slug*", destination: "/adventures/:slug*", permanent: true },
+     // Canonical domain enforcement: Vercel's default *.vercel.app URL always
+     // stays live alongside the custom domain. Without this, visitors (and
+     // Google) can reach the site on either host — splitting SEO signals and,
+     // combined with trustHost in auth.config.ts, making auth/session cookies
+     // host-specific to whichever domain was used. Redirect everything to the
+     // real domain so there's exactly one canonical host in practice.
+     {
+       source: "/:path*",
+       has: [{ type: "host", value: "vertexkashmirholidays.vercel.app" }],
+       destination: "https://vertexkashmirholidays.com/:path*",
+       permanent: true,
+     },
    ];
  },
  images: {
