@@ -39,8 +39,8 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[21px] font-bold">Things to Do in {name}</h2>
-        <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
+        <h2 className="text-[17px] font-bold">Things to Do in {name}</h2>
+        <a href="/activities" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
           View all
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </a>

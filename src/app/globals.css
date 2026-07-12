@@ -263,7 +263,11 @@ body {
 @keyframes marq { to { transform:translateX(-50%); } }
 
 /* Carousel */
-.snap-row { scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; }
+/* touch-action: pan-x tells mobile browsers this row owns horizontal drag
+   gestures, so a swipe that starts here isn't grabbed by the page's vertical
+   scroll instead — without it, touch swipe on these rows can feel dead or
+   only work on a perfectly horizontal drag. */
+.snap-row { scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x; -webkit-overflow-scrolling:touch; }
 .snap-row::-webkit-scrollbar { display:none; }
 .snap-row > * { scroll-snap-align:start; }
 

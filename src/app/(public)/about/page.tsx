@@ -176,7 +176,7 @@ export default async function AboutPage() {
       {aboutFaqs.length > 0 && (
         <section className="mx-auto max-w-[1300px] px-6 py-14">
           <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
-          <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
+          <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
           <div className="mt-6">
             <FaqPreviewList faqs={aboutFaqs} columns={2} />
           </div>

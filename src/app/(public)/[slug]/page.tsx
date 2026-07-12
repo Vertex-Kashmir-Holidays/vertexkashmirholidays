@@ -62,7 +62,7 @@ export default async function LegalPage({ params }: PageProps) {
           <span>›</span>
           <span className="font-semibold text-white">{title}</span>
         </nav>
-        <h1 className="h-display mt-4 text-3xl font-bold text-white sm:text-4xl">{title}</h1>
+        <h1 className="h-display mt-4 text-3xl font-bold text-white sm:text-4xl lg:text-[44px]">{title}</h1>
         <p className="mt-3 text-sm text-white/80">
           Last updated: {longDate(updated)}
         </p>

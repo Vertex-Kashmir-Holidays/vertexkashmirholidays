@@ -122,7 +122,7 @@ export function ContactForm({ content }: ContactFormProps) {
         {content.kicker}
       </motion.p>
       <motion.h2
-        className="h-display mt-2 font-display text-[23px] font-bold leading-snug"
+        className="h-display mt-2 font-display text-[17px] font-bold leading-snug"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}

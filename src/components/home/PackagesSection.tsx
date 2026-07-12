@@ -40,7 +40,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             {heading.kicker}
           </motion.p>
           <motion.h2
-            className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground"
+            className="rv h-display mt-3 text-[17px] font-bold text-foreground"
             style={{ '--rd': '0.08s' } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

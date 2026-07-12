@@ -60,7 +60,7 @@ export function ToursNewsletter() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="h-display text-[26px] font-bold text-white">Don't miss our best deals!</h2>
+          <h2 className="h-display text-[17px] font-bold text-white">Don't miss our best deals!</h2>
           <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/80">
             Subscribe to get early access to exclusive offers and Kashmir travel tips.
           </p>

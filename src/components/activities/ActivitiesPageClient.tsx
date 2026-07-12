@@ -108,7 +108,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
         {/* Grid */}
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="h-display text-[26px] font-bold">
+            <h2 className="h-display text-[17px] font-bold">
               All Activities{' '}
               <span className="font-sans text-[13px] font-semibold text-primary">
                 ({filtered.length} {filtered.length === 1 ? 'Activity' : 'Activities'})

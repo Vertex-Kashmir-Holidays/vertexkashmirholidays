@@ -47,7 +47,7 @@ export function TourDetailsRelatedTours({
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-[19px] font-bold">You Might Also Like</h2>
+          <h2 className="text-[17px] font-bold">You Might Also Like</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {relatedTours.map((entry, i) => (
               <div key={entry.tour.detailHref ?? i}>
@@ -76,7 +76,7 @@ export function TourDetailsRelatedTours({
             <p className="mx-auto max-w-2xl text-[13px] leading-relaxed text-foreground/70">{whyVertexBlurb}</p>
           )}
           {ctaHeadline && (
-            <h2 className="mt-4 text-[19px] font-bold">{ctaHeadline}</h2>
+            <h2 className="mt-4 text-[17px] font-bold">{ctaHeadline}</h2>
           )}
           {ctaBody && (
             <p className="mx-auto mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/70">{ctaBody}</p>

@@ -35,7 +35,7 @@ export function ContactTestimonials({ heading, testimonials }: ContactTestimonia
       transition={{ duration: 0.5 }}
     >
       <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-      <h2 className="h-display mt-2 font-display text-[22px] font-bold">{heading.title}</h2>
+      <h2 className="h-display mt-2 font-display text-[17px] font-bold">{heading.title}</h2>
       <div className="mt-5 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
         <AnimatePresence mode="wait">
           <motion.div

@@ -25,7 +25,7 @@ export function AboutJourney({ heading, journey }: AboutJourneyProps) {
         <div className="grid items-center gap-8 lg:grid-cols-[230px_1fr]">
           <div>
             <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-            <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">{renderMint(heading.title)}</h2>
+            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{renderMint(heading.title)}</h2>
           </div>
           <div className="scrollbar-none overflow-x-auto">
             <div className="relative min-w-[760px] pt-2">

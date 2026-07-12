@@ -20,7 +20,7 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
             <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-            <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+            <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
               {renderAccents(heading.title)}
             </h2>
             {content.para1 && (
