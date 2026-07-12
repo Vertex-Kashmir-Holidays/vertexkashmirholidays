@@ -14,7 +14,7 @@ export function SiteRatingBadge({ average, total }: { average: number; total: nu
         {average.toFixed(1)}
         <Star className="h-4 w-4 text-amber-400" strokeWidth={0} fill="currentColor" aria-hidden="true" />
       </span>
-      <span className="text-[13px] text-white/75">({total.toLocaleString("en-IN")})</span>
+      <span className="text-[14px] text-white/75">({total.toLocaleString("en-IN")})</span>
     </div>
   );
 }

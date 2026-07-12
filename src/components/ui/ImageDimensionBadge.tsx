@@ -14,7 +14,7 @@ export function ImageDimensionBadge({ width, height, className }: Props) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md pointer-events-none",
+        "inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md pointer-events-none",
         isWide ? "bg-sky-600/80 text-white" : "bg-fuchsia-600/80 text-white",
         className,
       )}

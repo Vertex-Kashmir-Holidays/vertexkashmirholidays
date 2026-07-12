@@ -187,7 +187,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Ref", "Guest", "Travel Date", "Amount", "Status", "Payment", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -209,7 +209,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono text-[10px] font-semibold text-foreground" title={b.id}>
+                        <span className="font-mono text-[12px] font-semibold text-foreground" title={b.id}>
                           #{b.id.slice(-8).toUpperCase()}
                         </span>
                       </td>
@@ -220,7 +220,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">{b.guestName}</p>
-                            <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">{b.guestEmail}</p>
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px]">{b.guestEmail}</p>
                           </div>
                         </div>
                       </td>
@@ -229,12 +229,12 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       </td>
                       <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">{fmtINR(b.amount)}</td>
                       <td className="px-4 py-3">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
+                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
                           {b.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
                           {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                         </span>
                       </td>
@@ -244,7 +244,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                             href={`/admin/bookings/${b.id}/services`}
                             onClick={(e) => e.stopPropagation()}
                             title="Manage services"
-                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-border text-primary hover:bg-primary/10 transition-colors"
+                            className="inline-flex items-center gap-1 text-[12px] font-bold px-2 py-0.5 rounded-lg border border-border text-primary hover:bg-primary/10 transition-colors"
                           >
                             <ClipboardList className="w-3 h-3" /> Services
                           </Link>
@@ -253,7 +253,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                               onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "CANCELLED"); }}
                               disabled={isPending}
                               title="Cancel booking (partially paid only)"
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-red-200 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                              className="text-[12px] font-bold px-2 py-0.5 rounded-lg border border-red-200 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                             >
                               CANCEL
                             </button>
@@ -263,7 +263,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                               onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "REFUNDED"); }}
                               disabled={isPending}
                               title="Mark as refunded"
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                              className="text-[12px] font-bold px-2 py-0.5 rounded-lg border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors"
                             >
                               REFUND
                             </button>
@@ -303,7 +303,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             <div className="flex items-start justify-between p-6 border-b border-border">
               <div>
                 <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
-                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
+                <p className="text-[12px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
               </div>
               <button
                 onClick={closeModal}
@@ -325,14 +325,14 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
               <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>
               <div><p className="text-muted-foreground mb-0.5">Paid</p><p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p></div>
               <div><p className="text-muted-foreground mb-0.5">Balance</p><p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[10px]">{selected.razorpayPayId ?? "—"}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[12px]">{selected.razorpayPayId ?? "—"}</p></div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Status</p>
-                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
+                <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Payment</p>
-                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
+                <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
               </div>
             </div>
 
@@ -345,14 +345,14 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                     <button
                       onClick={() => setConfirmMode("soft")}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Soft Delete
                     </button>
                     <button
                       onClick={() => setConfirmMode("permanent")}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-300 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-red-300 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Permanent Delete
                     </button>
@@ -374,7 +374,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       <button
                         onClick={() => handleDelete(selected.id, confirmMode === "permanent")}
                         disabled={isPending}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                         {isPending ? "Deleting…" : "Confirm"}
@@ -382,7 +382,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       <button
                         onClick={() => setConfirmMode(null)}
                         disabled={isPending}
-                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+                        className="text-[12px] font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
                       >
                         Cancel
                       </button>

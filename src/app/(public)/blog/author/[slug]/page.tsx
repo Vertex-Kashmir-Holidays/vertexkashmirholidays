@@ -100,7 +100,7 @@ export default async function BlogAuthorPage({ params }: PageProps) {
       <JsonLd data={breadcrumbJsonLd} />
 
       <section className="mx-auto max-w-[1300px] px-6 pb-6 pt-28">
-        <nav className="flex items-center gap-2 text-[12.5px] text-muted-foreground" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-muted-foreground" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-primary">Home</Link>
           <span>›</span>
           <Link href="/blog" className="transition hover:text-primary">Blog</Link>
@@ -118,8 +118,8 @@ export default async function BlogAuthorPage({ params }: PageProps) {
           />
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">{author}</h1>
-            {first.authorRole && <p className="text-[13px] font-semibold text-primary">{first.authorRole}</p>}
-            {first.authorBio && <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">{first.authorBio}</p>}
+            {first.authorRole && <p className="text-[14px] font-semibold text-primary">{first.authorRole}</p>}
+            {first.authorBio && <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">{first.authorBio}</p>}
           </div>
         </div>
       </section>

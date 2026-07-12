@@ -24,8 +24,8 @@ export function AboutJourney({ heading, journey }: AboutJourneyProps) {
       >
         <div className="grid items-center gap-8 lg:grid-cols-[230px_1fr]">
           <div>
-            <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{renderMint(heading.title)}</h2>
+            <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+            <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{renderMint(heading.title)}</h2>
           </div>
           <div className="scrollbar-none overflow-x-auto">
             <div className="relative min-w-[760px] pt-2">
@@ -46,8 +46,8 @@ export function AboutJourney({ heading, journey }: AboutJourneyProps) {
                       </svg>
                     </span>
                     <span className="mx-auto mt-2 block h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-muted"></span>
-                    <p className="mt-2.5 text-[14px] font-extrabold">{j.year}</p>
-                    <p className="mx-auto mt-1 max-w-[120px] text-[10.5px] leading-relaxed text-muted-foreground">{j.detail}</p>
+                    <p className="mt-2.5 text-[16px] font-extrabold">{j.year}</p>
+                    <p className="mx-auto mt-1 max-w-[120px] text-[12px] leading-relaxed text-muted-foreground">{j.detail}</p>
                   </motion.div>
                 ))}
               </div>

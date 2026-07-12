@@ -92,7 +92,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
               />
             </Link>
             <motion.span
-              className={`absolute left-3 top-3 rounded-md ${badgeCls[tour.bc]} px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg`}
+              className={`absolute left-3 top-3 rounded-md ${badgeCls[tour.bc]} px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-white shadow-lg`}
               initial={{ x: -20 }}
               animate={{ x: 0 }}
               transition={{ delay: index * 0.05 + 0.3 }}
@@ -123,7 +123,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
             </h3>
             
             {/* Duration & Destinations */}
-            <p className={`mt-1.5 text-[12px] leading-relaxed ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+            <p className={`mt-1.5 text-[14px] leading-relaxed ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
               <span className="font-semibold">{tour.d}</span>
               <span className="mx-2 opacity-40">·</span>
               {tour.places}
@@ -134,43 +134,43 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
               {/* Transfers */}
               <div className="flex flex-col items-center gap-1">
                 <Car className="h-5 w-5 text-primary" strokeWidth={1.8} />
-                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Transfers</span>
+                <span className={`text-[10px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Transfers</span>
               </div>
 
               {/* Hotel */}
               <div className="flex flex-col items-center gap-1">
                 <Hotel className="h-5 w-5 text-primary" strokeWidth={1.8} />
-                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{inclusions.hotel || '3★'}</span>
+                <span className={`text-[10px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{inclusions.hotel || '3★'}</span>
               </div>
 
               {/* Meals */}
               <div className="flex flex-col items-center gap-1">
                 <Utensils className="h-5 w-5 text-primary" strokeWidth={1.8} />
-                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Meals</span>
+                <span className={`text-[10px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Meals</span>
               </div>
 
               {/* Shikara */}
               <div className="flex flex-col items-center gap-1">
                 <Sailboat className="h-5 w-5 text-primary" strokeWidth={1.8} />
-                <span className={`text-[9px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Shikara</span>
+                <span className={`text-[10px] font-medium ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>Shikara</span>
               </div>
             </div>
 
             {/* Price Section */}
             <div className="mt-3 flex items-end justify-between">
                 {tour.old ? (
-                  <span className={`text-[11px] ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'} line-through`}>{tour.old}</span>
+                  <span className={`text-[12px] ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'} line-through`}>{tour.old}</span>
                 ) : (
-                  <span className="text-[11px]">&nbsp;</span>
+                  <span className="text-[12px]">&nbsp;</span>
                 )}
                 <p className={`text-[22px] font-extrabold leading-tight ${isHome ? 'text-primary' : 'text-foreground'}`}>
                   {tour.p}
                 </p>
-                <p className={`text-[9px] ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>per person</p>
+                <p className={`text-[10px] ${isHome ? 'text-muted-foreground' : 'text-muted-foreground'}`}>per person</p>
             </div>
 
             {/* Customization Text */}
-            <p className={`mt-3 py-1 text-[10px] italic  border-t  ${isHome ? 'text-muted-foreground border-border' : 'text-muted-foreground border-border'}`}>
+            <p className={`mt-3 py-1 text-[12px] italic  border-t  ${isHome ? 'text-muted-foreground border-border' : 'text-muted-foreground border-border'}`}>
               ✦ Tour can be customized as per requirements
             </p>
 
@@ -182,7 +182,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
+                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[14px] font-semibold transition-all duration-300 ${
                     isHome
                       ? 'border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-glow'
                       : 'border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md'
@@ -196,7 +196,7 @@ export function TourCard({ tour, index = 0, variant = 'tours' }: TourCardProps) 
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href={detailHref}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[12px] font-semibold transition-all duration-300 ${
+                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[14px] font-semibold transition-all duration-300 ${
                     isHome
                       ? 'bg-primary text-primary-foreground hover:brightness-110 hover:shadow-glow'
                       : 'bg-primary text-primary-foreground hover:brightness-110 hover:shadow-md'

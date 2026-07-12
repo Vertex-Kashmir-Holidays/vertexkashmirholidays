@@ -22,8 +22,8 @@ export function DestinationWhyVisit({ name, reasons }: DestinationWhyVisitProps)
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">Why Visit {name}</h2>
-      <ul className="mt-4 space-y-3 text-[13px] text-foreground/80">
+      <h2 className="text-[18px] font-bold">Why Visit {name}</h2>
+      <ul className="mt-4 space-y-3 text-[14px] text-foreground/80">
         {reasons.map((item, i) => (
           <motion.li
             key={i}

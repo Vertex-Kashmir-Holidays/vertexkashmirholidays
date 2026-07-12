@@ -34,7 +34,7 @@ type FieldErrors = Partial<
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-[11.5px] font-medium text-red-600 dark:text-red-400">
+    <p className="mt-1.5 text-[12px] font-medium text-red-600 dark:text-red-400">
       {message}
     </p>
   );
@@ -532,7 +532,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
     <div className="space-y-3">
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-2.5 text-[13px] font-semibold transition hover:bg-muted"
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-2.5 text-[14px] font-semibold transition hover:bg-muted"
         onClick={() => signIn('google', { callbackUrl: destination() })}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -555,7 +555,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
         <ThemeToggle />
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 text-[13px] font-semibold text-foreground/75 transition hover:text-primary"
+          className="flex shrink-0 items-center gap-2 text-[14px] font-semibold text-foreground/75 transition hover:text-primary"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M11 18l-6-6 6-6" />
@@ -582,18 +582,18 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   Welcome back
                   <Heart className="h-5 w-5 text-primary" fill="currentColor" strokeWidth={0} />
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                   Log in to your account to manage your bookings, view itineraries and more.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleLogin} noValidate>
                   {view === 'login' && error && (
-                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[14px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="liEmail">Email address</label>
+                    <label className="text-[14px] font-semibold" htmlFor="liEmail">Email address</label>
                     <div className="input-wrap mt-1.5">
                       <input
                         id="liEmail"
@@ -612,7 +612,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     <FieldError message={loginErrors.email} />
                   </div>
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="liPass">Password</label>
+                    <label className="text-[14px] font-semibold" htmlFor="liPass">Password</label>
                     <div className="input-wrap mt-1.5">
                       <input
                         id="liPass"
@@ -648,20 +648,20 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                           setNotice(null);
                           setLoginStep('forgot-request');
                         }}
-                        className="text-[12px] font-semibold text-primary hover:underline"
+                        className="text-[14px] font-semibold text-primary hover:underline"
                       >
                         Forgot password?
                       </button>
                     </div>
                   </div>
-                  <label className="flex items-center gap-2.5 text-[12.5px] font-medium text-foreground/80">
+                  <label className="flex items-center gap-2.5 text-[14px] font-medium text-foreground/80">
                     <input type="checkbox" className="cbx" /> Remember me
                   </label>
                   {captcha}
                   <button
                     type="submit"
                     disabled={submitting || captchaPending}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Logging in…' : 'Log In'}
                     <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
@@ -670,13 +670,13 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 <div className="mt-6 flex items-center gap-4">
                   <span className="h-px flex-1 bg-border"></span>
-                  <span className="text-[11px] font-medium text-muted-foreground">or continue with</span>
+                  <span className="text-[12px] font-medium text-muted-foreground">or continue with</span>
                   <span className="h-px flex-1 bg-border"></span>
                 </div>
 
                 <div className="mt-5">{oauthButtons}</div>
 
-                <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
+                <p className="mt-6 text-center text-[14px] text-muted-foreground">
                   Don't have an account?{' '}
                   <button onClick={() => switchView('register')} className="font-bold text-primary hover:underline">
                     Create one
@@ -685,8 +685,8 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
-                  <p className="text-[12px] leading-snug">
-                    <strong className="text-[12.5px]">Your data is safe with us</strong>
+                  <p className="text-[14px] leading-snug">
+                    <strong className="text-[14px]">Your data is safe with us</strong>
                     <br />
                     <span className="text-muted-foreground">We never share your information with anyone.</span>
                   </p>
@@ -697,7 +697,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                 <button
                   type="button"
                   onClick={resetForgotFlow}
-                  className="flex items-center gap-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:text-primary"
+                  className="flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground transition hover:text-primary"
                 >
                   <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
                   Back to login
@@ -706,18 +706,18 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                 <h2 className="mt-4 flex items-center gap-2.5 font-display text-[22px] font-bold text-primary sm:text-[26px]">
                   Reset your password
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                   Enter your account email. If it matches an account, we'll email you a verification code.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleForgotRequest} noValidate>
                   {error && (
-                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[14px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="fpEmail">Email address</label>
+                    <label className="text-[14px] font-semibold" htmlFor="fpEmail">Email address</label>
                     <div className={`input-wrap mt-1.5 ${forgotEmailError ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="fpEmail"
@@ -738,7 +738,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   <button
                     type="submit"
                     disabled={submitting || captchaPending}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Sending code…' : 'Send verification code'}
                     <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
@@ -754,7 +754,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     setError(null);
                     setNotice(null);
                   }}
-                  className="flex items-center gap-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:text-primary"
+                  className="flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground transition hover:text-primary"
                 >
                   <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
                   Edit details
@@ -764,25 +764,25 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   Verify your email
                   <Mail className="h-5 w-5 text-primary" strokeWidth={1.8} />
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                   Enter the 6-digit code we sent to{' '}
                   <strong className="text-foreground">{forgotEmail}</strong>.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleForgotVerify}>
                   {error && (
-                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[14px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
                   {!error && notice && (
-                    <p className="rounded-xl bg-primary/10 px-3.5 py-2.5 text-[12px] font-semibold text-primary">
+                    <p className="rounded-xl bg-primary/10 px-3.5 py-2.5 text-[14px] font-semibold text-primary">
                       {notice}
                     </p>
                   )}
 
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="fpOtpCode">Verification code</label>
+                    <label className="text-[14px] font-semibold" htmlFor="fpOtpCode">Verification code</label>
                     <div className="input-wrap mt-1.5">
                       <input
                         id="fpOtpCode"
@@ -801,7 +801,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   <button
                     type="submit"
                     disabled={verifying || otpCode.length !== 6}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {verifying ? 'Verifying…' : 'Verify code'}
                     <Check className="h-4 w-4" strokeWidth={2.4} />
@@ -810,7 +810,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 {siteKey && <div className="mt-5">{captcha}</div>}
 
-                <div className="mt-5 text-center text-[12.5px] text-muted-foreground">
+                <div className="mt-5 text-center text-[14px] text-muted-foreground">
                   Didn&apos;t get the code?{' '}
                   {resendIn > 0 ? (
                     <span className="font-semibold text-foreground/70">Resend in {resendIn}s</span>
@@ -832,19 +832,19 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   Set a new password
                   <ShieldCheck className="h-5 w-5 text-primary" strokeWidth={1.8} />
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                   Your email is verified. Choose a new password for{' '}
                   <strong className="text-foreground">{forgotEmail}</strong>.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleForgotReset} noValidate>
                   {error && (
-                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[14px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="fpPass">New password</label>
+                    <label className="text-[14px] font-semibold" htmlFor="fpPass">New password</label>
                     <div className={`input-wrap mt-1.5 ${forgotErrors.password ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="fpPass"
@@ -873,13 +873,13 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     {forgotErrors.password ? (
                       <FieldError message={forgotErrors.password} />
                     ) : (
-                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      <p className="mt-1.5 text-[12px] text-muted-foreground">
                         Use at least 8 characters with letters and numbers.
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="fpPass2">Confirm new password</label>
+                    <label className="text-[14px] font-semibold" htmlFor="fpPass2">Confirm new password</label>
                     <div className={`input-wrap mt-1.5 ${forgotErrors.confirm ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="fpPass2"
@@ -910,7 +910,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Saving…' : 'Reset Password'}
                     <Check className="h-4 w-4" strokeWidth={2.4} />
@@ -936,18 +936,18 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   Create your account
                   <Heart className="h-5 w-5 text-primary" fill="currentColor" strokeWidth={0} />
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                   Join thousands of happy travellers.<br/>It only takes a minute.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleRegister} noValidate>
                   {view === 'register' && error && (
-                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[14px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="rgName">Full name</label>
+                    <label className="text-[14px] font-semibold" htmlFor="rgName">Full name</label>
                     <div className={`input-wrap mt-1.5 ${errors.name ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgName"
@@ -964,7 +964,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     <FieldError message={errors.name} />
                   </div>
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="rgEmail">Email address</label>
+                    <label className="text-[14px] font-semibold" htmlFor="rgEmail">Email address</label>
                     <div className={`input-wrap mt-1.5 ${errors.email ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgEmail"
@@ -982,7 +982,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     <FieldError message={errors.email} />
                   </div>
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="rgPhone">Phone number</label>
+                    <label className="text-[14px] font-semibold" htmlFor="rgPhone">Phone number</label>
                     <PhoneInput
                       id="rgPhone"
                       country={country}
@@ -1000,7 +1000,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     <FieldError message={errors.phone} />
                   </div>
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="rgPass">Password</label>
+                    <label className="text-[14px] font-semibold" htmlFor="rgPass">Password</label>
                     <div className={`input-wrap mt-1.5 ${errors.password ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgPass"
@@ -1029,13 +1029,13 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     {errors.password ? (
                       <FieldError message={errors.password} />
                     ) : (
-                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      <p className="mt-1.5 text-[12px] text-muted-foreground">
                         Use at least 8 characters with letters and numbers.
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="rgPass2">Confirm password</label>
+                    <label className="text-[14px] font-semibold" htmlFor="rgPass2">Confirm password</label>
                     <div className={`input-wrap mt-1.5 ${errors.confirm ? 'ring-1 ring-red-500/60' : ''}`}>
                       <input
                         id="rgPass2"
@@ -1064,7 +1064,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     <FieldError message={errors.confirm} />
                   </div>
                   <div>
-                    <label className="flex items-start gap-2.5 text-[12px] leading-snug text-foreground/80">
+                    <label className="flex items-start gap-2.5 text-[14px] leading-snug text-foreground/80">
                       <input
                         type="checkbox"
                         className="cbx mt-0.5"
@@ -1101,7 +1101,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   <button
                     type="submit"
                     disabled={submitting || captchaPending}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? 'Creating account…' : 'Create Account'}
                     <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
@@ -1110,13 +1110,13 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 <div className="mt-6 flex items-center gap-4">
                   <span className="h-px flex-1 bg-border"></span>
-                  <span className="text-[11px] font-medium text-muted-foreground">or continue with</span>
+                  <span className="text-[12px] font-medium text-muted-foreground">or continue with</span>
                   <span className="h-px flex-1 bg-border"></span>
                 </div>
 
                 <div className="mt-5">{oauthButtons}</div>
 
-                <p className="mt-6 text-center text-[12.5px] text-muted-foreground">
+                <p className="mt-6 text-center text-[14px] text-muted-foreground">
                   Already have an account?{' '}
                   <button onClick={() => switchView('login')} className="font-bold text-primary hover:underline">
                     Log in
@@ -1125,8 +1125,8 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
-                  <p className="text-[12px] leading-snug">
-                    <strong className="text-[12.5px]">Your data is safe with us</strong>
+                  <p className="text-[14px] leading-snug">
+                    <strong className="text-[14px]">Your data is safe with us</strong>
                     <br />
                     <span className="text-muted-foreground">We never share your information with anyone.</span>
                   </p>
@@ -1141,7 +1141,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     setError(null);
                     setNotice(null);
                   }}
-                  className="flex items-center gap-1.5 text-[12.5px] font-semibold text-muted-foreground transition hover:text-primary"
+                  className="flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground transition hover:text-primary"
                 >
                   <ArrowLeft className="h-4 w-4" strokeWidth={2.2} />
                   Edit details
@@ -1151,25 +1151,25 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   Verify your email
                   <Mail className="h-5 w-5 text-primary" strokeWidth={1.8} />
                 </h2>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                   Enter the 6-digit code we sent to{' '}
                   <strong className="text-foreground">{regEmail}</strong>.
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleVerifyOtp}>
                   {error && (
-                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[12px] font-semibold text-red-600 dark:text-red-400">
+                    <p className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-[14px] font-semibold text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   )}
                   {!error && notice && (
-                    <p className="rounded-xl bg-primary/10 px-3.5 py-2.5 text-[12px] font-semibold text-primary">
+                    <p className="rounded-xl bg-primary/10 px-3.5 py-2.5 text-[14px] font-semibold text-primary">
                       {notice}
                     </p>
                   )}
 
                   <div>
-                    <label className="text-[12px] font-semibold" htmlFor="otpCode">Verification code</label>
+                    <label className="text-[14px] font-semibold" htmlFor="otpCode">Verification code</label>
                     <div className="input-wrap mt-1.5">
                       <input
                         id="otpCode"
@@ -1188,7 +1188,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                   <button
                     type="submit"
                     disabled={verifying || otpCode.length !== 6}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[13.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {verifying ? 'Verifying…' : 'Verify & Create Account'}
                     <Check className="h-4 w-4" strokeWidth={2.4} />
@@ -1197,7 +1197,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 {siteKey && <div className="mt-5">{captcha}</div>}
 
-                <div className="mt-5 text-center text-[12.5px] text-muted-foreground">
+                <div className="mt-5 text-center text-[14px] text-muted-foreground">
                   Didn&apos;t get the code?{' '}
                   {resendIn > 0 ? (
                     <span className="font-semibold text-foreground/70">Resend in {resendIn}s</span>
@@ -1215,8 +1215,8 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-primary/10 p-4">
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
-                  <p className="text-[12px] leading-snug">
-                    <strong className="text-[12.5px]">Your account isn&apos;t created yet</strong>
+                  <p className="text-[14px] leading-snug">
+                    <strong className="text-[14px]">Your account isn&apos;t created yet</strong>
                     <br />
                     <span className="text-muted-foreground">It&apos;s only created once your email is verified.</span>
                   </p>

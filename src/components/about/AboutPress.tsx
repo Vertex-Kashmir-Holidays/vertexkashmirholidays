@@ -20,7 +20,7 @@ export function AboutPress({ label, items }: AboutPressProps) {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-[11.5px] font-bold tracking-[0.22em] text-foreground/70">{label}</p>
+        <p className="text-[12px] font-bold tracking-[0.22em] text-foreground/70">{label}</p>
         <div className="flex flex-1 flex-wrap items-center justify-between gap-x-10 gap-y-5 opacity-80 grayscale">
           {items.map((item, i) => (
             <motion.span

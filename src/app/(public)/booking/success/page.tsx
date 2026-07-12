@@ -192,7 +192,7 @@ export default async function BookingSuccessPage({
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
                 <p className="text-xs font-bold text-foreground">{label}</p>
-                <p className="text-[10px] text-muted-foreground">{sub}</p>
+                <p className="text-[12px] text-muted-foreground">{sub}</p>
               </>
             );
             const cls =

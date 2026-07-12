@@ -50,6 +50,17 @@ export function GoogleOneTap({ nonce }: GoogleOneTapProps) {
     if (!clientId) return;
     const googleClientId: string = clientId;
 
+    // Google's Identity Services auto-prompt doesn't render as an in-page
+    // overlay inside a PWA's standalone window — it hands the flow off to
+    // the system browser instead, which breaks out of the installed app the
+    // moment /login mounts (before the user has clicked anything). Skip the
+    // passive auto-prompt entirely when running standalone; the password
+    // form and the explicit "Continue with Google" button remain unaffected.
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    if (isStandalone) return;
+
     let cancelled = false;
 
     async function handleCredential(response: { credential: string }) {

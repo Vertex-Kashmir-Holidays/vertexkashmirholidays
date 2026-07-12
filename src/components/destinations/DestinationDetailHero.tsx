@@ -53,7 +53,7 @@ export function DestinationDetailHero({
       <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent"></div>
 
       <div className="relative z-10 mx-auto max-w-[1300px] px-6 pb-24 pt-28">
-        <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
           <Link href="/destinations" className="transition hover:text-white">Destinations</Link>
@@ -64,7 +64,7 @@ export function DestinationDetailHero({
         <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
           <div className="max-w-xl">
             <motion.span
-              className="rounded-md bg-badge-green px-3 py-1.5 text-[10.5px] font-extrabold tracking-wide text-white shadow"
+              className="rounded-md bg-badge-green px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow"
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ duration: 0.5 }}
@@ -95,8 +95,8 @@ export function DestinationDetailHero({
                 <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-card">
                   <Thermometer className="h-6 w-6 shrink-0 text-primary" strokeWidth={1.8} />
                   <div className="leading-tight">
-                    <p className="text-[14px] font-extrabold">{weather.temperature}°C</p>
-                    <p className="text-[10.5px] text-muted-foreground">{weather.condition}</p>
+                    <p className="text-[16px] font-extrabold">{weather.temperature}°C</p>
+                    <p className="text-[12px] text-muted-foreground">{weather.condition}</p>
                   </div>
                 </div>
               )}
@@ -106,8 +106,8 @@ export function DestinationDetailHero({
                     <path d={stat.icon} />
                   </svg>
                   <div className="leading-tight">
-                    <p className="text-[14px] font-extrabold">{stat.value}</p>
-                    <p className="text-[10.5px] text-muted-foreground">{stat.label}</p>
+                    <p className="text-[16px] font-extrabold">{stat.value}</p>
+                    <p className="text-[12px] text-muted-foreground">{stat.label}</p>
                   </div>
                 </div>
               ))}

@@ -33,12 +33,12 @@ export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData 
       <h2 className="text-[20px] font-bold">Featured Package</h2>
       <article className="mt-4 grid overflow-hidden rounded-2xl border border-border bg-card shadow-soft md:grid-cols-[1fr_1.1fr]">
         <div className="flex flex-col p-6 lg:p-7">
-          <span className="w-fit rounded-md bg-primary px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-primary-foreground">
+          <span className="w-fit rounded-md bg-primary px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-primary-foreground">
             FEATURED
           </span>
           <h3 className="mt-4 text-[24px] font-bold leading-snug">{tour.title}</h3>
-          {tour.excerpt && <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{tour.excerpt}</p>}
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12.5px] text-muted-foreground">
+          {tour.excerpt && <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">{tour.excerpt}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[14px] text-muted-foreground">
             <span>{Math.max(tour.duration - 1, 0)}N / {tour.duration}D</span>
             {tour.places && <span>{tour.places}</span>}
             <span className="flex items-center gap-1 font-semibold text-foreground">
@@ -50,15 +50,15 @@ export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData 
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-[22px] font-extrabold">₹{tour.priceFrom.toLocaleString('en-IN')}</span>
             {tour.priceWas && (
-              <span className="text-[13px] font-semibold text-muted-foreground line-through">
+              <span className="text-[14px] font-semibold text-muted-foreground line-through">
                 ₹{tour.priceWas.toLocaleString('en-IN')}
               </span>
             )}
-            <span className="text-[11.5px] text-muted-foreground">per person</span>
+            <span className="text-[12px] text-muted-foreground">per person</span>
           </div>
           <Link
             href={`/tours/${tour.slug}`}
-            className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-[12.5px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
+            className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
           >
             View Full Itinerary
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />

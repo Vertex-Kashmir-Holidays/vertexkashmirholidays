@@ -20,7 +20,7 @@ export function CampaignDepartures({ batches }: CampaignDeparturesProps) {
     <section className="relative z-[2] mx-auto max-w-[900px] px-6 pt-20" id="departures">
       <div className="text-center">
         <motion.p
-          className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
+          className="text-[12px] font-extrabold tracking-[0.24em] text-camp-accent"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -45,7 +45,7 @@ export function CampaignDepartures({ batches }: CampaignDeparturesProps) {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <div className="hidden grid-cols-[1.3fr_1fr_1fr_.9fr] gap-4 border-b border-border px-6 py-3.5 text-[11px] font-extrabold tracking-wide text-muted-foreground sm:grid">
+        <div className="hidden grid-cols-[1.3fr_1fr_1fr_.9fr] gap-4 border-b border-border px-6 py-3.5 text-[12px] font-extrabold tracking-wide text-muted-foreground sm:grid">
           <span>DATES</span>
           <span>SEATS LEFT</span>
           <span>PRICE / PERSON</span>
@@ -60,19 +60,19 @@ export function CampaignDepartures({ batches }: CampaignDeparturesProps) {
                 key={i}
                 className={`grid grid-cols-2 items-center gap-x-4 gap-y-2 px-6 py-4 sm:grid-cols-[1.3fr_1fr_1fr_.9fr] ${isSold ? 'opacity-45' : ''}`}
               >
-                <p className="col-span-2 text-[13.5px] font-bold text-foreground sm:col-span-1">{batch.date}</p>
-                <p className={`text-[12.5px] font-semibold ${batch.seats > 0 && batch.seats <= 4 ? 'text-amber-500 dark:text-amber-300' : 'text-muted-foreground'}`}>
+                <p className="col-span-2 text-[14px] font-bold text-foreground sm:col-span-1">{batch.date}</p>
+                <p className={`text-[14px] font-semibold ${batch.seats > 0 && batch.seats <= 4 ? 'text-amber-500 dark:text-amber-300' : 'text-muted-foreground'}`}>
                   {isSold ? '—' : `${batch.seats} left`}
                 </p>
-                <p className="text-[14px] font-extrabold text-foreground">{batch.price}</p>
+                <p className="text-[16px] font-extrabold text-foreground">{batch.price}</p>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
-                  <span className={`rounded-full px-3 py-1 text-[10.5px] font-extrabold ${status.className}`}>
+                  <span className={`rounded-full px-3 py-1 text-[12px] font-extrabold ${status.className}`}>
                     {status.label}
                   </span>
                   {!isSold && (
                     <Link
                       href="#reserve"
-                      className="rounded-lg bg-accent-grad px-4 py-1.5 text-[11.5px] font-extrabold text-white ring-inner transition hover:brightness-110"
+                      className="rounded-lg bg-accent-grad px-4 py-1.5 text-[12px] font-extrabold text-white ring-inner transition hover:brightness-110"
                     >
                       Book
                     </Link>
@@ -84,7 +84,7 @@ export function CampaignDepartures({ batches }: CampaignDeparturesProps) {
         </div>
       </motion.div>
       <motion.p
-        className="mt-5 text-center text-[12.5px] text-muted-foreground"
+        className="mt-5 text-center text-[14px] text-muted-foreground"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}

@@ -37,9 +37,9 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">
+      <h2 className="text-[18px] font-bold">
         Reviews{' '}
-        <span className="text-[13px] font-semibold text-muted-foreground">
+        <span className="text-[14px] font-semibold text-muted-foreground">
           ({totalReviews.toLocaleString('en-IN')})
         </span>
       </h2>
@@ -65,23 +65,23 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
               />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <p className="text-[14px] font-bold">{review.name}</p>
+                  <p className="text-[16px] font-bold">{review.name}</p>
                   <span className="flex gap-0.5 text-amber-400">
                     {Array.from({ length: 5 }).map((_, s) => (
                       <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
                     ))}
                   </span>
                 </div>
-                <p className="text-[11.5px] text-muted-foreground">{review.meta}</p>
+                <p className="text-[12px] text-muted-foreground">{review.meta}</p>
               </div>
             </div>
 
-            <p className="mt-3 text-[13px] leading-relaxed text-foreground/75">
+            <p className="mt-3 text-[14px] leading-relaxed text-foreground/75">
               {review.quote}
             </p>
             <a
               href="#"
-              className="mt-2 inline-block text-[12px] font-bold text-primary hover:underline"
+              className="mt-2 inline-block text-[14px] font-bold text-primary hover:underline"
             >
               View Full Review
             </a>

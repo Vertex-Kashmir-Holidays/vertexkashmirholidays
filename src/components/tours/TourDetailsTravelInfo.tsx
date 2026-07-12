@@ -26,7 +26,7 @@ export function TourDetailsTravelInfo({
 
   return (
     <section id="travel-info" className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-      <h2 className="text-[17px] font-bold">Travel Information</h2>
+      <h2 className="text-[18px] font-bold">Travel Information</h2>
       <div className="mt-4 space-y-3">
         {hasBestTime && (
           <TourDetailsAccordionItem title="Best Time to Visit">
@@ -44,7 +44,7 @@ export function TourDetailsTravelInfo({
                     <p className="text-foreground/65">{row.reason}</p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold ${
                       row.mandatory ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground/60'
                     }`}
                   >
@@ -61,7 +61,7 @@ export function TourDetailsTravelInfo({
             <ol className="space-y-2.5">
               {localTravelTips.map((tip, i) => (
                 <li key={i} className="flex items-start gap-2.5">
-                  <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-foreground/70">
+                  <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-muted text-[12px] font-bold text-foreground/70">
                     {i + 1}
                   </span>
                   {tip}

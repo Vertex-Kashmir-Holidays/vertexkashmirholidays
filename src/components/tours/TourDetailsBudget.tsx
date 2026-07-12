@@ -17,12 +17,12 @@ export function TourDetailsBudget({ budgetBreakdown, personalExpenses }: TourDet
 
   return (
     <section id="budget" className="mt-6 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-      <h2 className="text-[17px] font-bold">Budget</h2>
+      <h2 className="text-[18px] font-bold">Budget</h2>
       <div className="mt-4 space-y-3">
         {hasBudget && (
           <TourDetailsAccordionItem title="Estimated Total Trip Budget">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[12.5px]">
+              <table className="w-full text-left text-[14px]">
                 <thead>
                   <tr className="border-b border-border text-foreground/60">
                     <th className="pb-2 pr-3 font-semibold">Category</th>
@@ -49,7 +49,7 @@ export function TourDetailsBudget({ budgetBreakdown, personalExpenses }: TourDet
         {hasExpenses && (
           <TourDetailsAccordionItem title="Estimated Personal Expenses">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[12.5px]">
+              <table className="w-full text-left text-[14px]">
                 <thead>
                   <tr className="border-b border-border text-foreground/60">
                     <th className="pb-2 pr-3 font-semibold">Activity / Expense</th>
@@ -64,7 +64,7 @@ export function TourDetailsBudget({ budgetBreakdown, personalExpenses }: TourDet
                       <td className="py-2 pr-3 text-foreground/75">{row.cost}</td>
                       <td className="py-2">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
+                          className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${
                             row.mandatory ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground/60'
                           }`}
                         >

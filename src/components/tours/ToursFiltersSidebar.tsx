@@ -48,12 +48,12 @@ function FilterContent({
   return (
     <>
       {/* Search */}
-      <p className="text-[15px] font-bold">Search</p>
+      <p className="text-[16px] font-bold">Search</p>
       <label className="mt-3 flex items-center gap-2 rounded-lg bg-muted px-3.5 py-2.5">
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
           placeholder="Search tours..."
         />
         <Search className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
@@ -61,8 +61,8 @@ function FilterContent({
 
       {/* Categories */}
       <div className="mt-7">
-        <p className="text-[15px] font-bold">Categories</p>
-        <ul className="mt-3.5 space-y-3 text-[13px]">
+        <p className="text-[16px] font-bold">Categories</p>
+        <ul className="mt-3.5 space-y-3 text-[14px]">
           {categories.map((c, i) => (
             <motion.li
               key={c.id}
@@ -82,7 +82,7 @@ function FilterContent({
                 <c.Icon size={18} strokeWidth={1.75} className="shrink-0 text-foreground/70" />
                 {c.label}
               </label>
-              <span className="text-[12px] text-muted-foreground">{c.count}</span>
+              <span className="text-[14px] text-muted-foreground">{c.count}</span>
             </motion.li>
           ))}
         </ul>
@@ -90,8 +90,8 @@ function FilterContent({
 
       {/* Duration */}
       <div className="mt-7 border-t border-border pt-6">
-        <p className="text-[15px] font-bold">Duration (Days)</p>
-        <ul className="mt-3.5 space-y-3 text-[13px]">
+        <p className="text-[16px] font-bold">Duration (Days)</p>
+        <ul className="mt-3.5 space-y-3 text-[14px]">
           {durations.map((d, i) => (
             <motion.li
               key={d.id}
@@ -110,7 +110,7 @@ function FilterContent({
               <label htmlFor={`${idPrefix}-dur-${d.id}`} className="w-full cursor-pointer text-foreground/85">
                 {d.label}
               </label>
-              <span className="text-[12px] text-muted-foreground">{d.count}</span>
+              <span className="text-[14px] text-muted-foreground">{d.count}</span>
             </motion.li>
           ))}
         </ul>
@@ -118,8 +118,8 @@ function FilterContent({
 
       {/* Price */}
       <div className="mt-7 border-t border-border pt-6">
-        <p className="text-[15px] font-bold">
-          Price Range <span className="text-[11px] font-medium text-muted-foreground">(per person)</span>
+        <p className="text-[16px] font-bold">
+          Price Range <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
         </p>
         <PriceRangeSlider
           min={priceMin}
@@ -131,7 +131,7 @@ function FilterContent({
       </div>
 
       <motion.button
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-[1.5px] border-primary py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-[1.5px] border-primary py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onClear}
@@ -192,7 +192,7 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
           >
             {/* Drawer Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card p-4">
-              <h3 className="text-[17px] font-bold">Filters</h3>
+              <h3 className="text-[18px] font-bold">Filters</h3>
               <button
                 onClick={onClose}
                 className="grid h-9 w-9 place-items-center rounded-full hover:bg-muted"

@@ -72,7 +72,7 @@ function DateDivider({ iso }: { iso: string }) {
   return (
     <div className="flex items-center gap-3 py-2 px-4">
       <div className="flex-1 h-px bg-border" />
-      <span className="text-[10px] text-muted-foreground font-medium shrink-0">{label}</span>
+      <span className="text-[12px] text-muted-foreground font-medium shrink-0">{label}</span>
       <div className="flex-1 h-px bg-border" />
     </div>
   );
@@ -366,7 +366,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
                     PRESENCE_COLORS[dmPresence],
                   )}
                 />
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[12px] text-muted-foreground">
                   {PRESENCE_LABELS[dmPresence]}
                 </span>
               </div>

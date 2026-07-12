@@ -59,7 +59,7 @@ export default async function ActivitiesPage() {
         alt="Things to do in Kashmir"
         aside={<HeroLeadCard source="activities" buttonLabel="Plan My Activities" />}
       >
-        <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
           <span className="font-semibold text-white">Activities</span>
@@ -67,7 +67,7 @@ export default async function ActivitiesPage() {
         <h1 className="mt-6 h-display text-3xl font-bold text-white sm:text-4xl lg:text-[44px]">
           Things to Do in Kashmir
         </h1>
-        <p className="mt-3 max-w-md text-[15px] text-white/85">
+        <p className="mt-3 max-w-md text-[16px] text-white/85">
           Shikara sunsets, Gulmarg gondola, alpine treks and more — handpicked experiences for your trip.
         </p>
       </SecondaryHero>

@@ -47,7 +47,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
           <AnimatePresence mode="wait">
             <motion.p
               key={view}
-              className="text-[13px] font-bold text-emerald-300"
+              className="text-[14px] font-bold text-emerald-300"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -70,7 +70,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
                 : "Let's start your Kashmir adventure"}
             </motion.h1>
           </AnimatePresence>
-          <p className="mt-5 text-[14px] leading-relaxed text-white/85">
+          <p className="mt-5 text-[16px] leading-relaxed text-white/85">
             Handcrafted trips. Honest pricing.<br/>Unforgettable memories.
           </p>
         </div>
@@ -79,23 +79,23 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
           {/* Stats */}
           <div className="flex flex-wrap gap-x-8 gap-y-4 text-white">
             <div>
-              <p className="text-[17px] font-extrabold leading-tight">15+</p>
-              <p className="text-[10.5px] text-white/70">Years on ground</p>
+              <p className="text-[18px] font-extrabold leading-tight">15+</p>
+              <p className="text-[12px] text-white/70">Years on ground</p>
             </div>
             <div>
-              <p className="text-[17px] font-extrabold leading-tight">12,000+</p>
-              <p className="text-[10.5px] text-white/70">Happy travellers</p>
+              <p className="text-[18px] font-extrabold leading-tight">12,000+</p>
+              <p className="text-[12px] text-white/70">Happy travellers</p>
             </div>
             <div>
-              <p className="text-[17px] font-extrabold leading-tight">4.9/5</p>
-              <p className="text-[10.5px] text-white/70">Average rating</p>
+              <p className="text-[18px] font-extrabold leading-tight">4.9/5</p>
+              <p className="text-[12px] text-white/70">Average rating</p>
             </div>
             <div>
-              <p className="flex items-center gap-1.5 text-[17px] font-extrabold leading-tight">
+              <p className="flex items-center gap-1.5 text-[18px] font-extrabold leading-tight">
                 <Clock className="h-4 w-4" strokeWidth={2} />
                 24×7
               </p>
-              <p className="text-[10.5px] text-white/70">WhatsApp support</p>
+              <p className="text-[12px] text-white/70">WhatsApp support</p>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
             <AnimatePresence mode="wait">
               <motion.p
                 key={testimonialIndex}
-                className="mt-2.5 text-[13px] leading-relaxed text-white/90"
+                className="mt-2.5 text-[14px] leading-relaxed text-white/90"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -121,7 +121,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
             <AnimatePresence mode="wait">
               <motion.p
                 key={testimonialIndex}
-                className="mt-2.5 text-[12px] font-semibold text-white/70"
+                className="mt-2.5 text-[14px] font-semibold text-white/70"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -146,7 +146,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
             ))}
           </div>
 
-          <p className="mt-6 text-[11px] text-white/55">
+          <p className="mt-6 text-[12px] text-white/55">
             © 2026 Vertex Kashmir Holidays. All rights reserved.
           </p>
         </div>

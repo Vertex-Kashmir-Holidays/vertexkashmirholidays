@@ -25,7 +25,7 @@ export function ActivityHighlights({ highlights }: ActivityHighlightsProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">Activity Highlights</h2>
+      <h2 className="text-[18px] font-bold">Activity Highlights</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {highlights.map((h, i) => (
           <motion.div
@@ -39,8 +39,8 @@ export function ActivityHighlights({ highlights }: ActivityHighlightsProps) {
             <div className="flex items-start gap-2.5">
               <Star className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} fill="currentColor" />
               <div>
-                <p className="text-[13.5px] font-bold">{h.name}</p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{h.description}</p>
+                <p className="text-[14px] font-bold">{h.name}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{h.description}</p>
               </div>
             </div>
           </motion.div>

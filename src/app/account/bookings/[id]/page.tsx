@@ -86,7 +86,7 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
             <h1 className="font-display text-xl font-bold text-foreground">{booking.tour?.title ?? "Custom Booking"}</h1>
             <p className="mt-1 text-xs text-muted-foreground">Ref: {ref}</p>
           </div>
-          <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold", STATUS_STYLES[booking.status] ?? "bg-muted text-muted-foreground")}>
+          <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-bold", STATUS_STYLES[booking.status] ?? "bg-muted text-muted-foreground")}>
             {booking.status}
           </span>
         </div>
@@ -94,14 +94,14 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-[11px] text-muted-foreground">Travel date</p>
+              <p className="text-[12px] text-muted-foreground">Travel date</p>
               <p className="font-semibold text-foreground">{booking.travelDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-[11px] text-muted-foreground">Travellers</p>
+              <p className="text-[12px] text-muted-foreground">Travellers</p>
               <p className="font-semibold text-foreground">{booking.travellers}</p>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
                   <div className="overflow-x-auto rounded-xl border border-border">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                        <tr className="bg-muted/50 text-left text-[12px] uppercase tracking-wide text-muted-foreground">
                           {g.headers.map((h) => (
                             <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>
                           ))}
@@ -173,12 +173,12 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
               { label: "Vehicle Number", value: booking.vehicleNumber },
             ].map((f) => (
               <div key={f.label} className="rounded-xl border border-border bg-muted/30 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{f.label}</p>
+                <p className="text-[12px] uppercase tracking-wide text-muted-foreground">{f.label}</p>
                 <p className="mt-0.5 text-sm font-semibold text-foreground break-words">{f.value || "—"}</p>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">Your driver will contact you before pickup.</p>
+          <p className="mt-3 text-[12px] text-muted-foreground">Your driver will contact you before pickup.</p>
         </div>
       )}
 
@@ -195,7 +195,7 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
           </div>
         </dl>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">{statusLabel}</span>
+          <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[12px] font-bold text-primary">{statusLabel}</span>
           {invoiceAvailable && (
             <a
               href={`/api/account/bookings/${booking.id}/invoice`}
@@ -218,7 +218,7 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left text-[12px] uppercase tracking-wide text-muted-foreground">
                   <th className="py-2 pr-3 font-semibold">Date</th>
                   <th className="py-2 pr-3 font-semibold">Type</th>
                   <th className="py-2 pr-3 font-semibold">Method</th>

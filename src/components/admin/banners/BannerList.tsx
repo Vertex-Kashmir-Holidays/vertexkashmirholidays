@@ -84,7 +84,7 @@ export function BannerList({
   const typeBadge = (t: BannerType) => (
     <span
       className={cn(
-        "inline-block shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+        "inline-block shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold",
         t === "STRIP"
           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
           : "bg-amber-500/15 text-amber-700 dark:text-amber-300",
@@ -131,13 +131,13 @@ export function BannerList({
             <button
               onClick={() => remove(b.id)}
               disabled={isPending}
-              className="min-h-[40px] rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-bold text-white md:min-h-0"
+              className="min-h-[40px] rounded-lg bg-red-600 px-3 py-1.5 text-[12px] font-bold text-white md:min-h-0"
             >
               Delete
             </button>
             <button
               onClick={() => setConfirmDelete(null)}
-              className="min-h-[40px] rounded-lg px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted md:min-h-0"
+              className="min-h-[40px] rounded-lg px-2 py-1.5 text-[12px] text-muted-foreground hover:bg-muted md:min-h-0"
             >
               Cancel
             </button>
@@ -184,7 +184,7 @@ export function BannerList({
       <div className="hidden w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:block">
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-border bg-muted/40 text-left text-[12px] uppercase tracking-wide text-muted-foreground">
               <th className="w-[28%] px-4 py-2.5 font-semibold">Title</th>
               <th className="w-[10%] px-4 py-2.5 font-semibold">Type</th>
               <th className="px-4 py-2.5 font-semibold">Pages</th>

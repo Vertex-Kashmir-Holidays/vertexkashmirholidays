@@ -64,8 +64,8 @@ export function BannerStripView({
   // On mobile the icon + body are hidden so the line never wraps or overflows.
   const iconCls = forceMobile ? "hidden" : "hidden sm:block";
   const bodyCls = forceMobile ? "hidden" : "hidden sm:inline";
-  const textCls = forceMobile ? "text-[11px]" : "text-[11px] sm:text-[12.5px]";
-  const ctaText = forceMobile ? "text-[10px]" : "text-[10px] sm:text-[10.5px]";
+  const textCls = forceMobile ? "text-[12px]" : "text-[12px] sm:text-[14px]";
+  const ctaText = forceMobile ? "text-[12px]" : "text-[12px] sm:text-[12px]";
 
   return (
     <div className="border-b border-white/10" style={{ background: STRIP_GRADIENT }}>

@@ -146,7 +146,7 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Tour", "Category", "Duration", "Price", "Rating", "Status", "Date", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -180,14 +180,14 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                           <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">
                             {tour.title}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate">/tours/{tour.slug}</p>
+                          <p className="text-[12px] text-muted-foreground truncate">/tours/{tour.slug}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* Category */}
                     <td className="px-4 py-3">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", CATEGORY_STYLES[tour.category] ?? "bg-muted text-muted-foreground")}>
+                      <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", CATEGORY_STYLES[tour.category] ?? "bg-muted text-muted-foreground")}>
                         {CATEGORY_LABELS[tour.category] ?? tour.category}
                       </span>
                     </td>
@@ -210,7 +210,7 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                           {tour.rating > 0 ? tour.rating.toFixed(1) : "—"}
                         </span>
                         {tour.reviewCount > 0 && (
-                          <span className="text-[10px] text-muted-foreground">({tour.reviewCount})</span>
+                          <span className="text-[12px] text-muted-foreground">({tour.reviewCount})</span>
                         )}
                       </div>
                     </td>
@@ -218,11 +218,11 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                     {/* Status */}
                     <td className="px-4 py-3">
                       {tour.published ? (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full w-fit">
+                        <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full w-fit">
                           <CheckCircle2 className="w-3 h-3" /> Published
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full w-fit">
+                        <span className="flex items-center gap-1 text-[12px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full w-fit">
                           <Clock className="w-3 h-3" /> Draft
                         </span>
                       )}
@@ -240,13 +240,13 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                           <button
                             onClick={() => handleDelete(tour.id)}
                             disabled={isPending}
-                            className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
                           >
                             {isPending ? "…" : "Delete"}
                           </button>
                           <button
                             onClick={() => setConfirmDelete(null)}
-                            className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
+                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
                           >
                             Cancel
                           </button>
@@ -272,7 +272,7 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[10px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">View only</span>
                           )}
                         </div>
                       )}

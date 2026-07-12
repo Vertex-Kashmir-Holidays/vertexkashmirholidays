@@ -54,7 +54,7 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
 
             {offer.badge && (
               <motion.span
-                className="absolute left-3 top-3 rounded-md bg-orange-600 px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg"
+                className="absolute left-3 top-3 rounded-md bg-orange-600 px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-white shadow-lg"
                 initial={{ x: -20 }}
                 animate={{ x: 0 }}
                 transition={{ delay: index * 0.05 + 0.3 }}
@@ -64,7 +64,7 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
             )}
 
             {discountPct && (
-              <span className="absolute right-3 top-3 flex items-center gap-0.5 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-extrabold text-white shadow">
+              <span className="absolute right-3 top-3 flex items-center gap-0.5 rounded-full bg-red-500 px-2.5 py-1 text-[12px] font-extrabold text-white shadow">
                 <Flame className="h-3 w-3" />
                 Save {discountPct}%
               </span>
@@ -80,14 +80,14 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
             </h3>
 
             {offer.description && (
-              <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">
+              <p className="mt-1.5 line-clamp-2 text-[14px] leading-relaxed text-muted-foreground">
                 {offer.description}
               </p>
             )}
 
             {offer.endsText && (
               <div
-                className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
+                className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold ${
                   isSeatsLimited
                     ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
                     : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
@@ -101,17 +101,17 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
             {/* Price */}
             <div className="mt-4 flex items-end justify-between border-t border-orange-100 pt-3 dark:border-orange-900/30">
               {offer.oldPrice ? (
-                <span className="text-[11px] text-muted-foreground line-through">{formatINR(offer.oldPrice)}</span>
+                <span className="text-[12px] text-muted-foreground line-through">{formatINR(offer.oldPrice)}</span>
               ) : (
-                <span className="text-[11px]">&nbsp;</span>
+                <span className="text-[12px]">&nbsp;</span>
               )}
               <p className="text-[22px] font-extrabold leading-tight text-orange-600 dark:text-orange-400">
                 {offer.price > 0 ? formatINR(offer.price) : 'Custom'}
               </p>
-              <p className="text-[9px] text-muted-foreground">per person</p>
+              <p className="text-[10px] text-muted-foreground">per person</p>
             </div>
 
-            <p className="mt-2 border-t border-orange-100 pt-2 text-[10px] italic text-muted-foreground dark:border-orange-900/30">
+            <p className="mt-2 border-t border-orange-100 pt-2 text-[12px] italic text-muted-foreground dark:border-orange-900/30">
               <Tag className="-mt-0.5 mr-1 inline h-3 w-3" />
               Fully customisable — dates, hotels & group size
             </p>
@@ -123,7 +123,7 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 py-2.5 text-[12px] font-semibold text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-md"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 py-2.5 text-[14px] font-semibold text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-md"
                 >
                   <WhatsAppIcon className="h-3.5 w-3.5" />
                   WhatsApp
@@ -132,7 +132,7 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href={offer.ctaHref ?? '#'}
-                  className="flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 py-2.5 text-[12px] font-extrabold text-white transition-all hover:brightness-110 hover:shadow-gold"
+                  className="flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 py-2.5 text-[14px] font-extrabold text-white transition-all hover:brightness-110 hover:shadow-gold"
                 >
                   Explore Adventure →
                 </Link>
@@ -161,7 +161,7 @@ export function AdventureSection({ heading, offers }: AdventureSectionProps) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
-            className="rv text-[11px] font-bold tracking-[0.22em] text-gold"
+            className="rv text-[12px] font-bold tracking-[0.22em] text-gold"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -170,7 +170,7 @@ export function AdventureSection({ heading, offers }: AdventureSectionProps) {
             {heading.kicker}
           </motion.p>
           <motion.h2
-            className="rv h-display mt-3 text-[17px] font-bold text-foreground"
+            className="rv h-display mt-3 text-[18px] font-bold text-foreground"
             style={{ '--rd': '0.08s' } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

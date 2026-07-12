@@ -37,7 +37,7 @@ export function PromoBannerCard({
   stacked?: boolean;
 }) {
   const ctaClass =
-    "ring-inner mt-1 inline-flex w-fit items-center gap-2 rounded-full bg-primary px-6 py-3 text-[13px] font-bold text-primary-foreground shadow-glow transition hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+    "ring-inner mt-1 inline-flex w-fit items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-bold text-primary-foreground shadow-glow transition hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
   const desktopSrc = b.imageUrl ?? undefined;
   const mobileSrc = b.imageMobileUrl ?? undefined;
@@ -109,7 +109,7 @@ export function PromoBannerCard({
           <p
             className={
               stacked
-                ? "max-w-xl text-[13px] leading-relaxed text-white/85"
+                ? "max-w-xl text-[14px] leading-relaxed text-white/85"
                 : "max-w-xl text-sm leading-relaxed text-white/85 sm:text-base"
             }
           >

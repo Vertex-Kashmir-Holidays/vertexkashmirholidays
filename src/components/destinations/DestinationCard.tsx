@@ -29,7 +29,7 @@ export function DestinationCard({ dest }: DestinationCardProps) {
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
-            <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[10.5px] font-bold text-white backdrop-blur">
+            <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">
               {dest.tours} {dest.tours === 1 ? 'Tour' : 'Tours'}
             </span>
             <motion.button
@@ -46,11 +46,11 @@ export function DestinationCard({ dest }: DestinationCardProps) {
             </motion.button>
           </div>
           <div className="flex flex-1 flex-col p-4">
-            <h3 className="text-[17px] font-bold">{dest.name}</h3>
-            {dest.tagline && <p className="mt-0.5 text-[12px] font-medium text-muted-foreground">{dest.tagline}</p>}
-            {dest.description && <p className="mt-2 min-h-[40px] text-[12.5px] leading-relaxed text-foreground/70">{dest.description}</p>}
+            <h3 className="text-[18px] font-bold">{dest.name}</h3>
+            {dest.tagline && <p className="mt-0.5 text-[14px] font-medium text-muted-foreground">{dest.tagline}</p>}
+            {dest.description && <p className="mt-2 min-h-[40px] text-[14px] leading-relaxed text-foreground/70">{dest.description}</p>}
             {(dest.temperature != null || dest.season) && (
-              <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[11.5px] font-semibold text-foreground/75">
+              <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[12px] font-semibold text-foreground/75">
                 {dest.temperature != null && (
                   <span className="flex items-center gap-1.5">
                     <Thermometer className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />

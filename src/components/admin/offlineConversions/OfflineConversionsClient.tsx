@@ -108,7 +108,7 @@ const selectCls =
 
 const chipCls = (active: boolean) =>
   cn(
-    "text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-colors whitespace-nowrap",
+    "text-[12px] font-semibold px-2.5 py-1.5 rounded-lg border transition-colors whitespace-nowrap",
     active ? "bg-primary/10 border-primary/30 text-primary" : "border-border text-muted-foreground hover:bg-muted",
   );
 
@@ -130,7 +130,7 @@ function StatCard({
       </div>
       <div className="min-w-0">
         <p className="text-xl font-extrabold text-foreground leading-none truncate">{value}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+        <p className="text-[12px] text-muted-foreground mt-0.5">{label}</p>
       </div>
     </div>
   );
@@ -139,23 +139,23 @@ function StatCard({
 function PeriodCard({ label, stat }: { label: string; stat: PeriodStat }) {
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
-      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2.5">{label}</p>
+      <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide mb-2.5">{label}</p>
       <div className="grid grid-cols-4 gap-2 text-center">
         <div>
           <p className="text-base font-extrabold text-foreground">{stat.uploads}</p>
-          <p className="text-[10px] text-muted-foreground">Uploads</p>
+          <p className="text-[12px] text-muted-foreground">Uploads</p>
         </div>
         <div>
           <p className="text-base font-extrabold text-green-600 dark:text-green-400">{stat.successRate}%</p>
-          <p className="text-[10px] text-muted-foreground">Success</p>
+          <p className="text-[12px] text-muted-foreground">Success</p>
         </div>
         <div>
           <p className="text-base font-extrabold text-red-600 dark:text-red-400">{stat.failedRate}%</p>
-          <p className="text-[10px] text-muted-foreground">Failed</p>
+          <p className="text-[12px] text-muted-foreground">Failed</p>
         </div>
         <div>
           <p className="text-base font-extrabold text-foreground">{stat.avgAttempts}</p>
-          <p className="text-[10px] text-muted-foreground">Avg. Attempts</p>
+          <p className="text-[12px] text-muted-foreground">Avg. Attempts</p>
         </div>
       </div>
     </div>
@@ -440,7 +440,7 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
           >
             <RefreshCw className={cn("w-3.5 h-3.5", isPending && "animate-spin")} /> Refresh
           </button>
-          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground cursor-pointer select-none pl-1">
+          <label className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground cursor-pointer select-none pl-1">
             <input type="checkbox" className="cbx" checked={autoRefresh} onChange={toggleAutoRefresh} />
             Auto-refresh (30s)
           </label>
@@ -524,7 +524,7 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
           <button
             type="button"
             onClick={() => setShowAdvanced((v) => !v)}
-            className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
           >
             <Filter className="w-3 h-3" />
             Advanced
@@ -577,7 +577,7 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
                   </th>
                 )}
                 {["Lead", "Booking", "Platform", "Destination ID", "Status", "Attempts", "Last Attempt", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -648,16 +648,16 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
 
                       {/* Destination ID */}
                       <td className="px-4 py-3">
-                        <span className="font-mono text-[10px] text-muted-foreground">{destinationId ?? "—"}</span>
+                        <span className="font-mono text-[12px] text-muted-foreground">{destinationId ?? "—"}</span>
                       </td>
 
                       {/* Status */}
                       <td className="px-4 py-3">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap", STATUS_STYLES[row.status])}>
+                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap", STATUS_STYLES[row.status])}>
                           {STATUS_LABELS[row.status]}
                         </span>
                         {row.status === "FAILED" && row.lastError && (
-                          <p className="text-[10px] text-red-500/80 mt-0.5 max-w-[160px] truncate" title={row.lastError}>
+                          <p className="text-[12px] text-red-500/80 mt-0.5 max-w-[160px] truncate" title={row.lastError}>
                             {failure.title}
                           </p>
                         )}

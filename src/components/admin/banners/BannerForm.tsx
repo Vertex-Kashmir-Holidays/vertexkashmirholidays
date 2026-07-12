@@ -55,7 +55,7 @@ function toDateInput(iso: string | null): string {
 const inputClass =
   "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60";
 const labelClass = "block text-xs font-semibold text-foreground";
-const hintClass = "text-[11px] text-muted-foreground";
+const hintClass = "text-[12px] text-muted-foreground";
 
 export function BannerForm({ initial, canEdit }: { initial: BannerFormData | null; canEdit: boolean }) {
   const router = useRouter();
@@ -166,7 +166,7 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
                 )}
               >
                 <span className="block">{t === "STRIP" ? "Strip" : "Promo"}</span>
-                <span className="mt-0.5 block text-[11px] font-normal opacity-80">
+                <span className="mt-0.5 block text-[12px] font-normal opacity-80">
                   {t === "STRIP" ? "Thin bar above the navbar" : "Inline image + text card"}
                 </span>
               </button>

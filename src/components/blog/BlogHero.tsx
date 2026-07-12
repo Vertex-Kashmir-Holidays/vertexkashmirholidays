@@ -21,7 +21,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
       aside={<HeroLeadCard source="blog-list" />}
     >
         <motion.p
-          className="text-[12px] font-bold tracking-[0.32em] text-white/90"
+          className="text-[14px] font-bold tracking-[0.32em] text-white/90"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -35,7 +35,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
           {content.heroTitle}
         </h1>
         <p
-          className="hero-reveal mt-3 text-[14.5px] text-white/90"
+          className="hero-reveal mt-3 text-[16px] text-white/90"
           style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {content.heroSubtitle}
@@ -48,7 +48,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
         >
           <input
             id="blogSearch"
-            className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+            className="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
             placeholder={content.heroSearchPlaceholder ?? 'Search articles...'}
             onChange={(e) => onSearch(e.target.value)}
           />

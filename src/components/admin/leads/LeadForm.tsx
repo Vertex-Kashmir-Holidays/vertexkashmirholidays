@@ -202,18 +202,18 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Name *</label>
                <input {...register("name")} className={inputCls} placeholder="Full name" />
-               {errors.name && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
+               {errors.name && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
              </div>
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Phone *</label>
                <input {...register("phone")} type="tel" className={inputCls} placeholder="+91 98765 43210" />
-               {errors.phone && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.phone.message}</p>}
+               {errors.phone && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.phone.message}</p>}
              </div>
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Email</label>
              <input {...register("email")} type="email" className={inputCls} placeholder="optional@email.com" />
-             {errors.email && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.email.message}</p>}
+             {errors.email && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.email.message}</p>}
            </div>
          </div>
 
@@ -235,7 +235,7 @@ export function LeadForm({ staffUsers, leadId, defaultValues, readOnly = false, 
                  className={inputCls}
                />
                {errors.endDate && (
-                 <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.endDate.message}</p>
+                 <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.endDate.message}</p>
                )}
              </div>
            </div>

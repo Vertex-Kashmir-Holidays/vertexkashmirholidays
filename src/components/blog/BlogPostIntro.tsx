@@ -11,7 +11,7 @@ export function BlogPostIntro({ paragraphs }: BlogPostIntroProps) {
   return (
     <motion.div
       id="intro"
-      className="space-y-4 text-[14.5px] leading-[1.8] text-brand-ink/85"
+      className="space-y-4 text-[16px] leading-[1.8] text-brand-ink/85"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

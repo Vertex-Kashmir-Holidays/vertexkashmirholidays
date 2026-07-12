@@ -55,7 +55,7 @@ export function EmojiPicker({ onSelect, onClose }: Props) {
     >
       {EMOJI_GROUPS.map((group) => (
         <div key={group.label} className="mb-3">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
+          <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
             {group.label}
           </p>
           <div className="flex flex-wrap gap-1">

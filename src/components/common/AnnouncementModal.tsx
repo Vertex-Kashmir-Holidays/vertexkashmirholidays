@@ -172,7 +172,7 @@ export function AnnouncementModal() {
               <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">
                 Kashmir · Ladakh · Gulmarg · Pahalgam · Vaishno Devi
               </p>
-              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-[12px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                 Custom itineraries · Group & private tours · Honeymoon packages
               </p>
             </div>

@@ -26,8 +26,8 @@ export function WhyChooseSection({ heading, items }: WhyChooseSectionProps) {
   return (
     <section id="why" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="text-center">
-        <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-        <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+        <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+        <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
           {renderAccents(heading.title)}
         </h2>
       </div>
@@ -42,7 +42,7 @@ export function WhyChooseSection({ heading, items }: WhyChooseSectionProps) {
                 {Icon ? <Icon size={24} strokeWidth={1.75} /> : w.emoji}
               </span>
               <h3 className="mt-5 font-bold text-foreground">{w.title}</h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{w.description}</p>
+              <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{w.description}</p>
             </div>
           </article>
           );

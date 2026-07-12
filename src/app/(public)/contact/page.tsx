@@ -216,8 +216,8 @@ export default async function ContactPage() {
         {faqs.length > 0 && (
           <section className="mt-16 border-t border-border pt-14">
             <div className="text-center">
-              <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
-              <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
+              <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
+              <h2 className="h-display mt-2 font-display text-[18px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
             </div>
             <div className="mt-8">
               <FaqPreviewList faqs={faqs} columns={2} />
@@ -225,7 +225,7 @@ export default async function ContactPage() {
             <div className="mt-6 flex justify-center">
               <Link
                 href={content?.faqsCtaHref && content.faqsCtaHref !== '#' ? content.faqsCtaHref : '/faq'}
-                className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
               >
                 {content?.faqsCtaLabel ?? 'View all FAQs'}
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />

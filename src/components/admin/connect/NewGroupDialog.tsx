@@ -182,7 +182,7 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
                       </div>
                     )}
                     <span className="text-sm">{u.name ?? u.id}</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground capitalize">
+                    <span className="ml-auto text-[12px] text-muted-foreground capitalize">
                       {u.role.toLowerCase()}
                     </span>
                   </label>

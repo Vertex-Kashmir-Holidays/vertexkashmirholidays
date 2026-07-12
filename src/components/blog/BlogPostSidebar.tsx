@@ -44,8 +44,8 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-[15.5px] font-bold">On This Page</h2>
-          <ul className="mt-3.5 space-y-2.5 text-[12.5px]">
+          <h2 className="text-[16px] font-bold">On This Page</h2>
+          <ul className="mt-3.5 space-y-2.5 text-[14px]">
             {toc.map((item, i) => (
               <li key={i}>
                 <Link
@@ -71,7 +71,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <h2 className="text-[15.5px] font-bold">{relatedTour.label}</h2>
+          <h2 className="text-[16px] font-bold">{relatedTour.label}</h2>
           <div className="relative mt-4 h-[140px] w-full overflow-hidden rounded-xl">
             <Image
               src={imgSrc(relatedTour.image)}
@@ -82,20 +82,20 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
             />
           </div>
           <h3 className="mt-4 text-[16px] font-bold leading-snug">{relatedTour.name}</h3>
-          <p className="text-[13px] font-semibold text-muted-foreground">{relatedTour.duration}</p>
+          <p className="text-[14px] font-semibold text-muted-foreground">{relatedTour.duration}</p>
           <p className="mt-2.5 flex flex-wrap items-center gap-2">
             <span className="text-[18px] font-extrabold">{relatedTour.price}</span>
-            <span className="text-[12px] text-muted-foreground">/ person</span>
+            <span className="text-[14px] text-muted-foreground">/ person</span>
             {relatedTour.oldPrice && (
-              <span className="text-[12px] text-muted-foreground line-through">{relatedTour.oldPrice}</span>
+              <span className="text-[14px] text-muted-foreground line-through">{relatedTour.oldPrice}</span>
             )}
             {relatedTour.off && (
-              <span className="rounded bg-amber-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
+              <span className="rounded bg-amber-500 px-2 py-0.5 text-[12px] font-extrabold text-white">
                 {relatedTour.off}
               </span>
             )}
           </p>
-          <ul className="mt-3.5 space-y-2 text-[12px] text-foreground/80">
+          <ul className="mt-3.5 space-y-2 text-[14px] text-foreground/80">
             <li className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
               {relatedTour.route}
@@ -111,12 +111,12 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           </ul>
           <Link
             href={relatedTour.href}
-            className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
+            className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"
           >
             View Details
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
           </Link>
-          <Link href={relatedTour.href} className="mt-3 block text-center text-[12.5px] font-bold text-primary underline-offset-2 hover:underline">
+          <Link href={relatedTour.href} className="mt-3 block text-center text-[14px] font-bold text-primary underline-offset-2 hover:underline">
             Customize this trip
           </Link>
         </motion.div>
@@ -130,28 +130,28 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <h2 className="text-[15.5px] font-bold text-foreground">
+        <h2 className="text-[16px] font-bold text-foreground">
           Get Kashmir stories in your inbox
         </h2>
-        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
           Weekly travel tips, exclusive deals, and hidden gems — straight from the valley.
         </p>
         <form className="mt-3.5 space-y-2.5" onSubmit={(e) => e.preventDefault()}>
           <input
             type="email"
             required
-            className="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-[12.5px] text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-[14px] text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
             placeholder="Enter your email"
           />
           <motion.button
-            className="w-full rounded-lg bg-primary py-2.5 text-[12.5px] font-bold text-primary-foreground transition hover:brightness-110"
+            className="w-full rounded-lg bg-primary py-2.5 text-[14px] font-bold text-primary-foreground transition hover:brightness-110"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             Subscribe
           </motion.button>
         </form>
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <p className="mt-3 flex items-center gap-1.5 text-[12px] text-muted-foreground">
           <Clock className="h-3.5 w-3.5" strokeWidth={2} />
           No spam. Unsubscribe anytime.
         </p>
@@ -165,7 +165,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        <h2 className="text-[15.5px] font-bold">About the Author</h2>
+        <h2 className="text-[16px] font-bold">About the Author</h2>
         <div className="mt-4 flex items-start gap-3.5">
           <Image
             src={author.avatar}
@@ -176,12 +176,12 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           />
           <div>
             {author.href ? (
-              <Link href={author.href} className="text-[14px] font-bold transition hover:text-primary">{author.name}</Link>
+              <Link href={author.href} className="text-[16px] font-bold transition hover:text-primary">{author.name}</Link>
             ) : (
-              <p className="text-[14px] font-bold">{author.name}</p>
+              <p className="text-[16px] font-bold">{author.name}</p>
             )}
-            {author.role && <p className="text-[11.5px] font-semibold text-primary">{author.role}</p>}
-            {author.bio && <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{author.bio}</p>}
+            {author.role && <p className="text-[12px] font-semibold text-primary">{author.role}</p>}
+            {author.bio && <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{author.bio}</p>}
             <div className="mt-3 flex gap-2">
               {['Instagram', 'Facebook', 'YouTube', 'WhatsApp'].map((s, i) => (
                 <a
@@ -190,7 +190,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
                   aria-label={s}
                   className="grid h-7 w-7 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-primary hover:text-primary"
                 >
-                  <span className="text-[10px] font-bold">{s[0]}</span>
+                  <span className="text-[12px] font-bold">{s[0]}</span>
                 </a>
               ))}
             </div>

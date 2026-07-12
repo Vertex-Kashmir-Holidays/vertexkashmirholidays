@@ -14,6 +14,15 @@ const config: Config = {
        display: ['"Playfair Display"', 'Georgia', 'serif'],
        sans: ['Inter', 'system-ui', 'sans-serif'],
      },
+     // Normalized type scale (docs/DESIGN_SYSTEM.md) — even-only steps (12,
+     // 14, 16, 18, 20, 24...), matching Tailwind's own original ladder shape.
+     // Only the two sizes that read as genuinely too small are bumped;
+     // base/lg/xl+ are already comfortable and 2xl+ is the already-normalized
+     // heading/hero tier.
+     fontSize: {
+       xs: ['0.875rem', { lineHeight: '1.25rem' }], // 14px (was 12px)
+       sm: ['1rem', { lineHeight: '1.5rem' }],       // 16px (was 14px) — same as `base`; see DESIGN_SYSTEM.md
+     },
      colors: {
        // ── Semantic theme tokens (flip between light/dark via CSS vars) ──
        // Defined in globals.css under :root and .dark. Use these for any

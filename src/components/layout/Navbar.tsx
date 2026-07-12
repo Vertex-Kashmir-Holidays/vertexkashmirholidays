@@ -96,7 +96,7 @@ export function Navbar() {
 
           {/* Desktop Navigation — light-on-dark over the hero, ink once landed. */}
           <ul
-            className={`hidden items-center gap-7 text-[15px] font-medium lg:flex ${
+            className={`hidden items-center gap-7 text-[16px] font-medium lg:flex ${
               overHero ? 'text-white/80' : 'text-foreground/75'
             }`}
           >
@@ -151,7 +151,7 @@ export function Navbar() {
               target="_blank"
               onClick={() => trackWhatsappClick('header')}
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
               <WhatsAppIcon className="h-4 w-4" />
               Plan My Trip
@@ -178,7 +178,7 @@ export function Navbar() {
               }`}
             >
               <link.Icon className="h-5 w-5" strokeWidth={1.8} />
-              <span className="text-[9px] font-medium">{link.label}</span>
+              <span className="text-[10px] font-medium">{link.label}</span>
             </Link>
           ))}
           
@@ -190,7 +190,7 @@ export function Navbar() {
             }`}
           >
             <User className="h-5 w-5" strokeWidth={1.8} />
-            <span className="text-[9px] font-medium">Profile</span>
+            <span className="text-[10px] font-medium">Profile</span>
           </Link>
           
           {/* Burger Menu - Opens overlay */}
@@ -206,7 +206,7 @@ export function Navbar() {
             ) : (
               <Menu className="h-5 w-5" strokeWidth={1.8} />
             )}
-            <span className="text-[9px] font-medium">Menu</span>
+            <span className="text-[10px] font-medium">Menu</span>
           </button>
         </div>
       </div>
@@ -303,7 +303,7 @@ export function Navbar() {
                 >
                   <Link
                     href={link.href}
-                    className={`text-[17px] font-medium transition hover:text-primary ${
+                    className={`text-[18px] font-medium transition hover:text-primary ${
                       isActive(link.href) ? 'text-primary' : 'text-foreground/80'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}

@@ -12,7 +12,7 @@ interface TourDetailsAccordionItemProps {
 export function TourDetailsAccordionItem({ title, children }: TourDetailsAccordionItemProps) {
   return (
     <details className="group rounded-xl border border-border bg-muted/40 open:bg-muted/50">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-[13.5px] font-bold text-foreground [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-[14px] font-bold text-foreground [&::-webkit-details-marker]:hidden">
         {title}
         <svg
           viewBox="0 0 24 24"
@@ -25,7 +25,7 @@ export function TourDetailsAccordionItem({ title, children }: TourDetailsAccordi
           <path d="m6 9 6 6 6-6" />
         </svg>
       </summary>
-      <div className="px-4 pb-4 text-[13px] leading-relaxed text-foreground/80">{children}</div>
+      <div className="px-4 pb-4 text-[14px] leading-relaxed text-foreground/80">{children}</div>
     </details>
   );
 }

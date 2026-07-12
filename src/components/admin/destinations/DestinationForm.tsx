@@ -237,12 +237,12 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Name *</label>
                <input {...register("name")} className={inputCls} placeholder="e.g. Dal Lake" />
-               {errors.name && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
+               {errors.name && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
              </div>
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Slug *</label>
                <input {...register("slug")} className={`${inputCls} font-mono`} placeholder="e.g. dal-lake" />
-               {errors.slug && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.slug.message}</p>}
+               {errors.slug && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.slug.message}</p>}
              </div>
            </div>
            <div>
@@ -264,7 +264,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <div>
              <h3 className="font-bold text-foreground text-sm">Facts &amp; Coordinates</h3>
-             <p className="text-[11px] text-muted-foreground mt-0.5">Shown on destination cards &amp; detail page. Coordinates power the live weather widget.</p>
+             <p className="text-[12px] text-muted-foreground mt-0.5">Shown on destination cards &amp; detail page. Coordinates power the live weather widget.</p>
            </div>
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              <div>
@@ -282,12 +282,12 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Latitude</label>
                <input {...register("latitude")} inputMode="decimal" className={`${inputCls} font-mono`} placeholder="e.g. 34.0500" />
-               {errors.latitude && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.latitude.message}</p>}
+               {errors.latitude && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.latitude.message}</p>}
              </div>
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Longitude</label>
                <input {...register("longitude")} inputMode="decimal" className={`${inputCls} font-mono`} placeholder="e.g. 74.3800" />
-               {errors.longitude && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.longitude.message}</p>}
+               {errors.longitude && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.longitude.message}</p>}
              </div>
            </div>
          </div>
@@ -329,7 +329,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <div>
              <h3 className="font-bold text-foreground text-sm">Cover Image (Mobile)</h3>
-             <p className="text-[11px] text-muted-foreground mt-0.5">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
+             <p className="text-[12px] text-muted-foreground mt-0.5">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
            </div>
            <div className="flex gap-3">
              <input
@@ -371,7 +371,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
            <div className="space-y-2">
              {whyVisitFields.map((field, i) => (
                <div key={field.id} className="flex gap-2 items-center">
-                 <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                 <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[12px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                  <input {...register(`whyVisit.${i}.value`)} className={`${inputCls} flex-1`} placeholder="e.g. Alpine meadows blooming with wildflowers in spring" />
                  <button type="button" onClick={() => removeWhyVisit(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
                    <Trash2 className="w-4 h-4" />
@@ -416,17 +416,17 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
            <h3 className="font-bold text-foreground text-sm">Planning Detail</h3>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Best Time to Visit — Detail</label>
-             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted. Full seasonal breakdown — the short Best Season field above stays for the sidebar quick-fact.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">HTML is accepted. Full seasonal breakdown — the short Best Season field above stays for the sidebar quick-fact.</p>
              <textarea {...register("bestTimeDetail")} rows={4} className={`${inputCls} resize-none`} placeholder="Season-by-season breakdown..." />
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">How to Reach</label>
-             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">HTML is accepted.</p>
              <textarea {...register("howToReach")} rows={4} className={`${inputCls} resize-none`} placeholder="Air / road / rail directions..." />
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Where to Stay</label>
-             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">HTML is accepted.</p>
              <textarea {...register("whereToStay")} rows={4} className={`${inputCls} resize-none`} placeholder="Hotel / stay category guidance..." />
            </div>
          </div>
@@ -499,7 +499,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
            <div className="space-y-2">
              {tipFields.map((field, i) => (
                <div key={field.id} className="flex gap-2 items-center">
-                 <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                 <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[12px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                  <input {...register(`travelTips.${i}.value`)} className={`${inputCls} flex-1`} placeholder="e.g. Carry a postpaid SIM — prepaid connections don't work in J&K" />
                  <button type="button" onClick={() => removeTip(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
                    <Trash2 className="w-4 h-4" />
@@ -518,7 +518,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <div>
              <h3 className="font-bold text-foreground text-sm">Things to Do</h3>
-             <p className="text-[11px] text-muted-foreground mt-0.5">Activities shown on this destination&apos;s page. Manage activities in the Activities module.</p>
+             <p className="text-[12px] text-muted-foreground mt-0.5">Activities shown on this destination&apos;s page. Manage activities in the Activities module.</p>
            </div>
            <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
          </div>
@@ -528,7 +528,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <div>
              <h3 className="font-bold text-foreground text-sm">Related Blogs</h3>
-             <p className="text-[11px] text-muted-foreground mt-0.5">Curated editorial links shown at the end of this destination&apos;s page. Not an automatic feed — manage blog posts in the Blogs module.</p>
+             <p className="text-[12px] text-muted-foreground mt-0.5">Curated editorial links shown at the end of this destination&apos;s page. Not an automatic feed — manage blog posts in the Blogs module.</p>
            </div>
            <LinkChecklist title="Blog Posts" options={blogOptions} value={relatedBlogIds} onChange={setRelatedBlogIds} />
          </div>
@@ -561,12 +561,12 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Title</label>
-             <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
              <input {...register("ogTitle")} className={inputCls} />
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Description</label>
-             <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
              <textarea {...register("ogDescription")} rows={2} className={`${inputCls} resize-none`} />
            </div>
          </div>

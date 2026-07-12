@@ -101,34 +101,34 @@ export function TourDetailsSidebar({
         transition={{ duration: 0.5 }}
       >
         {discountPct ? (
-          <span className="rounded-md bg-badge-green px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white">
+          <span className="rounded-md bg-badge-green px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-white">
             {discountPct}% OFF
           </span>
         ) : null}
         <p className="mt-3 flex items-baseline gap-2">
           <span className="text-[30px] font-extrabold leading-none">₹{price.toLocaleString('en-IN')}</span>
-          <span className="text-[12px] font-medium text-muted-foreground">per person</span>
+          <span className="text-[14px] font-medium text-muted-foreground">per person</span>
         </p>
         {oldPrice && (
-          <p className="mt-1.5 text-[15px] font-semibold text-muted-foreground line-through">
+          <p className="mt-1.5 text-[16px] font-semibold text-muted-foreground line-through">
             ₹{oldPrice.toLocaleString('en-IN')}
           </p>
         )}
 
         <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3">
-          <p className="flex items-center gap-1.5 text-[19px] font-extrabold">
+          <p className="flex items-center gap-1.5 text-[20px] font-extrabold">
             {rating}
             <Star className="h-5 w-5 text-amber-400" fill="currentColor" strokeWidth={0} />
           </p>
           <div className="leading-tight">
-            <p className="text-[13px] font-bold">Excellent</p>
-            <p className="text-[11.5px] text-muted-foreground">{reviews.toLocaleString('en-IN')} reviews</p>
+            <p className="text-[14px] font-bold">Excellent</p>
+            <p className="text-[12px] text-muted-foreground">{reviews.toLocaleString('en-IN')} reviews</p>
           </div>
         </div>
 
         <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-primary/10 px-4 py-3 text-foreground">
           <ShieldCheck className="h-5 w-5 shrink-0" strokeWidth={2} />
-          <p className="text-[12px] font-semibold leading-snug">
+          <p className="text-[14px] font-semibold leading-snug">
             Book with {ADVANCE_PCT}% advance to lock your dates
           </p>
         </div>
@@ -136,7 +136,7 @@ export function TourDetailsSidebar({
         {isFilling && nextDeparture && (
           <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-orange-500/10 px-4 py-3 text-orange-700 dark:text-orange-400">
             <Flame className="h-5 w-5 shrink-0" strokeWidth={2} />
-            <p className="text-[12px] font-semibold leading-snug">
+            <p className="text-[14px] font-semibold leading-snug">
               Filling fast — only {nextDeparture.seats} seats left for{' '}
               {new Date(nextDeparture.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
             </p>
@@ -148,7 +148,7 @@ export function TourDetailsSidebar({
         <div className="hidden lg:block">
         {/* Tabs — only shown when both forms are enabled. */}
         {showInquiry && showBook && (
-          <div className="mt-5 flex border-b border-border text-[14px] font-bold">
+          <div className="mt-5 flex border-b border-border text-[16px] font-bold">
             <button
              onClick={() => { setActiveTab('inquiry'); if (activeTab !== 'inquiry') trackTourInquiry(tourName, tourId); }}
               className={`relative flex-1 pb-3 transition ${
@@ -203,7 +203,7 @@ export function TourDetailsSidebar({
         >
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="bkDate" className="text-[12.5px] font-semibold">
+              <label htmlFor="bkDate" className="text-[14px] font-semibold">
                 Start Date
               </label>
               <div className="mt-1.5 flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
@@ -213,20 +213,20 @@ export function TourDetailsSidebar({
                   min={minBookDate}
                   value={bookDate}
                   onChange={(e) => setBookDate(e.target.value)}
-                  className="w-full px-3 py-2.5 text-[13px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                  className="w-full px-3 py-2.5 text-[14px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
                 />
                 <Calendar className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
               </div>
             </div>
             <div>
-              <label htmlFor="bkPax" className="text-[12.5px] font-semibold">
+              <label htmlFor="bkPax" className="text-[14px] font-semibold">
                 Travellers
               </label>
               <select
                 id="bkPax"
                 value={bookPax}
                 onChange={(e) => setBookPax(e.target.value)}
-                className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[13px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                   <option key={n} value={n}>{n}</option>
@@ -237,7 +237,7 @@ export function TourDetailsSidebar({
           <motion.button
             type="button"
             onClick={goToBooking}
-            className="!mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
+            className="!mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -245,7 +245,7 @@ export function TourDetailsSidebar({
             Book Now — Pay {ADVANCE_PCT}% Advance
             <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
           </motion.button>
-          <p className="text-center text-[11px] text-muted-foreground">
+          <p className="text-center text-[12px] text-muted-foreground">
             Secure checkout via Razorpay · Pay {advanceAmount > 0 ? `₹${advanceAmount.toLocaleString('en-IN')}` : `${ADVANCE_PCT}%`} advance now, balance later
           </p>
         </motion.div>
@@ -260,13 +260,13 @@ export function TourDetailsSidebar({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <ul className="space-y-4 text-[13px]">
+        <ul className="space-y-4 text-[14px]">
           {trustItems.map((item, i) => (
             <li key={i} className="flex items-center gap-3">
               <item.Icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.8} />
               <div>
                 <p className="font-bold">{item.t}</p>
-                {item.s && <p className="text-[11.5px] text-muted-foreground">{item.s}</p>}
+                {item.s && <p className="text-[12px] text-muted-foreground">{item.s}</p>}
               </div>
             </li>
           ))}
@@ -289,9 +289,9 @@ export function TourDetailsSidebar({
           <WhatsAppIcon className="h-5 w-5" />
         </span>
         <span>
-          <span className="block text-[14px] font-bold text-foreground">Need Help?</span>
-          <span className="block text-[12px] text-muted-foreground">Chat with our travel expert</span>
-          <span className="mt-0.5 block text-[12.5px] font-bold text-primary">{helpPhone}</span>
+          <span className="block text-[16px] font-bold text-foreground">Need Help?</span>
+          <span className="block text-[14px] text-muted-foreground">Chat with our travel expert</span>
+          <span className="mt-0.5 block text-[14px] font-bold text-primary">{helpPhone}</span>
         </span>
       </motion.a>
 
@@ -311,8 +311,8 @@ export function TourDetailsSidebar({
               <card.Icon className="h-5 w-5" strokeWidth={1.8} />
             </span>
             <div>
-              <p className="text-[13.5px] font-bold">{card.t}</p>
-              <p className="text-[12px] text-muted-foreground">{card.s}</p>
+              <p className="text-[14px] font-bold">{card.t}</p>
+              <p className="text-[14px] text-muted-foreground">{card.s}</p>
             </div>
           </div>
         ))}

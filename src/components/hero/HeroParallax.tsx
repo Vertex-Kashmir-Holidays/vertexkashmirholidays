@@ -130,12 +130,12 @@ export function HeroParallax() {
           <div className="hidden lg:flex absolute -left-36 top-1/2 -translate-y-1/2 flex-col items-center gap-1">
             <Flame className="h-5 w-5 text-gold" />
             <p className="text-gold font-bold text-2xl font-mono leading-none">46°C</p>
-            <p className="text-white/35 text-[10px] uppercase tracking-widest">Delhi Plains</p>
+            <p className="text-white/35 text-[12px] uppercase tracking-widest">Delhi Plains</p>
           </div>
           <div className="hidden lg:flex absolute -right-36 top-1/2 -translate-y-1/2 flex-col items-center gap-1">
             <Snowflake className="h-5 w-5 text-link" />
             <p className="text-link font-bold text-2xl font-mono leading-none">18°C</p>
-            <p className="text-white/35 text-[10px] uppercase tracking-widest">Kashmir</p>
+            <p className="text-white/35 text-[12px] uppercase tracking-widest">Kashmir</p>
           </div>
         </div>
       </motion.div>

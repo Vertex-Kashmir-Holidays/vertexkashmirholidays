@@ -220,7 +220,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             <BlogPostBody html={html} />
             {faqs.length > 0 && (
               <section id="faqs" className="scroll-mt-16 mt-8 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-                <h2 className="text-[17px] font-bold">FAQs</h2>
+                <h2 className="text-[18px] font-bold">FAQs</h2>
                 <div className="mt-4">
                   <FaqPreviewList faqs={faqs} />
                 </div>

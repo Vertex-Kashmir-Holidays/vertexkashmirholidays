@@ -34,7 +34,7 @@ export function CampaignUrgencyBar({ offerText, deadline, seats }: CampaignUrgen
 
   return (
     <div className="relative z-[5] border-b border-white/10 bg-black/60 backdrop-blur">
-      <div className="mx-auto flex max-w-[1300px] flex-wrap items-center justify-center gap-x-7 gap-y-1 px-6 py-2 text-[12px] font-semibold text-white/90">
+      <div className="mx-auto flex max-w-[1300px] flex-wrap items-center justify-center gap-x-7 gap-y-1 px-6 py-2 text-[14px] font-semibold text-white/90">
         <motion.span initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           {offerText}
         </motion.span>

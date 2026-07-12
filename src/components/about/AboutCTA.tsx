@@ -30,15 +30,15 @@ export function AboutCTA({ data }: AboutCTAProps) {
           aria-hidden
           className="orb orb-gold absolute left-1/2 top-1/2 -z-10 h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2"
         />
-        <h2 className="h-display font-display text-[17px] font-bold leading-snug text-foreground">
+        <h2 className="h-display font-display text-[18px] font-bold leading-snug text-foreground">
           {renderMint(data.title)}
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-[14px] text-muted-foreground">{data.subtitle}</p>
+        <p className="mx-auto mt-3 max-w-xl text-[16px] text-muted-foreground">{data.subtitle}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3.5">
           {data.whatsappLabel && (
             <Link
               href={data.whatsappHref ?? '#'}
-              className="inline-flex items-center gap-2.5 rounded-lg bg-brand-bright px-6 py-3.5 text-[13.5px] font-bold text-white shadow-card transition hover:brightness-110"
+              className="inline-flex items-center gap-2.5 rounded-lg bg-brand-bright px-6 py-3.5 text-[14px] font-bold text-white shadow-card transition hover:brightness-110"
             >
               <WhatsAppIcon className="h-[18px] w-[18px]" />
               {data.whatsappLabel}
@@ -47,7 +47,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
           {data.callLabel && (
             <Link
               href={data.callHref ?? '#'}
-              className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[13.5px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
+              className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[14px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
             >
               <Phone className="h-4 w-4" strokeWidth={2} />
               {data.callLabel}
@@ -56,7 +56,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
           {data.emailLabel && (
             <Link
               href={data.emailHref ?? '#'}
-              className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[13.5px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
+              className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[14px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
             >
               <Mail className="h-4 w-4" strokeWidth={2} />
               {data.emailLabel}

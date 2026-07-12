@@ -312,7 +312,7 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
 
           {/* Members list */}
           <div className="px-5 pt-4 pb-2">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Members</p>
+            <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Members</p>
             <div className="space-y-1">
               {room.members.map((m) => {
                 const isSelf = m.userId === currentUserId;
@@ -342,14 +342,14 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                       <p className="text-sm truncate">
                         {m.user.name ?? m.userId}
                         {isSelf && (
-                          <span className="ml-1 text-[10px] text-muted-foreground">(you)</span>
+                          <span className="ml-1 text-[12px] text-muted-foreground">(you)</span>
                         )}
                       </p>
                     </div>
 
                     {/* Role badge */}
                     {m.role === "ADMIN" && (
-                      <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-full shrink-0">
+                      <span className="text-[12px] font-semibold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-full shrink-0">
                         Admin
                       </span>
                     )}
@@ -407,7 +407,7 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
           {/* Add members (admin only) */}
           {isAdmin && nonMembers.length > 0 && (
             <div className="px-5 pt-3 pb-4 border-t border-border mt-2">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Add Members</p>
+              <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Add Members</p>
               <div className="space-y-1">
                 {nonMembers.map((u) => (
                   <div key={u.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-muted/40 transition-colors">

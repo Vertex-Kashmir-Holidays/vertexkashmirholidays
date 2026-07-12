@@ -267,13 +267,13 @@ export default async function AdminDashboard() {
                   ) : (
                     <TrendingDown className="w-3 h-3 text-red-400" />
                   )}
-                  <span className={`text-[10px] font-semibold ${change >= 0 ? "text-green-500" : "text-red-400"}`}>
+                  <span className={`text-[12px] font-semibold ${change >= 0 ? "text-green-500" : "text-red-400"}`}>
                     {change >= 0 ? "+" : ""}{change}%
                   </span>
-                  <span className="text-[10px] text-muted-foreground">{sub}</span>
+                  <span className="text-[12px] text-muted-foreground">{sub}</span>
                 </>
               ) : (
-                <span className="text-[10px] text-muted-foreground">{sub}</span>
+                <span className="text-[12px] text-muted-foreground">{sub}</span>
               )}
             </div>
           </div>
@@ -329,11 +329,11 @@ export default async function AdminDashboard() {
                       <p className="text-xs font-semibold text-foreground truncate leading-tight">
                         {b.tour?.title ?? "Custom booking"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">{fmtDate(b.createdAt)}</p>
+                      <p className="text-[12px] text-muted-foreground">{fmtDate(b.createdAt)}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs font-bold text-foreground">{fmtINR(b.amount)}</p>
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${s.className}`}>
+                      <span className={`text-[12px] font-semibold px-1.5 py-0.5 rounded-md ${s.className}`}>
                         {s.label}
                       </span>
                     </div>
@@ -358,7 +358,7 @@ export default async function AdminDashboard() {
             <thead>
               <tr className="bg-muted border-b border-border">
                 {["Name", "Phone", "Source", "Travel Date", "Status", "Action"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wide text-[10px]">
+                  <th key={h} className="text-left px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wide text-[12px]">
                     {h}
                   </th>
                 ))}
@@ -385,7 +385,7 @@ export default async function AdminDashboard() {
                       {lead.startDate ? fmtDate(lead.startDate) : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${LEAD_STATUS_STYLES[lead.status] ?? "bg-muted text-muted-foreground"}`}>
+                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[12px] ${LEAD_STATUS_STYLES[lead.status] ?? "bg-muted text-muted-foreground"}`}>
                         {lead.status}
                       </span>
                     </td>
@@ -435,11 +435,11 @@ export default async function AdminDashboard() {
                       {tour.title}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[12px] text-muted-foreground">
                         {tour.bookingCount} booking{tour.bookingCount !== 1 ? "s" : ""}
                       </span>
                       {(tour.rating ?? 0) > 0 && (
-                        <span className="flex items-center gap-0.5 text-[10px] text-yellow-500">
+                        <span className="flex items-center gap-0.5 text-[12px] text-yellow-500">
                           <Star className="w-2.5 h-2.5 fill-yellow-400" />
                           {tour.rating?.toFixed(1)}
                         </span>
@@ -461,7 +461,7 @@ export default async function AdminDashboard() {
             <div className="flex items-center gap-2">
               <p className="font-display font-bold text-foreground text-sm">Reviews Awaiting Approval</p>
               {pendingReviews.length > 0 && (
-                <span className="bg-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="bg-accent text-white text-[12px] font-bold px-1.5 py-0.5 rounded-full">
                   {pendingReviews.length}
                 </span>
               )}
@@ -491,7 +491,7 @@ export default async function AdminDashboard() {
                         ))}
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-1 truncate">{review.tour.title}</p>
+                    <p className="text-[12px] text-muted-foreground mb-1 truncate">{review.tour.title}</p>
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{review.body}</p>
                   </div>
                 </div>

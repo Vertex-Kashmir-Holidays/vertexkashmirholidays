@@ -60,8 +60,8 @@ export function ToursNewsletter() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="h-display text-[17px] font-bold text-white">Don't miss our best deals!</h2>
-          <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/80">
+          <h2 className="h-display text-[18px] font-bold text-white">Don't miss our best deals!</h2>
+          <p className="mt-2 max-w-sm text-[14px] leading-relaxed text-white/80">
             Subscribe to get early access to exclusive offers and Kashmir travel tips.
           </p>
         </motion.div>
@@ -78,20 +78,20 @@ export function ToursNewsletter() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && subscribe()}
-              className="w-full bg-transparent px-4 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+              className="w-full bg-transparent px-4 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
               placeholder="Enter your email address"
             />
             <motion.button
               onClick={subscribe}
               disabled={submitting}
-              className="shrink-0 rounded-md bg-brand-bright px-5 py-3 text-[13px] font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              className="shrink-0 rounded-md bg-brand-bright px-5 py-3 text-[14px] font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
               {submitting ? 'Subscribing…' : 'Subscribe Now'}
             </motion.button>
           </div>
-          <p className="mt-2.5 text-[11px] text-white/70">No spam. Unsubscribe anytime.</p>
+          <p className="mt-2.5 text-[12px] text-white/70">No spam. Unsubscribe anytime.</p>
         </motion.div>
       </div>
     </section>

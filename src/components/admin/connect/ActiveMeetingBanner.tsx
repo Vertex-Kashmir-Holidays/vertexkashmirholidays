@@ -101,7 +101,7 @@ export function ActiveMeetingBanner({ roomId, roomType, currentUserId, onJoin, i
         <p className="text-xs font-semibold text-green-700 dark:text-green-400 truncate">
           {meeting.title}
         </p>
-        <p className="text-[10px] text-green-600/70 dark:text-green-500/70">
+        <p className="text-[12px] text-green-600/70 dark:text-green-500/70">
           {count} participant{count !== 1 ? "s" : ""}
           {alreadyIn ? " · you are in this call" : ""}
         </p>

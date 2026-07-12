@@ -37,11 +37,11 @@ export function AboutStory({ data, features }: AboutStoryProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{data.kicker}</p>
-          <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">
+          <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{data.kicker}</p>
+          <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">
             {renderMint(data.title)}
           </h2>
-          <p className="mt-4 max-w-xl text-[13.5px] leading-relaxed text-foreground/75">
+          <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-foreground/75">
             {data.body}
           </p>
           <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-7 lg:grid-cols-4">
@@ -58,8 +58,8 @@ export function AboutStory({ data, features }: AboutStoryProps) {
                     <path d={feat.icon} />
                   </svg>
                 </span>
-                <p className="mt-3 text-[13px] font-bold leading-snug">{feat.title}</p>
-                <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted-foreground">{feat.subtitle}</p>
+                <p className="mt-3 text-[14px] font-bold leading-snug">{feat.title}</p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{feat.subtitle}</p>
               </motion.div>
             ))}
           </div>

@@ -35,7 +35,7 @@ export function RatingSummaryRow({ googleRating, googleProfileUrl, tripadvisorWi
                 <Star key={i} className="h-4 w-4" strokeWidth={0} fill={i < Math.round(stats.average) ? "currentColor" : "none"} />
               ))}
             </div>
-            <p className="mt-1.5 text-[12px] text-muted-foreground">
+            <p className="mt-1.5 text-[14px] text-muted-foreground">
               {stats.total.toLocaleString("en-IN")} review{stats.total === 1 ? "" : "s"}
             </p>
           </div>
@@ -44,7 +44,7 @@ export function RatingSummaryRow({ googleRating, googleProfileUrl, tripadvisorWi
               const count = stats.distribution[star];
               const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
               return (
-                <div key={star} className="flex items-center gap-2.5 text-[12px]">
+                <div key={star} className="flex items-center gap-2.5 text-[14px]">
                   <span className="w-9 shrink-0 font-semibold text-foreground">{star}★</span>
                   <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                     <span className="block h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />

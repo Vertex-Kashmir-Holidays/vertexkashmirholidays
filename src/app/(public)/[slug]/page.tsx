@@ -57,7 +57,7 @@ export default async function LegalPage({ params }: PageProps) {
 
       {/* Unified image-banner hero (admin-replaceable from the gallery). */}
       <SecondaryHero image={heroImage} imageMobile={heroImageMobile} alt={title}>
-        <nav className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+        <nav className="flex flex-wrap items-center gap-1.5 text-[14px] text-white/85" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
           <span className="font-semibold text-white">{title}</span>

@@ -393,7 +393,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               {/* 16. FAQs */}
               {faqs.length > 0 && (
                 <section className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-                  <h2 className="text-[17px] font-bold">FAQs</h2>
+                  <h2 className="text-[18px] font-bold">FAQs</h2>
                   <div className="mt-4">
                     <FaqPreviewList faqs={faqs} />
                   </div>

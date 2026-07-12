@@ -166,7 +166,7 @@ function SidebarContent({
         {navGroups.map((group, i) => (
           <div key={group.label ?? `group-${i}`} className="space-y-0.5">
             {group.label && (
-              <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+              <p className="px-3 pt-2 pb-1 text-[12px] font-bold uppercase tracking-wider text-muted-foreground/60">
                 {group.label}
               </p>
             )}
@@ -223,7 +223,7 @@ function SidebarContent({
           <Avatar src={userImage} name={userName} className="w-8 h-8" />
           <div className="flex-1 min-w-0">
             <p className="text-foreground text-xs font-semibold truncate">{userName}</p>
-            <p className="text-muted-foreground text-[10px] truncate">{userEmail}</p>
+            <p className="text-muted-foreground text-[12px] truncate">{userEmail}</p>
           </div>
         </Link>
         <button

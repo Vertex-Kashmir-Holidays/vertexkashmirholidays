@@ -27,8 +27,8 @@ export function AuthTrustStrip() {
         >
           <item.Icon className="h-9 w-9 shrink-0 text-primary" strokeWidth={1.6} />
           <div>
-            <p className="text-[13.5px] font-bold">{item.t}</p>
-            <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">{item.s}</p>
+            <p className="text-[14px] font-bold">{item.t}</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{item.s}</p>
           </div>
         </div>
       ))}

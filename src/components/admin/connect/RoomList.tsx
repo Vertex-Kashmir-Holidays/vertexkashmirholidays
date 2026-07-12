@@ -165,12 +165,12 @@ function RoomButton({
           </span>
           <div className="flex items-center gap-1 shrink-0">
             {lastMsg && (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[12px] text-muted-foreground">
                 {timeAgo(lastMsg.createdAt)}
               </span>
             )}
             {room.unreadCount > 0 && !isActive && (
-              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold">
                 {room.unreadCount > 99 ? "99+" : room.unreadCount}
               </span>
             )}
@@ -256,7 +256,7 @@ export function RoomList({
                 onClick={() => setShowArchived((v) => !v)}
                 className="w-full px-4 pt-4 pb-1 flex items-center gap-2 text-left"
               >
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex-1">
+                <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider flex-1">
                   Archived ({archivedRooms.length})
                 </span>
                 <ChevronDown
@@ -283,7 +283,7 @@ export function RoomList({
           {newDMCandidates.length > 0 && (
             <>
               <div className="px-4 pt-4 pb-1">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
                   Start new DM
                 </span>
               </div>

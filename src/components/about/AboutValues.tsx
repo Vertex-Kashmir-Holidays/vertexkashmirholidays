@@ -24,9 +24,9 @@ export function AboutValues({ heading, values }: AboutValuesProps) {
       >
         <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
           <div>
-            <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{renderMint(heading.title)}</h2>
-            <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">{heading.subtitle}</p>
+            <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+            <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{renderMint(heading.title)}</h2>
+            <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">{heading.subtitle}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((val, i) => (
@@ -43,8 +43,8 @@ export function AboutValues({ heading, values }: AboutValuesProps) {
                     <path d={val.icon} />
                   </svg>
                 </span>
-                <p className="mt-4 text-[14px] font-bold">{val.title}</p>
-                <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">{val.subtitle}</p>
+                <p className="mt-4 text-[16px] font-bold">{val.title}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{val.subtitle}</p>
               </motion.div>
             ))}
           </div>

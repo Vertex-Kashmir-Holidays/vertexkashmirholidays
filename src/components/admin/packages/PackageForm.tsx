@@ -305,7 +305,7 @@ function ImageUploadField({
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      {hint && <p className="text-[10px] text-muted-foreground mb-2">{hint}</p>}
+      {hint && <p className="text-[12px] text-muted-foreground mb-2">{hint}</p>}
       <div className="flex gap-2 mb-2">
         <TextInput
           type="url"
@@ -592,7 +592,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               )}
             >
               <span className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                "w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0",
                 activeSection === s.id ? "bg-primary text-white" : "bg-muted text-muted-foreground",
               )}>
                 {s.num}
@@ -648,7 +648,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 <option value="BOOKING_ONLY">Enable Booking Only</option>
                 <option value="INQUIRY_ONLY">Enable Inquiry Only</option>
               </select>
-              <p className="text-[10px] text-muted-foreground mt-1">Controls which forms visitors see on the tour page.</p>
+              <p className="text-[12px] text-muted-foreground mt-1">Controls which forms visitors see on the tour page.</p>
             </div>
           </div>
 
@@ -659,7 +659,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Full Description</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted (bold, links, lists etc.)</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted (bold, links, lists etc.)</p>
             <TextArea {...register("description")} rows={6} placeholder="Detailed description of the package..." />
           </div>
 
@@ -689,7 +689,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             <div>
               <FieldLabel>Min. Persons</FieldLabel>
               <TextInput {...register("minPersons", { valueAsNumber: true })} type="number" min={1} max={50} placeholder="1" />
-              <p className="text-[11px] text-muted-foreground mt-1">Minimum travellers required to book</p>
+              <p className="text-[12px] text-muted-foreground mt-1">Minimum travellers required to book</p>
             </div>
             <div>
               <FieldLabel>Original Price (₹)</FieldLabel>
@@ -1037,7 +1037,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           <div>
             <FieldLabel>Happy Travellers Count</FieldLabel>
             <TextInput {...register("happyCount", { valueAsNumber: true })} type="number" min={0} placeholder="e.g. 12000" />
-            <p className="text-[10px] text-muted-foreground mt-1">Shown as “12,000+ Happy Travellers” on the tour page. Leave blank to hide.</p>
+            <p className="text-[12px] text-muted-foreground mt-1">Shown as “12,000+ Happy Travellers” on the tour page. Leave blank to hide.</p>
           </div>
         </SectionCard>
 
@@ -1131,7 +1131,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
         <SectionCard id="logistics" title="8 · Trip Logistics">
           <div>
             <FieldLabel>Why This Itinerary Works</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted. Explains the route/pacing logic — builds trust before the day-by-day.</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Explains the route/pacing logic — builds trust before the day-by-day.</p>
             <TextArea {...register("whyItineraryWorks")} rows={4} placeholder="Why this itinerary is paced/routed the way it is..." />
           </div>
 
@@ -1178,13 +1178,13 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Meals</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted.</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted.</p>
             <TextArea {...register("meals")} rows={3} placeholder="Meal plan policy — what's included, what's not, and why..." />
           </div>
 
           <div>
             <FieldLabel>Transport Detail</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted. Vehicle/local-union-cab policy — richer than the short Transport quick-fact.</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Vehicle/local-union-cab policy — richer than the short Transport quick-fact.</p>
             <TextArea {...register("transportDetail")} rows={3} placeholder="Transport and local sightseeing rules..." />
           </div>
         </SectionCard>
@@ -1263,7 +1263,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Best Time to Visit — Detail</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted. Full seasonal breakdown — the short Best Time field (Trip Details) stays for the sidebar quick-fact.</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Full seasonal breakdown — the short Best Time field (Trip Details) stays for the sidebar quick-fact.</p>
             <TextArea {...register("bestTimeDetail")} rows={4} placeholder="Season-by-season breakdown..." />
           </div>
 
@@ -1324,7 +1324,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             <div className="space-y-2">
               {tipFields.map((field, i) => (
                 <div key={field.id} className="flex gap-2 items-center">
-                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[12px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                   <TextInput {...register(`localTravelTips.${i}.value`)} placeholder="e.g. Verify your SIM is postpaid before arrival" className="flex-1" />
                   <button type="button" onClick={() => removeTip(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
                     <Trash2 className="w-4 h-4" />
@@ -1385,7 +1385,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground mb-2">Up to 4 curated pairings. Each links to another tour with a custom CTA sentence — not an automatic &ldquo;more like this&rdquo; feed.</p>
+            <p className="text-[12px] text-muted-foreground mb-2">Up to 4 curated pairings. Each links to another tour with a custom CTA sentence — not an automatic &ldquo;more like this&rdquo; feed.</p>
             {relatedFields.length === 0 ? (
               <p className="text-xs text-muted-foreground py-2">No related tours added yet.</p>
             ) : (
@@ -1413,7 +1413,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Why Vertex Kashmir Holidays</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted. Per-tour trust paragraph shown near the closing CTA.</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Per-tour trust paragraph shown near the closing CTA.</p>
             <TextArea {...register("whyVertexBlurb")} rows={3} placeholder="Why travellers should book this trip with us..." />
           </div>
 
@@ -1425,7 +1425,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           </div>
           <div>
             <FieldLabel>CTA Body</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-1.5">HTML is accepted.</p>
+            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted.</p>
             <TextArea {...register("ctaBody")} rows={3} placeholder="Closing paragraph inviting the visitor to get in touch..." />
           </div>
         </SectionCard>
@@ -1435,7 +1435,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           <div>
             <FieldLabel>Meta Title</FieldLabel>
             <TextInput {...register("metaTitle")} placeholder="SEO page title (60 chars ideal)" />
-            <p className="text-[10px] text-muted-foreground mt-1">Leave blank to auto-generate from tour title.</p>
+            <p className="text-[12px] text-muted-foreground mt-1">Leave blank to auto-generate from tour title.</p>
           </div>
           <div>
             <FieldLabel>Meta Description</FieldLabel>
@@ -1460,7 +1460,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Things to Do (Activities)</FieldLabel>
-            <p className="text-[10px] text-muted-foreground mb-2">Activities shown on this tour&apos;s page. Manage activities in the Activities module.</p>
+            <p className="text-[12px] text-muted-foreground mb-2">Activities shown on this tour&apos;s page. Manage activities in the Activities module.</p>
             <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
           </div>
         </SectionCard>
@@ -1481,7 +1481,7 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               </div>
             )}
             {catInfo && (
-              <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${catInfo.color}`}>
+              <span className={`absolute top-2 left-2 text-[12px] font-bold px-2 py-0.5 rounded-full ${catInfo.color}`}>
                 {catInfo.label}
               </span>
             )}

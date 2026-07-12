@@ -362,11 +362,11 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">{lead.name}</h2>
           <div className="flex items-center gap-2 mt-1">
-            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[status])}>
+            <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[status])}>
               {status.replace(/_/g, " ")}
             </span>
             {locked && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400">
                 <Lock className="w-3 h-3" /> Locked
               </span>
             )}
@@ -506,7 +506,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     {ipDuplicates.length === 1 && (
                       <Link
                         href={`/admin/leads/${ipDuplicates[0].id}`}
-                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[12px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
                       >
                         maybe duplicate
                       </Link>
@@ -514,7 +514,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     {ipDuplicates.length > 1 && (
                       <Link
                         href={`/admin/leads?ip=${encodeURIComponent(lead.ipAddress!)}`}
-                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[12px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
                       >
                         maybe duplicate ({ipDuplicates.length})
                       </Link>
@@ -547,7 +547,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <div>
                   <p className="font-semibold text-foreground">{lead.assignedTo?.name ?? "—"}</p>
                   {lead.assignedTo?.email && (
-                    <p className="text-[10px] text-muted-foreground">{lead.assignedTo.email}</p>
+                    <p className="text-[12px] text-muted-foreground">{lead.assignedTo.email}</p>
                   )}
                 </div>
               </div>
@@ -575,12 +575,12 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                   <div className="flex items-center gap-2">
                     <Link
                       href="/admin/bookings"
-                      className="font-mono text-[10px] text-primary hover:underline"
+                      className="font-mono text-[12px] text-primary hover:underline"
                     >
                       {lead.booking.id}
                     </Link>
                     <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                      "text-[12px] font-bold px-1.5 py-0.5 rounded-full",
                       BOOKING_STATUS_STYLES[lead.booking.status] ?? "bg-muted text-muted-foreground",
                     )}>
                       {lead.booking.status}
@@ -617,7 +617,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <FileText className="w-4 h-4" /> Itinerary
               </h3>
               {itinerary?.locked && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                <span className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400">
                   <Lock className="w-3 h-3" /> Locked
                 </span>
               )}
@@ -627,7 +627,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               <div className="space-y-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold text-foreground text-sm">{itinerary.title}</p>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                     {itinerary.status}
                   </span>
                 </div>
@@ -644,7 +644,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     <p className="text-muted-foreground mb-0.5">Created by</p>
                     <p className="font-semibold text-foreground">{itinerary.owner?.name ?? "—"}</p>
                     {itinerary.owner?.email && (
-                      <p className="text-[10px] text-muted-foreground">{itinerary.owner.email}</p>
+                      <p className="text-[12px] text-muted-foreground">{itinerary.owner.email}</p>
                     )}
                   </div>
                   <div>
@@ -653,7 +653,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                       {(itinerary.lastEditedBy ?? itinerary.owner)?.name ?? "—"}
                     </p>
                     {(itinerary.lastEditedBy ?? itinerary.owner)?.email && (
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[12px] text-muted-foreground">
                         {(itinerary.lastEditedBy ?? itinerary.owner)?.email}
                       </p>
                     )}
@@ -679,7 +679,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 </div>
 
                 {converted && (
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <p className="text-[12px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Lock className="w-3 h-3" /> Final itinerary for the converted lead — locked and no longer editable.
                   </p>
                 )}
@@ -691,7 +691,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     </summary>
                     <ol className="mt-2 space-y-2 border-l border-border pl-3">
                       {itinerary.history.map((h) => (
-                        <li key={h.id} className="text-[10px]">
+                        <li key={h.id} className="text-[12px]">
                           <p className="font-semibold text-foreground">{fmtDateTime(h.createdAt)}</p>
                           <p className="text-muted-foreground">by {h.editedByName}</p>
                         </li>
@@ -713,7 +713,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     Generate Itinerary
                   </button>
                 ) : (
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     {converted
                       ? "Lead was converted without an itinerary."
                       : "You don't have permission to manage this lead's itinerary."}
@@ -764,8 +764,8 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                       </div>
                       <div className="flex-1 min-w-0 pb-3 border-b border-border last:border-0 last:pb-0">
                         <p className="text-xs font-semibold text-foreground">{activityLabel(a)}</p>
-                        {a.note && <p className="text-[10px] text-muted-foreground mt-0.5">{a.note}</p>}
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {a.note && <p className="text-[12px] text-muted-foreground mt-0.5">{a.note}</p>}
+                        <p className="text-[12px] text-muted-foreground mt-0.5">
                           by {a.performedByName} · {fmtDateTime(a.performedAt)}
                         </p>
                       </div>
@@ -796,7 +796,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
             </div>
 
             {!canManage && !locked && (
-              <p className="text-[11px] text-muted-foreground rounded-lg bg-muted px-2.5 py-2">
+              <p className="text-[12px] text-muted-foreground rounded-lg bg-muted px-2.5 py-2">
                 {isAdmin
                   ? "As an admin you can reassign this lead. Status, itinerary, conversion and other updates are handled by its assignee."
                   : "This lead is managed by its assignee."}
@@ -894,7 +894,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                   </p>
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Locked at conversion. Manage further payments from the booking.
               </p>
             </div>
@@ -908,7 +908,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <button
                   onClick={() => { setFollowUpAt(""); patch({ followUpAt: null }); }}
                   disabled={isPending}
-                  className="text-[10px] text-muted-foreground hover:text-red-500 transition-colors"
+                  className="text-[12px] text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   Clear
                 </button>
@@ -939,7 +939,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <button
                   onClick={() => patch({ bookingId: null })}
                   disabled={isPending}
-                  className="text-[10px] text-muted-foreground hover:text-red-500 transition-colors"
+                  className="text-[12px] text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   Unlink
                 </button>
@@ -949,18 +949,18 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
             {lead.booking ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-muted-foreground">
+                  <span className="font-mono text-[12px] text-muted-foreground">
                     ...{lead.booking.id.slice(-8)}
                   </span>
                   <span className={cn(
-                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                    "text-[12px] font-bold px-2 py-0.5 rounded-full",
                     BOOKING_STATUS_STYLES[lead.booking.status] ?? "bg-muted text-muted-foreground",
                   )}>
                     {lead.booking.status}
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-foreground">{lead.booking.guestName}</p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   {fmtDate(lead.booking.travelDate)}
                   {" · "}
                   <span className="font-semibold text-foreground">
@@ -976,7 +976,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               </div>
             ) : (
               <>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   {canManage ? "Paste a booking ID to link this lead to a booking." : "Only the assignee can link a booking."}
                 </p>
                 <input
@@ -1002,7 +1002,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
           {/* Lead ID */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
             <p className="text-xs font-semibold text-muted-foreground mb-1">Lead ID</p>
-            <p className="font-mono text-[10px] text-foreground break-all">{lead.id}</p>
+            <p className="font-mono text-[12px] text-foreground break-all">{lead.id}</p>
           </div>
         </div>
       </div>
@@ -1082,7 +1082,7 @@ function ConvertModal({
 
         <div className="space-y-3">
           <label className="block">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Booking Amount (₹)</span>
+            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Booking Amount (₹)</span>
             <input
               type="number"
               min={0}
@@ -1095,7 +1095,7 @@ function ConvertModal({
             />
           </label>
           <label className="block">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Token / Advance Amount (₹)</span>
+            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Token / Advance Amount (₹)</span>
             <input
               type="number"
               min={0}
@@ -1105,11 +1105,11 @@ function ConvertModal({
               placeholder="e.g. 9000"
               className={`${inputCls} mt-1`}
             />
-            <span className="text-[10px] text-muted-foreground">Recorded as the first payment. Must be less than the booking amount.</span>
+            <span className="text-[12px] text-muted-foreground">Recorded as the first payment. Must be less than the booking amount.</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Payment Mode</span>
+              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Payment Mode</span>
               <select
                 value={paymentMethod}
                 onChange={(e) => { setPaymentMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
@@ -1119,7 +1119,7 @@ function ConvertModal({
               </select>
             </label>
             <label className="block">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">GST</span>
+              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">GST</span>
               <select
                 value={gstPercent}
                 onChange={(e) => setGstPercent(e.target.value)}
@@ -1133,7 +1133,7 @@ function ConvertModal({
             </label>
           </div>
           {!gstEligible && (
-            <p className="text-[10px] text-muted-foreground">GST applies to non-cash payments only.</p>
+            <p className="text-[12px] text-muted-foreground">GST applies to non-cash payments only.</p>
           )}
         </div>
 

@@ -55,7 +55,7 @@ export function ActivityDetailTabs({ sections }: ActivityDetailTabsProps) {
   return (
     <div className="sticky top-24 z-40 border-b border-border bg-card shadow-sm">
       <div className="mx-auto max-w-[1100px] px-6">
-        <div className="scrollbar-none flex gap-7 overflow-x-auto py-3 text-[14px] font-semibold text-muted-foreground">
+        <div className="scrollbar-none flex gap-7 overflow-x-auto py-3 text-[16px] font-semibold text-muted-foreground">
           {sections.map((section) => (
             <motion.button
               key={section.id}

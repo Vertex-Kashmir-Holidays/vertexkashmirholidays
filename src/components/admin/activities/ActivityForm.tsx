@@ -172,12 +172,12 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Name *</label>
                <input {...register("name")} className={inputCls} placeholder="e.g. Gondola Ride" />
-               {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name.message}</p>}
+               {errors.name && <p className="text-[12px] text-red-500 mt-1">{errors.name.message}</p>}
              </div>
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Slug *</label>
                <input {...register("slug")} className={`${inputCls} font-mono`} />
-               {errors.slug && <p className="text-[10px] text-red-500 mt-1">{errors.slug.message}</p>}
+               {errors.slug && <p className="text-[12px] text-red-500 mt-1">{errors.slug.message}</p>}
              </div>
            </div>
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -198,7 +198,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Price (₹)</label>
                <input {...register("price")} inputMode="decimal" className={`${inputCls} font-mono`} placeholder="e.g. 1500" />
-               {errors.price && <p className="text-[10px] text-red-500 mt-1">{errors.price.message}</p>}
+               {errors.price && <p className="text-[12px] text-red-500 mt-1">{errors.price.message}</p>}
              </div>
              <div>
                <label className="block text-xs font-semibold text-muted-foreground mb-1">Difficulty</label>
@@ -221,7 +221,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            </div>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Cover Image (Mobile)</label>
-             <p className="text-[11px] text-muted-foreground mb-1">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
              <ImageField value={coverImageMobile} onChange={setCoverImageMobile} folder="activities" />
            </div>
            <SectionArrayEditor label="Gallery images" value={images} onChange={setImages} spec={{ kind: "scalar", type: "image" }} folder="activities" />
@@ -232,7 +232,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            <h3 className="font-bold text-foreground text-sm">Experience Content</h3>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Why Experience This</label>
-             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">HTML is accepted.</p>
              <textarea {...register("whyExperience")} rows={4} className={`${inputCls} resize-none`} placeholder="What makes this experience worth doing..." />
            </div>
            <SectionArrayEditor
@@ -246,7 +246,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            />
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Best Time</label>
-             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">HTML is accepted.</p>
              <textarea {...register("bestTime")} rows={4} className={`${inputCls} resize-none`} placeholder="Season / time-of-day breakdown..." />
            </div>
            <SectionArrayEditor
@@ -262,7 +262,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
            <h3 className="font-bold text-foreground text-sm">Pricing &amp; Safety</h3>
            <div>
              <label className="block text-xs font-semibold text-muted-foreground mb-1">Pricing Guide</label>
-             <p className="text-[11px] text-muted-foreground mb-1">HTML is accepted. Ticket/pricing policy, inclusions, exclusions.</p>
+             <p className="text-[12px] text-muted-foreground mb-1">HTML is accepted. Ticket/pricing policy, inclusions, exclusions.</p>
              <textarea {...register("pricingGuide")} rows={5} className={`${inputCls} resize-none`} placeholder="Ticket & pricing guide..." />
            </div>
            <SectionArrayEditor label="Safety Tips" value={safetyTips} onChange={setSafetyTips} spec={{ kind: "scalar" }} />
@@ -278,7 +278,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <div>
              <h3 className="font-bold text-foreground text-sm">Linked Destinations &amp; Tours</h3>
-             <p className="text-[11px] text-muted-foreground mt-0.5">This activity appears under the selected destinations and tours.</p>
+             <p className="text-[12px] text-muted-foreground mt-0.5">This activity appears under the selected destinations and tours.</p>
            </div>
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <LinkChecklist title="Destinations" options={destinationOptions} value={destinationIds} onChange={setDestinationIds} />

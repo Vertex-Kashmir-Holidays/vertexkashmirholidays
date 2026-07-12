@@ -178,7 +178,7 @@ export function ListEditor({ title, description, resource, fields, items, canCre
             return (
             <div key={item.id} className="flex items-center gap-3 px-5 py-3">
               {meta.sortable && (
-                <span className="w-6 shrink-0 text-[11px] font-medium text-muted-foreground/60">{item.sortOrder ?? 0}</span>
+                <span className="w-6 shrink-0 text-[12px] font-medium text-muted-foreground/60">{item.sortOrder ?? 0}</span>
               )}
               <div className="min-w-0 flex-1">
                 <p className={cn("truncate text-sm font-medium", item.isActive === false ? "text-muted-foreground" : "text-foreground")}>
@@ -189,7 +189,7 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                 )}
               </div>
               {meta.activatable && item.isActive === false && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Hidden</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[12px] font-semibold text-muted-foreground">Hidden</span>
               )}
               {viewHref && (
                 <Link
@@ -215,10 +215,10 @@ export function ListEditor({ title, description, resource, fields, items, canCre
               {canDelete &&
                 (confirmDelete === item.id ? (
                   <span className="flex items-center gap-1">
-                    <button onClick={() => remove(item.id)} disabled={busy} className="rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                    <button onClick={() => remove(item.id)} disabled={busy} className="rounded bg-red-600 px-2 py-0.5 text-[12px] font-bold text-white">
                       Delete
                     </button>
-                    <button onClick={() => setConfirmDelete(null)} className="text-[11px] text-muted-foreground">Cancel</button>
+                    <button onClick={() => setConfirmDelete(null)} className="text-[12px] text-muted-foreground">Cancel</button>
                   </span>
                 ) : (
                   <button onClick={() => setConfirmDelete(item.id)} className="text-muted-foreground hover:text-red-500 dark:text-red-400" aria-label="Delete">

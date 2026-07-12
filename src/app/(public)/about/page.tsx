@@ -175,12 +175,12 @@ export default async function AboutPage() {
       <AboutPress label={content?.pressLabel ?? null} items={press.map((p) => sanitizePressHtml(p.html))} />
       {aboutFaqs.length > 0 && (
         <section className="mx-auto max-w-[1300px] px-6 py-14">
-          <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
-          <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
+          <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
+          <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
           <div className="mt-6">
             <FaqPreviewList faqs={aboutFaqs} columns={2} />
           </div>
-          <Link href="/faq" className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
+          <Link href="/faq" className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
             View all FAQs
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
           </Link>
@@ -208,7 +208,7 @@ export default async function AboutPage() {
         }}
       />
       {(settings?.legalName || settings?.tourismRegNumber || businessAddress) && (
-        <p className="mx-auto max-w-[1300px] px-6 pb-10 text-center text-[11px] leading-relaxed text-muted-foreground">
+        <p className="mx-auto max-w-[1300px] px-6 pb-10 text-center text-[12px] leading-relaxed text-muted-foreground">
           {settings?.legalName && settings.legalName !== settings?.siteName
             ? `"${settings?.siteName ?? 'Vertex Kashmir Holidays'}" is operated by ${settings.legalName}`
             : settings?.siteName ?? 'Vertex Kashmir Holidays'}

@@ -87,7 +87,7 @@ export function SectionArrayEditor({ label, description, value, onChange, spec, 
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h4 className="text-sm font-bold text-foreground">{label}</h4>
-          {description && <p className="text-[11px] text-muted-foreground">{description}</p>}
+          {description && <p className="text-[12px] text-muted-foreground">{description}</p>}
         </div>
         {!disabled && (
           <button type="button" onClick={add} className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary hover:text-primary">
@@ -102,7 +102,7 @@ export function SectionArrayEditor({ label, description, value, onChange, spec, 
         {rows.map((row, i) => (
           <div key={i} className="rounded-lg border border-border bg-card p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">#{i + 1}</span>
+              <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">#{i + 1}</span>
               {!disabled && (
                 <div className="flex items-center gap-1">
                   <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
@@ -134,7 +134,7 @@ function RowFields({ spec, row, folder, disabled, onChange }: { spec: ItemSpec; 
       <div className="grid gap-2 sm:grid-cols-3">
         {spec.fields.map((f, idx) => (
           <div key={idx}>
-            <label className="mb-1 block text-[10px] font-semibold text-muted-foreground">{f.label}</label>
+            <label className="mb-1 block text-[12px] font-semibold text-muted-foreground">{f.label}</label>
             <input
               value={arr[idx] ?? ""}
               disabled={disabled}
@@ -163,7 +163,7 @@ function RowFields({ spec, row, folder, disabled, onChange }: { spec: ItemSpec; 
         const span = type === "textarea" || type === "image" || type === "stringList" ? "sm:col-span-2" : "";
         return (
           <div key={f.key} className={span}>
-            <label className="mb-1 block text-[10px] font-semibold text-muted-foreground">{f.label}</label>
+            <label className="mb-1 block text-[12px] font-semibold text-muted-foreground">{f.label}</label>
             {type === "image" ? (
               <ImageField value={String(obj[f.key] ?? "")} onChange={(url) => set(f.key, url)} folder={folder} />
             ) : type === "textarea" ? (

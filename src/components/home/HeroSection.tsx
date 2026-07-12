@@ -139,7 +139,7 @@ return (
         {content.badge && (
           <motion.p
             variants={itemVariants}
-            className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[11px] font-bold tracking-[0.22em] "
+            className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[12px] font-bold tracking-[0.22em] "
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> {content.badge}
           </motion.p>
@@ -148,7 +148,7 @@ return (
           className="hero-reveal h-display font-extrabold text-white"
           style={{ '--hr-y': '30px', '--hr-delay': '0.3s' } as React.CSSProperties}
         >
-            <span className="hero-brand mb-2 block whitespace-nowrap text-[13px] font-bold tracking-wide text-white/85 sm:mb-2.5 sm:text-[17px] lg:mb-3 lg:text-[20px]">
+            <span className="hero-brand mb-2 block whitespace-nowrap text-[14px] font-bold tracking-wide text-white/85 sm:mb-2.5 sm:text-[18px] lg:mb-3 lg:text-[20px]">
               Vertex Kashmir Holidays
             </span>
             <span className="hero-tagline block text-[30px] leading-[1.1] sm:text-[48px] lg:text-[64px]">
@@ -157,7 +157,7 @@ return (
         </h1>
         {content.subtitle && (
           <p
-            className="hero-reveal mt-6 max-w-md text-[15px] leading-relaxed text-white/70"
+            className="hero-reveal mt-6 max-w-md text-[16px] leading-relaxed text-white/70"
             style={{ '--hr-delay': '0.4s' } as React.CSSProperties}
           >
             {content.subtitle}
@@ -198,7 +198,7 @@ return (
                   {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString('en-IN') : stat.value}
                   {stat.suffix}
                 </p>
-                <p className="mt-1 text-[10px] primary-foreground/55">{stat.label}</p>
+                <p className="mt-1 text-[12px] primary-foreground/55">{stat.label}</p>
               </div>
             ))}
           </motion.div>

@@ -65,12 +65,12 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[21px] font-bold">{title}</h2>
+        <h2 className="text-[22px] font-bold">{title}</h2>
         <div className="flex items-center gap-3">
           {seeAllHref && (
             <Link
               href={seeAllHref}
-              className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition hover:gap-1.5"
+              className="inline-flex items-center gap-1 text-[14px] font-semibold text-primary transition hover:gap-1.5"
             >
               See All <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
             </Link>
@@ -127,22 +127,22 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
                       className="object-cover transition duration-500 group-hover/card:scale-105"
                     />
                     {thing.duration && (
-                      <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-brand-dark/80 px-2 py-0.5 text-[9.5px] font-bold text-white backdrop-blur">
+                      <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-brand-dark/80 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
                         <Clock className="h-2.5 w-2.5" /> {thing.duration}
                       </span>
                     )}
                   </div>
                   <div className="flex flex-1 flex-col p-4">
-                    <h3 className="text-[13.5px] font-bold leading-snug transition group-hover/card:text-primary">
+                    <h3 className="text-[14px] font-bold leading-snug transition group-hover/card:text-primary">
                       {thing.title}
                     </h3>
                     {thing.description && (
-                      <p className="mt-1.5 line-clamp-3 text-[11.5px] leading-relaxed text-muted-foreground">
+                      <p className="mt-1.5 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">
                         {thing.description}
                       </p>
                     )}
                     {thing.href && (
-                      <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-primary">
+                      <span className="mt-3 inline-flex items-center gap-1 text-[14px] font-bold text-primary">
                         View <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
                       </span>
                     )}

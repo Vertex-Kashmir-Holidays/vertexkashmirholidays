@@ -31,7 +31,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
-            className="rv text-[11px] font-bold tracking-[0.22em] text-primary"
+            className="rv text-[12px] font-bold tracking-[0.22em] text-primary"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -40,7 +40,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             {heading.kicker}
           </motion.p>
           <motion.h2
-            className="rv h-display mt-3 text-[17px] font-bold text-foreground"
+            className="rv h-display mt-3 text-[18px] font-bold text-foreground"
             style={{ '--rd': '0.08s' } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

@@ -260,7 +260,7 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                   ) : brokenIds.has(item.id) ? (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-red-50 dark:bg-red-950/30 text-red-400">
                       <ImageOff className="w-6 h-6" />
-                      <span className="text-[9px] font-bold">Broken</span>
+                      <span className="text-[10px] font-bold">Broken</span>
                     </div>
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -331,7 +331,7 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                     ))}
                   </div>
                   {item.type === "VIDEO" && (
-                    <span className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md pointer-events-none">
+                    <span className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md pointer-events-none">
                       <Film className="w-2.5 h-2.5" /> VIDEO
                     </span>
                   )}
@@ -343,7 +343,7 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                     />
                   )}
                   {item.category && (
-                    <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md">
+                    <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md">
                       {item.category}
                     </span>
                   )}
@@ -393,7 +393,7 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
               <p className="text-xs font-semibold text-muted-foreground">
                 {uploading ? "Uploading..." : !newCategory.trim() ? "Enter a category above to enable upload" : "Click to select files"}
               </p>
-              <p className="text-[10px] text-muted-foreground">PNG · SVG · WebP (max 500 KB) • Video (max 10 MB)</p>
+              <p className="text-[12px] text-muted-foreground">PNG · SVG · WebP (max 500 KB) • Video (max 10 MB)</p>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,video/*"

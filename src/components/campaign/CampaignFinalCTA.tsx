@@ -43,7 +43,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
         )}
         {sub && (
           <motion.p
-            className="mt-4 text-[14.5px] text-white/70"
+            className="mt-4 text-[16px] text-white/70"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -61,14 +61,14 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
         >
           <Link
             href="#reserve"
-            className="sweep rounded-full bg-accent-grad px-9 py-4 text-[14.5px] font-extrabold text-white ring-inner shadow-glow transition hover:scale-[1.03]"
+            className="sweep rounded-full bg-accent-grad px-9 py-4 text-[16px] font-extrabold text-white ring-inner shadow-glow transition hover:scale-[1.03]"
           >
             {cta} →
           </Link>
           {phone && (
             <a
               href={`tel:${phone.replace(/\s/g, '')}`}
-              className="rounded-full border border-white/20 bg-white/10 px-9 py-4 text-[14px] font-semibold text-white backdrop-blur-xl transition hover:bg-white/20"
+              className="rounded-full border border-white/20 bg-white/10 px-9 py-4 text-[16px] font-semibold text-white backdrop-blur-xl transition hover:bg-white/20"
             >
               Call {phone}
             </a>
@@ -76,7 +76,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
         </motion.div>
         {note && (
           <motion.p
-            className="mt-7 text-[12px] text-white/50"
+            className="mt-7 text-[14px] text-white/50"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}

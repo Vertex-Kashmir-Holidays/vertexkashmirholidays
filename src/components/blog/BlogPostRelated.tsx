@@ -125,16 +125,16 @@ export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelat
                       className="object-cover transition duration-500 group-hover:scale-105"
                     />
                     {post.category && (
-                      <span className={`absolute bottom-2 left-2 rounded ${badgeColor[post.category] ?? 'bg-primary'} px-2 py-0.5 text-[8.5px] font-extrabold tracking-wide text-white`}>
+                      <span className={`absolute bottom-2 left-2 rounded ${badgeColor[post.category] ?? 'bg-primary'} px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white`}>
                         {post.category.toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="min-h-[42px] text-[13px] font-bold leading-snug transition group-hover:text-primary">
+                    <h3 className="min-h-[42px] text-[14px] font-bold leading-snug transition group-hover:text-primary">
                       {post.title}
                     </h3>
-                    <p className="mt-2 text-[11px] text-muted-foreground">
+                    <p className="mt-2 text-[12px] text-muted-foreground">
                       {[post.dateLabel, post.readTime ? `${post.readTime} min read` : null]
                         .filter(Boolean)
                         .join('  ·  ')}

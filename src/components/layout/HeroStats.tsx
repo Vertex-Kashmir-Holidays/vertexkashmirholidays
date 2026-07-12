@@ -53,11 +53,11 @@ export function HeroStats({ stats }: HeroStatsProps) {
               <Icon className="h-7 w-7" strokeWidth={1.8} />
             </motion.span>
             <div>
-              <p className="text-[17px] font-bold leading-tight">
+              <p className="text-[18px] font-bold leading-tight">
                 {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString('en-IN') : stat.value}
                 {stat.suffix}
               </p>
-              <p className="text-[12px] text-white/70">{stat.label}</p>
+              <p className="text-[14px] text-white/70">{stat.label}</p>
             </div>
           </motion.div>
         );

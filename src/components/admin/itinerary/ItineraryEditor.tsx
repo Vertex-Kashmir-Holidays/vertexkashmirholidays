@@ -256,7 +256,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                <div key={it.id} className={`flex flex-col items-center px-2 text-center sm:px-4 ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
                  <ItineraryIcon icon={it.icon} className="h-6 w-6 text-[hsl(156_40%_21%)] dark:text-primary" />
                  <EditableField value={it.value} onValueChange={(v) => updateInfo(it.id, "value", v)} className="mt-2.5 text-center text-sm font-bold" />
-                 <EditableField value={it.label} onValueChange={(v) => updateInfo(it.id, "label", v)} className="text-center text-[10.5px] text-mute dark:text-muted-foreground" />
+                 <EditableField value={it.label} onValueChange={(v) => updateInfo(it.id, "label", v)} className="text-center text-[12px] text-mute dark:text-muted-foreground" />
                </div>
              ))}
            </div>
@@ -276,8 +276,8 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                  </button>
                  <div className="flex flex-col items-center">
                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[hsl(156_40%_21%)] text-center text-white dark:bg-primary">
-                     <span className="text-[8px] font-semibold tracking-wide">DAY</span>
-                     <span className="text-[15px] font-extrabold">{String(dayIdx + 1).padStart(2, "0")}</span>
+                     <span className="text-[10px] font-semibold tracking-wide">DAY</span>
+                     <span className="text-[16px] font-extrabold">{String(dayIdx + 1).padStart(2, "0")}</span>
                    </span>
                    <span className="dotline mt-1 w-px flex-1" />
                  </div>
@@ -291,13 +291,13 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                            <button onClick={() => removeMeta(day.id, m.id)} className="absolute -left-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white text-xs group-hover/m:flex no-print">×</button>
                            <ItineraryIcon icon={m.label.trim().toLowerCase()} className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary" />
                            <div className="leading-tight">
-                             <EditableField value={m.label} onValueChange={(v) => updateMeta(day.id, m.id, "label", v)} className="w-[96px] text-[11px] font-bold sm:w-[110px]" />
-                             <EditableField value={m.value} onValueChange={(v) => updateMeta(day.id, m.id, "value", v)} className="w-[120px] text-[11px] text-mute dark:text-muted-foreground sm:w-[150px]" />
+                             <EditableField value={m.label} onValueChange={(v) => updateMeta(day.id, m.id, "label", v)} className="w-[96px] text-[12px] font-bold sm:w-[110px]" />
+                             <EditableField value={m.value} onValueChange={(v) => updateMeta(day.id, m.id, "value", v)} className="w-[120px] text-[12px] text-mute dark:text-muted-foreground sm:w-[150px]" />
                            </div>
                          </div>
                        ))}
                      </div>
-                     <button onClick={() => addMeta(day.id)} className="addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-2.5 py-1 text-[10px] font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print">
+                     <button onClick={() => addMeta(day.id)} className="addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-2.5 py-1 text-[12px] font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print">
                        <Plus className="h-3 w-3" /> detail
                      </button>
                    </div>
@@ -356,7 +356,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
 
 
            <button onClick={addHotel} className={addBtn}><Plus className="h-3 w-3" /> Add Hotel</button>
-           <p className="mt-2.5 text-[10.5px] italic text-mute dark:text-muted-foreground">*All accommodations are subject to availability at the time of confirmation.</p>
+           <p className="mt-2.5 text-[12px] italic text-mute dark:text-muted-foreground">*All accommodations are subject to availability at the time of confirmation.</p>
 
 
            <div className="mt-7 grid grid-cols-2 gap-y-6 rounded-2xl bg-[hsl(40_33%_96%)] px-3 py-6 dark:bg-muted/20 sm:grid-cols-4 sm:px-7">
@@ -364,7 +364,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                <div key={t.id} className={`flex flex-col items-center px-2 text-center sm:px-3 ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
                  <ItineraryIcon icon={t.icon} className="h-6 w-6 text-[hsl(156_40%_21%)] dark:text-primary" />
                  <EditableField value={t.title} onValueChange={(v) => updateTrust(t.id, "title", v)} className="mt-2 text-center text-xs font-bold" />
-                 <EditableField value={t.subtitle} onValueChange={(v) => updateTrust(t.id, "subtitle", v)} className="text-center text-[10px] leading-snug text-mute dark:text-muted-foreground" />
+                 <EditableField value={t.subtitle} onValueChange={(v) => updateTrust(t.id, "subtitle", v)} className="text-center text-[12px] leading-snug text-mute dark:text-muted-foreground" />
                </div>
              ))}
            </div>
@@ -486,7 +486,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
 
 function Footer() {
  return (
-   <div className="print-foot mt-10 border-t border-[hsl(40_14%_87%)] pt-3 text-center text-[9px] tracking-wide text-mute dark:border-mute/20">
+   <div className="print-foot mt-10 border-t border-[hsl(40_14%_87%)] pt-3 text-center text-[10px] tracking-wide text-mute dark:border-mute/20">
      Vertex Kashmir Holidays · Kashmir Escape Itinerary
    </div>
  );

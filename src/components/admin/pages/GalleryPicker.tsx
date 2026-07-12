@@ -152,7 +152,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                     />
                   )}
                   {item.type === "VIDEO" && (
-                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</span>
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-bold text-white">VIDEO</span>
                   )}
                   {item.type !== "VIDEO" && dims[item.id] && (
                     <ImageDimensionBadge

@@ -21,7 +21,7 @@ export function AboutHero({ data }: AboutHeroProps) {
       alt="Traveller overlooking a Kashmir valley"
       aside={<HeroLeadCard source="about" />}
     >
-        <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
           <a href="/" className="transition hover:text-white">Home</a>
           <span>›</span>
           <span className="font-semibold text-white">{data.breadcrumb}</span>
@@ -33,7 +33,7 @@ export function AboutHero({ data }: AboutHeroProps) {
           {renderMint(data.title)}
         </h1>
         <p
-          className="hero-reveal mt-6 max-w-md text-[14.5px] leading-relaxed text-white/85"
+          className="hero-reveal mt-6 max-w-md text-[16px] leading-relaxed text-white/85"
           style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {data.subtitle}
@@ -47,7 +47,7 @@ export function AboutHero({ data }: AboutHeroProps) {
           {data.ctaPrimaryLabel && (
             <Link
               href={data.ctaPrimaryHref ?? '#'}
-              className="inline-flex items-center gap-2.5 rounded-full bg-brand-bright px-6 py-3 text-[13.5px] font-bold text-white shadow-card transition hover:brightness-110"
+              className="inline-flex items-center gap-2.5 rounded-full bg-brand-bright px-6 py-3 text-[14px] font-bold text-white shadow-card transition hover:brightness-110"
             >
               <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20">
                 <Play className="h-3 w-3" fill="currentColor" strokeWidth={0} />
@@ -58,7 +58,7 @@ export function AboutHero({ data }: AboutHeroProps) {
           {data.ctaSecondaryLabel && (
             <Link
               href={data.ctaSecondaryHref ?? '#'}
-              className="rounded-full border border-white/55 px-6 py-3 text-[13.5px] font-semibold text-white backdrop-blur transition hover:bg-white hover:text-brand-ink"
+              className="rounded-full border border-white/55 px-6 py-3 text-[14px] font-semibold text-white backdrop-blur transition hover:bg-white hover:text-brand-ink"
             >
               {data.ctaSecondaryLabel}
             </Link>

@@ -47,13 +47,13 @@ export function TourDetailsRelatedTours({
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-[17px] font-bold">You Might Also Like</h2>
+          <h2 className="text-[18px] font-bold">You Might Also Like</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {relatedTours.map((entry, i) => (
               <div key={entry.tour.detailHref ?? i}>
                 <TourCard tour={entry.tour} index={i} variant="tours" />
                 {entry.ctaSentence && (
-                  <p className="mt-2.5 text-[12.5px] italic leading-relaxed text-foreground/65">
+                  <p className="mt-2.5 text-[14px] italic leading-relaxed text-foreground/65">
                     {entry.ctaSentence}
                   </p>
                 )}
@@ -73,26 +73,26 @@ export function TourDetailsRelatedTours({
           transition={{ duration: 0.5 }}
         >
           {whyVertexBlurb && (
-            <p className="mx-auto max-w-2xl text-[13px] leading-relaxed text-foreground/70">{whyVertexBlurb}</p>
+            <p className="mx-auto max-w-2xl text-[14px] leading-relaxed text-foreground/70">{whyVertexBlurb}</p>
           )}
           {ctaHeadline && (
-            <h2 className="mt-4 text-[17px] font-bold">{ctaHeadline}</h2>
+            <h2 className="mt-4 text-[18px] font-bold">{ctaHeadline}</h2>
           )}
           {ctaBody && (
-            <p className="mx-auto mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/70">{ctaBody}</p>
+            <p className="mx-auto mt-2 max-w-2xl text-[14px] leading-relaxed text-foreground/70">{ctaBody}</p>
           )}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-primary/30 bg-primary/10 px-5 py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+              className="rounded-lg border border-primary/30 bg-primary/10 px-5 py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
             >
               WhatsApp Us
             </Link>
             <Link
               href={`/booking?tour=${tourSlug}`}
-              className="rounded-lg bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition hover:brightness-110"
+              className="rounded-lg bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground transition hover:brightness-110"
             >
               Enquire Now
             </Link>

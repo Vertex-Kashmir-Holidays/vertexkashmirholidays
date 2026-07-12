@@ -16,7 +16,7 @@ export function CampaignHighlights({ title, highlights }: CampaignHighlightsProp
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20">
       <div className="text-center">
         <motion.p
-          className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
+          className="text-[12px] font-extrabold tracking-[0.24em] text-camp-accent"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -52,8 +52,8 @@ export function CampaignHighlights({ title, highlights }: CampaignHighlightsProp
                   </span>
                 </div>
                 <div className="p-5">
-                  <h3 className="text-[15px] font-bold text-foreground">{highlight.title}</h3>
-                  <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">{highlight.description}</p>
+                  <h3 className="text-[16px] font-bold text-foreground">{highlight.title}</h3>
+                  <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{highlight.description}</p>
                 </div>
               </article>
             </Tilt3D>

@@ -95,6 +95,10 @@ The homepage hero supports three render modes controlled by `NEXT_PUBLIC_HERO_MO
 
 `SiteSettingsProvider` (`src/components/providers/SiteSettingsProvider.tsx`) passes `siteName`, `whatsapp`, and `sitePhone` from the DB singleton to client components. Access via `useSiteSettings()` hook rather than reading the DB in client components.
 
+### Design system
+
+`docs/DESIGN_SYSTEM.md` is the authoritative reference for brand, color tokens, and the typography scale. When sizing new text or choosing a color, use an existing token from that doc rather than inventing a new arbitrary value — the scale exists specifically to prevent the kind of fragmentation (dozens of near-duplicate `text-[Npx]` sizes) that used to exist in this codebase.
+
 # CLAUDE.md
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.

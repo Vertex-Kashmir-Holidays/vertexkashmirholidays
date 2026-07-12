@@ -201,7 +201,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         alt={activity.name}
         aside={<HeroLeadCard source="activity-detail" buttonLabel="Enquire Now" />}
       >
-        <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
           <Link href="/activities" className="transition hover:text-white">Activities</Link>
@@ -237,8 +237,8 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           <section id="overview" className="mt-6 space-y-5 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
             {activity.description && (
               <div>
-                <h2 className="text-[17px] font-bold">About this experience</h2>
-                <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-foreground/85">
+                <h2 className="text-[18px] font-bold">About this experience</h2>
+                <p className="mt-3 whitespace-pre-line text-[16px] leading-relaxed text-foreground/85">
                   {activity.description}
                 </p>
               </div>
@@ -292,7 +292,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         {/* 14. FAQs — moved to last */}
         {faqs.length > 0 && (
           <section id="faqs" className="scroll-mt-16 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-            <h2 className="text-[17px] font-bold">FAQs</h2>
+            <h2 className="text-[18px] font-bold">FAQs</h2>
             <div className="mt-4">
               <FaqPreviewList faqs={faqs} />
             </div>

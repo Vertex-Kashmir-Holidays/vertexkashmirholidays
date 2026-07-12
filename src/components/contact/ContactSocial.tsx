@@ -46,8 +46,8 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
-      <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content.title}</h2>
+      <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
+      <h2 className="h-display mt-2 font-display text-[18px] font-bold">{content.title}</h2>
       {socials.length > 0 && (
         <div className="mt-5 flex gap-2.5">
           {socials.map((s) => {
@@ -69,7 +69,7 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
           })}
         </div>
       )}
-      {content.text && <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">{content.text}</p>}
+      {content.text && <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">{content.text}</p>}
       <div className="mt-4 grid grid-cols-4 gap-2">
         {Array.from({ length: IG_COUNT }, (_, i) => (
           <a
@@ -94,7 +94,7 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
         ))}
       </div>
       {content.ctaLabel && (
-        <Link href={content.ctaHref ?? '#'} className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline">
+        <Link href={content.ctaHref ?? '#'} className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
           {content.ctaLabel}
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </Link>

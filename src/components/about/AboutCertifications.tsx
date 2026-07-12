@@ -28,9 +28,9 @@ export function AboutCertifications({ licenses, certifications }: AboutCertifica
       >
         <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
           <div>
-            <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">TRUST &amp; LICENSING</p>
-            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">Licensed &amp; Certified</h2>
-            <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">
+            <p className="text-[12px] font-bold tracking-[0.22em] text-primary">TRUST &amp; LICENSING</p>
+            <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">Licensed &amp; Certified</h2>
+            <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
               Real credentials you can verify — not just a claim.
             </p>
           </div>
@@ -39,13 +39,13 @@ export function AboutCertifications({ licenses, certifications }: AboutCertifica
               <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
                 <BadgeCheck className="h-6 w-6" strokeWidth={1.7} />
               </span>
-              <p className="mt-4 text-[14px] font-bold">J&amp;K Tourism Registration</p>
+              <p className="mt-4 text-[16px] font-bold">J&amp;K Tourism Registration</p>
               {licenses.businessName && (
-                <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">{licenses.businessName}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{licenses.businessName}</p>
               )}
-              <p className="mt-1 text-[13px] font-bold text-primary">{licenses.registrationNumber}</p>
+              <p className="mt-1 text-[14px] font-bold text-primary">{licenses.registrationNumber}</p>
               {licenses.authority && (
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">Issued by {licenses.authority}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">Issued by {licenses.authority}</p>
               )}
             </div>
             {certifications.map((cert, i) => (
@@ -62,8 +62,8 @@ export function AboutCertifications({ licenses, certifications }: AboutCertifica
                     <path d={cert.icon} />
                   </svg>
                 </span>
-                <p className="mt-4 text-[14px] font-bold">{cert.title}</p>
-                <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">{cert.subtitle}</p>
+                <p className="mt-4 text-[16px] font-bold">{cert.title}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{cert.subtitle}</p>
               </motion.div>
             ))}
           </div>

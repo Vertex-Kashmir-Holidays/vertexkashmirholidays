@@ -80,7 +80,7 @@ export function BlogPostHero({
 
       <div className="relative mx-auto grid max-w-[1300px] items-center gap-10 px-6 pb-9 pt-28 lg:grid-cols-[1fr_minmax(0,340px)]">
        <div>
-        <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
           {crumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-2">
               {i > 0 && <span>›</span>}
@@ -98,7 +98,7 @@ export function BlogPostHero({
 
         {category && (
           <motion.span
-            className="mt-6 inline-block rounded-md bg-brand-bright/90 px-3 py-1.5 text-[10.5px] font-extrabold tracking-[0.12em] text-white"
+            className="mt-6 inline-block rounded-md bg-brand-bright/90 px-3 py-1.5 text-[12px] font-extrabold tracking-[0.12em] text-white"
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -116,7 +116,7 @@ export function BlogPostHero({
 
         {excerpt && (
           <p
-            className="hero-reveal mt-4 max-w-xl text-[14.5px] leading-relaxed text-white/90"
+            className="hero-reveal mt-4 max-w-xl text-[16px] leading-relaxed text-white/90"
             style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
           >
             {excerpt}
@@ -139,20 +139,20 @@ export function BlogPostHero({
                 className="h-11 w-11 rounded-full border-2 border-white/40 object-cover"
               />
               <div className="leading-tight">
-                <p className="text-[13px] font-bold">
+                <p className="text-[14px] font-bold">
                   By <span>{author.name}</span>
                 </p>
-                {author.role && <p className="text-[11.5px] text-white/70">{author.role}</p>}
+                {author.role && <p className="text-[12px] text-white/70">{author.role}</p>}
               </div>
             </div>
             {readTime && (
-              <span className="flex items-center gap-1.5 text-[12.5px]">
+              <span className="flex items-center gap-1.5 text-[14px]">
                 <Clock className="h-4 w-4" strokeWidth={2} />
                 {readTime}
               </span>
             )}
             {date && (
-              <span className="flex items-center gap-1.5 text-[12.5px]">
+              <span className="flex items-center gap-1.5 text-[14px]">
                 <Calendar className="h-4 w-4" strokeWidth={2} />
                 {date}
               </span>
@@ -160,7 +160,7 @@ export function BlogPostHero({
           </div>
 
           <div className="flex items-center gap-2.5">
-            <span className="text-[12.5px] font-semibold text-white/85">Share:</span>
+            <span className="text-[14px] font-semibold text-white/85">Share:</span>
             {(['WhatsApp', 'Facebook', 'X'] as const).map((label) => (
               <motion.a
                 key={label}

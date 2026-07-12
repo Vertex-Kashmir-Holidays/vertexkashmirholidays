@@ -26,7 +26,7 @@ export function DestinationTopAttractions({ name, attractions }: DestinationTopA
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">Top Attractions in {name}</h2>
+      <h2 className="text-[18px] font-bold">Top Attractions in {name}</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {attractions.map((a, i) => (
           <motion.div
@@ -40,8 +40,8 @@ export function DestinationTopAttractions({ name, attractions }: DestinationTopA
             <div className="flex items-start gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2} />
               <div>
-                <p className="text-[13.5px] font-bold">{a.name}</p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{a.description}</p>
+                <p className="text-[14px] font-bold">{a.name}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{a.description}</p>
               </div>
             </div>
           </motion.div>

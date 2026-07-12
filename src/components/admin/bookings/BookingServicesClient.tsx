@@ -491,7 +491,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
           <h3 className="font-bold text-foreground text-sm mb-3">Discount</h3>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[11px] font-semibold text-muted-foreground">Type</span>
+              <span className="text-[12px] font-semibold text-muted-foreground">Type</span>
               <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} disabled={locked} className={`${inputCls} mt-1`}>
                 <option value="">None</option>
                 <option value="FLAT">Flat (₹)</option>
@@ -499,7 +499,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
               </select>
             </label>
             <label className="block">
-              <span className="text-[11px] font-semibold text-muted-foreground">Value</span>
+              <span className="text-[12px] font-semibold text-muted-foreground">Value</span>
               <input type="number" min={0} value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} disabled={locked || !discountType} className={`${inputCls} mt-1`} />
             </label>
           </div>
@@ -524,7 +524,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
             </div>
           </dl>
           {finance.servicesTotal > booking.amount && (
-            <p className="mt-2 text-[11px] text-red-500 dark:text-red-400">Services total exceeds the booking amount.</p>
+            <p className="mt-2 text-[12px] text-red-500 dark:text-red-400">Services total exceeds the booking amount.</p>
           )}
         </div>
       </div>
@@ -771,25 +771,25 @@ function EditDetailsModal({
             </div>
           </div>
           {isWebsiteBooking && (
-            <div className="flex items-start gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-[11px]">
+            <div className="flex items-start gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-[12px]">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
               <p className="text-muted-foreground">Online booking — package price was fixed at checkout and cannot be changed.</p>
             </div>
           )}
           {!tripFieldsEditable && amountFloor > 0 && locked && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px]">
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px]">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
               <p className="text-muted-foreground">Services are locked — travel date, travellers and amount can no longer be changed. Contact details remain editable.</p>
             </div>
           )}
           {!tripFieldsEditable && !locked && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px]">
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px]">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
               <p className="text-muted-foreground">Trip details cannot be changed within 2 days of travel. Contact details remain editable.</p>
             </div>
           )}
           {tripFieldsEditable && !isWebsiteBooking && amountFloor > 0 && (
-            <p className="text-[11px] text-muted-foreground">Minimum amount: {inr(amountFloor)} (already paid / services total).</p>
+            <p className="text-[12px] text-muted-foreground">Minimum amount: {inr(amountFloor)} (already paid / services total).</p>
           )}
 
 
@@ -925,7 +925,7 @@ function DriverSection({
 
 
       {driver && !editable && (
-        <p className="mt-3 text-[11px] text-muted-foreground">Editing is closed — driver details can only be changed up to one day before travel.</p>
+        <p className="mt-3 text-[12px] text-muted-foreground">Editing is closed — driver details can only be changed up to one day before travel.</p>
       )}
 
 
@@ -983,7 +983,7 @@ function DriverFact({ icon: Icon, label, value }: { icon: typeof Car; label: str
     <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/30 p-3">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-[12px] uppercase tracking-wide text-muted-foreground">{label}</p>
         <p className="text-sm font-semibold text-foreground break-words">{value}</p>
       </div>
     </div>
@@ -1049,7 +1049,7 @@ function LockDialog({
               </p>
             </div>
             <label className="block">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Customer Email</span>
+              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Customer Email</span>
               <input
                 type="email"
                 value={value}
@@ -1103,7 +1103,7 @@ function Detail({ label, value, sub, strong }: { label: string; value: string; s
     <div>
       <p className="text-muted-foreground mb-0.5">{label}</p>
       <p className={cn("text-foreground", strong ? "font-bold text-sm" : "font-semibold")}>{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
+      {sub && <p className="text-[12px] text-muted-foreground truncate">{sub}</p>}
     </div>
   );
 }
@@ -1112,7 +1112,7 @@ function Detail({ label, value, sub, strong }: { label: string; value: string; s
 function Row({ label, value, strong, muted }: { label: string; value: string; strong?: boolean; muted?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className={cn("text-muted-foreground", muted && "text-[11px]")}>{label}</dt>
+      <dt className={cn("text-muted-foreground", muted && "text-[12px]")}>{label}</dt>
       <dd className={cn("text-foreground", strong ? "font-extrabold" : "font-semibold")}>{value}</dd>
     </div>
   );
@@ -1267,7 +1267,7 @@ function ServiceRow({
     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
       {fields.map((f) => (
         <label key={f.key} className={cn("block", f.key === "amount" || f.key === "nights" ? "w-24" : "flex-1 min-w-[120px]")}>
-          <span className="text-[10px] font-semibold text-muted-foreground">{f.label}</span>
+          <span className="text-[12px] font-semibold text-muted-foreground">{f.label}</span>
           <input
             type={f.type}
             value={form[f.key]}
@@ -1375,7 +1375,7 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-wide text-muted-foreground border-b border-border">
+            <tr className="text-left text-[12px] uppercase tracking-wide text-muted-foreground border-b border-border">
               <th className="py-2 pr-3 font-bold">Type</th>
               <th className="py-2 pr-3 font-bold">Method</th>
               <th className="py-2 pr-3 font-bold">GST</th>
@@ -1423,11 +1423,11 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
       ) : (
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
           <label className="w-24">
-            <span className="text-[10px] font-semibold text-muted-foreground">Amount</span>
+            <span className="text-[12px] font-semibold text-muted-foreground">Amount</span>
             <input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} mt-0.5`} />
           </label>
           <label className="w-24">
-            <span className="text-[10px] font-semibold text-muted-foreground">Type</span>
+            <span className="text-[12px] font-semibold text-muted-foreground">Type</span>
             <select value={type} onChange={(e) => setType(e.target.value)} className={`${inputCls} mt-0.5`}>
               <option value="TOKEN">Token</option>
               <option value="PARTIAL">Partial</option>
@@ -1436,7 +1436,7 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
             </select>
           </label>
           <label className="w-28">
-            <span className="text-[10px] font-semibold text-muted-foreground">Method</span>
+            <span className="text-[12px] font-semibold text-muted-foreground">Method</span>
             <select
               value={method}
               onChange={(e) => { setMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
@@ -1446,14 +1446,14 @@ function PaymentsCard({ bookingId, payments, gstRates, balance, onAdded, onUpdat
             </select>
           </label>
           <label className="w-24">
-            <span className="text-[10px] font-semibold text-muted-foreground">GST</span>
+            <span className="text-[12px] font-semibold text-muted-foreground">GST</span>
             <select value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} disabled={!gstEligible} title={gstEligible ? undefined : "GST does not apply to cash payments."} className={`${inputCls} mt-0.5`}>
               <option value="">No GST</option>
               {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
             </select>
           </label>
           <label className="flex-1 min-w-[120px]">
-            <span className="text-[10px] font-semibold text-muted-foreground">Note</span>
+            <span className="text-[12px] font-semibold text-muted-foreground">Note</span>
             <input value={note} onChange={(e) => setNote(e.target.value)} className={`${inputCls} mt-0.5`} />
           </label>
           <button onClick={add} disabled={pending} className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 disabled:opacity-50">

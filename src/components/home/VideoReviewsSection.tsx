@@ -38,8 +38,8 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
     <section className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
           {heading.subtitle && (
@@ -114,7 +114,7 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/30"></div>
                   {v.duration && (
-                    <span className="glass absolute left-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold text-white">
+                    <span className="glass absolute left-3 top-3 rounded-full px-3 py-1 text-[12px] font-bold text-white">
                       ▶ {v.duration}
                     </span>
                   )}
@@ -128,7 +128,7 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
                   </button>
                   <div className="absolute inset-x-0 bottom-0 p-4">
                     <p className="text-sm font-bold text-white">{v.name}</p>
-                    <p className="text-[11px] text-white/65">{v.place}</p>
+                    <p className="text-[12px] text-white/65">{v.place}</p>
                   </div>
                 </>
               )}

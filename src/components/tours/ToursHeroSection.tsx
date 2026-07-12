@@ -23,7 +23,7 @@ export function ToursHeroSection({ heading, stats, heroImage, heroImageMobile }:
       aside={<HeroLeadCard source="tours" buttonLabel="Get Tour Quotes" />}
     >
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
           <Link href="/tours" className="transition hover:text-white">Tours</Link>
@@ -39,7 +39,7 @@ export function ToursHeroSection({ heading, stats, heroImage, heroImageMobile }:
           </h1>
           {heading.subtitle && (
             <p
-              className="hero-reveal mt-3 text-[15px] text-white/85"
+              className="hero-reveal mt-3 text-[16px] text-white/85"
               style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
             >
               {heading.subtitle}

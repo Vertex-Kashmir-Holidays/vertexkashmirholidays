@@ -168,7 +168,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
             <Link
               href="/reviews"
-              className={`rounded-full border px-4 py-1.5 text-[12.5px] font-semibold transition ${
+              className={`rounded-full border px-4 py-1.5 text-[14px] font-semibold transition ${
                 !rating ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
               }`}
             >
@@ -178,7 +178,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
               <Link
                 key={star}
                 href={`/reviews?rating=${star}`}
-                className={`rounded-full border px-4 py-1.5 text-[12.5px] font-semibold transition ${
+                className={`rounded-full border px-4 py-1.5 text-[14px] font-semibold transition ${
                   rating === star ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
                 }`}
               >
@@ -207,18 +207,18 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             {page > 1 && (
               <Link
                 href={`/reviews?${new URLSearchParams({ ...(rating ? { rating: String(rating) } : {}), page: String(page - 1) }).toString()}`}
-                className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold transition hover:bg-muted"
+                className="rounded-xl border border-border px-4 py-2 text-[14px] font-semibold transition hover:bg-muted"
               >
                 ← Previous
               </Link>
             )}
-            <span className="text-[12.5px] text-muted-foreground">
+            <span className="text-[14px] text-muted-foreground">
               Page {page} of {totalPages}
             </span>
             {page < totalPages && (
               <Link
                 href={`/reviews?${new URLSearchParams({ ...(rating ? { rating: String(rating) } : {}), page: String(page + 1) }).toString()}`}
-                className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold transition hover:bg-muted"
+                className="rounded-xl border border-border px-4 py-2 text-[14px] font-semibold transition hover:bg-muted"
               >
                 Next →
               </Link>
@@ -257,7 +257,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           <p className="font-display text-lg font-bold text-foreground">Ready to plan your own Kashmir trip?</p>
           <Link
             href="/tours"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[13px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110"
           >
             Browse Tour Packages
             <ArrowRight className="h-4 w-4" strokeWidth={2.4} />

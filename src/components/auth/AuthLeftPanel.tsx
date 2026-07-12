@@ -61,7 +61,7 @@ export function AuthLeftPanel({ headline, subheadline }: AuthLeftPanelProps) {
           {STATS.map(({ value, label }) => (
             <div key={label} className="text-center">
               <p className="font-display font-extrabold text-white text-lg leading-tight">{value}</p>
-              <p className="text-white/55 text-[10px] font-medium">{label}</p>
+              <p className="text-white/55 text-[12px] font-medium">{label}</p>
             </div>
           ))}
         </div>
@@ -78,12 +78,12 @@ export function AuthLeftPanel({ headline, subheadline }: AuthLeftPanelProps) {
             perfect — from the houseboat on Dal Lake to the Gulmarg gondola sunrise.&rdquo;
           </p>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-brand-green flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+            <div className="w-6 h-6 rounded-full bg-brand-green flex items-center justify-center text-white text-[12px] font-bold shrink-0">
               PS
             </div>
             <div>
               <p className="text-white text-xs font-semibold leading-none">Priya &amp; Suresh</p>
-              <p className="text-white/45 text-[10px]">Mumbai · Honeymoon Package</p>
+              <p className="text-white/45 text-[12px]">Mumbai · Honeymoon Package</p>
             </div>
           </div>
         </div>

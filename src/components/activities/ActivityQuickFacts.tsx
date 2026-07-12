@@ -29,8 +29,8 @@ export function ActivityQuickFacts({ location, duration, price, difficulty }: Ac
               <f.icon className="h-[18px] w-[18px]" strokeWidth={2} />
             </span>
             <div className="leading-tight">
-              <p className="text-[11px] text-muted-foreground">{f.label}</p>
-              <p className="text-[13.5px] font-bold">{f.value}</p>
+              <p className="text-[12px] text-muted-foreground">{f.label}</p>
+              <p className="text-[14px] font-bold">{f.value}</p>
             </div>
           </div>
         ))}

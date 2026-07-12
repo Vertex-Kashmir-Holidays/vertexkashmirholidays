@@ -227,7 +227,7 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
       <div className="flex items-center gap-2 py-1 px-2">
         <div className="flex-1 h-px bg-border/50" />
         <span className={cn(
-          "text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
+          "text-[12px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
           isMissed
             ? "text-red-500 dark:text-red-400 bg-red-500/10"
             : "text-muted-foreground bg-muted/60",
@@ -253,7 +253,7 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
         )}
         <div className={cn("flex flex-col max-w-[85%] sm:max-w-[72%]", isOwn && "items-end")}>
           {!isOwn && isFirstInGroup && (
-            <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
+            <span className="text-[12px] text-muted-foreground mb-0.5 ml-1">
               {sender.name ?? "Unknown"}
             </span>
           )}
@@ -286,7 +286,7 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
       */}
       <div className={cn("group flex flex-col max-w-[85%] sm:max-w-[72%]", isOwn && "items-end")}>
         {!isOwn && isFirstInGroup && (
-          <span className="text-[10px] text-muted-foreground mb-0.5 ml-1">
+          <span className="text-[12px] text-muted-foreground mb-0.5 ml-1">
             {sender.name ?? "Unknown"}
           </span>
         )}
@@ -299,9 +299,9 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
               <span className={cn("leading-none", emojiSizeClass)}>{body}</span>
               <span className="flex-none inline-flex items-baseline gap-0.5 leading-none whitespace-nowrap pb-0.5">
                 {editedAt && (
-                  <span className="text-[10px] italic text-muted-foreground/60">edited·</span>
+                  <span className="text-[12px] italic text-muted-foreground/60">edited·</span>
                 )}
-                <span className="text-[10px] text-muted-foreground/70">{formatTime(createdAt)}</span>
+                <span className="text-[12px] text-muted-foreground/70">{formatTime(createdAt)}</span>
                 {isOwn && !message.deletedAt && <MessageStatus message={message} readUpTo={readUpTo} />}
               </span>
             </div>
@@ -324,11 +324,11 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                    full width instead of reserving a column for the timestamp. */
                 <div className="flex justify-end items-baseline gap-0.5 mt-0.5 leading-none select-none">
                   {editedAt && (
-                    <span className={cn("text-[10px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>
+                    <span className={cn("text-[12px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>
                       edited·
                     </span>
                   )}
-                  <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                  <span className={cn("text-[12px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
                     {formatTime(createdAt)}
                   </span>
                   {isOwn && !message.deletedAt && (
@@ -342,9 +342,9 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                   {/* Time below attachment (covers both attachment-only and body+attachment) */}
                   <div className="flex justify-end items-baseline gap-0.5 mt-1 leading-none select-none">
                     {editedAt && (
-                      <span className={cn("text-[10px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>edited·</span>
+                      <span className={cn("text-[12px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>edited·</span>
                     )}
-                    <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                    <span className={cn("text-[12px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
                       {formatTime(createdAt)}
                     </span>
                     {isOwn && !message.deletedAt && (
@@ -371,7 +371,7 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                   key={emoji}
                   onClick={() => onReact?.(message.id, emoji)}
                   className={cn(
-                    "flex items-center gap-0.5 text-[11px] leading-none px-1.5 py-0.5 rounded-full border bg-background shadow-sm transition-colors",
+                    "flex items-center gap-0.5 text-[12px] leading-none px-1.5 py-0.5 rounded-full border bg-background shadow-sm transition-colors",
                     users.includes(currentUserId)
                       ? "border-primary/50 text-primary"
                       : "border-border text-muted-foreground hover:border-muted-foreground/50",

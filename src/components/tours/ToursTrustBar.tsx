@@ -53,8 +53,8 @@ export function ToursTrustBar() {
               <x.Icon className="h-5 w-5" strokeWidth={1.8} />
             </motion.span>
             <div>
-              <p className="text-[13.5px] font-bold">{x.t}</p>
-              <p className="text-[12px] text-muted-foreground">{x.s}</p>
+              <p className="text-[14px] font-bold">{x.t}</p>
+              <p className="text-[14px] text-muted-foreground">{x.s}</p>
             </div>
           </motion.div>
         ))}

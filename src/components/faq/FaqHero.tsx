@@ -12,7 +12,7 @@ export function FaqHero() {
       alt="Kashmir valley"
       aside={<HeroLeadCard source="faq" />}
     >
-      <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+      <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
         <a href="/" className="transition hover:text-white">Home</a>
         <span>›</span>
         <span className="font-semibold text-white">FAQ</span>
@@ -24,7 +24,7 @@ export function FaqHero() {
         Frequently Asked Questions
       </h1>
       <p
-        className="hero-reveal mt-5 max-w-md text-[14.5px] leading-relaxed text-white/85"
+        className="hero-reveal mt-5 max-w-md text-[16px] leading-relaxed text-white/85"
         style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
       >
         Everything you need to know before booking your Kashmir trip — payments, itineraries, weather and more.

@@ -24,15 +24,15 @@ export function TourDetailsMealsTransport({ meals, transportDetail }: TourDetail
     >
       {hasMeals && (
         <div className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-          <h2 className="text-[17px] font-bold">Meals</h2>
-          <p className="mt-4 text-[13px] leading-relaxed text-foreground/75">{meals}</p>
+          <h2 className="text-[18px] font-bold">Meals</h2>
+          <p className="mt-4 text-[14px] leading-relaxed text-foreground/75">{meals}</p>
         </div>
       )}
 
       {hasTransport && (
         <div className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-          <h2 className="text-[17px] font-bold">Transport</h2>
-          <p className="mt-4 text-[13px] leading-relaxed text-foreground/75">{transportDetail}</p>
+          <h2 className="text-[18px] font-bold">Transport</h2>
+          <p className="mt-4 text-[14px] leading-relaxed text-foreground/75">{transportDetail}</p>
         </div>
       )}
     </motion.section>

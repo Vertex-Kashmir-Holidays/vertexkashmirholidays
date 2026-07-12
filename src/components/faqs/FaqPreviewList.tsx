@@ -42,7 +42,7 @@ export function FaqPreviewList({ faqs, columns = 1 }: FaqPreviewListProps) {
               aria-expanded={open}
               className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
             >
-              <h3 className="text-[13px] font-bold text-foreground leading-snug">{faq.question}</h3>
+              <h3 className="text-[14px] font-bold text-foreground leading-snug">{faq.question}</h3>
               <ChevronDown
                 className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")}
                 strokeWidth={2.4}
@@ -53,10 +53,10 @@ export function FaqPreviewList({ faqs, columns = 1 }: FaqPreviewListProps) {
             >
               <div className="overflow-hidden">
                 <div className="px-4 pb-3.5">
-                  <p className="text-[12px] leading-relaxed text-muted-foreground">{faq.shortAnswer}</p>
+                  <p className="text-[14px] leading-relaxed text-muted-foreground">{faq.shortAnswer}</p>
                   <Link
                     href={`/faq#${faq.slug}`}
-                    className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-bold text-primary hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-primary hover:underline"
                   >
                     Read Full Answer
                     <ArrowRight className="h-3 w-3" strokeWidth={2.4} />

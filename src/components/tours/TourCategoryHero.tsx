@@ -22,7 +22,7 @@ export function TourCategoryHero({ pageTitle, subtitle, heroImage, heroImageMobi
       alt="Kashmir valley"
       aside={<HeroLeadCard source="tour-category" buttonLabel="Get a Free Quote" />}
     >
-      <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+      <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
         <Link href="/" className="transition hover:text-white">Home</Link>
         <span>›</span>
         <Link href="/tours" className="transition hover:text-white">Tours</Link>
@@ -38,7 +38,7 @@ export function TourCategoryHero({ pageTitle, subtitle, heroImage, heroImageMobi
           {pageTitle}
         </h1>
         <p
-          className="hero-reveal mt-3 max-w-md text-[15px] text-white/85"
+          className="hero-reveal mt-3 max-w-md text-[16px] text-white/85"
           style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {subtitle}
