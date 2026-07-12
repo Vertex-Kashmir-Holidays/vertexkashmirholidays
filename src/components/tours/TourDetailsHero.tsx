@@ -246,14 +246,12 @@ export function TourDetailsHero({
 
        {/* Title Block */}
        <div className="mt-8 max-w-2xl sm:mt-12">
-         <motion.span
-           className={`rounded-md ${badgeCls[badgeColor]} px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow`}
-           initial={{ x: -20, opacity: 0 }}
-           animate={{ x: 0, opacity: 1 }}
-           transition={{ duration: 0.5 }}
+         <span
+           className={`hero-reveal-x rounded-md ${badgeCls[badgeColor]} px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow`}
+           style={{ '--hr-duration': '0.5s' } as React.CSSProperties}
          >
            {badge}
-         </motion.span>
+         </span>
          <h1
            className="hero-reveal h-display mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[44px]"
            style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
@@ -270,11 +268,9 @@ export function TourDetailsHero({
              {tagline}
            </p>
          )}
-         <motion.p
-           className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-semibold text-white"
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           transition={{ duration: 0.6, delay: 0.3 }}
+         <p
+           className="hero-reveal mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-semibold text-white"
+           style={{ '--hr-delay': '0.3s' } as React.CSSProperties}
          >
            <span className="flex items-center gap-1.5">
              <Star className="h-4 w-4 text-amber-400" fill="currentColor" strokeWidth={0} />
@@ -286,16 +282,14 @@ export function TourDetailsHero({
                <span>{happyLabel}</span>
              </>
            )}
-         </motion.p>
+         </p>
        </div>
 
 
        {/* Quick Facts */}
-       <motion.div
-         className="mt-8 flex flex-wrap gap-x-9 gap-y-4"
-         initial={{ opacity: 0, y: 20 }}
-         animate={{ opacity: 1, y: 0 }}
-         transition={{ duration: 0.6, delay: 0.4 }}
+       <div
+         className="hero-reveal mt-8 flex flex-wrap gap-x-9 gap-y-4"
+         style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
        >
          {quickFacts.map((fact, i) => (
            <div key={i} className="flex items-center gap-2.5 text-white">
@@ -308,7 +302,7 @@ export function TourDetailsHero({
              </div>
            </div>
          ))}
-       </motion.div>
+       </div>
 
 
        {/* Thumbnails */}

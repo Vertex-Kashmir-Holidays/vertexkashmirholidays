@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
@@ -74,24 +73,70 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selected, setSelected] = useState<Booking | null>(null);
   const [confirmMode, setConfirmMode] = useState<null | "soft" | "permanent">(null);
 
-  const filtered = initialBookings.filter((b) => {
-    const matchesStatus = statusFilter === "ALL" || b.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchesSearch =
-      search === "" ||
-      b.guestName.toLowerCase().includes(q) ||
-      (b.guestEmail ?? "").toLowerCase().includes(q) ||
-      (b.razorpayOrderId ?? "").toLowerCase().includes(q) ||
-      b.id.toLowerCase().includes(q) ||
-      (b.tour?.title ?? "").toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
+  // Server-paginated: the admin/bookings list previously capped at the first
+  // 100 rows (fetched once, filtered/paginated in the browser), silently
+  // hiding anything older. This now calls the already-existing, correctly
+  // paginated /api/bookings endpoint for every page/search/filter change —
+  // the initial page still renders instantly from the server-fetched props
+  // below, no fetch needed on first paint.
+  const [bookings, setBookings] = useState(initialBookings);
+  const [total, setTotal] = useState(totalCount);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const hasMounted = useRef(false);
 
-  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+  // Debounce search input — avoids a network round trip on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Any filter change should jump back to page 1, same as the old client-side
+  // pagination's auto-clamp when the filtered set shrank.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  async function fetchBookings() {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      if (statusFilter !== "ALL") params.set("status", statusFilter);
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      const res = await fetch(`/api/bookings?${params.toString()}`);
+      if (!res.ok) throw new Error();
+      const data = (await res.json()) as { bookings: Booking[]; total: number };
+      setBookings(data.bookings);
+      setTotal(data.total);
+    } catch {
+      toast.error("Failed to load bookings.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // Skip the redundant fetch on first mount — initialBookings/totalCount
+    // already came from the server render.
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    fetchBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, statusFilter, debouncedSearch]);
+
+  function changePageSize(n: number) {
+    setPageSize(n);
+    setPage(1);
+  }
 
   function closeModal() {
     if (isPending) return;
@@ -112,6 +157,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
         setConfirmMode(null);
         setSelected(null);
         router.refresh();
+        fetchBookings();
       } catch {
         toast.error("An error occurred.");
       }
@@ -134,6 +180,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
         toast.success(`Booking marked as ${status.toLowerCase()}.`);
         setSelected(null);
         router.refresh();
+        fetchBookings();
       } catch {
         toast.error("Failed to update booking status.");
       }
@@ -178,11 +225,11 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           </div>
-          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+          <p className="text-xs text-muted-foreground self-center shrink-0">{total} results</p>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className={cn("overflow-x-auto", loading && "opacity-60 pointer-events-none")}>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
@@ -192,14 +239,14 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.length === 0 ? (
+              {bookings.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No bookings found.
                   </td>
                 </tr>
               ) : (
-                pageItems.map((b) => {
+                bookings.map((b) => {
                   const showCancel = canCancel(b, isAdmin);
                   const showRefund = canRefund(b, isAdmin);
                   return (

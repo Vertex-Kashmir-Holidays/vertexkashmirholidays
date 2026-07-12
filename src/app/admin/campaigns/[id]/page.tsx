@@ -16,10 +16,11 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
   if (!role || !(await can(role, "campaigns", "view"))) redirect("/admin/dashboard");
 
   const { id } = await params;
-  const campaign = await prisma.campaign.findUnique({ where: { id } });
+  const [campaign, canEdit] = await Promise.all([
+    prisma.campaign.findUnique({ where: { id } }),
+    can(role, "campaigns", "edit"),
+  ]);
   if (!campaign) notFound();
-
-  const canEdit = await can(role, "campaigns", "edit");
 
   return (
     <div className="space-y-5">

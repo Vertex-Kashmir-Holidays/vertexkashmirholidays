@@ -1,7 +1,6 @@
 // src/components/blog/BlogHero.tsx
 'use client';
 
-import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
@@ -20,14 +19,12 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
       alt="Houseboats on a Kashmir lake"
       aside={<HeroLeadCard source="blog-list" />}
     >
-        <motion.p
-          className="text-[14px] font-bold tracking-[0.32em] text-white/90"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        <p
+          className="hero-reveal text-[14px] font-bold tracking-[0.32em] text-white/90"
+          style={{ '--hr-y': '20px', '--hr-duration': '0.5s' } as React.CSSProperties}
         >
           {content.heroKicker}
-        </motion.p>
+        </p>
         <h1
           className="hero-reveal mt-4 text-3xl font-bold leading-tight text-white sm:text-[38px] lg:text-[42px]"
           style={{ '--hr-y': '30px', '--hr-delay': '0.1s' } as React.CSSProperties}
@@ -40,11 +37,9 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
         >
           {content.heroSubtitle}
         </p>
-        <motion.label
-          className="mt-7 flex w-full max-w-[350px] items-center gap-3 rounded-lg bg-card px-4 py-3 shadow-card"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+        <label
+          className="hero-reveal mt-7 flex w-full max-w-[350px] items-center gap-3 rounded-lg bg-card px-4 py-3 shadow-card"
+          style={{ '--hr-y': '20px', '--hr-delay': '0.3s' } as React.CSSProperties}
         >
           <input
             id="blogSearch"
@@ -53,7 +48,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
             onChange={(e) => onSearch(e.target.value)}
           />
           <Search className="h-4 w-4 shrink-0 text-foreground/70" strokeWidth={2} />
-        </motion.label>
+        </label>
     </SecondaryHero>
   );
 }

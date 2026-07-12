@@ -149,17 +149,12 @@ export async function notifyNewBooking(bookingId: string): Promise<void> {
       maximumFractionDigits: 0,
     }).format(booking.amount);
 
-    await Promise.all(
-      staffUsers.map((u) =>
-        createNotification({
-          userId: u.id,
-          type: "BOOKING_NEW",
-          title: "New booking received",
-          body: `${booking.guestName} · ${tourTitle} · ${amount} · Travel: ${travelDate}`,
-          link: `/admin/bookings/${bookingId}`,
-        }),
-      ),
-    );
+    const title = "New booking received";
+    const body = `${booking.guestName} · ${tourTitle} · ${amount} · Travel: ${travelDate}`;
+    const link = `/admin/bookings/${bookingId}`;
+    await prisma.notification.createMany({
+      data: staffUsers.map((u) => ({ userId: u.id, type: "BOOKING_NEW", title, body, link })),
+    });
   } catch (err) {
     console.error("[notifications] notifyNewBooking failed", err);
   }

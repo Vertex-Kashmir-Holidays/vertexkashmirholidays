@@ -2,8 +2,10 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cache } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/siteSettings';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
 import { ContactForm } from '@/components/contact/ContactForm';
@@ -21,12 +23,18 @@ import { formatBusinessAddress } from '@/lib/businessAddress';
 import { JsonLd, buildBreadcrumbList, buildFAQPage, buildOrganizationLocation, buildContactPage } from '@/components/seo/JsonLd';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
-export const revalidate = 300;
+export const revalidate = 1800;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getContactContent = cache(async () =>
+  prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, content] = await Promise.all([
-    prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
-    prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+    getSiteSettings(),
+    getContactContent(),
   ]);
   return buildMetadata({
     title:
@@ -45,13 +53,13 @@ const telLink = (n: string) => `tel:${n.replace(/\s/g, '')}`;
 export default async function ContactPage() {
   const [content, heroFeatures, promiseItems, faqs, offices, settings, testimonials] =
     await Promise.all([
-      prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+      getContactContent(),
       prisma.contactHeroFeature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.contactPromiseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       // Centralized FAQ module — same Faq pool /about and /faq draw from.
       getFaqsForPlacement('CONTACT'),
       prisma.contactOffice.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
+      getSiteSettings(),
       // Approved customer reviews (admin-managed) replace CMS testimonials here.
       getDisplayReviews(8),
     ]);

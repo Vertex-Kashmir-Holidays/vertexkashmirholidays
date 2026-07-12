@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { z } from "zod";
@@ -66,5 +67,6 @@ export async function PATCH(request: Request) {
     create: { id: "singleton", ...data },
     update: data,
   });
+  revalidateTag("site-settings", "max");
   return NextResponse.json(updated);
 }

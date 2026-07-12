@@ -17,7 +17,7 @@ import { BlogPostSidebar } from '@/components/blog/BlogPostSidebar';
 import { TourDetailsRelatedTours } from '@/components/tours/TourDetailsRelatedTours';
 import { parseRelatedTours } from '@/lib/tours/content';
 
-export const revalidate = 300;
+export const revalidate = 1800;
 
 // Without this, Next.js has no known slug list to pre-render and falls back
 // to fully dynamic rendering on every request regardless of `revalidate`.

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { XCircle, RefreshCcw, CreditCard, Headphones, ArrowRight, HelpCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -49,7 +50,7 @@ export default async function BookingFailedPage({
           },
         })
       : null,
-    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    getSiteSettings(),
   ]).catch((err) => {
     console.error("[booking/failed] data load failed", err);
     return [null, null] as [null, null];

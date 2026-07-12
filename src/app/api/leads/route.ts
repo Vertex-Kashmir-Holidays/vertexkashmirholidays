@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { sendMail, leadNotificationHtml, leadNotificationText } from "@/lib/mail";
 import { requirePermission } from "@/lib/permissions";
 import { leadInputSchema } from "@/lib/leads/schema";
@@ -233,10 +234,7 @@ export async function POST(req: NextRequest) {
     const ageMs = Date.now() - recent.createdAt.getTime();
     const withinWindow = ageMs < DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
     if (withinWindow) {
-      const settings = await prisma.siteSettings.findUnique({
-        where: { id: "singleton" },
-        select: { whatsapp: true },
-      });
+      const settings = await getSiteSettings();
       const whatsapp = buildWhatsAppHref(
         settings?.whatsapp,
         "Hi! I recently submitted an enquiry and wanted to follow up.",

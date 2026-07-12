@@ -63,14 +63,12 @@ export function DestinationDetailHero({
 
         <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
           <div className="max-w-xl">
-            <motion.span
-              className="rounded-md bg-badge-green px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow"
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
+            <span
+              className="hero-reveal-x rounded-md bg-badge-green px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow"
+              style={{ '--hr-duration': '0.5s' } as React.CSSProperties}
             >
               {region}
-            </motion.span>
+            </span>
             <h1
               className="hero-reveal mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-[64px] lg:leading-none"
               style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
@@ -84,11 +82,9 @@ export function DestinationDetailHero({
               {tagline}
             </p>
 
-            <motion.div
-              className="mt-8 flex flex-wrap gap-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+            <div
+              className="hero-reveal mt-8 flex flex-wrap gap-3"
+              style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
             >
               {/* Live weather chip — shown first when coordinates are available */}
               {weather && (
@@ -111,7 +107,7 @@ export function DestinationDetailHero({
                   </div>
                 </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           <HeroLeadCard source="destination-detail" context={{ destinationName: name }} />

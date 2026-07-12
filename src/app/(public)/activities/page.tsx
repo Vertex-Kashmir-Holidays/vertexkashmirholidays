@@ -7,7 +7,7 @@ import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import { ActivitiesPageClient } from "@/components/activities/ActivitiesPageClient";
 import Link from "next/link";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 export async function generateMetadata(): Promise<Metadata> {
   const section = await prisma.homeSection.findUnique({ where: { key: "activitiesHero" } });

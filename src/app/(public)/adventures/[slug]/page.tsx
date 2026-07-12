@@ -1,8 +1,10 @@
 // src/app/(public)/campaign/[slug]/page.tsx
 
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/siteSettings';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
 import { JsonLd, buildBreadcrumbList, buildCampaignProduct, buildCampaignEvents, buildFAQPage } from '@/components/seo/JsonLd';
@@ -32,12 +34,24 @@ function parse<T>(value: string | null | undefined, fallback: T): T {
   }
 }
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getCampaign = cache(async (slug: string) =>
+  prisma.campaign.findUnique({
+    where: { slug },
+    include: {
+      relatedFaqs: {
+        where: { status: 'PUBLISHED' },
+        orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
+        select: { id: true, question: true, shortAnswer: true, slug: true },
+      },
+    },
+  }),
+);
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const c = await prisma.campaign.findUnique({
-    where: { slug },
-    select: { name: true, sub: true, metaTitle: true, metaDesc: true, ogImage: true, heroImage: true, published: true },
-  });
+  const c = await getCampaign(slug);
   if (!c || !c.published) {
     return buildMetadata({
       title: 'Campaign Not Found',
@@ -57,17 +71,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CampaignPage({ params }: PageProps) {
   const { slug } = await params;
   const [c, s, reviews] = await Promise.all([
-    prisma.campaign.findUnique({
-      where: { slug },
-      include: {
-        relatedFaqs: {
-          where: { status: 'PUBLISHED' },
-          orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
-          select: { id: true, question: true, shortAnswer: true, slug: true },
-        },
-      },
-    }),
-    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    getCampaign(slug),
+    getSiteSettings(),
     getDisplayReviews(6),
   ]);
   if (!c || !c.published) notFound();

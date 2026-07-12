@@ -328,6 +328,12 @@ body {
 @keyframes hero-reveal { from { opacity:0; transform:translateY(var(--hr-y, 0)); } to { opacity:1; transform:translateY(0); } }
 .hero-reveal { animation:hero-reveal var(--hr-duration, .6s) cubic-bezier(.22,1,.36,1) both; animation-delay:var(--hr-delay, 0s); }
 
+/* Horizontal counterpart — same LCP-safety rationale as .hero-reveal above,
+   for the small badges that previously slid in from the left (x:-20 → 0)
+   instead of fading up. */
+@keyframes hero-reveal-x { from { opacity:0; transform:translateX(var(--hr-x, -20px)); } to { opacity:1; transform:translateX(0); } }
+.hero-reveal-x { animation:hero-reveal-x var(--hr-duration, .5s) cubic-bezier(.22,1,.36,1) both; animation-delay:var(--hr-delay, 0s); }
+
 /* Campaign accent — driven by per-campaign --camp-accent / --camp-accent2
    (set inline on the campaign wrapper), with sensible cyan/teal fallbacks. */
 .bg-accent-grad { background-image:linear-gradient(120deg, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); }

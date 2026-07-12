@@ -6,7 +6,7 @@ import { JsonLd, buildBreadcrumbList, buildFAQPage } from "@/components/seo/Json
 import { FaqHero } from "@/components/faq/FaqHero";
 import { FaqAccordionPage } from "@/components/faqs/FaqAccordionPage";
 
-export const revalidate = 300;
+export const revalidate = 1800;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({

@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import { renderAccents } from '@/lib/accents';
 import type { HeroContentData, HeroSlideData, SiteStatData } from '@/types/home';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -51,26 +51,6 @@ useEffect(() => {
   if (embersRef.current) createParticles(embersRef.current, 'ember', 16, true);
   if (flakesRef.current) createParticles(flakesRef.current, 'flake', 26, false);
 }, []);
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-  },
-};
 
 const currentSlide = slides[currentImageIndex];
 
@@ -128,21 +108,18 @@ return (
 
     {/* Main content */}
     <div className="relative z-[2] mx-auto grid w-full min-h-[100svh] max-w-[1300px] items-center gap-6 px-4 pb-20 pt-32 sm:px-6 sm:gap-8 lg:gap-10 lg:grid-cols-[1.15fr_.85fr]">
-      <motion.div
+      <div
         data-depth
         style={{ '--d': '0.7' } as React.CSSProperties}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
         className="min-w-0"
       >
         {content.badge && (
-          <motion.p
-            variants={itemVariants}
-            className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[12px] font-bold tracking-[0.22em] "
+          <p
+            className="hero-reveal mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-[12px] font-bold tracking-[0.22em] "
+            style={{ '--hr-y': '30px', '--hr-delay': '0.2s' } as React.CSSProperties}
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-glow"></span> {content.badge}
-          </motion.p>
+          </p>
         )}
         <h1
           className="hero-reveal h-display font-extrabold text-white"
@@ -163,10 +140,9 @@ return (
             {content.subtitle}
           </p>
         )}
-        <motion.div
-          variants={itemVariants}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
-          className="mt-8 flex flex-wrap items-center gap-3"
+        <div
+          className="hero-reveal mt-8 flex flex-wrap items-center gap-3"
+          style={{ '--hr-y': '30px', '--hr-delay': '0.5s' } as React.CSSProperties}
         >
           {content.ctaPrimaryLabel && (
             <Link
@@ -185,12 +161,11 @@ return (
               ▶&nbsp; {content.ctaSecondaryLabel}
             </Link>
           )}
-        </motion.div>
+        </div>
         {stats.length > 0 && (
-          <motion.div
-            variants={itemVariants}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
-            className="mt-10 grid max-w-md grid-cols-4 divide-x divide-white/10 rounded-2xl glass py-4 text-center"
+          <div
+            className="hero-reveal mt-10 grid max-w-md grid-cols-4 divide-x divide-white/10 rounded-2xl glass py-4 text-center"
+            style={{ '--hr-y': '30px', '--hr-delay': '0.6s' } as React.CSSProperties}
           >
             {stats.map((stat, i) => (
               <div key={i}>
@@ -201,9 +176,9 @@ return (
                 <p className="mt-1 text-[12px] primary-foreground/55">{stat.label}</p>
               </div>
             ))}
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
       {/* Lead-capture card — uses the shared HeroLeadCard component so the
           home hero form is visually identical to Tours/Destinations heroes. */}
       <HeroLeadCard

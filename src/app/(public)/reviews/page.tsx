@@ -1,8 +1,10 @@
 // src/app/(public)/reviews/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList, buildOrganizationReviews } from "@/components/seo/JsonLd";
 import { getApprovedReviewsPage, getReviewStats } from "@/lib/reviews";
@@ -23,12 +25,18 @@ const RATINGS = [5, 4, 3, 2, 1] as const;
 
 type PageProps = { searchParams: Promise<{ page?: string; rating?: string }> };
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getReviewsContent = cache(async () =>
+  prisma.reviewsContent.findUnique({ where: { id: "singleton" } }),
+);
+
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const canonical = page > 1 ? `${SITE_URL}/reviews?page=${page}` : `${SITE_URL}/reviews`;
 
-  const content = await prisma.reviewsContent.findUnique({ where: { id: "singleton" } });
+  const content = await getReviewsContent();
 
   return buildMetadata({
     title: "Customer Reviews & Ratings — Real Traveller Experiences",
@@ -47,17 +55,8 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
   const [{ items, total }, stats, settings, heroContent, videos] = await Promise.all([
     getApprovedReviewsPage({ page, perPage: PER_PAGE, rating }),
     getReviewStats(),
-    prisma.siteSettings.findUnique({
-      where: { id: "singleton" },
-      select: {
-        googleReviews: true,
-        tripadvisor: true,
-        googlePlaceId: true,
-        tripadvisorHeroWidgetEmbed: true,
-        tripadvisorRatingWidgetEmbed: true,
-      },
-    }),
-    prisma.reviewsContent.findUnique({ where: { id: "singleton" } }),
+    getSiteSettings(),
+    getReviewsContent(),
     prisma.videoReview.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 

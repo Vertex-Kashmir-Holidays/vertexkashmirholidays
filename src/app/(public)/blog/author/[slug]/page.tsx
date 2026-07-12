@@ -3,6 +3,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
@@ -11,7 +12,7 @@ import { imgSrc } from '@/lib/placeholder';
 import { BlogArticlesGrid } from '@/components/blog/BlogArticlesGrid';
 import type { BlogArticleData } from '@/types/blog';
 
-export const revalidate = 300;
+export const revalidate = 1800;
 
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -36,7 +37,9 @@ const shortDate = (d: Date | null) =>
 
 // Authors are a free-text field on Blog (no dedicated Author model), so the
 // archive route matches on the slugified name rather than a stored slug.
-async function findAuthorName(slug: string): Promise<string | null> {
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const findAuthorName = cache(async (slug: string): Promise<string | null> => {
   const rows = await prisma.blog.findMany({
     where: { published: true, author: { not: null } },
     select: { author: true },
@@ -44,7 +47,7 @@ async function findAuthorName(slug: string): Promise<string | null> {
   });
   const match = rows.find((r) => r.author && slugify(r.author) === slug);
   return match?.author ?? null;
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;

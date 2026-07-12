@@ -24,7 +24,7 @@ export default async function AccountOverviewPage() {
   // verified login email.
   const scope = customerBookingWhere(session.user.id, session.user.email);
 
-  const [bookings, payments] = await Promise.all([
+  const [bookings, payments, totalBookings] = await Promise.all([
     prisma.booking.findMany({
       where: scope,
       orderBy: { travelDate: "asc" },
@@ -37,9 +37,8 @@ export default async function AccountOverviewPage() {
       where: { booking: scope },
       select: { amount: true, type: true },
     }),
+    prisma.booking.count({ where: scope }),
   ]);
-
-  const totalBookings = await prisma.booking.count({ where: scope });
   const upcoming = bookings.filter((b) => b.travelDate >= now).length;
   const totalSpent = payments.reduce((sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount), 0);
 

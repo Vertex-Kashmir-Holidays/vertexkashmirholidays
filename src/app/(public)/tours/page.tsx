@@ -37,8 +37,11 @@ export default async function ToursPage() {
     prisma.tour.findMany({
       where: { published: true },
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
-      include: {
-        destinations: { include: { destination: { select: { name: true } } } },
+      select: {
+        id: true, slug: true, title: true, badge: true, badgeColor: true,
+        duration: true, coverImage: true, rating: true, reviewCount: true,
+        priceFrom: true, priceWas: true, category: true, region: true,
+        destinations: { select: { destination: { select: { name: true } } } },
       },
     }),
   ]);

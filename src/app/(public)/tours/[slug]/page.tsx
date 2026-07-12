@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import {
  JsonLd,
  buildProduct,
@@ -144,10 +145,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
  const { slug } = await params;
  const [tour, settings] = await Promise.all([
    getTour(slug),
-   prisma.siteSettings.findUnique({
-     where: { id: "singleton" },
-     select: { sitePhone: true },
-   }),
+   getSiteSettings(),
  ]);
 
 

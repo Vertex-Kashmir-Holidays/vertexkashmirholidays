@@ -152,14 +152,12 @@ export function CampaignHero({
       <div className="relative z-[2] mx-auto grid min-h-[100svh] max-w-[1300px] items-center gap-10 px-6 pb-16 pt-36 lg:grid-cols-[1.15fr_370px]">
         <div>
           {badge && (
-            <motion.span
-              className={`${darkGlass} inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-extrabold tracking-[0.16em] text-white`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+            <span
+              className={`${darkGlass} hero-reveal inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-extrabold tracking-[0.16em] text-white`}
+              style={{ '--hr-y': '20px', '--hr-duration': '0.5s' } as React.CSSProperties}
             >
               {badge}
-            </motion.span>
+            </span>
           )}
           {titleHTML && (
             <h1
@@ -178,25 +176,21 @@ export function CampaignHero({
           )}
 
           {facts.length > 0 && (
-            <motion.div
-              className="mt-7 flex flex-wrap gap-2.5"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+            <div
+              className="hero-reveal mt-7 flex flex-wrap gap-2.5"
+              style={{ '--hr-y': '20px', '--hr-delay': '0.3s' } as React.CSSProperties}
             >
               {facts.map((fact, i) => (
                 <span key={i} className={`${darkGlass} rounded-full px-3.5 py-1.5 text-[14px] font-semibold text-white`}>
                   {fact}
                 </span>
               ))}
-            </motion.div>
+            </div>
           )}
 
-          <motion.div
-            className="mt-9 flex flex-wrap items-center gap-3.5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+          <div
+            className="hero-reveal mt-9 flex flex-wrap items-center gap-3.5"
+            style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
           >
             <Link
               href="#pricing"
@@ -215,14 +209,12 @@ export function CampaignHero({
                 Watch the film <span className="text-white/55">· {filmDur}</span>
               </button>
             )}
-          </motion.div>
+          </div>
 
           {proofCount && (
-            <motion.div
-              className="mt-9 flex flex-wrap items-center gap-5"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+            <div
+              className="hero-reveal mt-9 flex flex-wrap items-center gap-5"
+              style={{ '--hr-y': '20px', '--hr-delay': '0.5s' } as React.CSSProperties}
             >
               <div className="flex -space-x-2.5">
                 {['sp1', 'sp2', 'sp3'].map((s) => (
@@ -234,7 +226,7 @@ export function CampaignHero({
                 <span className="inline-flex items-center gap-1 font-bold text-amber-300"><Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} /> 4.9</span> from{' '}
                 <span className="font-bold text-white">{proofCount}</span> travellers on this trip last season
               </p>
-            </motion.div>
+            </div>
           )}
         </div>
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -8,9 +9,15 @@ import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } fr
 
 type Props = { params: Promise<{ id: string }> };
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getDestination = cache(async (id: string) =>
+  prisma.destination.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
+);
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const dest = await prisma.destination.findUnique({ where: { id }, select: { name: true } });
+  const dest = await getDestination(id);
   return { title: dest ? `Edit: ${dest.name} — Admin` : "Edit Destination — Admin" };
 }
 
@@ -19,7 +26,7 @@ export const dynamic = "force-dynamic";
 export default async function EditDestinationPage({ params }: Props) {
   const { id } = await params;
   const [dest, activities, blogs] = await Promise.all([
-    prisma.destination.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
+    getDestination(id),
     prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.blog.findMany({ where: { published: true }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
   ]);

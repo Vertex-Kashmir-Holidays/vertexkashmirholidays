@@ -2,8 +2,10 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cache } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/siteSettings';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { AboutCTA } from '@/components/about/AboutCTA';
 import { AboutCertifications } from '@/components/about/AboutCertifications';
@@ -24,10 +26,16 @@ import { parseTripadvisorWidget } from '@/lib/reviews/tripadvisorWidget';
 import { getFaqsForPlacement } from '@/lib/faqs';
 import { JsonLd, buildBreadcrumbList, buildFAQPage, buildOrganizationPeople } from '@/components/seo/JsonLd';
 
-export const revalidate = 300;
+export const revalidate = 1800;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getAboutContent = cache(async () =>
+  prisma.aboutContent.findUnique({ where: { id: 'singleton' } }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
-  const content = await prisma.aboutContent.findUnique({ where: { id: 'singleton' } });
+  const content = await getAboutContent();
   return buildMetadata({
     title: 'About Us — Local Kashmir Travel Experts',
     description:
@@ -40,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AboutPage() {
   const [content, storyFeatures, stats, values, certifications, team, journey, press, settings, { items: reviews }, reviewStats, aboutFaqs] =
     await Promise.all([
-      prisma.aboutContent.findUnique({ where: { id: 'singleton' } }),
+      getAboutContent(),
       prisma.aboutStoryFeature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.aboutStat.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.aboutValue.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
@@ -48,7 +56,7 @@ export default async function AboutPage() {
       prisma.teamMember.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.journeyMilestone.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.pressLogo.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
+      getSiteSettings(),
       // Compact reuse of the same review infrastructure /reviews and /contact
       // already use — no new collection system, just a smaller slice of it.
       getApprovedReviewsPage({ page: 1, perPage: 3 }),

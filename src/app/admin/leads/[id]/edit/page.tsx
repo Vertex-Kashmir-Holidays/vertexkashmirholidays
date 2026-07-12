@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -11,9 +12,36 @@ export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getLead = cache(async (id: string) =>
+  prisma.lead.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      source: true,
+      category: true,
+      adults: true,
+      children: true,
+      startDate: true,
+      endDate: true,
+      followUpAt: true,
+      assignedToId: true,
+      notes: true,
+      negotiatedAmount: true,
+      tokenAmount: true,
+      locked: true,
+      assignedTo: { select: { name: true, email: true } },
+    },
+  }),
+);
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const lead = await prisma.lead.findUnique({ where: { id }, select: { name: true } });
+  const lead = await getLead(id);
   return { title: lead ? `Edit ${lead.name} — Lead` : "Edit Lead — Admin" };
 }
 
@@ -22,28 +50,7 @@ export default async function EditLeadPage({ params }: PageProps) {
   const session = await auth();
 
   const [lead, staffUsers] = await Promise.all([
-    prisma.lead.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        email: true,
-        source: true,
-        category: true,
-        adults: true,
-        children: true,
-        startDate: true,
-        endDate: true,
-        followUpAt: true,
-        assignedToId: true,
-        notes: true,
-        negotiatedAmount: true,
-        tokenAmount: true,
-        locked: true,
-        assignedTo: { select: { name: true, email: true } },
-      },
-    }),
+    getLead(id),
     prisma.user.findMany({
       where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
       select: { id: true, name: true },

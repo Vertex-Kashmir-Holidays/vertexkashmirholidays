@@ -97,14 +97,12 @@ export function BlogPostHero({
         </nav>
 
         {category && (
-          <motion.span
-            className="mt-6 inline-block rounded-md bg-brand-bright/90 px-3 py-1.5 text-[12px] font-extrabold tracking-[0.12em] text-white"
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
+          <span
+            className="hero-reveal-x mt-6 inline-block rounded-md bg-brand-bright/90 px-3 py-1.5 text-[12px] font-extrabold tracking-[0.12em] text-white"
+            style={{ '--hr-duration': '0.5s' } as React.CSSProperties}
           >
             {category.toUpperCase()}
-          </motion.span>
+          </span>
         )}
 
         <h1
@@ -123,11 +121,9 @@ export function BlogPostHero({
           </p>
         )}
 
-        <motion.div
-          className="mt-8 flex flex-wrap items-center justify-between gap-5"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+        <div
+          className="hero-reveal mt-8 flex flex-wrap items-center justify-between gap-5"
+          style={{ '--hr-y': '20px', '--hr-delay': '0.3s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-white">
             <div className="flex items-center gap-3">
@@ -187,7 +183,7 @@ export function BlogPostHero({
               {copied ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Link2 className="h-4 w-4" strokeWidth={2} />}
             </motion.button>
           </div>
-        </motion.div>
+        </div>
        </div>
 
         {/* Lead-capture card (right) */}

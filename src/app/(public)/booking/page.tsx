@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { auth } from "@/lib/auth";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { parseJson } from "@/lib/tours/content";
@@ -42,7 +43,7 @@ export default async function BookingPage({
         batches: true,
       },
     }),
-    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    getSiteSettings(),
     // Prefill the form for a signed-in customer (their own details only).
     session?.user?.id
       ? prisma.user.findUnique({

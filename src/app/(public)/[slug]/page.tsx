@@ -3,6 +3,7 @@
 // falls through to a 404, identical to having no route.
 
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -12,19 +13,31 @@ import { BlogPostBody } from "@/components/blog/BlogPostBody";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { LEGAL_PAGES, LEGAL_SLUGS, getLegalDefault } from "@/lib/legal/content";
 
-export const revalidate = 300;
+export const revalidate = 3600;
+
+// Small, fixed, known slug set — pre-render all of them at build time instead
+// of generating each on-demand on its first post-deploy hit.
+export async function generateStaticParams() {
+  return LEGAL_SLUGS.map((slug) => ({ slug }));
+}
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 const longDate = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getLegalPage = cache(async (slug: string) =>
+  prisma.legalPage.findUnique({ where: { slug } }),
+);
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const def = getLegalDefault(slug);
   if (!def) return buildMetadata({ title: "Not Found", description: "", noindex: true });
 
-  const record = await prisma.legalPage.findUnique({ where: { slug } });
+  const record = await getLegalPage(slug);
   return buildMetadata({
     title: `${record?.title ?? def.title} | Vertex Kashmir Holidays`,
     description: def.description,
@@ -37,7 +50,7 @@ export default async function LegalPage({ params }: PageProps) {
   if (!LEGAL_SLUGS.includes(slug)) notFound();
 
   const def = getLegalDefault(slug)!;
-  const record = await prisma.legalPage.findUnique({ where: { slug } });
+  const record = await getLegalPage(slug);
 
   const title = record?.title ?? def.title;
   const html = record?.content ?? def.content;

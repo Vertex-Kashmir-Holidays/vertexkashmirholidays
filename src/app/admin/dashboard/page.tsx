@@ -110,14 +110,24 @@ export default async function AdminDashboard() {
       where: { deletedAt: null },
       take: 8,
       orderBy: { createdAt: "desc" },
-      include: { tour: { select: { title: true, coverImage: true, slug: true } } },
+      select: {
+        id: true, status: true, amount: true, createdAt: true,
+        tour: { select: { title: true, coverImage: true, slug: true } },
+      },
     }),
-    prisma.lead.findMany({ take: 8, orderBy: { createdAt: "desc" } }),
+    prisma.lead.findMany({
+      take: 8,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, phone: true, source: true, startDate: true, status: true },
+    }),
     prisma.review.findMany({
       where: { approved: false },
       take: 5,
       orderBy: { createdAt: "desc" },
-      include: { tour: { select: { title: true } } },
+      select: {
+        id: true, name: true, rating: true, body: true,
+        tour: { select: { title: true } },
+      },
     }),
     prisma.booking.findMany({
       where: { status: BookingStatus.PAID, deletedAt: null },

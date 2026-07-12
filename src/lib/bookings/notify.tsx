@@ -4,6 +4,7 @@
 // break the underlying business action (locking services, recording a payment).
 
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
 import { notifyNewBooking } from "@/lib/notifications";
@@ -44,10 +45,7 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
 };
 
 async function whatsappNumber(): Promise<string | null> {
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "singleton" },
-    select: { whatsapp: true, sitePhone: true },
-  });
+  const settings = await getSiteSettings();
   return settings?.whatsapp ?? settings?.sitePhone ?? null;
 }
 
