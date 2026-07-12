@@ -38,7 +38,7 @@ export function AboutStory({ data, features }: AboutStoryProps) {
           transition={{ duration: 0.6 }}
         >
           <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{data.kicker}</p>
-          <h2 className="h-display mt-3 font-display text-[32px] font-bold leading-snug lg:text-[34px]">
+          <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">
             {renderMint(data.title)}
           </h2>
           <p className="mt-4 max-w-xl text-[13.5px] leading-relaxed text-foreground/75">

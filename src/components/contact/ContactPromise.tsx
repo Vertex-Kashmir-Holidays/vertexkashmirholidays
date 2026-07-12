@@ -21,7 +21,7 @@ export function ContactPromise({ heading, items }: ContactPromiseProps) {
       transition={{ duration: 0.5 }}
     >
       <p className="text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-      <h2 className="h-display mt-2 font-display text-[24px] font-bold">{heading.title}</h2>
+      <h2 className="h-display mt-2 font-display text-[17px] font-bold">{heading.title}</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((p, i) => (
           <motion.div

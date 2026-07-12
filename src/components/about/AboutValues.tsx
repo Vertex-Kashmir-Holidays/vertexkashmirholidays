@@ -25,7 +25,7 @@ export function AboutValues({ heading, values }: AboutValuesProps) {
         <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
           <div>
             <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-            <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">{renderMint(heading.title)}</h2>
+            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{renderMint(heading.title)}</h2>
             <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">{heading.subtitle}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

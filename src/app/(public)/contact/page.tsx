@@ -213,46 +213,54 @@ export default async function ContactPage() {
           }))}
         />
 
-        <section className="mt-14 grid gap-10 lg:grid-cols-[1fr_1.15fr_1fr]">
-          {faqs.length > 0 && (
-            <div>
+        {faqs.length > 0 && (
+          <section className="mt-16 border-t border-border pt-14">
+            <div className="text-center">
               <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
-              <h2 className="h-display mt-2 font-display text-[22px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
-              <div className="mt-5">
-                <FaqPreviewList faqs={faqs} />
-              </div>
-              {content?.faqsCtaLabel && (
-                <Link href={content.faqsCtaHref ?? '/faq'} className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline">
-                  {content.faqsCtaLabel}
-                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-                </Link>
-              )}
+              <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
             </div>
-          )}
-          <ContactTestimonials
-            heading={{
-              kicker: content?.testimonialsKicker ?? null,
-              title: content?.testimonialsTitle ?? null,
-            }}
-            testimonials={testimonials.map((t) => ({
-              id: t.id,
-              name: t.name,
-              location: t.location,
-              avatar: t.avatar,
-              quote: t.quote,
-              rating: t.rating,
-            }))}
-          />
-          <ContactSocial
-            content={{
-              kicker: content?.socialKicker ?? null,
-              title: content?.socialTitle ?? null,
-              text: content?.socialText ?? null,
-              ctaLabel: content?.socialCtaLabel ?? null,
-              ctaHref: content?.socialCtaHref ?? null,
-            }}
-            socials={socialLinks}
-          />
+            <div className="mt-8">
+              <FaqPreviewList faqs={faqs} columns={2} />
+            </div>
+            <div className="mt-6 flex justify-center">
+              <Link
+                href={content?.faqsCtaHref && content.faqsCtaHref !== '#' ? content.faqsCtaHref : '/faq'}
+                className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline"
+              >
+                {content?.faqsCtaLabel ?? 'View all FAQs'}
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+              </Link>
+            </div>
+          </section>
+        )}
+
+        <section className="mt-16 border-t border-border pt-14">
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
+            <ContactTestimonials
+              heading={{
+                kicker: content?.testimonialsKicker ?? null,
+                title: content?.testimonialsTitle ?? null,
+              }}
+              testimonials={testimonials.map((t) => ({
+                id: t.id,
+                name: t.name,
+                location: t.location,
+                avatar: t.avatar,
+                quote: t.quote,
+                rating: t.rating,
+              }))}
+            />
+            <ContactSocial
+              content={{
+                kicker: content?.socialKicker ?? null,
+                title: content?.socialTitle ?? null,
+                text: content?.socialText ?? null,
+                ctaLabel: content?.socialCtaLabel ?? null,
+                ctaHref: content?.socialCtaHref ?? null,
+              }}
+              socials={socialLinks}
+            />
+          </div>
         </section>
       </main>
 

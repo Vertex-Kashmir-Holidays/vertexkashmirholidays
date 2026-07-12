@@ -22,7 +22,7 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
         </div>

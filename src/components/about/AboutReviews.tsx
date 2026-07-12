@@ -35,7 +35,7 @@ export function AboutReviews({
     <section className="mx-auto max-w-[1300px] px-6 py-14">
       <div className="text-center">
         <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">REAL FEEDBACK</p>
-        <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">What Our Travellers Say</h2>
+        <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">What Our Travellers Say</h2>
       </div>
 
       <RatingSummaryRow

@@ -56,7 +56,7 @@ export function DestinationDetailGallery({ name, images }: DestinationDetailGall
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-[21px] font-bold">Glimpses of {name}</h2>
+          <h2 className="text-[17px] font-bold">Glimpses of {name}</h2>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setOpenIndex(0)}

@@ -30,7 +30,7 @@ export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
         transition={{ duration: 0.5 }}
       >
         <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
-        <h2 className="h-display mt-2 font-display text-[26px] font-bold">{content.title}</h2>
+        <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content.title}</h2>
         {content.subtitle && <p className="mt-2 text-[12.5px] text-muted-foreground">{content.subtitle}</p>}
 
         <ul className="mt-6 space-y-4 text-[12.5px]">

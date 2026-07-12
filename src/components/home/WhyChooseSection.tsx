@@ -27,7 +27,7 @@ export function WhyChooseSection({ heading, items }: WhyChooseSectionProps) {
     <section id="why" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="text-center">
         <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-        <h2 className="rv h-display mt-3 text-3xl sm:text-4xl font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+        <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
           {renderAccents(heading.title)}
         </h2>
       </div>

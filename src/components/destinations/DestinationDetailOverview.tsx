@@ -23,7 +23,7 @@ export function DestinationDetailOverview({ name, description, features = [] }: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[21px] font-bold">About {name}</h2>
+      <h2 className="text-[17px] font-bold">About {name}</h2>
       <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-foreground/75">
         {description}
       </p>

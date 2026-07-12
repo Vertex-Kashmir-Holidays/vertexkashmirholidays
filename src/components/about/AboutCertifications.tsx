@@ -29,7 +29,7 @@ export function AboutCertifications({ licenses, certifications }: AboutCertifica
         <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
           <div>
             <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">TRUST &amp; LICENSING</p>
-            <h2 className="h-display mt-3 font-display text-[30px] font-bold leading-snug">Licensed &amp; Certified</h2>
+            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">Licensed &amp; Certified</h2>
             <p className="mt-4 text-[12.5px] leading-relaxed text-muted-foreground">
               Real credentials you can verify — not just a claim.
             </p>

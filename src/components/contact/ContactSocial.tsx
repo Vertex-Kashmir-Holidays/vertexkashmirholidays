@@ -47,7 +47,7 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
       transition={{ duration: 0.5 }}
     >
       <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
-      <h2 className="h-display mt-2 font-display text-[22px] font-bold">{content.title}</h2>
+      <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content.title}</h2>
       {socials.length > 0 && (
         <div className="mt-5 flex gap-2.5">
           {socials.map((s) => {

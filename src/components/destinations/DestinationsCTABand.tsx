@@ -35,7 +35,7 @@ export function DestinationsCTABand() {
         <div className="absolute inset-0 bg-gradient-to-r from-brand-green via-brand-green/95 to-brand-green/20"></div>
         <div className="relative grid items-center gap-8 p-9 lg:grid-cols-[1.1fr_1.3fr] lg:p-11">
           <div>
-            <h2 className="text-[26px] font-bold leading-snug text-white lg:text-[28px]">
+            <h2 className="text-[17px] font-bold leading-snug text-white">
               Can't decide which destination is perfect for you?
             </h2>
             <p className="mt-3.5 max-w-xs text-[13.5px] leading-relaxed text-white/80">

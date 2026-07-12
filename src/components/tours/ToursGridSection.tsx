@@ -52,7 +52,7 @@ export function ToursGridSection({
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <motion.h2
-          className="h-display text-[26px] font-bold"
+          className="h-display text-[17px] font-bold"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}

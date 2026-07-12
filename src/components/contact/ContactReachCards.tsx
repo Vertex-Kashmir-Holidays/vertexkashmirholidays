@@ -33,7 +33,7 @@ export function ContactReachCards({ heading, cards }: ContactReachCardsProps) {
         {heading.kicker}
       </motion.p>
       <motion.h2
-        className="h-display mt-2 font-display text-[28px] font-bold"
+        className="h-display mt-2 font-display text-[17px] font-bold"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}

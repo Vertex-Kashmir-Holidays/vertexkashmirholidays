@@ -30,7 +30,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
           aria-hidden
           className="orb orb-gold absolute left-1/2 top-1/2 -z-10 h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2"
         />
-        <h2 className="h-display font-display text-[28px] font-bold leading-snug text-foreground sm:text-[32px]">
+        <h2 className="h-display font-display text-[17px] font-bold leading-snug text-foreground">
           {renderMint(data.title)}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[14px] text-muted-foreground">{data.subtitle}</p>
