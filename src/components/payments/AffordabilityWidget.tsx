@@ -84,7 +84,7 @@ export function AffordabilityWidget({ amount,
       >
           <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
             {title && (
-              <p className="mb-4 text-center text-[13.5px] font-bold">
+              <p className="mb-4 text-center text-[14px] font-bold">
                 {title}
               </p>
             )}

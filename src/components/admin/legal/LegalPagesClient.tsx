@@ -110,7 +110,7 @@ function PageCard({ page, canEdit, defaultOpen }: { page: LegalPageItem; canEdit
                 onClear={() => setHeroImageMobile(null)}
               />
             </div>
-            <p className="mt-1.5 text-[10px] text-muted-foreground">
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
               Shown as the page banner. Leave empty to use the built-in default image.
             </p>
           </div>
@@ -142,10 +142,10 @@ function PageCard({ page, canEdit, defaultOpen }: { page: LegalPageItem; canEdit
                 onChange={(e) => setContent(e.target.value)}
                 disabled={!canEdit}
                 rows={22}
-                className={cn(inputCls, "resize-y font-mono text-[13px] leading-relaxed")}
+                className={cn(inputCls, "resize-y font-mono text-[14px] leading-relaxed")}
               />
             )}
-            <p className="mt-1 text-[10px] text-muted-foreground">
+            <p className="mt-1 text-[12px] text-muted-foreground">
               Use headings (&lt;h2&gt;), paragraphs (&lt;p&gt;), lists (&lt;ul&gt;/&lt;li&gt;) and links. Rendered with the site theme.
             </p>
           </div>
@@ -203,7 +203,7 @@ function BannerSlot({
   const shown = url ?? fallback;
   return (
     <div className="w-full max-w-[220px]">
-      <p className="mb-1 text-[11px] font-semibold text-muted-foreground">{heading}</p>
+      <p className="mb-1 text-[12px] font-semibold text-muted-foreground">{heading}</p>
       <div className="group relative aspect-[16/9] overflow-hidden rounded-xl border border-border bg-muted">
         {shown ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -214,7 +214,7 @@ function BannerSlot({
           </div>
         )}
         {!url && shown && (
-          <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white">
+          <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
             DEFAULT
           </span>
         )}

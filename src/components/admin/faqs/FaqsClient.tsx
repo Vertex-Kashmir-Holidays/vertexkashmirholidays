@@ -151,7 +151,7 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Question", "Category", "Attached To", "Status", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -175,7 +175,7 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                           {faq.featured && <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />}
                           <div className="min-w-0">
                             <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[280px]">{faq.question}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">/faq#{faq.slug}</p>
+                            <p className="text-[12px] text-muted-foreground truncate">/faq#{faq.slug}</p>
                           </div>
                         </div>
                       </td>
@@ -194,11 +194,11 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                           title={!canEdit ? "No permission to change status" : faq.status === "PUBLISHED" ? "Click to unpublish" : "Click to publish"}
                         >
                           {faq.status === "PUBLISHED" ? (
-                            <span className="flex items-center gap-1 text-[10px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full hover:bg-green-500/15 transition-colors">
+                            <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full hover:bg-green-500/15 transition-colors">
                               <CheckCircle2 className="w-3 h-3" /> Published
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full hover:bg-muted transition-colors">
+                            <span className="flex items-center gap-1 text-[12px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full hover:bg-muted transition-colors">
                               <Clock className="w-3 h-3" /> Draft
                             </span>
                           )}
@@ -207,10 +207,10 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                       <td className="px-4 py-3">
                         {confirmDelete === faq.id ? (
                           <div className="flex items-center gap-1.5">
-                            <button onClick={() => handleDelete(faq.id)} disabled={isPending} className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
+                            <button onClick={() => handleDelete(faq.id)} disabled={isPending} className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
                               {isPending ? "…" : "Delete"}
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
+                            <button onClick={() => setConfirmDelete(null)} className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
                               Cancel
                             </button>
                           </div>
@@ -226,7 +226,7 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
-                            {!canEdit && !canDelete && <span className="text-[10px] text-muted-foreground italic">View only</span>}
+                            {!canEdit && !canDelete && <span className="text-[12px] text-muted-foreground italic">View only</span>}
                           </div>
                         )}
                       </td>

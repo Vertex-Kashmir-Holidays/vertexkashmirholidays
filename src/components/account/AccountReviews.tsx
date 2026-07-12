@@ -202,7 +202,7 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                 placeholder="Tell other travellers about your experience…"
                 className={cn(inputCls, "resize-none")}
               />
-              <p className="mt-1 text-[10px] text-muted-foreground">{newBody.trim().length}/2000 · minimum 10 characters</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">{newBody.trim().length}/2000 · minimum 10 characters</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -240,7 +240,7 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-foreground">{r.tourTitle}</p>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">
                       {new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                       {" · "}
                       <span className={r.approved ? "font-semibold text-green-600 dark:text-green-400" : "font-semibold text-amber-600 dark:text-amber-400"}>
@@ -252,23 +252,23 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                     <div className="flex shrink-0 items-center gap-1.5">
                       <button
                         onClick={() => startEdit(r)}
-                        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
                       >
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </button>
                       {confirmDelete === r.id ? (
                         <>
-                          <button onClick={() => handleDelete(r.id)} disabled={isPending} className="rounded-lg bg-red-500 px-2 py-1.5 text-[11px] font-bold text-white transition hover:bg-red-600">
+                          <button onClick={() => handleDelete(r.id)} disabled={isPending} className="rounded-lg bg-red-500 px-2 py-1.5 text-[12px] font-bold text-white transition hover:bg-red-600">
                             {isPending ? "…" : "Confirm"}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="rounded-lg border border-border px-2 py-1.5 text-[11px] text-muted-foreground transition hover:bg-muted">
+                          <button onClick={() => setConfirmDelete(null)} className="rounded-lg border border-border px-2 py-1.5 text-[12px] text-muted-foreground transition hover:bg-muted">
                             Cancel
                           </button>
                         </>
                       ) : (
                         <button
                           onClick={() => setConfirmDelete(r.id)}
-                          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-muted-foreground transition hover:bg-red-500/10 hover:text-red-500"
+                          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-semibold text-muted-foreground transition hover:bg-red-500/10 hover:text-red-500"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Delete
                         </button>
@@ -287,7 +287,7 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                       maxLength={2000}
                       className={cn(inputCls, "resize-none")}
                     />
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       Editing re-submits your review for moderation before it shows publicly again.
                     </p>
                     <div className="flex items-center gap-2">

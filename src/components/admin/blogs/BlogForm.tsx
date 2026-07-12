@@ -188,14 +188,14 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">Title *</label>
             <input {...register("title")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Why 7 Days in Kashmir is Perfect" />
-            {errors.title && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.title.message}</p>}
+            {errors.title && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.title.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">Slug *</label>
               <input {...register("slug")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" />
-              {errors.slug && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.slug.message}</p>}
+              {errors.slug && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.slug.message}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">Author</label>
@@ -211,7 +211,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
                   href="/admin/blog-categories"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                  className="text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
                   + Add New
                 </Link>
@@ -226,7 +226,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">Read Time (minutes)</label>
               <input {...register("readTime")} inputMode="numeric" className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" placeholder="e.g. 8" />
-              {errors.readTime && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.readTime.message}</p>}
+              {errors.readTime && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.readTime.message}</p>}
             </div>
           </div>
 
@@ -237,7 +237,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
 
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">Quick Answer</label>
-            <p className="text-[11px] text-muted-foreground mb-1">Short direct-answer callout shown near the top of the article, right before the body. HTML is accepted. Leave the "## Quick Answer" heading out of the Body field below if you fill this in.</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Short direct-answer callout shown near the top of the article, right before the body. HTML is accepted. Leave the "## Quick Answer" heading out of the Body field below if you fill this in.</p>
             <textarea {...register("quickAnswer")} rows={3} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="e.g. The best time to visit Kashmir is..." />
           </div>
         </div>
@@ -269,7 +269,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div>
             <h3 className="font-bold text-foreground text-sm">Cover Image (Mobile)</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
           </div>
           <div className="flex gap-3">
             <input {...register("coverImageMobile")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
@@ -295,7 +295,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div>
             <h3 className="font-bold text-foreground text-sm">Author</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Shown on the public "About the Author" card and the article byline.</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">Shown on the public "About the Author" card and the article byline.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -371,7 +371,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
               placeholder="<p>Your blog content here. HTML is supported.</p>"
             />
           )}
-          <p className="text-[10px] text-muted-foreground">HTML is rendered as-is on the public blog page.</p>
+          <p className="text-[12px] text-muted-foreground">HTML is rendered as-is on the public blog page.</p>
         </div>
 
         {/* Related Tours */}
@@ -388,7 +388,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
               </button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-2">Up to 3 curated pairings shown at the end of the article. Each links to a tour with a custom &ldquo;why it fits&rdquo; sentence — not an automatic feed.</p>
+          <p className="text-[12px] text-muted-foreground -mt-2">Up to 3 curated pairings shown at the end of the article. Each links to a tour with a custom &ldquo;why it fits&rdquo; sentence — not an automatic feed.</p>
           {relatedFields.length === 0 ? (
             <p className="text-xs text-muted-foreground py-2">No related tours added yet.</p>
           ) : (
@@ -446,12 +446,12 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Title</label>
-            <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
             <input {...register("ogTitle")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Description</label>
-            <p className="text-[11px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
             <textarea {...register("ogDescription")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" />
           </div>
         </div>
@@ -463,7 +463,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
           <h3 className="font-bold text-foreground text-sm">Publish</h3>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">Status</span>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
+            <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
               {publishedVal ? "Published" : "Draft"}
             </span>
           </div>

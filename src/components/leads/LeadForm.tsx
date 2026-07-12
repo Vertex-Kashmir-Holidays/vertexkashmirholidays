@@ -44,7 +44,7 @@ interface LeadFormProps {
 // the same input border, and an identical primary focus ring — so Name, Email
 // and Phone read as one consistent field set.
 const inputBase =
-  "w-full rounded-xl border border-input bg-card px-4 py-3 text-[14px] text-foreground placeholder-foreground/45 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25";
+  "w-full rounded-xl border border-input bg-card px-4 py-3 text-[16px] text-foreground placeholder-foreground/45 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25";
 
 export function LeadForm({
   source,
@@ -187,10 +187,10 @@ export function LeadForm({
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
             <Check className="h-7 w-7" strokeWidth={2.5} />
           </div>
-          <p className="text-[17px] font-bold text-foreground">
+          <p className="text-[18px] font-bold text-foreground">
             Thank you, {sentName}! 🌿
           </p>
-          <p className="mx-auto mt-1.5 max-w-[16rem] text-[13px] leading-relaxed text-muted-foreground">
+          <p className="mx-auto mt-1.5 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
             Our local Kashmir expert will connect with you on WhatsApp shortly —
             usually within 30 minutes.
           </p>
@@ -199,7 +199,7 @@ export function LeadForm({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackWhatsappClick("lead_form")}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 px-5 py-2.5 text-[13px] font-bold text-[#25D366] transition hover:bg-[#25D366]/20"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 px-5 py-2.5 text-[14px] font-bold text-[#25D366] transition hover:bg-[#25D366]/20"
           >
             <WhatsAppIcon className="h-4 w-4" />
             Chat on WhatsApp now
@@ -212,14 +212,14 @@ export function LeadForm({
   return (
     <div className={className}>
       {kicker && (
-        <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.2em] text-primary">
+        <p className="inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.2em] text-primary">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" /> {kicker}
         </p>
       )}
       {title && (
         <h2 className="h-display mt-3 text-[24px] font-bold text-foreground">{title}</h2>
       )}
-      {subtitle && <p className="mt-1 text-[13px] text-muted-foreground">{subtitle}</p>}
+      {subtitle && <p className="mt-1 text-[14px] text-muted-foreground">{subtitle}</p>}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-5 space-y-3">
         {/* Honeypot — off-screen, hidden from users + a11y tree; bots fill it. */}
@@ -235,7 +235,7 @@ export function LeadForm({
 
         {/* Name */}
         <div>
-          <label htmlFor={`lf-name-${source}`} className="mb-1.5 block text-[12.5px] font-semibold text-foreground/90">
+          <label htmlFor={`lf-name-${source}`} className="mb-1.5 block text-[14px] font-semibold text-foreground/90">
             Full Name <span className="text-primary">*</span>
           </label>
           <div className="relative">
@@ -251,13 +251,13 @@ export function LeadForm({
             />
           </div>
           {errors.name && (
-            <p className="mt-1 text-[11.5px] text-red-500">{errors.name.message}</p>
+            <p className="mt-1 text-[12px] text-red-500">{errors.name.message}</p>
           )}
         </div>
 
         {/* Phone (country-aware, reuses PhoneInput) */}
         <div>
-          <label htmlFor={`lf-phone-${source}`} className="mb-1.5 block text-[12.5px] font-semibold text-foreground/90">
+          <label htmlFor={`lf-phone-${source}`} className="mb-1.5 block text-[14px] font-semibold text-foreground/90">
             Phone <span className="text-primary">*</span>
           </label>
           <PhoneInput
@@ -271,13 +271,13 @@ export function LeadForm({
           {/* RHF holds the E.164 string the schema validates. */}
           <input type="hidden" {...register("phone")} />
           {errors.phone && (
-            <p className="mt-1 text-[11.5px] text-red-500">{errors.phone.message}</p>
+            <p className="mt-1 text-[12px] text-red-500">{errors.phone.message}</p>
           )}
         </div>
 
         {/* Email (optional) */}
         <div>
-          <label htmlFor={`lf-email-${source}`} className="mb-1.5 block text-[12.5px] font-semibold text-foreground/90">
+          <label htmlFor={`lf-email-${source}`} className="mb-1.5 block text-[14px] font-semibold text-foreground/90">
             Email <span className="font-medium text-muted-foreground">(optional)</span>
           </label>
           <div className="relative">
@@ -293,13 +293,13 @@ export function LeadForm({
             />
           </div>
           {errors.email && (
-            <p className="mt-1 text-[11.5px] text-red-500">{errors.email.message}</p>
+            <p className="mt-1 text-[12px] text-red-500">{errors.email.message}</p>
           )}
         </div>
 
         {/* Consent */}
         <div>
-          <label className="flex items-start gap-2.5 text-[11.5px] leading-relaxed text-muted-foreground">
+          <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-muted-foreground">
             <input
               type="checkbox"
               className="cbx mt-0.5 shrink-0"
@@ -320,7 +320,7 @@ export function LeadForm({
             </span>
           </label>
           {errors.agree && (
-            <p className="mt-1 text-[11.5px] text-red-500">{errors.agree.message}</p>
+            <p className="mt-1 text-[12px] text-red-500">{errors.agree.message}</p>
           )}
         </div>
 
@@ -339,7 +339,7 @@ export function LeadForm({
         <button
           type="submit"
           disabled={isSubmitting || !isValid || (!!siteKey && !captchaToken)}
-          className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
+          className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
         >
           {isSubmitting ? (
             <>
@@ -359,7 +359,7 @@ export function LeadForm({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackWhatsappClick("lead_form")}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-[13px] font-bold transition hover:border-[#25D366] hover:text-[#25D366]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-[14px] font-bold transition hover:border-[#25D366] hover:text-[#25D366]"
         >
           <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
           Or chat on WhatsApp
@@ -381,7 +381,7 @@ export function LeadForm({
                 ))}
               </div>
             )}
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               {note ?? "Free, no spam — a real human replies on WhatsApp."}
             </p>
           </div>

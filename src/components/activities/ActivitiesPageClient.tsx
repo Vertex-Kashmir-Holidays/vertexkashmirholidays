@@ -66,7 +66,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
       <div className="grid gap-7 lg:grid-cols-[252px_1fr]">
         {/* Filters */}
         <aside className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <p className="text-[15px] font-bold">Search</p>
+          <p className="text-[16px] font-bold">Search</p>
           <label className="mt-3 flex items-center gap-2 rounded-lg bg-muted px-3.5 py-2.5">
             <input
               value={search}
@@ -74,15 +74,15 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
+              className="w-full bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
               placeholder="Search activities..."
             />
             <Search className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
           </label>
 
           <div className="mt-7 border-t border-border pt-6">
-            <p className="text-[15px] font-bold">
-              Price Range <span className="text-[11px] font-medium text-muted-foreground">(per person)</span>
+            <p className="text-[16px] font-bold">
+              Price Range <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
             </p>
             <PriceRangeSlider
               min={priceBounds.min}
@@ -98,7 +98,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
 
           <button
             onClick={clear}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-[1.5px] border-primary py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border-[1.5px] border-primary py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
           >
             Clear Filters
             <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
@@ -108,13 +108,13 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
         {/* Grid */}
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="h-display text-[17px] font-bold">
+            <h2 className="h-display text-[18px] font-bold">
               All Activities{' '}
-              <span className="font-sans text-[13px] font-semibold text-primary">
+              <span className="font-sans text-[14px] font-semibold text-primary">
                 ({filtered.length} {filtered.length === 1 ? 'Activity' : 'Activities'})
               </span>
             </h2>
-            <div className="flex items-center gap-2.5 text-[13px]">
+            <div className="flex items-center gap-2.5 text-[14px]">
               <label htmlFor="act-sort" className="hidden text-muted-foreground sm:inline">Sort by:</label>
               <select
                 id="act-sort"
@@ -134,10 +134,10 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
 
           {paged.length === 0 ? (
             <div className="mt-16 flex flex-col items-center gap-4 text-center">
-              <p className="text-[17px] font-bold">No activities match your filters</p>
+              <p className="text-[18px] font-bold">No activities match your filters</p>
               <button
                 onClick={clear}
-                className="rounded-lg border-[1.5px] border-primary px-5 py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+                className="rounded-lg border-[1.5px] border-primary px-5 py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
               >
                 Clear Filters
               </button>
@@ -161,7 +161,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
                     p === currentPage
                       ? 'bg-primary text-primary-foreground shadow-card'
                       : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
-                  } grid h-10 w-10 place-items-center rounded-full text-[13px] font-semibold transition`}
+                  } grid h-10 w-10 place-items-center rounded-full text-[14px] font-semibold transition`}
                 >
                   {p}
                 </button>

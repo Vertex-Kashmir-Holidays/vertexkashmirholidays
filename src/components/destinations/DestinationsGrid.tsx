@@ -67,7 +67,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
         <div className="mt-10 flex justify-center">
           <motion.button
             onClick={loadMore}
-            className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-[13.5px] font-semibold shadow-soft transition hover:border-primary hover:text-primary"
+            className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-[14px] font-semibold shadow-soft transition hover:border-primary hover:text-primary"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >

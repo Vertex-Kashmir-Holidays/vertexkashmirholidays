@@ -24,7 +24,7 @@ export function BlogPostHighlights({ id, title, items }: BlogPostHighlightsProps
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="scroll-mt-24 text-[17px] font-bold">{title}</h2>
+      <h2 className="scroll-mt-24 text-[18px] font-bold">{title}</h2>
       <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
         {items.map((item, i) => (
           <motion.div
@@ -38,7 +38,7 @@ export function BlogPostHighlights({ id, title, items }: BlogPostHighlightsProps
             <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
               <path d={item.icon} />
             </svg>
-            <p className="text-[11.5px] font-semibold leading-snug">{item.label}</p>
+            <p className="text-[12px] font-semibold leading-snug">{item.label}</p>
           </motion.div>
         ))}
       </div>

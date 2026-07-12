@@ -66,7 +66,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
          <button
            type="button"
            onClick={() => { setOpen("inquiry"); trackTourInquiry(tourName, tourId); }}
-           className="flex flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3 text-[14px] font-bold text-primary"
+           className="flex flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3 text-[16px] font-bold text-primary"
          >
            <MessageSquare className="h-4 w-4" /> Inquiry
          </button>
@@ -75,7 +75,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
          <button
            type="button"
            onClick={() => { setOpen("book"); trackBookingStarted(tourName); }}
-           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-card"
+           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-[16px] font-bold text-primary-foreground shadow-card"
          >
            <Lock className="h-4 w-4" /> Book Now
          </button>
@@ -103,7 +103,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
            >
              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-border" />
              <div className="mb-4 flex items-center justify-between">
-               <h3 className="text-[17px] font-bold text-foreground">
+               <h3 className="text-[18px] font-bold text-foreground">
                  {open === "inquiry" ? "Send an Inquiry" : "Book This Tour"}
                </h3>
                <button
@@ -125,22 +125,22 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
                  <div className="flex items-end justify-between rounded-xl border border-border bg-muted px-4 py-3">
                    <div>
                      {discountPct ? (
-                       <span className="mb-1 inline-block rounded-md bg-red-500 px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-white">
+                       <span className="mb-1 inline-block rounded-md bg-red-500 px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white">
                          {discountPct}% OFF
                        </span>
                      ) : null}
                      <p className="flex items-baseline gap-1.5">
                        <span className="text-[24px] font-extrabold leading-none">₹{price.toLocaleString("en-IN")}</span>
-                       <span className="text-[11px] font-medium text-muted-foreground">/ person</span>
+                       <span className="text-[12px] font-medium text-muted-foreground">/ person</span>
                      </p>
                      {oldPrice ? (
-                       <p className="mt-0.5 text-[12px] font-semibold text-muted-foreground line-through">
+                       <p className="mt-0.5 text-[14px] font-semibold text-muted-foreground line-through">
                          ₹{oldPrice.toLocaleString("en-IN")}
                        </p>
                      ) : null}
                    </div>
                    <div className="text-right">
-                     <p className="text-[11px] text-muted-foreground">Total ({pax} {pax === 1 ? "traveller" : "travellers"})</p>
+                     <p className="text-[12px] text-muted-foreground">Total ({pax} {pax === 1 ? "traveller" : "travellers"})</p>
                      <p className="text-[16px] font-extrabold leading-tight">₹{totalAmount.toLocaleString("en-IN")}</p>
                    </div>
                  </div>
@@ -148,7 +148,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
 
                  <div className="grid grid-cols-2 gap-3">
                    <div>
-                     <label htmlFor="mbDate" className="text-[12.5px] font-semibold">Start Date</label>
+                     <label htmlFor="mbDate" className="text-[14px] font-semibold">Start Date</label>
                      <div className="mt-1.5 flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                        <input
                          id="mbDate"
@@ -156,18 +156,18 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
                          min={minBookDate}
                          value={bookDate}
                          onChange={(e) => setBookDate(e.target.value)}
-                         className="w-full px-3 py-2.5 text-[13px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                         className="w-full px-3 py-2.5 text-[14px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
                        />
                        <Calendar className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
                      </div>
                    </div>
                    <div>
-                     <label htmlFor="mbPax" className="text-[12.5px] font-semibold">Travellers</label>
+                     <label htmlFor="mbPax" className="text-[14px] font-semibold">Travellers</label>
                      <select
                        id="mbPax"
                        value={bookPax}
                        onChange={(e) => setBookPax(e.target.value)}
-                       className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[13px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                       className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                      >
                        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                          <option key={n} value={n}>{n}</option>
@@ -178,11 +178,11 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
                  <button
                    type="button"
                    onClick={goToBooking}
-                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
+                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
                  >
                    <Lock className="h-4 w-4" /> Proceed to Secure Checkout <ArrowRight className="h-4 w-4" />
                  </button>
-                 <p className="text-center text-[11px] text-muted-foreground">
+                 <p className="text-center text-[12px] text-muted-foreground">
                    Pay {advanceAmount > 0 ? `₹${advanceAmount.toLocaleString("en-IN")}` : `${ADVANCE_PCT}%`} advance or full — choose on the next step. Bookings need ≥7 days&apos; notice.
                  </p>
                </div>

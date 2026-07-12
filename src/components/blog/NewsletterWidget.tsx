@@ -71,7 +71,7 @@ export function NewsletterWidget() {
           </Button>
         </form>
       )}
-      <p className="text-white/30 text-[10px] mt-2">No spam. Unsubscribe anytime.</p>
+      <p className="text-white/30 text-[12px] mt-2">No spam. Unsubscribe anytime.</p>
     </div>
   );
 }

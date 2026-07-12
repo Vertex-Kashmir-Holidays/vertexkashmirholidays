@@ -22,7 +22,7 @@ export function ActivityRelatedDestinations({ destinations }: ActivityRelatedDes
 
   return (
     <section id="where-to-experience" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-      <h2 className="text-[17px] font-bold">Where to Experience This</h2>
+      <h2 className="text-[18px] font-bold">Where to Experience This</h2>
       <div className="mt-4 grid gap-4">
         {destinations.map((d) => (
           <Link
@@ -34,11 +34,11 @@ export function ActivityRelatedDestinations({ destinations }: ActivityRelatedDes
               <Image src={imgSrc(d.coverImage)} alt={d.name} fill sizes="64px" className="object-cover transition duration-500 group-hover:scale-110" />
             </div>
             <div className="min-w-0">
-              <p className="flex items-center gap-1.5 text-[13.5px] font-bold text-foreground transition group-hover:text-primary">
+              <p className="flex items-center gap-1.5 text-[14px] font-bold text-foreground transition group-hover:text-primary">
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
                 {d.name}
               </p>
-              {d.tagline && <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{d.tagline}</p>}
+              {d.tagline && <p className="mt-0.5 truncate text-[14px] text-muted-foreground">{d.tagline}</p>}
             </div>
           </Link>
         ))}

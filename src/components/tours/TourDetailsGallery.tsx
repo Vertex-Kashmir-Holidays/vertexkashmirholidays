@@ -64,12 +64,12 @@ export function TourDetailsGallery({ images, noTopMargin }: TourDetailsGalleryPr
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-bold">Photo Gallery</h2>
+          <h2 className="text-[18px] font-bold">Photo Gallery</h2>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setOpenIndex(0)}
-              className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline focus:outline-none focus:underline"
+              className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline focus:outline-none focus:underline"
             >
               View All Photos
               <Images className="h-4 w-4" strokeWidth={2} />

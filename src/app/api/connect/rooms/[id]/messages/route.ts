@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { createNotification } from "@/lib/notifications";
 
 const SITE_HOST = (() => {
   try { return new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vertexkashmirholidays.com").hostname; } catch { return "vertexkashmirholidays.com"; }
@@ -240,28 +239,34 @@ export async function POST(req: NextRequest, { params }: Params) {
   const mentionedIds = bodyText ? resolveMentions(bodyText, others) : [];
   const mentionedSet = new Set(mentionedIds);
 
-  await Promise.all([
-    // Standard new-message notification for every other member
-    ...others.map((m) =>
-      createNotification({
-        userId: m.userId,
-        type: "CHAT_MESSAGE",
-        title: `New message from ${senderName}`,
-        body: notifBody,
-        link: `/admin/connect?room=${roomId}`,
-      }),
-    ),
-    // Additional CHAT_MENTION notification for explicitly mentioned members
-    ...[...mentionedSet].map((uid) =>
-      createNotification({
-        userId: uid,
-        type: "CHAT_MENTION",
-        title: `${senderName} mentioned you`,
-        body: notifBody,
-        link: `/admin/connect?room=${roomId}`,
-      }),
-    ),
-  ]);
+  const link = `/admin/connect?room=${roomId}`;
+  // Best-effort, matching createNotification()'s own contract elsewhere — a
+  // notification failure must never fail the message send itself (the message
+  // is already persisted above by this point).
+  try {
+    await prisma.notification.createMany({
+      data: [
+        // Standard new-message notification for every other member
+        ...others.map((m) => ({
+          userId: m.userId,
+          type: "CHAT_MESSAGE",
+          title: `New message from ${senderName}`,
+          body: notifBody,
+          link,
+        })),
+        // Additional CHAT_MENTION notification for explicitly mentioned members
+        ...[...mentionedSet].map((uid) => ({
+          userId: uid,
+          type: "CHAT_MENTION",
+          title: `${senderName} mentioned you`,
+          body: notifBody,
+          link,
+        })),
+      ],
+    });
+  } catch (err) {
+    console.error("[connect] message notification createMany failed", err);
+  }
 
   return NextResponse.json(message, { status: 201 });
 }

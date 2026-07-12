@@ -52,7 +52,7 @@ export function Toolbar({
           <select
             value={status}
             onChange={(e) => onStatusChange(e.target.value as ItineraryStatus)}
-            className="rounded-lg border border-border bg-card px-2 py-1.5 text-[11px] font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+            className="rounded-lg border border-border bg-card px-2 py-1.5 text-[12px] font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             {STATUSES.map((sVal) => (
               <option key={sVal} value={sVal}>{sVal}</option>

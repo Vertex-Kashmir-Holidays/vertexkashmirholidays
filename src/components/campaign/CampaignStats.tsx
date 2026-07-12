@@ -23,7 +23,7 @@ export function CampaignStats({ stats }: CampaignStatsProps) {
               {value}
               <span className="grad-accent-text">{suffix}</span>
             </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">{label}</p>
           </div>
         ))}
       </motion.div>

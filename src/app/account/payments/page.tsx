@@ -67,7 +67,7 @@ export default async function AccountPaymentsPage() {
               <Link key={p.id} href={`/account/bookings/${p.booking.id}`} className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40">
                 <div className="flex items-start justify-between gap-3">
                   <p className="min-w-0 truncate font-semibold text-foreground">{p.booking.tour?.title ?? "Custom booking"}</p>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground")}>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold", TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground")}>
                     {TYPE_LABELS[p.type] ?? p.type}
                   </span>
                 </div>
@@ -86,7 +86,7 @@ export default async function AccountPaymentsPage() {
           <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border text-left text-[12px] uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-3 font-semibold">Booking</th>
                   <th className="px-4 py-3 font-semibold">Type</th>
                   <th className="px-4 py-3 font-semibold">Method</th>
@@ -101,10 +101,10 @@ export default async function AccountPaymentsPage() {
                       <Link href={`/account/bookings/${p.booking.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
                         {p.booking.tour?.title ?? "Custom booking"}
                       </Link>
-                      <span className="ml-1 text-[11px] text-muted-foreground">#{p.booking.id.slice(-8).toUpperCase()}</span>
+                      <span className="ml-1 text-[12px] text-muted-foreground">#{p.booking.id.slice(-8).toUpperCase()}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground")}>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-bold", TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground")}>
                         {TYPE_LABELS[p.type] ?? p.type}
                       </span>
                     </td>

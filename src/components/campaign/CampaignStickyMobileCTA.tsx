@@ -12,12 +12,12 @@ export function CampaignStickyMobileCTA({ price, cta }: CampaignStickyMobileCTAP
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between gap-4 border-t border-border bg-background/95 px-5 py-3 backdrop-blur lg:hidden">
       <div className="leading-tight">
-        <p className="text-[10.5px] text-muted-foreground">From</p>
-        <p className="text-[17px] font-extrabold text-foreground">{price} /person</p>
+        <p className="text-[12px] text-muted-foreground">From</p>
+        <p className="text-[18px] font-extrabold text-foreground">{price} /person</p>
       </div>
       <Link
         href="#reserve"
-        className="sweep flex-1 rounded-xl bg-accent-grad py-3 text-center text-[13.5px] font-extrabold text-white ring-inner"
+        className="sweep flex-1 rounded-xl bg-accent-grad py-3 text-center text-[14px] font-extrabold text-white ring-inner"
       >
         {cta}
       </Link>

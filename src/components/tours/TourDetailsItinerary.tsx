@@ -33,12 +33,12 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[17px] font-bold">
-          Itinerary <span className="text-[13px] font-semibold text-muted-foreground">(Day by Day)</span>
+        <h2 className="text-[18px] font-bold">
+          Itinerary <span className="text-[14px] font-semibold text-muted-foreground">(Day by Day)</span>
         </h2>
         <button
           onClick={() => setOpenDay(0)}
-          className="text-[12px] font-semibold text-primary hover:underline"
+          className="text-[14px] font-semibold text-primary hover:underline"
         >
           Collapse All
         </button>
@@ -66,13 +66,13 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                 className="flex w-full cursor-pointer items-center gap-4 px-4 py-3.5"
               >
                 <span
-                  className={`text-[13px] font-extrabold ${
+                  className={`text-[14px] font-extrabold ${
                     isOpen ? 'text-primary' : ''
                   }`}
                 >
                   Day {day.day}
                 </span>
-                <span className="flex-1 text-[13.5px] font-bold text-left">
+                <span className="flex-1 text-[14px] font-bold text-left">
                   {day.title}
                 </span>
                 <motion.svg
@@ -99,25 +99,25 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="min-w-0 space-y-2.5">
-                      <p className="text-[13px] leading-relaxed text-foreground/70">
+                      <p className="text-[14px] leading-relaxed text-foreground/70">
                         {day.body}
                       </p>
                       {(day.meals || day.stay) && (
                         <div className="flex flex-wrap gap-2">
                           {day.meals && (
-                            <span className="rounded-full bg-muted px-3 py-1 text-[11.5px] font-semibold text-foreground/70">
+                            <span className="rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground/70">
                               🍽️ {day.meals}
                             </span>
                           )}
                           {day.stay && (
-                            <span className="rounded-full bg-muted px-3 py-1 text-[11.5px] font-semibold text-foreground/70">
+                            <span className="rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground/70">
                               🏨 {day.stay}
                             </span>
                           )}
                         </div>
                       )}
                       {day.travelTips && (
-                        <p className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-[12px] leading-relaxed text-foreground/65">
+                        <p className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-[14px] leading-relaxed text-foreground/65">
                           <span className="font-bold">Travel Tip:</span> {day.travelTips}
                         </p>
                       )}

@@ -179,7 +179,7 @@ export function SettingsForm({ settings }: Props) {
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <div>
                <Field label="Site Name *" name="siteName" register={register} placeholder="Vertex Kashmir Holidays" />
-               {errors.siteName && <p className="text-[10px] text-red-500 dark:text-red-400 mt-1">{errors.siteName.message}</p>}
+               {errors.siteName && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.siteName.message}</p>}
              </div>
              <Field label="Tagline" name="siteTagline" register={register} placeholder="Discover the Paradise" />
            </div>
@@ -193,7 +193,7 @@ export function SettingsForm({ settings }: Props) {
          {/* Legal & Registration — used in JSON-LD, legal pages, and generated PDFs/itineraries */}
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <h3 className="font-bold text-foreground text-sm">Legal &amp; Registration</h3>
-           <p className="text-[11px] text-muted-foreground -mt-2">
+           <p className="text-[12px] text-muted-foreground -mt-2">
              Official business identity — shown in legal pages, generated PDFs/itineraries, and structured SEO data. Separate from the brand name/address above.
            </p>
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -230,7 +230,7 @@ export function SettingsForm({ settings }: Props) {
                placeholder="https://maps.app.goo.gl/... or Google Maps listing URL"
              />
            </div>
-           <p className="text-[11px] text-muted-foreground -mt-2">
+           <p className="text-[12px] text-muted-foreground -mt-2">
              The canonical Google Maps/Business Profile listing URL — distinct from the reviews link above. Used to
              connect your website to your existing Business Profile in Google&apos;s structured data.
            </p>
@@ -250,7 +250,7 @@ export function SettingsForm({ settings }: Props) {
                placeholder="ChIJ..."
              />
            </div>
-           <p className="text-[11px] text-muted-foreground -mt-2">
+           <p className="text-[12px] text-muted-foreground -mt-2">
              Find this with Google&apos;s{" "}
              <a
                href="https://developers.google.com/maps/documentation/places/web-service/place-id"
@@ -285,7 +285,7 @@ export function SettingsForm({ settings }: Props) {
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <h3 className="font-bold text-foreground text-sm">Payments</h3>
            <Field label="GST Rate Options (%)" name="gstRates" register={register} placeholder="5, 16, 18" />
-           <p className="text-[11px] text-muted-foreground -mt-2">
+           <p className="text-[12px] text-muted-foreground -mt-2">
              Comma-separated percentages offered when recording non-cash payments. Leave blank to use the defaults (5, 16, 18). GST never applies to cash payments.
            </p>
          </div>
@@ -293,7 +293,7 @@ export function SettingsForm({ settings }: Props) {
          {/* Default SEO */}
          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
            <h3 className="font-bold text-foreground text-sm">Default SEO</h3>
-           <p className="text-[11px] text-muted-foreground -mt-2">Used when pages have no meta set.</p>
+           <p className="text-[12px] text-muted-foreground -mt-2">Used when pages have no meta set.</p>
            <Field label="Default Meta Title" name="metaTitle" register={register} placeholder="Vertex Kashmir Holidays — Premium Kashmir Tours" />
            <Field label="Default Meta Description" name="metaDesc" register={register} textarea placeholder="Discover the paradise of Kashmir..." />
            <Field label="Default OG Image URL" name="ogImage" register={register} placeholder="https://..." />
@@ -306,7 +306,7 @@ export function SettingsForm({ settings }: Props) {
        <div className="flex items-center justify-between gap-4">
          <div>
            <h3 className="font-bold text-foreground text-sm">Announcement Banner</h3>
-           <p className="text-[11px] text-muted-foreground mt-0.5">
+           <p className="text-[12px] text-muted-foreground mt-0.5">
              Shows a modal popup to visitors after 30 seconds. Once dismissed it won&apos;t reappear in the same session.
            </p>
          </div>
@@ -334,7 +334,7 @@ export function SettingsForm({ settings }: Props) {
              placeholder="We're adding new tours. Contact us for a custom itinerary tailored just for you!"
              className={`${inputCls} resize-none`}
            />
-           <p className="text-[11px] text-muted-foreground mt-1">
+           <p className="text-[12px] text-muted-foreground mt-1">
              Leave blank to use the default message.
            </p>
          </div>

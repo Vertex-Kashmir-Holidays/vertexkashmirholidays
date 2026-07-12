@@ -37,7 +37,7 @@ import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRe
 import { DestinationNearby } from "@/components/destinations/DestinationNearby";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 // Without this, Next.js has no known slug list to pre-render and falls back
 // to fully dynamic rendering on every request regardless of `revalidate`
@@ -85,12 +85,13 @@ const getDestination = cache(async (slug: string) => {
     include: {
       tours: {
         where: { tour: { published: true } },
-        include: {
+        select: {
           tour: {
-            include: {
-              destinations: {
-                include: { destination: { select: { name: true } } },
-              },
+            select: {
+              id: true, slug: true, title: true, badge: true, badgeColor: true,
+              duration: true, coverImage: true, rating: true, reviewCount: true,
+              priceFrom: true, priceWas: true,
+              destinations: { select: { destination: { select: { name: true } } } },
             },
           },
         },
@@ -393,7 +394,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               {/* 16. FAQs */}
               {faqs.length > 0 && (
                 <section className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-                  <h2 className="text-[17px] font-bold">FAQs</h2>
+                  <h2 className="text-[18px] font-bold">FAQs</h2>
                   <div className="mt-4">
                     <FaqPreviewList faqs={faqs} />
                   </div>

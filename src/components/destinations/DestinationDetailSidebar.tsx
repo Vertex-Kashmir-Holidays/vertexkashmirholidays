@@ -31,8 +31,8 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <div className="flex items-center justify-between">
-          <p className="text-[14px] font-bold">Today's Weather</p>
-          <p className="text-[12px] font-semibold text-muted-foreground">{name}</p>
+          <p className="text-[16px] font-bold">Today's Weather</p>
+          <p className="text-[14px] font-semibold text-muted-foreground">{name}</p>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <div>
@@ -40,7 +40,7 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
               <Thermometer className="mr-1 mt-1 h-5 w-5 text-link" strokeWidth={2} />
               {weather.temperature}°C
             </p>
-            <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground">
+            <p className="mt-2 flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground">
               <Cloud className="h-4 w-4 text-link" strokeWidth={2} />
               {weather.condition}
             </p>
@@ -52,16 +52,16 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
         </div>
         <div className="mt-4 grid grid-cols-3 divide-x divide-border border-t border-border pt-4 text-center">
           <div>
-            <p className="text-[11px] text-muted-foreground">Humidity</p>
-            <p className="mt-1 text-[13.5px] font-bold">{weather.humidity}%</p>
+            <p className="text-[12px] text-muted-foreground">Humidity</p>
+            <p className="mt-1 text-[14px] font-bold">{weather.humidity}%</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground">Wind</p>
-            <p className="mt-1 text-[13.5px] font-bold">{weather.wind} km/h</p>
+            <p className="text-[12px] text-muted-foreground">Wind</p>
+            <p className="mt-1 text-[14px] font-bold">{weather.wind} km/h</p>
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground">Feels Like</p>
-            <p className="mt-1 text-[13.5px] font-bold">{weather.feelsLike}°C</p>
+            <p className="text-[12px] text-muted-foreground">Feels Like</p>
+            <p className="mt-1 text-[14px] font-bold">{weather.feelsLike}°C</p>
           </div>
         </div>
       </motion.div>
@@ -73,7 +73,7 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-[17px] font-bold">Quick Info</h2>
+        <h2 className="text-[18px] font-bold">Quick Info</h2>
         <ul className="mt-4 space-y-4">
           {quickInfo.map((info, i) => (
             <motion.li
@@ -89,8 +89,8 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
                 </svg>
               </span>
               <div className="leading-snug">
-                <p className="text-[12.5px] font-bold">{info.label}</p>
-                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{info.value}</p>
+                <p className="text-[14px] font-bold">{info.label}</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">{info.value}</p>
               </div>
             </motion.li>
           ))}

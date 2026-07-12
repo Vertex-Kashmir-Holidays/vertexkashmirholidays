@@ -25,8 +25,8 @@ export function TourDetailsAccommodation({ accommodation, image }: TourDetailsAc
     >
       <div className="grid gap-6 md:grid-cols-[1fr_320px]">
         <div>
-          <h2 className="text-[17px] font-bold">Accommodation</h2>
-          <ul className="mt-4 space-y-3.5 text-[13px] text-foreground/80">
+          <h2 className="text-[18px] font-bold">Accommodation</h2>
+          <ul className="mt-4 space-y-3.5 text-[14px] text-foreground/80">
             {accommodation.map((entry, i) => (
               <li key={i}>
                 <p className="font-bold text-foreground">{entry.location}</p>

@@ -50,11 +50,11 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
             </Link>
-            <span className="absolute left-3 top-3 rounded-md bg-badge-green px-2.5 py-1 text-[10px] font-extrabold tracking-wide text-white shadow-lg">
+            <span className="absolute left-3 top-3 rounded-md bg-badge-green px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-white shadow-lg">
               ACTIVITY
             </span>
             {activity.duration && (
-              <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-brand-dark/80 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur">
+              <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-brand-dark/80 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">
                 <Clock className="h-3 w-3" /> {activity.duration}
               </span>
             )}
@@ -69,7 +69,7 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
             </h3>
 
             {activity.location && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+              <p className="mt-1.5 flex items-center gap-1.5 text-[14px] text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
                 {activity.location}
               </p>
@@ -77,11 +77,11 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
 
             {/* Price */}
             <div className="mt-4 flex items-end justify-between border-t border-border pt-3">
-              <span className="text-[11px] text-muted-foreground">From</span>
+              <span className="text-[12px] text-muted-foreground">From</span>
               <p className="text-[22px] font-extrabold leading-tight text-foreground">
                 {activity.price != null ? formatINR(activity.price) : 'On request'}
               </p>
-              <span className="text-[9px] text-muted-foreground">per person</span>
+              <span className="text-[10px] text-muted-foreground">per person</span>
             </div>
 
             {/* CTAs */}
@@ -91,7 +91,7 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 py-2.5 text-[12px] font-semibold text-primary transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:shadow-md"
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 py-2.5 text-[14px] font-semibold text-primary transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:shadow-md"
                 >
                   <WhatsAppIcon className="h-3.5 w-3.5" />
                   WhatsApp
@@ -100,7 +100,7 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href={detailHref}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-[12px] font-semibold text-primary-foreground transition-all duration-300 hover:brightness-110 hover:shadow-md"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-all duration-300 hover:brightness-110 hover:shadow-md"
                 >
                   View Details
                   <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />

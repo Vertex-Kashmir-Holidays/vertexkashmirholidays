@@ -35,10 +35,10 @@ export function DestinationsCTABand() {
         <div className="absolute inset-0 bg-gradient-to-r from-brand-green via-brand-green/95 to-brand-green/20"></div>
         <div className="relative grid items-center gap-8 p-9 lg:grid-cols-[1.1fr_1.3fr] lg:p-11">
           <div>
-            <h2 className="text-[17px] font-bold leading-snug text-white">
+            <h2 className="text-[18px] font-bold leading-snug text-white">
               Can't decide which destination is perfect for you?
             </h2>
-            <p className="mt-3.5 max-w-xs text-[13.5px] leading-relaxed text-white/80">
+            <p className="mt-3.5 max-w-xs text-[14px] leading-relaxed text-white/80">
               Let our local experts help you plan the perfect Kashmir experience.
             </p>
           </div>
@@ -49,15 +49,15 @@ export function DestinationsCTABand() {
                   <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white">
                     <feat.Icon className="h-5 w-5" strokeWidth={1.8} />
                   </span>
-                  <p className="mt-2.5 text-[12.5px] font-bold text-white">{feat.t}</p>
-                  <p className="text-[11px] text-white/70">{feat.s}</p>
+                  <p className="mt-2.5 text-[14px] font-bold text-white">{feat.t}</p>
+                  <p className="text-[12px] text-white/70">{feat.s}</p>
                 </div>
               ))}
             </div>
             <div className="text-right">
               <motion.a
                 href="#"
-                className="inline-flex items-center gap-2.5 rounded-xl bg-white px-6 py-3.5 text-[14px] font-bold text-brand-ink shadow-card transition hover:brightness-95"
+                className="inline-flex items-center gap-2.5 rounded-xl bg-white px-6 py-3.5 text-[16px] font-bold text-brand-ink shadow-card transition hover:brightness-95"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -66,7 +66,7 @@ export function DestinationsCTABand() {
                   <WhatsAppIcon className="h-4 w-4" />
                 </span>
               </motion.a>
-              <p className="mt-2.5 flex items-center justify-end gap-1.5 text-[12px] text-white/75">
+              <p className="mt-2.5 flex items-center justify-end gap-1.5 text-[14px] text-white/75">
                 <Clock className="h-3.5 w-3.5" strokeWidth={2} />
                 Reply in 60 seconds
               </p>

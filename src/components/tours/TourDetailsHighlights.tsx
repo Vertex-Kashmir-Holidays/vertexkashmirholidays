@@ -20,8 +20,8 @@ export function TourDetailsHighlights({ highlights }: TourDetailsHighlightsProps
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">Tour Highlights</h2>
-      <ul className="mt-4 space-y-3 text-[13px] text-foreground/80">
+      <h2 className="text-[18px] font-bold">Tour Highlights</h2>
+      <ul className="mt-4 space-y-3 text-[14px] text-foreground/80">
         {highlights.map((item, i) => (
           <motion.li
             key={i}

@@ -35,7 +35,7 @@ export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarP
           <input
             value={searchQuery}
             onChange={handleSearch}
-            className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
+            className="w-full bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
             placeholder="Search destinations..."
           />
         </label>
@@ -46,7 +46,7 @@ export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarP
             <motion.button
               key={i}
               onClick={() => handleChipClick(chip)}
-              className={`shrink-0 rounded-full px-4 py-2 text-[12.5px] font-semibold shadow-soft transition ${
+              className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-semibold shadow-soft transition ${
                 activeChip === chip
                   ? 'bg-primary text-primary-foreground'
                   : 'border border-border bg-card text-foreground/80 hover:border-primary hover:text-primary'
@@ -60,7 +60,7 @@ export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarP
         </div>
 
         {/* Sort */}
-        <button className="ml-auto flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-[13px] font-semibold shadow-soft">
+        <button className="ml-auto flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-[14px] font-semibold shadow-soft">
           Sort by: Popular
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.4} />
         </button>

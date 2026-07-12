@@ -39,7 +39,7 @@ export function BlogPostBody({ html }: BlogPostBodyProps) {
   return (
     <div
       className="
-        max-w-none text-[15px] leading-[1.8] text-foreground/85
+        max-w-none text-[16px] leading-[1.8] text-foreground/85
         [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:scroll-mt-28 [&_h2]:font-display [&_h2]:text-[26px] [&_h2]:font-bold [&_h2]:text-foreground
         [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:text-[18px] [&_h3]:font-bold [&_h3]:text-foreground
         [&_p]:my-4
@@ -49,8 +49,8 @@ export function BlogPostBody({ html }: BlogPostBodyProps) {
         [&_a]:font-semibold [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline
         [&_strong]:font-bold [&_strong]:text-foreground
         [&_img]:my-6 [&_img]:rounded-xl
-        [&_blockquote]:my-6 [&_blockquote]:not-italic [&_blockquote]:rounded-xl [&_blockquote]:border [&_blockquote]:border-primary/25 [&_blockquote]:bg-primary/5 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-[14px] [&_blockquote]:text-foreground/80 [&_blockquote_p]:my-0 [&_blockquote_strong]:text-foreground
-        [&_table]:my-6 [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:rounded-xl [&_table]:border [&_table]:border-border [&_table]:text-[13.5px]
+        [&_blockquote]:my-6 [&_blockquote]:not-italic [&_blockquote]:rounded-xl [&_blockquote]:border [&_blockquote]:border-primary/25 [&_blockquote]:bg-primary/5 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-[16px] [&_blockquote]:text-foreground/80 [&_blockquote_p]:my-0 [&_blockquote_strong]:text-foreground
+        [&_table]:my-6 [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:rounded-xl [&_table]:border [&_table]:border-border [&_table]:text-[14px]
         [&_thead]:bg-muted/60
         [&_th]:border-b [&_th]:border-border [&_th]:px-3.5 [&_th]:py-2.5 [&_th]:text-left [&_th]:font-bold [&_th]:text-foreground [&_th]:whitespace-nowrap
         [&_td]:border-b [&_td]:border-border [&_td]:px-3.5 [&_td]:py-2.5 [&_td]:align-top [&_td]:text-foreground/80

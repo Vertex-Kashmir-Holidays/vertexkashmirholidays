@@ -11,7 +11,7 @@ import { DestinationsHero } from '@/components/destinations/DestinationsHero';
 import { DestinationsThingsToDo } from '@/components/destinations/DestinationsThingsToDo';
 import type { DestinationCardData } from '@/components/destinations/DestinationsGrid';
 
-export const revalidate = 300;
+export const revalidate = 900;
 
 export async function generateMetadata(): Promise<Metadata> {
   const section = await prisma.homeSection.findUnique({ where: { key: 'destinationsHero' } });

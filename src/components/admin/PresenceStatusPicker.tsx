@@ -115,7 +115,7 @@ export function PresenceStatusPicker({ userImage, userName }: Props) {
             View profile
           </Link>
           <div className="h-px bg-border mx-3 my-1" />
-          <p className="px-3.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <p className="px-3.5 py-1 text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
             Status
           </p>
           {(["ONLINE", "AWAY", "BUSY"] as const).map((s) => (
@@ -130,7 +130,7 @@ export function PresenceStatusPicker({ userImage, userName }: Props) {
             >
               <Dot status={s} className="w-2 h-2 border-0" />
               {STATUS_LABELS[s]}
-              {status === s && <span className="ml-auto text-[10px] text-muted-foreground">✓</span>}
+              {status === s && <span className="ml-auto text-[12px] text-muted-foreground">✓</span>}
             </button>
           ))}
         </div>

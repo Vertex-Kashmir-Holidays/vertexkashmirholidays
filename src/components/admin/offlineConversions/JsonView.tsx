@@ -37,7 +37,7 @@ export function JsonView({ value, className }: Props) {
   const json = typeof value === "string" ? value : JSON.stringify(value, null, 2);
   return (
     <pre
-      className={`text-[11px] font-mono bg-muted rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-words ${className ?? ""}`}
+      className={`text-[12px] font-mono bg-muted rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-words ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: highlight(json) }}
     />
   );

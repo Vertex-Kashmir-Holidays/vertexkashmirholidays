@@ -1,5 +1,6 @@
 import { Toaster } from "sonner";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -16,7 +17,7 @@ export default async function PublicLayout({
   children: React.ReactNode;
 }) {
   const [s, strip, promos, categoryRows, homeContent] = await Promise.all([
-    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    getSiteSettings(),
     getActiveStrip(),
     getActivePromoBanners(),
     prisma.tour.groupBy({ by: ["category"], where: { published: true }, _count: true }),

@@ -157,7 +157,7 @@ export function GalleryLightbox({
 
         {/* Caption — only when alt text is set and this is a real image */}
         {!isPlaceholder && image.alt && (
-          <p className="max-w-[80vw] text-center text-[13px] text-white/75">
+          <p className="max-w-[80vw] text-center text-[14px] text-white/75">
             {image.alt}
           </p>
         )}

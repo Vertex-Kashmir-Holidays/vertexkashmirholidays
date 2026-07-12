@@ -21,7 +21,7 @@ export function ReviewCard({ review }: { review: ReviewListItem }) {
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-foreground">{review.name}</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             {review.createdAt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })}
           </p>
         </div>
@@ -36,13 +36,13 @@ export function ReviewCard({ review }: { review: ReviewListItem }) {
           ))}
         </span>
       </div>
-      <p className="mt-3.5 line-clamp-5 flex-1 text-[13.5px] leading-relaxed text-foreground/80">
+      <p className="mt-3.5 line-clamp-5 flex-1 text-[14px] leading-relaxed text-foreground/80">
         {review.body}
       </p>
       {review.tourSlug && review.tourTitle && (
         <Link
           href={`/tours/${review.tourSlug}`}
-          className="mt-3.5 truncate border-t border-border pt-3 text-[11.5px] font-semibold text-primary hover:underline"
+          className="mt-3.5 truncate border-t border-border pt-3 text-[12px] font-semibold text-primary hover:underline"
         >
           Reviewed: {review.tourTitle}
         </Link>

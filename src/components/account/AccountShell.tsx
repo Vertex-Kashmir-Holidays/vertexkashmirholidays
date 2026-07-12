@@ -34,7 +34,7 @@ export function AccountShell({ children, userName, userEmail }: AccountShellProp
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="min-w-0 text-right">
               <p className="truncate text-xs font-semibold text-foreground">{userName}</p>
-              <p className="hidden truncate text-[10px] text-muted-foreground sm:block">{userEmail}</p>
+              <p className="hidden truncate text-[12px] text-muted-foreground sm:block">{userEmail}</p>
             </div>
             <ThemeToggle />
             <button
@@ -87,7 +87,7 @@ export function AccountShell({ children, userName, userEmail }: AccountShellProp
                 key={href}
                 href={href}
                 className={cn(
-                  "relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors",
+                  "relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[12px] font-semibold transition-colors",
                   isActive ? "text-primary" : "text-foreground/55",
                 )}
               >

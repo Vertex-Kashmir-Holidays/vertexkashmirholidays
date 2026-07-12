@@ -64,14 +64,14 @@ export function DestinationsThingsToDo() {
               <thing.Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
             </span>
             <span className="leading-tight">
-              <span className="block text-[12px] font-bold">{thing.t}</span>
-              <span className="block text-[10.5px] text-muted-foreground">{thing.s}</span>
+              <span className="block text-[14px] font-bold">{thing.t}</span>
+              <span className="block text-[12px] text-muted-foreground">{thing.s}</span>
             </span>
           </motion.a>
         ))}
       </motion.div>
       <div className="mt-4 flex justify-end">
-        <a href="#" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
+        <a href="#" className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
           View all experiences
           <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
         </a>

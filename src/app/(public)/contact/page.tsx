@@ -2,8 +2,10 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cache } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/siteSettings';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
 import { ContactForm } from '@/components/contact/ContactForm';
@@ -21,12 +23,18 @@ import { formatBusinessAddress } from '@/lib/businessAddress';
 import { JsonLd, buildBreadcrumbList, buildFAQPage, buildOrganizationLocation, buildContactPage } from '@/components/seo/JsonLd';
 import type { ContactReachCardData, ContactSocialLink } from '@/types/contact';
 
-export const revalidate = 300;
+export const revalidate = 1800;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getContactContent = cache(async () =>
+  prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, content] = await Promise.all([
-    prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
-    prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+    getSiteSettings(),
+    getContactContent(),
   ]);
   return buildMetadata({
     title:
@@ -45,13 +53,13 @@ const telLink = (n: string) => `tel:${n.replace(/\s/g, '')}`;
 export default async function ContactPage() {
   const [content, heroFeatures, promiseItems, faqs, offices, settings, testimonials] =
     await Promise.all([
-      prisma.contactContent.findUnique({ where: { id: 'singleton' } }),
+      getContactContent(),
       prisma.contactHeroFeature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       prisma.contactPromiseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
       // Centralized FAQ module — same Faq pool /about and /faq draw from.
       getFaqsForPlacement('CONTACT'),
       prisma.contactOffice.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-      prisma.siteSettings.findUnique({ where: { id: 'singleton' } }),
+      getSiteSettings(),
       // Approved customer reviews (admin-managed) replace CMS testimonials here.
       getDisplayReviews(8),
     ]);
@@ -216,8 +224,8 @@ export default async function ContactPage() {
         {faqs.length > 0 && (
           <section className="mt-16 border-t border-border pt-14">
             <div className="text-center">
-              <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
-              <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
+              <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{content?.faqsKicker ?? 'QUESTIONS'}</p>
+              <h2 className="h-display mt-2 font-display text-[18px] font-bold">{content?.faqsTitle ?? 'Frequently Asked'}</h2>
             </div>
             <div className="mt-8">
               <FaqPreviewList faqs={faqs} columns={2} />
@@ -225,7 +233,7 @@ export default async function ContactPage() {
             <div className="mt-6 flex justify-center">
               <Link
                 href={content?.faqsCtaHref && content.faqsCtaHref !== '#' ? content.faqsCtaHref : '/faq'}
-                className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-primary hover:underline"
+                className="inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
               >
                 {content?.faqsCtaLabel ?? 'View all FAQs'}
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />

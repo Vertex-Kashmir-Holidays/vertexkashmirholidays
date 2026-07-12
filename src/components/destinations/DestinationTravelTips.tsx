@@ -19,8 +19,8 @@ export function DestinationTravelTips({ tips }: DestinationTravelTipsProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">Travel Tips</h2>
-      <ol className="mt-4 space-y-3 text-[13px] text-foreground/80">
+      <h2 className="text-[18px] font-bold">Travel Tips</h2>
+      <ol className="mt-4 space-y-3 text-[14px] text-foreground/80">
         {tips.map((tip, i) => (
           <motion.li
             key={i}
@@ -30,7 +30,7 @@ export function DestinationTravelTips({ tips }: DestinationTravelTipsProps) {
             viewport={{ once: true }}
             transition={{ delay: i * 0.05 }}
           >
-            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[12px] font-bold text-primary">
               {i + 1}
             </span>
             {tip}

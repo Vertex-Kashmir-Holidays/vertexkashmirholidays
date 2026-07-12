@@ -12,7 +12,7 @@ export function UpdatesStrip({ items }: UpdatesStripProps) {
   return (
     <section className="relative z-[2] border-y border-border bg-foreground/[.03] py-4 backdrop-blur">
       <div className="marquee">
-        <div className="marquee-track text-[13px] font-semibold tracking-wide text-muted-foreground">
+        <div className="marquee-track text-[14px] font-semibold tracking-wide text-muted-foreground">
           {[...items, ...items].map((item, i) => {
             const { Icon, label } = parseMarqueeItem(item);
             return (

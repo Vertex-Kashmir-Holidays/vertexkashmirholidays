@@ -17,7 +17,7 @@ export function TourCategoryRecommended({ tours }: TourCategoryRecommendedProps)
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[19px] font-bold">Recommended Packages</h2>
+      <h2 className="text-[20px] font-bold">Recommended Packages</h2>
       <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {tours.map((tour, i) => (
           <TourCard key={tour.detailHref ?? i} tour={tour} index={i} variant="tours" />

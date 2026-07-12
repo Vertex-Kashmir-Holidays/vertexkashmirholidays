@@ -11,8 +11,8 @@ export function ActivitySafetyTips({ tips }: ActivitySafetyTipsProps) {
 
   return (
     <section id="safety-tips" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
-      <h2 className="text-[17px] font-bold">Safety Tips</h2>
-      <ul className="mt-4 space-y-3 text-[13px] text-foreground/80">
+      <h2 className="text-[18px] font-bold">Safety Tips</h2>
+      <ul className="mt-4 space-y-3 text-[14px] text-foreground/80">
         {tips.map((tip, i) => (
           <li key={i} className="flex items-start gap-2.5">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" strokeWidth={2} />

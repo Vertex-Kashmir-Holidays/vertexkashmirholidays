@@ -66,7 +66,7 @@ export function ImageField({
             onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
           />
           {/* Helper text hidden on the smallest screens to save width. */}
-          <span className="hidden text-[10px] text-muted-foreground sm:inline">PNG · SVG · WebP · max 500 KB</span>
+          <span className="hidden text-[12px] text-muted-foreground sm:inline">PNG · SVG · WebP · max 500 KB</span>
         </label>
       </div>
       {value && (

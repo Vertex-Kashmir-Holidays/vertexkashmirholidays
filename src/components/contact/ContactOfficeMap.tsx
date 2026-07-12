@@ -29,15 +29,15 @@ export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
-        <h2 className="h-display mt-2 font-display text-[17px] font-bold">{content.title}</h2>
-        {content.subtitle && <p className="mt-2 text-[12.5px] text-muted-foreground">{content.subtitle}</p>}
+        <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{content.kicker}</p>
+        <h2 className="h-display mt-2 font-display text-[18px] font-bold">{content.title}</h2>
+        {content.subtitle && <p className="mt-2 text-[14px] text-muted-foreground">{content.subtitle}</p>}
 
-        <ul className="mt-6 space-y-4 text-[12.5px]">
+        <ul className="mt-6 space-y-4 text-[14px]">
           <li className="flex items-start gap-2.5">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2} />
             <span>
-              {content.name && <strong className="text-[13px]">{content.name}</strong>}
+              {content.name && <strong className="text-[14px]">{content.name}</strong>}
               {content.name && <br />}
               {content.address && <span className="text-muted-foreground">{content.address}</span>}
             </span>
@@ -63,7 +63,7 @@ export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
         </ul>
 
         {(content.legalName || content.tourismRegNumber) && (
-          <p className="mt-5 text-[11px] leading-relaxed text-muted-foreground">
+          <p className="mt-5 text-[12px] leading-relaxed text-muted-foreground">
             {content.legalName && content.legalName !== content.brandName
               ? `"${content.brandName ?? 'Vertex Kashmir Holidays'}" is operated by ${content.legalName}`
               : content.brandName ?? 'Vertex Kashmir Holidays'}
@@ -75,7 +75,7 @@ export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
         <Link
           href={content.directionsUrl ?? '#'}
           target='_blank'
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-[12.5px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
         >
           Get Directions on Google Maps
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
@@ -145,8 +145,8 @@ export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
             embed (Google places its own marker). */}
         {!mapEmbedKey || !content.placeId ? content.mapLabel && (
           <div className="absolute left-[26%] top-[18%] rounded-xl bg-card px-4 py-3 shadow-card">
-            <p className="text-[12.5px] font-bold">{content.mapLabel}</p>
-            {content.mapSubLabel && <p className="text-[11px] text-muted-foreground">{content.mapSubLabel}</p>}
+            <p className="text-[14px] font-bold">{content.mapLabel}</p>
+            {content.mapSubLabel && <p className="text-[12px] text-muted-foreground">{content.mapSubLabel}</p>}
             <span className="absolute -bottom-1.5 left-8 h-3 w-3 rotate-45 bg-card" />
           </div>
         ) : null}

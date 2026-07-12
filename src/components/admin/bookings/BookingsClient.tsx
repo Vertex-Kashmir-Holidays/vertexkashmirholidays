@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
@@ -74,24 +73,70 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selected, setSelected] = useState<Booking | null>(null);
   const [confirmMode, setConfirmMode] = useState<null | "soft" | "permanent">(null);
 
-  const filtered = initialBookings.filter((b) => {
-    const matchesStatus = statusFilter === "ALL" || b.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchesSearch =
-      search === "" ||
-      b.guestName.toLowerCase().includes(q) ||
-      (b.guestEmail ?? "").toLowerCase().includes(q) ||
-      (b.razorpayOrderId ?? "").toLowerCase().includes(q) ||
-      b.id.toLowerCase().includes(q) ||
-      (b.tour?.title ?? "").toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
+  // Server-paginated: the admin/bookings list previously capped at the first
+  // 100 rows (fetched once, filtered/paginated in the browser), silently
+  // hiding anything older. This now calls the already-existing, correctly
+  // paginated /api/bookings endpoint for every page/search/filter change —
+  // the initial page still renders instantly from the server-fetched props
+  // below, no fetch needed on first paint.
+  const [bookings, setBookings] = useState(initialBookings);
+  const [total, setTotal] = useState(totalCount);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const hasMounted = useRef(false);
 
-  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+  // Debounce search input — avoids a network round trip on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Any filter change should jump back to page 1, same as the old client-side
+  // pagination's auto-clamp when the filtered set shrank.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  async function fetchBookings() {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      if (statusFilter !== "ALL") params.set("status", statusFilter);
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      const res = await fetch(`/api/bookings?${params.toString()}`);
+      if (!res.ok) throw new Error();
+      const data = (await res.json()) as { bookings: Booking[]; total: number };
+      setBookings(data.bookings);
+      setTotal(data.total);
+    } catch {
+      toast.error("Failed to load bookings.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // Skip the redundant fetch on first mount — initialBookings/totalCount
+    // already came from the server render.
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    fetchBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, statusFilter, debouncedSearch]);
+
+  function changePageSize(n: number) {
+    setPageSize(n);
+    setPage(1);
+  }
 
   function closeModal() {
     if (isPending) return;
@@ -112,6 +157,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
         setConfirmMode(null);
         setSelected(null);
         router.refresh();
+        fetchBookings();
       } catch {
         toast.error("An error occurred.");
       }
@@ -134,6 +180,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
         toast.success(`Booking marked as ${status.toLowerCase()}.`);
         setSelected(null);
         router.refresh();
+        fetchBookings();
       } catch {
         toast.error("Failed to update booking status.");
       }
@@ -178,28 +225,28 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           </div>
-          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+          <p className="text-xs text-muted-foreground self-center shrink-0">{total} results</p>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className={cn("overflow-x-auto", loading && "opacity-60 pointer-events-none")}>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Ref", "Guest", "Travel Date", "Amount", "Status", "Payment", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.length === 0 ? (
+              {bookings.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No bookings found.
                   </td>
                 </tr>
               ) : (
-                pageItems.map((b) => {
+                bookings.map((b) => {
                   const showCancel = canCancel(b, isAdmin);
                   const showRefund = canRefund(b, isAdmin);
                   return (
@@ -209,7 +256,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono text-[10px] font-semibold text-foreground" title={b.id}>
+                        <span className="font-mono text-[12px] font-semibold text-foreground" title={b.id}>
                           #{b.id.slice(-8).toUpperCase()}
                         </span>
                       </td>
@@ -220,7 +267,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">{b.guestName}</p>
-                            <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">{b.guestEmail}</p>
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px]">{b.guestEmail}</p>
                           </div>
                         </div>
                       </td>
@@ -229,12 +276,12 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       </td>
                       <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">{fmtINR(b.amount)}</td>
                       <td className="px-4 py-3">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
+                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
                           {b.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
                           {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                         </span>
                       </td>
@@ -244,7 +291,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                             href={`/admin/bookings/${b.id}/services`}
                             onClick={(e) => e.stopPropagation()}
                             title="Manage services"
-                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-border text-primary hover:bg-primary/10 transition-colors"
+                            className="inline-flex items-center gap-1 text-[12px] font-bold px-2 py-0.5 rounded-lg border border-border text-primary hover:bg-primary/10 transition-colors"
                           >
                             <ClipboardList className="w-3 h-3" /> Services
                           </Link>
@@ -253,7 +300,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                               onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "CANCELLED"); }}
                               disabled={isPending}
                               title="Cancel booking (partially paid only)"
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-red-200 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                              className="text-[12px] font-bold px-2 py-0.5 rounded-lg border border-red-200 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                             >
                               CANCEL
                             </button>
@@ -263,7 +310,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                               onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "REFUNDED"); }}
                               disabled={isPending}
                               title="Mark as refunded"
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                              className="text-[12px] font-bold px-2 py-0.5 rounded-lg border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors"
                             >
                               REFUND
                             </button>
@@ -303,7 +350,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             <div className="flex items-start justify-between p-6 border-b border-border">
               <div>
                 <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
-                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
+                <p className="text-[12px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
               </div>
               <button
                 onClick={closeModal}
@@ -325,14 +372,14 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
               <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>
               <div><p className="text-muted-foreground mb-0.5">Paid</p><p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p></div>
               <div><p className="text-muted-foreground mb-0.5">Balance</p><p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[10px]">{selected.razorpayPayId ?? "—"}</p></div>
+              <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[12px]">{selected.razorpayPayId ?? "—"}</p></div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Status</p>
-                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
+                <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Payment</p>
-                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
+                <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
               </div>
             </div>
 
@@ -345,14 +392,14 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                     <button
                       onClick={() => setConfirmMode("soft")}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Soft Delete
                     </button>
                     <button
                       onClick={() => setConfirmMode("permanent")}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-300 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-red-300 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Permanent Delete
                     </button>
@@ -374,7 +421,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       <button
                         onClick={() => handleDelete(selected.id, confirmMode === "permanent")}
                         disabled={isPending}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                         {isPending ? "Deleting…" : "Confirm"}
@@ -382,7 +429,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       <button
                         onClick={() => setConfirmMode(null)}
                         disabled={isPending}
-                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+                        className="text-[12px] font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
                       >
                         Cancel
                       </button>

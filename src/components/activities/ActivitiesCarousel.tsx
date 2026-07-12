@@ -27,12 +27,12 @@ export function ActivitiesCarousel({ title, items, seeAllHref }: ActivitiesCarou
   return (
     <section id="things-to-do">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="h-display text-[17px] font-bold text-foreground">{title}</h2>
+        <h2 className="h-display text-[18px] font-bold text-foreground">{title}</h2>
         <div className="ml-auto flex items-center gap-3">
           {seeAllHref && (
             <Link
               href={seeAllHref}
-              className="inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition hover:gap-1.5"
+              className="inline-flex items-center gap-1 text-[14px] font-semibold text-primary transition hover:gap-1.5"
             >
               See All <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
             </Link>

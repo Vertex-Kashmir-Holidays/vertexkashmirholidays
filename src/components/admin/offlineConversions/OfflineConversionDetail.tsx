@@ -260,39 +260,39 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
         <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3.5">Health Summary</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Platform</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Platform</p>
             <PlatformBadge platform={row.platform} />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Status</p>
-            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[row.status])}>{STATUS_LABELS[row.status]}</span>
+            <p className="text-[12px] text-muted-foreground mb-1">Status</p>
+            <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[row.status])}>{STATUS_LABELS[row.status]}</span>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Failure Type</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Failure Type</p>
             <p className="text-xs font-bold text-foreground">{row.status === "FAILED" ? failure.title : "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Retryable</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Retryable</p>
             <p className={cn("text-xs font-bold", isRetryable(row.status) ? "text-green-600 dark:text-green-400" : "text-muted-foreground")}>
               {isRetryable(row.status) ? "YES" : "NO"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Attempts</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Attempts</p>
             <p className="text-xs font-bold text-foreground">{row.attempts}</p>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Last Attempt</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Last Attempt</p>
             <p className="text-xs font-bold text-foreground" title={fmtDate(row.updatedAt)}>
               {row.attempts > 0 ? timeAgo(row.updatedAt) : "—"}
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">Event</p>
+            <p className="text-[12px] text-muted-foreground mb-1">Event</p>
             <p className="text-xs font-bold text-foreground">{eventName}</p>
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground mb-1">GCLID</p>
+            <p className="text-[12px] text-muted-foreground mb-1">GCLID</p>
             <span className="flex items-center gap-1">
               <span className="text-xs font-mono font-bold text-foreground truncate max-w-[100px]">{gclid ?? "—"}</span>
               {gclid && <CopyButton value={gclid} label="GCLID" />}
@@ -325,7 +325,7 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
               <Field label="Lead" value={row.lead ? <Link href={`/admin/leads/${row.lead.id}`} className="text-primary hover:underline">{row.lead.name}</Link> : "—"} />
               <Field label="Booking" value={row.booking ? <Link href={`/admin/bookings/${row.booking.id}`} className="text-primary hover:underline">{row.booking.guestName}</Link> : "—"} />
               <Field label="Platform" value={<PlatformBadge platform={row.platform} />} />
-              <Field label="Status" value={<span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[row.status])}>{STATUS_LABELS[row.status]}</span>} />
+              <Field label="Status" value={<span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[row.status])}>{STATUS_LABELS[row.status]}</span>} />
               <Field label="Attempts" value={row.attempts} />
               <Field label="Created" value={fmtDate(row.createdAt)} />
               <Field label="Updated" value={fmtDate(row.updatedAt)} />
@@ -353,27 +353,27 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
           <details className="bg-card rounded-2xl border border-border shadow-sm p-5 group">
             <summary className="text-xs font-bold uppercase tracking-wide text-muted-foreground cursor-pointer select-none list-none flex items-center justify-between">
               Advanced Debug
-              <span className="text-[10px] font-normal normal-case text-muted-foreground/70 group-open:hidden">click to expand</span>
+              <span className="text-[12px] font-normal normal-case text-muted-foreground/70 group-open:hidden">click to expand</span>
             </summary>
             <div className="mt-4 space-y-4">
               <div>
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-muted-foreground mb-1.5 flex items-center justify-between">
                   Raw Row JSON <CopyButton value={JSON.stringify(row, null, 2)} label="Raw JSON" />
                 </p>
                 <JsonView value={row} />
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5 flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-muted-foreground mb-1.5 flex items-center justify-between">
                   Platform Response {row.platformResponse && <CopyButton value={row.platformResponse} label="Platform Response" />}
                 </p>
                 {row.platformResponse ? <JsonView value={row.platformResponse} /> : <p className="text-xs text-muted-foreground">No response captured.</p>}
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Stack Trace</p>
+                <p className="text-[12px] font-semibold text-muted-foreground mb-1.5">Stack Trace</p>
                 <p className="text-xs text-muted-foreground">Not captured — adapters only persist the platform's error message, not a stack trace.</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Headers</p>
+                <p className="text-[12px] font-semibold text-muted-foreground mb-1.5">Headers</p>
                 <p className="text-xs text-muted-foreground">Not currently captured (reserved for a future enhancement).</p>
               </div>
             </div>
@@ -390,11 +390,11 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
             <div className="space-y-4">
               {Object.entries(requestDataGroups).map(([group, fields]) => (
                 <div key={group}>
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
+                  <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
                   <JsonView value={fields} />
                 </div>
               ))}
-              <p className="text-[10px] text-muted-foreground italic">
+              <p className="text-[12px] text-muted-foreground italic">
                 This is reconstructed from the source Lead/Booking's current attribution data — the exact historical wire payload isn't persisted.
               </p>
             </div>
@@ -430,7 +430,7 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
               <div key={i} className="flex items-center gap-3">
                 <t.icon className={cn("w-4 h-4 shrink-0", t.tone)} />
                 <span className="text-xs font-semibold text-foreground flex-1">{t.label}</span>
-                <span className="text-[11px] text-muted-foreground">{t.timestamp}</span>
+                <span className="text-[12px] text-muted-foreground">{t.timestamp}</span>
               </div>
             ))}
           </div>

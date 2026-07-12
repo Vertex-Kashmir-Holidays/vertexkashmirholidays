@@ -97,7 +97,7 @@ export function BookingAdminPanel({
               <UserCheck className="w-3.5 h-3.5" />
               {customer.email}
               {customer.mustChangePassword && (
-                <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
                   awaiting reset
                 </span>
               )}
@@ -115,7 +115,7 @@ export function BookingAdminPanel({
           type="button"
           onClick={() => run("verify", `/api/bookings/${bookingId}/reconcile`, "Payment verified.")}
           disabled={busy !== null || !razorpayOrderId}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[12.5px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy === "verify" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
           Verify Payment
@@ -124,7 +124,7 @@ export function BookingAdminPanel({
           type="button"
           onClick={() => run("creds", `/api/bookings/${bookingId}/resend-credentials`, "Credentials resent.")}
           disabled={busy !== null || !customer}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[12.5px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy === "creds" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
           Resend Credentials
@@ -133,13 +133,13 @@ export function BookingAdminPanel({
           type="button"
           onClick={() => run("emails", `/api/bookings/${bookingId}/resend-emails`, "Emails resent.")}
           disabled={busy !== null}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[12.5px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy === "emails" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
           Resend Emails
         </button>
       </div>
-      <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+      <p className="mt-2 flex items-center gap-1 text-[12px] text-muted-foreground">
         <RefreshCw className="w-3 h-3" /> Verify Payment re-checks Razorpay and records a captured payment if one was missed.
       </p>
     </div>

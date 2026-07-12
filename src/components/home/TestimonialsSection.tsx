@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { renderAccents } from '@/lib/accents';
 import type { SectionHeading, TestimonialData } from '@/types/home';
@@ -25,19 +24,22 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
     <section id="testimonials" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
         </div>
         <div className="rv flex items-center gap-3" style={{ '--rd': '0.16s' } as React.CSSProperties}>
-          <Link
+          {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
+              script, which only reliably initializes on a fresh page load,
+              not a client-side (SPA) transition. */}
+          <a
             href="/reviews"
-            className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline"
+            className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
           >
             View all reviews
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-          </Link>
+          </a>
           <button
             onClick={() => scroll('prev')}
             aria-label="Previous testimonials"
@@ -58,17 +60,17 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
         {testimonials.map((t, i) => (
           <article key={t.id} className="rv glass relative w-[300px] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card" style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}>
             <p className="font-display text-5xl leading-none text-primary/50">"</p>
-            <p className="mt-2 line-clamp-3 text-[14px] leading-relaxed text-muted-foreground">{t.quote}</p>
-            <Link href="/reviews" className="mt-1 inline-block text-[12.5px] font-bold text-primary hover:underline">
+            <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-muted-foreground">{t.quote}</p>
+            <a href="/reviews" className="mt-1 inline-block text-[14px] font-bold text-primary hover:underline">
               Show more
-            </Link>
+            </a>
             <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
                 <Image src={t.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" unoptimized />
               )}
               <div>
                 <p className="text-sm font-bold text-foreground">{t.name}</p>
-                {t.location && <p className="text-[11px] text-muted-foreground">{t.location}</p>}
+                {t.location && <p className="text-[12px] text-muted-foreground">{t.location}</p>}
               </div>
               <span className="ml-auto flex gap-0.5 text-amber-300">
                 {Array.from({ length: Math.max(1, Math.min(5, t.rating)) }).map((_, s) => (

@@ -133,7 +133,7 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
                 />
               </div>
             </div>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">JPG or PNG, up to 5 MB. Shown on your reviews.</p>
+            <p className="mt-1.5 text-[12px] text-muted-foreground">JPG or PNG, up to 5 MB. Shown on your reviews.</p>
           </div>
 
           <div>
@@ -149,7 +149,7 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
           <div>
             <label className="text-xs font-semibold text-foreground" htmlFor="pf-email">Email</label>
             <input id="pf-email" value={email} disabled className={`${inputClass} cursor-not-allowed bg-muted text-muted-foreground`} />
-            <p className="mt-1 text-[11px] text-muted-foreground">Email can&apos;t be changed.</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Email can&apos;t be changed.</p>
           </div>
         </div>
       </div>

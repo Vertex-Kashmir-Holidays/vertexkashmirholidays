@@ -47,7 +47,7 @@ export function ShareTripButton({ tourTitle, shareUrl }: ShareTripButtonProps) {
         )}
       </div>
       <p className="text-xs font-bold text-foreground">Share Your Trip</p>
-      <p className="text-[10px] text-muted-foreground">{copied ? "Link copied!" : "Tell your friends"}</p>
+      <p className="text-[12px] text-muted-foreground">{copied ? "Link copied!" : "Tell your friends"}</p>
     </button>
   );
 }

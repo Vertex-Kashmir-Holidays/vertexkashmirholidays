@@ -21,7 +21,7 @@ export function CampaignsHeroSection({ title, subtitle, stats }: CampaignsHeroSe
       aside={<HeroLeadCard source="campaign" buttonLabel="Get Campaign Offers" />}
     >
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+      <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
         <Link href="/" className="transition hover:text-white">Home</Link>
         <span>›</span>
         <span className="text-white/60">Campaigns</span>
@@ -36,7 +36,7 @@ export function CampaignsHeroSection({ title, subtitle, stats }: CampaignsHeroSe
           {title}
         </h1>
         <p
-          className="hero-reveal mt-3 max-w-xl text-[15px] text-white/85"
+          className="hero-reveal mt-3 max-w-xl text-[16px] text-white/85"
           style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {subtitle}

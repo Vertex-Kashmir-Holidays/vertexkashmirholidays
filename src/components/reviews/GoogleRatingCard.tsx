@@ -16,7 +16,7 @@ export function GoogleRatingCard({ data, profileUrl }: { data: GooglePlaceRating
           <Star key={i} className="h-4 w-4" strokeWidth={0} fill={i < Math.round(data.rating) ? "currentColor" : "none"} />
         ))}
       </div>
-      <p className="text-[12px] text-muted-foreground">
+      <p className="text-[14px] text-muted-foreground">
         {data.total > 0 ? `${data.total.toLocaleString("en-IN")} Google reviews` : "Google reviews"}
       </p>
       {profileUrl && (
@@ -24,7 +24,7 @@ export function GoogleRatingCard({ data, profileUrl }: { data: GooglePlaceRating
           href={profileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 text-[12px] font-semibold text-primary hover:underline"
+          className="mt-1 text-[14px] font-semibold text-primary hover:underline"
         >
           View on Google →
         </a>

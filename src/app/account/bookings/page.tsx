@@ -75,10 +75,10 @@ export default async function AccountBookingsPage() {
                   <span className="truncate text-sm font-bold text-foreground">
                     {b.tour?.title ?? "Custom booking"}
                   </span>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[b.status])}>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold", STATUS_STYLES[b.status])}>
                     {b.status}
                   </span>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
                     {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                   </span>
                 </div>
@@ -90,11 +90,11 @@ export default async function AccountBookingsPage() {
                   {" · "}
                   Booked {b.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Ref: {b.id.slice(-8).toUpperCase()}</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">Ref: {b.id.slice(-8).toUpperCase()}</p>
               </div>
               <div className="text-right">
                 <p className="text-base font-bold text-foreground">{inr.format(b.amount)}</p>
-                <p className="text-[11px] font-semibold text-primary">View details →</p>
+                <p className="text-[12px] font-semibold text-primary">View details →</p>
               </div>
             </Link>
           ))}

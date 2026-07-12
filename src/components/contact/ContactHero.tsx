@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { SecondaryHero } from '@/components/layout/SecondaryHero';
 import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import type { ContactHeroData, ContactHeroFeatureData } from '@/types/contact';
+import Link from 'next/link';
 
 interface ContactHeroProps {
   data: ContactHeroData;
@@ -19,8 +20,8 @@ export function ContactHero({ data, features }: ContactHeroProps) {
       alt="Houseboats on Dal Lake at dusk"
       aside={<HeroLeadCard source="contact" />}
     >
-        <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
-          <a href="/" className="transition hover:text-white">Home</a>
+        <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
+          <Link href="/" className="transition hover:text-white">Home</Link>
           <span>›</span>
           <span className="font-semibold text-white">{data.breadcrumb}</span>
         </nav>
@@ -32,7 +33,7 @@ export function ContactHero({ data, features }: ContactHeroProps) {
         </h1>
         {data.subtitle && (
           <p
-            className="hero-reveal mt-5 max-w-md text-[14.5px] leading-relaxed text-white/85"
+            className="hero-reveal mt-5 max-w-md text-[16px] leading-relaxed text-white/85"
             style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
           >
             {data.subtitle}
@@ -53,8 +54,8 @@ export function ContactHero({ data, features }: ContactHeroProps) {
                   </svg>
                 </span>
                 <div className="leading-tight">
-                  <p className="text-[13.5px] font-bold">{feat.title}</p>
-                  <p className="text-[11.5px] text-white/70">{feat.subtitle}</p>
+                  <p className="text-[14px] font-bold">{feat.title}</p>
+                  <p className="text-[12px] text-white/70">{feat.subtitle}</p>
                 </div>
               </div>
             ))}

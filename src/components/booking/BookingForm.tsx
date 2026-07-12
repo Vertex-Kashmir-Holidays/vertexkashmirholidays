@@ -572,9 +572,9 @@ function PaymentChoice({
         </span>
       )}
       <Icon className={`h-5 w-5 ${selected ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2} />
-      <span className="text-[13px] font-bold text-foreground">{title}</span>
+      <span className="text-[14px] font-bold text-foreground">{title}</span>
       <span className="text-[18px] font-extrabold text-primary">{amount}</span>
-      <span className="text-[11px] text-muted-foreground">{sub}</span>
+      <span className="text-[12px] text-muted-foreground">{sub}</span>
     </button>
   );
 }

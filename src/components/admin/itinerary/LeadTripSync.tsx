@@ -111,13 +111,13 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         <h3 className="text-sm font-bold text-foreground">Trip details — synced with lead</h3>
         {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
       </div>
-      <p className="mb-3 text-[11px] text-muted-foreground">
+      <p className="mb-3 text-[12px] text-muted-foreground">
         Editing these updates the lead and recalculates the cover dates, duration and travellers.
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <label className="col-span-2 sm:col-span-1 block">
-          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Name</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Name</span>
           <input
             value={trip.name}
             onChange={(e) => set("name", e.target.value, false)}
@@ -127,17 +127,17 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Start date</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Start date</span>
           <input type="date" value={trip.start} onChange={(e) => set("start", e.target.value, true)} className={inputCls} />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">End date</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">End date</span>
           <input type="date" value={trip.end} onChange={(e) => set("end", e.target.value, true)} className={inputCls} />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Adults</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Adults</span>
           <input
             type="number"
             min={1}
@@ -149,7 +149,7 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Children</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Children</span>
           <input
             type="number"
             min={0}
@@ -161,7 +161,7 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         </label>
 
         <label className="relative block">
-          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Category</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Category</span>
           <select
             value={trip.category}
             onChange={(e) => set("category", e.target.value, true)}

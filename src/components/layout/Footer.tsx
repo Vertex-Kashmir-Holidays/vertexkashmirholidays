@@ -98,7 +98,7 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
        <div className="mx-auto grid max-w-[1300px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
          <div>
            <Logo variant="auto" href="/" className="h-9" />
-           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
+           <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-muted-foreground">
              Operated by Vertex Kashmir Tour &amp; Travels — locals, not just planners. We live here and explore daily.
              Honest pricing, real experiences, unforgettable memories.
            </p>
@@ -125,7 +125,7 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
          </div>
          <div>
            <p className="text-sm font-bold text-foreground">Explore</p>
-           <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
+           <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
              {priorityCategoryLinks.map((c) => (
                <li key={c}>
                  <Link href={`/tours/category/${TOUR_CATEGORY_META[c].slug}`} className="transition hover:text-primary">
@@ -137,13 +137,16 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
                <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
              </li>
              <li>
-               <Link href="/reviews" className="transition hover:text-primary">Customer Reviews</Link>
+               {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
+                   script, which only reliably initializes on a fresh page load,
+                   not a client-side (SPA) transition. */}
+               <a href="/reviews" className="transition hover:text-primary">Customer Reviews</a>
              </li>
            </ul>
          </div>
          <div>
            <p className="text-sm font-bold text-foreground">Legals</p>
-           <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
+           <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
              <li>
                <Link href="/about" className="transition hover:text-primary">About Us</Link>
              </li>
@@ -163,12 +166,12 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
          </div>
          <div>
            <p className="text-sm font-bold text-foreground">Get valley updates</p>
-           <ul className="mt-4 space-y-2.5 text-[13px] text-muted-foreground">
+           <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
              <li><Link href="/blog" className="transition hover:text-primary">Travel Blog</Link></li>
              <li><Link href="/faq" className="transition hover:text-primary">FAQs</Link></li>
              <li><Link href="/adventures" className="transition hover:text-primary">Adventures</Link></li>
            </ul>
-           <p className="mt-5 text-[12px] leading-relaxed text-muted-foreground">
+           <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
              <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> {address}
              <br />
              <Phone className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> <a href={`tel:${phone.replace(/\s+/g, '')}`} onClick={trackPhoneClick} className="transition hover:text-primary">{phone}</a>
@@ -179,7 +182,7 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
        </div>
        <div className="border-t border-border pt-5 pb-20 lg:pb-5">
          <div className="mx-auto flex max-w-[1300px] flex-wrap items-center justify-between gap-4 px-6">
-           <p className="text-[14px] text-muted-foreground">
+           <p className="text-[16px] text-muted-foreground">
              © {new Date().getFullYear()} {siteName}
              {settings?.legalName && settings.legalName !== siteName ? `, operated by ${settings.legalName}` : ''}
              {settings?.tourismRegNumber ? ` · J&K Tourism Reg. ${settings.tourismRegNumber}` : ' · J&K Tourism Licensed'}
@@ -191,7 +194,7 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
                  href={settings.googleReviews}
                  target="_blank"
                  rel="noopener noreferrer"
-                 className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:border-primary hover:text-primary"
+                 className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] font-semibold text-muted-foreground transition hover:border-primary hover:text-primary"
                >
                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/>
@@ -206,7 +209,7 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
                  href={settings.tripadvisor}
                  target="_blank"
                  rel="noopener noreferrer"
-                 className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground transition hover:border-[#34E0A1] hover:text-[#00aa6c]"
+                 className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[12px] font-semibold text-muted-foreground transition hover:border-[#34E0A1] hover:text-[#00aa6c]"
                >
                  <svg className="h-3.5 w-3.5 text-[#00aa6c]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                    <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 4a6 6 0 1 1 0 12A6 6 0 0 1 12 6zm0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>

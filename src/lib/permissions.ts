@@ -1,6 +1,7 @@
 // Server-only permission helpers. Reads the DB-driven RolePermission matrix.
 // Do NOT import this from middleware / auth.config (edge) — use src/lib/rbac.ts there.
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import type { Session } from "next-auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,19 @@ import {
   isStaff,
 } from "@/lib/rbac";
 
+// The RolePermission table rarely changes (only when a SUPERADMIN edits role
+// permissions) but is read on nearly every authenticated admin request —
+// unstable_cache shares one DB read across requests instead of hitting the
+// DB fresh every time. Keyed per-role since each role has a different map.
+// revalidateTag("role-permissions", ...) in the role-permissions save route
+// (+ the existing flushPublicCache admin action) invalidates it immediately
+// on edit; the 5-minute TTL is a safety net either way.
+const fetchRolePermissionRows = unstable_cache(
+  async (role: Role) => prisma.rolePermission.findMany({ where: { role } }),
+  ["role-permissions"],
+  { revalidate: 300, tags: ["role-permissions"] },
+);
+
 /**
  * Resolve the effective permission map for a role.
  * SUPERADMIN always gets full access (can never lock itself out).
@@ -25,7 +39,7 @@ export const getRolePermissions = cache(
   async (role: Role): Promise<PermissionMap> => {
     if (role === "SUPERADMIN") return fullPermissionMap();
 
-    const rows = await prisma.rolePermission.findMany({ where: { role } });
+    const rows = await fetchRolePermissionRows(role);
     const map = emptyPermissionMap();
 
     for (const row of rows) {

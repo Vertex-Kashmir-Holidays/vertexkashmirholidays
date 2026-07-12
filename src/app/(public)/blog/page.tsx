@@ -7,7 +7,7 @@ import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
 import { BlogPageClient } from '@/components/blog/BlogPageClient';
 
-export const revalidate = 300;
+export const revalidate = 600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await prisma.blogContent.findUnique({ where: { id: 'singleton' } });

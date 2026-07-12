@@ -29,7 +29,7 @@ export function BlogCategoryChips({ chips, onCategoryChange, initialActive = 'Al
           <motion.button
             key={i}
             onClick={() => handleChipClick(chip.name)}
-            className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold shadow-soft transition ${
+            className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[14px] font-semibold shadow-soft transition ${
               activeChip === chip.name
                 ? 'bg-primary text-primary-foreground'
                 : 'border border-border bg-card text-foreground/80 hover:border-primary hover:text-primary'

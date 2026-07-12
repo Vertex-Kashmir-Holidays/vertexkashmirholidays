@@ -99,7 +99,7 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Activity", "Location", "Duration", "Price", "Linked", "Status", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -122,7 +122,7 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">{a.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">/{a.slug}</p>
+                          <p className="text-[12px] text-muted-foreground truncate">/{a.slug}</p>
                         </div>
                       </div>
                     </td>
@@ -141,21 +141,21 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
                     <td className="px-4 py-3 text-xs font-semibold text-foreground whitespace-nowrap">
                       {a.price != null ? `₹${a.price.toLocaleString("en-IN")}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-[12px] text-muted-foreground whitespace-nowrap">
                       {a._count?.destinations ?? 0} dest · {a._count?.tours ?? 0} tours
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", a.published ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground")}>
+                      <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", a.published ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground")}>
                         {a.published ? "Published" : "Draft"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       {confirmDelete === a.id ? (
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleDelete(a.id)} disabled={isPending} className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
+                          <button onClick={() => handleDelete(a.id)} disabled={isPending} className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
                             {isPending ? "…" : "Delete"}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
+                          <button onClick={() => setConfirmDelete(null)} className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
                             Cancel
                           </button>
                         </div>
@@ -172,7 +172,7 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[10px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">View only</span>
                           )}
                         </div>
                       )}

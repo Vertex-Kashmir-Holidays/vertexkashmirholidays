@@ -27,7 +27,7 @@ export function ReviewsHero({ data, badges }: ReviewsHeroProps) {
       alt="Happy travellers on a Kashmir houseboat"
       aside={<HeroLeadCard source="reviews" />}
     >
-      <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+      <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
         <a href="/" className="transition hover:text-white">Home</a>
         <span>›</span>
         <span className="font-semibold text-white">{data.breadcrumb}</span>
@@ -40,7 +40,7 @@ export function ReviewsHero({ data, badges }: ReviewsHeroProps) {
       </h1>
       {data.subtitle && (
         <p
-          className="hero-reveal mt-5 max-w-md text-[14.5px] leading-relaxed text-white/85"
+          className="hero-reveal mt-5 max-w-md text-[16px] leading-relaxed text-white/85"
           style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
         >
           {data.subtitle}

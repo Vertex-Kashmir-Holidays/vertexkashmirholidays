@@ -26,8 +26,8 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
     <section id="blogs" className="relative z-[2] mx-auto max-w-[1300px] px-4 pb-12 pt-16 sm:px-6 sm:pb-10 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
             {renderAccents(heading.title)}
           </h2>
         </div>
@@ -70,17 +70,17 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
             <div className="relative h-44 overflow-hidden">
               <Image src={imgSrc(b.coverImage)} alt={b.title} fill sizes="(max-width: 768px) 80vw, 360px" className="object-cover transition duration-700 group-hover:scale-110" />
               {b.category && (
-                <span className="glass pop-sm absolute left-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold text-white">
+                <span className="glass pop-sm absolute left-3 top-3 rounded-full px-3 py-1 text-[12px] font-bold text-white">
                   {b.category}
                 </span>
               )}
             </div>
             <div className="pop-sm p-5">
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 {[b.dateLabel, b.readTime ? `${b.readTime} min read` : null].filter(Boolean).join(' · ')}
               </p>
               <h3 className="mt-2 font-bold leading-snug text-foreground transition group-hover:text-primary">{b.title}</h3>
-              {b.excerpt && <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{b.excerpt}</p>}
+              {b.excerpt && <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{b.excerpt}</p>}
               <p className="mt-4 text-xs font-bold text-primary">Read Article →</p>
             </div>
           </Link>

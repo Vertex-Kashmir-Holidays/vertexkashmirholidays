@@ -117,6 +117,11 @@ function buildCsp(nonce: string): string {
 // 'self' + 'unsafe-inline' + the explicit SCRIPT_HOSTS allowlist do the work
 // instead. Same effective allowlist as the nonce-based CSP, just enforced
 // differently — no third-party script that worked before is newly blocked.
+//
+// Unlike buildCsp() (which bakes in a fresh per-request nonce and genuinely
+// can't be hoisted), this output is identical on every call within a given
+// deploy — it only depends on NODE_ENV, fixed at process start. Computed once
+// at module load instead of on every request that hits the middleware.
 function buildStaticCsp(): string {
   const isDev = process.env.NODE_ENV !== "production";
   const scriptExtra = isDev ? " 'unsafe-eval'" : "";
@@ -125,6 +130,7 @@ function buildStaticCsp(): string {
   directives.push(`script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} ${SCRIPT_HOSTS}`);
   return directives.join("; ");
 }
+const STATIC_CSP = buildStaticCsp();
 
 // Nonce-based security headers for routes that need session awareness
 // (/admin, /account, /login, /api) — forwards the nonce via a request header
@@ -147,7 +153,7 @@ function withNonceCsp(req: NextRequest): NextResponse {
 // stays eligible for ISR/static rendering.
 function withStaticCsp(): NextResponse {
   const response = NextResponse.next();
-  response.headers.set("Content-Security-Policy", buildStaticCsp());
+  response.headers.set("Content-Security-Policy", STATIC_CSP);
   return response;
 }
 

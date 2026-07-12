@@ -45,7 +45,7 @@ export function CampaignsList({ items, canDelete }: { items: CampaignRow[]; canD
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <p className="truncate text-sm font-bold text-foreground">{c.name}</p>
-              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", c.published ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground")}>
+              <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-bold", c.published ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground")}>
                 {c.published ? "Published" : "Draft"}
               </span>
             </div>
@@ -60,8 +60,8 @@ export function CampaignsList({ items, canDelete }: { items: CampaignRow[]; canD
           {canDelete &&
             (confirmDelete === c.id ? (
               <span className="flex items-center gap-1">
-                <button onClick={() => remove(c.id)} disabled={isPending} className="rounded bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">Delete</button>
-                <button onClick={() => setConfirmDelete(null)} className="text-[11px] text-muted-foreground">Cancel</button>
+                <button onClick={() => remove(c.id)} disabled={isPending} className="rounded bg-red-600 px-2 py-0.5 text-[12px] font-bold text-white">Delete</button>
+                <button onClick={() => setConfirmDelete(null)} className="text-[12px] text-muted-foreground">Cancel</button>
               </span>
             ) : (
               <button onClick={() => setConfirmDelete(c.id)} className="text-muted-foreground hover:text-red-500 dark:text-red-400" aria-label="Delete">

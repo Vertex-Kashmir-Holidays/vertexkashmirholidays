@@ -54,7 +54,7 @@ export function PriceRangeSlider({
           aria-label="Maximum price"
         />
       </div>
-      <div className="mt-3 flex justify-between text-[12px] font-semibold text-foreground/80">
+      <div className="mt-3 flex justify-between text-[14px] font-semibold text-foreground/80">
         <span>{formatINR(lo)}</span>
         <span>{formatINR(hi)}</span>
       </div>

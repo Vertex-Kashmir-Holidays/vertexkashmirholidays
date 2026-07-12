@@ -115,7 +115,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-black/70 no-print",
+          "inline-flex items-center gap-1.5 rounded-lg bg-black/55 px-2.5 py-1 text-[12px] font-semibold text-white backdrop-blur transition hover:bg-black/70 no-print",
           className,
         )}
       >
@@ -169,7 +169,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                           className="absolute top-1 right-1"
                         />
                       )}
-                      <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                      <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
                         {img.label}
                       </span>
                     </button>
@@ -235,7 +235,7 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                               />
                             )}
                             {item.category && (
-                              <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                              <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
                                 {item.category}
                               </span>
                             )}

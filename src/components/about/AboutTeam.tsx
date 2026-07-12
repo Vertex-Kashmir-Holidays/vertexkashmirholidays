@@ -19,8 +19,8 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
     <section id="team" className="mx-auto max-w-[1300px] px-6 py-14">
       <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
         <div>
-          <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{renderMint(heading.title)}</h2>
+          <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+          <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{renderMint(heading.title)}</h2>
         </div>
         <div className="scrollbar-none grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {team.map((m, i) => (
@@ -42,9 +42,9 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
                 />
               </div>
               <div className="p-3.5">
-                <p className="text-[13.5px] font-bold leading-snug">{m.name}</p>
-                <p className="mt-0.5 text-[11px] font-semibold text-primary">{m.role}</p>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{m.bio}</p>
+                <p className="text-[14px] font-bold leading-snug">{m.name}</p>
+                <p className="mt-0.5 text-[12px] font-semibold text-primary">{m.role}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{m.bio}</p>
               </div>
             </motion.article>
           ))}
@@ -52,7 +52,7 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
       </div>
       {heading.ctaLabel && (
         <div className="mt-9 flex justify-center">
-          <a href={heading.ctaHref ?? '#'} className="rounded-lg border-[1.5px] border-border bg-card px-6 py-2.5 text-[13px] font-semibold shadow-soft transition hover:border-primary hover:text-primary">
+          <a href={heading.ctaHref ?? '#'} className="rounded-lg border-[1.5px] border-border bg-card px-6 py-2.5 text-[14px] font-semibold shadow-soft transition hover:border-primary hover:text-primary">
             {heading.ctaLabel}
           </a>
         </div>

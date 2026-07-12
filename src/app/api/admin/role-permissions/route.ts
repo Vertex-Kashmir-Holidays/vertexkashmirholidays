@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
@@ -80,5 +81,6 @@ export async function PUT(req: NextRequest) {
     create: { role: role as never, module, ...data },
   });
 
+  revalidateTag("role-permissions", "max");
   return NextResponse.json({ permission: saved });
 }

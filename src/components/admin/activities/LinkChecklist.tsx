@@ -34,7 +34,7 @@ export function LinkChecklist({
     <div className="rounded-xl border border-border">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <span className="text-xs font-bold text-foreground">{title}</span>
-        <span className="text-[10px] text-muted-foreground">{value.length} selected</span>
+        <span className="text-[12px] text-muted-foreground">{value.length} selected</span>
       </div>
       <div className="p-2">
         <div className="relative mb-2">
@@ -48,7 +48,7 @@ export function LinkChecklist({
         </div>
         <div className="max-h-48 overflow-y-auto space-y-0.5">
           {shown.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground italic px-1 py-2">No options.</p>
+            <p className="text-[12px] text-muted-foreground italic px-1 py-2">No options.</p>
           ) : (
             shown.map((o) => (
               <label key={o.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted cursor-pointer">

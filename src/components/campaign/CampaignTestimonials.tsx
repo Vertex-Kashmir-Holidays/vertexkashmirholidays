@@ -14,7 +14,7 @@ export function CampaignTestimonials({ testimonials }: CampaignTestimonialsProps
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20">
       <div className="text-center">
         <motion.p
-          className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
+          className="text-[12px] font-extrabold tracking-[0.24em] text-camp-accent"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -47,14 +47,14 @@ export function CampaignTestimonials({ testimonials }: CampaignTestimonialsProps
                 <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
               ))}
             </p>
-            <p className="mt-3 text-[13.5px] leading-relaxed text-foreground/80">&ldquo;{testimonial.quote}&rdquo;</p>
+            <p className="mt-3 text-[14px] leading-relaxed text-foreground/80">&ldquo;{testimonial.quote}&rdquo;</p>
             <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {testimonial.image && (
                 <img src={testimonial.image} alt="" className="h-10 w-10 rounded-full border border-border object-cover" />
               )}
               <div>
-                <p className="text-[13px] font-bold text-foreground">{testimonial.name}</p>
-                <p className="text-[11px] text-muted-foreground">{testimonial.location}</p>
+                <p className="text-[14px] font-bold text-foreground">{testimonial.name}</p>
+                <p className="text-[12px] text-muted-foreground">{testimonial.location}</p>
               </div>
             </div>
           </motion.div>

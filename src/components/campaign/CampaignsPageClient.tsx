@@ -40,7 +40,7 @@ export function CampaignsPageClient({ campaigns }: CampaignsPageClientProps) {
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="h-display text-[26px] font-bold">
           All Campaigns{' '}
-          <span className="font-sans text-[13px] font-semibold text-primary">
+          <span className="font-sans text-[14px] font-semibold text-primary">
             ({campaigns.length} {campaigns.length === 1 ? 'Campaign' : 'Campaigns'})
           </span>
         </h2>
@@ -48,8 +48,8 @@ export function CampaignsPageClient({ campaigns }: CampaignsPageClientProps) {
 
       {campaigns.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-3 text-center">
-          <p className="text-[17px] font-bold">No campaigns available right now</p>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[18px] font-bold">No campaigns available right now</p>
+          <p className="text-[14px] text-muted-foreground">
             Please check back soon — new seasonal experiences are added regularly.
           </p>
         </div>
@@ -91,7 +91,7 @@ export function CampaignsPageClient({ campaigns }: CampaignsPageClientProps) {
                 p === currentPage
                   ? 'bg-primary text-primary-foreground shadow-card'
                   : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
-              } grid h-10 w-10 place-items-center rounded-full text-[13px] font-semibold transition-all duration-200`}
+              } grid h-10 w-10 place-items-center rounded-full text-[14px] font-semibold transition-all duration-200`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

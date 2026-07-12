@@ -47,7 +47,7 @@ export function AboutStats({ stats, image }: AboutStatsProps) {
               </svg>
               <div className="leading-tight">
                 <p className="text-[20px] font-extrabold text-white">{stat.value}</p>
-                <p className="text-[11px] text-white/65">{stat.label}</p>
+                <p className="text-[12px] text-white/65">{stat.label}</p>
               </div>
             </motion.div>
           ))}

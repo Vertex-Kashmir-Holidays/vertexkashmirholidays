@@ -18,7 +18,7 @@ export function GoogleRatingBadge({ data, profileUrl }: { data: GooglePlaceRatin
         <Star className="h-4 w-4 text-amber-400" strokeWidth={0} fill="currentColor" aria-hidden="true" />
       </span>
       {data.total > 0 && (
-        <span className="text-[13px] text-white/75">({data.total.toLocaleString("en-IN")})</span>
+        <span className="text-[14px] text-white/75">({data.total.toLocaleString("en-IN")})</span>
       )}
     </Wrapper>
   );

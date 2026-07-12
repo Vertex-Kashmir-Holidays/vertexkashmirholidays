@@ -46,7 +46,7 @@ export function BlogPagination({ currentPage, totalPages, onPageChange }: BlogPa
             key={p}
             onClick={() => onPageChange(p)}
             aria-current={isActive ? 'page' : undefined}
-            className={`grid h-9 w-9 place-items-center rounded-lg text-[13px] font-semibold transition ${
+            className={`grid h-9 w-9 place-items-center rounded-lg text-[14px] font-semibold transition ${
               isActive
                 ? 'bg-primary text-primary-foreground shadow-card'
                 : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
@@ -61,7 +61,7 @@ export function BlogPagination({ currentPage, totalPages, onPageChange }: BlogPa
       <motion.button
         onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
         disabled={currentPage >= totalPages}
-        className="ml-1 flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-[13px] font-semibold shadow-soft transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="ml-1 flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-[14px] font-semibold shadow-soft transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >

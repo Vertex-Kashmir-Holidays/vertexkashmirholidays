@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { formatINR } from "@/lib/accents";
@@ -76,7 +77,7 @@ export default async function TourCategoryPage({ params }: PageProps) {
   const meta = TOUR_CATEGORY_META[category];
   const [data, settings] = await Promise.all([
     getFeaturedAndRecommended(category),
-    prisma.siteSettings.findUnique({ where: { id: "singleton" }, select: { sitePhone: true } }),
+    getSiteSettings(),
   ]);
   if (!data) notFound();
 

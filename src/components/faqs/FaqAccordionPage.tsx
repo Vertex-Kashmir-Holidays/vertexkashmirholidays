@@ -79,12 +79,12 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search questions..."
-          className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-[13.5px] text-foreground shadow-soft placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
+          className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-[14px] text-foreground shadow-soft placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
         />
       </div>
 
       {search.trim() && (
-        <p className="text-center text-[12.5px] text-muted-foreground">
+        <p className="text-center text-[14px] text-muted-foreground">
           {totalMatches === 0 ? "No questions match your search." : `${totalMatches} question${totalMatches === 1 ? "" : "s"} found`}
         </p>
       )}
@@ -93,7 +93,7 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
       {filteredCategories.map((cat) => (
         <section key={cat.id}>
           <h2 className="h-display font-display text-[22px] font-bold text-foreground">{cat.name}</h2>
-          {cat.description && <p className="mt-1.5 text-[13px] text-muted-foreground">{cat.description}</p>}
+          {cat.description && <p className="mt-1.5 text-[14px] text-muted-foreground">{cat.description}</p>}
           <div className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-x-5">
             {cat.faqs.map((faq) => {
               const open = openSlug === faq.slug;
@@ -109,7 +109,7 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
                     aria-expanded={open}
                     className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
                   >
-                    <span className="text-[13.5px] font-bold text-foreground">{faq.question}</span>
+                    <span className="text-[14px] font-bold text-foreground">{faq.question}</span>
                     <ChevronDown
                       className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")}
                       strokeWidth={2.4}
@@ -120,14 +120,14 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
                   >
                     <div className="overflow-hidden">
                       <div className="border-t border-border px-4 pb-4 pt-3">
-                        <p className="whitespace-pre-line text-[13px] leading-relaxed text-foreground/80">{faq.answer}</p>
+                        <p className="whitespace-pre-line text-[14px] leading-relaxed text-foreground/80">{faq.answer}</p>
                         {(faq.tours.length > 0 || faq.destinations.length > 0) && (
                           <div className="mt-4 flex flex-wrap gap-2">
                             {faq.tours.map((t) => (
                               <Link
                                 key={t.id}
                                 href={`/tours/${t.slug}`}
-                                className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                               >
                                 {t.title}
                                 <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
@@ -137,7 +137,7 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
                               <Link
                                 key={d.id}
                                 href={`/destinations/${d.slug}`}
-                                className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                               >
                                 {d.name}
                                 <ArrowRight className="h-3 w-3" strokeWidth={2.4} />

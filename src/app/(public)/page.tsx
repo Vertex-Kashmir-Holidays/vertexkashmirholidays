@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { JsonLd, buildItemList, buildWebSite, buildFAQPage } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { AboutSection } from "@/components/about/AboutSection";
 import { BlogSection } from "@/components/blog/BlogSection";
 import { DestinationsSection } from "@/components/destinations/DestinationsSection";
 import { HeroSection } from "@/components/home/HeroSection";
-import { AdventureSection } from "@/components/home/AdventureSection";
 import { ActivitiesCarousel } from "@/components/activities/ActivitiesCarousel";
 import { PackagesSection } from "@/components/home/PackagesSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
@@ -19,16 +19,14 @@ import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getFaqsForPlacement } from "@/lib/faqs";
 import { getKashmirWeather } from "@/lib/weather";
-import type { OfferData, SectionHeading } from "@/types/home";
+import type { SectionHeading } from "@/types/home";
 
 // ISR: serve cached HTML and refresh in the background (admin edits appear
 // within the window). Replaces force-dynamic, which hit the DB every request.
 export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "singleton" },
-  });
+  const settings = await getSiteSettings();
 
   return buildMetadata({
     // No brand suffix here — the root layout title template appends
@@ -44,62 +42,6 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-// Map a published campaign onto the adventure-card shape used by AdventureSection.
-// Pricing is derived from the campaign's cheapest pricing tier (tiers store
-// prices as "₹28,999"-style strings); HTML in `sub` is stripped for the blurb.
-type CampaignDeal = {
-  id: string;
-  slug: string;
-  name: string;
-  badge: string | null;
-  sub: string | null;
-  heroImage: string | null;
-  offerText: string | null;
-  offerSeats: string | null;
-  offerDeadline: Date | null;
-  tiers: string;
-};
-
-function priceNum(raw: string | undefined): number {
-  return Number(String(raw ?? "").replace(/[^\d]/g, "")) || 0;
-}
-
-function campaignToDeal(c: CampaignDeal): OfferData {
-  let price = 0;
-  let oldPrice: number | null = null;
-  try {
-    const tiers = JSON.parse(c.tiers) as { price?: string; old?: string }[];
-    const priced = tiers
-      .map((t) => ({ p: priceNum(t.price), o: priceNum(t.old) }))
-      .filter((t) => t.p > 0)
-      .sort((a, b) => a.p - b.p);
-    if (priced.length) {
-      price = priced[0].p;
-      oldPrice = priced[0].o > price ? priced[0].o : null;
-    }
-  } catch {
-    /* no tiers → no price shown */
-  }
-
-  const endsText =
-    c.offerSeats ??
-    (c.offerDeadline
-      ? `Ends ${c.offerDeadline.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-      : null);
-
-  return {
-    id: c.id,
-    badge: c.badge,
-    title: c.name,
-    description: (c.sub ?? c.offerText)?.replace(/<[^>]+>/g, "").trim() || null,
-    image: c.heroImage,
-    price,
-    oldPrice,
-    endsText,
-    ctaHref: `/adventures/${c.slug}`,
-  };
-}
-
 export default async function HomePage() {
   const [
     content,
@@ -109,14 +51,11 @@ export default async function HomePage() {
     tickerItems,
     videos,
     tours,
-    ladakhTours,
     whyItems,
     destinations,
-    offers,
     activities,
     reviews,
     blogs,
-    settings,
     faqs,
   ] = await Promise.all([
     prisma.homeContent.findUnique({ where: { id: "singleton" } }),
@@ -129,16 +68,11 @@ export default async function HomePage() {
       where: { published: true, region: "KASHMIR" },
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
       take: 4,
-      include: {
-        destinations: { include: { destination: { select: { name: true } } } },
-      },
-    }),
-    prisma.tour.findMany({
-      where: { published: true, region: "LADAKH" },
-      orderBy: [{ bestseller: "desc" }, { priceFrom: "asc" }],
-      take: 4,
-      include: {
-        destinations: { include: { destination: { select: { name: true } } } },
+      select: {
+        id: true, slug: true, title: true, badge: true, badgeColor: true,
+        duration: true, coverImage: true, rating: true, reviewCount: true,
+        priceFrom: true, priceWas: true,
+        destinations: { select: { destination: { select: { name: true } } } },
       },
     }),
     prisma.whyChooseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
@@ -146,14 +80,6 @@ export default async function HomePage() {
       where: { isFeatured: true },
       orderBy: { sortOrder: "asc" },
       take: 5,
-    }),
-    // The home "deals" section is driven by published campaigns — each card
-    // links to its full /campaign/[slug] microsite.
-    prisma.campaign.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: { id: true, slug: true, name: true, badge: true, sub: true, heroImage: true, offerText: true, offerSeats: true, offerDeadline: true, tiers: true },
     }),
     // Homepage "Popular Things to Do" carousel — 4 handpicked activities.
     prisma.activity.findMany({
@@ -171,7 +97,6 @@ export default async function HomePage() {
       orderBy: { publishedAt: "desc" },
       take: 3,
     }),
-    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
     // Centralized FAQ module — same Faq pool /about, /contact and /faq draw from.
     getFaqsForPlacement("HOME"),
   ]);
@@ -291,33 +216,6 @@ export default async function HomePage() {
           coverImage: d.coverImage,
         }))}
       />
-      {/* Ladakh section temporarily disabled
-      {ladakhTours.length > 0 && (
-        <PackagesSection
-          heading={{
-            kicker: "HIGH ALTITUDE ADVENTURES",
-            title: "Explore *Ladakh*",
-            subtitle: "Khardung La · Pangong Tso · Nubra Valley · Tso Moriri",
-            ctaLabel: "View All Ladakh Tours",
-            ctaHref: "/tours",
-          }}
-          tours={ladakhTours.map((t) => ({
-            id: t.id,
-            slug: t.slug,
-            title: t.title,
-            badge: t.badge,
-            badgeColor: t.badgeColor,
-            durationLabel: `${t.duration - 1}N / ${t.duration}D`,
-            places: t.destinations.map((d) => d.destination.name).join(", "),
-            image: t.coverImage,
-            rating: t.rating,
-            reviewCount: t.reviewCount,
-            priceFrom: t.priceFrom,
-            priceWas: t.priceWas,
-          }))}
-        />
-      )}
-      */}
       <AboutSection
         heading={heading("about")}
         content={{
@@ -335,12 +233,6 @@ export default async function HomePage() {
           .filter((s) => s.section === "about")
           .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
-      {/* Adventures section temporarily disabled
-      <AdventureSection
-        heading={heading("offers")}
-        offers={offers.map(campaignToDeal)}
-      />
-      */}
       <div className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
         <ActivitiesCarousel
           title="Popular Things to Do in Kashmir"
@@ -363,14 +255,14 @@ export default async function HomePage() {
       {faqs.length > 0 && (
         <section className="mx-auto max-w-[1300px] px-4 py-14 sm:px-6">
           <div className="text-center">
-            <p className="text-[11.5px] font-bold tracking-[0.22em] text-primary">{heading("faqs").kicker ?? 'QUESTIONS'}</p>
-            <h2 className="h-display mt-3 font-display text-[17px] font-bold leading-snug">{heading("faqs").title ?? 'Frequently Asked'}</h2>
+            <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading("faqs").kicker ?? 'QUESTIONS'}</p>
+            <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{heading("faqs").title ?? 'Frequently Asked'}</h2>
           </div>
           <div className="mt-8">
             <FaqPreviewList faqs={faqs} columns={2} />
           </div>
           <div className="mt-6 flex justify-center">
-            <Link href="/faq" className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
+            <Link href="/faq" className="inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
               View all FAQs
               <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
             </Link>

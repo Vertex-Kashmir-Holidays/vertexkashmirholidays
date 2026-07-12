@@ -178,7 +178,7 @@ export function UsersClient({
             )}
           >
             {label}
-            <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+            <span className="ml-2 text-[12px] font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
               {count}
             </span>
           </button>
@@ -217,7 +217,7 @@ export function UsersClient({
                   ? ["User", "Phone", "Bookings", "Reviews", "Joined", "Actions"]
                   : ["User", "Role", "Phone", "Joined", "Actions"]
                 ).map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -244,17 +244,17 @@ export function UsersClient({
                           <div className="min-w-0">
                             <p className={cn("font-semibold text-foreground text-xs", isDeleted && "line-through")}>
                               {u.name ?? "—"}
-                              {isDeleted && <span className="ml-2 text-[9px] font-bold text-destructive uppercase">deleted</span>}
-                              {isSelf && <span className="ml-2 text-[9px] text-muted-foreground/60">you</span>}
+                              {isDeleted && <span className="ml-2 text-[10px] font-bold text-destructive uppercase">deleted</span>}
+                              {isSelf && <span className="ml-2 text-[10px] text-muted-foreground/60">you</span>}
                             </p>
-                            <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{u.email}</p>
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[180px]">{u.email}</p>
                           </div>
                         </div>
                       </td>
 
                       {tab === "employees" && (
                         <td className="px-4 py-3">
-                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", isStaff(u.role) ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                          <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", isStaff(u.role) ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
                             {u.role}
                           </span>
                         </td>
@@ -281,7 +281,7 @@ export function UsersClient({
                                 onClick={() => handleRestore(u)}
                                 disabled={isPending || lockedSuper}
                                 title="Restore"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40"
+                                className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" /> Restore
                               </button>
@@ -289,7 +289,7 @@ export function UsersClient({
                                 onClick={() => handlePermanentDelete(u)}
                                 disabled={isPending || isSelf || lockedSuper}
                                 title="Delete permanently"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-destructive/40 text-destructive hover:bg-red-500 disabled:opacity-40"
+                                className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-destructive/40 text-destructive hover:bg-red-500 disabled:opacity-40"
                               >
                                 <Trash2 className="w-3.5 h-3.5" /> Forever
                               </button>
@@ -300,7 +300,7 @@ export function UsersClient({
                                 onClick={() => setEditing(u)}
                                 disabled={isPending || lockedSuper}
                                 title="Edit"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40"
+                                className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40"
                               >
                                 <Pencil className="w-3.5 h-3.5" /> Edit
                               </button>
@@ -308,7 +308,7 @@ export function UsersClient({
                                 onClick={() => setDeleting(u)}
                                 disabled={isPending || isSelf || lockedSuper}
                                 title="Delete"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-40"
+                                className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-40"
                               >
                                 <Trash2 className="w-3.5 h-3.5" /> Delete
                               </button>
@@ -408,7 +408,7 @@ function DeleteModal({
                 className="w-full text-left rounded-xl border border-border p-3 hover:bg-muted disabled:opacity-50"
               >
                 <span className="block text-sm font-semibold text-foreground">Soft delete</span>
-                <span className="block text-[11px] text-muted-foreground mt-0.5">
+                <span className="block text-[12px] text-muted-foreground mt-0.5">
                   Hide the user and block their login. Reversible — you can restore them later.
                 </span>
               </button>
@@ -419,7 +419,7 @@ function DeleteModal({
                 className="w-full text-left rounded-xl border border-destructive/40 p-3 hover:bg-red-500 disabled:opacity-50"
               >
                 <span className="block text-sm font-semibold text-destructive">Permanent delete</span>
-                <span className="block text-[11px] text-muted-foreground mt-0.5">
+                <span className="block text-[12px] text-muted-foreground mt-0.5">
                   Remove the row for good. Bookings and reviews are unlinked; itineraries are deleted. Cannot be undone.
                 </span>
               </button>
@@ -588,7 +588,7 @@ function EditModal({
               autoComplete="new-password"
               className={inputCls}
             />
-            <span className="mt-1 block text-[10px] text-muted-foreground">
+            <span className="mt-1 block text-[12px] text-muted-foreground">
               Min 8 characters. The user will be asked to set their own on next login.
             </span>
           </Field>
@@ -685,7 +685,7 @@ function AddEmployeeModal({
               required
               className={inputCls}
             />
-            <span className="mt-1 block text-[10px] text-muted-foreground">
+            <span className="mt-1 block text-[12px] text-muted-foreground">
               The employee will be asked to set their own password on first login.
             </span>
           </Field>
@@ -722,7 +722,7 @@ const inputCls =
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
   );

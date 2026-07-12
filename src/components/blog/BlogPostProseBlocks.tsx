@@ -30,16 +30,16 @@ export function BlogPostProseBlocks({ blocks }: BlogPostProseBlocksProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: i * 0.05 }}
         >
-          <h2 className="text-[17px] font-bold">{block.title}</h2>
+          <h2 className="text-[18px] font-bold">{block.title}</h2>
 
           {block.type === 'text' && (
-            <p className="mt-3 text-[13.5px] leading-[1.8] text-brand-ink/80">{block.content}</p>
+            <p className="mt-3 text-[14px] leading-[1.8] text-brand-ink/80">{block.content}</p>
           )}
 
           {block.type === 'list' && (
             <ul className="mt-3 space-y-2.5">
               {(block.items as string[]).map((item, j) => (
-                <li key={j} className="flex items-start gap-2.5 text-[13.5px] leading-relaxed text-brand-ink/80">
+                <li key={j} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-brand-ink/80">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-bright" strokeWidth={2.4} />
                   {item}
                 </li>
@@ -52,7 +52,7 @@ export function BlogPostProseBlocks({ blocks }: BlogPostProseBlocksProps) {
               {(block.rows as Array<[string, string]>).map(([k, v], j) => (
                 <div
                   key={j}
-                  className={`flex justify-between gap-4 px-4 py-3 text-[13px] ${
+                  className={`flex justify-between gap-4 px-4 py-3 text-[14px] ${
                     j % 2 ? 'bg-brand-page' : ''
                   } ${j === (block.rows?.length || 0) - 1 ? 'font-bold' : ''}`}
                 >
@@ -67,11 +67,11 @@ export function BlogPostProseBlocks({ blocks }: BlogPostProseBlocksProps) {
             <div className="mt-3 space-y-2.5">
               {(block.items as Array<[string, string]>).map(([q, a], j) => (
                 <details key={j} className="rounded-lg border border-brand-line bg-white px-4 py-3 shadow-soft">
-                  <summary className="flex cursor-pointer items-center justify-between gap-3 text-[13px] font-semibold">
+                  <summary className="flex cursor-pointer items-center justify-between gap-3 text-[14px] font-semibold">
                     {q}
                     <ChevronDown className="chev h-3.5 w-3.5 shrink-0 text-brand-mute" strokeWidth={2.4} />
                   </summary>
-                  <p className="mt-2.5 text-[12.5px] leading-relaxed text-brand-mute">{a}</p>
+                  <p className="mt-2.5 text-[14px] leading-relaxed text-brand-mute">{a}</p>
                 </details>
               ))}
             </div>

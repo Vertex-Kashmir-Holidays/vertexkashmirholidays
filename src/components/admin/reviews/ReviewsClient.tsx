@@ -277,7 +277,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                       })()}
                       <div>
                         <p className="font-semibold text-foreground text-sm">{review.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{review.tour.title}</p>
+                        <p className="text-[12px] text-muted-foreground">{review.tour.title}</p>
                       </div>
                       <div className="flex items-center gap-0.5 ml-auto">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -286,7 +286,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{review.body}</p>
-                    <p className="text-[10px] text-muted-foreground mt-2">
+                    <p className="text-[12px] text-muted-foreground mt-2">
                       {new Date(review.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                       {" · "}
                       <span className={review.approved ? "text-green-600 dark:text-green-400 font-semibold" : "text-orange-500 font-semibold"}>
@@ -301,7 +301,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                       <button
                         onClick={() => handleApprove(review.id, true)}
                         disabled={isPending}
-                        className="flex items-center gap-1 text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 hover:bg-green-500/15 px-2.5 py-1.5 rounded-lg transition-colors"
+                        className="flex items-center gap-1 text-[12px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 hover:bg-green-500/15 px-2.5 py-1.5 rounded-lg transition-colors"
                         title="Approve"
                       >
                         <CheckCircle2 className="w-3 h-3" />
@@ -311,7 +311,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                       <button
                         onClick={() => handleApprove(review.id, false)}
                         disabled={isPending}
-                        className="flex items-center gap-1 text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/15 px-2.5 py-1.5 rounded-lg transition-colors"
+                        className="flex items-center gap-1 text-[12px] font-bold text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/15 px-2.5 py-1.5 rounded-lg transition-colors"
                         title="Reject"
                       >
                         <XCircle className="w-3 h-3" />
@@ -331,10 +331,10 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
 
                     {canDelete && (confirmDelete === review.id ? (
                       <>
-                        <button onClick={() => handleDelete(review.id)} disabled={isPending} className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1.5 rounded-lg transition-colors">
+                        <button onClick={() => handleDelete(review.id)} disabled={isPending} className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1.5 rounded-lg transition-colors">
                           {isPending ? "…" : "Confirm"}
                         </button>
-                        <button onClick={() => setConfirmDelete(null)} className="text-[10px] text-muted-foreground hover:text-muted-foreground px-2 py-1.5 rounded-lg border border-border transition-colors">
+                        <button onClick={() => setConfirmDelete(null)} className="text-[12px] text-muted-foreground hover:text-muted-foreground px-2 py-1.5 rounded-lg border border-border transition-colors">
                           Cancel
                         </button>
                       </>
@@ -443,7 +443,7 @@ export function ReviewsClient({ initialReviews, totalCount, pendingCount, tours,
                     )}
                   </div>
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-[12px] text-muted-foreground">
                   {draft.avatar
                     ? "Custom picture set for this review."
                     : draft.userImage

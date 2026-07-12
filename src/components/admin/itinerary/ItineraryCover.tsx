@@ -71,7 +71,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
         </div>
 
         <div className="mt-auto">
-          <p className="text-center text-[11px] font-semibold tracking-[0.32em] text-white/70">PREPARED FOR</p>
+          <p className="text-center text-[12px] font-semibold tracking-[0.32em] text-white/70">PREPARED FOR</p>
           {readOnlyDerived ? (
             <p className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl">{data.preparedFor}</p>
           ) : (
@@ -91,7 +91,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
                 ) : (
                   <EditableField value={data.travelDates} onValueChange={(v) => onUpdate("travelDates", v)} className="text-sm font-bold text-white" />
                 )}
-                <p className="text-[10px] tracking-wide text-white/65">TRAVEL DATES</p>
+                <p className="text-[12px] tracking-wide text-white/65">TRAVEL DATES</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -102,7 +102,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
                 ) : (
                   <EditableField value={data.travelers} onValueChange={(v) => onUpdate("travelers", v)} className="text-sm font-bold text-white" />
                 )}
-                <p className="text-[10px] tracking-wide text-white/65">TRAVELLERS</p>
+                <p className="text-[12px] tracking-wide text-white/65">TRAVELLERS</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -113,7 +113,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
                 ) : (
                   <EditableField value={data.packageType} onValueChange={(v) => onUpdate("packageType", v)} className="text-sm font-bold text-white" />
                 )}
-                <p className="text-[10px] tracking-wide text-white/65">PACKAGE TYPE</p>
+                <p className="text-[12px] tracking-wide text-white/65">PACKAGE TYPE</p>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function ItineraryCover({ data, onUpdate, onImageChange, readOnlyDerived 
            ) : (
              <EditableField value={data.totalCost} onValueChange={(v) => onUpdate("totalCost", v)} className="font-serif text-center text-2xl font-bold text-white sm:text-3xl" />
            )}
-           <p className="text-[11px] font-semibold tracking-[0.28em] text-white/70">TOTAL PACKAGE COST</p>
+           <p className="text-[12px] font-semibold tracking-[0.28em] text-white/70">TOTAL PACKAGE COST</p>
          </div>
 
         </div>

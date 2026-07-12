@@ -31,11 +31,11 @@ export function CampaignFilm({ poster, title, dur, onFilmClick }: CampaignFilmPr
           <span className="ml-1 text-xl">▶</span>
         </span>
         <span className="absolute bottom-6 left-7 text-left">
-          <span className="block text-[11px] font-extrabold tracking-[0.22em] text-white/70">THE FILM</span>
+          <span className="block text-[12px] font-extrabold tracking-[0.22em] text-white/70">THE FILM</span>
           {title && <span className="h-display mt-1 block text-2xl font-bold text-white">{title}</span>}
         </span>
         {dur && (
-          <span className="absolute bottom-6 right-7 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[12px] font-bold text-white backdrop-blur-xl">
+          <span className="absolute bottom-6 right-7 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[14px] font-bold text-white backdrop-blur-xl">
             ▶ {dur}
           </span>
         )}

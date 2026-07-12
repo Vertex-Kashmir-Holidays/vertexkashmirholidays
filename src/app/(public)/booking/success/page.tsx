@@ -8,6 +8,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { Button } from "@/components/ui/button";
 import { BookingCompletedEvent } from "@/components/booking/BookingCompletedEvent";
 import { ShareTripButton } from "@/components/booking/ShareTripButton";
@@ -52,7 +53,7 @@ export default async function BookingSuccessPage({
           },
         })
       : null,
-    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+    getSiteSettings(),
   ]).catch((err) => {
     console.error("[booking/success] data load failed", err);
     return [null, null] as [null, null];
@@ -192,7 +193,7 @@ export default async function BookingSuccessPage({
                   <Icon className="w-5 h-5 text-primary" />
                 </div>
                 <p className="text-xs font-bold text-foreground">{label}</p>
-                <p className="text-[10px] text-muted-foreground">{sub}</p>
+                <p className="text-[12px] text-muted-foreground">{sub}</p>
               </>
             );
             const cls =

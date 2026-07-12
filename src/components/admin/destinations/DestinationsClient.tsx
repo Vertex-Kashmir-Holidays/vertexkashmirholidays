@@ -98,7 +98,7 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Destination", "Location", "Tours", "Date", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -121,7 +121,7 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">{dest.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">/destinations/{dest.slug}</p>
+                          <p className="text-[12px] text-muted-foreground truncate">/destinations/{dest.slug}</p>
                         </div>
                       </div>
                     </td>
@@ -147,13 +147,13 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
                           <button
                             onClick={() => handleDelete(dest.id)}
                             disabled={isPending}
-                            className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
                           >
                             {isPending ? "…" : "Delete"}
                           </button>
                           <button
                             onClick={() => setConfirmDelete(null)}
-                            className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
+                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
                           >
                             Cancel
                           </button>
@@ -179,7 +179,7 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[10px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">View only</span>
                           )}
                         </div>
                       )}

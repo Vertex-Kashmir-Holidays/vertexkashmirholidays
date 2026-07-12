@@ -19,17 +19,17 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-green-bright/15 blur-3xl"></div>
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
-            <p className="rv text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-            <h2 className="rv h-display mt-3 text-[17px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+            <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+            <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
               {renderAccents(heading.title)}
             </h2>
             {content.para1 && (
-              <p className="rv mt-5 text-[15px] leading-relaxed text-muted-foreground" style={{ '--rd': '0.14s' } as React.CSSProperties}>
+              <p className="rv mt-5 text-[16px] leading-relaxed text-muted-foreground" style={{ '--rd': '0.14s' } as React.CSSProperties}>
                 {content.para1}
               </p>
             )}
             {content.para2 && (
-              <p className="rv mt-4 text-[15px] leading-relaxed text-muted-foreground" style={{ '--rd': '0.2s' } as React.CSSProperties}>
+              <p className="rv mt-4 text-[16px] leading-relaxed text-muted-foreground" style={{ '--rd': '0.2s' } as React.CSSProperties}>
                 {content.para2}
               </p>
             )}
@@ -41,7 +41,7 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
                       {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString('en-IN') : stat.value}
                       {stat.suffix}
                     </p>
-                    <p className="mt-1 text-[10px] text-muted-foreground">{stat.label}</p>
+                    <p className="mt-1 text-[12px] text-muted-foreground">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -87,13 +87,13 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
               <div className="glass-strong absolute right-4 top-2 rounded-2xl px-5 py-4 shadow-card" data-depth style={{ '--d': '1.6' } as React.CSSProperties}>
                 {content.cardEmoji && <p className="text-2xl">{content.cardEmoji}</p>}
                 <p className="mt-1 text-xs font-bold text-foreground">{content.cardTitle}</p>
-                {content.cardSubtitle && <p className="text-[10px] text-muted-foreground">{content.cardSubtitle}</p>}
+                {content.cardSubtitle && <p className="text-[12px] text-muted-foreground">{content.cardSubtitle}</p>}
               </div>
             )}
             {content.ratingTitle && (
               <div className="glass-strong absolute -bottom-3 left-6 rounded-2xl px-5 py-4 shadow-card" data-depth style={{ '--d': '1.3' } as React.CSSProperties}>
                 <p className="text-xs font-bold text-foreground">{content.ratingTitle}</p>
-                {content.ratingSubtitle && <p className="text-[10px] text-muted-foreground">{content.ratingSubtitle}</p>}
+                {content.ratingSubtitle && <p className="text-[12px] text-muted-foreground">{content.ratingSubtitle}</p>}
               </div>
             )}
           </div>

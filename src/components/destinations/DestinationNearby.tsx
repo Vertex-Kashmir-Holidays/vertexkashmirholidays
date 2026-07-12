@@ -45,7 +45,7 @@ export function DestinationNearby({ destinations }: DestinationNearbyProps) {
   return (
     <section id="nearby" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
       <div className="flex items-center justify-between">
-        <h2 className="text-[17px] font-bold">Nearby Destinations</h2>
+        <h2 className="text-[18px] font-bold">Nearby Destinations</h2>
         {destinations.length > itemsPerView && (
           <div className="flex gap-2">
             <motion.button

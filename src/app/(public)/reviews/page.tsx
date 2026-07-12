@@ -1,8 +1,10 @@
 // src/app/(public)/reviews/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList, buildOrganizationReviews } from "@/components/seo/JsonLd";
 import { getApprovedReviewsPage, getReviewStats } from "@/lib/reviews";
@@ -23,12 +25,18 @@ const RATINGS = [5, 4, 3, 2, 1] as const;
 
 type PageProps = { searchParams: Promise<{ page?: string; rating?: string }> };
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getReviewsContent = cache(async () =>
+  prisma.reviewsContent.findUnique({ where: { id: "singleton" } }),
+);
+
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const canonical = page > 1 ? `${SITE_URL}/reviews?page=${page}` : `${SITE_URL}/reviews`;
 
-  const content = await prisma.reviewsContent.findUnique({ where: { id: "singleton" } });
+  const content = await getReviewsContent();
 
   return buildMetadata({
     title: "Customer Reviews & Ratings — Real Traveller Experiences",
@@ -47,17 +55,8 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
   const [{ items, total }, stats, settings, heroContent, videos] = await Promise.all([
     getApprovedReviewsPage({ page, perPage: PER_PAGE, rating }),
     getReviewStats(),
-    prisma.siteSettings.findUnique({
-      where: { id: "singleton" },
-      select: {
-        googleReviews: true,
-        tripadvisor: true,
-        googlePlaceId: true,
-        tripadvisorHeroWidgetEmbed: true,
-        tripadvisorRatingWidgetEmbed: true,
-      },
-    }),
-    prisma.reviewsContent.findUnique({ where: { id: "singleton" } }),
+    getSiteSettings(),
+    getReviewsContent(),
     prisma.videoReview.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
@@ -168,7 +167,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
             <Link
               href="/reviews"
-              className={`rounded-full border px-4 py-1.5 text-[12.5px] font-semibold transition ${
+              className={`rounded-full border px-4 py-1.5 text-[14px] font-semibold transition ${
                 !rating ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
               }`}
             >
@@ -178,7 +177,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
               <Link
                 key={star}
                 href={`/reviews?rating=${star}`}
-                className={`rounded-full border px-4 py-1.5 text-[12.5px] font-semibold transition ${
+                className={`rounded-full border px-4 py-1.5 text-[14px] font-semibold transition ${
                   rating === star ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
                 }`}
               >
@@ -207,18 +206,18 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             {page > 1 && (
               <Link
                 href={`/reviews?${new URLSearchParams({ ...(rating ? { rating: String(rating) } : {}), page: String(page - 1) }).toString()}`}
-                className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold transition hover:bg-muted"
+                className="rounded-xl border border-border px-4 py-2 text-[14px] font-semibold transition hover:bg-muted"
               >
                 ← Previous
               </Link>
             )}
-            <span className="text-[12.5px] text-muted-foreground">
+            <span className="text-[14px] text-muted-foreground">
               Page {page} of {totalPages}
             </span>
             {page < totalPages && (
               <Link
                 href={`/reviews?${new URLSearchParams({ ...(rating ? { rating: String(rating) } : {}), page: String(page + 1) }).toString()}`}
-                className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold transition hover:bg-muted"
+                className="rounded-xl border border-border px-4 py-2 text-[14px] font-semibold transition hover:bg-muted"
               >
                 Next →
               </Link>
@@ -257,7 +256,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           <p className="font-display text-lg font-bold text-foreground">Ready to plan your own Kashmir trip?</p>
           <Link
             href="/tours"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[13px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110"
           >
             Browse Tour Packages
             <ArrowRight className="h-4 w-4" strokeWidth={2.4} />

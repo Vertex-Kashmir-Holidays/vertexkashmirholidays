@@ -52,15 +52,15 @@ export function ToursGridSection({
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <motion.h2
-          className="h-display text-[17px] font-bold"
+          className="h-display text-[18px] font-bold"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          All Tours <span className="font-sans text-[13px] font-semibold text-primary">({totalCount} {totalCount === 1 ? 'Package' : 'Packages'})</span>
+          All Tours <span className="font-sans text-[14px] font-semibold text-primary">({totalCount} {totalCount === 1 ? 'Package' : 'Packages'})</span>
         </motion.h2>
 
-        <div className="flex items-center gap-2.5 text-[13px]">
+        <div className="flex items-center gap-2.5 text-[14px]">
           {/* Mobile Filter Button */}
           <button
             onClick={onFilterToggle}
@@ -88,11 +88,11 @@ export function ToursGridSection({
 
       {tours.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
-          <p className="text-[17px] font-bold">No tours match your filters</p>
-          <p className="text-[13px] text-muted-foreground">Try removing a filter or searching for something else.</p>
+          <p className="text-[18px] font-bold">No tours match your filters</p>
+          <p className="text-[14px] text-muted-foreground">Try removing a filter or searching for something else.</p>
           <button
             onClick={onClearFilters}
-            className="rounded-lg border-[1.5px] border-primary px-5 py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+            className="rounded-lg border-[1.5px] border-primary px-5 py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
           >
             Clear Filters
           </button>
@@ -152,7 +152,7 @@ export function ToursGridSection({
                 p === page
                   ? 'bg-primary text-primary-foreground shadow-card'
                   : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
-              } grid h-10 w-10 place-items-center rounded-full text-[13px] font-semibold transition-all duration-200`}
+              } grid h-10 w-10 place-items-center rounded-full text-[14px] font-semibold transition-all duration-200`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

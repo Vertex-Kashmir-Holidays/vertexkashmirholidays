@@ -152,14 +152,12 @@ export function CampaignHero({
       <div className="relative z-[2] mx-auto grid min-h-[100svh] max-w-[1300px] items-center gap-10 px-6 pb-16 pt-36 lg:grid-cols-[1.15fr_370px]">
         <div>
           {badge && (
-            <motion.span
-              className={`${darkGlass} inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-extrabold tracking-[0.16em] text-white`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+            <span
+              className={`${darkGlass} hero-reveal inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-extrabold tracking-[0.16em] text-white`}
+              style={{ '--hr-y': '20px', '--hr-duration': '0.5s' } as React.CSSProperties}
             >
               {badge}
-            </motion.span>
+            </span>
           )}
           {titleHTML && (
             <h1
@@ -170,7 +168,7 @@ export function CampaignHero({
           )}
           {sub && (
             <p
-              className="hero-reveal mt-6 max-w-md text-[15px] leading-relaxed text-white/75"
+              className="hero-reveal mt-6 max-w-md text-[16px] leading-relaxed text-white/75"
               style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
             >
               {sub}
@@ -178,63 +176,57 @@ export function CampaignHero({
           )}
 
           {facts.length > 0 && (
-            <motion.div
-              className="mt-7 flex flex-wrap gap-2.5"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+            <div
+              className="hero-reveal mt-7 flex flex-wrap gap-2.5"
+              style={{ '--hr-y': '20px', '--hr-delay': '0.3s' } as React.CSSProperties}
             >
               {facts.map((fact, i) => (
-                <span key={i} className={`${darkGlass} rounded-full px-3.5 py-1.5 text-[12px] font-semibold text-white`}>
+                <span key={i} className={`${darkGlass} rounded-full px-3.5 py-1.5 text-[14px] font-semibold text-white`}>
                   {fact}
                 </span>
               ))}
-            </motion.div>
+            </div>
           )}
 
-          <motion.div
-            className="mt-9 flex flex-wrap items-center gap-3.5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+          <div
+            className="hero-reveal mt-9 flex flex-wrap items-center gap-3.5"
+            style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
           >
             <Link
               href="#pricing"
-              className="sweep inline-flex items-center gap-2 rounded-full bg-accent-grad px-8 py-4 text-[14px] font-extrabold text-white ring-inner shadow-glow transition hover:scale-[1.03]"
+              className="sweep inline-flex items-center gap-2 rounded-full bg-accent-grad px-8 py-4 text-[16px] font-extrabold text-white ring-inner shadow-glow transition hover:scale-[1.03]"
             >
               {heroCta} →
             </Link>
             {filmDur && (
               <button
                 onClick={onFilmClick}
-                className={`${darkGlass} inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-[13.5px] font-semibold text-white transition hover:scale-[1.03] hover:bg-white/15`}
+                className={`${darkGlass} inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-[14px] font-semibold text-white transition hover:scale-[1.03] hover:bg-white/15`}
               >
                 <span className="relative grid h-8 w-8 place-items-center rounded-full bg-white text-[hsl(202_50%_8%)]">
-                  <span className="ml-0.5 text-[10px]">▶</span>
+                  <span className="ml-0.5 text-[12px]">▶</span>
                 </span>
                 Watch the film <span className="text-white/55">· {filmDur}</span>
               </button>
             )}
-          </motion.div>
+          </div>
 
           {proofCount && (
-            <motion.div
-              className="mt-9 flex flex-wrap items-center gap-5"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+            <div
+              className="hero-reveal mt-9 flex flex-wrap items-center gap-5"
+              style={{ '--hr-y': '20px', '--hr-delay': '0.5s' } as React.CSSProperties}
             >
               <div className="flex -space-x-2.5">
                 {['sp1', 'sp2', 'sp3'].map((s) => (
                   <img key={s} className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover" src={imgSrc()} alt="" />
                 ))}
-                <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[10px] font-extrabold text-white">2k+</span>
+                <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[12px] font-extrabold text-white">2k+</span>
               </div>
-              <p className="text-[12.5px] leading-snug text-white/70">
+              <p className="text-[14px] leading-snug text-white/70">
                 <span className="inline-flex items-center gap-1 font-bold text-amber-300"><Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} /> 4.9</span> from{' '}
                 <span className="font-bold text-white">{proofCount}</span> travellers on this trip last season
               </p>
-            </motion.div>
+            </div>
           )}
         </div>
 
@@ -245,18 +237,18 @@ export function CampaignHero({
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="flex items-center gap-2 text-[11px] font-extrabold tracking-[0.2em] text-camp-accent">
+            <p className="flex items-center gap-2 text-[12px] font-extrabold tracking-[0.2em] text-camp-accent">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--camp-accent)' }}></span>
               PLAN YOUR TRIP
             </p>
-            <h2 className="h-display mt-3 text-[23px] font-bold leading-snug text-white">Get a quote in 60 seconds</h2>
-            <p className="mt-1.5 text-[12.5px] text-white/60">Free callback from our local expert within 30 minutes.</p>
+            <h2 className="h-display mt-3 text-[24px] font-bold leading-snug text-white">Get a quote in 60 seconds</h2>
+            <p className="mt-1.5 text-[14px] text-white/60">Free callback from our local expert within 30 minutes.</p>
 
             {sent ? (
               <div className="py-10 text-center">
                 <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-accent-grad text-white"><Check className="h-6 w-6" strokeWidth={2.5} /></div>
-                <p className="text-[15px] font-bold text-white">Request received!</p>
-                <p className="mt-1 text-[12.5px] text-white/60">We&apos;ll call you back shortly.</p>
+                <p className="text-[16px] font-bold text-white">Request received!</p>
+                <p className="mt-1 text-[14px] text-white/60">We&apos;ll call you back shortly.</p>
               </div>
             ) : (
               <form className="mt-5 space-y-3" onSubmit={handleSubmit} noValidate>
@@ -271,7 +263,7 @@ export function CampaignHero({
                 <input
                   name="name"
                   required
-                  className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[13px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
+                  className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[14px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
                   style={{ '--tw-ring-color': 'var(--camp-accent)' } as React.CSSProperties}
                   placeholder="Your Name *"
                 />
@@ -279,14 +271,14 @@ export function CampaignHero({
                   name="phone"
                   type="tel"
                   required
-                  className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[13px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
+                  className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[14px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
                   style={{ '--tw-ring-color': 'var(--camp-accent)' } as React.CSSProperties}
                   placeholder="Phone Number *"
                 />
                 <select
                   name="travellers"
                   defaultValue=""
-                  className="w-full appearance-none rounded-xl border border-white/12 bg-white/[.06] px-3 py-3 text-[12.5px] text-white/60 outline-none transition focus:bg-white/10 focus:ring-2"
+                  className="w-full appearance-none rounded-xl border border-white/12 bg-white/[.06] px-3 py-3 text-[14px] text-white/60 outline-none transition focus:bg-white/10 focus:ring-2"
                   style={{ '--tw-ring-color': 'var(--camp-accent)' } as React.CSSProperties}
                 >
                   <option value="" className="text-black">Travellers</option>
@@ -295,7 +287,7 @@ export function CampaignHero({
                   ))}
                   <option value="5" className="text-black">5+</option>
                 </select>
-                <label className="flex items-start gap-2.5 text-[11px] leading-relaxed text-white/65">
+                <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-white/65">
                   <input type="checkbox" name="agree" required className="cbx mt-0.5 shrink-0" />
                   <span>
                     I agree to the{' '}
@@ -321,13 +313,13 @@ export function CampaignHero({
                 <button
                   type="submit"
                   disabled={submitting || (!!siteKey && !captchaToken)}
-                  className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-accent-grad py-3.5 text-[14px] font-extrabold text-white ring-inner shadow-glow transition hover:brightness-110 disabled:opacity-60"
+                  className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-accent-grad py-3.5 text-[16px] font-extrabold text-white ring-inner shadow-glow transition hover:brightness-110 disabled:opacity-60"
                 >
                   {submitting ? 'Reserving…' : 'Reserve My Seat →'}
                 </button>
               </form>
             )}
-            <p className="mt-3.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10.5px] font-semibold text-white/55">
+            <p className="mt-3.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[12px] font-semibold text-white/55">
               <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" strokeWidth={2.2} /> Razorpay secured</span>
               <span className="inline-flex items-center gap-1"><Check className="h-3 w-3" strokeWidth={2.5} /> J&amp;K licensed</span>
               {phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" strokeWidth={2.2} /> {phone}</span>}

@@ -58,7 +58,7 @@ export function HeroContent({ cardTilt }: HeroContentProps) {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-green opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-green" />
                 </span>
-                <span className="text-[10px] font-semibold text-brand-green tracking-[0.18em] uppercase">
+                <span className="text-[12px] font-semibold text-brand-green tracking-[0.18em] uppercase">
                   Monsoon Ready Kashmir Trips · 2026
                 </span>
               </motion.div>
@@ -150,7 +150,7 @@ export function HeroContent({ cardTilt }: HeroContentProps) {
                 <p className="text-2xl font-extrabold text-white font-mono leading-none mb-0.5">
                   {s.value}
                 </p>
-                <p className="text-[11px] text-white/60 uppercase tracking-widest">{s.label}</p>
+                <p className="text-[12px] text-white/60 uppercase tracking-widest">{s.label}</p>
               </div>
             ))}
           </div>
@@ -222,7 +222,7 @@ function InquiryCard() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-green opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-green" />
             </span>
-            <span className="text-[10px] font-semibold text-brand-green tracking-[0.18em] uppercase">
+            <span className="text-[12px] font-semibold text-brand-green tracking-[0.18em] uppercase">
               Plan Your Kashmir Trip
             </span>
           </div>

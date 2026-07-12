@@ -215,7 +215,7 @@ export function TourDetailsHero({
      <div className="relative mx-auto max-w-[1300px] px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-28">
        {/* Breadcrumb + Actions */}
        <div className="flex items-center justify-between gap-3">
-         <nav className="flex min-w-0 items-center gap-2 text-[12px] text-white/80" aria-label="Breadcrumb">
+         <nav className="flex min-w-0 items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
            <a href="/" className="shrink-0 transition hover:text-white">Home</a>
            <span className="shrink-0">›</span>
            <a href="/tours" className="shrink-0 transition hover:text-white">Tours</a>
@@ -233,7 +233,7 @@ export function TourDetailsHero({
            </motion.button>
            <motion.button
              onClick={handleShare}
-             className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[13px] font-semibold text-brand-ink shadow-card transition hover:brightness-95"
+             className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[14px] font-semibold text-brand-ink shadow-card transition hover:brightness-95"
              whileHover={{ scale: 1.02 }}
              whileTap={{ scale: 0.98 }}
            >
@@ -246,14 +246,12 @@ export function TourDetailsHero({
 
        {/* Title Block */}
        <div className="mt-8 max-w-2xl sm:mt-12">
-         <motion.span
-           className={`rounded-md ${badgeCls[badgeColor]} px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white shadow`}
-           initial={{ x: -20, opacity: 0 }}
-           animate={{ x: 0, opacity: 1 }}
-           transition={{ duration: 0.5 }}
+         <span
+           className={`hero-reveal-x rounded-md ${badgeCls[badgeColor]} px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow`}
+           style={{ '--hr-duration': '0.5s' } as React.CSSProperties}
          >
            {badge}
-         </motion.span>
+         </span>
          <h1
            className="hero-reveal h-display mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[44px]"
            style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
@@ -264,17 +262,15 @@ export function TourDetailsHero({
          </h1>
          {tagline && (
            <p
-             className="hero-reveal mt-4 text-[15px] font-medium text-white/90"
+             className="hero-reveal mt-4 text-[16px] font-medium text-white/90"
              style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
            >
              {tagline}
            </p>
          )}
-         <motion.p
-           className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13.5px] font-semibold text-white"
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           transition={{ duration: 0.6, delay: 0.3 }}
+         <p
+           className="hero-reveal mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-semibold text-white"
+           style={{ '--hr-delay': '0.3s' } as React.CSSProperties}
          >
            <span className="flex items-center gap-1.5">
              <Star className="h-4 w-4 text-amber-400" fill="currentColor" strokeWidth={0} />
@@ -286,16 +282,14 @@ export function TourDetailsHero({
                <span>{happyLabel}</span>
              </>
            )}
-         </motion.p>
+         </p>
        </div>
 
 
        {/* Quick Facts */}
-       <motion.div
-         className="mt-8 flex flex-wrap gap-x-9 gap-y-4"
-         initial={{ opacity: 0, y: 20 }}
-         animate={{ opacity: 1, y: 0 }}
-         transition={{ duration: 0.6, delay: 0.4 }}
+       <div
+         className="hero-reveal mt-8 flex flex-wrap gap-x-9 gap-y-4"
+         style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
        >
          {quickFacts.map((fact, i) => (
            <div key={i} className="flex items-center gap-2.5 text-white">
@@ -303,12 +297,12 @@ export function TourDetailsHero({
                <path d={fact.icon} />
              </svg>
              <div>
-               <p className="text-[13px] font-bold leading-tight">{fact.t}</p>
-               <p className="text-[11px] text-white/65">{fact.s}</p>
+               <p className="text-[14px] font-bold leading-tight">{fact.t}</p>
+               <p className="text-[12px] text-white/65">{fact.s}</p>
              </div>
            </div>
          ))}
-       </motion.div>
+       </div>
 
 
        {/* Thumbnails */}
@@ -326,7 +320,7 @@ export function TourDetailsHero({
              <Image src={imgSrc(img)} alt="" fill sizes="104px" className="object-cover" />
              {i === currentImage && (
                <span className="absolute inset-0 grid place-items-center bg-black/30">
-                 <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[11px] text-brand-ink">▶</span>
+                 <span className="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[12px] text-brand-ink">▶</span>
                </span>
              )}
            </motion.button>

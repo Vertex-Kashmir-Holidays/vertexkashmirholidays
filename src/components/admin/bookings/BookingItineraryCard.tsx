@@ -42,7 +42,7 @@ export function BookingItineraryCard({
   }
 
   const linkClass =
-    "mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-bold text-primary-foreground transition hover:brightness-110";
+    "mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[14px] font-bold text-primary-foreground transition hover:brightness-110";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -94,7 +94,7 @@ export function BookingItineraryCard({
             type="button"
             onClick={generate}
             disabled={pending}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[14px] font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Generate Itinerary

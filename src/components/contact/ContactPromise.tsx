@@ -20,8 +20,8 @@ export function ContactPromise({ heading, items }: ContactPromiseProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <p className="text-[11px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-      <h2 className="h-display mt-2 font-display text-[17px] font-bold">{heading.title}</h2>
+      <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
+      <h2 className="h-display mt-2 font-display text-[18px] font-bold">{heading.title}</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((p, i) => (
           <motion.div
@@ -38,8 +38,8 @@ export function ContactPromise({ heading, items }: ContactPromiseProps) {
               </svg>
             </span>
             <div>
-              <p className="text-[13px] font-bold">{p.title}</p>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">{p.subtitle}</p>
+              <p className="text-[14px] font-bold">{p.title}</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{p.subtitle}</p>
             </div>
           </motion.div>
         ))}

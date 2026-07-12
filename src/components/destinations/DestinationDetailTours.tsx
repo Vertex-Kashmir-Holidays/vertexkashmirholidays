@@ -49,9 +49,9 @@ export function DestinationDetailTours({ name, tours }: DestinationDetailToursPr
       transition={{ duration: 0.5 }}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[21px] font-bold">Featured Tours in {name}</h2>
+        <h2 className="text-[22px] font-bold">Featured Tours in {name}</h2>
         <div className="flex items-center gap-3">
-          <a href="/tours" className="text-[13px] font-bold text-primary hover:underline">View full tours</a>
+          <a href="/tours" className="text-[14px] font-bold text-primary hover:underline">View full tours</a>
           <motion.button
             onClick={() => scroll('prev')}
             aria-label="Previous tours"

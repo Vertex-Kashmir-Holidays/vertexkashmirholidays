@@ -35,11 +35,13 @@ export async function POST(_req: Request, { params }: Params) {
   if (existing) {
     // Re-admit the initiator if they previously deleted the chat (leftAt was set)
     const myMember = existing.members.find((m) => m.userId === myId);
+    let mutated = false;
     if (myMember?.leftAt) {
       await prisma.chatMember.update({
         where: { id: myMember.id },
         data: { leftAt: null },
       });
+      mutated = true;
     }
     // Re-admit the target too if they had left
     const theirMember = existing.members.find((m) => m.userId === targetId);
@@ -47,6 +49,16 @@ export async function POST(_req: Request, { params }: Params) {
       await prisma.chatMember.update({
         where: { id: theirMember.id },
         data: { leftAt: null },
+      });
+      mutated = true;
+    }
+    // Only the common "nothing changed" path skips a second query — if a
+    // member was actually re-admitted above, the DM_INCLUDE members filter
+    // (leftAt: null) means our already-fetched `existing` is stale for them.
+    if (!mutated) {
+      return NextResponse.json({
+        ...existing,
+        members: existing.members.filter((m) => !m.leftAt),
       });
     }
     const refreshed = await prisma.chatRoom.findUnique({ where: { directKey }, include: DM_INCLUDE });

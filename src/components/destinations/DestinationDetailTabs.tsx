@@ -59,7 +59,7 @@ export function DestinationDetailTabs({ sections }: DestinationDetailTabsProps) 
             <motion.button
               key={section.id}
               onClick={() => scrollToSection(section.id)}
-              className={`relative flex shrink-0 items-center gap-2 px-3 pb-3 pt-1 text-[13px] font-semibold ${
+              className={`relative flex shrink-0 items-center gap-2 px-3 pb-3 pt-1 text-[14px] font-semibold ${
                 activeTab === section.id
                   ? 'text-primary'
                   : 'text-foreground/70 transition hover:text-foreground'

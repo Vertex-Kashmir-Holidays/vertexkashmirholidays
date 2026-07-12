@@ -68,7 +68,7 @@ export function ForceChangePasswordForm() {
               autoComplete="new-password"
               autoFocus
             />
-            <p className="mt-1 text-[11px] text-muted-foreground">At least 8 characters.</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">At least 8 characters.</p>
           </div>
           <div>
             <label className="text-xs font-semibold text-foreground" htmlFor="cp-confirm">Confirm new password</label>

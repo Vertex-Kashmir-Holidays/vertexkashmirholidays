@@ -95,7 +95,7 @@ export function PhoneInput({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Select country code, currently +${dial}`}
-        className="ml-3.5 flex shrink-0 items-center gap-1.5 border-r border-border pr-3 text-[12.5px] font-semibold"
+        className="ml-3.5 flex shrink-0 items-center gap-1.5 border-r border-border pr-3 text-[14px] font-semibold"
       >
         <span aria-hidden="true">{flagOf(country)}</span>
         <span className="text-muted-foreground">+{dial}</span>
@@ -125,7 +125,7 @@ export function PhoneInput({
               placeholder="Search country or code"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[12.5px] outline-none focus:border-primary"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[14px] outline-none focus:border-primary"
             />
           </div>
           {filtered.map((c) => (
@@ -139,7 +139,7 @@ export function PhoneInput({
                 setOpen(false);
                 setQuery('');
               }}
-              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition hover:bg-muted ${
+              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] transition hover:bg-muted ${
                 c.code === country ? 'bg-primary/10 font-semibold' : ''
               }`}
             >
@@ -149,7 +149,7 @@ export function PhoneInput({
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="px-3 py-3 text-[12px] text-muted-foreground">
+            <p className="px-3 py-3 text-[14px] text-muted-foreground">
               No countries match “{query}”.
             </p>
           )}

@@ -25,7 +25,7 @@ export function DestinationsHero({ heroImage, heroImageMobile }: DestinationsHer
       alt="Dal Lake, Kashmir"
       aside={<HeroLeadCard source="destinations" />}
     >
-      <nav className="flex items-center gap-2 text-[12.5px] text-white/85" aria-label="Breadcrumb">
+      <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
         <a href="/" className="transition hover:text-white">Home</a>
         <span>›</span>
         <span className="font-semibold text-white">Destinations</span>
@@ -38,7 +38,7 @@ export function DestinationsHero({ heroImage, heroImageMobile }: DestinationsHer
         Explore the breathtaking destinations of Kashmir
       </h1>
       <p
-        className="hero-reveal mt-5 max-w-md text-[15px] leading-relaxed text-white/85"
+        className="hero-reveal mt-5 max-w-md text-[16px] leading-relaxed text-white/85"
         style={{ '--hr-delay': '0.1s' } as React.CSSProperties}
       >
         From snow-capped peaks to serene valleys and crystal clear lakes – discover paradise on earth.
@@ -59,8 +59,8 @@ export function DestinationsHero({ heroImage, heroImageMobile }: DestinationsHer
               <Icon className="h-4 w-4" strokeWidth={1.8} />
             </span>
             <span className="leading-tight">
-              <span className="block text-[13px] font-bold text-white">{t}</span>
-              <span className="block text-[11px] text-white/70">{s}</span>
+              <span className="block text-[14px] font-bold text-white">{t}</span>
+              <span className="block text-[12px] text-white/70">{s}</span>
             </span>
           </div>
         ))}

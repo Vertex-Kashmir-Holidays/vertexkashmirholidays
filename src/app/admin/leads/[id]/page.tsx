@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { isAdminRole } from "@/lib/itinerary/access";
@@ -13,9 +15,40 @@ export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getLead = cache(async (id: string) =>
+  prisma.lead.findUnique({
+    where: { id },
+    include: {
+      activities: { orderBy: { performedAt: "desc" } },
+      assignedTo: { select: { id: true, name: true, email: true } },
+      booking: { select: { id: true, status: true, amount: true, travelDate: true, guestName: true } },
+      itinerary: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          locked: true,
+          createdAt: true,
+          updatedAt: true,
+          owner: { select: { name: true, email: true } },
+          lastEditedBy: { select: { name: true, email: true } },
+          history: {
+            select: { id: true, title: true, editedByName: true, createdAt: true },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+          },
+          _count: { select: { history: true } },
+        },
+      },
+    },
+  }),
+);
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const lead = await prisma.lead.findUnique({ where: { id }, select: { name: true } });
+  const lead = await getLead(id);
   return { title: lead ? `${lead.name} — Lead` : "Lead — Admin" };
 }
 
@@ -24,32 +57,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
   const session = await auth();
 
   const [lead, staffUsers] = await Promise.all([
-    prisma.lead.findUnique({
-      where: { id },
-      include: {
-        activities: { orderBy: { performedAt: "desc" } },
-        assignedTo: { select: { id: true, name: true, email: true } },
-        booking: { select: { id: true, status: true, amount: true, travelDate: true, guestName: true } },
-        itinerary: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            locked: true,
-            createdAt: true,
-            updatedAt: true,
-            owner: { select: { name: true, email: true } },
-            lastEditedBy: { select: { name: true, email: true } },
-            history: {
-              select: { id: true, title: true, editedByName: true, createdAt: true },
-              orderBy: { createdAt: "desc" },
-              take: 20,
-            },
-            _count: { select: { history: true } },
-          },
-        },
-      },
-    }),
+    getLead(id),
     prisma.user.findMany({
       where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
       select: { id: true, name: true, email: true },
@@ -68,10 +76,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
           take: 10,
         })
       : Promise.resolve([]),
-      prisma.siteSettings.findUnique({
-        where: { id: "singleton" },
-        select: { gstRates: true },
-      }),
+      getSiteSettings(),
   ]);
   const gstRates = parseGstRates(settings?.gstRates);
 

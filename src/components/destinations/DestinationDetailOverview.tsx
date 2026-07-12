@@ -23,8 +23,8 @@ export function DestinationDetailOverview({ name, description, features = [] }: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[17px] font-bold">About {name}</h2>
-      <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-foreground/75">
+      <h2 className="text-[18px] font-bold">About {name}</h2>
+      <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-foreground/75">
         {description}
       </p>
       {features.length > 0 && (
@@ -42,8 +42,8 @@ export function DestinationDetailOverview({ name, description, features = [] }: 
                 <path d={feature.icon} />
               </svg>
             </span>
-            <p className="mt-3 text-[13.5px] font-bold">{feature.title}</p>
-            <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted-foreground">{feature.description}</p>
+            <p className="mt-3 text-[14px] font-bold">{feature.title}</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{feature.description}</p>
           </motion.div>
         ))}
       </div>

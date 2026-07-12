@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Lock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { BookingServicesClient } from "@/components/admin/bookings/BookingServicesClient";
@@ -115,10 +116,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
  };
 
 
- const settings = await prisma.siteSettings.findUnique({
-   where: { id: "singleton" },
-   select: { gstRates: true },
- });
+ const settings = await getSiteSettings();
  const gstRates = parseGstRates(settings?.gstRates);
 
 

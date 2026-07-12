@@ -24,7 +24,7 @@ export function CampaignActivities({ title, activities }: CampaignActivitiesProp
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
-            className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
+            className="text-[12px] font-extrabold tracking-[0.24em] text-camp-accent"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -75,7 +75,7 @@ export function CampaignActivities({ title, activities }: CampaignActivitiesProp
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
             <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/10 text-white opacity-0 backdrop-blur-xl transition duration-300 group-hover:opacity-100"><ArrowRight className="h-4 w-4" strokeWidth={2.2} /></span>
-            <p className="absolute inset-x-0 bottom-0 p-5 text-[15px] font-bold text-white transition duration-300 group-hover:-translate-y-1">
+            <p className="absolute inset-x-0 bottom-0 p-5 text-[16px] font-bold text-white transition duration-300 group-hover:-translate-y-1">
               {activity.title}
             </p>
           </motion.article>

@@ -243,7 +243,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Ref", "Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -263,7 +263,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                   <tr key={lead.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === lead.id && "bg-red-500/5")}>
                     {/* Ref */}
                     <td className="px-4 py-3">
-                      <span className="font-mono text-[10px] font-semibold text-foreground" title={lead.id}>
+                      <span className="font-mono text-[12px] font-semibold text-foreground" title={lead.id}>
                         #{lead.id.slice(-8).toUpperCase()}
                       </span>
                     </td>
@@ -272,9 +272,9 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                     <td className="px-4 py-3">
                       <div className="min-w-0">
                         <p className="font-semibold text-foreground text-xs truncate max-w-[160px]">{lead.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{lead.phone}</p>
+                        <p className="text-[12px] text-muted-foreground">{lead.phone}</p>
                         {lead.email && (
-                          <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">{lead.email}</p>
+                          <p className="text-[12px] text-muted-foreground truncate max-w-[160px]">{lead.email}</p>
                         )}
                       </div>
                     </td>
@@ -286,7 +286,7 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                           <p className="text-xs font-medium text-foreground truncate max-w-[140px]">
                             {lead.assignedTo.name ?? "—"}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+                          <p className="text-[12px] text-muted-foreground truncate max-w-[140px]">
                             {lead.assignedTo.email}
                           </p>
                         </div>
@@ -297,14 +297,14 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
 
                     {/* Status */}
                     <td className="px-4 py-3">
-                      <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[lead.status])}>
+                      <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[lead.status])}>
                         {lead.status.replace(/_/g, " ")}
                       </span>
                     </td>
 
                     {/* Source */}
                     <td className="px-4 py-3">
-                      <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
+                      <span className="text-[12px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
                         {SOURCE_LABELS[lead.source]}
                       </span>
                     </td>
@@ -321,13 +321,13 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                           <button
                             onClick={() => handleDelete(lead.id)}
                             disabled={isPending}
-                            className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
                           >
                             {isPending ? "…" : "Delete"}
                           </button>
                           <button
                             onClick={() => setConfirmDelete(null)}
-                            className="text-[10px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
+                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
                           >
                             Cancel
                           </button>

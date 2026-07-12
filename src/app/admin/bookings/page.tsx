@@ -15,12 +15,30 @@ export default async function AdminBookingsPage() {
   // Cancellation/refund are admin-only business actions (server-enforced too).
   const isAdmin = role === "ADMIN" || role === "SUPERADMIN";
 
+  // Only the first page (matching BookingsClient's default page size) is
+  // fetched server-side for a fast initial paint — every subsequent
+  // page/search/filter change is handled client-side via /api/bookings,
+  // the same already-existing paginated endpoint, instead of the previous
+  // approach of loading (and silently capping at) the first 100 rows.
   const [rows, totalCount] = await Promise.all([
     prisma.booking.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: "desc" },
-      take: 100,
-      include: {
+      take: 10,
+      select: {
+        id: true,
+        razorpayOrderId: true,
+        razorpayPayId: true,
+        status: true,
+        amount: true,
+        discountType: true,
+        discountValue: true,
+        travelDate: true,
+        travellers: true,
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        createdAt: true,
         tour: { select: { title: true, slug: true, coverImage: true } },
         user: { select: { name: true, email: true } },
         payments: { select: { amount: true } },

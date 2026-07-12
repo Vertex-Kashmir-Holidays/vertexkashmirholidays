@@ -5,6 +5,7 @@ import { imgSrc } from '@/lib/placeholder';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronRight, Clock } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface ThingToDo {
   id: string;
@@ -39,11 +40,11 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
       transition={{ duration: 0.5 }}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-[17px] font-bold">Things to Do in {name}</h2>
-        <a href="/activities" className="flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline">
+        <h2 className="text-[18px] font-bold">Things to Do in {name}</h2>
+        <Link href="/activities" className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
           View all
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-        </a>
+        </Link>
       </div>
       <div className="relative mt-5">
         <div className="snap-row scrollbar-none flex gap-4 overflow-x-auto pb-1" id="thingsRow">
@@ -65,13 +66,13 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
                   className="object-cover transition duration-500 group-hover:scale-105"
                 />
                 {thing.duration && (
-                  <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-brand-dark/80 px-2 py-0.5 text-[9.5px] font-bold text-white backdrop-blur">
+                  <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-brand-dark/80 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
                     <Clock className="h-2.5 w-2.5" /> {thing.duration}
                   </span>
                 )}
               </div>
-              <h3 className="mt-3 text-[13.5px] font-bold leading-snug">{thing.title}</h3>
-              <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted-foreground">{thing.description}</p>
+              <h3 className="mt-3 text-[14px] font-bold leading-snug">{thing.title}</h3>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{thing.description}</p>
             </motion.article>
           ))}
         </div>

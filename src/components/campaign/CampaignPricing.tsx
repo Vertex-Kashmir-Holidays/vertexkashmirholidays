@@ -25,7 +25,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20" id="pricing">
       <div className="text-center">
         <motion.p
-          className="text-[11px] font-extrabold tracking-[0.24em] text-camp-accent"
+          className="text-[12px] font-extrabold tracking-[0.24em] text-camp-accent"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -43,7 +43,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
           Pick how you want to travel
         </motion.h2>
         <motion.p
-          className="mt-3 text-[13px] text-muted-foreground"
+          className="mt-3 text-[14px] text-muted-foreground"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
@@ -70,18 +70,18 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
                 >
                   <div className="flex h-full flex-col">
                     {tier.tag && (
-                      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-grad px-4 py-1.5 text-[10px] font-extrabold tracking-wide text-white ring-inner">
+                      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-grad px-4 py-1.5 text-[12px] font-extrabold tracking-wide text-white ring-inner">
                         {tier.tag}
                       </span>
                     )}
-                    <h3 className="text-[17px] font-bold text-foreground">{tier.name}</h3>
-                    <p className="mt-1 text-[12px] text-muted-foreground">{tier.desc}</p>
+                    <h3 className="text-[18px] font-bold text-foreground">{tier.name}</h3>
+                    <p className="mt-1 text-[14px] text-muted-foreground">{tier.desc}</p>
                     <p className="mt-5 flex items-baseline gap-2">
                       <span className="text-[30px] font-extrabold text-foreground">{tier.price}</span>
-                      {tier.old && <span className="text-[13px] text-muted-foreground line-through">{tier.old}</span>}
-                      <span className="text-[11px] text-muted-foreground">/person</span>
+                      {tier.old && <span className="text-[14px] text-muted-foreground line-through">{tier.old}</span>}
+                      <span className="text-[12px] text-muted-foreground">/person</span>
                     </p>
-                    <ul className="mt-5 flex-1 space-y-2.5 text-[12.5px] text-foreground/75">
+                    <ul className="mt-5 flex-1 space-y-2.5 text-[14px] text-foreground/75">
                       {tier.feats.map((feat, j) => (
                         <li key={j} className="flex items-start gap-2.5">
                           <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-glow" strokeWidth={2.5} />
@@ -95,7 +95,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
                         popular
                           ? 'sweep bg-accent-grad text-white ring-inner shadow-glow'
                           : 'glass text-foreground hover:bg-foreground/10'
-                      } mt-7 rounded-xl py-3 text-center text-[13px] font-extrabold transition hover:scale-[1.02]`}
+                      } mt-7 rounded-xl py-3 text-center text-[14px] font-extrabold transition hover:scale-[1.02]`}
                     >
                       Choose {tier.name}
                     </Link>

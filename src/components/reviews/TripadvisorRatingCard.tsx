@@ -21,7 +21,7 @@ export function TripadvisorRatingCard({ widget, profileUrl }: { widget: ParsedTr
           href={profileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 text-[12px] font-semibold text-primary hover:underline"
+          className="mt-1 text-[14px] font-semibold text-primary hover:underline"
         >
           View on Tripadvisor →
         </a>

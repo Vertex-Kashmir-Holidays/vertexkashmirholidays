@@ -122,9 +122,9 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
                 <Link href={`/admin/itinerary/${item.id}`} className="min-w-0 flex-1 group">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">{item.title}</p>
-                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", STATUS_STYLES[item.status])}>{item.status}</span>
+                    <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-bold", STATUS_STYLES[item.status])}>{item.status}</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
+                  <p className="mt-1 text-[12px] text-muted-foreground">
                     {showOwner && item.ownerName ? `${item.ownerName} · ` : ""}
                     Updated {new Date(item.updatedAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
@@ -142,8 +142,8 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
                   {canDelete && (
                     confirmDelete === item.id ? (
                       <span className="flex items-center gap-1">
-                        <button onClick={() => remove(item)} disabled={isPending} className="rounded-lg bg-red-600 px-2 py-1 text-[11px] font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm</button>
-                        <button onClick={() => setConfirmDelete(null)} className="rounded-lg border border-border px-2 py-1 text-[11px] font-semibold text-muted-foreground">Cancel</button>
+                        <button onClick={() => remove(item)} disabled={isPending} className="rounded-lg bg-red-600 px-2 py-1 text-[12px] font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm</button>
+                        <button onClick={() => setConfirmDelete(null)} className="rounded-lg border border-border px-2 py-1 text-[12px] font-semibold text-muted-foreground">Cancel</button>
                       </span>
                     ) : (
                       <button onClick={() => setConfirmDelete(item.id)} className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-red-500" aria-label="Delete">
