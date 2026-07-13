@@ -82,6 +82,8 @@ export interface ContactSocialContent {
   text: string | null;
   ctaLabel: string | null;
   ctaHref: string | null;
+  /** Admin-curated "Follow Our Journey" preview grid — 4 fixed slots. */
+  images: (string | null)[];
 }
 
 export interface ContactFormContent {

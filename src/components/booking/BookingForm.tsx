@@ -373,6 +373,24 @@ export function BookingForm({
                 {text}
               </div>
             ))}
+            {/* Theme-matched pair, same block/hidden dark: pattern as <Logo variant="auto">.
+                The inactive variant is display:none from first paint, so the
+                browser never fetches it unless the theme is toggled live;
+                neither carries `priority` since this is below-the-fold. */}
+            <Image
+              src="/gateway/payment-partner-light.webp"
+              alt="Payment processing partner — Razorpay, and accepted cards/wallets"
+              width={1536}
+              height={1024}
+              className="block h-24 w-full object-contain dark:hidden sm:h-28"
+            />
+            <Image
+              src="/gateway/payment-partner-dark.webp"
+              alt="Payment processing partner — Razorpay, and accepted cards/wallets"
+              width={1536}
+              height={1024}
+              className="hidden h-24 w-full object-contain dark:block sm:h-28"
+            />
           </div>
         </div>
 
