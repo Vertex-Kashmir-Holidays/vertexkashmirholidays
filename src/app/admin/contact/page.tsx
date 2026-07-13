@@ -60,6 +60,10 @@ const GROUPS: ContentGroup[] = [
       { key: "socialText", label: "Social text", type: "textarea" },
       { key: "socialCtaLabel", label: "Social CTA label", type: "text" },
       { key: "socialCtaHref", label: "Social CTA link", type: "text" },
+      { key: "socialImage1", label: "Follow Our Journey — photo 1", type: "image" },
+      { key: "socialImage2", label: "Follow Our Journey — photo 2", type: "image" },
+      { key: "socialImage3", label: "Follow Our Journey — photo 3", type: "image" },
+      { key: "socialImage4", label: "Follow Our Journey — photo 4", type: "image" },
     ],
   },
   {

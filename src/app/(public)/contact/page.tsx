@@ -265,6 +265,12 @@ export default async function ContactPage() {
                 text: content?.socialText ?? null,
                 ctaLabel: content?.socialCtaLabel ?? null,
                 ctaHref: content?.socialCtaHref ?? null,
+                images: [
+                  content?.socialImage1 ?? null,
+                  content?.socialImage2 ?? null,
+                  content?.socialImage3 ?? null,
+                  content?.socialImage4 ?? null,
+                ],
               }}
               socials={socialLinks}
             />

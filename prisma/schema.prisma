@@ -50,8 +50,9 @@ model User {
   faqsCreated          Faq[]                @relation("FaqCreatedBy")
   faqsUpdated          Faq[]                @relation("FaqUpdatedBy")
 
-  @@index([email])
+  // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
+  @@index([role, deletedAt])
 }
 
 // One-time recovery codes for staff TOTP MFA — issued once at enrollment
@@ -164,7 +165,7 @@ model EmailOtp {
   verifiedAt     DateTime? // RESET only: set once the OTP code is verified
   resetTokenHash String? // RESET only: bcrypt hash of the one-time token issued after OTP verification
 
-  @@index([email])
+  // email already has a unique index via @unique above — no separate @@index needed.
   @@index([expiresAt])
 }
 
@@ -242,7 +243,7 @@ model Destination {
   tours            TourDestination[]
   activities       ActivityDestination[]
 
-  @@index([slug])
+  // slug already has a unique index via @unique above — no separate @@index needed.
 }
 
 // Things to do — a first-class admin entity linked many-to-many to destinations
@@ -286,7 +287,7 @@ model Activity {
   destinations       ActivityDestination[]
   tours              ActivityTour[]
 
-  @@index([slug])
+  // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([published])
 }
 
@@ -378,7 +379,7 @@ model Tour {
   destinations       TourDestination[]
   activities         ActivityTour[]
 
-  @@index([slug])
+  // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([category])
   @@index([region])
   @@index([published])
@@ -471,6 +472,8 @@ model Booking {
   @@index([tourId])
   @@index([userId])
   @@index([createdAt])
+  @@index([deletedAt, createdAt])
+  @@index([guestEmail])
 }
 
 // A single payment entry against a booking — the booking payment ledger.
@@ -602,6 +605,8 @@ model Lead {
   // Public-form dedupe looks up the most recent lead by normalized phone/email.
   @@index([phone])
   @@index([email])
+  // Booking.leads relation lookups (admin booking detail pages).
+  @@index([bookingId])
 }
 
 enum OfflineConversionPlatform {
@@ -720,7 +725,7 @@ model Blog {
   ogTitle          String?
   ogDescription    String?
 
-  @@index([slug])
+  // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([published])
   @@index([publishedAt])
   @@index([featured])
@@ -774,6 +779,7 @@ model Gallery {
 
   @@index([category])
   @@index([type])
+  @@index([sortOrder, createdAt])
 }
 
 // Long-form legal/policy pages (Terms, Privacy, Refund & Cancellation).
@@ -1093,6 +1099,12 @@ model ContactContent {
   socialText         String?
   socialCtaLabel     String?
   socialCtaHref      String?
+  // Admin-curated "Follow Our Journey" preview grid — 4 fixed slots (matches
+  // the component's hardcoded IG_COUNT), not a live Instagram feed.
+  socialImage1       String?
+  socialImage2       String?
+  socialImage3       String?
+  socialImage4       String?
   formKicker         String?
   formTitle          String?
   formNote           String?
@@ -1270,7 +1282,7 @@ model Campaign {
   updatedAt       DateTime  @updatedAt
   heroImageMobile String?
 
-  @@index([slug])
+  // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([published])
 }
 

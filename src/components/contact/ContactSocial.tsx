@@ -30,8 +30,6 @@ const SOCIAL_META: Record<
   twitter: { label: 'X', bg: 'bg-foreground', Icon: TwitterIcon },
 };
 
-const IG_COUNT = 4;
-
 export function ContactSocial({ content, socials }: ContactSocialProps) {
   // Resolve Instagram href — prefer the social link, fall back to ctaHref
   const igHref =
@@ -71,7 +69,7 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
       )}
       {content.text && <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">{content.text}</p>}
       <div className="mt-4 grid grid-cols-4 gap-2">
-        {Array.from({ length: IG_COUNT }, (_, i) => (
+        {content.images.map((src, i) => (
           <a
             key={i}
             href={igHref}
@@ -81,7 +79,7 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
             className="group relative block aspect-square overflow-hidden rounded-lg"
           >
             <Image
-              src={imgSrc(null)}
+              src={imgSrc(src)}
               alt=""
               fill
               sizes="(max-width: 768px) 25vw, 80px"

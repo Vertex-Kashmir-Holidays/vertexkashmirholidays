@@ -2,6 +2,7 @@
 
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Phone } from 'lucide-react';
 import type { TourCategory } from '@prisma/client';
 import { Logo } from '@/components/brand/Logo';
@@ -155,46 +156,69 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
              </div>
            )}
          </div>
-         <div>
-           <p className="text-sm font-bold text-foreground">Explore</p>
-           <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
-             {priorityCategoryLinks.map((c) => (
-               <li key={c}>
-                 <Link href={`/tours/category/${TOUR_CATEGORY_META[c].slug}`} className="transition hover:text-primary">
-                   {TOUR_CATEGORY_META[c].pageTitle}
-                 </Link>
-               </li>
-             ))}
-             <li>
-               <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
-             </li>
-             <li>
-               {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
-                   script, which only reliably initializes on a fresh page load,
-                   not a client-side (SPA) transition. */}
-               <a href="/reviews" className="transition hover:text-primary">Customer Reviews</a>
-             </li>
-           </ul>
-         </div>
-         <div>
-           <p className="text-sm font-bold text-foreground">Legals</p>
-           <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
-             <li>
-               <Link href="/about" className="transition hover:text-primary">About Us</Link>
-             </li>
-             <li>
-               <Link href="/contact" className="transition hover:text-primary">Contact Us</Link>
-             </li>
-             <li>
-               <Link href="/refund-and-cancellation" className="transition hover:text-primary">Refund &amp; Cancellation</Link>
-             </li>
-             <li>
-               <Link href="/terms-and-conditions" className="transition hover:text-primary">Terms &amp; Conditions</Link>
-             </li>
-             <li>
-               <Link href="/privacy-policy" className="transition hover:text-primary">Privacy Policy</Link>
-             </li>
-           </ul>
+         <div className="md:col-span-2">
+           <div className="grid grid-cols-2 gap-10">
+             <div>
+               <p className="text-sm font-bold text-foreground">Explore</p>
+               <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
+                 {priorityCategoryLinks.map((c) => (
+                   <li key={c}>
+                     <Link href={`/tours/category/${TOUR_CATEGORY_META[c].slug}`} className="transition hover:text-primary">
+                       {TOUR_CATEGORY_META[c].pageTitle}
+                     </Link>
+                   </li>
+                 ))}
+                 <li>
+                   <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
+                 </li>
+                 <li>
+                   {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
+                       script, which only reliably initializes on a fresh page load,
+                       not a client-side (SPA) transition. */}
+                   <a href="/reviews" className="transition hover:text-primary">Customer Reviews</a>
+                 </li>
+               </ul>
+             </div>
+             <div>
+               <p className="text-sm font-bold text-foreground">Legals</p>
+               <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
+                 <li>
+                   <Link href="/about" className="transition hover:text-primary">About Us</Link>
+                 </li>
+                 <li>
+                   <Link href="/contact" className="transition hover:text-primary">Contact Us</Link>
+                 </li>
+                 <li>
+                   <Link href="/refund-and-cancellation" className="transition hover:text-primary">Refund &amp; Cancellation</Link>
+                 </li>
+                 <li>
+                   <Link href="/terms-and-conditions" className="transition hover:text-primary">Terms &amp; Conditions</Link>
+                 </li>
+                 <li>
+                   <Link href="/privacy-policy" className="transition hover:text-primary">Privacy Policy</Link>
+                 </li>
+               </ul>
+             </div>
+           </div>
+           {/* Theme-matched pair, same block/hidden dark: pattern as <Logo variant="auto">.
+               The inactive variant is display:none from first paint, so — unlike
+               `priority` — the browser never fetches it unless the theme is
+               actually toggled live; neither carries `priority` since this is
+               below-the-fold footer content, not LCP-critical. */}
+           <Image
+             src="/gateway/payment-partner-light.webp"
+             alt="Payment processing partner — Razorpay, and accepted cards/wallets"
+             width={1536}
+             height={1024}
+             className="mt-8 block h-24 w-full object-contain dark:hidden sm:h-28"
+           />
+           <Image
+             src="/gateway/payment-partner-dark.webp"
+             alt="Payment processing partner — Razorpay, and accepted cards/wallets"
+             width={1536}
+             height={1024}
+             className="mt-8 hidden h-24 w-full object-contain dark:block sm:h-28"
+           />
          </div>
          <div>
            <p className="text-sm font-bold text-foreground">Get valley updates</p>
