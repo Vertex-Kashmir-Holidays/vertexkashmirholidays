@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Phone, Mail } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/brand';
@@ -16,8 +17,9 @@ export function AboutCTA({ data }: AboutCTAProps) {
   return (
     <section className="mx-auto max-w-[1300px] px-4 py-14 sm:px-6">
       {/* Single cohesive panel: warm-frost glass in light, navy frost in dark.
-          No background image — the prior decorative <img>/left gradient left a
-          grey broken-image block when the asset failed to load. */}
+          The CMS background image is optional and guarded below — an unset
+          image renders nothing (no broken <img> block); a set one shows
+          through the glass-cream frost/blur behind the content. */}
       <motion.div
         className="glass-cream relative isolate overflow-hidden rounded-3xl px-6 py-14 text-center shadow-card sm:px-10 sm:py-16"
         initial={{ opacity: 0, y: 20 }}
@@ -25,6 +27,15 @@ export function AboutCTA({ data }: AboutCTAProps) {
         viewport={{ once: true }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
+        {data.image && (
+          <Image
+            src={data.image}
+            alt=""
+            fill
+            sizes="(max-width: 1300px) 100vw, 1300px"
+            className="-z-10 object-cover"
+          />
+        )}
         {/* Subtle centered glow for depth — decorative only. */}
         <div
           aria-hidden

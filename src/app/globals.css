@@ -263,11 +263,14 @@ body {
 @keyframes marq { to { transform:translateX(-50%); } }
 
 /* Carousel */
-/* touch-action: pan-x tells mobile browsers this row owns horizontal drag
-   gestures, so a swipe that starts here isn't grabbed by the page's vertical
-   scroll instead — without it, touch swipe on these rows can feel dead or
-   only work on a perfectly horizontal drag. */
-.snap-row { scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x; -webkit-overflow-scrolling:touch; }
+/* touch-action: pan-x pan-y tells mobile browsers this row owns both
+   horizontal AND vertical drag gestures natively, so a swipe that starts
+   here is routed to whichever direction it actually moves in — horizontal
+   scrolls the row, vertical falls through to the page's own scroll. Using
+   pan-x alone (the previous value) claimed the row for horizontal panning
+   only, which left vertical swipes starting on the row with no native
+   handler at all — the page wouldn't scroll until the finger left the row. */
+.snap-row { scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
 .snap-row::-webkit-scrollbar { display:none; }
 .snap-row > * { scroll-snap-align:start; }
 

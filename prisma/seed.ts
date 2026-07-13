@@ -1601,7 +1601,7 @@ async function main() {
         "These aren't just words on a page. They're how we run every trip, every day.",
       // Team
       teamKicker: "OUR TEAM",
-      teamTitle: "Locals. Explorers.\nPassionate Hosts.",
+      teamTitle: "Meet the Local Experts Behind Every Journey",
       teamCtaLabel: "Meet Our Full Team",
       teamCtaHref: "#",
       // Journey
