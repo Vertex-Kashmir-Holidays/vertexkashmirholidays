@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // picsum.photos. The domain is env-driven so it follows the deployment.
 const PLACEHOLDER =
   process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE ??
-  "https://vertexkashmirholidays.vercel.app/uploads/general/1782136262740-dy3wqa.svg";
+  "https://vertexkashmirholidays.com/uploads/general/1782136262740-dy3wqa.svg";
 
 async function main() {
   // ── Super admin user ─────────────────────────────────────────────────────────

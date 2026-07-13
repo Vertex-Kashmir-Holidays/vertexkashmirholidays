@@ -10,10 +10,10 @@ const PLACEHOLDER_HOST = (() => {
  try {
    return new URL(
      process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE ??
-       "https://vertexkashmirholidays.vercel.app/uploads/general/1782136262740-dy3wqa.svg",
+       "https://vertexkashmirholidays.com/uploads/general/1782136262740-dy3wqa.svg",
    ).hostname;
  } catch {
-   return "vertexkashmirholidays.vercel.app";
+   return "vertexkashmirholidays.com";
  }
 })();
 

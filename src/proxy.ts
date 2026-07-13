@@ -176,6 +176,16 @@ function withStaticCsp(): NextResponse {
 // so no route's gating behavior changes.
 const authMiddleware = auth((req) => withNonceCsp(req as NextRequest));
 
+// The literal production host. Vercel's default *.vercel.app alias for this
+// project (vertexkashmirholidays.vercel.app) is already 301-redirected to
+// this domain in next.config.ts, but branch preview deployments (random
+// *.vercel.app hashes) are NOT redirected — redirecting those would break
+// preview testing. Google indexed the vercel.app alias in the past because,
+// for a period before that redirect existed, nothing told crawlers the
+// duplicate host shouldn't be indexed. This header is that signal for any
+// host that still isn't the production domain.
+const PRODUCTION_HOST = "vertexkashmirholidays.com";
+
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const needsAuth =
@@ -184,10 +194,24 @@ export default function middleware(req: NextRequest) {
     pathname.startsWith("/api") ||
     pathname === "/login";
 
-  if (needsAuth) {
-    return (authMiddleware as (req: NextRequest) => ReturnType<typeof withNonceCsp>)(req);
+  const response = needsAuth
+    ? (authMiddleware as (req: NextRequest) => ReturnType<typeof withNonceCsp>)(req)
+    : withStaticCsp();
+
+  if (req.headers.get("host") !== PRODUCTION_HOST) {
+    try {
+      // robots.txt disallow alone doesn't stop indexing of a URL Google only
+      // discovers via an external link without crawling it — this header is
+      // the actual directive Google honors once it does crawl the response.
+      response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    } catch {
+      // Response.redirect() (used by the auth.config.ts callbacks) returns a
+      // Response with an immutable header guard — nothing to tag since the
+      // eventual redirect target's own response carries the header instead.
+    }
   }
-  return withStaticCsp();
+
+  return response;
 }
 
 // Match all routes except Next.js internal static assets and image optimisation
