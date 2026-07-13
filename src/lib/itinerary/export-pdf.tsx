@@ -49,7 +49,17 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   const [coverImages, smallImages, logos] = await Promise.all([
     compressMany([data.coverImage].filter(Boolean), { maxWidth: 900, maxHeight: 1300, quality: 0.6 }),
     compressMany(srcs.filter((s) => s !== data.coverImage), { maxWidth: 640, maxHeight: 480, quality: 0.7 }),
-    Promise.all(LOGO_ASSETS.map((src) => fetchAsDataUrl(src).catch(() => ""))),
+    Promise.all(
+      LOGO_ASSETS.map((src) =>
+        fetchAsDataUrl(src).catch((err) => {
+          // Silent-drop fallback stays (one missing brand asset shouldn't
+          // abort the whole export), but log so this doesn't go unnoticed
+          // the way the payment-partner strip did before.
+          console.warn(`[itinerary-pdf] Failed to embed brand asset "${src}" — it will be omitted from the PDF.`, err);
+          return "";
+        }),
+      ),
+    ),
   ]);
   const logoMap: Record<string, string> = {};
   LOGO_ASSETS.forEach((src, i) => {

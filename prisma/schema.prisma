@@ -1025,6 +1025,9 @@ model TeamMember {
   role      String
   bio       String
   image     String
+  // CSS object-position (e.g. "50% 20%") overriding the default face-focused
+  // crop for this member's photo. Null/empty uses the default in AboutTeam.tsx.
+  imageFocus String?
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

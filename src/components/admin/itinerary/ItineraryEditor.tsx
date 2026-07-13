@@ -449,9 +449,13 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
          {/* Thank you */}
          <article className="page overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] bg-white shadow-page dark:border-mute/20 dark:bg-card">
            {/* Payment Options — renders above the Thank You block on the PDF's
-               closing page (see ItineraryPdf.tsx). Same dark panel so this
-               on-screen mirror matches what actually prints. */}
-           <div className="bg-[hsl(158_46%_14%)] p-6 dark:bg-primary/20 sm:p-8">
+               closing page (see ItineraryPdf.tsx). This panel depicts the
+               PDF's own fixed dark-green brand page — not the admin app's
+               light/dark theme — so its background is a literal color, not
+               dark:bg-primary (which resolves to gold in this app's dark
+               theme and made the panel look like a mismatched grey/tan
+               block instead of matching the Thank You panel below it). */}
+           <div className="bg-[hsl(158_46%_14%)] p-6 sm:p-8">
              <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-[hsl(146_35%_55%)]">Payment Options</p>
              <div className="mx-auto mt-2 h-[1.5px] w-10 bg-[hsl(146_35%_55%)]" />
              <div className="mt-6 grid items-center gap-6 sm:grid-cols-[1.2fr_1fr]">
@@ -473,6 +477,10 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                  <p className="mt-2 text-[11px] text-white/60">Scan to pay</p>
                </div>
              </div>
+             {/* Same divider treatment as the PDF's tyDivider (mint, thin,
+                 centered) — separates this section from the Thank You block
+                 below instead of a background-color seam. */}
+             <div className="mx-auto mt-8 h-[2px] w-16 bg-[hsl(146_35%_55%)]" />
            </div>
 
            <div className="grid sm:grid-cols-[1.6fr_1fr]">
@@ -499,7 +507,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                  <p className="flex items-center gap-3"><ItineraryIcon icon="calendar" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.email}</span></p>
                </div>
              </div>
-             <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white dark:bg-primary/20 sm:p-10">
+             <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white sm:p-10">
                <p className="font-script text-4xl leading-none text-[hsl(146_35%_55%)] sm:text-5xl">Thank You!</p>
                <p className="mt-4 max-w-[220px] text-sm leading-relaxed text-white/85">We look forward to hosting you in the paradise on earth.</p>
              </div>

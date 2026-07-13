@@ -156,8 +156,6 @@ export default async function AboutPage() {
         heading={{
           kicker: content?.teamKicker ?? null,
           title: content?.teamTitle ?? null,
-          ctaLabel: content?.teamCtaLabel ?? null,
-          ctaHref: content?.teamCtaHref ?? null,
         }}
         team={team.map((m) => ({
           id: m.id,
@@ -165,6 +163,7 @@ export default async function AboutPage() {
           role: m.role,
           bio: m.bio,
           image: m.image,
+          imageFocus: m.imageFocus ?? null,
         }))}
       />
       <AboutJourney

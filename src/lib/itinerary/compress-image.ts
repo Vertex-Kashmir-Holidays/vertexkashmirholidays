@@ -69,8 +69,12 @@ export async function compressMany(
     unique.map(async (src) => {
       try {
         out[src] = await toCompressedJpeg(src, opts);
-      } catch {
-        // skip unreadable image
+      } catch (err) {
+        // Skip unreadable image (e.g. a broken custom QR URL) rather than
+        // aborting the export — but log it so a silent drop (like the QR
+        // card quietly disappearing) is visible in devtools instead of
+        // looking like an unexplained missing element in the PDF.
+        console.warn(`[itinerary-pdf] Failed to embed image "${src}" — it will be omitted from the PDF.`, err);
       }
     }),
   );

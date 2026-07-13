@@ -179,7 +179,10 @@ const s = StyleSheet.create({
 
   // Payment options — sits above the Thank You block on the closing page,
   // same dark-page palette (mint accents, translucent-white muted text).
-  paySection: { width: "100%", marginBottom: 30 },
+  // No marginBottom here — the tyDivider placed right after this section
+  // (reusing its existing marginTop) supplies the spacing before it, same
+  // treatment the divider already gets between the tagline and company card.
+  paySection: { width: "100%" },
   payHeadWrap: { alignItems: "center", marginBottom: 18 },
   payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: C.mint, textAlign: "center" },
   payKickerLine: { width: 40, height: 1.5, backgroundColor: C.mint, marginTop: 8 },
@@ -228,9 +231,13 @@ function Footer() {
 function SectionHead({ title }: { title: string }) {
   // wrap={false} keeps the heading and its underline together; minPresenceAhead
   // pulls the whole heading to the next page if too little room remains below,
-  // so a heading never strands at the bottom of a sheet.
+  // so a heading never strands at the bottom of a sheet. 160pt covers the
+  // tallest realistic "first block" that follows any of these headings (e.g.
+  // Transportation Info's ~120pt image row) — 90pt measured too small and let
+  // "Transportation Info" render alone at the bottom of a sheet with its
+  // content starting fresh on the next one.
   return (
-    <View style={s.secHeadRow} wrap={false} minPresenceAhead={90}>
+    <View style={s.secHeadRow} wrap={false} minPresenceAhead={160}>
       <Text style={s.secHead}>{title}</Text>
       <View style={s.secLine} />
     </View>
@@ -365,18 +372,32 @@ export function ItineraryPdf({ data, images }: Props) {
           </View>
         ))}
 
-        {/* ACCOMMODATION */}
+        {/* ACCOMMODATION — heading + table header + first row are glued
+            together (wrap={false}) so the heading can never render alone with
+            the table starting fresh on the next sheet. Remaining rows stay
+            individually atomic (wrap={false} each) and are free to continue
+            across a page break between rows. */}
         <View style={s.sectionGap}>
           <SectionHead title="Accommodation Info" />
         </View>
         <View style={s.table}>
-          <View style={s.tHead} wrap={false}>
-            <Text style={[s.th, s.colDest]}>Destination</Text>
-            <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
-            <Text style={[s.th, s.colNights]}>Nights</Text>
-            <Text style={[s.th, s.colRoom]}>Room Type</Text>
+          <View wrap={false}>
+            <View style={s.tHead}>
+              <Text style={[s.th, s.colDest]}>Destination</Text>
+              <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
+              <Text style={[s.th, s.colNights]}>Nights</Text>
+              <Text style={[s.th, s.colRoom]}>Room Type</Text>
+            </View>
+            {data.hotels.length > 0 && (
+              <View style={s.tRow}>
+                <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>{data.hotels[0].destination}</Text>
+                <Text style={[s.td, s.colHotel, { color: C.muted }]}>{data.hotels[0].hotelDetails}</Text>
+                <Text style={[s.td, s.colNights]}>{data.hotels[0].nights}</Text>
+                <Text style={[s.td, s.colRoom]}>{data.hotels[0].roomType}</Text>
+              </View>
+            )}
           </View>
-          {data.hotels.map((h) => (
+          {data.hotels.slice(1).map((h) => (
             <View key={h.id} style={s.tRow} wrap={false}>
               <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>{h.destination}</Text>
               <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
@@ -396,32 +417,55 @@ export function ItineraryPdf({ data, images }: Props) {
           ))}
         </View>
 
-        {/* TRANSPORT + INCLUSIONS/EXCLUSIONS */}
-        <View style={s.sectionGap}>
+        {/* TRANSPORT — short enough to keep fully atomic (heading + row) so
+            it never straddles a page break at all, per the "transportation
+            block" atomic requirement. */}
+        <View style={s.sectionGap} wrap={false}>
           <SectionHead title="Transportation Info" />
-        </View>
-        <View style={s.transportRow} wrap={false}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.transportType}>{data.transportType}</Text>
-            <Text style={s.transportDesc}>{data.transportDesc}</Text>
+          <View style={s.transportRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.transportType}>{data.transportType}</Text>
+              <Text style={s.transportDesc}>{data.transportDesc}</Text>
+            </View>
+            {img(data.transportImage) ? <Image src={img(data.transportImage)} style={s.transportImg} /> : null}
           </View>
-          {img(data.transportImage) ? <Image src={img(data.transportImage)} style={s.transportImg} /> : null}
         </View>
 
+        {/* INCLUSIONS/EXCLUSIONS — each column heading is glued to its first
+            2 items (wrap={false}) so a heading can never end up alone with
+            its list starting fresh on the next sheet; remaining items stay
+            individually atomic and are free to continue across a break
+            between items (never mid-item). */}
         <View style={s.twoCol}>
           <View style={s.col}>
-            <Text style={s.listHead}>Package Inclusions</Text>
-            {data.inc.map((item, i) => (
-              <View key={i} style={s.listRow} wrap={false}>
+            <View wrap={false}>
+              <Text style={s.listHead}>Package Inclusions</Text>
+              {data.inc.slice(0, 2).map((item, i) => (
+                <View key={i} style={s.listRow}>
+                  <Text style={s.bulletInc}>+</Text>
+                  <Text style={s.listText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+            {data.inc.slice(2).map((item, i) => (
+              <View key={i + 2} style={s.listRow} wrap={false}>
                 <Text style={s.bulletInc}>+</Text>
                 <Text style={s.listText}>{item}</Text>
               </View>
             ))}
           </View>
           <View style={s.col}>
-            <Text style={s.listHead}>Package Exclusions</Text>
-            {data.exc.map((item, i) => (
-              <View key={i} style={s.listRow} wrap={false}>
+            <View wrap={false}>
+              <Text style={s.listHead}>Package Exclusions</Text>
+              {data.exc.slice(0, 2).map((item, i) => (
+                <View key={i} style={s.listRow}>
+                  <Text style={s.bulletExc}>x</Text>
+                  <Text style={s.listText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+            {data.exc.slice(2).map((item, i) => (
+              <View key={i + 2} style={s.listRow} wrap={false}>
                 <Text style={s.bulletExc}>x</Text>
                 <Text style={s.listText}>{item}</Text>
               </View>
@@ -486,32 +530,43 @@ export function ItineraryPdf({ data, images }: Props) {
           </View>
         </View>
 
-        <View style={s.brandRow}>
-          {img(LOGO_DARK_SRC) ? (
-            <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />
-          ) : (
-            <>
-              {img(LOGO_SRC) ? (
-                <View style={s.logoBox}>
-                  <Image src={img(LOGO_SRC)} style={s.logoImg} />
-                </View>
-              ) : null}
-              <Text style={s.tyBrandName}>Vertex</Text>
-              <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
-            </>
-          )}
-        </View>
-
-        <Text style={s.tyScript}>Thank You!</Text>
-        <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
-
+        {/* Same divider treatment used below (tyDivider — mint, 64x2)
+            separates the payment section from the Thank You block, instead
+            of relying on margin alone. No panel background here — this and
+            the payment section above both sit directly on tyPage's own dark
+            green, matching the admin preview. */}
         <View style={s.tyDivider} />
 
-        <Text style={s.tyCompany}>{CONTACT.company}</Text>
-        <Text style={s.tyReg}>{CONTACT.reg}</Text>
-        <Text style={s.tyInfo}>{CONTACT.phone}</Text>
-        <Text style={s.tyInfo}>{CONTACT.address}</Text>
-        <Text style={s.tyInfo}>{CONTACT.email}</Text>
+        {/* Thank-you content — kept as one atomic group (wrap={false}) so it
+            can never straddle a page break. */}
+        <View wrap={false}>
+          <View style={s.brandRow}>
+            {img(LOGO_DARK_SRC) ? (
+              <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />
+            ) : (
+              <>
+                {img(LOGO_SRC) ? (
+                  <View style={s.logoBox}>
+                    <Image src={img(LOGO_SRC)} style={s.logoImg} />
+                  </View>
+                ) : null}
+                <Text style={s.tyBrandName}>Vertex</Text>
+                <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
+              </>
+            )}
+          </View>
+
+          <Text style={s.tyScript}>Thank You!</Text>
+          <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
+
+          <View style={s.tyDivider} />
+
+          <Text style={s.tyCompany}>{CONTACT.company}</Text>
+          <Text style={s.tyReg}>{CONTACT.reg}</Text>
+          <Text style={s.tyInfo}>{CONTACT.phone}</Text>
+          <Text style={s.tyInfo}>{CONTACT.address}</Text>
+          <Text style={s.tyInfo}>{CONTACT.email}</Text>
+        </View>
       </Page>
     </Document>
   );

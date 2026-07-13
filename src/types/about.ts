@@ -65,13 +65,13 @@ export interface TeamMemberData {
   role: string;
   bio: string;
   image: string;
+  /** CSS object-position (e.g. "50% 20%") for this member's photo crop. */
+  imageFocus: string | null;
 }
 
 export interface AboutTeamHeading {
   kicker: string | null;
   title: string | null;
-  ctaLabel: string | null;
-  ctaHref: string | null;
 }
 
 export interface JourneyMilestoneData {
