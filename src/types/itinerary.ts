@@ -76,6 +76,10 @@ export const itineraryDataSchema = z.object({
   exc: z.array(z.string()),
   pay: z.array(z.string()),
   cancel: z.array(z.string()),
+
+  // Payment QR shown on the closing PDF page. Optional — omitted/empty means
+  // "use the bundled default QR" (see src/lib/itinerary/payment.ts).
+  paymentQrUrl: z.string().optional(),
 });
 
 export type ItineraryMeta = z.infer<typeof metaSchema>;

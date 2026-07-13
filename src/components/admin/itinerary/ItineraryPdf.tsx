@@ -14,6 +14,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
+import { getPaymentQr } from "@/lib/itinerary/payment";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -22,10 +23,17 @@ import { PDF_CONTACT } from "@/lib/pdf/contact";
 export const LOGO_SRC = "/brand/png/icon/vertex-icon-512.png";
 export const LOGO_DARK_SRC = "/brand/png/horizontal/vertex-horizontal-dark-1600w.png";
 export const LOGO_LIGHT_SRC = "/brand/png/horizontal/vertex-horizontal-light-1600w.png";
+// Payment-partner strip on the closing page — pre-recolored for the dark
+// background, transparent bg. Pre-converted to PNG (checked in alongside the
+// original .webp) because react-pdf/pdfkit can't embed WebP; PNG also keeps
+// the transparency, unlike the JPEG path used for photos (which mattes
+// transparency to white — wrong on a dark page).
+export const PAYMENT_PARTNER_SRC = "/gateway/payment-partner-dark.png";
 
-// Every brand asset the PDF embeds — the export pipeline fetches each as a data
-// URL up-front so a missing one degrades gracefully instead of throwing.
-export const LOGO_ASSETS = [LOGO_SRC, LOGO_DARK_SRC, LOGO_LIGHT_SRC] as const;
+// Every lossless brand asset the PDF embeds — the export pipeline fetches each
+// as a data URL up-front (no re-encoding, so PNG transparency survives) so a
+// missing one degrades gracefully instead of throwing.
+export const LOGO_ASSETS = [LOGO_SRC, LOGO_DARK_SRC, LOGO_LIGHT_SRC, PAYMENT_PARTNER_SRC] as const;
 
 const C = {
   green: "#1d5c43",
@@ -169,6 +177,21 @@ const s = StyleSheet.create({
   policyCard: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
   policyHead: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 8 },
 
+  // Payment options — sits above the Thank You block on the closing page,
+  // same dark-page palette (mint accents, translucent-white muted text).
+  paySection: { width: "100%", marginBottom: 30 },
+  payHeadWrap: { alignItems: "center", marginBottom: 18 },
+  payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: C.mint, textAlign: "center" },
+  payKickerLine: { width: 40, height: 1.5, backgroundColor: C.mint, marginTop: 8 },
+  payRow: { flexDirection: "row", alignItems: "center", gap: 16, width: "100%" },
+  payPartnerCol: { width: "54%", alignItems: "center", justifyContent: "center" },
+  payPartnerColFull: { width: "100%" },
+  payPartnerImg: { width: "100%", height: 58, objectFit: "contain" },
+  payQrCol: { width: "42%", alignItems: "center", justifyContent: "center" },
+  payQrCard: { backgroundColor: C.white, borderRadius: 12, padding: 12 },
+  payQrImg: { width: 100, height: 100, objectFit: "contain" },
+  payQrCaption: { fontSize: 8.5, color: "rgba(255,255,255,0.6)", textAlign: "center", marginTop: 8, letterSpacing: 0.5 },
+
   // Thank you — full-bleed dark page, everything centred.
   tyPage: { backgroundColor: C.greenDark, alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 50 },
   tyBrandName: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.white },
@@ -222,6 +245,7 @@ interface Props {
 
 export function ItineraryPdf({ data, images }: Props) {
   const img = (src: string) => images[src];
+  const qrDataUrl = img(getPaymentQr(data));
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -433,8 +457,35 @@ export function ItineraryPdf({ data, images }: Props) {
         <Footer />
       </Page>
 
-      {/* THANK YOU — centred on a full dark page. */}
+      {/* THANK YOU — centred on a full dark page. Payment Options sits above
+          the (untouched) Thank You block as a second block in the same
+          centred column, so the page still reads as one balanced group. */}
       <Page size="A4" style={[s.page, s.tyPage]}>
+        <View style={s.paySection} wrap={false}>
+          <View style={s.payHeadWrap}>
+            <Text style={s.payKicker}>PAYMENT OPTIONS</Text>
+            <View style={s.payKickerLine} />
+          </View>
+          <View style={s.payRow}>
+            <View style={qrDataUrl ? s.payPartnerCol : [s.payPartnerCol, s.payPartnerColFull]}>
+              {img(PAYMENT_PARTNER_SRC) ? <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} /> : null}
+            </View>
+            {/* QR card hidden entirely (rather than shown broken) if the
+                itinerary's custom QR — or the default — failed to load.
+                No advance-amount callout: the payment policy's advance % only
+                ever exists as free-text bullets (data.pay), never as
+                structured data, so there's nothing safe to compute from. */}
+            {qrDataUrl ? (
+              <View style={s.payQrCol}>
+                <View style={s.payQrCard}>
+                  <Image src={qrDataUrl} style={s.payQrImg} />
+                </View>
+                <Text style={s.payQrCaption}>Scan to pay</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
         <View style={s.brandRow}>
           {img(LOGO_DARK_SRC) ? (
             <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />

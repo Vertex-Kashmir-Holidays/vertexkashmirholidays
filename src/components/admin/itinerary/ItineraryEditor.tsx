@@ -1,557 +1,518 @@
-"use client";
+/* eslint-disable jsx-a11y/alt-text */
+// PDF rendering of the itinerary using @react-pdf/renderer primitives.
+// One <Page> per section; long sections wrap across physical pages.
+// Text is vector (selectable); images are pre-compressed JPEG data URLs passed
+// in via `images` (keyed by the original src) so the document stays under 1 MB.
 
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
-import { Toolbar } from "./Toolbar";
-import { ItineraryCover } from "./ItineraryCover";
-import { LeadTripSync } from "./LeadTripSync";
-import { EditableField } from "./EditableField";
-import { ImagePicker } from "./ImagePicker";
-import { ItineraryIcon } from "./icons";
-import { PDF_CONTACT } from "@/lib/pdf/contact";
-import { DEFAULT_ITINERARY_DATA } from "./default-data";
-import { downloadItineraryPdf } from "@/lib/itinerary/export-pdf";
-import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
 import {
- type ItineraryData,
- type ItineraryStatus,
- type ItineraryDay,
- genId,
-} from "@/types/itinerary";
-
-
-type ListKey = "inc" | "exc" | "pay" | "cancel";
-
-
-/** Structured lead data for the two-way trip-detail sync (lead-linked itineraries). */
-export interface LeadSyncData {
- leadId: string;
- name: string;
- category: string | null;
- adults: number;
- children: number | null;
- startDate: string; // yyyy-mm-dd or ""
- endDate: string; // yyyy-mm-dd or ""
-}
-
-
-interface ItineraryEditorProps {
- id?: string;
- initialData: ItineraryData;
- initialTitle: string;
- initialStatus: ItineraryStatus;
- canSave?: boolean;
- leadSync?: LeadSyncData;
- /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
- lockCost?: boolean;
-}
-
-
-export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, canSave = true, leadSync, lockCost = false }: ItineraryEditorProps) {
- const router = useRouter();
- const [data, setData] = useState<ItineraryData>(initialData);
- const [title, setTitle] = useState(initialTitle);
- const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
- const [isSaving, setSaving] = useState(false);
- const [isExporting, setExporting] = useState(false);
-
-
- /* ---------- cover ---------- */
- const updateCover = (field: keyof ItineraryData, value: string) =>
-   setData((p) => ({ ...p, [field]: value }));
-
-
- /* ---------- lead trip sync (two-way) ---------- */
- // Recompute the lead-derived cover/duration fields live when trip details change.
- const handleLeadFacts = (facts: LeadItinerarySeed) =>
-   setData((p) => applyLeadFactsToItinerary(p, facts));
-
-
- /* ---------- info bar ---------- */
- const updateInfo = (id: string, field: "label" | "value", value: string) =>
-   setData((p) => ({ ...p, info: p.info.map((it) => (it.id === id ? { ...it, [field]: value } : it)) }));
-
-
- /* ---------- days ---------- */
- const updateDay = (dayId: string, updates: Partial<ItineraryDay>) =>
-   setData((p) => ({ ...p, days: p.days.map((d) => (d.id === dayId ? { ...d, ...updates } : d)) }));
-
-
- const addDay = () =>
-   setData((p) => ({
-     ...p,
-     days: [
-       ...p.days,
-       { id: genId("day"), title: "New Day", body: "Describe the day's plan…", image: "/itinerary/srinagar.webp", meta: [{ id: genId("m"), label: "Meals", value: "Breakfast" }, { id: genId("m"), label: "Stay", value: "Srinagar" }] },
-     ],
-   }));
-
-
- const removeDay = (dayId: string) =>
-   setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
-
-
- const addMeta = (dayId: string) =>
-   setData((p) => ({
-     ...p,
-     days: p.days.map((d) => (d.id === dayId ? { ...d, meta: [...d.meta, { id: genId("m"), label: "Detail", value: "Value" }] } : d)),
-   }));
-
-
- const updateMeta = (dayId: string, metaId: string, field: "label" | "value", value: string) =>
-   setData((p) => ({
-     ...p,
-     days: p.days.map((d) =>
-       d.id === dayId ? { ...d, meta: d.meta.map((m) => (m.id === metaId ? { ...m, [field]: value } : m)) } : d,
-     ),
-   }));
-
-
- const removeMeta = (dayId: string, metaId: string) =>
-   setData((p) => ({
-     ...p,
-     days: p.days.map((d) => (d.id === dayId ? { ...d, meta: d.meta.filter((m) => m.id !== metaId) } : d)),
-   }));
-
-
- /* ---------- hotels ---------- */
- const updateHotel = (hid: string, field: "destination" | "hotelDetails" | "nights" | "roomType", value: string) =>
-   setData((p) => ({ ...p, hotels: p.hotels.map((h) => (h.id === hid ? { ...h, [field]: value } : h)) }));
-
-
- const addHotel = () =>
-   setData((p) => ({ ...p, hotels: [...p.hotels, { id: genId("h"), destination: "New Destination (1N)", hotelDetails: "Hotel name / Similar", nights: "1", roomType: "Double Sharing" }] }));
-
-
- const removeHotel = (hid: string) =>
-   setData((p) => ({ ...p, hotels: p.hotels.filter((h) => h.id !== hid) }));
-
-
- /* ---------- trust ---------- */
- const updateTrust = (tid: string, field: "title" | "subtitle", value: string) =>
-   setData((p) => ({ ...p, trust: p.trust.map((t) => (t.id === tid ? { ...t, [field]: value } : t)) }));
-
-
- /* ---------- lists ---------- */
- const addListItem = (key: ListKey, item: string) => setData((p) => ({ ...p, [key]: [...p[key], item] }));
- const updateListItem = (key: ListKey, idx: number, value: string) =>
-   setData((p) => ({ ...p, [key]: p[key].map((v, i) => (i === idx ? value : v)) }));
- const removeListItem = (key: ListKey, idx: number) =>
-   setData((p) => ({ ...p, [key]: p[key].filter((_, i) => i !== idx) }));
-
-
- /* ---------- actions ---------- */
- async function handleSave() {
-   if (!title.trim()) {
-     toast.error("Please enter an itinerary title.");
-     return;
-   }
-   setSaving(true);
-   try {
-     const payload = { title: title.trim(), status, data };
-     const res = await fetch(id ? `/api/itineraries/${id}` : "/api/itineraries", {
-       method: id ? "PATCH" : "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(payload),
-     });
-     const json = await res.json();
-     if (!res.ok) throw new Error(json.error ?? "Save failed");
-     toast.success("Itinerary saved.");
-     if (!id && json.id) {
-       router.replace(`/admin/itinerary/${json.id}`);
-     } else {
-       router.refresh();
-     }
-   } catch (err) {
-     toast.error(err instanceof Error ? err.message : "Save failed");
-   } finally {
-     setSaving(false);
-   }
- }
-
-
- async function handleExport() {
-   setExporting(true);
-   try {
-     const { bytes } = await downloadItineraryPdf(data);
-     const kb = Math.round(bytes / 1024);
-     if (bytes > 1024 * 1024) {
-       toast.warning(`PDF generated (${(bytes / 1048576).toFixed(2)} MB) — above the 1 MB target.`);
-     } else {
-       toast.success(`PDF downloaded (${kb} KB).`);
-     }
-   } catch (err) {
-     toast.error(err instanceof Error ? err.message : "PDF export failed");
-   } finally {
-     setExporting(false);
-   }
- }
-
-
- function handleReset() {
-   if (confirm("Reset all content to the default itinerary? Unsaved changes will be lost.")) {
-     setData(DEFAULT_ITINERARY_DATA);
-   }
- }
-
-
- const greenHead = "font-serif text-2xl font-bold text-[hsl(156_40%_21%)] dark:text-primary";
- const pageCard = "page rounded-xl border border-[hsl(40_14%_87%)] bg-white p-5 shadow-page dark:border-mute/20 dark:bg-card sm:p-8 md:p-12";
- const addBtn = "addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-3 py-1.5 text-xs font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print";
-
-
- return (
-   <div className="pb-8">
-     <Toolbar
-       title={title}
-       onTitleChange={setTitle}
-       status={status}
-       onStatusChange={setStatus}
-       onSave={handleSave}
-       onExport={handleExport}
-       onReset={handleReset}
-       isSaving={isSaving}
-       isExporting={isExporting}
-       canSave={canSave}
-     />
-
-
-     <div className="px-3 py-7 sm:px-5">
-       <div className="mx-auto max-w-[820px] space-y-8">
-         {/* Lead trip-detail sync (lead-linked, editable itineraries only) */}
-         {leadSync && canSave && (
-           <LeadTripSync leadId={leadSync.leadId} initial={leadSync} onFacts={handleLeadFacts} />
-         )}
-
-
-         {/* Cover */}
-         <ItineraryCover
-           data={data}
-           onUpdate={(field, value) => updateCover(field, value)}
-           onImageChange={(src) => updateCover("coverImage", src)}
-           readOnlyDerived={!!leadSync}
-           lockCost={lockCost}
-         />
-
-
-         {/* Destinations + Daily Itinerary */}
-         <article className={pageCard}>
-           <div className="text-center">
-             <ItineraryIcon icon="map-pin" className="mx-auto h-7 w-7 text-[hsl(156_40%_21%)] dark:text-primary" />
-             <p className="font-serif mt-2 text-xl font-semibold text-ink/70 dark:text-muted-foreground">Destinations</p>
-             <EditableField
-               value={data.destinations}
-               onValueChange={(v) => updateCover("destinations", v)}
-               className="font-serif mt-1 text-center text-3xl font-bold text-[hsl(156_40%_21%)] dark:text-primary"
-             />
-           </div>
-
-
-           {/* Info bar */}
-           <div className="mt-8 grid grid-cols-2 gap-y-6 rounded-2xl border border-[hsl(40_14%_87%)] bg-white px-3 py-6 shadow-soft dark:border-mute/20 dark:bg-card sm:grid-cols-4 sm:px-7 sm:py-7">
-             {data.info.map((it, i) => (
-               <div key={it.id} className={`flex flex-col items-center px-2 text-center sm:px-4 ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
-                 <ItineraryIcon icon={it.icon} className="h-6 w-6 text-[hsl(156_40%_21%)] dark:text-primary" />
-                 <EditableField value={it.value} onValueChange={(v) => updateInfo(it.id, "value", v)} className="mt-2.5 text-center text-sm font-bold" />
-                 <EditableField value={it.label} onValueChange={(v) => updateInfo(it.id, "label", v)} className="text-center text-[12px] text-mute dark:text-muted-foreground" />
-               </div>
-             ))}
-           </div>
-
-
-           <div className="mt-10 flex items-center gap-4">
-             <h2 className={greenHead}>Daily Itinerary</h2>
-             <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
-           </div>
-
-
-           <div className="mt-7 space-y-8">
-             {data.days.map((day, dayIdx) => (
-               <div key={day.id} className="dayitem group relative flex gap-5">
-                 <button onClick={() => removeDay(day.id)} className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print">
-                   <Trash2 className="h-3 w-3" />
-                 </button>
-                 <div className="flex flex-col items-center">
-                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[hsl(156_40%_21%)] text-center text-white dark:bg-primary">
-                     <span className="text-[10px] font-semibold tracking-wide">DAY</span>
-                     <span className="text-[16px] font-extrabold">{String(dayIdx + 1).padStart(2, "0")}</span>
-                   </span>
-                   <span className="dotline mt-1 w-px flex-1" />
-                 </div>
-                 <div className="flex flex-1 flex-col items-start gap-5 pb-2 md:flex-row md:flex-nowrap">
-                   <div className="min-w-0 flex-1">
-                     <EditableField value={day.title} onValueChange={(v) => updateDay(day.id, { title: v })} className="font-serif text-xl font-bold text-ink dark:text-foreground" />
-                     <EditableField value={day.body} onValueChange={(v) => updateDay(day.id, { body: v })} className="mt-1.5 block text-sm leading-relaxed text-ink/70 dark:text-muted-foreground" rows={3} />
-                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 sm:gap-x-9">
-                       {day.meta.map((m) => (
-                         <div key={m.id} className="metaitem group/m relative flex items-start gap-2">
-                           <button onClick={() => removeMeta(day.id, m.id)} className="absolute -left-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white text-xs group-hover/m:flex no-print">×</button>
-                           <ItineraryIcon icon={m.label.trim().toLowerCase()} className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary" />
-                           <div className="leading-tight">
-                             <EditableField value={m.label} onValueChange={(v) => updateMeta(day.id, m.id, "label", v)} className="w-[96px] text-[12px] font-bold sm:w-[110px]" />
-                             <EditableField value={m.value} onValueChange={(v) => updateMeta(day.id, m.id, "value", v)} className="w-[120px] text-[12px] text-mute dark:text-muted-foreground sm:w-[150px]" />
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                     <button onClick={() => addMeta(day.id)} className="addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-2.5 py-1 text-[12px] font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print">
-                       <Plus className="h-3 w-3" /> detail
-                     </button>
-                   </div>
-                   <div className="relative w-full shrink-0 md:w-auto">
-                     <ImagePicker value={day.image} onChange={(src) => updateDay(day.id, { image: src })} className="absolute right-2 top-2 z-10" label="Replace" />
-                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                     <img src={day.image} alt={day.title} className="h-[120px] w-full rounded-xl object-cover shadow-soft md:w-[210px]" loading="lazy" />
-                   </div>
-                 </div>
-               </div>
-             ))}
-           </div>
-
-
-           <button onClick={addDay} className="addbtn mt-7 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-4 py-2 text-sm font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print">
-             <Plus className="h-4 w-4" /> Add Day
-           </button>
-
-
-           <Footer />
-         </article>
-
-
-         {/* Accommodation */}
-         <article className={pageCard}>
-           <div className="flex items-center gap-4">
-             <h2 className={greenHead}>Accommodation Info</h2>
-             <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
-           </div>
-
-
-           <div className="acc-wrap mt-6 overflow-x-auto rounded-xl border border-[hsl(40_14%_87%)] dark:border-mute/20">
-             <table className="w-full min-w-[520px] text-left text-sm">
-               <thead className="bg-[hsl(150_28%_92%)] text-xs font-bold text-[hsl(156_40%_21%)] dark:bg-muted/30 dark:text-primary">
-                 <tr>
-                   <th className="px-5 py-3.5">Destination</th>
-                   <th className="px-5 py-3.5">Hotel Details</th>
-                   <th className="w-[70px] px-5 py-3.5">Nights</th>
-                   <th className="w-[120px] px-5 py-3.5">Room Type</th>
-                   <th className="w-10 px-2 no-print"></th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-[hsl(40_14%_87%)] dark:divide-mute/20">
-                 {data.hotels.map((h, idx) => (
-                   <tr key={h.id} className={idx % 2 === 0 ? "bg-white dark:bg-card" : "bg-[hsl(150_28%_92%)]/30 dark:bg-muted/10"}>
-                     <td className="px-5 py-3"><EditableField value={h.destination} onValueChange={(v) => updateHotel(h.id, "destination", v)} className="font-semibold" /></td>
-                     <td className="px-5 py-3"><EditableField value={h.hotelDetails} onValueChange={(v) => updateHotel(h.id, "hotelDetails", v)} className="text-ink/75 dark:text-muted-foreground" /></td>
-                     <td className="px-5 py-3"><EditableField value={h.nights} onValueChange={(v) => updateHotel(h.id, "nights", v)} /></td>
-                     <td className="px-5 py-3"><EditableField value={h.roomType} onValueChange={(v) => updateHotel(h.id, "roomType", v)} /></td>
-                     <td className="px-2 no-print"><button onClick={() => removeHotel(h.id)} className="text-rose-500 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button></td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-
-
-           <button onClick={addHotel} className={addBtn}><Plus className="h-3 w-3" /> Add Hotel</button>
-           <p className="mt-2.5 text-[12px] italic text-mute dark:text-muted-foreground">*All accommodations are subject to availability at the time of confirmation.</p>
-
-
-           <div className="mt-7 grid grid-cols-2 gap-y-6 rounded-2xl bg-[hsl(40_33%_96%)] px-3 py-6 dark:bg-muted/20 sm:grid-cols-4 sm:px-7">
-             {data.trust.map((t, i) => (
-               <div key={t.id} className={`flex flex-col items-center px-2 text-center sm:px-3 ${i ? "sm:border-l sm:border-[hsl(40_14%_87%)] dark:sm:border-mute/20" : ""}`}>
-                 <ItineraryIcon icon={t.icon} className="h-6 w-6 text-[hsl(156_40%_21%)] dark:text-primary" />
-                 <EditableField value={t.title} onValueChange={(v) => updateTrust(t.id, "title", v)} className="mt-2 text-center text-xs font-bold" />
-                 <EditableField value={t.subtitle} onValueChange={(v) => updateTrust(t.id, "subtitle", v)} className="text-center text-[12px] leading-snug text-mute dark:text-muted-foreground" />
-               </div>
-             ))}
-           </div>
-
-
-           <Footer />
-         </article>
-
-
-         {/* Transport + Inclusions/Exclusions */}
-         <article className={pageCard}>
-           <div className="flex items-center gap-4">
-             <h2 className={greenHead}>Transportation Info</h2>
-             <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
-           </div>
-           <div className="mt-6 grid items-center gap-6 sm:grid-cols-[1fr_1.1fr]">
-             <div className="flex items-start gap-4">
-               <ItineraryIcon icon="car" className="mt-1 h-9 w-9 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary" />
-               <div className="min-w-0">
-                 <EditableField value={data.transportType} onValueChange={(v) => updateCover("transportType", v)} className="text-base font-bold" />
-                 <EditableField value={data.transportDesc} onValueChange={(v) => updateCover("transportDesc", v)} className="mt-1 text-sm text-mute dark:text-muted-foreground" />
-               </div>
-             </div>
-             <div className="relative">
-               <ImagePicker value={data.transportImage} onChange={(src) => updateCover("transportImage", src)} className="absolute right-2 top-2 z-10" label="Replace" />
-               {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img src={data.transportImage} alt="Vehicle" className="h-[170px] w-full rounded-xl object-cover shadow-soft" loading="lazy" />
-             </div>
-           </div>
-
-
-           <div className="mt-11 grid gap-10 sm:grid-cols-2">
-             <ListColumn
-               title="Package Inclusions"
-               items={data.inc}
-               tone="inc"
-               onUpdate={(i, v) => updateListItem("inc", i, v)}
-               onRemove={(i) => removeListItem("inc", i)}
-               onAdd={() => addListItem("inc", "New inclusion item")}
-               addLabel="Add inclusion"
-             />
-             <ListColumn
-               title="Package Exclusions"
-               items={data.exc}
-               tone="exc"
-               onUpdate={(i, v) => updateListItem("exc", i, v)}
-               onRemove={(i) => removeListItem("exc", i)}
-               onAdd={() => addListItem("exc", "New exclusion item")}
-               addLabel="Add exclusion"
-             />
-           </div>
-
-
-           <Footer />
-         </article>
-
-
-         {/* Terms */}
-         <article className={pageCard}>
-           <h2 className="font-serif text-3xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">Terms &amp; Policies</h2>
-           <div className="mt-8 grid gap-7 sm:grid-cols-2">
-             <PolicyCard
-               title="Payment Policy"
-               items={data.pay}
-               onUpdate={(i, v) => updateListItem("pay", i, v)}
-               onRemove={(i) => removeListItem("pay", i)}
-               onAdd={() => addListItem("pay", "New policy point")}
-             />
-             <PolicyCard
-               title="Cancellation Policy"
-               items={data.cancel}
-               onUpdate={(i, v) => updateListItem("cancel", i, v)}
-               onRemove={(i) => removeListItem("cancel", i)}
-               onAdd={() => addListItem("cancel", "New policy point")}
-             />
-           </div>
-           <Footer />
-         </article>
-
-
-         {/* Thank you */}
-         <article className="page overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] bg-white shadow-page dark:border-mute/20 dark:bg-card">
-           <div className="grid sm:grid-cols-[1.6fr_1fr]">
-             <div className="p-6 sm:p-10">
-               <div className="flex items-center">
-                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img
-                   src="/brand/png/horizontal/vertex-horizontal-light-1600w.png"
-                   alt="Vertex Kashmir Holidays"
-                   className="h-12 w-auto object-contain dark:hidden"
-                 />
-                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img
-                   src="/brand/png/horizontal/vertex-horizontal-dark-1600w.png"
-                   alt="Vertex Kashmir Holidays"
-                   className="hidden h-12 w-auto object-contain dark:block"
-                 />
-               </div>
-               <p className="font-serif mt-4 text-xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">{PDF_CONTACT.company}</p>
-               <p className="text-sm text-mute dark:text-muted-foreground">{PDF_CONTACT.reg}</p>
-               <div className="mt-7 space-y-3 text-sm">
-                 <p className="flex items-center gap-3"><ItineraryIcon icon="support" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.phone}</span></p>
-                 <p className="flex items-center gap-3"><ItineraryIcon icon="map-pin" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.address}</span></p>
-                 <p className="flex items-center gap-3"><ItineraryIcon icon="calendar" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.email}</span></p>
-               </div>
-             </div>
-             <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white dark:bg-primary/20 sm:p-10">
-               <p className="font-script text-4xl leading-none text-[hsl(146_35%_55%)] sm:text-5xl">Thank You!</p>
-               <p className="mt-4 max-w-[220px] text-sm leading-relaxed text-white/85">We look forward to hosting you in the paradise on earth.</p>
-             </div>
-           </div>
-         </article>
-       </div>
-     </div>
-   </div>
- );
-}
-
+  Document,
+  Page,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+} from "@react-pdf/renderer";
+import type { ItineraryData } from "@/types/itinerary";
+import { PDF_CONTACT } from "@/lib/pdf/contact";
+import { getPaymentQr } from "@/lib/itinerary/payment";
+
+// Brand assets. Each data URL is supplied through the `images` map (keyed by
+// these paths). The icon doubles as the faint per-page watermark; the
+// horizontal lockups are the primary logo — dark-bg (white text) variant for
+// the cover/thank-you pages, light-bg (dark text) variant for the body header.
+export const LOGO_SRC = "/brand/png/icon/vertex-icon-512.png";
+export const LOGO_DARK_SRC = "/brand/png/horizontal/vertex-horizontal-dark-1600w.png";
+export const LOGO_LIGHT_SRC = "/brand/png/horizontal/vertex-horizontal-light-1600w.png";
+// Payment-partner strip on the closing page — pre-recolored for the dark
+// background, transparent bg. Pre-converted to PNG (checked in alongside the
+// original .webp) because react-pdf/pdfkit can't embed WebP; PNG also keeps
+// the transparency, unlike the JPEG path used for photos (which mattes
+// transparency to white — wrong on a dark page).
+export const PAYMENT_PARTNER_SRC = "/gateway/payment-partner-dark.png";
+
+// Every lossless brand asset the PDF embeds — the export pipeline fetches each
+// as a data URL up-front (no re-encoding, so PNG transparency survives) so a
+// missing one degrades gracefully instead of throwing.
+export const LOGO_ASSETS = [LOGO_SRC, LOGO_DARK_SRC, LOGO_LIGHT_SRC, PAYMENT_PARTNER_SRC] as const;
+
+const C = {
+  green: "#1d5c43",
+  greenDark: "#10261b",
+  mint: "#6abf8e",
+  lightGreen: "#e3f0e9",
+  cream: "#f7f4ee",
+  border: "#e4e0d8",
+  ink: "#2b2b2b",
+  muted: "#7a7a72",
+  rose: "#e11d48",
+  white: "#ffffff",
+};
+
+// Company contact details, reused by the page footer and the closing
+// Thank-You page — sourced from the shared PDF_CONTACT (src/lib/pdf/assets.ts)
+// so this never drifts from the invoice PDF's copy again.
+const CONTACT = {
+  ...PDF_CONTACT,
+  phonePrimary: "+91-7889577789", // single number for the compact page footer
+};
+
+const s = StyleSheet.create({
+  // NOTE: no page-level `lineHeight`. A unitless lineHeight here is inherited and
+  // resolved against the 10pt base size, squashing every line box to ~14.5pt —
+  // which makes large display text (titles, price) overlap the next element.
+  // Multi-line body styles set their own lineHeight where readable spacing matters.
+  page: { paddingTop: 58, paddingBottom: 40, paddingHorizontal: 40, fontSize: 10, color: C.ink, fontFamily: "Helvetica" },
+
+  // Fixed brand header repeated on every physical sheet of the body page.
+  header: { position: "absolute", top: 20, left: 40, right: 40, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 8 },
+  headerLogo: { width: 120, height: 30, objectFit: "contain" },
+  headerTag: { fontSize: 7.5, color: C.muted, letterSpacing: 1 },
+
+  // Faint centred icon watermark — sits behind body content on every sheet.
+  watermark: { position: "absolute", top: 250, left: 116, width: 360, height: 360, opacity: 0.045 },
+  watermarkImg: { width: 360, height: 360, objectFit: "contain" },
+
+  footer: { position: "absolute", bottom: 14, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1.5, borderTopColor: C.green, paddingTop: 7 },
+  footerLeft: { flexDirection: "row", alignItems: "center", gap: 5, width: "30%" },
+  footerDotMark: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.mint },
+  footerBrand: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.green, letterSpacing: 0.4 },
+  footerContact: { flex: 1, textAlign: "center", fontSize: 7, color: C.muted },
+  footerDot: { color: C.mint, fontFamily: "Helvetica-Bold" },
+  footerPage: { width: "30%", textAlign: "right", fontSize: 7.5, color: C.green, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
+
+  // Cover — every block is absolutely positioned over the full-bleed image so
+  // the cover has zero in-flow height and can never overflow onto a 2nd page.
+  cover: { padding: 0 },
+  coverImg: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" },
+  coverOverlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(12,28,22,0.58)" },
+  coverBrand: { position: "absolute", top: 44, left: 44, right: 44, flexDirection: "row", alignItems: "center", gap: 8 },
+  coverTitleBlock: { position: "absolute", top: 210, left: 44, right: 44 },
+  coverBottom: { position: "absolute", bottom: 44, left: 44, right: 44 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logoBox: { width: 34, height: 34, borderRadius: 6, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  logoImg: { width: 28, height: 28, objectFit: "contain" },
+  // Horizontal brand lockup used on the cover (dark overlay) and thank-you page.
+  coverLogo: { width: 188, height: 47, objectFit: "contain" },
+  tyLogo: { width: 200, height: 50, objectFit: "contain" },
+  brandName: { fontSize: 20, fontFamily: "Helvetica-Bold", color: C.white },
+  brandSub: { fontSize: 8, letterSpacing: 2, color: "rgba(255,255,255,0.85)" },
+  coverTitle: { fontSize: 58, fontFamily: "Helvetica-Bold", color: C.white, letterSpacing: 2 },
+  coverScript: { fontSize: 34, color: C.mint, marginTop: 2 },
+  durationRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 },
+  durationText: { fontSize: 11, letterSpacing: 3, color: C.white, fontFamily: "Helvetica-Bold" },
+  preparedLabel: { fontSize: 9, letterSpacing: 4, textAlign: "center", color: "rgba(255,255,255,0.7)" },
+  preparedName: { fontSize: 28, fontFamily: "Helvetica-Bold", textAlign: "center", color: C.white, marginTop: 4 },
+  coverGrid: { flexDirection: "row", marginTop: 22, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.25)", paddingTop: 16 },
+  coverGridCol: { flex: 1, paddingRight: 10, alignItems: "center" },
+  coverGridValue: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
+  coverGridLabel: { fontSize: 8, letterSpacing: 1, color: "rgba(255,255,255,0.65)", marginTop: 3, textAlign: "center" },
+  costBox: { marginTop: 18, backgroundColor: "rgba(16,38,27,0.88)", borderRadius: 10, paddingVertical: 16, paddingHorizontal: 12, alignItems: "center" },
+  costValue: { fontSize: 24, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
+  costLabel: { fontSize: 9, letterSpacing: 3, color: "rgba(255,255,255,0.7)", marginTop: 4, textAlign: "center" },
+
+  // Section headings
+  section: { marginBottom: 8 },
+  sectionGap: { marginTop: 26 },
+  secHeadRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  secHead: { fontSize: 18, fontFamily: "Helvetica-Bold", color: C.green },
+  secLine: { flex: 1, height: 1, backgroundColor: C.border },
+
+  centerHead: { textAlign: "center", marginBottom: 8 },
+  destLabel: { fontSize: 12, fontFamily: "Helvetica-Bold", color: C.muted, textAlign: "center" },
+  destValue: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center", marginTop: 2 },
+
+  // Info bar
+  infoBar: { flexDirection: "row", borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 14, marginTop: 14, marginBottom: 22 },
+  infoCell: { flex: 1, alignItems: "center", paddingHorizontal: 8, textAlign: "center" },
+  infoValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.ink, textAlign: "center", marginTop: 4 },
+  infoLabel: { fontSize: 7.5, color: C.muted, textAlign: "center", marginTop: 2 },
+
+  // Day
+  day: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  dayBadge: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
+  dayBadgeKicker: { fontSize: 6, color: C.white, fontFamily: "Helvetica-Bold" },
+  dayBadgeNum: { fontSize: 13, color: C.white, fontFamily: "Helvetica-Bold" },
+  dayBody: { flex: 1 },
+  dayTitle: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink },
+  dayText: { fontSize: 9.5, color: "#555", marginTop: 3, lineHeight: 1.45 },
+  metaWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
+  metaItem: { width: "33%", marginBottom: 4, paddingRight: 6 },
+  metaLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green },
+  metaValue: { fontSize: 8, color: C.muted, lineHeight: 1.4 },
+  dayImg: { width: 120, height: 80, borderRadius: 8, objectFit: "cover" },
+
+  // Table
+  table: { borderWidth: 1, borderColor: C.border, borderRadius: 8, overflow: "hidden", marginTop: 6 },
+  tHead: { flexDirection: "row", backgroundColor: C.lightGreen },
+  th: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green, padding: 7 },
+  tRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border },
+  td: { fontSize: 9, padding: 7, color: C.ink, lineHeight: 1.4 },
+  colDest: { width: "26%" },
+  colHotel: { width: "44%" },
+  colNights: { width: "13%" },
+  colRoom: { width: "17%" },
+  note: { fontSize: 8, color: C.muted, fontStyle: "italic", marginTop: 6 },
+
+  // Trust strip
+  trust: { flexDirection: "row", backgroundColor: C.cream, borderRadius: 12, paddingVertical: 14, marginTop: 16 },
+  trustCell: { flex: 1, alignItems: "center", paddingHorizontal: 6, textAlign: "center" },
+  trustTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.ink, textAlign: "center" },
+  trustSub: { fontSize: 7.5, color: C.muted, textAlign: "center", marginTop: 1 },
+
+  // Transport
+  transportRow: { flexDirection: "row", gap: 14, alignItems: "center", marginBottom: 22 },
+  transportImg: { width: 200, height: 120, borderRadius: 8, objectFit: "cover" },
+  transportType: { fontSize: 12, fontFamily: "Helvetica-Bold", color: C.ink },
+  transportDesc: { fontSize: 9.5, color: C.muted, marginTop: 2 },
+
+  // Two columns (inc/exc, policies)
+  twoCol: { flexDirection: "row", gap: 24 },
+  col: { flex: 1 },
+  listHead: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.green, marginBottom: 8 },
+  listRow: { flexDirection: "row", gap: 6, marginBottom: 4 },
+  bulletInc: { width: 8, fontSize: 9, color: C.green, fontFamily: "Helvetica-Bold" },
+  bulletExc: { width: 8, fontSize: 9, color: C.rose, fontFamily: "Helvetica-Bold" },
+  listText: { flex: 1, fontSize: 9.5, color: "#444", lineHeight: 1.4 },
+
+  policyCard: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
+  policyHead: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 8 },
+
+  // Payment options — sits above the Thank You block on the closing page,
+  // same dark-page palette (mint accents, translucent-white muted text).
+  paySection: { width: "100%", marginBottom: 30 },
+  payHeadWrap: { alignItems: "center", marginBottom: 18 },
+  payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: C.mint, textAlign: "center" },
+  payKickerLine: { width: 40, height: 1.5, backgroundColor: C.mint, marginTop: 8 },
+  payRow: { flexDirection: "row", alignItems: "center", gap: 16, width: "100%" },
+  payPartnerCol: { width: "54%", alignItems: "center", justifyContent: "center" },
+  payPartnerColFull: { width: "100%" },
+  payPartnerImg: { width: "100%", height: 58, objectFit: "contain" },
+  payQrCol: { width: "42%", alignItems: "center", justifyContent: "center" },
+  payQrCard: { backgroundColor: C.white, borderRadius: 12, padding: 12 },
+  payQrImg: { width: 100, height: 100, objectFit: "contain" },
+  payQrCaption: { fontSize: 8.5, color: "rgba(255,255,255,0.6)", textAlign: "center", marginTop: 8, letterSpacing: 0.5 },
+
+  // Thank you — full-bleed dark page, everything centred.
+  tyPage: { backgroundColor: C.greenDark, alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 50 },
+  tyBrandName: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.white },
+  tyBrandSub: { fontSize: 8, letterSpacing: 2, color: C.mint },
+  tyScript: { fontSize: 46, color: C.mint, marginTop: 30, textAlign: "center" },
+  tyMsg: { fontSize: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 14, lineHeight: 1.5 },
+  tyDivider: { width: 64, height: 2, backgroundColor: C.mint, marginTop: 30, marginBottom: 28 },
+  tyCompany: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
+  tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", textAlign: "center", marginTop: 4 },
+  tyInfo: { fontSize: 10.5, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 7 },
+});
 
 function Footer() {
- return (
-   <div className="print-foot mt-10 border-t border-[hsl(40_14%_87%)] pt-3 text-center text-[10px] tracking-wide text-mute dark:border-mute/20">
-     Vertex Kashmir Holidays · Kashmir Escape Itinerary
-   </div>
- );
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <View style={s.footer} fixed>
+      <View style={s.footerLeft}>
+        <View style={s.footerDotMark} />
+        <Text style={s.footerBrand}>Vertex Kashmir Holidays</Text>
+      </View>
+      <Text style={s.footerContact}>
+        {CONTACT.phonePrimary}
+        <Text style={s.footerDot}>{"   ·   "}</Text>
+        {CONTACT.email}
+      </Text>
+      <Text
+        style={s.footerPage}
+        render={({ pageNumber, totalPages }) => `${pad(pageNumber)} / ${pad(totalPages)}`}
+      />
+    </View>
+  );
 }
 
-
-function ListColumn({
- title, items, tone, onUpdate, onRemove, onAdd, addLabel,
-}: {
- title: string;
- items: string[];
- tone: "inc" | "exc";
- onUpdate: (i: number, v: string) => void;
- onRemove: (i: number) => void;
- onAdd: () => void;
- addLabel: string;
-}) {
- return (
-   <div>
-     <h3 className="font-serif text-[22px] font-bold text-[hsl(156_40%_21%)] dark:text-primary">{title}</h3>
-     <ul className="mt-5 space-y-2.5 text-sm text-ink/85 dark:text-muted-foreground">
-       {items.map((item, idx) => (
-         <li key={idx} className="listrow group relative flex items-start gap-2.5 pr-6">
-           <span className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}>
-             <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-               {tone === "inc" ? <path d="M20 6 9 17l-5-5" /> : <path d="M18 6 6 18M6 6l12 12" />}
-             </svg>
-           </span>
-           <EditableField value={item} onValueChange={(v) => onUpdate(idx, v)} className="flex-1" />
-           <button onClick={() => onRemove(idx)} className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"><Trash2 className="h-3.5 w-3.5" /></button>
-         </li>
-       ))}
-     </ul>
-     <button onClick={onAdd} className="addbtn mt-4 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-3 py-1.5 text-xs font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print">
-       <Plus className="h-3 w-3" /> {addLabel}
-     </button>
-   </div>
- );
+function SectionHead({ title }: { title: string }) {
+  // wrap={false} keeps the heading and its underline together; minPresenceAhead
+  // pulls the whole heading to the next page if too little room remains below,
+  // so a heading never strands at the bottom of a sheet.
+  return (
+    <View style={s.secHeadRow} wrap={false} minPresenceAhead={90}>
+      <Text style={s.secHead}>{title}</Text>
+      <View style={s.secLine} />
+    </View>
+  );
 }
 
+interface Props {
+  data: ItineraryData;
+  /** original src -> compressed JPEG data URL */
+  images: Record<string, string>;
+}
 
-function PolicyCard({
- title, items, onUpdate, onRemove, onAdd,
-}: {
- title: string;
- items: string[];
- onUpdate: (i: number, v: string) => void;
- onRemove: (i: number) => void;
- onAdd: () => void;
-}) {
- return (
-   <div className="policy-card rounded-2xl border border-[hsl(40_14%_87%)] bg-white p-6 shadow-soft dark:border-mute/20 dark:bg-card">
-     <h3 className="text-base font-bold">{title}</h3>
-     <ul className="mt-4 space-y-2.5 text-sm leading-relaxed text-ink/80 dark:text-muted-foreground">
-       {items.map((item, idx) => (
-         <li key={idx} className="group relative flex items-start gap-2 pr-6">
-           <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[hsl(156_40%_21%)] dark:bg-primary" />
-           <EditableField value={item} onValueChange={(v) => onUpdate(idx, v)} className="flex-1 text-xs" />
-           <button onClick={() => onRemove(idx)} className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"><Trash2 className="h-3 w-3" /></button>
-         </li>
-       ))}
-     </ul>
-     <button onClick={onAdd} className="addbtn mt-4 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-3 py-1.5 text-xs font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print">
-       <Plus className="h-3 w-3" /> Add point
-     </button>
-   </div>
- );
+export function ItineraryPdf({ data, images }: Props) {
+  const img = (src: string) => images[src];
+  const qrDataUrl = img(getPaymentQr(data));
+
+  return (
+    <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
+      {/* COVER — full-bleed image with absolutely-positioned overlay content.
+          The image + overlay are `fixed` (out of flow) so a page-tall image
+          can't trigger a page break that would push the text onto a 2nd sheet. */}
+      <Page size="A4" style={[s.page, s.cover]}>
+        {img(data.coverImage) ? <Image src={img(data.coverImage)} style={s.coverImg} fixed /> : null}
+        <View style={s.coverOverlay} fixed />
+
+        <View style={s.coverBrand}>
+          {img(LOGO_DARK_SRC) ? (
+            <Image src={img(LOGO_DARK_SRC)} style={s.coverLogo} />
+          ) : (
+            <>
+              {img(LOGO_SRC) ? (
+                <View style={s.logoBox}>
+                  <Image src={img(LOGO_SRC)} style={s.logoImg} />
+                </View>
+              ) : null}
+              <Text style={s.brandName}>Vertex</Text>
+              <Text style={s.brandSub}>KASHMIR HOLIDAYS</Text>
+            </>
+          )}
+        </View>
+
+        <View style={s.coverTitleBlock}>
+          <Text style={s.coverTitle}>{data.coverTitle}</Text>
+          <Text style={s.coverScript}>{data.subtitle}</Text>
+          <View style={s.durationRow}>
+            <View style={{ width: 30, height: 1, backgroundColor: "rgba(255,255,255,0.6)" }} />
+            <Text style={s.durationText}>{data.duration}</Text>
+          </View>
+        </View>
+
+        <View style={s.coverBottom}>
+          <Text style={s.preparedLabel}>PREPARED FOR</Text>
+          <Text style={s.preparedName}>{data.preparedFor}</Text>
+
+          <View style={s.coverGrid}>
+            <View style={s.coverGridCol}>
+              <Text style={s.coverGridValue}>{data.travelDates}</Text>
+              <Text style={s.coverGridLabel}>TRAVEL DATES</Text>
+            </View>
+            <View style={s.coverGridCol}>
+              <Text style={s.coverGridValue}>{data.travelers}</Text>
+              <Text style={s.coverGridLabel}>TRAVELLERS</Text>
+            </View>
+            <View style={s.coverGridCol}>
+              <Text style={s.coverGridValue}>{data.packageType}</Text>
+              <Text style={s.coverGridLabel}>PACKAGE TYPE</Text>
+            </View>
+          </View>
+
+          <View style={s.costBox}>
+            <Text style={s.costValue}>{data.totalCost}</Text>
+            <Text style={s.costLabel}>TOTAL PACKAGE COST</Text>
+          </View>
+        </View>
+      </Page>
+
+      {/* BODY — one continuous page so content flows and fills each sheet
+          instead of leaving a near-empty page after every section. */}
+      <Page size="A4" style={s.page}>
+        {/* Faint icon watermark behind all content — fixed so it repeats on
+            every physical sheet this flowing page spans. */}
+        {img(LOGO_SRC) ? (
+          <View style={s.watermark} fixed>
+            <Image src={img(LOGO_SRC)} style={s.watermarkImg} />
+          </View>
+        ) : null}
+
+        {/* Brand header, fixed to the top of every sheet. */}
+        <View style={s.header} fixed>
+          {img(LOGO_LIGHT_SRC) ? (
+            <Image src={img(LOGO_LIGHT_SRC)} style={s.headerLogo} />
+          ) : (
+            <Text style={s.brandName}>Vertex</Text>
+          )}
+          <Text style={s.headerTag}>YOUR JOURNEY, CRAFTED</Text>
+        </View>
+
+        <View style={s.centerHead}>
+          <Text style={s.destLabel}>Destinations</Text>
+          <Text style={s.destValue}>{data.destinations}</Text>
+        </View>
+
+        <View style={s.infoBar}>
+          {data.info.map((it) => (
+            <View key={it.id} style={s.infoCell}>
+              <Text style={s.infoValue}>{it.value}</Text>
+              <Text style={s.infoLabel}>{it.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <SectionHead title="Daily Itinerary" />
+        {data.days.map((day, i) => (
+          <View key={day.id} style={s.day} wrap={false}>
+            <View style={s.dayBadge}>
+              <Text style={s.dayBadgeKicker}>DAY</Text>
+              <Text style={s.dayBadgeNum}>{String(i + 1).padStart(2, "0")}</Text>
+            </View>
+            <View style={s.dayBody}>
+              <Text style={s.dayTitle}>{day.title}</Text>
+              <Text style={s.dayText}>{day.body}</Text>
+              <View style={s.metaWrap}>
+                {day.meta.map((m) => (
+                  <View key={m.id} style={s.metaItem}>
+                    <Text style={s.metaLabel}>{m.label}</Text>
+                    <Text style={s.metaValue}>{m.value}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            {img(day.image) ? <Image src={img(day.image)} style={s.dayImg} /> : null}
+          </View>
+        ))}
+
+        {/* ACCOMMODATION */}
+        <View style={s.sectionGap}>
+          <SectionHead title="Accommodation Info" />
+        </View>
+        <View style={s.table}>
+          <View style={s.tHead} wrap={false}>
+            <Text style={[s.th, s.colDest]}>Destination</Text>
+            <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
+            <Text style={[s.th, s.colNights]}>Nights</Text>
+            <Text style={[s.th, s.colRoom]}>Room Type</Text>
+          </View>
+          {data.hotels.map((h) => (
+            <View key={h.id} style={s.tRow} wrap={false}>
+              <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>{h.destination}</Text>
+              <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
+              <Text style={[s.td, s.colNights]}>{h.nights}</Text>
+              <Text style={[s.td, s.colRoom]}>{h.roomType}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={s.note}>*All accommodations are subject to availability at the time of confirmation.</Text>
+
+        <View style={s.trust} wrap={false}>
+          {data.trust.map((t) => (
+            <View key={t.id} style={s.trustCell}>
+              <Text style={s.trustTitle}>{t.title}</Text>
+              <Text style={s.trustSub}>{t.subtitle}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* TRANSPORT + INCLUSIONS/EXCLUSIONS */}
+        <View style={s.sectionGap}>
+          <SectionHead title="Transportation Info" />
+        </View>
+        <View style={s.transportRow} wrap={false}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.transportType}>{data.transportType}</Text>
+            <Text style={s.transportDesc}>{data.transportDesc}</Text>
+          </View>
+          {img(data.transportImage) ? <Image src={img(data.transportImage)} style={s.transportImg} /> : null}
+        </View>
+
+        <View style={s.twoCol}>
+          <View style={s.col}>
+            <Text style={s.listHead}>Package Inclusions</Text>
+            {data.inc.map((item, i) => (
+              <View key={i} style={s.listRow} wrap={false}>
+                <Text style={s.bulletInc}>+</Text>
+                <Text style={s.listText}>{item}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={s.col}>
+            <Text style={s.listHead}>Package Exclusions</Text>
+            {data.exc.map((item, i) => (
+              <View key={i} style={s.listRow} wrap={false}>
+                <Text style={s.bulletExc}>x</Text>
+                <Text style={s.listText}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* TERMS & POLICIES */}
+        <View style={s.sectionGap}>
+          <SectionHead title="Terms & Policies" />
+        </View>
+        <View style={s.twoCol}>
+          <View style={s.policyCard} wrap={false}>
+            <Text style={s.policyHead}>Payment Policy</Text>
+            {data.pay.map((item, i) => (
+              <View key={i} style={s.listRow} wrap={false}>
+                <Text style={s.bulletInc}>•</Text>
+                <Text style={s.listText}>{item}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={s.policyCard} wrap={false}>
+            <Text style={s.policyHead}>Cancellation Policy</Text>
+            {data.cancel.map((item, i) => (
+              <View key={i} style={s.listRow} wrap={false}>
+                <Text style={s.bulletExc}>•</Text>
+                <Text style={s.listText}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <Footer />
+      </Page>
+
+      {/* THANK YOU — centred on a full dark page. Payment Options sits above
+          the (untouched) Thank You block as a second block in the same
+          centred column, so the page still reads as one balanced group. */}
+      <Page size="A4" style={[s.page, s.tyPage]}>
+        <View style={s.paySection} wrap={false}>
+          <View style={s.payHeadWrap}>
+            <Text style={s.payKicker}>PAYMENT OPTIONS</Text>
+            <View style={s.payKickerLine} />
+          </View>
+          <View style={s.payRow}>
+            <View style={qrDataUrl ? s.payPartnerCol : [s.payPartnerCol, s.payPartnerColFull]}>
+              {img(PAYMENT_PARTNER_SRC) ? <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} /> : null}
+            </View>
+            {/* QR card hidden entirely (rather than shown broken) if the
+                itinerary's custom QR — or the default — failed to load.
+                No advance-amount callout: the payment policy's advance % only
+                ever exists as free-text bullets (data.pay), never as
+                structured data, so there's nothing safe to compute from. */}
+            {qrDataUrl ? (
+              <View style={s.payQrCol}>
+                <View style={s.payQrCard}>
+                  <Image src={qrDataUrl} style={s.payQrImg} />
+                </View>
+                <Text style={s.payQrCaption}>Scan to pay</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={s.brandRow}>
+          {img(LOGO_DARK_SRC) ? (
+            <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />
+          ) : (
+            <>
+              {img(LOGO_SRC) ? (
+                <View style={s.logoBox}>
+                  <Image src={img(LOGO_SRC)} style={s.logoImg} />
+                </View>
+              ) : null}
+              <Text style={s.tyBrandName}>Vertex</Text>
+              <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
+            </>
+          )}
+        </View>
+
+        <Text style={s.tyScript}>Thank You!</Text>
+        <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
+
+        <View style={s.tyDivider} />
+
+        <Text style={s.tyCompany}>{CONTACT.company}</Text>
+        <Text style={s.tyReg}>{CONTACT.reg}</Text>
+        <Text style={s.tyInfo}>{CONTACT.phone}</Text>
+        <Text style={s.tyInfo}>{CONTACT.address}</Text>
+        <Text style={s.tyInfo}>{CONTACT.email}</Text>
+      </Page>
+    </Document>
+  );
 }

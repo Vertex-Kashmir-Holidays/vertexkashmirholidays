@@ -3,6 +3,7 @@
 import { pdf } from "@react-pdf/renderer";
 import { ItineraryPdf, LOGO_ASSETS } from "@/components/admin/itinerary/ItineraryPdf";
 import { compressMany } from "@/lib/itinerary/compress-image";
+import { getPaymentQr } from "@/lib/itinerary/payment";
 import type { ItineraryData } from "@/types/itinerary";
 
 function slugify(text: string): string {
@@ -38,12 +39,13 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   const srcs = [
     data.coverImage,
     data.transportImage,
+    getPaymentQr(data),
     ...data.days.map((d) => d.image),
   ].filter(Boolean);
 
   // The cover wants a larger, fuller-bleed image; day thumbnails stay tiny.
-  // Brand logos (icon watermark + horizontal lockups) embed losslessly via
-  // data URLs so PNG transparency survives.
+  // Brand assets (icon watermark, horizontal lockups, payment-partner strip)
+  // embed losslessly via data URLs so PNG transparency survives.
   const [coverImages, smallImages, logos] = await Promise.all([
     compressMany([data.coverImage].filter(Boolean), { maxWidth: 900, maxHeight: 1300, quality: 0.6 }),
     compressMany(srcs.filter((s) => s !== data.coverImage), { maxWidth: 640, maxHeight: 480, quality: 0.7 }),
