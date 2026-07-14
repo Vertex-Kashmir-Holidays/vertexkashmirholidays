@@ -87,7 +87,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
   { label: "CRM", keys: ["leads", "itinerary", "bookings"] },
   { label: "Marketing", keys: ["offlineConversions"] },
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
-  { label: "Editorial", keys: ["blogs", "seo", "reviews"] },
+  { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews"] },
   { label: "Admin", keys: ["users", "settings", "roles"] },
 ];
 

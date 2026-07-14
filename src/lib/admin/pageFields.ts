@@ -127,6 +127,7 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "role", label: "Role", type: "text", required: true },
     { key: "bio", label: "Bio", type: "textarea", required: true },
     { key: "image", label: "Photo", type: "image", required: true },
+    { key: "imageFocus", label: "Photo focus (CSS object-position, e.g. 50% 20%)", type: "text", placeholder: "50% 25%" },
   ],
   journeyMilestones: [
     { key: "year", label: "Year", type: "text", required: true },

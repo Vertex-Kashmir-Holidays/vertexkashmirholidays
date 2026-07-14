@@ -15,6 +15,7 @@ import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf } from "@/lib/itinerary/export-pdf";
 import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
+import { getPaymentQr } from "@/lib/itinerary/payment";
 import {
  type ItineraryData,
  type ItineraryStatus,
@@ -447,6 +448,41 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
 
          {/* Thank you */}
          <article className="page overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] bg-white shadow-page dark:border-mute/20 dark:bg-card">
+           {/* Payment Options — renders above the Thank You block on the PDF's
+               closing page (see ItineraryPdf.tsx). This panel depicts the
+               PDF's own fixed dark-green brand page — not the admin app's
+               light/dark theme — so its background is a literal color, not
+               dark:bg-primary (which resolves to gold in this app's dark
+               theme and made the panel look like a mismatched grey/tan
+               block instead of matching the Thank You panel below it). */}
+           <div className="bg-[hsl(158_46%_14%)] p-6 sm:p-8">
+             <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-[hsl(146_35%_55%)]">Payment Options</p>
+             <div className="mx-auto mt-2 h-[1.5px] w-10 bg-[hsl(146_35%_55%)]" />
+             <div className="mt-6 grid items-center gap-6 sm:grid-cols-[1.2fr_1fr]">
+               <div className="flex items-center justify-center">
+                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                 <img src="/gateway/payment-partner-dark.webp" alt="Payment partners" className="h-14 w-auto max-w-full object-contain" />
+               </div>
+               <div className="relative flex flex-col items-center">
+                 <ImagePicker
+                   value={data.paymentQrUrl ?? ""}
+                   onChange={(src) => updateCover("paymentQrUrl", src)}
+                   className="absolute -top-1 right-0 z-10"
+                   label="Replace QR"
+                 />
+                 <div className="rounded-xl bg-white p-2 shadow-soft">
+                   {/* eslint-disable-next-line @next/next/no-img-element */}
+                   <img src={getPaymentQr(data)} alt="Payment QR code" className="h-24 w-24 object-contain" />
+                 </div>
+                 <p className="mt-2 text-[11px] text-white/60">Scan to pay</p>
+               </div>
+             </div>
+             {/* Same divider treatment as the PDF's tyDivider (mint, thin,
+                 centered) — separates this section from the Thank You block
+                 below instead of a background-color seam. */}
+             <div className="mx-auto mt-8 h-[2px] w-16 bg-[hsl(146_35%_55%)]" />
+           </div>
+
            <div className="grid sm:grid-cols-[1.6fr_1fr]">
              <div className="p-6 sm:p-10">
                <div className="flex items-center">
@@ -471,7 +507,7 @@ export function ItineraryEditor({ id, initialData, initialTitle, initialStatus, 
                  <p className="flex items-center gap-3"><ItineraryIcon icon="calendar" className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary" /><span className="font-semibold">{PDF_CONTACT.email}</span></p>
                </div>
              </div>
-             <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white dark:bg-primary/20 sm:p-10">
+             <div className="flex flex-col items-center justify-center bg-[hsl(158_46%_14%)] p-8 text-center text-white sm:p-10">
                <p className="font-script text-4xl leading-none text-[hsl(146_35%_55%)] sm:text-5xl">Thank You!</p>
                <p className="mt-4 max-w-[220px] text-sm leading-relaxed text-white/85">We look forward to hosting you in the paradise on earth.</p>
              </div>

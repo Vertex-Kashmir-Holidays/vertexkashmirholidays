@@ -45,8 +45,6 @@ const GROUPS: ContentGroup[] = [
       { key: "valuesSubtitle", label: "Values subtitle", type: "textarea" },
       { key: "teamKicker", label: "Team kicker", type: "text" },
       { key: "teamTitle", label: "Team title", type: "text" },
-      { key: "teamCtaLabel", label: "Team CTA label", type: "text" },
-      { key: "teamCtaHref", label: "Team CTA link", type: "text" },
       { key: "journeyKicker", label: "Journey kicker", type: "text" },
       { key: "journeyTitle", label: "Journey title", type: "text" },
       { key: "pressLabel", label: "Press label", type: "text" },

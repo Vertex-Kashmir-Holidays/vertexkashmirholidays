@@ -14,6 +14,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
+import { getPaymentQr } from "@/lib/itinerary/payment";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -22,10 +23,17 @@ import { PDF_CONTACT } from "@/lib/pdf/contact";
 export const LOGO_SRC = "/brand/png/icon/vertex-icon-512.png";
 export const LOGO_DARK_SRC = "/brand/png/horizontal/vertex-horizontal-dark-1600w.png";
 export const LOGO_LIGHT_SRC = "/brand/png/horizontal/vertex-horizontal-light-1600w.png";
+// Payment-partner strip on the closing page — pre-recolored for the dark
+// background, transparent bg. Pre-converted to PNG (checked in alongside the
+// original .webp) because react-pdf/pdfkit can't embed WebP; PNG also keeps
+// the transparency, unlike the JPEG path used for photos (which mattes
+// transparency to white — wrong on a dark page).
+export const PAYMENT_PARTNER_SRC = "/gateway/payment-partner-dark.png";
 
-// Every brand asset the PDF embeds — the export pipeline fetches each as a data
-// URL up-front so a missing one degrades gracefully instead of throwing.
-export const LOGO_ASSETS = [LOGO_SRC, LOGO_DARK_SRC, LOGO_LIGHT_SRC] as const;
+// Every lossless brand asset the PDF embeds — the export pipeline fetches each
+// as a data URL up-front (no re-encoding, so PNG transparency survives) so a
+// missing one degrades gracefully instead of throwing.
+export const LOGO_ASSETS = [LOGO_SRC, LOGO_DARK_SRC, LOGO_LIGHT_SRC, PAYMENT_PARTNER_SRC] as const;
 
 const C = {
   green: "#1d5c43",
@@ -39,6 +47,15 @@ const C = {
   rose: "#e11d48",
   white: "#ffffff",
 };
+
+// Exact hex equivalents of the admin editor's literal Tailwind arbitrary
+// values (hsl(158 46% 14%), hsl(146 35% 55%)) used only on the closing page,
+// so it matches ItineraryEditor.tsx's preview precisely instead of the
+// slightly different C.greenDark/C.mint used elsewhere in this document.
+const TY_GREEN = "#133428";
+const TY_MINT = "#64b487";
+// Theme's navy primary (--primary: hsl(214 68% 14%) in light mode).
+const TY_NAVY = "#0b203c";
 
 // Company contact details, reused by the page footer and the closing
 // Thank-You page — sourced from the shared PDF_CONTACT (src/lib/pdf/assets.ts)
@@ -169,16 +186,50 @@ const s = StyleSheet.create({
   policyCard: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
   policyHead: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 8 },
 
-  // Thank you — full-bleed dark page, everything centred.
-  tyPage: { backgroundColor: C.greenDark, alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 50 },
-  tyBrandName: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.white },
-  tyBrandSub: { fontSize: 8, letterSpacing: 2, color: C.mint },
-  tyScript: { fontSize: 46, color: C.mint, marginTop: 30, textAlign: "center" },
-  tyMsg: { fontSize: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 14, lineHeight: 1.5 },
-  tyDivider: { width: 64, height: 2, backgroundColor: C.mint, marginTop: 30, marginBottom: 28 },
-  tyCompany: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
-  tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", textAlign: "center", marginTop: 4 },
-  tyInfo: { fontSize: 10.5, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 7 },
+  // Closing page — mirrors the admin editor's on-screen preview exactly
+  // (ItineraryEditor.tsx "Thank you" article): a full-width dark green
+  // Payment Options block on top, then a two-column row below it — white
+  // left column (logo + company + contact), dark green right column
+  // (Thank You + tagline). TY_GREEN/TY_MINT are the editor's actual literal
+  // hex values (hsl(158 46% 14%) / hsl(146 35% 55%)) — not the same as the
+  // C.greenDark/C.mint used on the cover/footer elsewhere in this file,
+  // which is why this page previously looked like a different, mismatched
+  // green from the admin preview.
+  tyPage: { backgroundColor: C.white, paddingVertical: 60, paddingHorizontal: 40, justifyContent: "center" },
+
+  // Payment options
+  payBlock: { width: "100%", backgroundColor: TY_GREEN, alignItems: "center", paddingVertical: 34, paddingHorizontal: 30 },
+  payHeadWrap: { alignItems: "center", marginBottom: 20 },
+  payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: TY_MINT, textAlign: "center" },
+  payKickerLine: { width: 40, height: 1.5, backgroundColor: TY_MINT, marginTop: 8 },
+  payRow: { flexDirection: "row", alignItems: "center", gap: 16, width: "100%" },
+  payPartnerCol: { width: "54%", alignItems: "center", justifyContent: "center" },
+  payPartnerColFull: { width: "100%" },
+  // 80/135 — both >=30% larger than the previous 58/100, per the "increase
+  // both by at least 30%" request.
+  payPartnerImg: { width: "100%", height: 80, objectFit: "contain" },
+  payQrCol: { width: "42%", alignItems: "center", justifyContent: "center" },
+  payQrCard: { backgroundColor: C.white, borderRadius: 12, padding: 14 },
+  payQrImg: { width: 135, height: 135, objectFit: "contain" },
+  payQrCaption: { fontSize: 8.5, color: "rgba(255,255,255,0.6)", textAlign: "center", marginTop: 8, letterSpacing: 0.5 },
+
+  // Two-column closing row — left column is the theme's navy (--primary:
+  // hsl(214 68% 14%)), so its logo/text switch to the light-on-dark variants
+  // (same white logo used on the cover page) instead of the dark-on-white
+  // ones a white panel would need.
+  tyRow: { flexDirection: "row", width: "100%" },
+  tyLeftCol: { width: "62%", backgroundColor: TY_NAVY, paddingVertical: 30, paddingHorizontal: 28 },
+  tyLeftLogo: { width: 150, height: 34, objectFit: "contain" },
+  tyCompany: { fontSize: 14.5, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 14 },
+  tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", marginTop: 3 },
+  tyContactWrap: { marginTop: 18 },
+  tyInfo: { fontSize: 10, fontFamily: "Helvetica-Bold", color: "rgba(255,255,255,0.9)", marginTop: 9, lineHeight: 1.4 },
+  // Same navy as tyLeftCol — no explicit border was ever drawn between the
+  // two columns, so matching their background removes the seam entirely
+  // instead of needing to hide a line.
+  tyRightCol: { width: "38%", backgroundColor: TY_NAVY, alignItems: "center", justifyContent: "center", paddingVertical: 30, paddingHorizontal: 20 },
+  tyScript: { fontSize: 26, fontFamily: "Helvetica-Bold", color: TY_MINT, textAlign: "center" },
+  tyMsg: { fontSize: 9.5, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 12, lineHeight: 1.5 },
 });
 
 function Footer() {
@@ -222,6 +273,7 @@ interface Props {
 
 export function ItineraryPdf({ data, images }: Props) {
   const img = (src: string) => images[src];
+  const qrDataUrl = img(getPaymentQr(data));
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -433,34 +485,59 @@ export function ItineraryPdf({ data, images }: Props) {
         <Footer />
       </Page>
 
-      {/* THANK YOU — centred on a full dark page. */}
+      {/* CLOSING PAGE — mirrors ItineraryEditor.tsx's "Thank you" preview
+          article exactly: full-width Payment Options block on top, then a
+          two-column row (white left = logo/company/contact, dark green
+          right = Thank You + tagline), both centred vertically on the page
+          with generous top/bottom margin (tyPage.paddingVertical). */}
       <Page size="A4" style={[s.page, s.tyPage]}>
-        <View style={s.brandRow}>
-          {img(LOGO_DARK_SRC) ? (
-            <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />
-          ) : (
-            <>
-              {img(LOGO_SRC) ? (
-                <View style={s.logoBox}>
-                  <Image src={img(LOGO_SRC)} style={s.logoImg} />
+        <View wrap={false}>
+          <View style={s.payBlock}>
+            <View style={s.payHeadWrap}>
+              <Text style={s.payKicker}>PAYMENT OPTIONS</Text>
+              <View style={s.payKickerLine} />
+            </View>
+            <View style={s.payRow}>
+              <View style={qrDataUrl ? s.payPartnerCol : [s.payPartnerCol, s.payPartnerColFull]}>
+                {img(PAYMENT_PARTNER_SRC) ? <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} /> : null}
+              </View>
+              {/* QR card hidden entirely (rather than shown broken) if the
+                  itinerary's custom QR — or the default — failed to load.
+                  No advance-amount callout: the payment policy's advance %
+                  only ever exists as free-text bullets (data.pay), never as
+                  structured data, so there's nothing safe to compute from. */}
+              {qrDataUrl ? (
+                <View style={s.payQrCol}>
+                  <View style={s.payQrCard}>
+                    <Image src={qrDataUrl} style={s.payQrImg} />
+                  </View>
+                  <Text style={s.payQrCaption}>Scan to pay</Text>
                 </View>
               ) : null}
-              <Text style={s.tyBrandName}>Vertex</Text>
-              <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
-            </>
-          )}
+            </View>
+          </View>
+
+          <View style={s.tyRow}>
+            <View style={s.tyLeftCol}>
+              {img(LOGO_DARK_SRC) ? (
+                <Image src={img(LOGO_DARK_SRC)} style={s.tyLeftLogo} />
+              ) : (
+                <Text style={s.brandName}>Vertex</Text>
+              )}
+              <Text style={s.tyCompany}>{CONTACT.company}</Text>
+              <Text style={s.tyReg}>{CONTACT.reg}</Text>
+              <View style={s.tyContactWrap}>
+                <Text style={s.tyInfo}>{CONTACT.phone}</Text>
+                <Text style={s.tyInfo}>{CONTACT.address}</Text>
+                <Text style={s.tyInfo}>{CONTACT.email}</Text>
+              </View>
+            </View>
+            <View style={s.tyRightCol}>
+              <Text style={s.tyScript}>Thank You!</Text>
+              <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
+            </View>
+          </View>
         </View>
-
-        <Text style={s.tyScript}>Thank You!</Text>
-        <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
-
-        <View style={s.tyDivider} />
-
-        <Text style={s.tyCompany}>{CONTACT.company}</Text>
-        <Text style={s.tyReg}>{CONTACT.reg}</Text>
-        <Text style={s.tyInfo}>{CONTACT.phone}</Text>
-        <Text style={s.tyInfo}>{CONTACT.address}</Text>
-        <Text style={s.tyInfo}>{CONTACT.email}</Text>
       </Page>
     </Document>
   );
