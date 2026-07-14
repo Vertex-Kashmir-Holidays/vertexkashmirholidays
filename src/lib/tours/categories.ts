@@ -9,17 +9,69 @@ export interface TourCategoryMeta {
   slug: string;
   shortLabel: string;
   pageTitle: string;
+  // Card copy + emoji for the /tours/category hub grid — kept alongside the
+  // rest of the category metadata rather than a separate lookup table.
+  emoji: string;
+  cardDescription: string;
 }
 
 export const TOUR_CATEGORY_META: Record<TourCategory, TourCategoryMeta> = {
-  HONEYMOON: { slug: "honeymoon-packages", shortLabel: "Honeymoon", pageTitle: "Honeymoon Packages" },
-  FAMILY: { slug: "family-tour-packages", shortLabel: "Family", pageTitle: "Family Tour Packages" },
-  ADVENTURE: { slug: "adventure-tour-packages", shortLabel: "Adventure", pageTitle: "Adventure Tour Packages" },
-  LUXURY: { slug: "luxury-tour-packages", shortLabel: "Luxury", pageTitle: "Luxury Tour Packages" },
-  BUDGET: { slug: "budget-tour-packages", shortLabel: "Budget", pageTitle: "Budget Tour Packages" },
-  GROUP: { slug: "group-tour-packages", shortLabel: "Group", pageTitle: "Group Tour Packages" },
-  PILGRIMAGE: { slug: "pilgrimage-tour-packages", shortLabel: "Pilgrimage", pageTitle: "Pilgrimage Tour Packages" },
-  PREMIUM: { slug: "premium-tour-packages", shortLabel: "Premium", pageTitle: "Premium Tour Packages" },
+  HONEYMOON: {
+    slug: "honeymoon-packages",
+    shortLabel: "Honeymoon",
+    pageTitle: "Honeymoon Packages",
+    emoji: "❤️",
+    cardDescription: "Perfect for couples looking for romantic stays, houseboats and private experiences.",
+  },
+  FAMILY: {
+    slug: "family-tour-packages",
+    shortLabel: "Family",
+    pageTitle: "Family Tour Packages",
+    emoji: "👨‍👩‍👧",
+    cardDescription: "Comfortable holidays designed for families with children and senior travellers.",
+  },
+  ADVENTURE: {
+    slug: "adventure-tour-packages",
+    shortLabel: "Adventure",
+    pageTitle: "Adventure Tour Packages",
+    emoji: "🏔",
+    cardDescription: "For trekking, skiing and outdoor enthusiasts chasing Kashmir's mountain trails.",
+  },
+  LUXURY: {
+    slug: "luxury-tour-packages",
+    shortLabel: "Luxury",
+    pageTitle: "Luxury Tour Packages",
+    emoji: "💎",
+    cardDescription: "Premium hotels, private vehicles and curated experiences for a five-star trip.",
+  },
+  BUDGET: {
+    slug: "budget-tour-packages",
+    shortLabel: "Budget",
+    pageTitle: "Budget Tour Packages",
+    emoji: "🎒",
+    cardDescription: "Well-planned itineraries that cover Kashmir's highlights without overspending.",
+  },
+  GROUP: {
+    slug: "group-tour-packages",
+    shortLabel: "Group",
+    pageTitle: "Group Tour Packages",
+    emoji: "👥",
+    cardDescription: "Affordable shared departures with fixed itineraries, great for friends and colleagues.",
+  },
+  PILGRIMAGE: {
+    slug: "pilgrimage-tour-packages",
+    shortLabel: "Pilgrimage",
+    pageTitle: "Pilgrimage Tour Packages",
+    emoji: "🛕",
+    cardDescription: "Guided trips to Kashmir's shrines and holy sites with comfortable travel arrangements.",
+  },
+  PREMIUM: {
+    slug: "premium-tour-packages",
+    shortLabel: "Premium",
+    pageTitle: "Premium Tour Packages",
+    emoji: "⭐",
+    cardDescription: "A step above standard packages — upgraded stays and a more personalised itinerary.",
+  },
 };
 
 export function getCategoryBySlug(slug: string): TourCategory | null {
