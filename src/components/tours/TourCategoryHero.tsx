@@ -9,12 +9,16 @@ interface TourCategoryHeroProps {
   subtitle: string;
   heroImage?: string | null;
   heroImageMobile?: string | null;
+  // Optional CTA rendered under the subtitle — omitted by every existing
+  // per-category page; only the /tours/category hub passes this.
+  ctaLabel?: string;
+  ctaHref?: string;
 }
 
 // Same SecondaryHero + breadcrumb + HeroLeadCard shell used by every other
 // listing page (Tours, Destinations, Blog, Contact) — kept identical so
 // category pages read as a natural part of the site, not a bolted-on template.
-export function TourCategoryHero({ pageTitle, subtitle, heroImage, heroImageMobile }: TourCategoryHeroProps) {
+export function TourCategoryHero({ pageTitle, subtitle, heroImage, heroImageMobile, ctaLabel, ctaHref }: TourCategoryHeroProps) {
   return (
     <SecondaryHero
       image={heroImage ?? '/hero/gulmarg-lg.webp'}
@@ -43,6 +47,19 @@ export function TourCategoryHero({ pageTitle, subtitle, heroImage, heroImageMobi
         >
           {subtitle}
         </p>
+        {ctaLabel && ctaHref && (
+          <div
+            className="hero-reveal mt-6"
+            style={{ '--hr-delay': '0.3s' } as React.CSSProperties}
+          >
+            <Link
+              href={ctaHref}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
+            >
+              {ctaLabel}
+            </Link>
+          </div>
+        )}
       </div>
     </SecondaryHero>
   );

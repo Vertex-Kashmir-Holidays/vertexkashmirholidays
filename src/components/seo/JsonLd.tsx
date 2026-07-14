@@ -423,6 +423,24 @@ export function buildFAQPage(faqs: { question: string; answer: string }[]) {
   };
 }
 
+// Hub/listing pages that aggregate other pages (e.g. /tours/category) — pair
+// with buildItemList for the actual entries, same "one node per concern"
+// pattern as the rest of this file.
+export function buildCollectionPage(opts: {
+  name: string;
+  description?: string;
+  url: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: opts.name,
+    ...(opts.description ? { description: opts.description } : {}),
+    url: opts.url,
+    isPartOf: { "@id": `${siteUrl}/#website` },
+  };
+}
+
 export function buildBreadcrumbList(
   items: { name: string; url: string }[],
 ) {

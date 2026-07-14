@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import type { TourCategory } from '@prisma/client';
 import { TOUR_CATEGORY_META } from '@/lib/tours/categories';
 
@@ -19,6 +20,13 @@ export function TourCategoryLinksRow({ categories }: { categories: TourCategory[
           {TOUR_CATEGORY_META[c].pageTitle}
         </Link>
       ))}
+      <Link
+        href="/tours/category"
+        className="inline-flex items-center gap-1 text-[14px] font-bold text-primary hover:underline"
+      >
+        View all categories
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+      </Link>
     </div>
   );
 }

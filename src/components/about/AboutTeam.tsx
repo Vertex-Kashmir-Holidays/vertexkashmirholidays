@@ -16,7 +16,7 @@ interface AboutTeamProps {
 // from the top keeps typical portrait headshots in frame instead of the
 // center-crop default, which was cutting heads off on this card's short,
 // wide (not square) image area.
-const DEFAULT_IMAGE_FOCUS = "50% 25%";
+const DEFAULT_IMAGE_FOCUS = "center top";
 
 export function AboutTeam({ heading, team }: AboutTeamProps) {
   if (team.length === 0) return null;
@@ -43,17 +43,20 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <div className="relative h-[120px] w-full overflow-hidden">
+              <div className="relative h-[200px] w-full overflow-hidden">
                 <Image
                   src={imgSrc(m.image)}
                   alt={m.name}
                   fill
                   sizes="(max-width: 640px) 50vw, 33vw"
                   className="object-cover"
-                  // Face-focused crop only applies to a real uploaded photo —
-                  // the branded placeholder (no photo set) keeps the default
-                  // centered position so its logo mark isn't shifted.
-                  style={m.image?.trim() ? { objectPosition: m.imageFocus?.trim() || DEFAULT_IMAGE_FOCUS } : undefined}
+                  style={
+                    m.image?.trim()
+                      ? {
+                          objectPosition: m.imageFocus?.trim() || DEFAULT_IMAGE_FOCUS,
+                        }
+                      : undefined
+                  }
                 />
               </div>
               <div className="p-3.5">

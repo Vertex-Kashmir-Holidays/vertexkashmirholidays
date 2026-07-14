@@ -169,13 +169,16 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
                    </li>
                  ))}
                  <li>
+                   <Link href="/tours/category" className="transition hover:text-primary">All Tour Categories</Link>
+                 </li>
+                 <li>
                    <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
                  </li>
                  <li>
                    {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
                        script, which only reliably initializes on a fresh page load,
                        not a client-side (SPA) transition. */}
-                   <a href="/reviews" className="transition hover:text-primary">Customer Reviews</a>
+                   <Link href="/reviews" className="transition hover:text-primary">Customer Reviews</Link>
                  </li>
                </ul>
              </div>
