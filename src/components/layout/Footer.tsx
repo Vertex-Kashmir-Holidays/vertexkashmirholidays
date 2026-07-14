@@ -169,6 +169,9 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
                    </li>
                  ))}
                  <li>
+                   <Link href="/tours/category" className="transition hover:text-primary">All Tour Categories</Link>
+                 </li>
+                 <li>
                    <Link href="/destinations" className="transition hover:text-primary">Destinations</Link>
                  </li>
                  <li>
