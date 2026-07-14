@@ -133,10 +133,11 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   ],
 
   pay: [
-    "20% advance payment for confirmation",
-    "Balance 80% payable upon arrival",
+    "All tour costs are inclusive of GST",
+    "10% advance payment for confirmation",
+    "Balance 90% payable upon arrival",
     "No transaction fees for bank transfers & UPI",
-    "Credit/debit card payments attract additional charges upto 5% or more",
+    "No additional charges on credit/debit card payments",
     "Policy may change during peak seasons",
   ],
 

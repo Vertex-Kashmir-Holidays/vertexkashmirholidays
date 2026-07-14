@@ -48,6 +48,15 @@ const C = {
   white: "#ffffff",
 };
 
+// Exact hex equivalents of the admin editor's literal Tailwind arbitrary
+// values (hsl(158 46% 14%), hsl(146 35% 55%)) used only on the closing page,
+// so it matches ItineraryEditor.tsx's preview precisely instead of the
+// slightly different C.greenDark/C.mint used elsewhere in this document.
+const TY_GREEN = "#133428";
+const TY_MINT = "#64b487";
+// Theme's navy primary (--primary: hsl(214 68% 14%) in light mode).
+const TY_NAVY = "#0b203c";
+
 // Company contact details, reused by the page footer and the closing
 // Thank-You page — sourced from the shared PDF_CONTACT (src/lib/pdf/assets.ts)
 // so this never drifts from the invoice PDF's copy again.
@@ -177,34 +186,50 @@ const s = StyleSheet.create({
   policyCard: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
   policyHead: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 8 },
 
-  // Payment options — sits above the Thank You block on the closing page,
-  // same dark-page palette (mint accents, translucent-white muted text).
-  // No marginBottom here — the tyDivider placed right after this section
-  // (reusing its existing marginTop) supplies the spacing before it, same
-  // treatment the divider already gets between the tagline and company card.
-  paySection: { width: "100%" },
-  payHeadWrap: { alignItems: "center", marginBottom: 18 },
-  payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: C.mint, textAlign: "center" },
-  payKickerLine: { width: 40, height: 1.5, backgroundColor: C.mint, marginTop: 8 },
+  // Closing page — mirrors the admin editor's on-screen preview exactly
+  // (ItineraryEditor.tsx "Thank you" article): a full-width dark green
+  // Payment Options block on top, then a two-column row below it — white
+  // left column (logo + company + contact), dark green right column
+  // (Thank You + tagline). TY_GREEN/TY_MINT are the editor's actual literal
+  // hex values (hsl(158 46% 14%) / hsl(146 35% 55%)) — not the same as the
+  // C.greenDark/C.mint used on the cover/footer elsewhere in this file,
+  // which is why this page previously looked like a different, mismatched
+  // green from the admin preview.
+  tyPage: { backgroundColor: C.white, paddingVertical: 60, paddingHorizontal: 40, justifyContent: "center" },
+
+  // Payment options
+  payBlock: { width: "100%", backgroundColor: TY_GREEN, alignItems: "center", paddingVertical: 34, paddingHorizontal: 30 },
+  payHeadWrap: { alignItems: "center", marginBottom: 20 },
+  payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: TY_MINT, textAlign: "center" },
+  payKickerLine: { width: 40, height: 1.5, backgroundColor: TY_MINT, marginTop: 8 },
   payRow: { flexDirection: "row", alignItems: "center", gap: 16, width: "100%" },
   payPartnerCol: { width: "54%", alignItems: "center", justifyContent: "center" },
   payPartnerColFull: { width: "100%" },
-  payPartnerImg: { width: "100%", height: 58, objectFit: "contain" },
+  // 80/135 — both >=30% larger than the previous 58/100, per the "increase
+  // both by at least 30%" request.
+  payPartnerImg: { width: "100%", height: 80, objectFit: "contain" },
   payQrCol: { width: "42%", alignItems: "center", justifyContent: "center" },
-  payQrCard: { backgroundColor: C.white, borderRadius: 12, padding: 12 },
-  payQrImg: { width: 100, height: 100, objectFit: "contain" },
+  payQrCard: { backgroundColor: C.white, borderRadius: 12, padding: 14 },
+  payQrImg: { width: 135, height: 135, objectFit: "contain" },
   payQrCaption: { fontSize: 8.5, color: "rgba(255,255,255,0.6)", textAlign: "center", marginTop: 8, letterSpacing: 0.5 },
 
-  // Thank you — full-bleed dark page, everything centred.
-  tyPage: { backgroundColor: C.greenDark, alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 50 },
-  tyBrandName: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.white },
-  tyBrandSub: { fontSize: 8, letterSpacing: 2, color: C.mint },
-  tyScript: { fontSize: 46, color: C.mint, marginTop: 30, textAlign: "center" },
-  tyMsg: { fontSize: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 14, lineHeight: 1.5 },
-  tyDivider: { width: 64, height: 2, backgroundColor: C.mint, marginTop: 30, marginBottom: 28 },
-  tyCompany: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
-  tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", textAlign: "center", marginTop: 4 },
-  tyInfo: { fontSize: 10.5, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 7 },
+  // Two-column closing row — left column is the theme's navy (--primary:
+  // hsl(214 68% 14%)), so its logo/text switch to the light-on-dark variants
+  // (same white logo used on the cover page) instead of the dark-on-white
+  // ones a white panel would need.
+  tyRow: { flexDirection: "row", width: "100%" },
+  tyLeftCol: { width: "62%", backgroundColor: TY_NAVY, paddingVertical: 30, paddingHorizontal: 28 },
+  tyLeftLogo: { width: 150, height: 34, objectFit: "contain" },
+  tyCompany: { fontSize: 14.5, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 14 },
+  tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", marginTop: 3 },
+  tyContactWrap: { marginTop: 18 },
+  tyInfo: { fontSize: 10, fontFamily: "Helvetica-Bold", color: "rgba(255,255,255,0.9)", marginTop: 9, lineHeight: 1.4 },
+  // Same navy as tyLeftCol — no explicit border was ever drawn between the
+  // two columns, so matching their background removes the seam entirely
+  // instead of needing to hide a line.
+  tyRightCol: { width: "38%", backgroundColor: TY_NAVY, alignItems: "center", justifyContent: "center", paddingVertical: 30, paddingHorizontal: 20 },
+  tyScript: { fontSize: 26, fontFamily: "Helvetica-Bold", color: TY_MINT, textAlign: "center" },
+  tyMsg: { fontSize: 9.5, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 12, lineHeight: 1.5 },
 });
 
 function Footer() {
@@ -231,13 +256,9 @@ function Footer() {
 function SectionHead({ title }: { title: string }) {
   // wrap={false} keeps the heading and its underline together; minPresenceAhead
   // pulls the whole heading to the next page if too little room remains below,
-  // so a heading never strands at the bottom of a sheet. 160pt covers the
-  // tallest realistic "first block" that follows any of these headings (e.g.
-  // Transportation Info's ~120pt image row) — 90pt measured too small and let
-  // "Transportation Info" render alone at the bottom of a sheet with its
-  // content starting fresh on the next one.
+  // so a heading never strands at the bottom of a sheet.
   return (
-    <View style={s.secHeadRow} wrap={false} minPresenceAhead={160}>
+    <View style={s.secHeadRow} wrap={false} minPresenceAhead={90}>
       <Text style={s.secHead}>{title}</Text>
       <View style={s.secLine} />
     </View>
@@ -372,32 +393,18 @@ export function ItineraryPdf({ data, images }: Props) {
           </View>
         ))}
 
-        {/* ACCOMMODATION — heading + table header + first row are glued
-            together (wrap={false}) so the heading can never render alone with
-            the table starting fresh on the next sheet. Remaining rows stay
-            individually atomic (wrap={false} each) and are free to continue
-            across a page break between rows. */}
+        {/* ACCOMMODATION */}
         <View style={s.sectionGap}>
           <SectionHead title="Accommodation Info" />
         </View>
         <View style={s.table}>
-          <View wrap={false}>
-            <View style={s.tHead}>
-              <Text style={[s.th, s.colDest]}>Destination</Text>
-              <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
-              <Text style={[s.th, s.colNights]}>Nights</Text>
-              <Text style={[s.th, s.colRoom]}>Room Type</Text>
-            </View>
-            {data.hotels.length > 0 && (
-              <View style={s.tRow}>
-                <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>{data.hotels[0].destination}</Text>
-                <Text style={[s.td, s.colHotel, { color: C.muted }]}>{data.hotels[0].hotelDetails}</Text>
-                <Text style={[s.td, s.colNights]}>{data.hotels[0].nights}</Text>
-                <Text style={[s.td, s.colRoom]}>{data.hotels[0].roomType}</Text>
-              </View>
-            )}
+          <View style={s.tHead} wrap={false}>
+            <Text style={[s.th, s.colDest]}>Destination</Text>
+            <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
+            <Text style={[s.th, s.colNights]}>Nights</Text>
+            <Text style={[s.th, s.colRoom]}>Room Type</Text>
           </View>
-          {data.hotels.slice(1).map((h) => (
+          {data.hotels.map((h) => (
             <View key={h.id} style={s.tRow} wrap={false}>
               <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>{h.destination}</Text>
               <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
@@ -417,55 +424,32 @@ export function ItineraryPdf({ data, images }: Props) {
           ))}
         </View>
 
-        {/* TRANSPORT — short enough to keep fully atomic (heading + row) so
-            it never straddles a page break at all, per the "transportation
-            block" atomic requirement. */}
-        <View style={s.sectionGap} wrap={false}>
+        {/* TRANSPORT + INCLUSIONS/EXCLUSIONS */}
+        <View style={s.sectionGap}>
           <SectionHead title="Transportation Info" />
-          <View style={s.transportRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.transportType}>{data.transportType}</Text>
-              <Text style={s.transportDesc}>{data.transportDesc}</Text>
-            </View>
-            {img(data.transportImage) ? <Image src={img(data.transportImage)} style={s.transportImg} /> : null}
+        </View>
+        <View style={s.transportRow} wrap={false}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.transportType}>{data.transportType}</Text>
+            <Text style={s.transportDesc}>{data.transportDesc}</Text>
           </View>
+          {img(data.transportImage) ? <Image src={img(data.transportImage)} style={s.transportImg} /> : null}
         </View>
 
-        {/* INCLUSIONS/EXCLUSIONS — each column heading is glued to its first
-            2 items (wrap={false}) so a heading can never end up alone with
-            its list starting fresh on the next sheet; remaining items stay
-            individually atomic and are free to continue across a break
-            between items (never mid-item). */}
         <View style={s.twoCol}>
           <View style={s.col}>
-            <View wrap={false}>
-              <Text style={s.listHead}>Package Inclusions</Text>
-              {data.inc.slice(0, 2).map((item, i) => (
-                <View key={i} style={s.listRow}>
-                  <Text style={s.bulletInc}>+</Text>
-                  <Text style={s.listText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-            {data.inc.slice(2).map((item, i) => (
-              <View key={i + 2} style={s.listRow} wrap={false}>
+            <Text style={s.listHead}>Package Inclusions</Text>
+            {data.inc.map((item, i) => (
+              <View key={i} style={s.listRow} wrap={false}>
                 <Text style={s.bulletInc}>+</Text>
                 <Text style={s.listText}>{item}</Text>
               </View>
             ))}
           </View>
           <View style={s.col}>
-            <View wrap={false}>
-              <Text style={s.listHead}>Package Exclusions</Text>
-              {data.exc.slice(0, 2).map((item, i) => (
-                <View key={i} style={s.listRow}>
-                  <Text style={s.bulletExc}>x</Text>
-                  <Text style={s.listText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-            {data.exc.slice(2).map((item, i) => (
-              <View key={i + 2} style={s.listRow} wrap={false}>
+            <Text style={s.listHead}>Package Exclusions</Text>
+            {data.exc.map((item, i) => (
+              <View key={i} style={s.listRow} wrap={false}>
                 <Text style={s.bulletExc}>x</Text>
                 <Text style={s.listText}>{item}</Text>
               </View>
@@ -501,71 +485,58 @@ export function ItineraryPdf({ data, images }: Props) {
         <Footer />
       </Page>
 
-      {/* THANK YOU — centred on a full dark page. Payment Options sits above
-          the (untouched) Thank You block as a second block in the same
-          centred column, so the page still reads as one balanced group. */}
+      {/* CLOSING PAGE — mirrors ItineraryEditor.tsx's "Thank you" preview
+          article exactly: full-width Payment Options block on top, then a
+          two-column row (white left = logo/company/contact, dark green
+          right = Thank You + tagline), both centred vertically on the page
+          with generous top/bottom margin (tyPage.paddingVertical). */}
       <Page size="A4" style={[s.page, s.tyPage]}>
-        <View style={s.paySection} wrap={false}>
-          <View style={s.payHeadWrap}>
-            <Text style={s.payKicker}>PAYMENT OPTIONS</Text>
-            <View style={s.payKickerLine} />
-          </View>
-          <View style={s.payRow}>
-            <View style={qrDataUrl ? s.payPartnerCol : [s.payPartnerCol, s.payPartnerColFull]}>
-              {img(PAYMENT_PARTNER_SRC) ? <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} /> : null}
-            </View>
-            {/* QR card hidden entirely (rather than shown broken) if the
-                itinerary's custom QR — or the default — failed to load.
-                No advance-amount callout: the payment policy's advance % only
-                ever exists as free-text bullets (data.pay), never as
-                structured data, so there's nothing safe to compute from. */}
-            {qrDataUrl ? (
-              <View style={s.payQrCol}>
-                <View style={s.payQrCard}>
-                  <Image src={qrDataUrl} style={s.payQrImg} />
-                </View>
-                <Text style={s.payQrCaption}>Scan to pay</Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-
-        {/* Same divider treatment used below (tyDivider — mint, 64x2)
-            separates the payment section from the Thank You block, instead
-            of relying on margin alone. No panel background here — this and
-            the payment section above both sit directly on tyPage's own dark
-            green, matching the admin preview. */}
-        <View style={s.tyDivider} />
-
-        {/* Thank-you content — kept as one atomic group (wrap={false}) so it
-            can never straddle a page break. */}
         <View wrap={false}>
-          <View style={s.brandRow}>
-            {img(LOGO_DARK_SRC) ? (
-              <Image src={img(LOGO_DARK_SRC)} style={s.tyLogo} />
-            ) : (
-              <>
-                {img(LOGO_SRC) ? (
-                  <View style={s.logoBox}>
-                    <Image src={img(LOGO_SRC)} style={s.logoImg} />
+          <View style={s.payBlock}>
+            <View style={s.payHeadWrap}>
+              <Text style={s.payKicker}>PAYMENT OPTIONS</Text>
+              <View style={s.payKickerLine} />
+            </View>
+            <View style={s.payRow}>
+              <View style={qrDataUrl ? s.payPartnerCol : [s.payPartnerCol, s.payPartnerColFull]}>
+                {img(PAYMENT_PARTNER_SRC) ? <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} /> : null}
+              </View>
+              {/* QR card hidden entirely (rather than shown broken) if the
+                  itinerary's custom QR — or the default — failed to load.
+                  No advance-amount callout: the payment policy's advance %
+                  only ever exists as free-text bullets (data.pay), never as
+                  structured data, so there's nothing safe to compute from. */}
+              {qrDataUrl ? (
+                <View style={s.payQrCol}>
+                  <View style={s.payQrCard}>
+                    <Image src={qrDataUrl} style={s.payQrImg} />
                   </View>
-                ) : null}
-                <Text style={s.tyBrandName}>Vertex</Text>
-                <Text style={s.tyBrandSub}>KASHMIR HOLIDAYS</Text>
-              </>
-            )}
+                  <Text style={s.payQrCaption}>Scan to pay</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
 
-          <Text style={s.tyScript}>Thank You!</Text>
-          <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
-
-          <View style={s.tyDivider} />
-
-          <Text style={s.tyCompany}>{CONTACT.company}</Text>
-          <Text style={s.tyReg}>{CONTACT.reg}</Text>
-          <Text style={s.tyInfo}>{CONTACT.phone}</Text>
-          <Text style={s.tyInfo}>{CONTACT.address}</Text>
-          <Text style={s.tyInfo}>{CONTACT.email}</Text>
+          <View style={s.tyRow}>
+            <View style={s.tyLeftCol}>
+              {img(LOGO_DARK_SRC) ? (
+                <Image src={img(LOGO_DARK_SRC)} style={s.tyLeftLogo} />
+              ) : (
+                <Text style={s.brandName}>Vertex</Text>
+              )}
+              <Text style={s.tyCompany}>{CONTACT.company}</Text>
+              <Text style={s.tyReg}>{CONTACT.reg}</Text>
+              <View style={s.tyContactWrap}>
+                <Text style={s.tyInfo}>{CONTACT.phone}</Text>
+                <Text style={s.tyInfo}>{CONTACT.address}</Text>
+                <Text style={s.tyInfo}>{CONTACT.email}</Text>
+              </View>
+            </View>
+            <View style={s.tyRightCol}>
+              <Text style={s.tyScript}>Thank You!</Text>
+              <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
