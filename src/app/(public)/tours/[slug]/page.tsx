@@ -36,6 +36,7 @@ import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
 import { PackageViewTracker } from "@/components/analytics/PackageViewTracker";
 import { ScrollToTopOnMount } from "@/components/layout/ScrollToTopOnMount";
+import { TrustSection } from "@/components/common/TrustSection";
 import {
  parseJson,
  parseItinerary,
@@ -527,6 +528,8 @@ export default async function TourDetailsPage({ params }: PageProps) {
        oldPrice={tour.priceWas ?? undefined}
        discountPct={tour.discountPct ?? undefined}
      />
+
+     <TrustSection type="tour" name={tour.title} />
    </div>
  );
 }

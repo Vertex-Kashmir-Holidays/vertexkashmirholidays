@@ -151,7 +151,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
           )}
 
           {pageCount > 1 && (
-            <nav className="mt-10 flex items-center justify-center gap-2" aria-label="Pagination">
+            <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Pagination">
               {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}

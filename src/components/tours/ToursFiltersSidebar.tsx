@@ -1,12 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Search, RotateCcw, X } from 'lucide-react';
+import { Search, RotateCcw, X, ArrowRight } from 'lucide-react';
+import type { TourCategory } from '@prisma/client';
 import { PriceRangeSlider } from '@/components/ui/PriceRangeSlider';
+import { TOUR_CATEGORY_META } from '@/lib/tours/categories';
 import type { CategoryOption, DurationOption } from '@/types/tours';
 
 interface ToursFiltersSidebarProps {
+  browseCategories: TourCategory[];
   search: string;
   onSearchChange: (value: string) => void;
   categories: CategoryOption[];
@@ -23,6 +27,36 @@ interface ToursFiltersSidebarProps {
   onClear: () => void;
   isMobileOpen?: boolean;
   onClose?: () => void;
+}
+
+// Separate card of internal links to category landing pages — kept apart from
+// the filter card since it navigates away rather than filtering in place.
+function BrowseByTypeCard({ browseCategories }: { browseCategories: TourCategory[] }) {
+  if (browseCategories.length === 0) return null;
+  return (
+    <div className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <p className="text-[16px] font-bold">Browse by Type</p>
+      <ul className="mt-3.5 space-y-2.5 text-[14px]">
+        {browseCategories.map((c) => (
+          <li key={c}>
+            <Link
+              href={`/tours/category/${TOUR_CATEGORY_META[c].slug}`}
+              className="text-foreground/85 transition hover:text-primary hover:underline"
+            >
+              {TOUR_CATEGORY_META[c].pageTitle}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Link
+        href="/tours/category"
+        className="mt-3 inline-flex items-center gap-1 text-[13px] font-bold text-primary hover:underline"
+      >
+        View all categories
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
+      </Link>
+    </div>
+  );
 }
 
 // Shared between the desktop sidebar and the mobile drawer. Defined at module
@@ -158,14 +192,17 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
 
   if (!isMobile) {
     return (
-      <motion.aside
-        className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <FilterContent {...props} idPrefix="desktop" />
-      </motion.aside>
+      <>
+        <motion.aside
+          className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <FilterContent {...props} idPrefix="desktop" />
+        </motion.aside>
+        <BrowseByTypeCard browseCategories={props.browseCategories} />
+      </>
     );
   }
 
@@ -204,6 +241,9 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
             {/* Drawer Content */}
             <div className="p-5">
               <FilterContent {...props} idPrefix="mobile" />
+            </div>
+            <div className="mt-5 px-5 pb-5">
+              <BrowseByTypeCard browseCategories={props.browseCategories} />
             </div>
           </motion.div>
         </>

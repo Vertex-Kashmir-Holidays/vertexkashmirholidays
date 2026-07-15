@@ -34,7 +34,7 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
               </p>
             )}
             {stats.length > 0 && (
-              <div className="rv mt-7 grid grid-cols-3 gap-4" style={{ '--rd': '0.26s' } as React.CSSProperties}>
+              <div className="rv mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3" style={{ '--rd': '0.26s' } as React.CSSProperties}>
                 {stats.map((stat, i) => (
                   <div key={i} className="glass rounded-2xl p-4 text-center">
                     <p className="text-lg sm:text-xl font-extrabold text-foreground">

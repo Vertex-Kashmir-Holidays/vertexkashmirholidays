@@ -18,6 +18,7 @@ import { TourCategoryHubWhyChoose } from "@/components/tours/TourCategoryHubWhyC
 import { TourCategoryHubFaq } from "@/components/tours/TourCategoryHubFaq";
 import { TourCategoryHubSpotlight } from "@/components/tours/TourCategoryHubSpotlight";
 import { TOUR_CATEGORY_HUB_FAQS } from "@/lib/tours/categoryHubFaqs";
+import { TrustSection } from "@/components/common/TrustSection";
 import type { TourCategory } from "@prisma/client";
 
 export const revalidate = 300;
@@ -144,6 +145,8 @@ export default async function TourCategoryHubPage() {
           </p>
         </section>
       </div>
+
+      <TrustSection type="category" />
     </div>
   );
 }
