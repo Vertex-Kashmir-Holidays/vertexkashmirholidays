@@ -214,7 +214,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         </h1>
       </SecondaryHero>
 
-      <main className="mx-auto max-w-[1100px] space-y-6 px-3 sm:px-6 py-10">
+      <main className="mx-auto max-w-[1300px] space-y-6 px-3 sm:px-6 py-10">
         <ActivityDetailTabs
           sections={[
             { id: "overview", label: "Overview" },

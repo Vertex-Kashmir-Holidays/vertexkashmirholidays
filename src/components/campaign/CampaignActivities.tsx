@@ -57,12 +57,11 @@ export function CampaignActivities({ title, activities }: CampaignActivitiesProp
           ))}
         </div>
       </div>
-      <div id="actRow" className="scrollbar-none mt-9 flex gap-5 overflow-x-auto pb-2" style={{ scrollSnapType: 'x mandatory' }}>
+      <div id="actRow" className="snap-row mt-9 flex gap-5 overflow-x-auto pb-2">
         {activities.map((activity, i) => (
           <motion.article
             key={i}
             className="group relative h-[300px] w-[230px] shrink-0 overflow-hidden rounded-3xl border border-border shadow-card"
-            style={{ scrollSnapAlign: 'start' }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
