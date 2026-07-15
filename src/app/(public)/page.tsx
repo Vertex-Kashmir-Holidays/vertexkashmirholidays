@@ -16,6 +16,7 @@ import { UpdatesStrip } from "@/components/home/UpdatesStrip";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 import { WhyChooseSection } from "@/components/home/WhyChooseSection";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
+import { TrustSection } from "@/components/common/TrustSection";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getFaqsForPlacement } from "@/lib/faqs";
 import { getKashmirWeather } from "@/lib/weather";
@@ -288,6 +289,7 @@ export default async function HomePage() {
             : null,
         }))}
       />
+      <TrustSection type="home" />
     </div>
   );
 }

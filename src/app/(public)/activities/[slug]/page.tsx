@@ -22,6 +22,7 @@ import {
   JsonLd,
 } from "@/components/seo/JsonLd";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
+import { TrustSection } from "@/components/common/TrustSection";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
 import { formatINR } from "@/lib/accents";
 import { prisma } from "@/lib/prisma";
@@ -301,6 +302,8 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* 19. Final CTA — already surfaced via the Hero's HeroLeadCard ("Enquire Now") */}
       </main>
+
+      <TrustSection type="activity" name={activity.name} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { TourCategoryFeatured } from "@/components/tours/TourCategoryFeatured";
 import { TourCategoryRecommended } from "@/components/tours/TourCategoryRecommended";
 import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
+import { TrustSection } from "@/components/common/TrustSection";
 import type { TourCategory } from "@prisma/client";
 
 export const revalidate = 300;
@@ -64,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const meta = TOUR_CATEGORY_META[category];
   return buildMetadata({
     title: `${meta.pageTitle} — Curated Kashmir Tours`,
-    description: `Handpicked ${meta.shortLabel.toLowerCase()} tour packages in Kashmir — private cabs, hotels and a local expert planning every day of your trip. Compare packages and get a free quote.`,
+    description: meta.metaDescription,
     canonical: `${SITE_URL}/tours/category/${meta.slug}`,
   });
 }
@@ -157,6 +158,8 @@ export default async function TourCategoryPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      <TrustSection type="category" name={meta.pageTitle} />
     </div>
   );
 }

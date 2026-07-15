@@ -35,6 +35,7 @@ import { DestinationTravelTips } from "@/components/destinations/DestinationTrav
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRelatedBlogs";
 import { DestinationNearby } from "@/components/destinations/DestinationNearby";
+import { TrustSection } from "@/components/common/TrustSection";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
 
 export const revalidate = 900;
@@ -412,6 +413,8 @@ export default async function DestinationDetailPage({ params }: PageProps) {
           </div>
         </div>
       </main>
+
+      <TrustSection type="destination" name={dest.name} />
     </div>
   );
 }

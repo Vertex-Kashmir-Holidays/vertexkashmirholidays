@@ -33,7 +33,7 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
           <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
           <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{renderMint(heading.title)}</h2>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {visible.map((m, i) => (
             <motion.article
               key={m.id}

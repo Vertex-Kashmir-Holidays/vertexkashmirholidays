@@ -99,10 +99,6 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
        <div className="mx-auto grid max-w-[1300px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
          <div>
            <Logo variant="auto" href="/" className="h-9" />
-           <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-muted-foreground">
-             Operated by Vertex Kashmir Tour &amp; Travels — locals, not just planners. We live here and explore daily.
-             Honest pricing, real experiences, unforgettable memories.
-           </p>
            <div className="mt-5 flex gap-2.5">
              {settings?.instagram && (
                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">

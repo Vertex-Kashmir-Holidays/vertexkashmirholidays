@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { JsonLd, buildBreadcrumbList } from '@/components/seo/JsonLd';
 import { BlogPageClient } from '@/components/blog/BlogPageClient';
+import { TrustSection } from '@/components/common/TrustSection';
 
 export const revalidate = 600;
 
@@ -118,6 +119,7 @@ export default async function BlogPage() {
       }))}
     />
     </Suspense>
+    <TrustSection type="blog" />
     </>
   );
 }
