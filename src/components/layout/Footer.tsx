@@ -157,7 +157,7 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
            )}
          </div>
          <div className="md:col-span-2">
-           <div className="grid grid-cols-2 gap-10">
+           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-10">
              <div>
                <p className="text-sm font-bold text-foreground">Explore</p>
                <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">

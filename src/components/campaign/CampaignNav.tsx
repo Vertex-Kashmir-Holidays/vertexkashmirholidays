@@ -35,7 +35,7 @@ export function CampaignNav({ ctaText, phone }: CampaignNavProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Logo variant="light" href="/" />
+        <Logo variant="light" href="/" className="h-8 md:h-12" />
         <div className="flex items-center gap-3">
           {phone && (
             <a
@@ -48,7 +48,7 @@ export function CampaignNav({ ctaText, phone }: CampaignNavProps) {
               {phone}
             </a>
           )}
-          <ThemeToggle className="!border-white/20 !text-white hover:!bg-white/10" />
+          <ThemeToggle className="grid h-9 w-9 place-items-center rounded-full border !border-white/20 !text-white hover:!bg-white/10" />
           <a
             href="#reserve"
             className="sweep rounded-full bg-accent-grad px-5 py-2.5 text-[14px] font-bold text-white ring-inner shadow-glow transition hover:scale-[1.03]"

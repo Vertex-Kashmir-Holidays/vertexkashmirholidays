@@ -31,7 +31,7 @@ export function BlogPagination({ currentPage, totalPages, onPageChange }: BlogPa
   const pages = buildPages(currentPage, totalPages);
 
   return (
-    <nav className="mt-9 flex items-center justify-center gap-2" aria-label="Pagination">
+    <nav className="mt-9 flex flex-wrap items-center justify-center gap-2" aria-label="Pagination">
       {pages.map((p, i) => {
         if (p === '…') {
           return (

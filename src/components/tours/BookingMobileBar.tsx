@@ -61,7 +61,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
  return (
    <>
      {/* Sticky bar */}
-     <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-card/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+     <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-card/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
        {showInquiry && (
          <button
            type="button"
@@ -95,7 +95,7 @@ export function BookingMobileBar({ formMode = "BOTH", tourId, tourName, tourSlug
              onClick={() => setOpen(null)}
            />
            <motion.div
-             className="fixed inset-x-0 bottom-0 z-50 max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-border bg-card p-5 lg:hidden"
+             className="fixed inset-x-0 bottom-0 z-50 max-h-[88vh] overflow-y-auto rounded-t-3xl border-t border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] lg:hidden"
              initial={{ y: "100%" }}
              animate={{ y: 0 }}
              exit={{ y: "100%" }}

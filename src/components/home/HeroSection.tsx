@@ -164,7 +164,7 @@ return (
         </div>
         {stats.length > 0 && (
           <div
-            className="hero-reveal mt-10 grid max-w-md grid-cols-4 divide-x divide-white/10 rounded-2xl glass py-4 text-center"
+            className="hero-reveal mt-10 grid max-w-md grid-cols-2 divide-x divide-y divide-white/10 rounded-2xl glass py-4 text-center sm:grid-cols-4 sm:divide-y-0"
             style={{ '--hr-y': '30px', '--hr-delay': '0.6s' } as React.CSSProperties}
           >
             {stats.map((stat, i) => (

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Heart, Users, Mountain, Crown, type LucideIcon } from 'lucide-react';
+import type { TourCategory } from '@prisma/client';
 import { ToursFiltersSidebar } from '@/components/tours/ToursFiltersSidebar';
 import { ToursGridSection } from '@/components/tours/ToursGridSection';
 import { AffordabilityWidget } from '@/components/payments/AffordabilityWidget';
@@ -9,6 +10,7 @@ import type { TourListItemData, TourSortOption } from '@/types/tours';
 
 interface ToursPageClientProps {
   tours: TourListItemData[];
+  browseCategories: TourCategory[];
 }
 
 const CATEGORY_META: Record<string, { label: string; Icon: LucideIcon }> = {
@@ -35,7 +37,7 @@ const REGION_TABS = [
   { id: 'LADAKH', label: 'Ladakh' },
 ] as const;
 
-export function ToursPageClient({ tours }: ToursPageClientProps) {
+export function ToursPageClient({ tours, browseCategories }: ToursPageClientProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [activeRegion, setActiveRegion] = useState<'ALL' | 'KASHMIR' | 'LADAKH'>('ALL');
   const [search, setSearch] = useState('');
@@ -153,12 +155,12 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
 
   return (
     <main className="mx-auto max-w-[1300px] px-3 sm:px-6 py-10">
-      <div className="mb-7 flex gap-2">
+      <div className="mb-7 flex gap-2 overflow-x-auto scrollbar-none -mx-3 px-3 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0">
         {REGION_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleRegionChange(tab.id as typeof activeRegion)}
-            className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
               activeRegion === tab.id
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -177,6 +179,7 @@ export function ToursPageClient({ tours }: ToursPageClientProps) {
             <AffordabilityWidget amount={priceBounds.min} title="Easy EMI Available" />
           )}
           <ToursFiltersSidebar
+          browseCategories={browseCategories}
           search={search}
           onSearchChange={handleSearchChange}
           categories={categories}

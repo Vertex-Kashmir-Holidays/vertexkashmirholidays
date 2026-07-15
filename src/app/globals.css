@@ -274,6 +274,13 @@ body {
 .snap-row::-webkit-scrollbar { display:none; }
 .snap-row > * { scroll-snap-align:start; }
 
+/* Standalone scrollbar-hider — used on horizontally-scrolling chip/tab rows
+   that don't need snap-row's scroll-snap behavior (see e.g. TourDetailsTabs,
+   DestinationsFilterBar, BlogCategoryChips). Was referenced across the
+   codebase with no matching rule until now, so the scrollbar never hid. */
+.scrollbar-none { scrollbar-width:none; -ms-overflow-style:none; }
+.scrollbar-none::-webkit-scrollbar { display:none; }
+
 /* Sweep shine — a light-theme card is pale, so a white highlight (the dark-theme
    treatment) all but disappears on it; light theme instead gets a navy-grey streak
    that reads against the pale background.

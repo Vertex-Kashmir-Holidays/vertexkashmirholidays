@@ -11,7 +11,6 @@ import { ToursHeroSection } from "@/components/tours/ToursHeroSection";
 import { ToursNewsletter } from "@/components/tours/ToursNewsletter";
 import { ToursPageClient } from "@/components/tours/ToursPageClient";
 import { ToursTrustBar } from "@/components/tours/ToursTrustBar";
-import { TourCategoryLinksRow } from "@/components/tours/TourCategoryLinksRow";
 
 export const revalidate = 300;
 
@@ -76,10 +75,8 @@ export default async function ToursPage() {
         heroImageMobile={section?.heroImageMobile ?? null}
         stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
-      <div className="mx-auto max-w-[1300px] px-4 pt-8 sm:px-6">
-        <TourCategoryLinksRow categories={[...new Set(tours.map((t) => t.category))]} />
-      </div>
       <ToursPageClient
+        browseCategories={[...new Set(tours.map((t) => t.category))]}
         tours={tours.map((t) => ({
           id: t.id,
           slug: t.slug,

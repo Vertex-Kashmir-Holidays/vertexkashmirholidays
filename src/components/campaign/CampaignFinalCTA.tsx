@@ -32,7 +32,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
       <div className="relative mx-auto max-w-[760px] px-6 py-24 text-center">
         {title && (
           <motion.h2
-            className="h-display text-[36px] font-bold leading-snug text-white"
+            className="h-display text-[28px] font-bold leading-snug text-white sm:text-[36px]"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
