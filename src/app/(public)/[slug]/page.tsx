@@ -81,7 +81,7 @@ export default async function LegalPage({ params }: PageProps) {
         </p>
       </SecondaryHero>
 
-      <main className="mx-auto max-w-[1100px] px-6 py-10 sm:py-12">
+      <main className="mx-auto max-w-[1300px] px-6 py-10 sm:py-12">
         <div className="grid items-start gap-10 lg:grid-cols-[1fr_240px]">
           <article className="min-w-0 rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-9">
             <BlogPostBody html={html} />

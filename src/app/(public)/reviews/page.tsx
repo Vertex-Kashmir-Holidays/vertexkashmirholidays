@@ -120,7 +120,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
         badges={heroBadges}
       />
 
-      <div className="mx-auto max-w-[1100px] px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-[1300px] px-4 py-12 sm:px-6 sm:py-16">
         {(stats.total > 0 || googleRating || tripadvisorRatingWidget) && (
           <>
             <h2 className="sr-only">Review ratings summary — Google, Tripadvisor and Vertex Kashmir Holidays</h2>
@@ -230,7 +230,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
       {/* Same max-width as the review-grid container above, so the video row
           lines up with it exactly rather than using VideoReviewsSection's own
           (wider) home-page max-width. */}
-      <div className="mx-auto max-w-[1100px] pb-4">
+      <div className="mx-auto max-w-[1300px] pb-4">
         <VideoReviewsSection
           heading={{
             kicker: "IN THEIR OWN WORDS",
@@ -251,7 +251,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
       </div>
 
       {/* ── Closing CTA ──────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-[1100px] px-4 pb-16 sm:px-6 sm:pb-24">
+      <div className="mx-auto max-w-[1300px] px-4 pb-16 sm:px-6 sm:pb-24">
         <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-primary/10 p-6 text-center">
           <p className="font-display text-lg font-bold text-foreground">Ready to plan your own Kashmir trip?</p>
           <Link
