@@ -95,7 +95,7 @@ Before touching `schema.prisma`:
 - Keep each migration focused on one logical schema change.
 - Review the generated SQL before applying it, especially for a column type change or a dropped column.
 - Prefer additive changes (new nullable column, new table) over destructive ones (drop column, narrow a type) — a destructive change needs explicit approval, not just a passing test suite.
-- String-encoded JSON columns (`gallery`, `itinerary`, `inclusions`, `exclusions`, `faqs`, `highlights` on `Tour`; the equivalent set on `Campaign`) are declared `String`, never Prisma's `Json` type — this is a deliberate, repository-wide convention (see `../instructions/coding-standards.md` → JSON Columns), not an oversight to "fix." `Itinerary.data` is the one model that genuinely uses `Json` — don't generalize from it.
+- String-encoded JSON columns (`gallery`, `itinerary`, `inclusions`, `exclusions`, `highlights` on `Tour`; the equivalent set on `Campaign` — see `../instructions/coding-standards.md` → JSON Columns for the full list) are declared `String`, never Prisma's `Json` type — this is a deliberate, repository-wide convention, not an oversight to "fix." `faqs` is **not** one of these — it's a real `Faq[]` relation on both models. `Itinerary.data` is the one model that genuinely uses `Json` — don't generalize from it.
 
 **Downstream consumers to check after any schema change:**
 - **Public pages** (`src/app/(public)/`) — any `findMany`/`findFirst` on `Tour`, `Blog`, `Destination`, or `Campaign` must keep `where: { published: true }`.
