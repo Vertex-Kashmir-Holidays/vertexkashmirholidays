@@ -1,14 +1,14 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Codex and other `AGENTS.md`-reading tools use the equivalent `AGENTS.md` instead — keep the two in sync; they should say the same thing.
+This file provides guidance to AI coding agents (Codex and other tools that read the `AGENTS.md` convention) working in this repository. Claude Code reads the equivalent `CLAUDE.md` instead — keep the two in sync; they should say the same thing.
 
 ## Start here
 
-This repository's engineering standards, architecture, coding conventions, and workflows live in `.ai/` — a single, tool-agnostic source of truth also meant for Codex, Copilot, Cursor, Windsurf, and Gemini CLI, not just Claude.
+This repository's engineering standards, architecture, coding conventions, and workflows live in `.ai/` — a single, tool-agnostic source of truth, not specific to any one assistant.
 
 **Read `.ai/START.md` before starting any task in this repository.** It defines the reading order (`.ai/README.md` → `context/` → `instructions/` → the matching `workflows/` entry → the matching `skills/` entry → implementation), and lists what a completed task should report.
 
-Architecture, commands, route groups, auth/RBAC, database conventions, and everything else project-specific live in `.ai/` and only there — this file does not restate them, to avoid the two documents silently drifting apart (as already happened once: this file's old JSON-columns example listed `faqs` as a JSON-string column after that had stopped being true — corrected in `.ai/instructions/coding-standards.md`, not here).
+Architecture, commands, route groups, auth/RBAC, database conventions, and everything else project-specific live in `.ai/` and only there — this file does not restate them, to avoid documents silently drifting apart from what's actually in the code.
 
 ---
 
