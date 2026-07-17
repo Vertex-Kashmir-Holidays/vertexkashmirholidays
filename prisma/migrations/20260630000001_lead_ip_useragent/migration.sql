@@ -1,2 +1,0 @@
-ALTER TABLE "Lead" ADD COLUMN "ipAddress" TEXT;
-ALTER TABLE "Lead" ADD COLUMN "userAgent" TEXT;

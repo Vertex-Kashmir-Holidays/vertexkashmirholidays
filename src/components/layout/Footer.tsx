@@ -33,6 +33,7 @@ export interface FooterSettings {
  tripadvisor?: string | null;
  legalName?: string | null;
  tourismRegNumber?: string | null;
+ gstNumber?: string | null;
  addressLine1?: string | null;
  addressCity?: string | null;
  addressState?: string | null;
@@ -99,6 +100,12 @@ export function Footer({ settings, tourCategories = [] }: { settings?: FooterSet
        <div className="mx-auto grid max-w-[1300px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
          <div>
            <Logo variant="auto" href="/" className="h-9" />
+           {(settings?.tourismRegNumber || settings?.gstNumber) && (
+             <ul className="mt-2.5 space-y-0.5 text-[11px] leading-relaxed text-muted-foreground sm:text-[12px]">
+               {settings?.tourismRegNumber && <li>Reg.: {settings.tourismRegNumber}</li>}
+               {settings?.gstNumber && <li>GSTIN: {settings.gstNumber}</li>}
+             </ul>
+           )}
            <div className="mt-5 flex gap-2.5">
              {settings?.instagram && (
                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10">
