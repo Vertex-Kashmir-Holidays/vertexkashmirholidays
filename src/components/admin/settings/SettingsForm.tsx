@@ -34,6 +34,7 @@ const schema = z.object({
  legalName: z.string().optional(),
  tourismRegNumber: z.string().optional(),
  tourismRegAuthority: z.string().optional(),
+ gstNumber: z.string().optional(),
  addressLine1: z.string().optional(),
  addressCity: z.string().optional(),
  addressState: z.string().optional(),
@@ -69,6 +70,7 @@ interface SiteSettings {
  legalName: string | null;
  tourismRegNumber: string | null;
  tourismRegAuthority: string | null;
+ gstNumber: string | null;
  addressLine1: string | null;
  addressCity: string | null;
  addressState: string | null;
@@ -135,6 +137,7 @@ export function SettingsForm({ settings }: Props) {
      legalName: settings.legalName ?? "",
      tourismRegNumber: settings.tourismRegNumber ?? "",
      tourismRegAuthority: settings.tourismRegAuthority ?? "",
+     gstNumber: settings.gstNumber ?? "",
      addressLine1: settings.addressLine1 ?? "",
      addressCity: settings.addressCity ?? "",
      addressState: settings.addressState ?? "",
@@ -199,6 +202,7 @@ export function SettingsForm({ settings }: Props) {
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <Field label="Legal Business Name" name="legalName" register={register} placeholder="Vertex Kashmir Tour & Travels" />
              <Field label="Tourism Registration No." name="tourismRegNumber" register={register} placeholder="JKEA00001840" />
+             <Field label="GST Number" name="gstNumber" register={register} placeholder="01AAXFV5134B1ZB" />
            </div>
            <Field label="Registration Issuing Authority" name="tourismRegAuthority" register={register} placeholder="e.g. Department of Tourism, Government of Jammu & Kashmir" />
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -994,6 +994,7 @@ async function main() {
   const legalIdentity = {
     legalName: "Vertex Kashmir Tour & Travels",
     tourismRegNumber: "JKEA00001840",
+    gstNumber: "01AAXFV5134B1ZB",
     addressLine1: "Katipora, Tangmarg",
     addressCity: "Baramulla",
     addressState: "Jammu & Kashmir",

@@ -1333,6 +1333,10 @@ model SiteSettings {
   // only the business owner can confirm the exact official wording. Shown on
   // About's Licenses & Certifications section only when populated.
   tourismRegAuthority          String?
+  // GSTIN (India GST registration number) — distinct from tourismRegNumber
+  // (that's a J&K Tourism license, not a tax ID). Shown near the footer logo
+  // alongside the tourism registration, and used as JSON-LD taxId.
+  gstNumber                    String?
   addressLine1                 String?
   addressCity                  String?
   addressState                 String?
