@@ -34,7 +34,7 @@ interface UploadResult {
 
 export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed, editingMessage, onCancelEdit, onEdited }: Props) {
   const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
+  const [, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [attachment, setAttachment] = useState<{

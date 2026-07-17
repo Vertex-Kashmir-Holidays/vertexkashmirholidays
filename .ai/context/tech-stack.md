@@ -183,22 +183,22 @@ Engineering standards are AI-tool agnostic — every assistant listed above is e
 
 | Technology | Purpose | Usage in Vertex |
 |---|---|---|
-| ESLint | Linting | `eslint.config.mjs` extends `next/core-web-vitals` + `next/typescript`. `@typescript-eslint/no-explicit-any`, `react/no-unescaped-entities`, and `@next/next/no-html-link-for-pages` are downgraded to warnings (not build-blocking) to accommodate existing patterns — new code should still avoid `any` where practical. |
+| ESLint | Linting | `eslint.config.mjs` extends `next/core-web-vitals` + `next/typescript`. Run directly via `yarn lint` → `eslint .` — Next.js 16 removed the `next lint` command, so the flat config now declares its own `ignores` (`.next/`, `node_modules/`, etc.) that `next lint` used to apply automatically. `@typescript-eslint/no-explicit-any`, `react/no-unescaped-entities`, and `@next/next/no-html-link-for-pages` are downgraded to warnings (not build-blocking) to accommodate existing patterns — new code should still avoid `any` where practical. `@typescript-eslint/no-unused-vars` allows an established underscore-prefix convention (`argsIgnorePattern`/`varsIgnorePattern: "^_"`) for intentionally-unused parameters, e.g. `(_req: NextRequest)`. |
 | TypeScript | Type checking | `strict: true` in `tsconfig.json`; `yarn typecheck` runs `tsc --noEmit` (no automated test suite exists yet) |
 | Bundle Analyzer | Bundle size inspection | `@next/bundle-analyzer`, wired into `next.config.ts`, run via `ANALYZE=true yarn build` — **already implemented**, not merely planned |
 | Lighthouse CI | Performance budget enforcement | `@lhci/cli` + `.lighthouserc.js` + the `yarn lhci` script — **already implemented**, not merely planned |
-| Production Build Verification | Release gate | `yarn build` (`prisma generate && next build`) is the release gate today; there is no CI pipeline enforcing it automatically yet (see Future Roadmap — GitHub Actions CI) |
+| GitHub Actions CI | PR quality gate | `.github/workflows/ci.yml` — three parallel jobs (`typecheck`, `lint`, `build`) run on every PR/push to `main`/`dev`. The `build` job spins up an ephemeral Postgres 16 service container and runs `prisma migrate deploy` first, since `next build` calls `generateStaticParams` on several public pages (tours, destinations, blog, etc.) that query Prisma directly — a dummy `DATABASE_URL` is not sufficient for that job. `typecheck`/`lint` only need `prisma generate` (schema parsing, no live connection). |
+| Production Build Verification | Release gate | `yarn build` (`prisma generate && next build`) plus the GitHub Actions CI workflow above, which blocks merge on failure once branch protection is enabled on `main` (manual step — see PR). |
 
 ---
 
 # Future Roadmap
 
-The following are genuinely **not implemented** in this repository today — confirmed absent (e.g. no `.github/workflows` directory exists, no Storybook config, no test runner config):
+The following are genuinely **not implemented** in this repository today — confirmed absent (no Storybook config, no test runner config):
 
 - Storybook
 - Playwright
 - Vitest
-- GitHub Actions CI
 - Design Token System
 - Visual Regression Testing
 
