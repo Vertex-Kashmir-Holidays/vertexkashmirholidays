@@ -16,9 +16,9 @@ Do not introduce enterprise processes that add unnecessary overhead.
 
 # Git Workflow
 
-Version: 1.0.0
+Version: 1.1.0
 
-Last Updated: 2026-07-17
+Last Updated: 2026-07-18
 
 ## Purpose
 
@@ -171,7 +171,7 @@ Keep Git history clean going forward — this is a change from current practice 
 ```
 GitHub
   ↓
-CI (future)
+CI (.github/workflows/ci.yml — typecheck, lint, build)
   ↓
 Merge
   ↓
@@ -179,6 +179,28 @@ Automatic Vercel Deployment
 ```
 
 Deployment is automatic on merge to `main`. Developers should not manually deploy unless required. Vercel Cron jobs (e.g. the daily Vertex Connect retention job) run independently of the deploy pipeline and don't require any manual step.
+
+────────────────────────────────────
+
+## Rollback
+
+A bad deploy to `main` has two possible causes, and they need different responses.
+
+**Application-code regression (no schema change involved):**
+
+1. In the Vercel dashboard, open the project's Deployments list and "Promote to Production" the last known-good deployment — this is the fastest path, live in seconds, no git operation required.
+2. In parallel (not instead of), revert the bad commit in git so `main`'s history stays correct for the next deploy: `git revert <bad-commit>` on a branch, then merge as a normal PR. Don't leave `main`'s history silently out of sync with what's actually deployed — the Vercel-dashboard rollback buys time, the git revert is the real fix.
+3. Merge the same revert into `dev` too (same reasoning as the Hotfix Workflow below — otherwise the next `dev → main` merge reintroduces the bug).
+
+**A schema migration shipped in the same deploy:**
+
+Vercel's dashboard rollback only reverts the *application code* — it does not undo a Prisma migration that already ran against the production database (this repo's build step runs `prisma generate`, not `prisma migrate deploy`; migrations are applied to production as a deliberate, separate step per `prisma-migration.md` → Database Safety, not automatically on every deploy). Before rolling back application code in this case:
+
+1. Confirm whether the migration is actually the problem, or just coincidentally shipped in the same deploy — check `npx prisma migrate status` against production.
+2. If the migration itself needs undoing, write and apply a new forward migration that reverses the change (`prisma migrate dev` locally to generate it, review the SQL, then apply to production) — this repo does not use Prisma's down-migration mechanism (it doesn't have one; Prisma Migrate is forward-only by design). Never hand-edit or delete an already-applied migration file to "undo" it.
+3. Only roll back the application code (via the two steps above) once the data/schema side is confirmed safe — rolling back code while a half-migrated schema is in place can be worse than the original bug.
+
+When in doubt, this is exactly the situation to slow down for rather than guess — a wrong rollback on the database side is far harder to undo than a wrong rollback on the code side.
 
 ────────────────────────────────────
 
@@ -253,3 +275,4 @@ An AI assistant commits locally for review; it does not push to a shared branch 
 - `coding-standards.md`
 - `architecture.md`
 - `../context/project-overview.md`
+- `../skills/prisma-migration.md`
