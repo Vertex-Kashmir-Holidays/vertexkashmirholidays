@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -28,6 +28,9 @@
       "sharp",
       "unrs-resolver"
     ]
+  },
+  "resolutions": {
+    "tmp": "^0.2.6"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

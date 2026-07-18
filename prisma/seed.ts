@@ -681,7 +681,7 @@ async function main() {
       excerpt: t.excerpt,
       description: `${t.excerpt} A thoughtfully paced ${nights}-night / ${t.duration}-day journey crafted by Vertex Kashmir Holidays, with private transfers, hand-picked stays and local experts throughout.`,
       coverImage: PLACEHOLDER,
-      gallery: JSON.stringify([1, 2, 3, 4].map((n) => PLACEHOLDER)),
+      gallery: JSON.stringify([1, 2, 3, 4].map(() => PLACEHOLDER)),
       highlights: JSON.stringify(["🏔️ Scenic Himalayan drives", "🏨 Hand-picked stays", "🧭 Local expert guides", "🚐 Private transfers"]),
       inclusions: JSON.stringify([`${nights} nights accommodation`, "Daily breakfast & dinner", "Private air-conditioned transfers", "All applicable taxes"]),
       exclusions: JSON.stringify(["Airfare", "Personal expenses & tips", "Travel insurance", "Anything not listed in inclusions"]),
@@ -767,7 +767,7 @@ async function main() {
       location: a.location,
       description: a.description,
       coverImage: PLACEHOLDER,
-      images: JSON.stringify([1, 2, 3].map((n) => PLACEHOLDER)),
+      images: JSON.stringify([1, 2, 3].map(() => PLACEHOLDER)),
       published: true,
     };
     const activity = await prisma.activity.upsert({

@@ -114,6 +114,7 @@ Skills
 - api-route.md
 - booking-finance.md
 - analytics-event.md
+- crm-ticket.md
 
 Workflows
 
