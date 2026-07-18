@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { resolveAuthDestination } from "@/lib/auth/destination";
+import { NEXT_PUBLIC_GOOGLE_CLIENT_ID } from "@/lib/env.public";
 
 // Minimal shape of the Google Identity Services global this script attaches —
 // only the members this component actually calls.
@@ -46,7 +47,7 @@ export function GoogleOneTap({ nonce }: GoogleOneTapProps) {
   const signingInRef = useRef(false);
 
   useEffect(() => {
-    const clientId: string | undefined = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId: string | undefined = NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) return;
     const googleClientId: string = clientId;
 

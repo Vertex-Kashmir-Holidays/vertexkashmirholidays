@@ -1,4 +1,5 @@
 import type { PlatformAdapter } from "../types";
+import { env } from "@/lib/env";
 
 // Microsoft Advertising Offline Conversion Import.
 //
@@ -12,11 +13,11 @@ export const microsoftAdapter: PlatformAdapter = {
 
   isConfigured(): boolean {
     return Boolean(
-      process.env.MICROSOFT_ADS_CLIENT_ID &&
-        process.env.MICROSOFT_ADS_CLIENT_SECRET &&
-        process.env.MICROSOFT_ADS_REFRESH_TOKEN &&
-        process.env.MICROSOFT_ADS_DEVELOPER_TOKEN &&
-        process.env.MICROSOFT_ADS_CUSTOMER_ID,
+      env.MICROSOFT_ADS_CLIENT_ID &&
+        env.MICROSOFT_ADS_CLIENT_SECRET &&
+        env.MICROSOFT_ADS_REFRESH_TOKEN &&
+        env.MICROSOFT_ADS_DEVELOPER_TOKEN &&
+        env.MICROSOFT_ADS_CUSTOMER_ID,
     );
   },
 

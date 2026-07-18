@@ -1,13 +1,16 @@
 import nodemailer from "nodemailer";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { groupServiceTables } from "@/lib/bookings/serviceDisplay";
+import { env } from "@/lib/env";
+import { NEXT_PUBLIC_SITE_URL } from "@/lib/env.public";
+import { SITE_URL } from "@/lib/seo";
 
 
 function createTransporter() {
- if (!process.env.SMTP_HOST) return null;
+ if (!env.SMTP_HOST) return null;
 
 
- const port = parseInt(process.env.SMTP_PORT ?? "465", 10);
+ const port = parseInt(env.SMTP_PORT ?? "465", 10);
 
 
  // Derive `secure` from the port so the two can never drift: only port 465 uses
@@ -18,12 +21,12 @@ function createTransporter() {
 
 
  return nodemailer.createTransport({
-   host: process.env.SMTP_HOST,
+   host: env.SMTP_HOST,
    port,
    secure,
    auth: {
-     user: process.env.SMTP_USER,
-     pass: process.env.SMTP_PASS,
+     user: env.SMTP_USER,
+     pass: env.SMTP_PASS,
    },
  });
 }
@@ -73,7 +76,7 @@ function toEmails(list: unknown): string[] {
 
 export async function sendMail(options: MailOptions): Promise<SendMailResult> {
  const from =
-   process.env.MAIL_FROM ??
+   env.MAIL_FROM ??
    "Vertex Kashmir Holidays <noreply@vertexkashmirholidays.com>";
 
 
@@ -104,7 +107,7 @@ export async function sendMail(options: MailOptions): Promise<SendMailResult> {
  const { headers: extraHeaders, replyTo, ...rest } = options;
  const info = await transporter.sendMail({
    from,
-   replyTo: replyTo ?? process.env.MAIL_REPLY_TO,
+   replyTo: replyTo ?? env.MAIL_REPLY_TO,
    headers: {
      "Auto-Submitted": "auto-generated",
      "X-Auto-Response-Suppress": "All",
@@ -466,13 +469,13 @@ export function staffBookingNotificationText(data: StaffBookingNotificationData)
    `Amount Paid: ₹${data.amountPaid.toLocaleString("en-IN")}`,
    `Payment Option: ${data.paymentOption}`,
    "",
-   `Admin Link: ${process.env.NEXT_PUBLIC_APP_URL ?? ""}/admin/bookings/${data.bookingId}/services`,
+   `Admin Link: ${SITE_URL}/admin/bookings/${data.bookingId}/services`,
  ].join("\n");
 }
 
 
 export function staffBookingNotificationHtml(data: StaffBookingNotificationData): string {
- const adminUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/admin/bookings/${data.bookingId}/services`;
+ const adminUrl = `${SITE_URL}/admin/bookings/${data.bookingId}/services`;
  const content = `          <tr>
            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">New Booking Received</h1>
@@ -870,12 +873,11 @@ function escapeHtml(value: string): string {
 const BRAND = "#0f3460";
 
 
-function siteUrl(): string {
- return (
-   process.env.NEXT_PUBLIC_SITE_URL ??
-   process.env.NEXTAUTH_URL ??
-   "https://vertexkashmirholidays.com"
- ).replace(/\/$/, "");
+// Exported for src/lib/notifications.ts, which needs the same fallback
+// chain (deliberately including NEXTAUTH_URL — see src/lib/auth.config.ts's
+// trustHost comment) for its own notification links.
+export function siteUrl(): string {
+ return (NEXT_PUBLIC_SITE_URL ?? env.NEXTAUTH_URL ?? "https://vertexkashmirholidays.com").replace(/\/$/, "");
 }
 
 
@@ -1026,14 +1028,10 @@ function resolveWhatsApp(whatsappNumber?: string | null): {
  href: string;
  text: string;
 } {
- const siteUrl =
-   process.env.NEXT_PUBLIC_SITE_URL ??
-   process.env.NEXTAUTH_URL ??
-   "https://vertexkashmirholidays.com";
  const waDigits = (whatsappNumber ?? "").replace(/[^0-9]/g, "");
  return waDigits
    ? { href: buildWhatsAppHref(whatsappNumber), text: `+${waDigits}` }
-   : { href: `${siteUrl}/contact`, text: "Contact us" };
+   : { href: `${siteUrl()}/contact`, text: "Contact us" };
 }
 
 
@@ -1203,11 +1201,7 @@ interface CustomerCredentialsData {
 
 function resolveLoginUrl(loginUrl?: string): string {
  if (loginUrl) return loginUrl;
- const siteUrl =
-   process.env.NEXT_PUBLIC_SITE_URL ??
-   process.env.NEXTAUTH_URL ??
-   "https://vertexkashmirholidays.com";
- return `${siteUrl.replace(/\/$/, "")}/login`;
+ return `${siteUrl()}/login`;
 }
 
 

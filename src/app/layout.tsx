@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { AttributionCapture } from "@/components/providers/AttributionCapture";
-import { SITE_NAME } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } from "@/lib/env.public";
 import "./globals.css";
 
 
@@ -19,12 +20,8 @@ const sansFont = Hanken_Grotesk({
 });
 
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://vertexkashmirholidays.com";
-
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   applicationName: "Vertex Kashmir Holidays",
   title: {
     template: "%s | Vertex Kashmir Holidays",
@@ -43,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: "Vertex Kashmir Holidays",
     title: "Vertex Kashmir Holidays — Premium Kashmir Tourism & Booking",
     description:
@@ -64,8 +61,8 @@ export const metadata: Metadata = {
       "Premium Kashmir tourism — honeymoon, family, adventure, luxury packages.",
     images: ["/brand/social/vertex-og-1200x630.png"],
   },
-  ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
-    ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }
+  ...(NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
+    ? { other: { "facebook-domain-verification": NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }
     : {}),
 };
 

@@ -16,6 +16,7 @@ import { PhoneInput } from '@/components/auth/PhoneInput';
 import { toE164 } from '@/lib/auth/validation';
 import { nameField, phoneField } from '@/lib/leads/schema';
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from '@/lib/env.public';
 import type { ContactFormContent } from '@/types/contact';
 import { trackLeadSubmit } from '@/lib/analytics';
 
@@ -43,7 +44,7 @@ export function ContactForm({ content }: ContactFormProps) {
   const [country, setCountry] = useState<CountryCode>('IN');
   const [national, setNational] = useState('');
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
   const renderedAt = useRef<number>(Date.now());

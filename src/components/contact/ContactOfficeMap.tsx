@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { MapPin, Phone, Mail, Clock, ArrowRight } from 'lucide-react';
 import type { ContactOfficeContent, ContactOfficeData } from '@/types/contact';
+import { NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY } from '@/lib/env.public';
 
 interface ContactOfficeMapProps {
   content: ContactOfficeContent;
@@ -17,7 +18,7 @@ interface ContactOfficeMapProps {
 // Client-safe, HTTP-referrer-restricted key for the Maps Embed API — distinct
 // from the server-only GOOGLE_PLACES_API_KEY, which must never reach the
 // client (it has no referrer restriction and is used for billed API calls).
-const mapEmbedKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
+const mapEmbedKey = NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
 
 export function ContactOfficeMap({ content }: ContactOfficeMapProps) {
   return (

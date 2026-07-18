@@ -25,6 +25,7 @@ import {
   isValidPhone,
   toE164,
 } from '@/lib/auth/validation';
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from '@/lib/env.public';
 
 type FieldErrors = Partial<
   Record<'name' | 'email' | 'phone' | 'password' | 'confirm' | 'terms', string>
@@ -58,7 +59,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
   const [error, setError] = useState<string | null>(null);
 
   // Turnstile (rendered + enforced only when the public site key is set).
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Login fields

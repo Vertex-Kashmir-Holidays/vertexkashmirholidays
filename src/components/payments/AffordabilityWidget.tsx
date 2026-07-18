@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
+import { NEXT_PUBLIC_RAZORPAY_KEY_ID } from "@/lib/env.public";
 
 declare global {
   interface Window {
@@ -22,7 +23,7 @@ interface AffordabilityWidgetProps {
 
 export function AffordabilityWidget({ amount,
   title = "Easy EMI Available", }: AffordabilityWidgetProps) {
-  const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
+  const key = NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
   const amountPaise = Math.round(amount * 100);
   const initialized = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);

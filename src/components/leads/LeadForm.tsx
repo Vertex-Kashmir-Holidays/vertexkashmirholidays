@@ -23,6 +23,7 @@ import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/ana
 import { readAttributionClient } from "@/lib/attribution";
 import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { WhatsAppIcon } from "@/components/icons/brand";
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -66,7 +67,7 @@ export function LeadForm({
   const wa = useWhatsAppLink();
 
   // ── Anti-bot ───────────────────────────────────────────────────────────────
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
   const renderedAt = useRef<number>(Date.now());

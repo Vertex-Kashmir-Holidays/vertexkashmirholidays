@@ -1,5 +1,6 @@
 import type { OfflineConversionPlatform, OfflineConversionStatus } from "@prisma/client";
 import { checkGoogleRequestStatus, type RequestStatusResult } from "@/lib/admin/googleRequestStatus";
+import { env } from "@/lib/env";
 
 // Shared, platform-agnostic display/diagnostic helpers for the admin Offline
 // Conversions module (src/app/admin/offline-conversions,
@@ -50,11 +51,11 @@ export const STATUS_STYLES: Record<string, string> = {
 export function getPlatformDestinationId(platform: OfflineConversionPlatform): string | null {
   switch (platform) {
     case "GOOGLE":
-      return process.env.GOOGLE_ADS_CONVERSION_ACTION_ID || null;
+      return env.GOOGLE_ADS_CONVERSION_ACTION_ID || null;
     case "META":
-      return process.env.META_CAPI_PIXEL_ID || null;
+      return env.META_CAPI_PIXEL_ID || null;
     case "MICROSOFT":
-      return process.env.MICROSOFT_ADS_CONVERSION_ID || null;
+      return env.MICROSOFT_ADS_CONVERSION_ID || null;
     default:
       return null;
   }

@@ -1,6 +1,7 @@
 import { GTMScript } from "@/components/providers/GTMScript";
+import { NEXT_PUBLIC_GTM_ID } from "@/lib/env.public";
 
-const rawGtmId = process.env.NEXT_PUBLIC_GTM_ID ?? "";
+const rawGtmId = NEXT_PUBLIC_GTM_ID ?? "";
 const GTM_ID = /^GTM-[A-Z0-9]+$/.test(rawGtmId) ? rawGtmId : null;
 
 interface SiteAnalyticsProps {

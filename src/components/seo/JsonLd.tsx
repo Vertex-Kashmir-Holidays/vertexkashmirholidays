@@ -1,6 +1,7 @@
 // Server component — renders application/ld+json script tags.
 
 import { safeLdJson } from "@/lib/sanitize";
+import { SITE_URL } from "@/lib/seo";
 
 interface JsonLdProps {
   data: Record<string, unknown>;
@@ -17,7 +18,7 @@ export function JsonLd({ data }: JsonLdProps) {
 
 // ── Schema builders ───────────────────────────────────────────────────────────
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://vertexkashmirholidays.com";
+const siteUrl = SITE_URL;
 
 export function buildTravelAgency(opts?: {
   telephone?: string | null;

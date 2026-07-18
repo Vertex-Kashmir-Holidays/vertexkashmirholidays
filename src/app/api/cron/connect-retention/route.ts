@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deleteFromCloudinary } from "@/lib/storage";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ const RETENTION_DAYS = 90;
 
 export async function GET(req: NextRequest) {
   const secret = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  if (!secret || secret !== env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
