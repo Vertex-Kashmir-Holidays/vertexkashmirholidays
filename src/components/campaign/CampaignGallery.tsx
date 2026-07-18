@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface CampaignGalleryProps {
   title: string | null;
@@ -15,8 +16,8 @@ export function CampaignGallery({ title, images }: CampaignGalleryProps) {
     <div className={`marquee ${reverse ? 'mt-4' : 'mt-10'}`}>
       <div className={`mq-imgs ${reverse ? 'mq-rev' : ''}`}>
         {[...items, ...items].map((src, i) => (
-          <span key={i} className="group block h-[170px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-border">
-            <img src={src} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
+          <span key={i} className="group relative block h-[170px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-border">
+            <Image src={src} alt="" fill sizes="250px" className="object-cover transition duration-700 group-hover:scale-110" />
           </span>
         ))}
       </div>

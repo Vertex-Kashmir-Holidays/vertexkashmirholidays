@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface CampaignFilmProps {
   poster: string;
@@ -15,16 +16,18 @@ export function CampaignFilm({ poster, title, dur, onFilmClick }: CampaignFilmPr
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20">
       <motion.button
         onClick={onFilmClick}
-        className="group relative block w-full overflow-hidden rounded-[2rem] border border-border shadow-card"
+        className="group relative block h-[300px] w-full overflow-hidden rounded-[2rem] border border-border shadow-card lg:h-[440px]"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <img
+        <Image
           src={poster}
           alt="Campaign film"
-          className="h-[300px] w-full object-cover transition duration-700 group-hover:scale-105 lg:h-[440px]"
+          fill
+          sizes="(max-width: 1300px) 100vw, 1300px"
+          className="object-cover transition duration-700 group-hover:scale-105"
         />
         <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-black/30"></span>
         <span className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-[hsl(202_50%_8%)] shadow-card transition duration-300 group-hover:scale-110">

@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { imgSrc } from '@/lib/placeholder';
 import type { CampaignItineraryItem } from '@/types/campaign';
 
@@ -53,11 +54,13 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
                 <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{item.description}</p>
               </div>
               <div className={`${i % 2 ? 'lg:order-1 lg:pr-14' : 'lg:pl-14'}`}>
-                <div className="group overflow-hidden rounded-2xl border border-border shadow-card">
-                  <img
+                <div className="group relative h-[150px] overflow-hidden rounded-2xl border border-border shadow-card lg:h-[170px]">
+                  <Image
                     src={imgSrc(item.image)}
                     alt=""
-                    className="h-[150px] w-full object-cover transition duration-700 group-hover:scale-110 lg:h-[170px]"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 460px"
+                    className="object-cover transition duration-700 group-hover:scale-110"
                   />
                 </div>
               </div>

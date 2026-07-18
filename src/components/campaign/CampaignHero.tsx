@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -130,16 +131,14 @@ export function CampaignHero({
             animate={{ scale: 1.14 }}
             transition={{ duration: 16, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
           >
-            <picture className="block h-full w-full">
-              {heroImageMobile && (
-                <source media="(max-width: 640px)" srcSet={heroImageMobile} />
-              )}
-              <img
-                src={heroImage}
-                alt="Campaign hero"
-                className="kb h-full w-full object-cover"
-              />
-            </picture>
+            {heroImageMobile ? (
+              <>
+                <Image src={heroImageMobile} alt="Campaign hero" fill priority sizes="100vw" className="object-cover sm:hidden" />
+                <Image src={heroImage} alt="Campaign hero" fill priority sizes="100vw" className="hidden object-cover sm:block" />
+              </>
+            ) : (
+              <Image src={heroImage} alt="Campaign hero" fill priority sizes="100vw" className="object-cover" />
+            )}
           </motion.div>
         )}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(100deg,hsl(202 50% 5% / .92) 8%,hsl(202 50% 5% / .55) 45%,hsl(202 50% 5% / .25) 75%)' }}></div>
@@ -218,7 +217,7 @@ export function CampaignHero({
             >
               <div className="flex -space-x-2.5">
                 {['sp1', 'sp2', 'sp3'].map((s) => (
-                  <img key={s} className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover" src={imgSrc()} alt="" />
+                  <Image key={s} width={36} height={36} className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover" src={imgSrc()} alt="" />
                 ))}
                 <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[12px] font-extrabold text-white">2k+</span>
               </div>

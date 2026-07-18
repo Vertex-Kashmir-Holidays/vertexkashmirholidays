@@ -42,3 +42,5 @@ prisma/dev.db-journal
 
 # lighthouse ci reports
 .lighthouseci*
+
+.claude
