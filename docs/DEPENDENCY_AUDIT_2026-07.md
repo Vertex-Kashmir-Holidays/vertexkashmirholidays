@@ -1,0 +1,37 @@
+# Dependency Vulnerability Audit — vertexkashmirholidays
+
+**Date:** 2026-07-17
+**Ticket:** VERTE-10 — Dependency Vulnerability Audit & Baseline
+**Method:** `yarn audit --level high` (this repo runs Yarn Classic 1.22.22, not Yarn Berry — the ticket's `yarn npm audit` syntax is a Berry-only command and doesn't exist here) plus `yarn outdated`, both run and reviewed directly, findings triaged against actual usage in this codebase (dev-only tooling vs. production dependency, reachability of the vulnerable code path).
+
+---
+
+## Result
+
+**0 critical, 0 high** (after the fix below). **2 moderate** remain, accepted — see Accepted Risk. Acceptance criteria met: every high/critical CVE found has a documented resolution.
+
+## High/Critical findings — fixed
+
+| CVE | Package | Path | Fix |
+|---|---|---|---|
+| CVE-2026-44705 (GHSA-ph9p-34f9-6g65) | `tmp` `<0.2.6` — path traversal via unsanitized `prefix`/`postfix`/`dir` | `@lhci/cli > tmp` and `@lhci/cli > inquirer > external-editor > tmp` (two separate paths, same advisory, counted as 2 findings by `yarn audit`) | Added a `resolutions` override (`"tmp": "^0.2.6"`) in `package.json`, forcing all three declared ranges (`^0.0.33`, `^0.1.0`, `^0.2.6`) in the tree to resolve to a single patched `tmp@0.2.7`. `@lhci/cli` (0.15.1) is already the latest release and its own dependency tree hasn't picked up a patched `tmp` yet — this override closes the gap without waiting on upstream. `tmp@0.2.6+` has zero dependencies of its own and the same public API (`tmp.file`/`tmp.dir`/`tmp.tmpName`), so the override carries low compatibility risk; confirmed via `yarn install`, `yarn typecheck`, and `yarn build` all passing clean after the change. |
+
+Even before the fix, actual exploitability was low: `@lhci/cli` is a `devDependency` (Lighthouse CI, run only via `yarn lhci` locally/in CI), never bundled into the production build, and the vulnerable code path requires attacker-controlled input reaching `tmp`'s `prefix`/`postfix`/`dir` options — which doesn't happen in lhci's own internal usage. Fixed anyway since a clean override was available and low-risk.
+
+## Accepted risk — moderate (not required by ticket scope, documented for completeness)
+
+| CVE / Advisory | Package | Path | Why not fixed | Why accepted |
+|---|---|---|---|---|
+| PostCSS XSS via unescaped `</style>` in CSS stringify output | `postcss` `<8.5.10`, resolved `8.4.31` | `next@16.2.9 > postcss` | Hard-pinned by Next.js's own build pipeline (exact-pinned in Next's own `package.json`, not a range we declare) — overriding it via `resolutions` risks running Next's CSS compiler against a `postcss` version it wasn't built/tested against, which is a real production-build-breakage risk for a moderate-severity issue. | This is a build-time CSS stringifier issue; exploitability requires attacker-controlled CSS content flowing through PostCSS's stringify step, which doesn't happen here (Tailwind-generated CSS from static config, not user input). Revisit when Next.js ships a release with a bumped `postcss`. |
+| `uuid` missing buffer bounds check (v3/v5/v6 when `buf` is provided) | `uuid` `<11.1.1`, resolved `8.3.2` | `@lhci/cli > uuid` | Same dev-only-tooling situation as the `tmp` finding above; not overridden separately since it doesn't block anything and `@lhci/cli` may pick up a patched `uuid` before `tmp` does. | Dev-only (`yarn lhci`), requires the calling code to pass a user-controlled `buf` — internal to lhci's own tooling, not reachable from this app's runtime or any external input. |
+
+## `yarn outdated` — non-security staleness, informational only
+
+Full output reviewed; nothing there is flagged by `yarn audit` (i.e. no known CVE forces any of these updates). Notable buckets:
+
+- **Patch/minor bumps within the existing `package.json` semver range** (e.g. `@radix-ui/react-*`, `framer-motion`, `lucide-react`, `next` 16.2.9→16.2.10, `eslint`, `postcss` devDependency copy, `react-hook-form`, `nodemailer`) — safe to pick up opportunistically via `yarn upgrade`, not done as part of this ticket since it's out of scope for a CVE audit and each still deserves a quick build/typecheck check, not a blind bulk bump.
+- **Major version bumps requiring their own migration effort** — `prisma`/`@prisma/client` 6→7, `tailwindcss` 3→4, `typescript` 5→7, `eslint` 9→10, `react`/`react-dom` 19.1→19.2. None are security-motivated; each is a real breaking-change surface (Tailwind 4 in particular is a rewrite of the config format) and belongs in its own dedicated ticket with proper regression testing, not bundled into this audit.
+
+## Baseline for future audits
+
+`yarn audit --level high` should be re-run each sprint (or added to CI) so this doesn't silently go stale again — this was the first time it had ever been run on this repo, per the ticket's own "never verified" framing.
