@@ -64,18 +64,15 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ reconciled: false, message: "No captured payment found for this order." });
   }
 
+  // Record the ledger row AND mark the booking paid in a single transaction.
   const { newPaymentId, chargeable } = await recordOnlinePayment({
     booking,
+    bookingStatus: "PAID",
     paymentId: captured.id,
     orderId: booking.razorpayOrderId,
     method: captured.method ?? "razorpay",
     metadata: JSON.stringify({ source: "manual-reconcile", method: captured.method ?? null }),
     auditEvent: "RECONCILED",
-  });
-
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status: "PAID", razorpayPayId: captured.id },
   });
 
   if (newPaymentId) {

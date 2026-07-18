@@ -126,7 +126,7 @@ Every Route Handler:
 - **Validates** input with a Zod schema before touching anything else.
 - **Authorizes** via `requirePermission(module, action)` (or `requireStaff()` for non-module routes) — checked immediately, returned early on failure. This is layer 3 of the three-layer authorization model in `coding-standards.md` → Security; middleware and the admin layout are layers 1 and 2, and neither substitutes for this check.
 - **Delegates** to a domain function in `lib/<domain>` for any real business logic (pricing, dedup, customer resolution); simple single-table CRUD may stay inline.
-- **Wraps multi-step writes in a Prisma `$transaction`** — the established pattern for lead conversion, lead unlock, and itinerary updates; the payment-verification path is the one confirmed gap (see architecture review).
+- **Wraps multi-step writes in a Prisma `$transaction`** — the established pattern for lead conversion, lead unlock, and itinerary updates; the online-payment path (verify-payment / webhook / reconcile) now shares this guarantee via `recordOnlinePayment`, which commits its ledger row and booking-status update atomically (VERTE-16).
 - **Returns consistent, typed JSON responses** and never leaks an internal error message or stack trace to the client.
 
 ────────────────────────────────────
