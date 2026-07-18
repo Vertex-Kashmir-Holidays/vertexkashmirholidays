@@ -118,18 +118,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, status: "FAILED" }, { status: 400 });
   }
 
-  // Booking lifecycle reaches Confirmed once payment is verified. Payment state
-  // (Pending/Partial/Full) is derived separately from the ledger.
-  const updated = await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status: "CONFIRMED", razorpayPayId: razorpay_payment_id },
-  });
-
-  // Record the payment on the shared ledger (idempotent; recomputes the charged
-  // amount server-side). Enrich with the gateway's method/metadata first.
+  // Enrich the ledger row with the gateway's method/metadata first (external
+  // call, so it stays outside the transaction below).
   const { method, metadata } = await fetchGatewayMeta(razorpay_payment_id);
-  const { newPaymentId, chargeable } = await recordOnlinePayment({
+
+  // Record the payment on the shared ledger AND confirm the booking in a single
+  // transaction (idempotent; recomputes the charged amount server-side). Booking
+  // lifecycle reaches Confirmed once payment is verified; payment state
+  // (Pending/Partial/Full) is derived separately from the ledger.
+  const { newPaymentId, chargeable, status } = await recordOnlinePayment({
     booking,
+    bookingStatus: "CONFIRMED",
     paymentId: razorpay_payment_id,
     orderId: razorpay_order_id,
     signature: razorpay_signature,
@@ -145,5 +144,5 @@ export async function POST(req: NextRequest) {
     await finalizeOnlinePayment(booking.id, chargeable, razorpay_payment_id, newPaymentId);
   }
 
-  return NextResponse.json({ success: true, status: updated.status });
+  return NextResponse.json({ success: true, status });
 }

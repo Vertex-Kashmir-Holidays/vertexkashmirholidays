@@ -54,19 +54,16 @@ export async function POST(req: NextRequest) {
       source: "webhook",
     });
 
+    // Record the ledger row AND mark the booking paid in a single transaction.
     const { newPaymentId, chargeable } = await recordOnlinePayment({
       booking,
+      bookingStatus: "PAID",
       paymentId,
       orderId,
       signature: null, // webhook authenticity is the body HMAC, not an order signature
       method,
       metadata,
       auditEvent: "WEBHOOK_CAPTURED",
-    });
-
-    await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: "PAID", razorpayPayId: paymentId },
     });
 
     // Only when THIS path recorded the payment first (no double-run): link/create
