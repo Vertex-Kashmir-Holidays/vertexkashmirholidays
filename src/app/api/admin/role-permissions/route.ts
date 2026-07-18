@@ -23,8 +23,8 @@ export async function GET() {
   const matrix: Record<string, Record<string, Record<string, boolean>>> = {};
   for (const role of EDITABLE_ROLES) {
     matrix[role] = {};
-    for (const module of MODULE_KEYS) {
-      matrix[role][module] = { view: false, create: false, edit: false, delete: false };
+    for (const moduleKey of MODULE_KEYS) {
+      matrix[role][moduleKey] = { view: false, create: false, edit: false, delete: false };
     }
   }
   for (const row of rows) {

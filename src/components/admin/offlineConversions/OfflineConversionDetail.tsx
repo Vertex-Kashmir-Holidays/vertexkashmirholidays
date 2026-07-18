@@ -118,7 +118,7 @@ const TABS: { key: Tab; label: string }[] = [
 
 export function OfflineConversionDetail({ row, canRetry, destinationId }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [retrying, setRetrying] = useState(false);
   const [checking, setChecking] = useState(false);
   const [tab, setTab] = useState<Tab>("summary");

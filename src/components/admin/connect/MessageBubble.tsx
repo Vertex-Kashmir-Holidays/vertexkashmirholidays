@@ -46,10 +46,6 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-}
-
 const URL_RE = /https?:\/\/[^\s<>"{}|\\^`[\]]+/g;
 const MENTION_RE = /@([A-Za-z0-9_.]+)/g;
 const EMOJI_STRIP_RE = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}\u{1F3FB}-\u{1F3FF}\s]/gu;

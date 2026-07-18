@@ -302,7 +302,9 @@ Some columns store JSON inside a String field. Always:
 - Safely parse on read, with a sensible fallback.
 - Centralize parsing — never parse the same column inline in multiple places.
 
-Affected columns on `Tour`: `gallery`, `itinerary`, `inclusions`, `exclusions`, `faqs`, `highlights`. Affected columns on `Campaign`: `facts`, `strip`, `stats`, `highlights`, `activities`, `itinerary`, `tiers`, `batches`, `inclusions`, `exclusions`, `gallery`, `testimonials`, `faqs`. Zod schemas for these accept them as `z.string()` (the raw JSON string), not `z.array(...)`.
+Affected columns on `Tour` (15): `gallery`, `itinerary`, `inclusions`, `exclusions`, `batches`, `highlights`, `perfectFor`, `notIdealFor`, `accommodation`, `budgetBreakdown`, `personalExpenses`, `thingsToCarry`, `localTravelTips`, `importantNotes`, `relatedTours`. Affected columns on `Campaign` (11): `facts`, `strip`, `stats`, `highlights`, `activities`, `itinerary`, `tiers`, `batches`, `inclusions`, `exclusions`, `gallery`. Zod schemas for these accept them as `z.string()` (the raw JSON string), not `z.array(...)`.
+
+`faqs` is **not** a JSON-string column on either model — it was migrated to a centralized `Faq[]` relation (see the schema comment above `Faq`). `testimonials` is not a `Campaign` field at all (only `testimonialsKicker`/`testimonialsTitle` plain strings exist elsewhere in the schema). Verify against `prisma/schema.prisma` directly rather than trusting this list if the schema has changed since 2026-07-17.
 
 Financial Calculations
 

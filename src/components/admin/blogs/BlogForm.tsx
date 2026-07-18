@@ -107,8 +107,6 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
   const authorImage = watch("authorImage");
   const bodyVal = watch("body");
   const publishedVal = watch("published");
-  const featuredVal = watch("featured");
-  const trendingVal = watch("trending");
 
   async function uploadFile(file: File, field: "coverImage" | "coverImageMobile" | "ogImage" | "authorImage") {
     setUploading(true);

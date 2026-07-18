@@ -10,6 +10,12 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    // `next lint` used to apply these ignores automatically; Next.js 16
+    // removed that command, so running ESLint directly (`yarn lint`) needs
+    // them declared explicitly or it lints build output.
+    ignores: ["**/node_modules/**", "**/.next/**", "**/out/**", "**/build/**", "next-env.d.ts"],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
@@ -19,6 +25,9 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "warn",
       "react/no-unescaped-entities": "warn",
       "@next/next/no-html-link-for-pages": "warn",
+      // Established codebase convention (~50 existing call sites) for
+      // intentionally-unused parameters, e.g. `(_req: NextRequest)`.
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
 ];
