@@ -116,6 +116,22 @@ interface Lead {
   updatedAt: Date | string;
   activities: Activity[];
   itinerary: LeadItinerary | null;
+  // Raw attribution signals — what deriveChannel() (src/lib/attribution.server.ts)
+  // actually classified `source` from. Shown so staff can self-diagnose an
+  // unexpected source (e.g. a stale first-touch cookie carrying an old test
+  // gclid) without needing database access.
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmTerm: string | null;
+  utmContent: string | null;
+  gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
+  fbclid: string | null;
+  msclkid: string | null;
+  landingPage: string | null;
+  referrer: string | null;
 }
 
 interface StaffUser {
@@ -219,6 +235,24 @@ function activityLabel(a: Activity): string {
   }
 }
 
+// Order mirrors deriveChannel()'s own precedence (click IDs first, then UTMs)
+// so the field staff most needs to check to explain a classification appears
+// first, not alphabetically.
+const ATTRIBUTION_DISPLAY_FIELDS: { key: keyof Lead; label: string }[] = [
+  { key: "gclid", label: "Google Click ID (gclid)" },
+  { key: "gbraid", label: "gbraid" },
+  { key: "wbraid", label: "wbraid" },
+  { key: "fbclid", label: "Meta Click ID (fbclid)" },
+  { key: "msclkid", label: "Microsoft Click ID (msclkid)" },
+  { key: "utmSource", label: "UTM Source" },
+  { key: "utmMedium", label: "UTM Medium" },
+  { key: "utmCampaign", label: "UTM Campaign" },
+  { key: "utmTerm", label: "UTM Term" },
+  { key: "utmContent", label: "UTM Content" },
+  { key: "referrer", label: "Referrer" },
+  { key: "landingPage", label: "Landing Page" },
+];
+
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
 
@@ -236,6 +270,7 @@ export function LeadDetail({
   const converted = lead.status === "CONVERTED";
   const locked = lead.locked;
   const itinerary = lead.itinerary;
+  const populatedAttribution = ATTRIBUTION_DISPLAY_FIELDS.filter(({ key }) => lead[key]);
   const [showConvert, setShowConvert] = useState(false);
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
@@ -662,6 +697,28 @@ export function LeadDetail({
                 <p className="font-semibold text-foreground">{fmtDate(lead.updatedAt)}</p>
               </div>
             </div>
+          </div>
+
+          {/* Attribution — the raw signals deriveChannel() classified `source` from. */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <h3 className="font-bold text-foreground text-sm mb-4">Attribution</h3>
+            {populatedAttribution.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No click ID, UTM, or referrer data captured — this visit had no ad-platform or
+                campaign signal, consistent with the &quot;{fmtSource(lead.source)}&quot; source.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-xs">
+                {populatedAttribution.map(({ key, label }) => (
+                  <div key={key} className={key === "landingPage" || key === "referrer" ? "sm:col-span-2" : undefined}>
+                    <p className="text-muted-foreground mb-0.5">{label}</p>
+                    <p className="font-mono font-semibold text-foreground break-all">
+                      {lead[key] as string}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Itinerary */}
