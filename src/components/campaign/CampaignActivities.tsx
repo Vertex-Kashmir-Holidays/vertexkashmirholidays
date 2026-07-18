@@ -2,6 +2,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { imgSrc } from '@/lib/placeholder';
 import type { CampaignActivity } from '@/types/campaign';
@@ -67,10 +68,12 @@ export function CampaignActivities({ title, activities }: CampaignActivitiesProp
             viewport={{ once: true }}
             transition={{ delay: i * 0.06 }}
           >
-            <img
+            <Image
               src={imgSrc(activity.image)}
               alt={activity.title}
-              className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-110"
+              fill
+              sizes="230px"
+              className="object-cover transition duration-700 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
             <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/10 text-white opacity-0 backdrop-blur-xl transition duration-300 group-hover:opacity-100"><ArrowRight className="h-4 w-4" strokeWidth={2.2} /></span>
