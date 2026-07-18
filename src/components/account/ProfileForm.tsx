@@ -99,9 +99,19 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             <div className="mt-1.5 flex items-center gap-4">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
                 {image ? (
-                  <Image src={image} alt="" fill sizes="64px" className="object-cover" unoptimized />
+                  <Image
+                    src={image}
+                    alt=""
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                    unoptimized
+                  />
                 ) : (
-                  <UserCircle className="absolute inset-0 m-auto h-10 w-10 text-muted-foreground/50" strokeWidth={1.5} />
+                  <UserCircle
+                    className="absolute inset-0 m-auto h-10 w-10 text-muted-foreground/50"
+                    strokeWidth={1.5}
+                  />
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -111,7 +121,11 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
                   disabled={uploading}
                   className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted disabled:opacity-60"
                 >
-                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {uploading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" />
+                  )}
                   {image ? "Change" : "Upload"}
                 </button>
                 {image && (
@@ -133,11 +147,15 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
                 />
               </div>
             </div>
-            <p className="mt-1.5 text-[12px] text-muted-foreground">JPG or PNG, up to 5 MB. Shown on your reviews.</p>
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
+              JPG or PNG, up to 5 MB. Shown on your reviews.
+            </p>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="pf-name">Full name</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-name">
+              Full name
+            </label>
             <input
               id="pf-name"
               value={name}
@@ -147,8 +165,15 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="pf-email">Email</label>
-            <input id="pf-email" value={email} disabled className={`${inputClass} cursor-not-allowed bg-muted text-muted-foreground`} />
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-email">
+              Email
+            </label>
+            <input
+              id="pf-email"
+              value={email}
+              disabled
+              className={`${inputClass} cursor-not-allowed bg-muted text-muted-foreground`}
+            />
             <p className="mt-1 text-[12px] text-muted-foreground">Email can&apos;t be changed.</p>
           </div>
         </div>
@@ -159,7 +184,9 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
         <p className="text-xs text-muted-foreground">Leave blank to keep your current password.</p>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="pf-current">Current password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-current">
+              Current password
+            </label>
             <input
               id="pf-current"
               type="password"
@@ -170,7 +197,9 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="pf-new">New password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-new">
+              New password
+            </label>
             <input
               id="pf-new"
               type="password"
@@ -181,7 +210,9 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="pf-confirm">Confirm new password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="pf-confirm">
+              Confirm new password
+            </label>
             <input
               id="pf-confirm"
               type="password"

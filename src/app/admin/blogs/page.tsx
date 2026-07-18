@@ -55,7 +55,12 @@ export default async function AdminBlogsPage() {
         initial={blogContent as Record<string, unknown>}
         canEdit={canEdit}
       />
-      <BlogsClient initialBlogs={blogs} canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} />
+      <BlogsClient
+        initialBlogs={blogs}
+        canCreate={canCreate}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
     </div>
   );
 }

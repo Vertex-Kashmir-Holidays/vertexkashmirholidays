@@ -49,7 +49,9 @@ export default async function FaqPage() {
   // The one page where the full answer is genuinely visible — every other
   // page's FAQ schema is built from shortAnswer instead (see FaqPreviewList).
   const faqPageJsonLd =
-    allFaqs.length > 0 ? buildFAQPage(allFaqs.map((f) => ({ question: f.question, answer: f.answer }))) : null;
+    allFaqs.length > 0
+      ? buildFAQPage(allFaqs.map((f) => ({ question: f.question, answer: f.answer })))
+      : null;
 
   return (
     <div className="bg-background text-foreground">

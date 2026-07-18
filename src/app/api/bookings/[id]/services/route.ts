@@ -16,11 +16,19 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const booking = await prisma.booking.findUnique({
     where: { id },
-    select: { id: true, amount: true, servicesLocked: true, services: { select: { amount: true } } },
+    select: {
+      id: true,
+      amount: true,
+      servicesLocked: true,
+      services: { select: { amount: true } },
+    },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
-    return NextResponse.json({ error: "Services are locked and cannot be changed." }, { status: 423 });
+    return NextResponse.json(
+      { error: "Services are locked and cannot be changed." },
+      { status: 423 },
+    );
   }
 
   let body: unknown;
@@ -31,7 +39,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
   const parsed = serviceBodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 

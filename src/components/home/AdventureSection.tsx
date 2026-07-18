@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion, type Variants } from 'framer-motion';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import { Clock, Flame, Tag } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { formatINR, renderAccents } from '@/lib/accents';
-import { imgSrc } from '@/lib/placeholder';
-import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
-import type { OfferData, SectionHeading } from '@/types/home';
+import Link from "next/link";
+import Image from "next/image";
+import { motion, type Variants } from "framer-motion";
+import { Tilt3D } from "@/components/ui/3DTilt";
+import { Clock, Flame, Tag } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { formatINR, renderAccents } from "@/lib/accents";
+import { imgSrc } from "@/lib/placeholder";
+import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import type { OfferData, SectionHeading } from "@/types/home";
 
 interface AdventureSectionProps {
   heading: SectionHeading;
@@ -28,8 +28,8 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
       : null;
 
   const isSeatsLimited =
-    offer.endsText?.toLowerCase().includes('seat') ||
-    offer.endsText?.toLowerCase().includes('left');
+    offer.endsText?.toLowerCase().includes("seat") ||
+    offer.endsText?.toLowerCase().includes("left");
 
   return (
     <motion.div
@@ -42,7 +42,11 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
         <article className="group flex flex-col overflow-hidden rounded-2xl border border-orange-200/60 bg-gradient-to-br from-amber-50/80 to-card shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-brand/15 dark:border-orange-900/40 dark:from-orange-950/30">
           {/* Image */}
           <div className="relative h-44 overflow-hidden">
-            <Link href={offer.ctaHref ?? '#'} aria-label={offer.title} className="block h-full w-full">
+            <Link
+              href={offer.ctaHref ?? "#"}
+              aria-label={offer.title}
+              className="block h-full w-full"
+            >
               <Image
                 src={imgSrc(offer.image)}
                 alt={offer.title}
@@ -74,7 +78,7 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
           {/* Body */}
           <div className="flex flex-1 flex-col p-5">
             <h3 className="text-[16px] font-bold leading-snug text-foreground">
-              <Link href={offer.ctaHref ?? '#'} className="transition-colors hover:text-orange-600">
+              <Link href={offer.ctaHref ?? "#"} className="transition-colors hover:text-orange-600">
                 {offer.title}
               </Link>
             </h3>
@@ -89,8 +93,8 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
               <div
                 className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold ${
                   isSeatsLimited
-                    ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
-                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                    ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+                    : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
                 }`}
               >
                 <Clock className="h-3 w-3" strokeWidth={2.2} />
@@ -101,12 +105,14 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
             {/* Price */}
             <div className="mt-4 flex items-end justify-between border-t border-orange-100 pt-3 dark:border-orange-900/30">
               {offer.oldPrice ? (
-                <span className="text-[12px] text-muted-foreground line-through">{formatINR(offer.oldPrice)}</span>
+                <span className="text-[12px] text-muted-foreground line-through">
+                  {formatINR(offer.oldPrice)}
+                </span>
               ) : (
                 <span className="text-[12px]">&nbsp;</span>
               )}
               <p className="text-[22px] font-extrabold leading-tight text-orange-600 dark:text-orange-400">
-                {offer.price > 0 ? formatINR(offer.price) : 'Custom'}
+                {offer.price > 0 ? formatINR(offer.price) : "Custom"}
               </p>
               <p className="text-[10px] text-muted-foreground">per person</p>
             </div>
@@ -131,7 +137,7 @@ function AdventureCard({ offer, index }: { offer: OfferData; index: number }) {
               </motion.div>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href={offer.ctaHref ?? '#'}
+                  href={offer.ctaHref ?? "#"}
                   className="flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 py-2.5 text-[14px] font-extrabold text-white transition-all hover:brightness-110 hover:shadow-gold"
                 >
                   Explore Adventure →
@@ -154,7 +160,10 @@ export function AdventureSection({ heading, offers }: AdventureSectionProps) {
   if (offers.length === 0) return null;
 
   return (
-    <section id="adventures" className="relative isolate z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section
+      id="adventures"
+      className="relative isolate z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24"
+    >
       <div aria-hidden className="orb orb-gold absolute -left-16 top-10 -z-10 h-72 w-72" />
       <div aria-hidden className="orb orb-green absolute -right-10 bottom-0 -z-10 h-80 w-80" />
 
@@ -171,7 +180,7 @@ export function AdventureSection({ heading, offers }: AdventureSectionProps) {
           </motion.p>
           <motion.h2
             className="rv h-display mt-3 text-[18px] font-bold text-foreground"
-            style={{ '--rd': '0.08s' } as React.CSSProperties}
+            style={{ "--rd": "0.08s" } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -183,7 +192,7 @@ export function AdventureSection({ heading, offers }: AdventureSectionProps) {
         {heading.subtitle && (
           <motion.p
             className="rv text-sm text-muted-foreground"
-            style={{ '--rd': '0.16s' } as React.CSSProperties}
+            style={{ "--rd": "0.16s" } as React.CSSProperties}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}

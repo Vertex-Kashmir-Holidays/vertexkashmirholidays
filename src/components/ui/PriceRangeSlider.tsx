@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { formatINR } from '@/lib/accents';
+import { formatINR } from "@/lib/accents";
 
 // Dual-handle price slider. Two overlaid native range inputs (accessible +
 // keyboard-friendly); the `.price-range` CSS in globals makes only the thumbs

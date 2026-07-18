@@ -23,7 +23,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     include: {
       activities: { orderBy: { performedAt: "desc" } },
       assignedTo: { select: { id: true, name: true, email: true } },
-      booking: { select: { id: true, status: true, amount: true, travelDate: true, guestName: true } },
+      booking: {
+        select: { id: true, status: true, amount: true, travelDate: true, guestName: true },
+      },
     },
   });
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -99,7 +101,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { status, assignedToId, startDate, endDate, notes, followUpAt, bookingId, negotiatedAmount, tokenAmount, ...rest } = parsed.data;
+  const {
+    status,
+    assignedToId,
+    startDate,
+    endDate,
+    notes,
+    followUpAt,
+    bookingId,
+    negotiatedAmount,
+    tokenAmount,
+    ...rest
+  } = parsed.data;
 
   // Changing a lead's assignee is an admin-only action.
   const assignmentChanged =
@@ -120,7 +133,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     (notes !== undefined && notes !== (existing.notes ?? "")) ||
     (followUpAt !== undefined && !sameTime(existing.followUpAt, followUpAt)) ||
     (bookingId !== undefined && (bookingId ?? null) !== (existing.bookingId ?? null)) ||
-    (negotiatedAmount !== undefined && (negotiatedAmount ?? null) !== (existing.negotiatedAmount ?? null)) ||
+    (negotiatedAmount !== undefined &&
+      (negotiatedAmount ?? null) !== (existing.negotiatedAmount ?? null)) ||
     (tokenAmount !== undefined && (tokenAmount ?? null) !== (existing.tokenAmount ?? null)) ||
     (startDate !== undefined && !sameTime(existing.startDate, startDate)) ||
     (endDate !== undefined && !sameTime(existing.endDate, endDate)) ||
@@ -143,8 +157,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // update that touches only one date is still validated against the other.
   const effStart =
     startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate;
-  const effEnd =
-    endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate;
+  const effEnd = endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate;
   if (effStart && effEnd && effEnd.getTime() < effStart.getTime()) {
     return NextResponse.json(
       { error: "Travel end date can't be before the start date." },
@@ -153,7 +166,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   if (bookingId) {
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId }, select: { id: true } });
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { id: true },
+    });
     if (!booking) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
 
@@ -192,7 +208,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         category: rest.category !== undefined ? rest.category : existing.category,
         adults: rest.adults ?? existing.adults,
         children: rest.children !== undefined ? rest.children : existing.children,
-        startDate: startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
+        startDate:
+          startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
         endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
       };
       const nextData = applyLeadFactsToItinerary(parsedItin.data, facts);
@@ -244,19 +261,75 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
     }),
     ...(status !== undefined && status !== existing.status
-      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.STATUS_CHANGE, fromStatus: existing.status, toStatus: status, performedById, performedByName } })]
+      ? [
+          prisma.leadActivity.create({
+            data: {
+              leadId: id,
+              type: LeadActivityType.STATUS_CHANGE,
+              fromStatus: existing.status,
+              toStatus: status,
+              performedById,
+              performedByName,
+            },
+          }),
+        ]
       : []),
     ...(assignedToId !== undefined && assignedToId !== existing.assignedToId
-      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.ASSIGNMENT_CHANGE, fromAssigneeId: existing.assignedToId, toAssigneeId: assignedToId, performedById, performedByName } })]
+      ? [
+          prisma.leadActivity.create({
+            data: {
+              leadId: id,
+              type: LeadActivityType.ASSIGNMENT_CHANGE,
+              fromAssigneeId: existing.assignedToId,
+              toAssigneeId: assignedToId,
+              performedById,
+              performedByName,
+            },
+          }),
+        ]
       : []),
     ...(notes !== undefined && notes.trim() !== "" && notes !== (existing.notes ?? "")
-      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.NOTE_ADDED, note: notes, performedById, performedByName } })]
+      ? [
+          prisma.leadActivity.create({
+            data: {
+              leadId: id,
+              type: LeadActivityType.NOTE_ADDED,
+              note: notes,
+              performedById,
+              performedByName,
+            },
+          }),
+        ]
       : []),
-    ...(followUpAt !== undefined && (followUpAt ? new Date(followUpAt).getTime() : null) !== (existing.followUpAt ? existing.followUpAt.getTime() : null)
-      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.FOLLOW_UP_SCHEDULED, note: followUpAt ? `Scheduled for ${new Date(followUpAt).toISOString().slice(0, 16).replace("T", " ")}` : "Follow-up cleared", performedById, performedByName } })]
+    ...(followUpAt !== undefined &&
+    (followUpAt ? new Date(followUpAt).getTime() : null) !==
+      (existing.followUpAt ? existing.followUpAt.getTime() : null)
+      ? [
+          prisma.leadActivity.create({
+            data: {
+              leadId: id,
+              type: LeadActivityType.FOLLOW_UP_SCHEDULED,
+              note: followUpAt
+                ? `Scheduled for ${new Date(followUpAt).toISOString().slice(0, 16).replace("T", " ")}`
+                : "Follow-up cleared",
+              performedById,
+              performedByName,
+            },
+          }),
+        ]
       : []),
     ...(bookingChanged
-      ? [prisma.leadActivity.create({ data: { leadId: id, type: LeadActivityType.BOOKING_LINKED, note: bookingId ? `Linked to booking ...${bookingId.slice(-8)}` : "Booking unlinked", performedById, performedByName } })]
+      ? [
+          prisma.leadActivity.create({
+            data: {
+              leadId: id,
+              type: LeadActivityType.BOOKING_LINKED,
+              note: bookingId ? `Linked to booking ...${bookingId.slice(-8)}` : "Booking unlinked",
+              performedById,
+              performedByName,
+            },
+          }),
+        ]
       : []),
     // Sync lead trip facts into the linked itinerary's cover fields.
     ...itinerarySyncOps,
@@ -296,10 +369,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   // Converted leads are permanent business records and cannot be deleted.
   if (existing.status === LeadStatus.CONVERTED) {
-    return NextResponse.json(
-      { error: "A converted lead cannot be deleted." },
-      { status: 422 },
-    );
+    return NextResponse.json({ error: "A converted lead cannot be deleted." }, { status: 422 });
   }
 
   // Cascade rules (schema onDelete) clean up the linked itinerary, its history,

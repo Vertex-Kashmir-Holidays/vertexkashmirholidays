@@ -1,7 +1,7 @@
 // src/components/campaign/CampaignStats.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface CampaignStatsProps {
   stats: Array<[string, string, string]>;

@@ -27,7 +27,8 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const rendered = await renderPaymentReceiptPdf(booking.id, paymentId);
-  if (!rendered) return NextResponse.json({ error: "Could not generate the receipt." }, { status: 500 });
+  if (!rendered)
+    return NextResponse.json({ error: "Could not generate the receipt." }, { status: 500 });
 
   return new NextResponse(new Uint8Array(rendered.buffer), {
     status: 200,

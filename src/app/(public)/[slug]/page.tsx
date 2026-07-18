@@ -70,15 +70,20 @@ export default async function LegalPage({ params }: PageProps) {
 
       {/* Unified image-banner hero (admin-replaceable from the gallery). */}
       <SecondaryHero image={heroImage} imageMobile={heroImageMobile} alt={title}>
-        <nav className="flex flex-wrap items-center gap-1.5 text-[14px] text-white/85" aria-label="Breadcrumb">
-          <Link href="/" className="transition hover:text-white">Home</Link>
+        <nav
+          className="flex flex-wrap items-center gap-1.5 text-[14px] text-white/85"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="transition hover:text-white">
+            Home
+          </Link>
           <span>›</span>
           <span className="font-semibold text-white">{title}</span>
         </nav>
-        <h1 className="h-display mt-4 text-3xl font-bold text-white sm:text-4xl lg:text-[44px]">{title}</h1>
-        <p className="mt-3 text-sm text-white/80">
-          Last updated: {longDate(updated)}
-        </p>
+        <h1 className="h-display mt-4 text-3xl font-bold text-white sm:text-4xl lg:text-[44px]">
+          {title}
+        </h1>
+        <p className="mt-3 text-sm text-white/80">Last updated: {longDate(updated)}</p>
       </SecondaryHero>
 
       <main className="mx-auto max-w-[1300px] px-6 py-10 sm:py-12">
@@ -90,7 +95,9 @@ export default async function LegalPage({ params }: PageProps) {
           {/* Sidebar: jump between policies */}
           <aside className="lg:sticky lg:top-24">
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Legal &amp; Policies</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Legal &amp; Policies
+              </p>
               <ul className="mt-3 space-y-1.5">
                 {LEGAL_PAGES.map((p) => {
                   const active = p.slug === slug;
@@ -111,7 +118,10 @@ export default async function LegalPage({ params }: PageProps) {
                 })}
               </ul>
               <div className="mt-4 border-t border-border pt-4">
-                <Link href="/contact" className="text-sm font-semibold text-primary hover:underline">
+                <Link
+                  href="/contact"
+                  className="text-sm font-semibold text-primary hover:underline"
+                >
                   Questions? Contact us →
                 </Link>
               </div>

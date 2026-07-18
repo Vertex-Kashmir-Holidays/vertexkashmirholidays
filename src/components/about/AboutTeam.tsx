@@ -1,11 +1,11 @@
 // src/components/about/AboutTeam.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { imgSrc } from '@/lib/placeholder';
-import { renderMint } from '@/lib/accents';
-import type { AboutTeamHeading, TeamMemberData } from '@/types/about';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { imgSrc } from "@/lib/placeholder";
+import { renderMint } from "@/lib/accents";
+import type { AboutTeamHeading, TeamMemberData } from "@/types/about";
 
 interface AboutTeamProps {
   heading: AboutTeamHeading;
@@ -31,7 +31,9 @@ export function AboutTeam({ heading, team }: AboutTeamProps) {
       <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
         <div>
           <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">{renderMint(heading.title)}</h2>
+          <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">
+            {renderMint(heading.title)}
+          </h2>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {visible.map((m, i) => (

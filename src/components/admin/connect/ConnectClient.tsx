@@ -32,7 +32,9 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
   const prevUnreadRef = useRef<Map<string, number>>(new Map());
   const firstRunRef = useRef(true);
   const selectedRoomIdRef = useRef(selectedRoomId);
-  useEffect(() => { selectedRoomIdRef.current = selectedRoomId; }, [selectedRoomId]);
+  useEffect(() => {
+    selectedRoomIdRef.current = selectedRoomId;
+  }, [selectedRoomId]);
 
   useEffect(() => {
     if (rooms.length === 0) return;
@@ -68,11 +70,14 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
 
   const presenceMap: PresenceMap = usePresence(dmPartnerIds);
 
-  const handleSelectRoom = useCallback((roomId: string) => {
-    unlock(); // user clicked → pre-authorize AudioContext for timer-triggered sounds
-    setSelectedRoomId(roomId);
-    setShowList(false);
-  }, [unlock]);
+  const handleSelectRoom = useCallback(
+    (roomId: string) => {
+      unlock(); // user clicked → pre-authorize AudioContext for timer-triggered sounds
+      setSelectedRoomId(roomId);
+      setShowList(false);
+    },
+    [unlock],
+  );
 
   const handleStartDM = useCallback(
     async (userId: string) => {

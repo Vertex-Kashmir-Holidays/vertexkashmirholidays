@@ -1,23 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  getCountries,
-  getCountryCallingCode,
-  type CountryCode,
-} from 'libphonenumber-js';
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getCountries, getCountryCallingCode, type CountryCode } from "libphonenumber-js";
+import { ChevronDown } from "lucide-react";
 
 // ISO-3166 alpha-2 → flag emoji (regional indicator symbols).
 function flagOf(code: string): string {
-  return code
-    .toUpperCase()
-    .replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
+  return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
 }
 
 const regionNames =
-  typeof Intl !== 'undefined' && 'DisplayNames' in Intl
-    ? new Intl.DisplayNames(['en'], { type: 'region' })
+  typeof Intl !== "undefined" && "DisplayNames" in Intl
+    ? new Intl.DisplayNames(["en"], { type: "region" })
     : null;
 
 interface PhoneInputProps {
@@ -43,7 +37,7 @@ export function PhoneInput({
   invalid,
 }: PhoneInputProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const countries = useMemo(
@@ -59,13 +53,11 @@ export function PhoneInput({
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase().replace(/^\+/, '');
+    const q = query.trim().toLowerCase().replace(/^\+/, "");
     if (!q) return countries;
     return countries.filter(
       (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.dial.includes(q) ||
-        c.code.toLowerCase().includes(q),
+        c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q),
     );
   }, [countries, query]);
 
@@ -75,11 +67,11 @@ export function PhoneInput({
     function onDocClick(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false);
-        setQuery('');
+        setQuery("");
       }
     }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
   const dial = getCountryCallingCode(country);
@@ -87,7 +79,7 @@ export function PhoneInput({
   return (
     <div
       ref={wrapRef}
-      className={`input-wrap relative mt-1.5 ${invalid ? 'ring-1 ring-red-500/60' : ''}`}
+      className={`input-wrap relative mt-1.5 ${invalid ? "ring-1 ring-red-500/60" : ""}`}
     >
       <button
         type="button"
@@ -109,7 +101,7 @@ export function PhoneInput({
         autoComplete="tel"
         placeholder="Enter your phone number"
         value={value}
-        onChange={(e) => onChange(e.target.value.replace(/[^\d\s()-]/g, ''))}
+        onChange={(e) => onChange(e.target.value.replace(/[^\d\s()-]/g, ""))}
       />
 
       {open && (
@@ -137,10 +129,10 @@ export function PhoneInput({
               onClick={() => {
                 onCountryChange(c.code);
                 setOpen(false);
-                setQuery('');
+                setQuery("");
               }}
               className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-[14px] transition hover:bg-muted ${
-                c.code === country ? 'bg-primary/10 font-semibold' : ''
+                c.code === country ? "bg-primary/10 font-semibold" : ""
               }`}
             >
               <span aria-hidden="true">{flagOf(c.code)}</span>

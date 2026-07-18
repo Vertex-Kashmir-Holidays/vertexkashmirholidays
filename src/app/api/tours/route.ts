@@ -32,10 +32,11 @@ export async function GET(request: Request) {
   const cursor = searchParams.get("cursor") ?? "";
   const take = Math.min(parseInt(searchParams.get("take") ?? String(PAGE_SIZE)), 24);
 
-  const category: TourCategory | undefined =
-    VALID_CATEGORIES.includes(rawCategory as (typeof VALID_CATEGORIES)[number])
-      ? (rawCategory as TourCategory)
-      : undefined;
+  const category: TourCategory | undefined = VALID_CATEGORIES.includes(
+    rawCategory as (typeof VALID_CATEGORIES)[number],
+  )
+    ? (rawCategory as TourCategory)
+    : undefined;
 
   const VALID_SORTS: SortKey[] = ["popular", "price_asc", "price_desc", "newest"];
   const sort: SortKey = VALID_SORTS.includes(rawSort as SortKey) ? (rawSort as SortKey) : "popular";
@@ -91,8 +92,20 @@ export async function GET(request: Request) {
 // ── Admin-only tour creation ───────────────────────────────────────────────────
 const createSchema = z.object({
   title: z.string().min(3),
-  slug: z.string().min(3).regex(/^[a-z0-9-]+$/, "Slug: lowercase letters, numbers, hyphens only"),
-  category: z.enum(["HONEYMOON", "FAMILY", "ADVENTURE", "LUXURY", "BUDGET", "GROUP", "PILGRIMAGE", "PREMIUM"]),
+  slug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9-]+$/, "Slug: lowercase letters, numbers, hyphens only"),
+  category: z.enum([
+    "HONEYMOON",
+    "FAMILY",
+    "ADVENTURE",
+    "LUXURY",
+    "BUDGET",
+    "GROUP",
+    "PILGRIMAGE",
+    "PREMIUM",
+  ]),
   duration: z.coerce.number().int().min(1),
   excerpt: z.string().optional(),
   description: z.string().optional(),

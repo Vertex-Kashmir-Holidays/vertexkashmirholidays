@@ -12,8 +12,7 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   return NextResponse.json(
     {
-      error:
-        "Email verification is now required to register. Please use the verification flow.",
+      error: "Email verification is now required to register. Please use the verification flow.",
     },
     { status: 410 },
   );

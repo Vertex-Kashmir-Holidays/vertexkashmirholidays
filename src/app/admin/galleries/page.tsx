@@ -22,7 +22,7 @@ export default async function AdminGalleriesPage() {
   ]);
 
   const categories = Array.from(
-    new Set(items.map((i) => i.category).filter((c): c is string => c !== null && c !== ""))
+    new Set(items.map((i) => i.category).filter((c): c is string => c !== null && c !== "")),
   ).sort();
 
   return (

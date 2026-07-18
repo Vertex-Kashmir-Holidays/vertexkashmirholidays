@@ -28,11 +28,7 @@ export function FlushCacheButton() {
       disabled={isPending}
       className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
     >
-      {isPending ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <RefreshCw className="h-4 w-4" />
-      )}
+      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
       Flush cache
     </button>
   );

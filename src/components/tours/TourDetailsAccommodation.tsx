@@ -1,10 +1,10 @@
 // src/components/sections/TourDetailsAccommodation.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { imgSrc } from '@/lib/placeholder';
-import type { AccommodationEntry } from '@/types/tours';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { imgSrc } from "@/lib/placeholder";
+import type { AccommodationEntry } from "@/types/tours";
 
 interface TourDetailsAccommodationProps {
   accommodation: AccommodationEntry[];

@@ -20,7 +20,10 @@ interface IncomingMeeting {
   createdById: string;
   roomId: string | null;
   room: { type: "DIRECT" | "GROUP" } | null;
-  participants: Array<{ userId: string; user: { id: string; name: string | null; image: string | null } }>;
+  participants: Array<{
+    userId: string;
+    user: { id: string; name: string | null; image: string | null };
+  }>;
 }
 
 interface Props {
@@ -146,8 +149,7 @@ export function GlobalCallNotification({ currentUserId }: Props) {
   const roomType = incoming?.room?.type ?? "GROUP";
   const isCreator = incoming?.createdById === currentUserId;
   const callerName =
-    incoming?.participants.find((p) => p.userId === incoming.createdById)?.user.name ??
-    "Someone";
+    incoming?.participants.find((p) => p.userId === incoming.createdById)?.user.name ?? "Someone";
 
   return (
     <>

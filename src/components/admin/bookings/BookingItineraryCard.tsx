@@ -61,7 +61,9 @@ export function BookingItineraryCard({
               <FileText className="w-4 h-4" /> View Itinerary <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
-            <p className="mt-2 text-xs text-muted-foreground">No itinerary was attached to the lead.</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              No itinerary was attached to the lead.
+            </p>
           )}
         </div>
       ) : itinerary ? (

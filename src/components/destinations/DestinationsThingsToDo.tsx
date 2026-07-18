@@ -1,19 +1,29 @@
 // src/components/sections/DestinationsThingsToDo.tsx
-'use client';
+"use client";
 
-import { motion, type Variants } from 'framer-motion';
-import { Sailboat, CableCar, Footprints, Snowflake, MountainSnow, Flower2, Camera, Utensils, ArrowRight } from 'lucide-react';
+import { motion, type Variants } from "framer-motion";
+import {
+  Sailboat,
+  CableCar,
+  Footprints,
+  Snowflake,
+  MountainSnow,
+  Flower2,
+  Camera,
+  Utensils,
+  ArrowRight,
+} from "lucide-react";
 
 export function DestinationsThingsToDo() {
   const things = [
-    { t: 'Shikara Ride', s: 'Dal Lake', Icon: Sailboat },
-    { t: 'Gondola Ride', s: 'Gulmarg', Icon: CableCar },
-    { t: 'Trekking', s: 'High Altitude', Icon: Footprints },
-    { t: 'Skiing', s: 'Winter Sports', Icon: Snowflake },
-    { t: 'Gulmarg', s: 'Ski Resort', Icon: MountainSnow },
-    { t: 'Mughal Gardens', s: 'Heritage', Icon: Flower2 },
-    { t: 'Photography', s: 'Scenic Views', Icon: Camera },
-    { t: 'Local Cuisine', s: 'Wazwan', Icon: Utensils },
+    { t: "Shikara Ride", s: "Dal Lake", Icon: Sailboat },
+    { t: "Gondola Ride", s: "Gulmarg", Icon: CableCar },
+    { t: "Trekking", s: "High Altitude", Icon: Footprints },
+    { t: "Skiing", s: "Winter Sports", Icon: Snowflake },
+    { t: "Gulmarg", s: "Ski Resort", Icon: MountainSnow },
+    { t: "Mughal Gardens", s: "Heritage", Icon: Flower2 },
+    { t: "Photography", s: "Scenic Views", Icon: Camera },
+    { t: "Local Cuisine", s: "Wazwan", Icon: Utensils },
   ];
 
   const containerVariants = {
@@ -71,7 +81,10 @@ export function DestinationsThingsToDo() {
         ))}
       </motion.div>
       <div className="mt-4 flex justify-end">
-        <a href="#" className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
+        <a
+          href="#"
+          className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
+        >
           View all experiences
           <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
         </a>

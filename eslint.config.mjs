@@ -27,7 +27,10 @@ const eslintConfig = [
       "@next/next/no-html-link-for-pages": "warn",
       // Established codebase convention (~50 existing call sites) for
       // intentionally-unused parameters, e.g. `(_req: NextRequest)`.
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
     },
   },
 ];

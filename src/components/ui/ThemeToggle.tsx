@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useTheme } from 'next-themes';
-import { Circle, Sun, Moon } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { Circle, Sun, Moon } from "lucide-react";
 
 type ThemeToggleProps = {
   className?: string;
 };
 
-export function ThemeToggle({ className = '' }: ThemeToggleProps) {
+export function ThemeToggle({ className = "" }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -16,13 +16,15 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   // to avoid a hydration mismatch between server and client markup.
   useEffect(() => setMounted(true), []);
 
-  const isDark = resolvedTheme === 'dark';
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      aria-label={mounted ? (isDark ? 'Switch to light mode' : 'Switch to dark mode') : 'Toggle color theme'}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={
+        mounted ? (isDark ? "Switch to light mode" : "Switch to dark mode") : "Toggle color theme"
+      }
       // title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       className={className}
     >

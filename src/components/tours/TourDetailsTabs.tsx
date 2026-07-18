@@ -1,8 +1,8 @@
 // src/components/sections/TourDetailsTabs.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface TourDetailsTabsProps {
   sections: {
@@ -33,17 +33,17 @@ export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [sections]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       const top = element.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
-      window.scrollTo({ top, behavior: 'smooth' });
+      window.scrollTo({ top, behavior: "smooth" });
       setActiveTab(id);
     }
   };
@@ -57,9 +57,7 @@ export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
               key={section.id}
               onClick={() => scrollToSection(section.id)}
               className={`relative whitespace-nowrap pb-1 transition-colors ${
-                activeTab === section.id
-                  ? 'text-primary'
-                  : 'hover:text-foreground'
+                activeTab === section.id ? "text-primary" : "hover:text-foreground"
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -69,7 +67,7 @@ export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
                 <motion.span
                   className="absolute inset-x-0 -bottom-[1px] h-[2.5px] rounded-full bg-primary"
                   layoutId="activeTab"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
             </motion.button>

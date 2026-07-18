@@ -1,11 +1,11 @@
 // src/components/blog/BlogPostSidebar.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { MapPin, Star, CheckCircle2, ArrowRight, Clock } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { MapPin, Star, CheckCircle2, ArrowRight, Clock } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
 
 interface BlogPostSidebarProps {
   toc: Array<{ label: string; href: string }>;
@@ -87,7 +87,9 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
             <span className="text-[18px] font-extrabold">{relatedTour.price}</span>
             <span className="text-[14px] text-muted-foreground">/ person</span>
             {relatedTour.oldPrice && (
-              <span className="text-[14px] text-muted-foreground line-through">{relatedTour.oldPrice}</span>
+              <span className="text-[14px] text-muted-foreground line-through">
+                {relatedTour.oldPrice}
+              </span>
             )}
             {relatedTour.off && (
               <span className="rounded bg-amber-500 px-2 py-0.5 text-[12px] font-extrabold text-white">
@@ -101,7 +103,11 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
               {relatedTour.route}
             </li>
             <li className="flex items-center gap-2">
-              <Star className="h-3.5 w-3.5 shrink-0 text-amber-400" fill="currentColor" strokeWidth={0} />
+              <Star
+                className="h-3.5 w-3.5 shrink-0 text-amber-400"
+                fill="currentColor"
+                strokeWidth={0}
+              />
               {relatedTour.rating} ({relatedTour.reviews})
             </li>
             <li className="flex items-center gap-2">
@@ -116,7 +122,10 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
             View Details
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
           </Link>
-          <Link href={relatedTour.href} className="mt-3 block text-center text-[14px] font-bold text-primary underline-offset-2 hover:underline">
+          <Link
+            href={relatedTour.href}
+            className="mt-3 block text-center text-[14px] font-bold text-primary underline-offset-2 hover:underline"
+          >
             Customize this trip
           </Link>
         </motion.div>
@@ -130,9 +139,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <h2 className="text-[16px] font-bold text-foreground">
-          Get Kashmir stories in your inbox
-        </h2>
+        <h2 className="text-[16px] font-bold text-foreground">Get Kashmir stories in your inbox</h2>
         <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
           Weekly travel tips, exclusive deals, and hidden gems — straight from the valley.
         </p>
@@ -176,14 +183,21 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           />
           <div>
             {author.href ? (
-              <Link href={author.href} className="text-[16px] font-bold transition hover:text-primary">{author.name}</Link>
+              <Link
+                href={author.href}
+                className="text-[16px] font-bold transition hover:text-primary"
+              >
+                {author.name}
+              </Link>
             ) : (
               <p className="text-[16px] font-bold">{author.name}</p>
             )}
             {author.role && <p className="text-[12px] font-semibold text-primary">{author.role}</p>}
-            {author.bio && <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{author.bio}</p>}
+            {author.bio && (
+              <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{author.bio}</p>
+            )}
             <div className="mt-3 flex gap-2">
-              {['Instagram', 'Facebook', 'YouTube', 'WhatsApp'].map((s, i) => (
+              {["Instagram", "Facebook", "YouTube", "WhatsApp"].map((s, i) => (
                 <a
                   key={i}
                   href="#"

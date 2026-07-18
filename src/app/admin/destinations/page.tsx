@@ -30,5 +30,12 @@ export default async function AdminDestinationsPage() {
     can(role, "destinations", "delete"),
   ]);
 
-  return <DestinationsClient initialDestinations={destinations} canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} />;
+  return (
+    <DestinationsClient
+      initialDestinations={destinations}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
+    />
+  );
 }

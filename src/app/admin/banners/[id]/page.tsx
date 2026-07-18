@@ -24,11 +24,18 @@ export default async function EditBannerPage({ params }: { params: Promise<{ id:
   return (
     <div className="space-y-5">
       <div>
-        <Link href="/admin/banners" className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary">
+        <Link
+          href="/admin/banners"
+          className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary"
+        >
           <ArrowLeft className="h-3 w-3" /> All Banners
         </Link>
-        <h2 className="font-display text-xl font-extrabold text-foreground">Edit: {banner.title}</h2>
-        {!canEdit && <p className="text-xs text-amber-600 dark:text-amber-400">You have read-only access.</p>}
+        <h2 className="font-display text-xl font-extrabold text-foreground">
+          Edit: {banner.title}
+        </h2>
+        {!canEdit && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">You have read-only access.</p>
+        )}
       </div>
       <BannerForm
         initial={{

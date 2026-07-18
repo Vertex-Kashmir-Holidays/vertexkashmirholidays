@@ -5,6 +5,7 @@ Version: 1.0.0
 Last Updated: 2026-07-16
 
 Maintainers:
+
 - Farooq Sheikh
 - Vertex Engineering Team
 
@@ -26,7 +27,6 @@ Every AI assistant and developer should understand the repository in the followi
 6. templates/
 
 Never begin implementation before understanding the relevant project context and engineering standards.
-
 
 ---
 
@@ -231,7 +231,6 @@ Every completed task should be verified using:
 
 The goal of this platform is to evolve Vertex Kashmir Holidays into a production-grade engineering repository where every developer—and every AI assistant—works from the same standards, processes, and architectural guidance.
 
-
 ---
 
 # Versioning
@@ -241,5 +240,3 @@ Engineering documents inside `.ai` should evolve alongside the project.
 Major architectural changes should update the relevant documentation before or together with implementation.
 
 Version history is maintained through Git.
-
-

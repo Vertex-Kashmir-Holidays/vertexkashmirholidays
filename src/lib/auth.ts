@@ -30,7 +30,11 @@ async function resolveGoogleCustomer(email: string, name?: string | null) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     if (existing.deletedAt || isStaff(existing.role)) return null;
-    return { id: existing.id, role: existing.role, mustChangePassword: existing.mustChangePassword };
+    return {
+      id: existing.id,
+      role: existing.role,
+      mustChangePassword: existing.mustChangePassword,
+    };
   }
 
   // First Google sign-in for this email — provision a CUSTOMER account. No
@@ -167,10 +171,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const validPassword = await bcrypt.compare(
-          parsed.data.password,
-          user.passwordHash
-        );
+        const validPassword = await bcrypt.compare(parsed.data.password, user.passwordHash);
 
         if (!validPassword) {
           return null;

@@ -1,5 +1,5 @@
 // src/components/activities/ActivityWhatToCarry.tsx
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from "lucide-react";
 
 interface ActivityWhatToCarryProps {
   items: string[];
@@ -9,7 +9,10 @@ export function ActivityWhatToCarry({ items }: ActivityWhatToCarryProps) {
   if (items.length === 0) return null;
 
   return (
-    <section id="what-to-carry" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+    <section
+      id="what-to-carry"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+    >
       <h2 className="text-[18px] font-bold">What to Carry</h2>
       <ul className="mt-4 grid gap-3 sm:grid-cols-2 text-[14px] text-foreground/80">
         {items.map((item, i) => (

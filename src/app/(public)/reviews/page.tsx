@@ -50,7 +50,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 export default async function ReviewsPage({ searchParams }: PageProps) {
   const { page: pageParam, rating: ratingParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const rating = ratingParam ? Math.min(5, Math.max(1, parseInt(ratingParam, 10) || 0)) || undefined : undefined;
+  const rating = ratingParam
+    ? Math.min(5, Math.max(1, parseInt(ratingParam, 10) || 0)) || undefined
+    : undefined;
 
   const [{ items, total }, stats, settings, heroContent, videos] = await Promise.all([
     getApprovedReviewsPage({ page, perPage: PER_PAGE, rating }),
@@ -66,7 +68,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
 
   const heroBadges = (googleRating || tripadvisorHeroWidget || stats.total > 0) && (
     <>
-      {googleRating && <GoogleRatingBadge data={googleRating} profileUrl={settings?.googleReviews} />}
+      {googleRating && (
+        <GoogleRatingBadge data={googleRating} profileUrl={settings?.googleReviews} />
+      )}
       {tripadvisorHeroWidget && (
         // Fixed to the widget's real measured size — 64px icon + 20px rating
         // callout below it = 64x84px total (confirmed by rendering it and
@@ -91,7 +95,8 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
   // (see buildOrganizationReviews) rather than redeclaring it — avoids two
   // full TravelAgency blocks on one page.
   const organizationReviewsJsonLd = buildOrganizationReviews({
-    aggregateRating: stats.total > 0 ? { ratingValue: stats.average, reviewCount: stats.total } : null,
+    aggregateRating:
+      stats.total > 0 ? { ratingValue: stats.average, reviewCount: stats.total } : null,
     // A representative sample, not every review ever left — the page itself
     // still lists everything via pagination.
     reviews: items.slice(0, 20).map((r) => ({
@@ -123,7 +128,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
       <div className="mx-auto max-w-[1300px] px-4 py-12 sm:px-6 sm:py-16">
         {(stats.total > 0 || googleRating || tripadvisorRatingWidget) && (
           <>
-            <h2 className="sr-only">Review ratings summary — Google, Tripadvisor and Vertex Kashmir Holidays</h2>
+            <h2 className="sr-only">
+              Review ratings summary — Google, Tripadvisor and Vertex Kashmir Holidays
+            </h2>
             <RatingSummaryRow
               googleRating={googleRating}
               googleProfileUrl={settings?.googleReviews}
@@ -168,7 +175,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             <Link
               href="/reviews"
               className={`rounded-full border px-4 py-1.5 text-[14px] font-semibold transition ${
-                !rating ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
+                !rating
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-muted"
               }`}
             >
               All
@@ -178,7 +187,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
                 key={star}
                 href={`/reviews?rating=${star}`}
                 className={`rounded-full border px-4 py-1.5 text-[14px] font-semibold transition ${
-                  rating === star ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"
+                  rating === star
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border hover:bg-muted"
                 }`}
               >
                 {star}★
@@ -224,7 +235,6 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             )}
           </div>
         )}
-
       </div>
 
       {/* Same max-width as the review-grid container above, so the video row
@@ -253,7 +263,9 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
       {/* ── Closing CTA ──────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-[1300px] px-4 pb-16 sm:px-6 sm:pb-24">
         <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-primary/10 p-6 text-center">
-          <p className="font-display text-lg font-bold text-foreground">Ready to plan your own Kashmir trip?</p>
+          <p className="font-display text-lg font-bold text-foreground">
+            Ready to plan your own Kashmir trip?
+          </p>
           <Link
             href="/tours"
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110"

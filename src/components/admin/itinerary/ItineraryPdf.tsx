@@ -4,14 +4,7 @@
 // Text is vector (selectable); images are pre-compressed JPEG data URLs passed
 // in via `images` (keyed by the original src) so the document stays under 1 MB.
 
-import {
-  Document,
-  Page,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-} from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { getPaymentQr } from "@/lib/itinerary/payment";
@@ -70,10 +63,28 @@ const s = StyleSheet.create({
   // resolved against the 10pt base size, squashing every line box to ~14.5pt —
   // which makes large display text (titles, price) overlap the next element.
   // Multi-line body styles set their own lineHeight where readable spacing matters.
-  page: { paddingTop: 58, paddingBottom: 40, paddingHorizontal: 40, fontSize: 10, color: C.ink, fontFamily: "Helvetica" },
+  page: {
+    paddingTop: 58,
+    paddingBottom: 40,
+    paddingHorizontal: 40,
+    fontSize: 10,
+    color: C.ink,
+    fontFamily: "Helvetica",
+  },
 
   // Fixed brand header repeated on every physical sheet of the body page.
-  header: { position: "absolute", top: 20, left: 40, right: 40, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 8 },
+  header: {
+    position: "absolute",
+    top: 20,
+    left: 40,
+    right: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    paddingBottom: 8,
+  },
   headerLogo: { width: 120, height: 30, objectFit: "contain" },
   headerTag: { fontSize: 7.5, color: C.muted, letterSpacing: 1 },
 
@@ -81,24 +92,71 @@ const s = StyleSheet.create({
   watermark: { position: "absolute", top: 250, left: 116, width: 360, height: 360, opacity: 0.045 },
   watermarkImg: { width: 360, height: 360, objectFit: "contain" },
 
-  footer: { position: "absolute", bottom: 14, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1.5, borderTopColor: C.green, paddingTop: 7 },
+  footer: {
+    position: "absolute",
+    bottom: 14,
+    left: 40,
+    right: 40,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTopWidth: 1.5,
+    borderTopColor: C.green,
+    paddingTop: 7,
+  },
   footerLeft: { flexDirection: "row", alignItems: "center", gap: 5, width: "30%" },
   footerDotMark: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.mint },
   footerBrand: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.green, letterSpacing: 0.4 },
   footerContact: { flex: 1, textAlign: "center", fontSize: 7, color: C.muted },
   footerDot: { color: C.mint, fontFamily: "Helvetica-Bold" },
-  footerPage: { width: "30%", textAlign: "right", fontSize: 7.5, color: C.green, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
+  footerPage: {
+    width: "30%",
+    textAlign: "right",
+    fontSize: 7.5,
+    color: C.green,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.5,
+  },
 
   // Cover — every block is absolutely positioned over the full-bleed image so
   // the cover has zero in-flow height and can never overflow onto a 2nd page.
   cover: { padding: 0 },
-  coverImg: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" },
-  coverOverlay: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(12,28,22,0.58)" },
-  coverBrand: { position: "absolute", top: 44, left: 44, right: 44, flexDirection: "row", alignItems: "center", gap: 8 },
+  coverImg: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  coverOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(12,28,22,0.58)",
+  },
+  coverBrand: {
+    position: "absolute",
+    top: 44,
+    left: 44,
+    right: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   coverTitleBlock: { position: "absolute", top: 210, left: 44, right: 44 },
   coverBottom: { position: "absolute", bottom: 44, left: 44, right: 44 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  logoBox: { width: 34, height: 34, borderRadius: 6, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  logoBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    backgroundColor: C.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   logoImg: { width: 28, height: 28, objectFit: "contain" },
   // Horizontal brand lockup used on the cover (dark overlay) and thank-you page.
   coverLogo: { width: 188, height: 47, objectFit: "contain" },
@@ -109,15 +167,56 @@ const s = StyleSheet.create({
   coverScript: { fontSize: 34, color: C.mint, marginTop: 2 },
   durationRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 },
   durationText: { fontSize: 11, letterSpacing: 3, color: C.white, fontFamily: "Helvetica-Bold" },
-  preparedLabel: { fontSize: 9, letterSpacing: 4, textAlign: "center", color: "rgba(255,255,255,0.7)" },
-  preparedName: { fontSize: 28, fontFamily: "Helvetica-Bold", textAlign: "center", color: C.white, marginTop: 4 },
-  coverGrid: { flexDirection: "row", marginTop: 22, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.25)", paddingTop: 16 },
+  preparedLabel: {
+    fontSize: 9,
+    letterSpacing: 4,
+    textAlign: "center",
+    color: "rgba(255,255,255,0.7)",
+  },
+  preparedName: {
+    fontSize: 28,
+    fontFamily: "Helvetica-Bold",
+    textAlign: "center",
+    color: C.white,
+    marginTop: 4,
+  },
+  coverGrid: {
+    flexDirection: "row",
+    marginTop: 22,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.25)",
+    paddingTop: 16,
+  },
   coverGridCol: { flex: 1, paddingRight: 10, alignItems: "center" },
-  coverGridValue: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
-  coverGridLabel: { fontSize: 8, letterSpacing: 1, color: "rgba(255,255,255,0.65)", marginTop: 3, textAlign: "center" },
-  costBox: { marginTop: 18, backgroundColor: "rgba(16,38,27,0.88)", borderRadius: 10, paddingVertical: 16, paddingHorizontal: 12, alignItems: "center" },
+  coverGridValue: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: C.white,
+    textAlign: "center",
+  },
+  coverGridLabel: {
+    fontSize: 8,
+    letterSpacing: 1,
+    color: "rgba(255,255,255,0.65)",
+    marginTop: 3,
+    textAlign: "center",
+  },
+  costBox: {
+    marginTop: 18,
+    backgroundColor: "rgba(16,38,27,0.88)",
+    borderRadius: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: "center",
+  },
   costValue: { fontSize: 24, fontFamily: "Helvetica-Bold", color: C.white, textAlign: "center" },
-  costLabel: { fontSize: 9, letterSpacing: 3, color: "rgba(255,255,255,0.7)", marginTop: 4, textAlign: "center" },
+  costLabel: {
+    fontSize: 9,
+    letterSpacing: 3,
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 4,
+    textAlign: "center",
+  },
 
   // Section headings
   section: { marginBottom: 8 },
@@ -128,17 +227,44 @@ const s = StyleSheet.create({
 
   centerHead: { textAlign: "center", marginBottom: 8 },
   destLabel: { fontSize: 12, fontFamily: "Helvetica-Bold", color: C.muted, textAlign: "center" },
-  destValue: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.green, textAlign: "center", marginTop: 2 },
+  destValue: {
+    fontSize: 22,
+    fontFamily: "Helvetica-Bold",
+    color: C.green,
+    textAlign: "center",
+    marginTop: 2,
+  },
 
   // Info bar
-  infoBar: { flexDirection: "row", borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingVertical: 14, marginTop: 14, marginBottom: 22 },
+  infoBar: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginTop: 14,
+    marginBottom: 22,
+  },
   infoCell: { flex: 1, alignItems: "center", paddingHorizontal: 8, textAlign: "center" },
-  infoValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.ink, textAlign: "center", marginTop: 4 },
+  infoValue: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: C.ink,
+    textAlign: "center",
+    marginTop: 4,
+  },
   infoLabel: { fontSize: 7.5, color: C.muted, textAlign: "center", marginTop: 2 },
 
   // Day
   day: { flexDirection: "row", gap: 12, marginBottom: 16 },
-  dayBadge: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
+  dayBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: C.green,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   dayBadgeKicker: { fontSize: 6, color: C.white, fontFamily: "Helvetica-Bold" },
   dayBadgeNum: { fontSize: 13, color: C.white, fontFamily: "Helvetica-Bold" },
   dayBody: { flex: 1 },
@@ -151,7 +277,13 @@ const s = StyleSheet.create({
   dayImg: { width: 120, height: 80, borderRadius: 8, objectFit: "cover" },
 
   // Table
-  table: { borderWidth: 1, borderColor: C.border, borderRadius: 8, overflow: "hidden", marginTop: 6 },
+  table: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 8,
+    overflow: "hidden",
+    marginTop: 6,
+  },
   tHead: { flexDirection: "row", backgroundColor: C.lightGreen },
   th: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green, padding: 7 },
   tRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border },
@@ -163,7 +295,13 @@ const s = StyleSheet.create({
   note: { fontSize: 8, color: C.muted, fontStyle: "italic", marginTop: 6 },
 
   // Trust strip
-  trust: { flexDirection: "row", backgroundColor: C.cream, borderRadius: 12, paddingVertical: 14, marginTop: 16 },
+  trust: {
+    flexDirection: "row",
+    backgroundColor: C.cream,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginTop: 16,
+  },
   trustCell: { flex: 1, alignItems: "center", paddingHorizontal: 6, textAlign: "center" },
   trustTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.ink, textAlign: "center" },
   trustSub: { fontSize: 7.5, color: C.muted, textAlign: "center", marginTop: 1 },
@@ -195,12 +333,29 @@ const s = StyleSheet.create({
   // C.greenDark/C.mint used on the cover/footer elsewhere in this file,
   // which is why this page previously looked like a different, mismatched
   // green from the admin preview.
-  tyPage: { backgroundColor: C.white, paddingVertical: 60, paddingHorizontal: 40, justifyContent: "center" },
+  tyPage: {
+    backgroundColor: C.white,
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+    justifyContent: "center",
+  },
 
   // Payment options
-  payBlock: { width: "100%", backgroundColor: TY_GREEN, alignItems: "center", paddingVertical: 34, paddingHorizontal: 30 },
+  payBlock: {
+    width: "100%",
+    backgroundColor: TY_GREEN,
+    alignItems: "center",
+    paddingVertical: 34,
+    paddingHorizontal: 30,
+  },
   payHeadWrap: { alignItems: "center", marginBottom: 20 },
-  payKicker: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 3, color: TY_MINT, textAlign: "center" },
+  payKicker: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 3,
+    color: TY_MINT,
+    textAlign: "center",
+  },
   payKickerLine: { width: 40, height: 1.5, backgroundColor: TY_MINT, marginTop: 8 },
   payRow: { flexDirection: "row", alignItems: "center", gap: 16, width: "100%" },
   payPartnerCol: { width: "54%", alignItems: "center", justifyContent: "center" },
@@ -211,7 +366,13 @@ const s = StyleSheet.create({
   payQrCol: { width: "42%", alignItems: "center", justifyContent: "center" },
   payQrCard: { backgroundColor: C.white, borderRadius: 12, padding: 14 },
   payQrImg: { width: 135, height: 135, objectFit: "contain" },
-  payQrCaption: { fontSize: 8.5, color: "rgba(255,255,255,0.6)", textAlign: "center", marginTop: 8, letterSpacing: 0.5 },
+  payQrCaption: {
+    fontSize: 8.5,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    marginTop: 8,
+    letterSpacing: 0.5,
+  },
 
   // Two-column closing row — left column is the theme's navy (--primary:
   // hsl(214 68% 14%)), so its logo/text switch to the light-on-dark variants
@@ -223,13 +384,32 @@ const s = StyleSheet.create({
   tyCompany: { fontSize: 14.5, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 14 },
   tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", marginTop: 3 },
   tyContactWrap: { marginTop: 18 },
-  tyInfo: { fontSize: 10, fontFamily: "Helvetica-Bold", color: "rgba(255,255,255,0.9)", marginTop: 9, lineHeight: 1.4 },
+  tyInfo: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 9,
+    lineHeight: 1.4,
+  },
   // Same navy as tyLeftCol — no explicit border was ever drawn between the
   // two columns, so matching their background removes the seam entirely
   // instead of needing to hide a line.
-  tyRightCol: { width: "38%", backgroundColor: TY_NAVY, alignItems: "center", justifyContent: "center", paddingVertical: 30, paddingHorizontal: 20 },
+  tyRightCol: {
+    width: "38%",
+    backgroundColor: TY_NAVY,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+  },
   tyScript: { fontSize: 26, fontFamily: "Helvetica-Bold", color: TY_MINT, textAlign: "center" },
-  tyMsg: { fontSize: 9.5, color: "rgba(255,255,255,0.82)", textAlign: "center", marginTop: 12, lineHeight: 1.5 },
+  tyMsg: {
+    fontSize: 9.5,
+    color: "rgba(255,255,255,0.82)",
+    textAlign: "center",
+    marginTop: 12,
+    lineHeight: 1.5,
+  },
 });
 
 function Footer() {
@@ -281,7 +461,9 @@ export function ItineraryPdf({ data, images }: Props) {
           The image + overlay are `fixed` (out of flow) so a page-tall image
           can't trigger a page break that would push the text onto a 2nd sheet. */}
       <Page size="A4" style={[s.page, s.cover]}>
-        {img(data.coverImage) ? <Image src={img(data.coverImage)} style={s.coverImg} fixed /> : null}
+        {img(data.coverImage) ? (
+          <Image src={img(data.coverImage)} style={s.coverImg} fixed />
+        ) : null}
         <View style={s.coverOverlay} fixed />
 
         <View style={s.coverBrand}>
@@ -406,14 +588,18 @@ export function ItineraryPdf({ data, images }: Props) {
           </View>
           {data.hotels.map((h) => (
             <View key={h.id} style={s.tRow} wrap={false}>
-              <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>{h.destination}</Text>
+              <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>
+                {h.destination}
+              </Text>
               <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
               <Text style={[s.td, s.colNights]}>{h.nights}</Text>
               <Text style={[s.td, s.colRoom]}>{h.roomType}</Text>
             </View>
           ))}
         </View>
-        <Text style={s.note}>*All accommodations are subject to availability at the time of confirmation.</Text>
+        <Text style={s.note}>
+          *All accommodations are subject to availability at the time of confirmation.
+        </Text>
 
         <View style={s.trust} wrap={false}>
           {data.trust.map((t) => (
@@ -433,7 +619,9 @@ export function ItineraryPdf({ data, images }: Props) {
             <Text style={s.transportType}>{data.transportType}</Text>
             <Text style={s.transportDesc}>{data.transportDesc}</Text>
           </View>
-          {img(data.transportImage) ? <Image src={img(data.transportImage)} style={s.transportImg} /> : null}
+          {img(data.transportImage) ? (
+            <Image src={img(data.transportImage)} style={s.transportImg} />
+          ) : null}
         </View>
 
         <View style={s.twoCol}>
@@ -499,7 +687,9 @@ export function ItineraryPdf({ data, images }: Props) {
             </View>
             <View style={s.payRow}>
               <View style={qrDataUrl ? s.payPartnerCol : [s.payPartnerCol, s.payPartnerColFull]}>
-                {img(PAYMENT_PARTNER_SRC) ? <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} /> : null}
+                {img(PAYMENT_PARTNER_SRC) ? (
+                  <Image src={img(PAYMENT_PARTNER_SRC)} style={s.payPartnerImg} />
+                ) : null}
               </View>
               {/* QR card hidden entirely (rather than shown broken) if the
                   itinerary's custom QR — or the default — failed to load.

@@ -103,7 +103,14 @@ export async function POST(req: NextRequest) {
 
   const tour = await prisma.tour.findUnique({
     where: { id: tourId },
-    select: { id: true, title: true, priceFrom: true, duration: true, minPersons: true, published: true },
+    select: {
+      id: true,
+      title: true,
+      priceFrom: true,
+      duration: true,
+      minPersons: true,
+      published: true,
+    },
   });
 
   if (!tour || !tour.published) {
@@ -112,7 +119,9 @@ export async function POST(req: NextRequest) {
 
   if (travellers < tour.minPersons) {
     return NextResponse.json(
-      { error: `This tour requires a minimum of ${tour.minPersons} traveller${tour.minPersons > 1 ? "s" : ""}.` },
+      {
+        error: `This tour requires a minimum of ${tour.minPersons} traveller${tour.minPersons > 1 ? "s" : ""}.`,
+      },
       { status: 422 },
     );
   }
@@ -183,10 +192,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid booking amount" }, { status: 400 });
   }
 
-  if (
-    !env.RAZORPAY_KEY_ID ||
-    env.RAZORPAY_KEY_ID.includes("REPLACE_ME")
-  ) {
+  if (!env.RAZORPAY_KEY_ID || env.RAZORPAY_KEY_ID.includes("REPLACE_ME")) {
     return NextResponse.json(
       { error: "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_SECRET in .env." },
       { status: 503 },

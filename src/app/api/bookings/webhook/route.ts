@@ -19,8 +19,7 @@ export async function POST(req: NextRequest) {
   const expectedBuf = Buffer.from(expected, "hex");
   const receivedBuf = Buffer.from(signature, "hex");
   const isValid =
-    expectedBuf.length === receivedBuf.length &&
-    crypto.timingSafeEqual(expectedBuf, receivedBuf);
+    expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
 
   if (!isValid) {
     return new Response("Invalid signature", { status: 400 });

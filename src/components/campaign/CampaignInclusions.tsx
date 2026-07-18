@@ -1,8 +1,8 @@
 // src/components/campaign/CampaignInclusions.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Check, X } from "lucide-react";
 
 interface CampaignInclusionsProps {
   inclusions: string[];
@@ -41,7 +41,10 @@ export function CampaignInclusions({ inclusions, exclusions }: CampaignInclusion
           <ul className="mt-5 space-y-3 text-[14px] text-foreground/75">
             {exclusions.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5">
-                <X className="mt-0.5 h-4 w-4 shrink-0 text-rose-500 dark:text-rose-400" strokeWidth={2.5} />
+                <X
+                  className="mt-0.5 h-4 w-4 shrink-0 text-rose-500 dark:text-rose-400"
+                  strokeWidth={2.5}
+                />
                 {item}
               </li>
             ))}

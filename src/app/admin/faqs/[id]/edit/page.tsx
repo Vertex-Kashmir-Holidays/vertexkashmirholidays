@@ -38,7 +38,11 @@ export default async function EditFaqPage({ params }: PageProps) {
         activities: { select: { id: true, name: true, slug: true } },
       },
     }),
-    prisma.faqCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
+    prisma.faqCategory.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    }),
     prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
     prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
@@ -52,21 +56,39 @@ export default async function EditFaqPage({ params }: PageProps) {
     ...faq.placements.map((p) => ({
       label: PLACEMENT_LABELS[p]?.label ?? p,
       // FAQ index links straight to this question via the anchor FaqAccordionPage opens.
-      href: p === "FAQ" ? `${SITE_URL}/faq#${faq.slug}` : `${SITE_URL}${PLACEMENT_LABELS[p]?.href ?? "/"}`,
+      href:
+        p === "FAQ"
+          ? `${SITE_URL}/faq#${faq.slug}`
+          : `${SITE_URL}${PLACEMENT_LABELS[p]?.href ?? "/"}`,
     })),
     ...faq.tours.map((t) => ({ label: `Tour: ${t.title}`, href: `${SITE_URL}/tours/${t.slug}` })),
-    ...faq.destinations.map((d) => ({ label: `Destination: ${d.name}`, href: `${SITE_URL}/destinations/${d.slug}` })),
+    ...faq.destinations.map((d) => ({
+      label: `Destination: ${d.name}`,
+      href: `${SITE_URL}/destinations/${d.slug}`,
+    })),
     ...faq.blogs.map((b) => ({ label: `Blog: ${b.title}`, href: `${SITE_URL}/blog/${b.slug}` })),
-    ...faq.campaigns.map((c) => ({ label: `Campaign: ${c.name}`, href: `${SITE_URL}/adventures/${c.slug}` })),
-    ...faq.activities.map((a) => ({ label: `Activity: ${a.name}`, href: `${SITE_URL}/activities/${a.slug}` })),
+    ...faq.campaigns.map((c) => ({
+      label: `Campaign: ${c.name}`,
+      href: `${SITE_URL}/adventures/${c.slug}`,
+    })),
+    ...faq.activities.map((a) => ({
+      label: `Activity: ${a.name}`,
+      href: `${SITE_URL}/activities/${a.slug}`,
+    })),
   ];
 
   return (
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/faqs" className="hover:text-primary transition-colors">FAQs</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/faqs" className="hover:text-primary transition-colors">
+              FAQs
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium truncate max-w-[240px]">{faq.question}</li>
         </ol>
       </nav>

@@ -6,8 +6,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Search, Plus, Pencil, Trash2, Star, Filter,
-  CheckCircle2, Clock, ChevronDown,
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+  Star,
+  Filter,
+  CheckCircle2,
+  Clock,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +57,12 @@ interface PackagesClientProps {
   canDelete: boolean;
 }
 
-export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: PackagesClientProps) {
+export function PackagesClient({
+  initialTours,
+  canCreate,
+  canEdit,
+  canDelete,
+}: PackagesClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -70,7 +82,10 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
     startTransition(async () => {
       try {
         const res = await fetch(`/api/tours/${id}`, { method: "DELETE" });
-        if (res.status === 403) { toast.error("You don't have permission to delete packages. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to delete packages. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error("Delete failed");
         toast.success("Package deleted.");
         router.refresh();
@@ -145,8 +160,20 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Tour", "Category", "Duration", "Price", "Rating", "Status", "Date", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                {[
+                  "Tour",
+                  "Category",
+                  "Duration",
+                  "Price",
+                  "Rating",
+                  "Status",
+                  "Date",
+                  "Actions",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
                     {h}
                   </th>
                 ))}
@@ -163,7 +190,13 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                 </tr>
               ) : (
                 filtered.map((tour) => (
-                  <tr key={tour.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === tour.id && "bg-red-500/10/30")}>
+                  <tr
+                    key={tour.id}
+                    className={cn(
+                      "hover:bg-muted/50 transition-colors",
+                      confirmDelete === tour.id && "bg-red-500/10/30",
+                    )}
+                  >
                     {/* Tour */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 max-w-xs">
@@ -180,14 +213,21 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                           <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">
                             {tour.title}
                           </p>
-                          <p className="text-[12px] text-muted-foreground truncate">/tours/{tour.slug}</p>
+                          <p className="text-[12px] text-muted-foreground truncate">
+                            /tours/{tour.slug}
+                          </p>
                         </div>
                       </div>
                     </td>
 
                     {/* Category */}
                     <td className="px-4 py-3">
-                      <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", CATEGORY_STYLES[tour.category] ?? "bg-muted text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                          CATEGORY_STYLES[tour.category] ?? "bg-muted text-muted-foreground",
+                        )}
+                      >
                         {CATEGORY_LABELS[tour.category] ?? tour.category}
                       </span>
                     </td>
@@ -210,7 +250,9 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                           {tour.rating > 0 ? tour.rating.toFixed(1) : "—"}
                         </span>
                         {tour.reviewCount > 0 && (
-                          <span className="text-[12px] text-muted-foreground">({tour.reviewCount})</span>
+                          <span className="text-[12px] text-muted-foreground">
+                            ({tour.reviewCount})
+                          </span>
                         )}
                       </div>
                     </td>
@@ -230,7 +272,11 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
 
                     {/* Date */}
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(tour.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
+                      {new Date(tour.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "2-digit",
+                      })}
                     </td>
 
                     {/* Actions */}
@@ -272,7 +318,9 @@ export function PackagesClient({ initialTours, canCreate, canEdit, canDelete }: 
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[12px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">
+                              View only
+                            </span>
                           )}
                         </div>
                       )}

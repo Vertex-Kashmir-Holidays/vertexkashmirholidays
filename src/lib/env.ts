@@ -27,8 +27,10 @@ import { z } from "zod";
 // attached to a refinement when the key is absent from process.env entirely
 // — a completely-missing var never even reaches `.min()`'s check.
 const REQUIRED: Record<"DATABASE_URL" | "AUTH_SECRET", string> = {
-  DATABASE_URL: "DATABASE_URL is required (Postgres connection string) — set it in .env.local for dev, or in the deployment platform's environment variables for Preview/Production.",
-  AUTH_SECRET: "AUTH_SECRET is required (session signing secret) — generate with `npx auth secret` and set it in .env.local for dev, or in the deployment platform's environment variables for Preview/Production.",
+  DATABASE_URL:
+    "DATABASE_URL is required (Postgres connection string) — set it in .env.local for dev, or in the deployment platform's environment variables for Preview/Production.",
+  AUTH_SECRET:
+    "AUTH_SECRET is required (session signing secret) — generate with `npx auth secret` and set it in .env.local for dev, or in the deployment platform's environment variables for Preview/Production.",
 };
 
 const schema = z.object({
@@ -111,7 +113,9 @@ const schema = z.object({
 export type Env = z.infer<typeof schema>;
 
 function checkRequired(): void {
-  const missing = (Object.keys(REQUIRED) as (keyof typeof REQUIRED)[]).filter((key) => !process.env[key]?.trim());
+  const missing = (Object.keys(REQUIRED) as (keyof typeof REQUIRED)[]).filter(
+    (key) => !process.env[key]?.trim(),
+  );
   if (missing.length > 0) {
     const problems = missing.map((key) => `  - ${REQUIRED[key]}`).join("\n");
     throw new Error(

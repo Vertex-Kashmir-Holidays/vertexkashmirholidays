@@ -1,13 +1,13 @@
 // src/components/sections/BlogPostProseBlocks.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Check, ChevronDown } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Check, ChevronDown } from "lucide-react";
 
 export interface ProseBlock {
   id: string;
   title: string;
-  type: 'text' | 'list' | 'table' | 'faq';
+  type: "text" | "list" | "table" | "faq";
   content?: string;
   items?: string[] | Array<[string, string]>;
   rows?: Array<[string, string]>;
@@ -32,14 +32,17 @@ export function BlogPostProseBlocks({ blocks }: BlogPostProseBlocksProps) {
         >
           <h2 className="text-[18px] font-bold">{block.title}</h2>
 
-          {block.type === 'text' && (
+          {block.type === "text" && (
             <p className="mt-3 text-[14px] leading-[1.8] text-brand-ink/80">{block.content}</p>
           )}
 
-          {block.type === 'list' && (
+          {block.type === "list" && (
             <ul className="mt-3 space-y-2.5">
               {(block.items as string[]).map((item, j) => (
-                <li key={j} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-brand-ink/80">
+                <li
+                  key={j}
+                  className="flex items-start gap-2.5 text-[14px] leading-relaxed text-brand-ink/80"
+                >
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-bright" strokeWidth={2.4} />
                   {item}
                 </li>
@@ -47,14 +50,14 @@ export function BlogPostProseBlocks({ blocks }: BlogPostProseBlocksProps) {
             </ul>
           )}
 
-          {block.type === 'table' && (
+          {block.type === "table" && (
             <div className="mt-3 overflow-hidden rounded-xl border border-brand-line">
               {(block.rows as Array<[string, string]>).map(([k, v], j) => (
                 <div
                   key={j}
                   className={`flex justify-between gap-4 px-4 py-3 text-[14px] ${
-                    j % 2 ? 'bg-brand-page' : ''
-                  } ${j === (block.rows?.length || 0) - 1 ? 'font-bold' : ''}`}
+                    j % 2 ? "bg-brand-page" : ""
+                  } ${j === (block.rows?.length || 0) - 1 ? "font-bold" : ""}`}
                 >
                   <span>{k}</span>
                   <span className="text-right">{v}</span>
@@ -63,13 +66,19 @@ export function BlogPostProseBlocks({ blocks }: BlogPostProseBlocksProps) {
             </div>
           )}
 
-          {block.type === 'faq' && (
+          {block.type === "faq" && (
             <div className="mt-3 space-y-2.5">
               {(block.items as Array<[string, string]>).map(([q, a], j) => (
-                <details key={j} className="rounded-lg border border-brand-line bg-white px-4 py-3 shadow-soft">
+                <details
+                  key={j}
+                  className="rounded-lg border border-brand-line bg-white px-4 py-3 shadow-soft"
+                >
                   <summary className="flex cursor-pointer items-center justify-between gap-3 text-[14px] font-semibold">
                     {q}
-                    <ChevronDown className="chev h-3.5 w-3.5 shrink-0 text-brand-mute" strokeWidth={2.4} />
+                    <ChevronDown
+                      className="chev h-3.5 w-3.5 shrink-0 text-brand-mute"
+                      strokeWidth={2.4}
+                    />
                   </summary>
                   <p className="mt-2.5 text-[14px] leading-relaxed text-brand-mute">{a}</p>
                 </details>

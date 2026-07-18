@@ -47,7 +47,12 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
     startTransition(async () => {
       try {
         const res = await fetch(`/api/activities/${id}`, { method: "DELETE" });
-        if (res.status === 403) { toast.error("You don't have permission to delete activities. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error(
+            "You don't have permission to delete activities. Contact your administrator.",
+          );
+          return;
+        }
         if (!res.ok) throw new Error("Delete failed");
         toast.success("Activity deleted.");
         router.refresh();
@@ -64,7 +69,9 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Activities</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">Things to do — linked to destinations and tours</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Things to do — linked to destinations and tours
+          </p>
         </div>
         {canCreate && (
           <Link
@@ -98,18 +105,25 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Activity", "Location", "Duration", "Price", "Linked", "Status", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
+                {["Activity", "Location", "Duration", "Price", "Linked", "Status", "Actions"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search ? "No activities match your search." : "No activities yet. Create your first one!"}
+                    {search
+                      ? "No activities match your search."
+                      : "No activities yet. Create your first one!"}
                   </td>
                 </tr>
               ) : (
@@ -118,10 +132,19 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 max-w-xs">
                         <div className="relative w-10 h-8 rounded-lg overflow-hidden shrink-0">
-                          <Image src={a.coverImage ?? PLACEHOLDER} alt={a.name} fill sizes="40px" className="object-cover" unoptimized />
+                          <Image
+                            src={a.coverImage ?? PLACEHOLDER}
+                            alt={a.name}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                            unoptimized
+                          />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">{a.name}</p>
+                          <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">
+                            {a.name}
+                          </p>
                           <p className="text-[12px] text-muted-foreground truncate">/{a.slug}</p>
                         </div>
                       </div>
@@ -145,34 +168,58 @@ export function ActivitiesClient({ initialActivities, canCreate, canEdit, canDel
                       {a._count?.destinations ?? 0} dest · {a._count?.tours ?? 0} tours
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", a.published ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                          a.published
+                            ? "bg-green-500/15 text-green-700 dark:text-green-300"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
                         {a.published ? "Published" : "Draft"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       {confirmDelete === a.id ? (
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleDelete(a.id)} disabled={isPending} className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
+                          <button
+                            onClick={() => handleDelete(a.id)}
+                            disabled={isPending}
+                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                          >
                             {isPending ? "…" : "Delete"}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
+                          >
                             Cancel
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
                           {canEdit && (
-                            <Link href={`/admin/activities/${a.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
+                            <Link
+                              href={`/admin/activities/${a.id}/edit`}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              title="Edit"
+                            >
                               <Pencil className="w-3.5 h-3.5" />
                             </Link>
                           )}
                           {canDelete && (
-                            <button onClick={() => setConfirmDelete(a.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Delete">
+                            <button
+                              onClick={() => setConfirmDelete(a.id)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Delete"
+                            >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[12px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">
+                              View only
+                            </span>
                           )}
                         </div>
                       )}

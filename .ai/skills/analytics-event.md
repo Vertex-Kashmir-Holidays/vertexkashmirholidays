@@ -40,7 +40,7 @@ Do not use this Skill for:
 
 - SEO metadata, Schema.org/JSON-LD, Search Console, robots.txt, or the sitemap.
 - UI animation or marketing copy changes with no tracking implication.
-- UTM/click-ID *capture* — that's a single, fixed capture point (`AttributionCapture.tsx` + `src/lib/attribution*.ts`) at Lead/Booking creation, not something a new event re-implements.
+- UTM/click-ID _capture_ — that's a single, fixed capture point (`AttributionCapture.tsx` + `src/lib/attribution*.ts`) at Lead/Booking creation, not something a new event re-implements.
 
 ────────────────────────────────────
 
@@ -70,20 +70,20 @@ Review:
 
 ## Client-Side Tracking (GA4, GTM, Meta Pixel)
 
-**Mechanism:** every `track*()` function in `src/lib/analytics.ts` calls one private `push()` function, which pushes a typed payload onto `window.dataLayer`. GTM (`GTMScript.tsx`) is the **only** script this codebase injects directly — GA4 and the client-side Meta Pixel are configured as tags *inside* the GTM container itself, not hardcoded anywhere in this repo. `push()` also no-ops (with a dev-mode console log) on any internal route (admin/account/login) via `isInternalRoute` — defense-in-depth, since GTM itself never loads there either.
+**Mechanism:** every `track*()` function in `src/lib/analytics.ts` calls one private `push()` function, which pushes a typed payload onto `window.dataLayer`. GTM (`GTMScript.tsx`) is the **only** script this codebase injects directly — GA4 and the client-side Meta Pixel are configured as tags _inside_ the GTM container itself, not hardcoded anywhere in this repo. `push()` also no-ops (with a dev-mode console log) on any internal route (admin/account/login) via `isInternalRoute` — defense-in-depth, since GTM itself never loads there either.
 
 **The complete, real event list today** (`AnalyticsEvent` in `src/types/analytics.ts` — treat this as authoritative, not illustrative):
 
-| Event | Fires when | Called from (example) |
-|---|---|---|
-| `lead_submit` | A lead form submits successfully — never on a validation error | `LeadForm.tsx`, `ContactForm.tsx` |
-| `whatsapp_click` | Any WhatsApp CTA is clicked (typed `source`, e.g. `header`, `footer_cta`, `tour_sidebar`) | `Footer.tsx`, `Navbar.tsx`, `ContactWhatsAppFloat.tsx` |
-| `phone_click` | A `tel:` link is clicked | `Navbar.tsx`, `Footer.tsx` |
-| `email_click` | A `mailto:` link is clicked | `Footer.tsx` |
-| `package_view` | A tour/package detail page loads | `PackageViewTracker.tsx` |
-| `inquiry_started` | A user opens an inquiry modal/form tab | `TourDetailsSidebar.tsx`, `TourCustomizationBanner.tsx` |
-| `booking_started` | A user initiates the booking checkout flow | `BookingMobileBar.tsx` |
-| `booking_completed` | Once, on the booking success page, after payment is confirmed — the de facto purchase/conversion event, with `value`, `currency`, and `items` | `BookingCompletedEvent.tsx` |
+| Event               | Fires when                                                                                                                                    | Called from (example)                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `lead_submit`       | A lead form submits successfully — never on a validation error                                                                                | `LeadForm.tsx`, `ContactForm.tsx`                       |
+| `whatsapp_click`    | Any WhatsApp CTA is clicked (typed `source`, e.g. `header`, `footer_cta`, `tour_sidebar`)                                                     | `Footer.tsx`, `Navbar.tsx`, `ContactWhatsAppFloat.tsx`  |
+| `phone_click`       | A `tel:` link is clicked                                                                                                                      | `Navbar.tsx`, `Footer.tsx`                              |
+| `email_click`       | A `mailto:` link is clicked                                                                                                                   | `Footer.tsx`                                            |
+| `package_view`      | A tour/package detail page loads                                                                                                              | `PackageViewTracker.tsx`                                |
+| `inquiry_started`   | A user opens an inquiry modal/form tab                                                                                                        | `TourDetailsSidebar.tsx`, `TourCustomizationBanner.tsx` |
+| `booking_started`   | A user initiates the booking checkout flow                                                                                                    | `BookingMobileBar.tsx`                                  |
+| `booking_completed` | Once, on the booking success page, after payment is confirmed — the de facto purchase/conversion event, with `value`, `currency`, and `items` | `BookingCompletedEvent.tsx`                             |
 
 There is no `page_view`, `form_start`, or `payment_success` event in this codebase — don't assume one exists; `booking_completed` is what plays that role for a confirmed booking.
 

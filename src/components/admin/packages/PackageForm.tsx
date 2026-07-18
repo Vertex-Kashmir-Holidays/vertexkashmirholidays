@@ -7,9 +7,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
-  Plus, Trash2, Upload, Loader2, Eye,
-  GripVertical, ImageIcon, X, Images,
-  CheckCircle2, XCircle, Save, Star,
+  Plus,
+  Trash2,
+  Upload,
+  Loader2,
+  Eye,
+  GripVertical,
+  ImageIcon,
+  X,
+  Images,
+  CheckCircle2,
+  XCircle,
+  Save,
+  Star,
 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
@@ -38,7 +48,10 @@ const batchSchema = z.object({
   status: z.enum(["open", "filling", "sold"]),
 });
 
-const accommodationItemSchema = z.object({ location: z.string().default(""), description: z.string().default("") });
+const accommodationItemSchema = z.object({
+  location: z.string().default(""),
+  description: z.string().default(""),
+});
 const budgetRowSchema = z.object({
   category: z.string().default(""),
   perPerson: z.string().default(""),
@@ -55,18 +68,39 @@ const packingItemSchema = z.object({
   reason: z.string().default(""),
   mandatory: z.boolean().default(false),
 });
-const noteItemSchema = z.object({ text: z.string().default(""), reviewNote: z.string().default("") });
-const relatedTourItemSchema = z.object({ tourId: z.string().default(""), ctaSentence: z.string().default("") });
+const noteItemSchema = z.object({
+  text: z.string().default(""),
+  reviewNote: z.string().default(""),
+});
+const relatedTourItemSchema = z.object({
+  tourId: z.string().default(""),
+  ctaSentence: z.string().default(""),
+});
 
 const nanToNull = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v)) ? null : Number(v)),
+  (v) =>
+    v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v))
+      ? null
+      : Number(v),
   z.number().positive().nullable(),
 );
 
 const packageSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
-  slug: z.string().min(3, "Slug required").regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, hyphens only"),
-  category: z.enum(["HONEYMOON", "FAMILY", "ADVENTURE", "LUXURY", "BUDGET", "GROUP", "PILGRIMAGE", "PREMIUM"]),
+  slug: z
+    .string()
+    .min(3, "Slug required")
+    .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, hyphens only"),
+  category: z.enum([
+    "HONEYMOON",
+    "FAMILY",
+    "ADVENTURE",
+    "LUXURY",
+    "BUDGET",
+    "GROUP",
+    "PILGRIMAGE",
+    "PREMIUM",
+  ]),
   duration: z.number().int().min(1, "Duration must be at least 1 day"),
   excerpt: z.string().default(""),
   description: z.string().default(""),
@@ -76,7 +110,10 @@ const packageSchema = z.object({
   minPersons: z.number().int().min(1).default(1),
   priceWas: nanToNull,
   discountPct: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v)) ? null : Number(v)),
+    (v) =>
+      v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v))
+        ? null
+        : Number(v),
     z.number().int().min(0).max(100).nullable(),
   ),
   bestseller: z.boolean().default(false),
@@ -102,7 +139,10 @@ const packageSchema = z.object({
   transport: z.string().default(""),
   tourType: z.string().default(""),
   happyCount: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v)) ? null : Number(v)),
+    (v) =>
+      v === "" || v === null || v === undefined || (typeof v === "number" && isNaN(v))
+        ? null
+        : Number(v),
     z.number().int().min(0).nullable(),
   ),
   highlights: z.array(listItemSchema).default([]),
@@ -148,7 +188,15 @@ export interface PackageFormDefaults {
   bestseller?: boolean;
   published?: boolean;
   formMode?: string;
-  itinerary?: { day: number; title: string; description?: string; image?: string; meals?: string; stay?: string; travelTips?: string }[];
+  itinerary?: {
+    day: number;
+    title: string;
+    description?: string;
+    image?: string;
+    meals?: string;
+    stay?: string;
+    travelTips?: string;
+  }[];
   inclusions?: string[];
   exclusions?: string[];
   gallery?: { url: string; alt?: string }[];
@@ -195,12 +243,36 @@ export interface PackageFormDefaults {
 const CATEGORIES = [
   { value: "HONEYMOON", label: "Honeymoon", color: "bg-pink-100 text-pink-700" },
   { value: "FAMILY", label: "Family", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
-  { value: "ADVENTURE", label: "Adventure", color: "bg-orange-500/15 text-orange-700 dark:text-orange-300" },
-  { value: "LUXURY", label: "Luxury", color: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300" },
-  { value: "BUDGET", label: "Budget", color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
-  { value: "GROUP", label: "Group", color: "bg-purple-500/15 text-purple-700 dark:text-purple-300" },
-  { value: "PILGRIMAGE", label: "Pilgrimage", color: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
-  { value: "PREMIUM", label: "Premium", color: "bg-slate-500/15 text-slate-700 dark:text-slate-300" },
+  {
+    value: "ADVENTURE",
+    label: "Adventure",
+    color: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  },
+  {
+    value: "LUXURY",
+    label: "Luxury",
+    color: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
+  },
+  {
+    value: "BUDGET",
+    label: "Budget",
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  },
+  {
+    value: "GROUP",
+    label: "Group",
+    color: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  },
+  {
+    value: "PILGRIMAGE",
+    label: "Pilgrimage",
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  },
+  {
+    value: "PREMIUM",
+    label: "Premium",
+    color: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
+  },
 ];
 
 const SECTIONS = [
@@ -220,7 +292,15 @@ const SECTIONS = [
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SectionCard({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function SectionCard({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div id={id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-border bg-muted/50">
@@ -328,7 +408,11 @@ function ImageUploadField({
           disabled={uploading}
           className="flex items-center gap-1.5 px-3 py-2.5 border border-dashed border-border rounded-xl text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors shrink-0"
         >
-          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          {uploading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Upload className="w-3.5 h-3.5" />
+          )}
           Upload
         </button>
         <input
@@ -339,7 +423,12 @@ function ImageUploadField({
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
       </div>
-      <GalleryPicker open={pickerOpen} type="IMAGE" onSelect={onChange} onClose={() => setPickerOpen(false)} />
+      <GalleryPicker
+        open={pickerOpen}
+        type="IMAGE"
+        onSelect={onChange}
+        onClose={() => setPickerOpen(false)}
+      />
       {value && (
         <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -369,7 +458,11 @@ function toArrayField<T>(arr: T[] | undefined, map: (v: T) => unknown) {
   return (arr ?? []).map(map) as ReturnType<typeof map>[];
 }
 
-export function PackageForm({ defaults, activityOptions = [], relatedTourOptions = [] }: PackageFormProps) {
+export function PackageForm({
+  defaults,
+  activityOptions = [],
+  relatedTourOptions = [],
+}: PackageFormProps) {
   const router = useRouter();
   const isEdit = Boolean(defaults?.id);
   const [activeSection, setActiveSection] = useState("basics");
@@ -410,8 +503,12 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
         stay: d.stay ?? "",
         travelTips: d.travelTips ?? "",
       })),
-      inclusions: toArrayField(defaults?.inclusions, (v) => ({ value: v as string })) as { value: string }[],
-      exclusions: toArrayField(defaults?.exclusions, (v) => ({ value: v as string })) as { value: string }[],
+      inclusions: toArrayField(defaults?.inclusions, (v) => ({ value: v as string })) as {
+        value: string;
+      }[],
+      exclusions: toArrayField(defaults?.exclusions, (v) => ({ value: v as string })) as {
+        value: string;
+      }[],
       gallery: (defaults?.gallery ?? []).map((g) => ({ url: g.url, alt: g.alt ?? "" })),
       batches: (defaults?.batches ?? []).map((b) => ({
         date: b.date,
@@ -433,11 +530,20 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
       transport: defaults?.transport ?? "",
       tourType: defaults?.tourType ?? "",
       happyCount: defaults?.happyCount ?? null,
-      highlights: toArrayField(defaults?.highlights, (v) => ({ value: v as string })) as { value: string }[],
-      perfectFor: toArrayField(defaults?.perfectFor, (v) => ({ value: v as string })) as { value: string }[],
-      notIdealFor: toArrayField(defaults?.notIdealFor, (v) => ({ value: v as string })) as { value: string }[],
+      highlights: toArrayField(defaults?.highlights, (v) => ({ value: v as string })) as {
+        value: string;
+      }[],
+      perfectFor: toArrayField(defaults?.perfectFor, (v) => ({ value: v as string })) as {
+        value: string;
+      }[],
+      notIdealFor: toArrayField(defaults?.notIdealFor, (v) => ({ value: v as string })) as {
+        value: string;
+      }[],
       whyItineraryWorks: defaults?.whyItineraryWorks ?? "",
-      accommodation: (defaults?.accommodation ?? []).map((a) => ({ location: a.location, description: a.description })),
+      accommodation: (defaults?.accommodation ?? []).map((a) => ({
+        location: a.location,
+        description: a.description,
+      })),
       accommodationImage: defaults?.accommodationImage ?? "",
       meals: defaults?.meals ?? "",
       transportDetail: defaults?.transportDetail ?? "",
@@ -458,33 +564,101 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
         reason: t.reason,
         mandatory: t.mandatory,
       })),
-      localTravelTips: toArrayField(defaults?.localTravelTips, (v) => ({ value: v as string })) as { value: string }[],
-      importantNotes: (defaults?.importantNotes ?? []).map((n) => ({ text: n.text, reviewNote: n.reviewNote ?? "" })),
+      localTravelTips: toArrayField(defaults?.localTravelTips, (v) => ({ value: v as string })) as {
+        value: string;
+      }[],
+      importantNotes: (defaults?.importantNotes ?? []).map((n) => ({
+        text: n.text,
+        reviewNote: n.reviewNote ?? "",
+      })),
       whyVertexBlurb: defaults?.whyVertexBlurb ?? "",
       ctaHeadline: defaults?.ctaHeadline ?? "",
       ctaBody: defaults?.ctaBody ?? "",
       ogTitle: defaults?.ogTitle ?? "",
       ogDescription: defaults?.ogDescription ?? "",
-      relatedTours: (defaults?.relatedTours ?? []).map((r) => ({ tourId: r.tourId, ctaSentence: r.ctaSentence })),
+      relatedTours: (defaults?.relatedTours ?? []).map((r) => ({
+        tourId: r.tourId,
+        ctaSentence: r.ctaSentence,
+      })),
     },
   });
 
   // ── Field arrays ───────────────────────────────────────────────────────────
-  const { fields: itineraryFields, append: addDay, remove: removeDay } = useFieldArray({ control, name: "itinerary" });
-  const { fields: inclusionFields, append: addInclusion, remove: removeInclusion } = useFieldArray({ control, name: "inclusions" });
-  const { fields: exclusionFields, append: addExclusion, remove: removeExclusion } = useFieldArray({ control, name: "exclusions" });
-  const { fields: galleryFields, append: addGalleryItem, remove: removeGalleryItem } = useFieldArray({ control, name: "gallery" });
-  const { fields: batchFields, append: addBatch, remove: removeBatch } = useFieldArray({ control, name: "batches" });
-  const { fields: highlightFields, append: addHighlight, remove: removeHighlight } = useFieldArray({ control, name: "highlights" });
-  const { fields: perfectForFields, append: addPerfectFor, remove: removePerfectFor } = useFieldArray({ control, name: "perfectFor" });
-  const { fields: notIdealForFields, append: addNotIdealFor, remove: removeNotIdealFor } = useFieldArray({ control, name: "notIdealFor" });
-  const { fields: accommodationFields, append: addAccommodation, remove: removeAccommodation } = useFieldArray({ control, name: "accommodation" });
-  const { fields: budgetFields, append: addBudgetRow, remove: removeBudgetRow } = useFieldArray({ control, name: "budgetBreakdown" });
-  const { fields: expenseFields, append: addExpenseRow, remove: removeExpenseRow } = useFieldArray({ control, name: "personalExpenses" });
-  const { fields: packingFields, append: addPackingItem, remove: removePackingItem } = useFieldArray({ control, name: "thingsToCarry" });
-  const { fields: tipFields, append: addTip, remove: removeTip } = useFieldArray({ control, name: "localTravelTips" });
-  const { fields: noteFields, append: addNote, remove: removeNote } = useFieldArray({ control, name: "importantNotes" });
-  const { fields: relatedFields, append: addRelated, remove: removeRelated } = useFieldArray({ control, name: "relatedTours" });
+  const {
+    fields: itineraryFields,
+    append: addDay,
+    remove: removeDay,
+  } = useFieldArray({ control, name: "itinerary" });
+  const {
+    fields: inclusionFields,
+    append: addInclusion,
+    remove: removeInclusion,
+  } = useFieldArray({ control, name: "inclusions" });
+  const {
+    fields: exclusionFields,
+    append: addExclusion,
+    remove: removeExclusion,
+  } = useFieldArray({ control, name: "exclusions" });
+  const {
+    fields: galleryFields,
+    append: addGalleryItem,
+    remove: removeGalleryItem,
+  } = useFieldArray({ control, name: "gallery" });
+  const {
+    fields: batchFields,
+    append: addBatch,
+    remove: removeBatch,
+  } = useFieldArray({ control, name: "batches" });
+  const {
+    fields: highlightFields,
+    append: addHighlight,
+    remove: removeHighlight,
+  } = useFieldArray({ control, name: "highlights" });
+  const {
+    fields: perfectForFields,
+    append: addPerfectFor,
+    remove: removePerfectFor,
+  } = useFieldArray({ control, name: "perfectFor" });
+  const {
+    fields: notIdealForFields,
+    append: addNotIdealFor,
+    remove: removeNotIdealFor,
+  } = useFieldArray({ control, name: "notIdealFor" });
+  const {
+    fields: accommodationFields,
+    append: addAccommodation,
+    remove: removeAccommodation,
+  } = useFieldArray({ control, name: "accommodation" });
+  const {
+    fields: budgetFields,
+    append: addBudgetRow,
+    remove: removeBudgetRow,
+  } = useFieldArray({ control, name: "budgetBreakdown" });
+  const {
+    fields: expenseFields,
+    append: addExpenseRow,
+    remove: removeExpenseRow,
+  } = useFieldArray({ control, name: "personalExpenses" });
+  const {
+    fields: packingFields,
+    append: addPackingItem,
+    remove: removePackingItem,
+  } = useFieldArray({ control, name: "thingsToCarry" });
+  const {
+    fields: tipFields,
+    append: addTip,
+    remove: removeTip,
+  } = useFieldArray({ control, name: "localTravelTips" });
+  const {
+    fields: noteFields,
+    append: addNote,
+    remove: removeNote,
+  } = useFieldArray({ control, name: "importantNotes" });
+  const {
+    fields: relatedFields,
+    append: addRelated,
+    remove: removeRelated,
+  } = useFieldArray({ control, name: "relatedTours" });
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
 
   // ── Auto-slug from title (new tours only) ──────────────────────────────────
@@ -509,18 +683,24 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
       itinerary: JSON.stringify(data.itinerary),
       inclusions: JSON.stringify(data.inclusions.map((i) => i.value).filter(Boolean)),
       exclusions: JSON.stringify(data.exclusions.map((e) => e.value).filter(Boolean)),
-      gallery: JSON.stringify(data.gallery.filter((g) => g.url).map((g) => ({ url: g.url, alt: g.alt }))),
+      gallery: JSON.stringify(
+        data.gallery.filter((g) => g.url).map((g) => ({ url: g.url, alt: g.alt })),
+      ),
       batches: JSON.stringify(data.batches),
       highlights: JSON.stringify(data.highlights.map((h) => h.value).filter(Boolean)),
       perfectFor: stringifyList(data.perfectFor.map((p) => p.value).filter(Boolean)),
       notIdealFor: stringifyList(data.notIdealFor.map((n) => n.value).filter(Boolean)),
-      accommodation: stringifyList(data.accommodation.filter((a) => a.location.trim() || a.description.trim())),
+      accommodation: stringifyList(
+        data.accommodation.filter((a) => a.location.trim() || a.description.trim()),
+      ),
       budgetBreakdown: stringifyList(data.budgetBreakdown.filter((b) => b.category.trim())),
       personalExpenses: stringifyList(data.personalExpenses.filter((e) => e.activity.trim())),
       thingsToCarry: stringifyList(data.thingsToCarry.filter((t) => t.item.trim())),
       localTravelTips: stringifyList(data.localTravelTips.map((t) => t.value).filter(Boolean)),
       importantNotes: stringifyList(data.importantNotes.filter((n) => n.text.trim())),
-      relatedTours: stringifyList(data.relatedTours.filter((r) => r.tourId && r.ctaSentence.trim())),
+      relatedTours: stringifyList(
+        data.relatedTours.filter((r) => r.tourId && r.ctaSentence.trim()),
+      ),
       priceWas: data.priceWas || null,
       discountPct: data.discountPct || null,
       happyCount: data.happyCount || null,
@@ -591,10 +771,14 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                   : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
-              <span className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0",
-                activeSection === s.id ? "bg-primary text-white" : "bg-muted text-muted-foreground",
-              )}>
+              <span
+                className={cn(
+                  "w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0",
+                  activeSection === s.id
+                    ? "bg-primary text-white"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
                 {s.num}
               </span>
               {s.label}
@@ -626,7 +810,9 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
               >
                 {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -635,7 +821,13 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <FieldLabel required>Duration (days)</FieldLabel>
-              <TextInput {...register("duration", { valueAsNumber: true })} type="number" min={1} max={30} placeholder="7" />
+              <TextInput
+                {...register("duration", { valueAsNumber: true })}
+                type="number"
+                min={1}
+                max={30}
+                placeholder="7"
+              />
               <FieldError message={errors.duration?.message} />
             </div>
             <div>
@@ -648,19 +840,31 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 <option value="BOOKING_ONLY">Enable Booking Only</option>
                 <option value="INQUIRY_ONLY">Enable Inquiry Only</option>
               </select>
-              <p className="text-[12px] text-muted-foreground mt-1">Controls which forms visitors see on the tour page.</p>
+              <p className="text-[12px] text-muted-foreground mt-1">
+                Controls which forms visitors see on the tour page.
+              </p>
             </div>
           </div>
 
           <div>
             <FieldLabel>Short Description (Excerpt)</FieldLabel>
-            <TextArea {...register("excerpt")} rows={2} placeholder="A brief, compelling description for cards and listings..." />
+            <TextArea
+              {...register("excerpt")}
+              rows={2}
+              placeholder="A brief, compelling description for cards and listings..."
+            />
           </div>
 
           <div>
             <FieldLabel>Full Description</FieldLabel>
-            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted (bold, links, lists etc.)</p>
-            <TextArea {...register("description")} rows={6} placeholder="Detailed description of the package..." />
+            <p className="text-[12px] text-muted-foreground mb-1.5">
+              HTML is accepted (bold, links, lists etc.)
+            </p>
+            <TextArea
+              {...register("description")}
+              rows={6}
+              placeholder="Detailed description of the package..."
+            />
           </div>
 
           <ImageUploadField
@@ -683,21 +887,45 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <FieldLabel required>Price From (₹)</FieldLabel>
-              <TextInput {...register("priceFrom", { valueAsNumber: true })} type="number" min={0} placeholder="25000" />
+              <TextInput
+                {...register("priceFrom", { valueAsNumber: true })}
+                type="number"
+                min={0}
+                placeholder="25000"
+              />
               <FieldError message={errors.priceFrom?.message} />
             </div>
             <div>
               <FieldLabel>Min. Persons</FieldLabel>
-              <TextInput {...register("minPersons", { valueAsNumber: true })} type="number" min={1} max={50} placeholder="1" />
-              <p className="text-[12px] text-muted-foreground mt-1">Minimum travellers required to book</p>
+              <TextInput
+                {...register("minPersons", { valueAsNumber: true })}
+                type="number"
+                min={1}
+                max={50}
+                placeholder="1"
+              />
+              <p className="text-[12px] text-muted-foreground mt-1">
+                Minimum travellers required to book
+              </p>
             </div>
             <div>
               <FieldLabel>Original Price (₹)</FieldLabel>
-              <TextInput {...register("priceWas", { valueAsNumber: true })} type="number" min={0} placeholder="30000" />
+              <TextInput
+                {...register("priceWas", { valueAsNumber: true })}
+                type="number"
+                min={0}
+                placeholder="30000"
+              />
             </div>
             <div>
               <FieldLabel>Discount (%)</FieldLabel>
-              <TextInput {...register("discountPct", { valueAsNumber: true })} type="number" min={0} max={100} placeholder="15" />
+              <TextInput
+                {...register("discountPct", { valueAsNumber: true })}
+                type="number"
+                min={0}
+                max={100}
+                placeholder="15"
+              />
             </div>
           </div>
 
@@ -709,7 +937,12 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 bestseller ? "bg-accent" : "bg-muted",
               )}
             >
-              <div className={cn("absolute top-0.5 w-4.5 h-4.5 rounded-full bg-card shadow-sm transition-transform", bestseller ? "translate-x-4.5" : "translate-x-0.5")} />
+              <div
+                className={cn(
+                  "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-card shadow-sm transition-transform",
+                  bestseller ? "translate-x-4.5" : "translate-x-0.5",
+                )}
+              />
             </div>
             <span className="text-sm font-medium text-foreground">Mark as Bestseller</span>
           </label>
@@ -723,7 +956,17 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               <FieldLabel>Day-by-Day Itinerary</FieldLabel>
               <button
                 type="button"
-                onClick={() => addDay({ day: itineraryFields.length + 1, title: "", description: "", image: "", meals: "", stay: "", travelTips: "" })}
+                onClick={() =>
+                  addDay({
+                    day: itineraryFields.length + 1,
+                    title: "",
+                    description: "",
+                    image: "",
+                    meals: "",
+                    stay: "",
+                    travelTips: "",
+                  })
+                }
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Day
@@ -763,8 +1006,14 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                       className="ml-11"
                     />
                     <div className="ml-11 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <TextInput {...register(`itinerary.${i}.meals`)} placeholder="Meals — e.g. Breakfast & Dinner" />
-                      <TextInput {...register(`itinerary.${i}.stay`)} placeholder="Stay — e.g. Deluxe Hotel in Pahalgam" />
+                      <TextInput
+                        {...register(`itinerary.${i}.meals`)}
+                        placeholder="Meals — e.g. Breakfast & Dinner"
+                      />
+                      <TextInput
+                        {...register(`itinerary.${i}.stay`)}
+                        placeholder="Stay — e.g. Deluxe Hotel in Pahalgam"
+                      />
                     </div>
                     <TextArea
                       {...register(`itinerary.${i}.travelTips`)}
@@ -803,8 +1052,16 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               {inclusionFields.map((field, i) => (
                 <div key={field.id} className="flex gap-2 items-center">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                  <TextInput {...register(`inclusions.${i}.value`)} placeholder="e.g. Airport transfers" className="flex-1" />
-                  <button type="button" onClick={() => removeInclusion(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                  <TextInput
+                    {...register(`inclusions.${i}.value`)}
+                    placeholder="e.g. Airport transfers"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeInclusion(i)}
+                    className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -831,8 +1088,16 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               {exclusionFields.map((field, i) => (
                 <div key={field.id} className="flex gap-2 items-center">
                   <XCircle className="w-4 h-4 text-red-400 shrink-0" />
-                  <TextInput {...register(`exclusions.${i}.value`)} placeholder="e.g. International flights" className="flex-1" />
-                  <button type="button" onClick={() => removeExclusion(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                  <TextInput
+                    {...register(`exclusions.${i}.value`)}
+                    placeholder="e.g. International flights"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExclusion(i)}
+                    className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -881,10 +1146,22 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                         )}
                       </div>
                       <div className="flex-1 space-y-1.5">
-                        <TextInput {...register(`gallery.${i}.url`)} type="url" placeholder="Image URL (https://...)" />
-                        <TextInput {...register(`gallery.${i}.alt`)} placeholder='Alt text — e.g. "Family shikara ride on Dal Lake"' className="text-xs" />
+                        <TextInput
+                          {...register(`gallery.${i}.url`)}
+                          type="url"
+                          placeholder="Image URL (https://...)"
+                        />
+                        <TextInput
+                          {...register(`gallery.${i}.alt`)}
+                          placeholder='Alt text — e.g. "Family shikara ride on Dal Lake"'
+                          className="text-xs"
+                        />
                       </div>
-                      <button type="button" onClick={() => removeGalleryItem(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryItem(i)}
+                        className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-0.5"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -906,7 +1183,8 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
         <SectionCard id="departures" title="4 · Departures">
           <div className="flex items-start justify-between gap-4">
             <p className="text-xs text-muted-foreground max-w-prose">
-              Departure dates shown on the tour page. Each batch emits an Event schema — Google can display availability directly in search results.
+              Departure dates shown on the tour page. Each batch emits an Event schema — Google can
+              display availability directly in search results.
             </p>
             <button
               type="button"
@@ -918,25 +1196,40 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             </button>
           </div>
           {batchFields.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic text-center py-4">No departures yet — click &ldquo;Add Departure&rdquo; to add one.</p>
+            <p className="text-xs text-muted-foreground italic text-center py-4">
+              No departures yet — click &ldquo;Add Departure&rdquo; to add one.
+            </p>
           ) : (
             <div className="space-y-3">
               {batchFields.map((field, i) => (
-                <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 grid grid-cols-[1fr_80px_1fr_140px_36px] gap-3 items-start">
+                <div
+                  key={field.id}
+                  className="border border-border rounded-xl p-4 bg-muted/50 grid grid-cols-[1fr_80px_1fr_140px_36px] gap-3 items-start"
+                >
                   <div>
                     <FieldLabel>Date</FieldLabel>
                     <TextInput {...register(`batches.${i}.date`)} type="date" />
-                    {errors.batches?.[i]?.date && <FieldError message={errors.batches[i]?.date?.message} />}
+                    {errors.batches?.[i]?.date && (
+                      <FieldError message={errors.batches[i]?.date?.message} />
+                    )}
                   </div>
                   <div>
                     <FieldLabel>Seats</FieldLabel>
-                    <TextInput {...register(`batches.${i}.seats`, { valueAsNumber: true })} type="number" min={1} />
-                    {errors.batches?.[i]?.seats && <FieldError message={errors.batches[i]?.seats?.message} />}
+                    <TextInput
+                      {...register(`batches.${i}.seats`, { valueAsNumber: true })}
+                      type="number"
+                      min={1}
+                    />
+                    {errors.batches?.[i]?.seats && (
+                      <FieldError message={errors.batches[i]?.seats?.message} />
+                    )}
                   </div>
                   <div>
                     <FieldLabel>Price</FieldLabel>
                     <TextInput {...register(`batches.${i}.price`)} placeholder="e.g. ₹25,000" />
-                    {errors.batches?.[i]?.price && <FieldError message={errors.batches[i]?.price?.message} />}
+                    {errors.batches?.[i]?.price && (
+                      <FieldError message={errors.batches[i]?.price?.message} />
+                    )}
                   </div>
                   <div>
                     <FieldLabel>Status</FieldLabel>
@@ -997,7 +1290,10 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             </div>
             <div>
               <FieldLabel>Tagline</FieldLabel>
-              <TextInput {...register("tagline")} placeholder="e.g. A romantic escape through the paradise on earth" />
+              <TextInput
+                {...register("tagline")}
+                placeholder="e.g. A romantic escape through the paradise on earth"
+              />
             </div>
           </div>
 
@@ -1008,7 +1304,10 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             </div>
             <div>
               <FieldLabel>Difficulty</FieldLabel>
-              <TextInput {...register("difficulty")} placeholder="e.g. Easy, Moderate, Challenging" />
+              <TextInput
+                {...register("difficulty")}
+                placeholder="e.g. Easy, Moderate, Challenging"
+              />
             </div>
           </div>
 
@@ -1036,8 +1335,15 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Happy Travellers Count</FieldLabel>
-            <TextInput {...register("happyCount", { valueAsNumber: true })} type="number" min={0} placeholder="e.g. 12000" />
-            <p className="text-[12px] text-muted-foreground mt-1">Shown as “12,000+ Happy Travellers” on the tour page. Leave blank to hide.</p>
+            <TextInput
+              {...register("happyCount", { valueAsNumber: true })}
+              type="number"
+              min={0}
+              placeholder="e.g. 12000"
+            />
+            <p className="text-[12px] text-muted-foreground mt-1">
+              Shown as “12,000+ Happy Travellers” on the tour page. Leave blank to hide.
+            </p>
           </div>
         </SectionCard>
 
@@ -1058,8 +1364,16 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               {highlightFields.map((field, i) => (
                 <div key={field.id} className="flex gap-2 items-center">
                   <Star className="w-4 h-4 text-accent shrink-0" />
-                  <TextInput {...register(`highlights.${i}.value`)} placeholder="e.g. ❤️ Romantic Houseboat" className="flex-1" />
-                  <button type="button" onClick={() => removeHighlight(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                  <TextInput
+                    {...register(`highlights.${i}.value`)}
+                    placeholder="e.g. ❤️ Romantic Houseboat"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeHighlight(i)}
+                    className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -1069,7 +1383,6 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               )}
             </div>
           </div>
-
         </SectionCard>
 
         {/* 7. Trip Fit */}
@@ -1090,13 +1403,23 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 {perfectForFields.map((field, i) => (
                   <div key={field.id} className="flex gap-2 items-center">
                     <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                    <TextInput {...register(`perfectFor.${i}.value`)} placeholder="e.g. Multi-generational families" className="flex-1" />
-                    <button type="button" onClick={() => removePerfectFor(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                    <TextInput
+                      {...register(`perfectFor.${i}.value`)}
+                      placeholder="e.g. Multi-generational families"
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePerfectFor(i)}
+                      className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
-                {perfectForFields.length === 0 && <p className="text-xs text-muted-foreground py-2">Not set yet.</p>}
+                {perfectForFields.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-2">Not set yet.</p>
+                )}
               </div>
             </div>
 
@@ -1115,13 +1438,23 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 {notIdealForFields.map((field, i) => (
                   <div key={field.id} className="flex gap-2 items-center">
                     <XCircle className="w-4 h-4 text-red-400 shrink-0" />
-                    <TextInput {...register(`notIdealFor.${i}.value`)} placeholder="e.g. Budget solo backpackers" className="flex-1" />
-                    <button type="button" onClick={() => removeNotIdealFor(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                    <TextInput
+                      {...register(`notIdealFor.${i}.value`)}
+                      placeholder="e.g. Budget solo backpackers"
+                      className="flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeNotIdealFor(i)}
+                      className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
-                {notIdealForFields.length === 0 && <p className="text-xs text-muted-foreground py-2">Not set yet.</p>}
+                {notIdealForFields.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-2">Not set yet.</p>
+                )}
               </div>
             </div>
           </div>
@@ -1131,8 +1464,15 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
         <SectionCard id="logistics" title="8 · Trip Logistics">
           <div>
             <FieldLabel>Why This Itinerary Works</FieldLabel>
-            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Explains the route/pacing logic — builds trust before the day-by-day.</p>
-            <TextArea {...register("whyItineraryWorks")} rows={4} placeholder="Why this itinerary is paced/routed the way it is..." />
+            <p className="text-[12px] text-muted-foreground mb-1.5">
+              HTML is accepted. Explains the route/pacing logic — builds trust before the
+              day-by-day.
+            </p>
+            <TextArea
+              {...register("whyItineraryWorks")}
+              rows={4}
+              placeholder="Why this itinerary is paced/routed the way it is..."
+            />
           </div>
 
           <div>
@@ -1151,10 +1491,20 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             ) : (
               <div className="space-y-3">
                 {accommodationFields.map((field, i) => (
-                  <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                  <div
+                    key={field.id}
+                    className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3"
+                  >
                     <div className="flex-1 space-y-2">
-                      <TextInput {...register(`accommodation.${i}.location`)} placeholder="Location — e.g. Pahalgam Stay" />
-                      <TextArea {...register(`accommodation.${i}.description`)} rows={2} placeholder="What travellers can expect here..." />
+                      <TextInput
+                        {...register(`accommodation.${i}.location`)}
+                        placeholder="Location — e.g. Pahalgam Stay"
+                      />
+                      <TextArea
+                        {...register(`accommodation.${i}.description`)}
+                        rows={2}
+                        placeholder="What travellers can expect here..."
+                      />
                     </div>
                     <button
                       type="button"
@@ -1179,13 +1529,24 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           <div>
             <FieldLabel>Meals</FieldLabel>
             <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted.</p>
-            <TextArea {...register("meals")} rows={3} placeholder="Meal plan policy — what's included, what's not, and why..." />
+            <TextArea
+              {...register("meals")}
+              rows={3}
+              placeholder="Meal plan policy — what's included, what's not, and why..."
+            />
           </div>
 
           <div>
             <FieldLabel>Transport Detail</FieldLabel>
-            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Vehicle/local-union-cab policy — richer than the short Transport quick-fact.</p>
-            <TextArea {...register("transportDetail")} rows={3} placeholder="Transport and local sightseeing rules..." />
+            <p className="text-[12px] text-muted-foreground mb-1.5">
+              HTML is accepted. Vehicle/local-union-cab policy — richer than the short Transport
+              quick-fact.
+            </p>
+            <TextArea
+              {...register("transportDetail")}
+              rows={3}
+              placeholder="Transport and local sightseeing rules..."
+            />
           </div>
         </SectionCard>
 
@@ -1196,7 +1557,9 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               <FieldLabel>Estimated Total Trip Budget</FieldLabel>
               <button
                 type="button"
-                onClick={() => addBudgetRow({ category: "", perPerson: "", perFamily: "", note: "" })}
+                onClick={() =>
+                  addBudgetRow({ category: "", perPerson: "", perFamily: "", note: "" })
+                }
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Row
@@ -1207,12 +1570,28 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             ) : (
               <div className="space-y-2">
                 {budgetFields.map((field, i) => (
-                  <div key={field.id} className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_1fr_1fr_1fr_32px] gap-2 items-start">
-                    <TextInput {...register(`budgetBreakdown.${i}.category`)} placeholder="Expense category" />
-                    <TextInput {...register(`budgetBreakdown.${i}.perPerson`)} placeholder="Per person" />
-                    <TextInput {...register(`budgetBreakdown.${i}.perFamily`)} placeholder="Per family" />
+                  <div
+                    key={field.id}
+                    className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_1fr_1fr_1fr_32px] gap-2 items-start"
+                  >
+                    <TextInput
+                      {...register(`budgetBreakdown.${i}.category`)}
+                      placeholder="Expense category"
+                    />
+                    <TextInput
+                      {...register(`budgetBreakdown.${i}.perPerson`)}
+                      placeholder="Per person"
+                    />
+                    <TextInput
+                      {...register(`budgetBreakdown.${i}.perFamily`)}
+                      placeholder="Per family"
+                    />
                     <TextInput {...register(`budgetBreakdown.${i}.note`)} placeholder="Note" />
-                    <button type="button" onClick={() => removeBudgetRow(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-2.5">
+                    <button
+                      type="button"
+                      onClick={() => removeBudgetRow(i)}
+                      className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-2.5"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -1239,19 +1618,34 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 {expenseFields.map((field, i) => {
                   const mandatory = watch(`personalExpenses.${i}.mandatory`);
                   return (
-                    <div key={field.id} className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_1fr_auto_32px] gap-2 items-center">
-                      <TextInput {...register(`personalExpenses.${i}.activity`)} placeholder="Activity / expense" />
-                      <TextInput {...register(`personalExpenses.${i}.cost`)} placeholder="Approx. cost" />
+                    <div
+                      key={field.id}
+                      className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_1fr_auto_32px] gap-2 items-center"
+                    >
+                      <TextInput
+                        {...register(`personalExpenses.${i}.activity`)}
+                        placeholder="Activity / expense"
+                      />
+                      <TextInput
+                        {...register(`personalExpenses.${i}.cost`)}
+                        placeholder="Approx. cost"
+                      />
                       <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={mandatory}
-                          onChange={(e) => setValue(`personalExpenses.${i}.mandatory`, e.target.checked)}
+                          onChange={(e) =>
+                            setValue(`personalExpenses.${i}.mandatory`, e.target.checked)
+                          }
                           className="rounded border-border"
                         />
                         Mandatory
                       </label>
-                      <button type="button" onClick={() => removeExpenseRow(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => removeExpenseRow(i)}
+                        className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -1263,8 +1657,15 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Best Time to Visit — Detail</FieldLabel>
-            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Full seasonal breakdown — the short Best Time field (Trip Details) stays for the sidebar quick-fact.</p>
-            <TextArea {...register("bestTimeDetail")} rows={4} placeholder="Season-by-season breakdown..." />
+            <p className="text-[12px] text-muted-foreground mb-1.5">
+              HTML is accepted. Full seasonal breakdown — the short Best Time field (Trip Details)
+              stays for the sidebar quick-fact.
+            </p>
+            <TextArea
+              {...register("bestTimeDetail")}
+              rows={4}
+              placeholder="Season-by-season breakdown..."
+            />
           </div>
 
           <div>
@@ -1285,19 +1686,31 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 {packingFields.map((field, i) => {
                   const mandatory = watch(`thingsToCarry.${i}.mandatory`);
                   return (
-                    <div key={field.id} className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_1fr_auto_32px] gap-2 items-center">
+                    <div
+                      key={field.id}
+                      className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_1fr_auto_32px] gap-2 items-center"
+                    >
                       <TextInput {...register(`thingsToCarry.${i}.item`)} placeholder="Item" />
-                      <TextInput {...register(`thingsToCarry.${i}.reason`)} placeholder="Why it's needed" />
+                      <TextInput
+                        {...register(`thingsToCarry.${i}.reason`)}
+                        placeholder="Why it's needed"
+                      />
                       <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={mandatory}
-                          onChange={(e) => setValue(`thingsToCarry.${i}.mandatory`, e.target.checked)}
+                          onChange={(e) =>
+                            setValue(`thingsToCarry.${i}.mandatory`, e.target.checked)
+                          }
                           className="rounded border-border"
                         />
                         Mandatory
                       </label>
-                      <button type="button" onClick={() => removePackingItem(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => removePackingItem(i)}
+                        className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -1324,14 +1737,26 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             <div className="space-y-2">
               {tipFields.map((field, i) => (
                 <div key={field.id} className="flex gap-2 items-center">
-                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[12px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                  <TextInput {...register(`localTravelTips.${i}.value`)} placeholder="e.g. Verify your SIM is postpaid before arrival" className="flex-1" />
-                  <button type="button" onClick={() => removeTip(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors">
+                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[12px] font-bold flex items-center justify-center shrink-0">
+                    {i + 1}
+                  </span>
+                  <TextInput
+                    {...register(`localTravelTips.${i}.value`)}
+                    placeholder="e.g. Verify your SIM is postpaid before arrival"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeTip(i)}
+                    className="text-muted-foreground/60 hover:text-red-400 transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
-              {tipFields.length === 0 && <p className="text-xs text-muted-foreground py-2">No tips added yet.</p>}
+              {tipFields.length === 0 && (
+                <p className="text-xs text-muted-foreground py-2">No tips added yet.</p>
+              )}
             </div>
           </div>
 
@@ -1351,10 +1776,21 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             ) : (
               <div className="space-y-3">
                 {noteFields.map((field, i) => (
-                  <div key={field.id} className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3">
+                  <div
+                    key={field.id}
+                    className="border border-border rounded-xl p-4 bg-muted/50 flex items-start gap-3"
+                  >
                     <div className="flex-1 space-y-2">
-                      <TextArea {...register(`importantNotes.${i}.text`)} rows={2} placeholder="Warning / regulation the traveller should know..." />
-                      <TextInput {...register(`importantNotes.${i}.reviewNote`)} placeholder="Internal review note (optional) — e.g. re-check seasonally" className="text-xs" />
+                      <TextArea
+                        {...register(`importantNotes.${i}.text`)}
+                        rows={2}
+                        placeholder="Warning / regulation the traveller should know..."
+                      />
+                      <TextInput
+                        {...register(`importantNotes.${i}.reviewNote`)}
+                        placeholder="Internal review note (optional) — e.g. re-check seasonally"
+                        className="text-xs"
+                      />
                     </div>
                     <button
                       type="button"
@@ -1385,24 +1821,39 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 </button>
               )}
             </div>
-            <p className="text-[12px] text-muted-foreground mb-2">Up to 4 curated pairings. Each links to another tour with a custom CTA sentence — not an automatic &ldquo;more like this&rdquo; feed.</p>
+            <p className="text-[12px] text-muted-foreground mb-2">
+              Up to 4 curated pairings. Each links to another tour with a custom CTA sentence — not
+              an automatic &ldquo;more like this&rdquo; feed.
+            </p>
             {relatedFields.length === 0 ? (
               <p className="text-xs text-muted-foreground py-2">No related tours added yet.</p>
             ) : (
               <div className="space-y-2">
                 {relatedFields.map((field, i) => (
-                  <div key={field.id} className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_2fr_32px] gap-2 items-start">
+                  <div
+                    key={field.id}
+                    className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-[1fr_2fr_32px] gap-2 items-start"
+                  >
                     <select
                       {...register(`relatedTours.${i}.tourId`)}
                       className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
                     >
                       <option value="">Select a tour…</option>
                       {relatedTourOptions.map((t) => (
-                        <option key={t.id} value={t.id}>{t.title}</option>
+                        <option key={t.id} value={t.id}>
+                          {t.title}
+                        </option>
                       ))}
                     </select>
-                    <TextInput {...register(`relatedTours.${i}.ctaSentence`)} placeholder='CTA sentence — e.g. "Looking for something more exclusive? Explore our Premium Kashmir Tour Package."' />
-                    <button type="button" onClick={() => removeRelated(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-2.5">
+                    <TextInput
+                      {...register(`relatedTours.${i}.ctaSentence`)}
+                      placeholder='CTA sentence — e.g. "Looking for something more exclusive? Explore our Premium Kashmir Tour Package."'
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeRelated(i)}
+                      className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-2.5"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -1413,20 +1864,33 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Why Vertex Kashmir Holidays</FieldLabel>
-            <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted. Per-tour trust paragraph shown near the closing CTA.</p>
-            <TextArea {...register("whyVertexBlurb")} rows={3} placeholder="Why travellers should book this trip with us..." />
+            <p className="text-[12px] text-muted-foreground mb-1.5">
+              HTML is accepted. Per-tour trust paragraph shown near the closing CTA.
+            </p>
+            <TextArea
+              {...register("whyVertexBlurb")}
+              rows={3}
+              placeholder="Why travellers should book this trip with us..."
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <FieldLabel>CTA Headline</FieldLabel>
-              <TextInput {...register("ctaHeadline")} placeholder="e.g. Plan Your Spiritual Journey to Katra & Kashmir" />
+              <TextInput
+                {...register("ctaHeadline")}
+                placeholder="e.g. Plan Your Spiritual Journey to Katra & Kashmir"
+              />
             </div>
           </div>
           <div>
             <FieldLabel>CTA Body</FieldLabel>
             <p className="text-[12px] text-muted-foreground mb-1.5">HTML is accepted.</p>
-            <TextArea {...register("ctaBody")} rows={3} placeholder="Closing paragraph inviting the visitor to get in touch..." />
+            <TextArea
+              {...register("ctaBody")}
+              rows={3}
+              placeholder="Closing paragraph inviting the visitor to get in touch..."
+            />
           </div>
         </SectionCard>
 
@@ -1435,11 +1899,17 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
           <div>
             <FieldLabel>Meta Title</FieldLabel>
             <TextInput {...register("metaTitle")} placeholder="SEO page title (60 chars ideal)" />
-            <p className="text-[12px] text-muted-foreground mt-1">Leave blank to auto-generate from tour title.</p>
+            <p className="text-[12px] text-muted-foreground mt-1">
+              Leave blank to auto-generate from tour title.
+            </p>
           </div>
           <div>
             <FieldLabel>Meta Description</FieldLabel>
-            <TextArea {...register("metaDesc")} rows={2} placeholder="SEO description (155 chars ideal)" />
+            <TextArea
+              {...register("metaDesc")}
+              rows={2}
+              placeholder="SEO description (155 chars ideal)"
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -1448,7 +1918,10 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             </div>
             <div>
               <FieldLabel>OG Description</FieldLabel>
-              <TextInput {...register("ogDescription")} placeholder="Leave blank to reuse Meta Description" />
+              <TextInput
+                {...register("ogDescription")}
+                placeholder="Leave blank to reuse Meta Description"
+              />
             </div>
           </div>
           <ImageUploadField
@@ -1460,8 +1933,15 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
 
           <div>
             <FieldLabel>Things to Do (Activities)</FieldLabel>
-            <p className="text-[12px] text-muted-foreground mb-2">Activities shown on this tour&apos;s page. Manage activities in the Activities module.</p>
-            <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
+            <p className="text-[12px] text-muted-foreground mb-2">
+              Activities shown on this tour&apos;s page. Manage activities in the Activities module.
+            </p>
+            <LinkChecklist
+              title="Activities"
+              options={activityOptions}
+              value={activityIds}
+              onChange={setActivityIds}
+            />
           </div>
         </SectionCard>
       </div>
@@ -1481,7 +1961,9 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
               </div>
             )}
             {catInfo && (
-              <span className={`absolute top-2 left-2 text-[12px] font-bold px-2 py-0.5 rounded-full ${catInfo.color}`}>
+              <span
+                className={`absolute top-2 left-2 text-[12px] font-bold px-2 py-0.5 rounded-full ${catInfo.color}`}
+              >
                 {catInfo.label}
               </span>
             )}
@@ -1512,13 +1994,20 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
                 published ? "bg-primary" : "bg-muted",
               )}
             >
-              <div className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-card shadow-sm transition-transform", published ? "translate-x-4" : "translate-x-0.5")} />
+              <div
+                className={cn(
+                  "absolute top-0.5 w-4 h-4 rounded-full bg-card shadow-sm transition-transform",
+                  published ? "translate-x-4" : "translate-x-0.5",
+                )}
+              />
             </div>
           </label>
 
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Visibility</span>
-            <span className={cn("font-semibold", published ? "text-primary" : "text-muted-foreground")}>
+            <span
+              className={cn("font-semibold", published ? "text-primary" : "text-muted-foreground")}
+            >
               {published ? "● Live" : "○ Draft"}
             </span>
           </div>
@@ -1533,7 +2022,11 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             variant="outline"
             className="w-full border-border text-foreground font-semibold"
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
             Save Draft
           </Button>
           <Button
@@ -1542,7 +2035,11 @@ export function PackageForm({ defaults, activityOptions = [], relatedTourOptions
             disabled={isSubmitting}
             className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-sm shadow-primary/25"
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Eye className="w-4 h-4 mr-2" />
+            )}
             Publish Package
           </Button>
           <button

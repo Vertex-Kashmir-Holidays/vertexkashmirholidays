@@ -1,14 +1,17 @@
 // src/components/sections/TourDetailsMealsTransport.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface TourDetailsMealsTransportProps {
   meals?: string;
   transportDetail?: string;
 }
 
-export function TourDetailsMealsTransport({ meals, transportDetail }: TourDetailsMealsTransportProps) {
+export function TourDetailsMealsTransport({
+  meals,
+  transportDetail,
+}: TourDetailsMealsTransportProps) {
   const hasMeals = Boolean(meals);
   const hasTransport = Boolean(transportDetail);
   if (!hasMeals && !hasTransport) return null;

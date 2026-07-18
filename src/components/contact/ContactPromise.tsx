@@ -1,8 +1,8 @@
 // src/components/contact/ContactPromise.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import type { ContactPromiseItemData, ContactSectionHeading } from '@/types/contact';
+import { motion } from "framer-motion";
+import type { ContactPromiseItemData, ContactSectionHeading } from "@/types/contact";
 
 interface ContactPromiseProps {
   heading: ContactSectionHeading;
@@ -33,7 +33,15 @@ export function ContactPromise({ heading, items }: ContactPromiseProps) {
             transition={{ delay: i * 0.05 }}
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-[1.5px] border-primary/40 text-primary">
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[18px] w-[18px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d={p.icon} />
               </svg>
             </span>

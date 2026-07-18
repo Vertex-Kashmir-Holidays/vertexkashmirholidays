@@ -18,8 +18,14 @@ export default async function NewPackagePage() {
       {/* Breadcrumb */}
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/packages" className="hover:text-primary transition-colors">Packages</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/packages" className="hover:text-primary transition-colors">
+              Packages
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium">Add New Package</li>
         </ol>
       </nav>

@@ -1,8 +1,8 @@
 // src/components/campaign/CampaignGallery.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
+import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface CampaignGalleryProps {
   title: string | null;
@@ -13,11 +13,20 @@ export function CampaignGallery({ title, images }: CampaignGalleryProps) {
   const half = Math.ceil(images.length / 2);
 
   const renderRow = (items: string[], reverse = false) => (
-    <div className={`marquee ${reverse ? 'mt-4' : 'mt-10'}`}>
-      <div className={`mq-imgs ${reverse ? 'mq-rev' : ''}`}>
+    <div className={`marquee ${reverse ? "mt-4" : "mt-10"}`}>
+      <div className={`mq-imgs ${reverse ? "mq-rev" : ""}`}>
         {[...items, ...items].map((src, i) => (
-          <span key={i} className="group relative block h-[170px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-border">
-            <Image src={src} alt="" fill sizes="250px" className="object-cover transition duration-700 group-hover:scale-110" />
+          <span
+            key={i}
+            className="group relative block h-[170px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-border"
+          >
+            <Image
+              src={src}
+              alt=""
+              fill
+              sizes="250px"
+              className="object-cover transition duration-700 group-hover:scale-110"
+            />
           </span>
         ))}
       </div>

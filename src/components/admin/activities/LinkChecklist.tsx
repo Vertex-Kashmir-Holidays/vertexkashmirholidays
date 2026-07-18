@@ -51,8 +51,16 @@ export function LinkChecklist({
             <p className="text-[12px] text-muted-foreground italic px-1 py-2">No options.</p>
           ) : (
             shown.map((o) => (
-              <label key={o.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted cursor-pointer">
-                <input type="checkbox" checked={value.includes(o.id)} onChange={() => toggle(o.id)} className="h-3.5 w-3.5 accent-primary" />
+              <label
+                key={o.id}
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={value.includes(o.id)}
+                  onChange={() => toggle(o.id)}
+                  className="h-3.5 w-3.5 accent-primary"
+                />
                 <span className="truncate">{o.label}</span>
               </label>
             ))

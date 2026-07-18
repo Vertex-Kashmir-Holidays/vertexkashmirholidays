@@ -45,14 +45,15 @@ async function getFeaturedAndRecommended(category: TourCategory) {
   // Fill "Recommended" with the rest of this category first, then top up
   // with other bestsellers site-wide so the page never looks thin.
   const needed = Math.max(0, 6 - restOfCategory.length);
-  const otherBestsellers = needed > 0
-    ? await prisma.tour.findMany({
-        where: { published: true, category: { not: category }, id: { notIn: [featured.id] } },
-        include: { destinations: { include: { destination: { select: { name: true } } } } },
-        orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
-        take: needed,
-      })
-    : [];
+  const otherBestsellers =
+    needed > 0
+      ? await prisma.tour.findMany({
+          where: { published: true, category: { not: category }, id: { notIn: [featured.id] } },
+          include: { destinations: { include: { destination: { select: { name: true } } } } },
+          orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
+          take: needed,
+        })
+      : [];
 
   return { featured, recommended: [...restOfCategory, ...otherBestsellers].slice(0, 6) };
 }

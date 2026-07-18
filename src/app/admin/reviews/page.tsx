@@ -29,26 +29,32 @@ export default async function AdminReviewsPage() {
   const role = session!.user.role;
   const isAdmin = isAdminRole(role);
 
-  const [reviews, totalCount, pendingCount, tours, canEdit, canDelete, heroContent] = await Promise.all([
-    prisma.review.findMany({
-      orderBy: [{ approved: "asc" }, { createdAt: "desc" }],
-      include: {
-        tour: { select: { title: true, slug: true } },
-        user: { select: { image: true } },
-      },
-    }),
-    prisma.review.count(),
-    prisma.review.count({ where: { approved: false } }),
-    prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-    can(role, "reviews", "edit"),
-    can(role, "reviews", "delete"),
-    prisma.reviewsContent.findUnique({ where: { id: "singleton" } }),
-  ]);
+  const [reviews, totalCount, pendingCount, tours, canEdit, canDelete, heroContent] =
+    await Promise.all([
+      prisma.review.findMany({
+        orderBy: [{ approved: "asc" }, { createdAt: "desc" }],
+        include: {
+          tour: { select: { title: true, slug: true } },
+          user: { select: { image: true } },
+        },
+      }),
+      prisma.review.count(),
+      prisma.review.count({ where: { approved: false } }),
+      prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+      can(role, "reviews", "edit"),
+      can(role, "reviews", "delete"),
+      prisma.reviewsContent.findUnique({ where: { id: "singleton" } }),
+    ]);
 
   return (
     <div className="space-y-6">
       <PageEditorHeader title="Reviews Page" publicHref="/reviews" readOnly={!canEdit} />
-      <ContentForm contentKey="reviews" groups={HERO_GROUPS} initial={heroContent} canEdit={canEdit} />
+      <ContentForm
+        contentKey="reviews"
+        groups={HERO_GROUPS}
+        initial={heroContent}
+        canEdit={canEdit}
+      />
       <ReviewsClient
         initialReviews={reviews}
         totalCount={totalCount}

@@ -1,6 +1,6 @@
 // src/components/activities/ActivityQuickFacts.tsx
-import { formatINR } from '@/lib/accents';
-import { BadgeIndianRupee, Clock, Gauge, MapPin } from 'lucide-react';
+import { formatINR } from "@/lib/accents";
+import { BadgeIndianRupee, Clock, Gauge, MapPin } from "lucide-react";
 
 interface ActivityQuickFactsProps {
   location: string | null;
@@ -10,18 +10,28 @@ interface ActivityQuickFactsProps {
 }
 
 // Same compact facts-strip idiom as the Tour/Destination detail pages.
-export function ActivityQuickFacts({ location, duration, price, difficulty }: ActivityQuickFactsProps) {
+export function ActivityQuickFacts({
+  location,
+  duration,
+  price,
+  difficulty,
+}: ActivityQuickFactsProps) {
   const facts = [
-    ...(location ? [{ icon: MapPin, label: 'Location', value: location }] : []),
-    ...(duration ? [{ icon: Clock, label: 'Duration', value: duration }] : []),
-    ...(price != null ? [{ icon: BadgeIndianRupee, label: 'From', value: `${formatINR(price)} / person` }] : []),
-    ...(difficulty ? [{ icon: Gauge, label: 'Difficulty', value: difficulty }] : []),
+    ...(location ? [{ icon: MapPin, label: "Location", value: location }] : []),
+    ...(duration ? [{ icon: Clock, label: "Duration", value: duration }] : []),
+    ...(price != null
+      ? [{ icon: BadgeIndianRupee, label: "From", value: `${formatINR(price)} / person` }]
+      : []),
+    ...(difficulty ? [{ icon: Gauge, label: "Difficulty", value: difficulty }] : []),
   ];
 
   if (facts.length === 0) return null;
 
   return (
-    <section id="quick-facts" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+    <section
+      id="quick-facts"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+    >
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {facts.map((f, i) => (
           <div key={i} className="flex items-center gap-3">

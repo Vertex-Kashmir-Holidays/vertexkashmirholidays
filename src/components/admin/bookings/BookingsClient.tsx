@@ -4,7 +4,16 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, ChevronDown, User, ClipboardList, Trash2, Loader2, AlertTriangle, X } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  User,
+  ClipboardList,
+  Trash2,
+  Loader2,
+  AlertTriangle,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 
@@ -59,10 +68,14 @@ const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 };
 
 function canCancel(b: Booking, isAdmin: boolean): boolean {
-  return isAdmin && b.paymentStatus === "PARTIAL" && b.status !== "CANCELLED" && b.status !== "REFUNDED";
+  return (
+    isAdmin && b.paymentStatus === "PARTIAL" && b.status !== "CANCELLED" && b.status !== "REFUNDED"
+  );
 }
 function canRefund(b: Booking, isAdmin: boolean): boolean {
-  return isAdmin && b.paymentStatus === "FULL" && b.status !== "CANCELLED" && b.status !== "REFUNDED";
+  return (
+    isAdmin && b.paymentStatus === "FULL" && b.status !== "CANCELLED" && b.status !== "REFUNDED"
+  );
 }
 
 function fmtINR(n: number) {
@@ -147,7 +160,9 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
   function handleDelete(id: string, permanent: boolean) {
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/bookings/${id}${permanent ? "?permanent=1" : ""}`, { method: "DELETE" });
+        const res = await fetch(`/api/bookings/${id}${permanent ? "?permanent=1" : ""}`, {
+          method: "DELETE",
+        });
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         if (!res.ok) {
           toast.error(j.error ?? "Failed to delete booking.");
@@ -233,9 +248,16 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Ref", "Guest", "Travel Date", "Amount", "Status", "Payment", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
-                ))}
+                {["Ref", "Guest", "Travel Date", "Amount", "Status", "Payment", "Actions"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -252,11 +274,17 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                   return (
                     <tr
                       key={b.id}
-                      onClick={() => { setConfirmMode(null); setSelected(b); }}
+                      onClick={() => {
+                        setConfirmMode(null);
+                        setSelected(b);
+                      }}
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono text-[12px] font-semibold text-foreground" title={b.id}>
+                        <span
+                          className="font-mono text-[12px] font-semibold text-foreground"
+                          title={b.id}
+                        >
                           #{b.id.slice(-8).toUpperCase()}
                         </span>
                       </td>
@@ -266,22 +294,42 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                             <User className="w-3 h-3 text-foreground" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">{b.guestName}</p>
-                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px]">{b.guestEmail}</p>
+                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">
+                              {b.guestName}
+                            </p>
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px]">
+                              {b.guestEmail}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(b.travelDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        {new Date(b.travelDate).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </td>
-                      <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">{fmtINR(b.amount)}</td>
+                      <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
+                        {fmtINR(b.amount)}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[b.status])}>
+                        <span
+                          className={cn(
+                            "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                            STATUS_STYLES[b.status],
+                          )}
+                        >
                           {b.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                        <span
+                          className={cn(
+                            "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                            PAYMENT_STATUS_STYLES[b.paymentStatus],
+                          )}
+                        >
                           {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                         </span>
                       </td>
@@ -297,7 +345,10 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                           </Link>
                           {showCancel && (
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "CANCELLED"); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(b.id, "CANCELLED");
+                              }}
                               disabled={isPending}
                               title="Cancel booking (partially paid only)"
                               className="text-[12px] font-bold px-2 py-0.5 rounded-lg border border-red-200 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -307,7 +358,10 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                           )}
                           {showRefund && (
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleStatusChange(b.id, "REFUNDED"); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(b.id, "REFUNDED");
+                              }}
                               disabled={isPending}
                               title="Mark as refunded"
                               className="text-[12px] font-bold px-2 py-0.5 rounded-lg border border-purple-200 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors"
@@ -350,7 +404,9 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             <div className="flex items-start justify-between p-6 border-b border-border">
               <div>
                 <h3 className="font-bold text-foreground text-sm">Booking Detail</h3>
-                <p className="text-[12px] text-muted-foreground font-mono mt-0.5">{selected.razorpayOrderId ?? selected.id}</p>
+                <p className="text-[12px] text-muted-foreground font-mono mt-0.5">
+                  {selected.razorpayOrderId ?? selected.id}
+                </p>
               </div>
               <button
                 onClick={closeModal}
@@ -363,23 +419,73 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
 
             {/* Detail grid */}
             <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-              <div><p className="text-muted-foreground mb-0.5">Guest</p><p className="font-semibold text-foreground">{selected.guestName}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Email</p><p className="font-semibold text-foreground">{selected.guestEmail ?? "—"}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Phone</p><p className="font-semibold text-foreground">{selected.guestPhone}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Tour</p><p className="font-semibold text-foreground">{selected.tour?.title ?? "Custom booking"}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Travel Date</p><p className="font-semibold text-foreground">{new Date(selected.travelDate).toLocaleDateString("en-IN")}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Travellers</p><p className="font-semibold text-foreground">{selected.travellers}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Amount</p><p className="font-bold text-foreground">{fmtINR(selected.amount)}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Paid</p><p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Balance</p><p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p></div>
-              <div><p className="text-muted-foreground mb-0.5">Payment ID</p><p className="font-mono text-foreground text-[12px]">{selected.razorpayPayId ?? "—"}</p></div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Guest</p>
+                <p className="font-semibold text-foreground">{selected.guestName}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Email</p>
+                <p className="font-semibold text-foreground">{selected.guestEmail ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Phone</p>
+                <p className="font-semibold text-foreground">{selected.guestPhone}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Tour</p>
+                <p className="font-semibold text-foreground">
+                  {selected.tour?.title ?? "Custom booking"}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Travel Date</p>
+                <p className="font-semibold text-foreground">
+                  {new Date(selected.travelDate).toLocaleDateString("en-IN")}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Travellers</p>
+                <p className="font-semibold text-foreground">{selected.travellers}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Amount</p>
+                <p className="font-bold text-foreground">{fmtINR(selected.amount)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Paid</p>
+                <p className="font-semibold text-foreground">{fmtINR(selected.paidAmount)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Balance</p>
+                <p className="font-semibold text-foreground">{fmtINR(selected.balance)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Payment ID</p>
+                <p className="font-mono text-foreground text-[12px]">
+                  {selected.razorpayPayId ?? "—"}
+                </p>
+              </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Status</p>
-                <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[selected.status])}>{selected.status}</span>
+                <span
+                  className={cn(
+                    "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                    STATUS_STYLES[selected.status],
+                  )}
+                >
+                  {selected.status}
+                </span>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Payment</p>
-                <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", PAYMENT_STATUS_STYLES[selected.paymentStatus])}>{PAYMENT_STATUS_LABELS[selected.paymentStatus]}</span>
+                <span
+                  className={cn(
+                    "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                    PAYMENT_STATUS_STYLES[selected.paymentStatus],
+                  )}
+                >
+                  {PAYMENT_STATUS_LABELS[selected.paymentStatus]}
+                </span>
               </div>
             </div>
 
@@ -388,7 +494,9 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
               <div className="px-6 pb-6 border-t border-border pt-4">
                 {confirmMode === null ? (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground mr-1">Delete booking:</span>
+                    <span className="text-xs font-semibold text-muted-foreground mr-1">
+                      Delete booking:
+                    </span>
                     <button
                       onClick={() => setConfirmMode("soft")}
                       disabled={isPending}
@@ -409,7 +517,9 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                     <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                     <div className="flex-1 text-xs">
                       <p className="font-semibold text-red-700 dark:text-red-300">
-                        {confirmMode === "permanent" ? "Permanently delete this booking?" : "Soft-delete this booking?"}
+                        {confirmMode === "permanent"
+                          ? "Permanently delete this booking?"
+                          : "Soft-delete this booking?"}
                       </p>
                       <p className="text-muted-foreground mt-0.5">
                         {confirmMode === "permanent"
@@ -423,7 +533,11 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                         disabled={isPending}
                         className="inline-flex items-center gap-1.5 text-[12px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        {isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                         {isPending ? "Deleting…" : "Confirm"}
                       </button>
                       <button

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import { MapPin, Clock, ArrowRight } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { imgSrc } from '@/lib/placeholder';
-import { formatINR } from '@/lib/accents';
-import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Tilt3D } from "@/components/ui/3DTilt";
+import { MapPin, Clock, ArrowRight } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { imgSrc } from "@/lib/placeholder";
+import { formatINR } from "@/lib/accents";
+import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 
 export interface ActivityCardData {
   id: string;
@@ -22,7 +22,13 @@ export interface ActivityCardData {
 
 // Mirrors the Tours TourCard shell (image, badge, title, meta, price, dual CTA)
 // adapted to activity content — so the two listings feel like one product.
-export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardData; index?: number }) {
+export function ActivityCard({
+  activity,
+  index = 0,
+}: {
+  activity: ActivityCardData;
+  index?: number;
+}) {
   const detailHref = `/activities/${activity.slug}`;
   const { siteName } = useSiteSettings();
   const wa = useWhatsAppLink();
@@ -41,7 +47,11 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
         <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/10">
           {/* Image */}
           <div className="relative h-44 overflow-hidden">
-            <Link href={detailHref} aria-label={activity.name} className="relative block h-full w-full">
+            <Link
+              href={detailHref}
+              aria-label={activity.name}
+              className="relative block h-full w-full"
+            >
               <Image
                 src={imgSrc(activity.image)}
                 alt={activity.name}
@@ -79,7 +89,7 @@ export function ActivityCard({ activity, index = 0 }: { activity: ActivityCardDa
             <div className="mt-4 flex items-end justify-between border-t border-border pt-3">
               <span className="text-[12px] text-muted-foreground">From</span>
               <p className="text-[22px] font-extrabold leading-tight text-foreground">
-                {activity.price != null ? formatINR(activity.price) : 'On request'}
+                {activity.price != null ? formatINR(activity.price) : "On request"}
               </p>
               <span className="text-[10px] text-muted-foreground">per person</span>
             </div>

@@ -22,7 +22,12 @@ export const videos = [
   { id: "vid-honeymoon", name: "Aarav & Meera", place: "Honeymoon · Pahalgam", duration: "0:42" },
   { id: "vid-family", name: "The Sharma Family", place: "Snow Day · Gulmarg", duration: "1:05" },
   { id: "vid-trek", name: "Rohit", place: "Great Lakes Trek", duration: "0:58" },
-  { id: "vid-shikara", name: "Fatima & Zoya", place: "Shikara Morning · Dal Lake", duration: "0:36" },
+  {
+    id: "vid-shikara",
+    name: "Fatima & Zoya",
+    place: "Shikara Morning · Dal Lake",
+    duration: "0:36",
+  },
 ];
 
 export const packages = [
@@ -82,20 +87,27 @@ export const destinations = [
 export const testimonials = [
   {
     name: "Neha S.",
-    quote: "Everything felt smooth because the itinerary was built by people who truly knew Kashmir.",
+    quote:
+      "Everything felt smooth because the itinerary was built by people who truly knew Kashmir.",
   },
   {
     name: "Rahul & Aditi",
-    quote: "Great communication, no pricing surprises, and the local support was genuinely helpful.",
+    quote:
+      "Great communication, no pricing surprises, and the local support was genuinely helpful.",
   },
   {
     name: "The Verma Family",
-    quote: "One of our easiest family trips. Hotels, transport, and daily flow all felt well planned.",
+    quote:
+      "One of our easiest family trips. Hotels, transport, and daily flow all felt well planned.",
   },
 ];
 
 export const blogs = [
   { slug: "best-time-kashmir", title: "Best time to visit Kashmir in 2026", category: "Guide" },
   { slug: "gulmarg-itinerary", title: "How to plan a perfect Gulmarg day", category: "Itinerary" },
-  { slug: "dal-lake-stay", title: "Houseboat or hotel? Choosing your Srinagar stay", category: "Stay Tips" },
+  {
+    slug: "dal-lake-stay",
+    title: "Houseboat or hotel? Choosing your Srinagar stay",
+    category: "Stay Tips",
+  },
 ];

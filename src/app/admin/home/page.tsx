@@ -63,17 +63,25 @@ export default async function AdminHomePage() {
   const perms = { canCreate, canEdit, canDelete };
   const order = [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }];
 
-  const [content, heroSlides, tickerItems, siteStats, whyChooseItems, offers, videoReviews, homeSections] =
-    await Promise.all([
-      prisma.homeContent.findUnique({ where: { id: "singleton" } }),
-      prisma.heroSlide.findMany({ orderBy: order }),
-      prisma.tickerItem.findMany({ orderBy: order }),
-      prisma.siteStat.findMany({ orderBy: order }),
-      prisma.whyChooseItem.findMany({ orderBy: order }),
-      prisma.offer.findMany({ orderBy: order }),
-      prisma.videoReview.findMany({ orderBy: order }),
-      prisma.homeSection.findMany({ orderBy: { createdAt: "asc" } }),
-    ]);
+  const [
+    content,
+    heroSlides,
+    tickerItems,
+    siteStats,
+    whyChooseItems,
+    offers,
+    videoReviews,
+    homeSections,
+  ] = await Promise.all([
+    prisma.homeContent.findUnique({ where: { id: "singleton" } }),
+    prisma.heroSlide.findMany({ orderBy: order }),
+    prisma.tickerItem.findMany({ orderBy: order }),
+    prisma.siteStat.findMany({ orderBy: order }),
+    prisma.whyChooseItem.findMany({ orderBy: order }),
+    prisma.offer.findMany({ orderBy: order }),
+    prisma.videoReview.findMany({ orderBy: order }),
+    prisma.homeSection.findMany({ orderBy: { createdAt: "asc" } }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -82,13 +90,56 @@ export default async function AdminHomePage() {
       <ContentForm contentKey="home" groups={GROUPS} initial={content} canEdit={canEdit} />
 
       <div className="space-y-5">
-        <ListEditor title="Hero Slides" resource="heroSlides" fields={FIELD_DEFS.heroSlides} items={heroSlides} {...perms} />
-        <ListEditor title="Section Headings" description="Kicker/title/subtitle per home section key." resource="homeSections" fields={FIELD_DEFS.homeSections} items={homeSections} {...perms} />
-        <ListEditor title="Ticker Items" resource="tickerItems" fields={FIELD_DEFS.tickerItems} items={tickerItems} {...perms} />
-        <ListEditor title="Site Stats" resource="siteStats" fields={FIELD_DEFS.siteStats} items={siteStats} {...perms} />
-        <ListEditor title="Why Choose Us" resource="whyChooseItems" fields={FIELD_DEFS.whyChooseItems} items={whyChooseItems} {...perms} />
-        <ListEditor title="Offers" resource="offers" fields={FIELD_DEFS.offers} items={offers} {...perms} />
-        <ListEditor title="Video Reviews" resource="videoReviews" fields={FIELD_DEFS.videoReviews} items={videoReviews} {...perms} />
+        <ListEditor
+          title="Hero Slides"
+          resource="heroSlides"
+          fields={FIELD_DEFS.heroSlides}
+          items={heroSlides}
+          {...perms}
+        />
+        <ListEditor
+          title="Section Headings"
+          description="Kicker/title/subtitle per home section key."
+          resource="homeSections"
+          fields={FIELD_DEFS.homeSections}
+          items={homeSections}
+          {...perms}
+        />
+        <ListEditor
+          title="Ticker Items"
+          resource="tickerItems"
+          fields={FIELD_DEFS.tickerItems}
+          items={tickerItems}
+          {...perms}
+        />
+        <ListEditor
+          title="Site Stats"
+          resource="siteStats"
+          fields={FIELD_DEFS.siteStats}
+          items={siteStats}
+          {...perms}
+        />
+        <ListEditor
+          title="Why Choose Us"
+          resource="whyChooseItems"
+          fields={FIELD_DEFS.whyChooseItems}
+          items={whyChooseItems}
+          {...perms}
+        />
+        <ListEditor
+          title="Offers"
+          resource="offers"
+          fields={FIELD_DEFS.offers}
+          items={offers}
+          {...perms}
+        />
+        <ListEditor
+          title="Video Reviews"
+          resource="videoReviews"
+          fields={FIELD_DEFS.videoReviews}
+          items={videoReviews}
+          {...perms}
+        />
       </div>
     </div>
   );

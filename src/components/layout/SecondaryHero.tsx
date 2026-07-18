@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import type { ReactNode } from 'react';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import type { ReactNode } from "react";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Shared wrapper for every non-home page hero (About, Blog, Contact, Tours,
@@ -28,7 +28,13 @@ interface SecondaryHeroProps {
   aside?: ReactNode;
 }
 
-export function SecondaryHero({ image, imageMobile, alt = '', children, aside }: SecondaryHeroProps) {
+export function SecondaryHero({
+  image,
+  imageMobile,
+  alt = "",
+  children,
+  aside,
+}: SecondaryHeroProps) {
   return (
     <section className="relative overflow-hidden bg-brand-dark">
       {image && (
@@ -81,7 +87,9 @@ export function SecondaryHero({ image, imageMobile, alt = '', children, aside }:
         {aside ? (
           <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
             <div className="min-w-0">{children}</div>
-            <div className="min-w-0 w-full max-w-md justify-self-center lg:justify-self-end">{aside}</div>
+            <div className="min-w-0 w-full max-w-md justify-self-center lg:justify-self-end">
+              {aside}
+            </div>
           </div>
         ) : (
           children

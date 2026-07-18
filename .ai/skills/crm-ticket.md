@@ -14,7 +14,7 @@ Last Updated: 2026-07-17
 
 ## Purpose
 
-This Skill defines how a CRM or admin operations ticket is scoped in Vertex — any change involving staff workflows, booking/inquiry management, customer data, admin UI, or business-rule logic. It exists to force identification of the owning surface, the RBAC module, and any status-transition rules *before* code is written, instead of discovering mid-build that a route was left unguarded or a transition wasn't validated server-side.
+This Skill defines how a CRM or admin operations ticket is scoped in Vertex — any change involving staff workflows, booking/inquiry management, customer data, admin UI, or business-rule logic. It exists to force identification of the owning surface, the RBAC module, and any status-transition rules _before_ code is written, instead of discovering mid-build that a route was left unguarded or a transition wasn't validated server-side.
 
 ────────────────────────────────────
 
@@ -38,12 +38,12 @@ Do not use this Skill for:
 
 Before touching any code, read the files relevant to the owning surface:
 
-| Always read | Purpose |
-|---|---|
-| `src/lib/rbac.ts` | Module key list (`MODULES`), role constants |
+| Always read              | Purpose                                               |
+| ------------------------ | ----------------------------------------------------- |
+| `src/lib/rbac.ts`        | Module key list (`MODULES`), role constants           |
 | `src/lib/permissions.ts` | `requirePermission`, `requireStaff` API guard pattern |
-| `src/lib/auth.config.ts` | Edge-safe session/role callbacks |
-| `prisma/schema.prisma` | Model fields and status enums |
+| `src/lib/auth.config.ts` | Edge-safe session/role callbacks                      |
+| `prisma/schema.prisma`   | Model fields and status enums                         |
 
 Then read the specific existing implementation closest to the ticket:
 
@@ -59,12 +59,12 @@ Answer these questions before writing any task map:
 
 **Which area owns the work?**
 
-| Surface | Signs |
-|---|---|
-| **Public site** | Visible to guests, no auth, `published: true` filter required, ISR |
-| **Customer account** | Requires login, scoped to `session.user.id`, `force-dynamic` |
-| **Admin CMS** | Staff-only, uses `requirePermission`, `force-dynamic` |
-| **CRM / operations** | Admin sub-area: bookings, leads, itineraries, reviews, users |
+| Surface              | Signs                                                              |
+| -------------------- | ------------------------------------------------------------------ |
+| **Public site**      | Visible to guests, no auth, `published: true` filter required, ISR |
+| **Customer account** | Requires login, scoped to `session.user.id`, `force-dynamic`       |
+| **Admin CMS**        | Staff-only, uses `requirePermission`, `force-dynamic`              |
+| **CRM / operations** | Admin sub-area: bookings, leads, itineraries, reviews, users       |
 
 Most CRM tickets live in admin + API routes only. If the ticket also touches the public site (e.g. a status badge visible to customers), name that explicitly.
 

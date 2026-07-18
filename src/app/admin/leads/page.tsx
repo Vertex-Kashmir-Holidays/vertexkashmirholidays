@@ -27,42 +27,43 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const [leads, staffUsers, total, todayFollowUps, converted, canCreate, canEdit, canDelete] = await Promise.all([
-    prisma.lead.findMany({
-      where: { ...scopeWhere, ...ipWhere },
-      orderBy: { updatedAt: "desc" },
-      take: ipFilter ? undefined : 200,
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        email: true,
-        source: true,
-        category: true,
-        adults: true,
-        status: true,
-        startDate: true,
-        followUpAt: true,
-        updatedAt: true,
-        negotiatedAmount: true,
-        tokenAmount: true,
-        assignedToId: true,
-        assignedTo: { select: { id: true, name: true, email: true } },
-        createdAt: true,
-      },
-    }),
-    prisma.user.findMany({
-      where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
-      select: { id: true, name: true, email: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.lead.count({ where: scopeWhere }),
-    prisma.lead.count({ where: { ...scopeWhere, followUpAt: { gte: today, lt: tomorrow } } }),
-    prisma.lead.count({ where: { ...scopeWhere, status: "CONVERTED" } }),
-    can(role, "leads", "create"),
-    can(role, "leads", "edit"),
-    can(role, "leads", "delete"),
-  ]);
+  const [leads, staffUsers, total, todayFollowUps, converted, canCreate, canEdit, canDelete] =
+    await Promise.all([
+      prisma.lead.findMany({
+        where: { ...scopeWhere, ...ipWhere },
+        orderBy: { updatedAt: "desc" },
+        take: ipFilter ? undefined : 200,
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          source: true,
+          category: true,
+          adults: true,
+          status: true,
+          startDate: true,
+          followUpAt: true,
+          updatedAt: true,
+          negotiatedAmount: true,
+          tokenAmount: true,
+          assignedToId: true,
+          assignedTo: { select: { id: true, name: true, email: true } },
+          createdAt: true,
+        },
+      }),
+      prisma.user.findMany({
+        where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
+        select: { id: true, name: true, email: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.lead.count({ where: scopeWhere }),
+      prisma.lead.count({ where: { ...scopeWhere, followUpAt: { gte: today, lt: tomorrow } } }),
+      prisma.lead.count({ where: { ...scopeWhere, status: "CONVERTED" } }),
+      can(role, "leads", "create"),
+      can(role, "leads", "edit"),
+      can(role, "leads", "delete"),
+    ]);
 
   const stats = { total, todayFollowUps, converted };
 

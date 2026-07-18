@@ -1,12 +1,12 @@
 // src/components/sections/TourDetailsGallery.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Images } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
-import { GalleryLightbox } from '@/components/ui/GalleryLightbox';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, Images } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
+import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
 
 interface GalleryItem {
   url: string;
@@ -35,11 +35,14 @@ export function TourDetailsGallery({ images, noTopMargin }: TourDetailsGalleryPr
       else setItemsPerView(3);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const lightboxImages = images.map((item) => ({ src: imgSrc(item.url), alt: item.alt || undefined }));
+  const lightboxImages = images.map((item) => ({
+    src: imgSrc(item.url),
+    alt: item.alt || undefined,
+  }));
 
   if (images.length === 0) return null;
 
@@ -48,7 +51,9 @@ export function TourDetailsGallery({ images, noTopMargin }: TourDetailsGalleryPr
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - itemsPerView < 0 ? Math.max(0, images.length - itemsPerView) : prev - itemsPerView));
+    setCurrentIndex((prev) =>
+      prev - itemsPerView < 0 ? Math.max(0, images.length - itemsPerView) : prev - itemsPerView,
+    );
   };
 
   const visibleImages = images.slice(currentIndex, currentIndex + itemsPerView);
@@ -57,7 +62,7 @@ export function TourDetailsGallery({ images, noTopMargin }: TourDetailsGalleryPr
     <>
       <motion.section
         id="gallery"
-        className={`${noTopMargin ? '' : 'mt-6'} rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft`}
+        className={`${noTopMargin ? "" : "mt-6"} rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft`}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -142,7 +147,9 @@ export function TourDetailsGallery({ images, noTopMargin }: TourDetailsGalleryPr
                   key={i}
                   onClick={() => setCurrentIndex(i * itemsPerView)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === Math.floor(currentIndex / itemsPerView) ? 'w-4 bg-primary' : 'w-1.5 bg-border'
+                    i === Math.floor(currentIndex / itemsPerView)
+                      ? "w-4 bg-primary"
+                      : "w-1.5 bg-border"
                   }`}
                   aria-label={`Go to slide ${i + 1}`}
                 />

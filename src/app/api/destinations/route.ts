@@ -13,7 +13,10 @@ const coord = z.preprocess(
 
 const createSchema = z.object({
   name: z.string().min(2),
-  slug: z.string().min(2).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
   description: z.string().optional(),
   excerpt: z.string().optional(),
   coverImage: z.string().optional(),
@@ -69,7 +72,11 @@ export async function POST(request: Request) {
   const guard = await requirePermission("destinations", "create");
   if (guard instanceof NextResponse) return guard;
   let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   const { activityIds = [], ...data } = parsed.data;
@@ -80,7 +87,8 @@ export async function POST(request: Request) {
     return NextResponse.json(dest, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Create failed" }, { status: 500 });
   }
 }

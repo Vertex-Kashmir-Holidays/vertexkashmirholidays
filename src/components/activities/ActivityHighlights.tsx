@@ -1,8 +1,8 @@
 // src/components/activities/ActivityHighlights.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 interface Highlight {
   name: string;
@@ -37,10 +37,16 @@ export function ActivityHighlights({ highlights }: ActivityHighlightsProps) {
             transition={{ delay: i * 0.05 }}
           >
             <div className="flex items-start gap-2.5">
-              <Star className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} fill="currentColor" />
+              <Star
+                className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+                strokeWidth={2}
+                fill="currentColor"
+              />
               <div>
                 <p className="text-[14px] font-bold">{h.name}</p>
-                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{h.description}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+                  {h.description}
+                </p>
               </div>
             </div>
           </motion.div>

@@ -16,7 +16,15 @@ interface Props {
 
 // Shared footer control for admin listing tables: rows-per-page selector,
 // "X–Y of Z" range, and prev/next paging. Hidden when there's nothing to show.
-export function TablePagination({ page, pageSize, pageCount, total, onPage, onPageSize, noun = "records" }: Props) {
+export function TablePagination({
+  page,
+  pageSize,
+  pageCount,
+  total,
+  onPage,
+  onPageSize,
+  noun = "records",
+}: Props) {
   if (total === 0) return null;
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(total, page * pageSize);
@@ -32,7 +40,9 @@ export function TablePagination({ page, pageSize, pageCount, total, onPage, onPa
             className="appearance-none rounded-lg border border-border bg-card pl-2.5 pr-7 py-1.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             {PAGE_SIZE_OPTIONS.map((n) => (
-              <option key={n} value={n}>{n}</option>
+              <option key={n} value={n}>
+                {n}
+              </option>
             ))}
           </select>
           <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />

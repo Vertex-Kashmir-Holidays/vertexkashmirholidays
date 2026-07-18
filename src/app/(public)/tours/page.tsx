@@ -1,11 +1,7 @@
 // src/app/(public)/tours/page.tsx
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import {
-  JsonLd,
-  buildBreadcrumbList,
-  buildItemList,
-} from "@/components/seo/JsonLd";
+import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { ToursHeroSection } from "@/components/tours/ToursHeroSection";
 import { ToursNewsletter } from "@/components/tours/ToursNewsletter";
@@ -37,9 +33,19 @@ export default async function ToursPage() {
       where: { published: true },
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
       select: {
-        id: true, slug: true, title: true, badge: true, badgeColor: true,
-        duration: true, coverImage: true, rating: true, reviewCount: true,
-        priceFrom: true, priceWas: true, category: true, region: true,
+        id: true,
+        slug: true,
+        title: true,
+        badge: true,
+        badgeColor: true,
+        duration: true,
+        coverImage: true,
+        rating: true,
+        reviewCount: true,
+        priceFrom: true,
+        priceWas: true,
+        category: true,
+        region: true,
         destinations: { select: { destination: { select: { name: true } } } },
       },
     }),

@@ -40,7 +40,12 @@ const GROUPS: ContentGroup[] = [
       { key: "officeSubtitle", label: "Office subtitle", type: "textarea" },
       { key: "officeName", label: "Office name", type: "text" },
       { key: "officeAddress", label: "Office address", type: "textarea" },
-      { key: "officeHours", label: "Office hours (fallback only — live hours come from Google Business Profile when available)", type: "text" },
+      {
+        key: "officeHours",
+        label:
+          "Office hours (fallback only — live hours come from Google Business Profile when available)",
+        type: "text",
+      },
       { key: "officeMapLabel", label: "Map label", type: "text" },
       { key: "officeMapSubLabel", label: "Map sub-label", type: "text" },
       { key: "directionsUrl", label: "Directions URL", type: "text" },
@@ -102,9 +107,27 @@ export default async function AdminContactPage() {
       <PageEditorHeader title="Contact Page" publicHref="/contact" readOnly={!canEdit} />
       <ContentForm contentKey="contact" groups={GROUPS} initial={content} canEdit={canEdit} />
       <div className="space-y-5">
-        <ListEditor title="Hero Features" resource="contactHeroFeatures" fields={FIELD_DEFS.contactHeroFeatures} items={heroFeatures} {...perms} />
-        <ListEditor title="Promise Items" resource="contactPromiseItems" fields={FIELD_DEFS.contactPromiseItems} items={promiseItems} {...perms} />
-        <ListEditor title="Offices" resource="contactOffices" fields={FIELD_DEFS.contactOffices} items={offices} {...perms} />
+        <ListEditor
+          title="Hero Features"
+          resource="contactHeroFeatures"
+          fields={FIELD_DEFS.contactHeroFeatures}
+          items={heroFeatures}
+          {...perms}
+        />
+        <ListEditor
+          title="Promise Items"
+          resource="contactPromiseItems"
+          fields={FIELD_DEFS.contactPromiseItems}
+          items={promiseItems}
+          {...perms}
+        />
+        <ListEditor
+          title="Offices"
+          resource="contactOffices"
+          fields={FIELD_DEFS.contactOffices}
+          items={offices}
+          {...perms}
+        />
       </div>
     </div>
   );

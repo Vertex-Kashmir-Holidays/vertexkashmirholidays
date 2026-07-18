@@ -114,12 +114,16 @@ export function FaqForm({
       status: (defaults?.status as "DRAFT" | "PUBLISHED") ?? "DRAFT",
       featured: defaults?.featured ?? false,
       sortOrder: defaults?.sortOrder ?? 0,
-      lastReviewedAt: defaults?.lastReviewedAt ? new Date(defaults.lastReviewedAt).toISOString().slice(0, 10) : "",
+      lastReviewedAt: defaults?.lastReviewedAt
+        ? new Date(defaults.lastReviewedAt).toISOString().slice(0, 10)
+        : "",
     },
   });
 
   function togglePlacement(value: string) {
-    setPlacements((prev) => (prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]));
+    setPlacements((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value],
+    );
   }
 
   async function onSubmit(data: FaqFormData) {
@@ -167,25 +171,37 @@ export function FaqForm({
             <h3 className="font-bold text-foreground text-sm">Content</h3>
             <div>
               <FieldLabel required>Question</FieldLabel>
-              <input {...register("question")} placeholder="e.g. Is Kashmir safe for family travel?" className={inputCls} />
+              <input
+                {...register("question")}
+                placeholder="e.g. Is Kashmir safe for family travel?"
+                className={inputCls}
+              />
               <FieldError message={errors.question?.message} />
               {isEdit && defaults?.slug && (
                 <p className="text-[12px] text-muted-foreground mt-1">
-                  Anchor: /faq#{defaults.slug} — set once at creation, not changed by editing the question.
+                  Anchor: /faq#{defaults.slug} — set once at creation, not changed by editing the
+                  question.
                 </p>
               )}
             </div>
             <div>
               <FieldLabel required>Short Answer</FieldLabel>
               <p className="text-[12px] text-muted-foreground mb-1.5">
-                Shown on Homepage, Tour, Destination, About and Contact — never the full answer. Keep it to 1–2 sentences.
+                Shown on Homepage, Tour, Destination, About and Contact — never the full answer.
+                Keep it to 1–2 sentences.
               </p>
-              <textarea {...register("shortAnswer")} rows={2} className={cn(inputCls, "resize-none")} />
+              <textarea
+                {...register("shortAnswer")}
+                rows={2}
+                className={cn(inputCls, "resize-none")}
+              />
               <FieldError message={errors.shortAnswer?.message} />
             </div>
             <div>
               <FieldLabel required>Full Answer</FieldLabel>
-              <p className="text-[12px] text-muted-foreground mb-1.5">Shown only on this FAQ&apos;s own detail page.</p>
+              <p className="text-[12px] text-muted-foreground mb-1.5">
+                Shown only on this FAQ&apos;s own detail page.
+              </p>
               <textarea {...register("answer")} rows={6} className={cn(inputCls, "resize-none")} />
               <FieldError message={errors.answer?.message} />
             </div>
@@ -194,15 +210,41 @@ export function FaqForm({
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
             <h3 className="font-bold text-foreground text-sm">Attach to specific records</h3>
             <p className="text-[12px] text-muted-foreground -mt-2">
-              Optional. A FAQ can attach to any number of Tours, Destinations, Blog posts, Campaigns, or Activities — it still
-              exists once and is shown wherever it&apos;s attached, never duplicated.
+              Optional. A FAQ can attach to any number of Tours, Destinations, Blog posts,
+              Campaigns, or Activities — it still exists once and is shown wherever it&apos;s
+              attached, never duplicated.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <LinkChecklist title="Tours" options={tourOptions} value={tourIds} onChange={setTourIds} />
-              <LinkChecklist title="Destinations" options={destinationOptions} value={destinationIds} onChange={setDestinationIds} />
-              <LinkChecklist title="Blog Posts" options={blogOptions} value={blogIds} onChange={setBlogIds} />
-              <LinkChecklist title="Campaigns" options={campaignOptions} value={campaignIds} onChange={setCampaignIds} />
-              <LinkChecklist title="Activities" options={activityOptions} value={activityIds} onChange={setActivityIds} />
+              <LinkChecklist
+                title="Tours"
+                options={tourOptions}
+                value={tourIds}
+                onChange={setTourIds}
+              />
+              <LinkChecklist
+                title="Destinations"
+                options={destinationOptions}
+                value={destinationIds}
+                onChange={setDestinationIds}
+              />
+              <LinkChecklist
+                title="Blog Posts"
+                options={blogOptions}
+                value={blogIds}
+                onChange={setBlogIds}
+              />
+              <LinkChecklist
+                title="Campaigns"
+                options={campaignOptions}
+                value={campaignIds}
+                onChange={setCampaignIds}
+              />
+              <LinkChecklist
+                title="Activities"
+                options={activityOptions}
+                value={activityIds}
+                onChange={setActivityIds}
+              />
             </div>
           </div>
 
@@ -210,7 +252,8 @@ export function FaqForm({
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-3">
               <h3 className="font-bold text-foreground text-sm">Currently appears on</h3>
               <p className="text-[12px] text-muted-foreground -mt-1">
-                Computed live from the relations above and the placements to the right — not a separately stored value.
+                Computed live from the relations above and the placements to the right — not a
+                separately stored value.
               </p>
               <ul className="flex flex-wrap gap-2">
                 {defaults.usedOn.map((u) => (
@@ -237,7 +280,9 @@ export function FaqForm({
               <FieldLabel required>Category</FieldLabel>
               <select {...register("categoryId")} className={inputCls}>
                 {categoryOptions.map((c) => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
               <FieldError message={errors.categoryId?.message} />
@@ -255,23 +300,33 @@ export function FaqForm({
             </label>
             <div>
               <FieldLabel>Sort Order</FieldLabel>
-              <input type="number" {...register("sortOrder", { valueAsNumber: true })} className={inputCls} />
+              <input
+                type="number"
+                {...register("sortOrder", { valueAsNumber: true })}
+                className={inputCls}
+              />
             </div>
             <div>
               <FieldLabel>Last Reviewed</FieldLabel>
               <input type="date" {...register("lastReviewedAt")} className={inputCls} />
-              <p className="text-[12px] text-muted-foreground mt-1">Optional freshness signal — not updated automatically.</p>
+              <p className="text-[12px] text-muted-foreground mt-1">
+                Optional freshness signal — not updated automatically.
+              </p>
             </div>
           </div>
 
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-3">
             <h3 className="font-bold text-foreground text-sm">Site Placement</h3>
             <p className="text-[12px] text-muted-foreground -mt-1">
-              Fixed sections to also show this FAQ&apos;s short answer on. Independent of the record attachments above.
+              Fixed sections to also show this FAQ&apos;s short answer on. Independent of the record
+              attachments above.
             </p>
             <div className="space-y-2">
               {PLACEMENT_OPTIONS.map((p) => (
-                <label key={p.value} className="flex items-center gap-2.5 cursor-pointer select-none">
+                <label
+                  key={p.value}
+                  className="flex items-center gap-2.5 cursor-pointer select-none"
+                >
                   <input
                     type="checkbox"
                     checked={placements.includes(p.value)}
@@ -285,7 +340,11 @@ export function FaqForm({
           </div>
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
             {isEdit ? "Save Changes" : "Create FAQ"}
           </Button>
         </div>

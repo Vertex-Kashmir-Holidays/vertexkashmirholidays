@@ -9,10 +9,21 @@ export function SiteRatingBadge({ average, total }: { average: number; total: nu
   if (total === 0) return null;
   return (
     <div className="glass flex h-[52px] shrink-0 items-center gap-2.5 rounded-xl px-5 py-3 text-white">
-      <Image src="/brand/svg/vertex-icon-mono-white.svg" alt="" width={28} height={28} className="h-7 w-7 shrink-0" />
+      <Image
+        src="/brand/svg/vertex-icon-mono-white.svg"
+        alt=""
+        width={28}
+        height={28}
+        className="h-7 w-7 shrink-0"
+      />
       <span className="flex items-center gap-1.5 text-base font-bold">
         {average.toFixed(1)}
-        <Star className="h-4 w-4 text-amber-400" strokeWidth={0} fill="currentColor" aria-hidden="true" />
+        <Star
+          className="h-4 w-4 text-amber-400"
+          strokeWidth={0}
+          fill="currentColor"
+          aria-hidden="true"
+        />
       </span>
       <span className="text-[14px] text-white/75">({total.toLocaleString("en-IN")})</span>
     </div>

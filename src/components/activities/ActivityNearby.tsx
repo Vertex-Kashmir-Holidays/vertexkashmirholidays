@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 // src/components/activities/ActivityNearby.tsx
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ActivityCard, type ActivityCardData } from '@/components/activities/ActivityCard';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ActivityCard, type ActivityCardData } from "@/components/activities/ActivityCard";
 
 interface ActivityNearbyProps {
   activities: ActivityCardData[];
@@ -19,28 +19,31 @@ interface ActivityNearbyProps {
 export function ActivityNearby({ activities }: ActivityNearbyProps) {
   if (activities.length === 0) return null;
 
-  const scroll = (direction: 'prev' | 'next') => {
-    const row = document.getElementById('nearby-activities-row');
+  const scroll = (direction: "prev" | "next") => {
+    const row = document.getElementById("nearby-activities-row");
     if (!row) return;
     const width = (row.firstElementChild as HTMLElement)?.offsetWidth || 260;
-    row.scrollBy({ left: (direction === 'next' ? 1 : -1) * (width + 20) * 2, behavior: 'smooth' });
+    row.scrollBy({ left: (direction === "next" ? 1 : -1) * (width + 20) * 2, behavior: "smooth" });
   };
 
   return (
-    <section id="nearby-activities" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+    <section
+      id="nearby-activities"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+    >
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-[18px] font-bold">Nearby Activities</h2>
         {activities.length > 1 && (
           <div className="flex gap-2">
             <button
-              onClick={() => scroll('prev')}
+              onClick={() => scroll("prev")}
               aria-label="Previous"
               className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2.2} />
             </button>
             <button
-              onClick={() => scroll('next')}
+              onClick={() => scroll("next")}
               aria-label="Next"
               className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
             >

@@ -1,8 +1,8 @@
 // src/components/ui/3DTilt.tsx
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 interface TiltProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface TiltProps {
   intensity?: number;
 }
 
-export function Tilt3D({ children, className = '', intensity = 10 }: TiltProps) {
+export function Tilt3D({ children, className = "", intensity = 10 }: TiltProps) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -45,7 +45,7 @@ export function Tilt3D({ children, className = '', intensity = 10 }: TiltProps) 
       style={{
         rotateX,
         rotateY,
-        transformStyle: 'preserve-3d',
+        transformStyle: "preserve-3d",
       }}
       className={`relative ${className}`}
     >

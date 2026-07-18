@@ -60,8 +60,14 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError("Group name is required."); return; }
-    if (selectedIds.size === 0) { setError("Select at least one member."); return; }
+    if (!name.trim()) {
+      setError("Group name is required.");
+      return;
+    }
+    if (selectedIds.size === 0) {
+      setError("Select at least one member.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -99,7 +105,10 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
             <Users className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-sm">New Group</h2>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -176,7 +185,11 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
                     />
                     {u.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={u.image} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      <img
+                        src={u.image}
+                        alt=""
+                        className="w-7 h-7 rounded-full object-cover shrink-0"
+                      />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
                         {(u.name ?? "?").charAt(0).toUpperCase()}

@@ -1,22 +1,22 @@
 // src/components/ui/MorphingShape.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface MorphingShapeProps {
   className?: string;
   duration?: number;
 }
 
-export function MorphingShape({ className = '', duration = 8 }: MorphingShapeProps) {
-  const [path, setPath] = useState('');
+export function MorphingShape({ className = "", duration = 8 }: MorphingShapeProps) {
+  const [path, setPath] = useState("");
 
   const paths = [
-    'M0 0L100 0L100 100L0 100Z',
-    'M50 0L100 50L50 100L0 50Z',
-    'M0 0C50 0 100 20 100 50C100 80 50 100 0 100Z',
-    'M50 0C80 0 100 20 100 50C100 80 80 100 50 100C20 100 0 80 0 50C0 20 20 0 50 0Z',
+    "M0 0L100 0L100 100L0 100Z",
+    "M50 0L100 50L50 100L0 50Z",
+    "M0 0C50 0 100 20 100 50C100 80 50 100 0 100Z",
+    "M50 0C80 0 100 20 100 50C100 80 80 100 50 100C20 100 0 80 0 50C0 20 20 0 50 0Z",
   ];
 
   useEffect(() => {

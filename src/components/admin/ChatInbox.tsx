@@ -90,7 +90,9 @@ export function ChatInbox() {
 
           <div className="max-h-96 overflow-y-auto divide-y divide-border">
             {items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-xs text-muted-foreground">No new messages.</p>
+              <p className="px-4 py-8 text-center text-xs text-muted-foreground">
+                No new messages.
+              </p>
             ) : (
               items.map((n) => {
                 const content = (
@@ -108,8 +110,12 @@ export function ChatInbox() {
                     />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-foreground">{n.title}</p>
-                      <p className="text-[12px] text-muted-foreground mt-0.5 break-words">{n.body}</p>
-                      <p className="text-[12px] text-muted-foreground/70 mt-1">{timeAgo(n.createdAt)}</p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5 break-words">
+                        {n.body}
+                      </p>
+                      <p className="text-[12px] text-muted-foreground/70 mt-1">
+                        {timeAgo(n.createdAt)}
+                      </p>
                     </div>
                   </div>
                 );

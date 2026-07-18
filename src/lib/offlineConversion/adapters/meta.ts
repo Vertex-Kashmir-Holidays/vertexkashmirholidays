@@ -70,7 +70,10 @@ export const metaAdapter: PlatformAdapter = {
       }
       return { success: true, response: json };
     } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : "Meta CAPI request failed" };
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Meta CAPI request failed",
+      };
     }
   },
 };

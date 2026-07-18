@@ -126,7 +126,10 @@ export function MeetingModal({
       // Set allow attribute synchronously before the browser evaluates
       // Permissions Policy — must happen before any getUserMedia call.
       const iframe = api.getIFrame();
-      iframe.setAttribute("allow", "camera; microphone; autoplay; clipboard-write; display-capture");
+      iframe.setAttribute(
+        "allow",
+        "camera; microphone; autoplay; clipboard-write; display-capture",
+      );
       iframe.style.height = "100%";
       iframe.style.width = "100%";
 
@@ -212,7 +215,11 @@ export function MeetingModal({
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
             aria-label={minimized ? "Expand call" : "Minimize call"}
           >
-            {minimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
+            {minimized ? (
+              <Maximize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Minimize2 className="w-3.5 h-3.5" />
+            )}
           </button>
         )}
         <button

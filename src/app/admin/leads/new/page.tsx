@@ -18,8 +18,14 @@ export default async function NewLeadPage() {
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/leads" className="hover:text-primary transition-colors">Leads</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/leads" className="hover:text-primary transition-colors">
+              Leads
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium">Add New</li>
         </ol>
       </nav>

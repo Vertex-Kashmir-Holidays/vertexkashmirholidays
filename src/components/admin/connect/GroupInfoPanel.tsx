@@ -6,9 +6,9 @@ import type { ConnectRoom } from "./hooks/useRoomList";
 import { usePresence } from "./hooks/usePresence";
 
 const PRESENCE_COLORS = {
-  ONLINE:  "bg-green-500",
-  AWAY:    "bg-amber-400",
-  BUSY:    "bg-red-500",
+  ONLINE: "bg-green-500",
+  AWAY: "bg-amber-400",
+  BUSY: "bg-red-500",
   OFFLINE: "bg-zinc-400",
 } as const;
 
@@ -27,11 +27,24 @@ interface Props {
   onRefresh: () => Promise<void>;
 }
 
-function MemberAvatar({ name, image, size = 36 }: { name: string | null; image: string | null; size?: number }) {
+function MemberAvatar({
+  name,
+  image,
+  size = 36,
+}: {
+  name: string | null;
+  image: string | null;
+  size?: number;
+}) {
   if (image) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={image} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />
+      <img
+        src={image}
+        alt=""
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+      />
     );
   }
   return (
@@ -75,7 +88,10 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
 
   async function saveName() {
     const trimmed = nameInput.trim();
-    if (!trimmed || trimmed === room.name) { setEditingName(false); return; }
+    if (!trimmed || trimmed === room.name) {
+      setEditingName(false);
+      return;
+    }
     setSavingName(true);
     setError(null);
     try {
@@ -98,7 +114,10 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
   }
 
   async function uploadAvatar(file: File) {
-    if (file.size > 2 * 1024 * 1024) { setError("Avatar must be under 2 MB."); return; }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Avatar must be under 2 MB.");
+      return;
+    }
     setAvatarUploading(true);
     setError(null);
     try {
@@ -126,7 +145,9 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
     setBusy({ id: userId, action: "remove" });
     setError(null);
     try {
-      const res = await fetch(`/api/connect/rooms/${room.id}/members/${userId}`, { method: "DELETE" });
+      const res = await fetch(`/api/connect/rooms/${room.id}/members/${userId}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "Failed to remove member");
@@ -186,7 +207,9 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
     setBusy({ id: currentUserId, action: "remove" });
     setError(null);
     try {
-      const res = await fetch(`/api/connect/rooms/${room.id}/members/${currentUserId}`, { method: "DELETE" });
+      const res = await fetch(`/api/connect/rooms/${room.id}/members/${currentUserId}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "Failed to leave group");
@@ -209,7 +232,10 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <h2 className="font-semibold text-sm">Group Info</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -277,7 +303,11 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                   disabled={savingName}
                   className="p-1.5 rounded-lg hover:bg-muted transition-colors text-primary"
                 >
-                  {savingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  {savingName ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
                 </button>
                 <button
                   onClick={() => setEditingName(false)}
@@ -291,7 +321,10 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                 <span className="font-semibold text-sm">{room.name ?? "Group"}</span>
                 {isAdmin && (
                   <button
-                    onClick={() => { setNameInput(room.name ?? ""); setEditingName(true); }}
+                    onClick={() => {
+                      setNameInput(room.name ?? "");
+                      setEditingName(true);
+                    }}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                     title="Rename group"
                   >
@@ -300,7 +333,9 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                 )}
               </div>
             )}
-            <span className="text-xs text-muted-foreground">{room.members.length} member{room.members.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground">
+              {room.members.length} member{room.members.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
           {/* Error */}
@@ -312,7 +347,9 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
 
           {/* Members list */}
           <div className="px-5 pt-4 pb-2">
-            <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Members</p>
+            <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Members
+            </p>
             <div className="space-y-1">
               {room.members.map((m) => {
                 const isSelf = m.userId === currentUserId;
@@ -360,7 +397,7 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                         {/* Promote / demote */}
                         <button
                           onClick={() => toggleRole(m.userId, m.role)}
-                          disabled={isBusy || (isLastAdmin)}
+                          disabled={isBusy || isLastAdmin}
                           title={m.role === "ADMIN" ? "Remove admin role" : "Make admin"}
                           className={cn(
                             "p-1.5 rounded-lg transition-colors",
@@ -407,12 +444,19 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
           {/* Add members (admin only) */}
           {isAdmin && nonMembers.length > 0 && (
             <div className="px-5 pt-3 pb-4 border-t border-border mt-2">
-              <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Add Members</p>
+              <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Add Members
+              </p>
               <div className="space-y-1">
                 {nonMembers.map((u) => (
-                  <div key={u.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-muted/40 transition-colors">
+                  <div
+                    key={u.id}
+                    className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-muted/40 transition-colors"
+                  >
                     <MemberAvatar name={u.name} image={u.image} size={28} />
-                    <span className="flex-1 text-sm truncate text-muted-foreground">{u.name ?? u.id}</span>
+                    <span className="flex-1 text-sm truncate text-muted-foreground">
+                      {u.name ?? u.id}
+                    </span>
                     <button
                       onClick={() => addMember(u.id)}
                       disabled={addingId === u.id}
@@ -431,7 +475,9 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
         <div className="shrink-0 px-5 py-4 border-t border-border">
           <button
             onClick={leaveGroup}
-            disabled={busy?.id === currentUserId || (myMember?.role === "ADMIN" && activeAdminCount === 1)}
+            disabled={
+              busy?.id === currentUserId || (myMember?.role === "ADMIN" && activeAdminCount === 1)
+            }
             title={
               myMember?.role === "ADMIN" && activeAdminCount === 1
                 ? "Promote another member to admin before leaving"
@@ -446,7 +492,8 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
           >
             {busy?.id === currentUserId ? (
               <span className="flex items-center justify-center gap-1.5">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />Leaving…
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Leaving…
               </span>
             ) : (
               "Leave Group"

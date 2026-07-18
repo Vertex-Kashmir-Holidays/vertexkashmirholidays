@@ -48,7 +48,10 @@ export async function POST(_req: NextRequest, { params }: Params) {
       );
     }
   } else if (!isCreator) {
-    return NextResponse.json({ error: "Only the meeting creator can end this meeting" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Only the meeting creator can end this meeting" },
+      { status: 403 },
+    );
   }
 
   await prisma.meeting.update({

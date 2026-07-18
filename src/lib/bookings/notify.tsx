@@ -22,7 +22,11 @@ import {
   driverDetailsText,
   type InvoiceService,
 } from "@/lib/mail";
-import { renderBookingSummaryPdf, renderPaymentReceiptPdf, bookingRef } from "@/lib/bookings/invoice-pdf";
+import {
+  renderBookingSummaryPdf,
+  renderPaymentReceiptPdf,
+  bookingRef,
+} from "@/lib/bookings/invoice-pdf";
 import { enqueueForBooking } from "@/lib/offlineConversion/service";
 
 function parseInclusions(raw: string): string[] {
@@ -120,7 +124,11 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
       html: bookingInvoiceHtml(payload),
       text: bookingInvoiceText(payload),
       attachments: [
-        { filename: `Vertex-Booking-Summary-${ref}.pdf`, content: pdf, contentType: "application/pdf" },
+        {
+          filename: `Vertex-Booking-Summary-${ref}.pdf`,
+          content: pdf,
+          contentType: "application/pdf",
+        },
       ],
     });
     return { delivered: res.delivered };
@@ -174,7 +182,11 @@ export async function finalizeOnlinePayment(
     if (customer.created && customer.tempPassword) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        select: { guestName: true, guestEmail: true, user: { select: { name: true, email: true } } },
+        select: {
+          guestName: true,
+          guestEmail: true,
+          user: { select: { name: true, email: true } },
+        },
       });
       const email = booking?.guestEmail ?? booking?.user?.email ?? null;
       const name = booking?.guestName || booking?.user?.name || "Guest";
@@ -313,7 +325,11 @@ export async function sendPaymentInvoiceEmail(
       html: paymentInvoiceHtml(payload),
       text: paymentInvoiceText(payload),
       attachments: [
-        { filename: `Vertex-Payment-Receipt-${invoiceRef}.pdf`, content: pdf, contentType: "application/pdf" },
+        {
+          filename: `Vertex-Payment-Receipt-${invoiceRef}.pdf`,
+          content: pdf,
+          contentType: "application/pdf",
+        },
       ],
     });
     return { delivered: res.delivered };
@@ -340,7 +356,12 @@ export async function sendDriverDetailsEmail(
       },
     });
     if (!booking) return { delivered: false };
-    if (!booking.driverName || !booking.driverPhone || !booking.vehicleName || !booking.vehicleNumber) {
+    if (
+      !booking.driverName ||
+      !booking.driverPhone ||
+      !booking.vehicleName ||
+      !booking.vehicleNumber
+    ) {
       return { delivered: false };
     }
 

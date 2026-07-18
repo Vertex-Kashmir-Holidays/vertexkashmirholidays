@@ -7,7 +7,10 @@
 // harmlessly server-side but breaks the page in the browser if this ever
 // gets bundled client-side (process.env secrets are never available there).
 import type { OfflineConversionPlatform } from "@prisma/client";
-import { checkGoogleRequestStatus, type RequestStatusResult } from "@/lib/admin/googleRequestStatus";
+import {
+  checkGoogleRequestStatus,
+  type RequestStatusResult,
+} from "@/lib/admin/googleRequestStatus";
 import { PLATFORM_LABELS } from "@/lib/admin/offlineConversions";
 import { env } from "@/lib/env";
 

@@ -1,16 +1,22 @@
 // src/app/(public)/campaign/[slug]/page.tsx
 
-import type { Metadata } from 'next';
-import { cache } from 'react';
-import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
-import { getSiteSettings } from '@/lib/siteSettings';
-import { buildMetadata, SITE_URL } from '@/lib/seo';
-import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
-import { JsonLd, buildBreadcrumbList, buildCampaignProduct, buildCampaignEvents, buildFAQPage } from '@/components/seo/JsonLd';
-import { getDisplayReviews } from '@/lib/reviews';
-import type { FooterSettings } from '@/components/layout/Footer';
-import { sanitizeInlineHtml } from '@/lib/sanitize';
+import type { Metadata } from "next";
+import { cache } from "react";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import { CampaignPageClient } from "@/components/campaign/CampaignPageClient";
+import {
+  JsonLd,
+  buildBreadcrumbList,
+  buildCampaignProduct,
+  buildCampaignEvents,
+  buildFAQPage,
+} from "@/components/seo/JsonLd";
+import { getDisplayReviews } from "@/lib/reviews";
+import type { FooterSettings } from "@/components/layout/Footer";
+import { sanitizeInlineHtml } from "@/lib/sanitize";
 import type {
   CampaignActivity,
   CampaignBatch,
@@ -19,7 +25,7 @@ import type {
   CampaignItineraryItem,
   CampaignTestimonial,
   CampaignTier,
-} from '@/types/campaign';
+} from "@/types/campaign";
 
 export const revalidate = 300;
 
@@ -41,8 +47,8 @@ const getCampaign = cache(async (slug: string) =>
     where: { slug },
     include: {
       relatedFaqs: {
-        where: { status: 'PUBLISHED' },
-        orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
+        where: { status: "PUBLISHED" },
+        orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
         select: { id: true, question: true, shortAnswer: true, slug: true },
       },
     },
@@ -54,15 +60,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const c = await getCampaign(slug);
   if (!c || !c.published) {
     return buildMetadata({
-      title: 'Campaign Not Found',
-      description: 'This campaign could not be found.',
+      title: "Campaign Not Found",
+      description: "This campaign could not be found.",
       canonical: `${SITE_URL}/campaign/${slug}`,
       noindex: true,
     });
   }
   return buildMetadata({
     title: c.metaTitle ?? c.name,
-    description: c.metaDesc ?? c.sub ?? `${c.name} — a curated Kashmir experience by Vertex Kashmir Holidays.`,
+    description:
+      c.metaDesc ?? c.sub ?? `${c.name} — a curated Kashmir experience by Vertex Kashmir Holidays.`,
     canonical: `${SITE_URL}/campaign/${slug}`,
     ogImage: c.ogImage ?? c.heroImage ?? null,
   });
@@ -97,9 +104,9 @@ export default async function CampaignPage({ params }: PageProps) {
   // Campaign "traveller stories" now pull from the global Review module rather
   // than a per-campaign JSON field — reviews are admin/customer managed.
   const testimonials: CampaignTestimonial[] = reviews.map((r) => ({
-    image: r.avatar ?? '',
+    image: r.avatar ?? "",
     name: r.name,
-    location: r.location ?? '',
+    location: r.location ?? "",
     quote: r.quote,
   }));
 
@@ -107,7 +114,7 @@ export default async function CampaignPage({ params }: PageProps) {
     slug: c.slug,
     accent: c.accent,
     accent2: c.accent2,
-    particles: c.particles === 'embers' ? 'embers' : 'snow',
+    particles: c.particles === "embers" ? "embers" : "snow",
     name: c.name,
     badge: c.badge,
     titleHtml: sanitizeInlineHtml(c.titleHtml),
@@ -174,8 +181,16 @@ export default async function CampaignPage({ params }: PageProps) {
     <>
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={productLd} />
-      {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
-      {data.faqs.length > 0 && <JsonLd data={buildFAQPage(data.faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
+      {eventLds.map((ev, i) => (
+        <JsonLd key={i} data={ev} />
+      ))}
+      {data.faqs.length > 0 && (
+        <JsonLd
+          data={buildFAQPage(
+            data.faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })),
+          )}
+        />
+      )}
       <CampaignPageClient campaign={data} footerSettings={footerSettings} />
     </>
   );

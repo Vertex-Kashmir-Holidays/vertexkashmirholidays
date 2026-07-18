@@ -22,9 +22,7 @@ function fieldSchema(f: FieldDef): z.ZodTypeAny {
     case "boolean":
       return z.boolean().optional();
     default: // text | textarea | image | video are all strings
-      return f.required
-        ? z.string().min(1, `${f.label} is required`)
-        : z.string().nullish();
+      return f.required ? z.string().min(1, `${f.label} is required`) : z.string().nullish();
   }
 }
 
@@ -44,7 +42,10 @@ export function getMeta(key: string): ResourceMeta {
 }
 
 /** Build a zod schema for a resource's create payload (content fields + sortOrder/isActive). */
-export function buildItemSchema(fields: FieldDef[], meta: ResourceMeta = { sortable: true, activatable: true }) {
+export function buildItemSchema(
+  fields: FieldDef[],
+  meta: ResourceMeta = { sortable: true, activatable: true },
+) {
   const shape: Record<string, z.ZodTypeAny> = {};
   for (const f of fields) shape[f.key] = fieldSchema(f);
   if (meta.sortable) shape.sortOrder = z.coerce.number().int().optional();
@@ -91,7 +92,13 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "videoUrl", label: "Video URL", type: "video" },
   ],
   homeSections: [
-    { key: "key", label: "Section key", type: "text", required: true, placeholder: "packages / destinations" },
+    {
+      key: "key",
+      label: "Section key",
+      type: "text",
+      required: true,
+      placeholder: "packages / destinations",
+    },
     { key: "kicker", label: "Kicker", type: "text" },
     { key: "title", label: "Title", type: "text" },
     { key: "subtitle", label: "Subtitle", type: "textarea" },
@@ -118,7 +125,13 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "icon", label: "Icon", type: "text", required: true },
   ],
   certifications: [
-    { key: "title", label: "Title", type: "text", required: true, placeholder: "e.g. ISO 9001 Certified" },
+    {
+      key: "title",
+      label: "Title",
+      type: "text",
+      required: true,
+      placeholder: "e.g. ISO 9001 Certified",
+    },
     { key: "subtitle", label: "Subtitle", type: "textarea", required: true },
     { key: "icon", label: "Icon", type: "text", required: true },
   ],
@@ -127,7 +140,12 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "role", label: "Role", type: "text", required: true },
     { key: "bio", label: "Bio", type: "textarea", required: true },
     { key: "image", label: "Photo", type: "image", required: true },
-    { key: "imageFocus", label: "Photo focus (CSS object-position, e.g. 50% 20%)", type: "text", placeholder: "50% 25%" },
+    {
+      key: "imageFocus",
+      label: "Photo focus (CSS object-position, e.g. 50% 20%)",
+      type: "text",
+      placeholder: "50% 25%",
+    },
   ],
   journeyMilestones: [
     { key: "year", label: "Year", type: "text", required: true },

@@ -1,15 +1,11 @@
 // src/app/(public)/campaign/page.tsx
-import type { Metadata } from 'next';
-import { prisma } from '@/lib/prisma';
-import { buildMetadata, SITE_URL } from '@/lib/seo';
-import {
-  JsonLd,
-  buildBreadcrumbList,
-  buildItemList,
-} from '@/components/seo/JsonLd';
-import { CampaignsHeroSection } from '@/components/campaign/CampaignsHeroSection';
-import { CampaignsPageClient } from '@/components/campaign/CampaignsPageClient';
-import type { CampaignListItemData, CampaignTier } from '@/types/campaign';
+import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
+import { CampaignsHeroSection } from "@/components/campaign/CampaignsHeroSection";
+import { CampaignsPageClient } from "@/components/campaign/CampaignsPageClient";
+import type { CampaignListItemData, CampaignTier } from "@/types/campaign";
 
 export const revalidate = 300;
 
@@ -26,12 +22,15 @@ function parse<T>(value: string | null | undefined, fallback: T): T {
 // first run of digits so we can sort/compare and drive the EMI estimate.
 function toNumber(price: string | null | undefined): number | null {
   if (!price) return null;
-  const digits = price.replace(/[^\d]/g, '');
+  const digits = price.replace(/[^\d]/g, "");
   return digits ? Number(digits) : null;
 }
 
 // Cheapest tier drives the "from" price; its `old` (if higher) becomes the strike price.
-function priceFromTiers(tiers: CampaignTier[]): { priceFrom: number | null; priceWas: number | null } {
+function priceFromTiers(tiers: CampaignTier[]): {
+  priceFrom: number | null;
+  priceWas: number | null;
+} {
   let best: { priceFrom: number; priceWas: number | null } | null = null;
   for (const tier of tiers) {
     const p = toNumber(tier.price);
@@ -45,9 +44,9 @@ function priceFromTiers(tiers: CampaignTier[]): { priceFrom: number | null; pric
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
-    title: 'Kashmir Campaigns & Seasonal Experiences',
+    title: "Kashmir Campaigns & Seasonal Experiences",
     description:
-      'Explore curated Kashmir campaigns from Vertex Kashmir Holidays — limited-time seasonal experiences, group departures and themed itineraries with exclusive offers and easy EMI options.',
+      "Explore curated Kashmir campaigns from Vertex Kashmir Holidays — limited-time seasonal experiences, group departures and themed itineraries with exclusive offers and easy EMI options.",
     canonical: `${SITE_URL}/campaign`,
   });
 }
@@ -56,7 +55,7 @@ export default async function CampaignsPage() {
   const [rows, stats] = await Promise.all([
     prisma.campaign.findMany({
       where: { published: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         slug: true,
@@ -69,7 +68,7 @@ export default async function CampaignsPage() {
         tiers: true,
       },
     }),
-    prisma.siteStat.findMany({ where: { section: 'hero' }, orderBy: { sortOrder: 'asc' } }),
+    prisma.siteStat.findMany({ where: { section: "hero" }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   const campaigns: CampaignListItemData[] = rows.map((c) => {
@@ -89,8 +88,8 @@ export default async function CampaignsPage() {
   });
 
   const breadcrumbJsonLd = buildBreadcrumbList([
-    { name: 'Home', url: SITE_URL },
-    { name: 'Campaigns', url: `${SITE_URL}/campaign` },
+    { name: "Home", url: SITE_URL },
+    { name: "Campaigns", url: `${SITE_URL}/campaign` },
   ]);
 
   const campaignsJsonLd = buildItemList(
@@ -98,7 +97,7 @@ export default async function CampaignsPage() {
       name: c.name,
       url: `${SITE_URL}/campaign/${c.slug}`,
     })),
-    'Kashmir Campaigns',
+    "Kashmir Campaigns",
   );
 
   return (

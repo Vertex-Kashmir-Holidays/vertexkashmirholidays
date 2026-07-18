@@ -54,9 +54,7 @@ export function cloudinaryUploadFolder(rawFolder: string): string {
 export function isCloudinaryConfigured(): boolean {
   return Boolean(
     env.CLOUDINARY_URL ||
-      (env.CLOUDINARY_CLOUD_NAME &&
-        env.CLOUDINARY_API_KEY &&
-        env.CLOUDINARY_API_SECRET),
+    (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET),
   );
 }
 
@@ -157,7 +155,7 @@ export async function saveUpload(
       processedBuffer = await Promise.race([
         applyWatermark(buffer, ext),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000)
+          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000),
         ),
       ]);
       console.log(`[upload] watermark applied (${ext}, folder=${slug})`);
@@ -173,10 +171,7 @@ export async function saveUpload(
   return saveToLocalDisk(processedBuffer, slug, ext);
 }
 
-async function saveToCloudinary(
-  buffer: Buffer,
-  slug: string,
-): Promise<SaveUploadResult> {
+async function saveToCloudinary(buffer: Buffer, slug: string): Promise<SaveUploadResult> {
   ensureCloudinaryConfig();
 
   const uploadOptions: UploadApiOptions = {
@@ -188,18 +183,15 @@ async function saveToCloudinary(
   console.log(`[upload] → Cloudinary folder=${uploadOptions.folder} size=${buffer.length}b`);
 
   const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, uploaded) => {
-        if (error || !uploaded) {
-          console.error("[upload] Cloudinary error:", JSON.stringify(error));
-          reject(new Error(error?.message ?? "Cloudinary upload failed"));
-          return;
-        }
-        console.log(`[upload] Cloudinary ok → ${uploaded.secure_url}`);
-        resolve(uploaded);
-      },
-    );
+    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, uploaded) => {
+      if (error || !uploaded) {
+        console.error("[upload] Cloudinary error:", JSON.stringify(error));
+        reject(new Error(error?.message ?? "Cloudinary upload failed"));
+        return;
+      }
+      console.log(`[upload] Cloudinary ok → ${uploaded.secure_url}`);
+      resolve(uploaded);
+    });
     stream.end(buffer);
   });
 

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { renderAccents } from '@/lib/accents';
-import type { SectionHeading, TestimonialData } from '@/types/home';
+import Image from "next/image";
+import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { renderAccents } from "@/lib/accents";
+import type { SectionHeading, TestimonialData } from "@/types/home";
 
 interface TestimonialsSectionProps {
   heading: SectionHeading;
@@ -11,25 +11,36 @@ interface TestimonialsSectionProps {
 }
 
 export function TestimonialsSection({ heading, testimonials }: TestimonialsSectionProps) {
-  const scroll = (direction: 'prev' | 'next') => {
-    const row = document.getElementById('trow');
+  const scroll = (direction: "prev" | "next") => {
+    const row = document.getElementById("trow");
     if (!row) return;
     const width = (row.firstElementChild as HTMLElement)?.offsetWidth || 340;
-    row.scrollBy({ left: (direction === 'next' ? 1 : -1) * (width + 20) * 2, behavior: 'smooth' });
+    row.scrollBy({ left: (direction === "next" ? 1 : -1) * (width + 20) * 2, behavior: "smooth" });
   };
 
   if (testimonials.length === 0) return null;
 
   return (
-    <section id="testimonials" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section
+      id="testimonials"
+      className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">
+            {heading.kicker}
+          </p>
+          <h2
+            className="rv h-display mt-3 text-[18px] font-bold text-foreground"
+            style={{ "--rd": "0.08s" } as React.CSSProperties}
+          >
             {renderAccents(heading.title)}
           </h2>
         </div>
-        <div className="rv flex items-center gap-3" style={{ '--rd': '0.16s' } as React.CSSProperties}>
+        <div
+          className="rv flex items-center gap-3"
+          style={{ "--rd": "0.16s" } as React.CSSProperties}
+        >
           {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
               script, which only reliably initializes on a fresh page load,
               not a client-side (SPA) transition. */}
@@ -41,14 +52,14 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
           </a>
           <button
-            onClick={() => scroll('prev')}
+            onClick={() => scroll("prev")}
             aria-label="Previous testimonials"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={2.2} />
           </button>
           <button
-            onClick={() => scroll('next')}
+            onClick={() => scroll("next")}
             aria-label="Next testimonials"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
@@ -58,15 +69,31 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
       </div>
       <div id="trow" className="snap-row mt-9 flex gap-5 overflow-x-auto pb-4">
         {testimonials.map((t, i) => (
-          <article key={t.id} className="rv glass relative w-[300px] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card" style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}>
+          <article
+            key={t.id}
+            className="rv glass relative w-[300px] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card"
+            style={{ "--rd": `${i * 0.07}s` } as React.CSSProperties}
+          >
             <p className="font-display text-5xl leading-none text-primary/50">"</p>
-            <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-muted-foreground">{t.quote}</p>
-            <a href="/reviews" className="mt-1 inline-block text-[14px] font-bold text-primary hover:underline">
+            <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-muted-foreground">
+              {t.quote}
+            </p>
+            <a
+              href="/reviews"
+              className="mt-1 inline-block text-[14px] font-bold text-primary hover:underline"
+            >
               Show more
             </a>
             <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
-                <Image src={t.avatar} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" unoptimized />
+                <Image
+                  src={t.avatar}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full border border-border object-cover"
+                  unoptimized
+                />
               )}
               <div>
                 <p className="text-sm font-bold text-foreground">{t.name}</p>

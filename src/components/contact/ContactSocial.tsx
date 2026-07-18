@@ -1,13 +1,19 @@
 // src/components/contact/ContactSocial.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
-import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon, TwitterIcon } from '@/components/icons/brand';
-import type { ContactSocialContent, ContactSocialLink } from '@/types/contact';
-import { imgSrc } from '@/lib/placeholder';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import {
+  InstagramIcon,
+  FacebookIcon,
+  YoutubeIcon,
+  WhatsAppIcon,
+  TwitterIcon,
+} from "@/components/icons/brand";
+import type { ContactSocialContent, ContactSocialLink } from "@/types/contact";
+import { imgSrc } from "@/lib/placeholder";
 
 interface ContactSocialProps {
   content: ContactSocialContent;
@@ -16,26 +22,23 @@ interface ContactSocialProps {
 
 // Brand colours are intentionally fixed in both themes.
 const SOCIAL_META: Record<
-  ContactSocialLink['type'],
+  ContactSocialLink["type"],
   { label: string; bg: string; Icon: typeof WhatsAppIcon }
 > = {
   instagram: {
-    label: 'Instagram',
-    bg: 'bg-gradient-to-tr from-amber-400 via-rose-500 to-fuchsia-500',
+    label: "Instagram",
+    bg: "bg-gradient-to-tr from-amber-400 via-rose-500 to-fuchsia-500",
     Icon: InstagramIcon,
   },
-  facebook: { label: 'Facebook', bg: 'bg-[#1877f2]', Icon: FacebookIcon },
-  youtube: { label: 'YouTube', bg: 'bg-[#ff0000]', Icon: YoutubeIcon },
-  whatsapp: { label: 'WhatsApp', bg: 'bg-[#25D366]', Icon: WhatsAppIcon },
-  twitter: { label: 'X', bg: 'bg-foreground', Icon: TwitterIcon },
+  facebook: { label: "Facebook", bg: "bg-[#1877f2]", Icon: FacebookIcon },
+  youtube: { label: "YouTube", bg: "bg-[#ff0000]", Icon: YoutubeIcon },
+  whatsapp: { label: "WhatsApp", bg: "bg-[#25D366]", Icon: WhatsAppIcon },
+  twitter: { label: "X", bg: "bg-foreground", Icon: TwitterIcon },
 };
 
 export function ContactSocial({ content, socials }: ContactSocialProps) {
   // Resolve Instagram href — prefer the social link, fall back to ctaHref
-  const igHref =
-    socials.find((s) => s.type === 'instagram')?.href ??
-    content.ctaHref ??
-    '#';
+  const igHref = socials.find((s) => s.type === "instagram")?.href ?? content.ctaHref ?? "#";
 
   return (
     <motion.div
@@ -51,7 +54,7 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
           {socials.map((s) => {
             const meta = SOCIAL_META[s.type];
             const Icon = meta.Icon;
-            const textClass = s.type === 'twitter' ? 'text-background' : 'text-white';
+            const textClass = s.type === "twitter" ? "text-background" : "text-white";
             return (
               <a
                 key={s.type}
@@ -67,7 +70,9 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
           })}
         </div>
       )}
-      {content.text && <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">{content.text}</p>}
+      {content.text && (
+        <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">{content.text}</p>
+      )}
       <div className="mt-4 grid grid-cols-4 gap-2">
         {content.images.map((src, i) => (
           <a
@@ -92,7 +97,10 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
         ))}
       </div>
       {content.ctaLabel && (
-        <Link href={content.ctaHref ?? '#'} className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
+        <Link
+          href={content.ctaHref ?? "#"}
+          className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
+        >
           {content.ctaLabel}
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </Link>

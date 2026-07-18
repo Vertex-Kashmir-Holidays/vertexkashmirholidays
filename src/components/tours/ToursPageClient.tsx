@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { Heart, Users, Mountain, Crown, type LucideIcon } from 'lucide-react';
-import type { TourCategory } from '@prisma/client';
-import { ToursFiltersSidebar } from '@/components/tours/ToursFiltersSidebar';
-import { ToursGridSection } from '@/components/tours/ToursGridSection';
-import { AffordabilityWidget } from '@/components/payments/AffordabilityWidget';
-import type { TourListItemData, TourSortOption } from '@/types/tours';
+import { useMemo, useState } from "react";
+import { Heart, Users, Mountain, Crown, type LucideIcon } from "lucide-react";
+import type { TourCategory } from "@prisma/client";
+import { ToursFiltersSidebar } from "@/components/tours/ToursFiltersSidebar";
+import { ToursGridSection } from "@/components/tours/ToursGridSection";
+import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
+import type { TourListItemData, TourSortOption } from "@/types/tours";
 
 interface ToursPageClientProps {
   tours: TourListItemData[];
@@ -14,17 +14,17 @@ interface ToursPageClientProps {
 }
 
 const CATEGORY_META: Record<string, { label: string; Icon: LucideIcon }> = {
-  HONEYMOON: { label: 'Honeymoon', Icon: Heart },
-  FAMILY: { label: 'Family', Icon: Users },
-  ADVENTURE: { label: 'Adventure', Icon: Mountain },
-  LUXURY: { label: 'Luxury', Icon: Crown },
+  HONEYMOON: { label: "Honeymoon", Icon: Heart },
+  FAMILY: { label: "Family", Icon: Users },
+  ADVENTURE: { label: "Adventure", Icon: Mountain },
+  LUXURY: { label: "Luxury", Icon: Crown },
 };
 
 const DURATION_BUCKETS = [
-  { id: '1-3', label: '1 – 3 Days', min: 1, max: 3 },
-  { id: '4-6', label: '4 – 6 Days', min: 4, max: 6 },
-  { id: '7-10', label: '7 – 10 Days', min: 7, max: 10 },
-  { id: '10+', label: '10+ Days', min: 11, max: Infinity },
+  { id: "1-3", label: "1 – 3 Days", min: 1, max: 3 },
+  { id: "4-6", label: "4 – 6 Days", min: 4, max: 6 },
+  { id: "7-10", label: "7 – 10 Days", min: 7, max: 10 },
+  { id: "10+", label: "10+ Days", min: 11, max: Infinity },
 ];
 
 const PAGE_SIZE = 9;
@@ -32,24 +32,24 @@ const PAGE_SIZE = 9;
 const PRICE_STEP = 1000;
 
 const REGION_TABS = [
-  { id: 'ALL', label: 'All Tours' },
-  { id: 'KASHMIR', label: 'Kashmir' },
-  { id: 'LADAKH', label: 'Ladakh' },
+  { id: "ALL", label: "All Tours" },
+  { id: "KASHMIR", label: "Kashmir" },
+  { id: "LADAKH", label: "Ladakh" },
 ] as const;
 
 export function ToursPageClient({ tours, browseCategories }: ToursPageClientProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [activeRegion, setActiveRegion] = useState<'ALL' | 'KASHMIR' | 'LADAKH'>('ALL');
-  const [search, setSearch] = useState('');
+  const [activeRegion, setActiveRegion] = useState<"ALL" | "KASHMIR" | "LADAKH">("ALL");
+  const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDurations, setSelectedDurations] = useState<string[]>([]);
   // null = "full range"; a tuple means the user has narrowed the price.
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
-  const [sort, setSort] = useState<TourSortOption>('popular');
+  const [sort, setSort] = useState<TourSortOption>("popular");
   const [page, setPage] = useState(1);
 
   const regionFiltered = useMemo(
-    () => (activeRegion === 'ALL' ? tours : tours.filter((t) => t.region === activeRegion)),
+    () => (activeRegion === "ALL" ? tours : tours.filter((t) => t.region === activeRegion)),
     [tours, activeRegion],
   );
 
@@ -68,7 +68,8 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
       DURATION_BUCKETS.map((b) => ({
         id: b.id,
         label: b.label,
-        count: regionFiltered.filter((t) => t.durationDays >= b.min && t.durationDays <= b.max).length,
+        count: regionFiltered.filter((t) => t.durationDays >= b.min && t.durationDays <= b.max)
+          .length,
       })),
     [regionFiltered],
   );
@@ -98,20 +99,26 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
         selectedDurations.length === 0 ||
         DURATION_BUCKETS.some(
           (b) =>
-            selectedDurations.includes(b.id) &&
-            t.durationDays >= b.min &&
-            t.durationDays <= b.max,
+            selectedDurations.includes(b.id) && t.durationDays >= b.min && t.durationDays <= b.max,
         );
       const priceMatch = t.priceFrom >= lo && t.priceFrom <= hi;
       return searchMatch && categoryMatch && durationMatch && priceMatch;
     });
 
     // "popular" keeps the server order (bestseller first, then rating)
-    if (sort === 'price-asc') result.sort((a, b) => a.priceFrom - b.priceFrom);
-    if (sort === 'price-desc') result.sort((a, b) => b.priceFrom - a.priceFrom);
-    if (sort === 'rating') result.sort((a, b) => b.rating - a.rating);
+    if (sort === "price-asc") result.sort((a, b) => a.priceFrom - b.priceFrom);
+    if (sort === "price-desc") result.sort((a, b) => b.priceFrom - a.priceFrom);
+    if (sort === "rating") result.sort((a, b) => b.rating - a.rating);
     return result;
-  }, [regionFiltered, search, selectedCategories, selectedDurations, sort, priceRange, priceBounds]);
+  }, [
+    regionFiltered,
+    search,
+    selectedCategories,
+    selectedDurations,
+    sort,
+    priceRange,
+    priceBounds,
+  ]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -137,7 +144,7 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
     setPage(1);
   };
   const handleClear = () => {
-    setSearch('');
+    setSearch("");
     setSelectedCategories([]);
     setSelectedDurations([]);
     setPriceRange(null);
@@ -146,7 +153,7 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
 
   const handleRegionChange = (region: typeof activeRegion) => {
     setActiveRegion(region);
-    setSearch('');
+    setSearch("");
     setSelectedCategories([]);
     setSelectedDurations([]);
     setPriceRange(null);
@@ -162,13 +169,13 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
             onClick={() => handleRegionChange(tab.id as typeof activeRegion)}
             className={`shrink-0 whitespace-nowrap rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
               activeRegion === tab.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
             {tab.label}
             <span className="ml-2 text-xs opacity-70">
-              ({tab.id === 'ALL' ? tours.length : tours.filter((t) => t.region === tab.id).length})
+              ({tab.id === "ALL" ? tours.length : tours.filter((t) => t.region === tab.id).length})
             </span>
           </button>
         ))}
@@ -179,24 +186,24 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
             <AffordabilityWidget amount={priceBounds.min} title="Easy EMI Available" />
           )}
           <ToursFiltersSidebar
-          browseCategories={browseCategories}
-          search={search}
-          onSearchChange={handleSearchChange}
-          categories={categories}
-          selectedCategories={selectedCategories}
-          onToggleCategory={handleToggleCategory}
-          durations={durations}
-          selectedDurations={selectedDurations}
-          onToggleDuration={handleToggleDuration}
-          priceMin={priceBounds.min}
-          priceMax={priceBounds.max}
-          priceStep={PRICE_STEP}
-          priceRange={effectiveRange}
-          onPriceChange={handlePriceChange}
-          onClear={handleClear}
-          isMobileOpen={showMobileFilters}
-          onClose={() => setShowMobileFilters(false)}
-        />
+            browseCategories={browseCategories}
+            search={search}
+            onSearchChange={handleSearchChange}
+            categories={categories}
+            selectedCategories={selectedCategories}
+            onToggleCategory={handleToggleCategory}
+            durations={durations}
+            selectedDurations={selectedDurations}
+            onToggleDuration={handleToggleDuration}
+            priceMin={priceBounds.min}
+            priceMax={priceBounds.max}
+            priceStep={PRICE_STEP}
+            priceRange={effectiveRange}
+            onPriceChange={handlePriceChange}
+            onClear={handleClear}
+            isMobileOpen={showMobileFilters}
+            onClose={() => setShowMobileFilters(false)}
+          />
         </div>
         <ToursGridSection
           tours={paged}

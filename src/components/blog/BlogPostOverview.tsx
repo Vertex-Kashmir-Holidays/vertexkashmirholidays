@@ -1,8 +1,8 @@
 // src/components/sections/BlogPostOverview.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { FileText } from 'lucide-react';
+import { motion } from "framer-motion";
+import { FileText } from "lucide-react";
 
 interface BlogPostOverviewProps {
   title: string;

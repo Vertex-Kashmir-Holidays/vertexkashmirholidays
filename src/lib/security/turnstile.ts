@@ -7,8 +7,7 @@
 
 import { env } from "@/lib/env";
 
-const VERIFY_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 /** True when the secret is configured and verification will be enforced. */
 export function turnstileEnforced(): boolean {

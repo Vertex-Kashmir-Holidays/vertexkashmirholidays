@@ -13,7 +13,10 @@ const priceField = z.preprocess(
 
 const createSchema = z.object({
   name: z.string().min(2),
-  slug: z.string().min(2).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
   description: z.string().optional(),
   coverImage: z.string().optional(),
   coverImageMobile: z.string().optional(),
@@ -86,7 +89,8 @@ export async function POST(request: Request) {
     return NextResponse.json(activity, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Create failed" }, { status: 500 });
   }
 }

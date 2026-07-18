@@ -16,7 +16,7 @@ export interface ContactHeroFeatureData {
 }
 
 export interface ContactReachCardData {
-  type: 'whatsapp' | 'call' | 'email' | 'visit';
+  type: "whatsapp" | "call" | "email" | "visit";
   title: string;
   value: string;
   subtitle: string;
@@ -72,7 +72,7 @@ export interface ContactTestimonialData {
 }
 
 export interface ContactSocialLink {
-  type: 'instagram' | 'facebook' | 'youtube' | 'whatsapp' | 'twitter';
+  type: "instagram" | "facebook" | "youtube" | "whatsapp" | "twitter";
   href: string;
 }
 

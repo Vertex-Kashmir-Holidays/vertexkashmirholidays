@@ -1,5 +1,5 @@
 // src/components/activities/ActivitySafetyTips.tsx
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from "lucide-react";
 
 interface ActivitySafetyTipsProps {
   tips: string[];
@@ -10,7 +10,10 @@ export function ActivitySafetyTips({ tips }: ActivitySafetyTipsProps) {
   if (tips.length === 0) return null;
 
   return (
-    <section id="safety-tips" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+    <section
+      id="safety-tips"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+    >
       <h2 className="text-[18px] font-bold">Safety Tips</h2>
       <ul className="mt-4 space-y-3 text-[14px] text-foreground/80">
         {tips.map((tip, i) => (

@@ -40,9 +40,7 @@ export const RESET_TOKEN_TTL_MS = RESET_OTP_TTL_MS;
 
 /** Cryptographically-secure, zero-padded 6-digit code (000000–999999). */
 export function generateOtp(): string {
-  return randomInt(0, 1_000_000)
-    .toString()
-    .padStart(OTP_LENGTH, "0");
+  return randomInt(0, 1_000_000).toString().padStart(OTP_LENGTH, "0");
 }
 
 export function hashOtp(code: string): Promise<string> {

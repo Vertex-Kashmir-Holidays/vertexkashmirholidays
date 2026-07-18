@@ -97,11 +97,13 @@ export function MfaEnrollForm() {
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center gap-2 text-primary">
             <ShieldCheck className="h-5 w-5" />
-            <h2 className="font-display font-bold text-foreground">Scan with your authenticator app</h2>
+            <h2 className="font-display font-bold text-foreground">
+              Scan with your authenticator app
+            </h2>
           </div>
           <p className="text-xs text-muted-foreground">
-            Use Google Authenticator, Authy, or any TOTP app. Can&apos;t scan?
-            Enter this key manually:
+            Use Google Authenticator, Authy, or any TOTP app. Can&apos;t scan? Enter this key
+            manually:
           </p>
           {qrDataUrl && (
             <div className="mt-4 flex justify-center">
@@ -158,8 +160,8 @@ export function MfaEnrollForm() {
           <h2 className="font-display font-bold text-foreground">Save your recovery codes</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          Each code can be used once to sign in if you lose access to your authenticator
-          app. Save these somewhere safe — they will not be shown again.
+          Each code can be used once to sign in if you lose access to your authenticator app. Save
+          these somewhere safe — they will not be shown again.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2 rounded-lg bg-muted p-3 font-mono text-xs">
           {recoveryCodes.map((c) => (

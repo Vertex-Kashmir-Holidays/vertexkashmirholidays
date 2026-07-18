@@ -39,7 +39,10 @@ export interface FaqPreviewItem {
 // same query shape everywhere, only the placement/relation filter changes.
 // Never returns `answer` (the full text) — those pages must only ever render
 // and schema-mark the short answer (see Faq.shortAnswer's doc comment).
-export async function getFaqsForPlacement(placement: FaqPlacement, limit = 6): Promise<FaqPreviewItem[]> {
+export async function getFaqsForPlacement(
+  placement: FaqPlacement,
+  limit = 6,
+): Promise<FaqPreviewItem[]> {
   const faqs = await prisma.faq.findMany({
     where: { status: "PUBLISHED", placements: { has: placement } },
     select: { id: true, question: true, shortAnswer: true, slug: true },

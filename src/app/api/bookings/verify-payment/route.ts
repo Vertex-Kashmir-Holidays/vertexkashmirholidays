@@ -18,7 +18,9 @@ const verifySchema = z.object({
 
 // Best-effort fetch of the gateway payment for richer metadata (method, bank…).
 // Never throws — the signature has already proven authenticity.
-async function fetchGatewayMeta(paymentId: string): Promise<{ method: string | null; metadata: string | null }> {
+async function fetchGatewayMeta(
+  paymentId: string,
+): Promise<{ method: string | null; metadata: string | null }> {
   try {
     if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_SECRET) {
       return { method: null, metadata: null };
@@ -102,8 +104,7 @@ export async function POST(req: NextRequest) {
   const expectedBuf = Buffer.from(expected, "hex");
   const receivedBuf = Buffer.from(razorpay_signature, "hex");
   const isValid =
-    expectedBuf.length === receivedBuf.length &&
-    crypto.timingSafeEqual(expectedBuf, receivedBuf);
+    expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
 
   if (!isValid) {
     await prisma.booking.update({ where: { id: booking.id }, data: { status: "FAILED" } });

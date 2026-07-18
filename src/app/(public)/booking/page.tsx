@@ -78,12 +78,18 @@ export default async function BookingPage({
 
   const initialDate = date ?? "";
   const initialTravellers = parseInt(travellers ?? "1", 10) || tour.minPersons;
-  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
+  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(
+    /\D/g,
+    "",
+  );
 
   // Real, admin-entered scarcity carried over from the tour page — only shown
   // when it genuinely applies to the date this visitor picked (or the nearest
   // upcoming departure if they haven't picked one yet).
-  const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []);
+  const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(
+    tour.batches,
+    [],
+  );
   const today = new Date().toISOString().split("T")[0];
   const departure =
     (initialDate ? batches.find((b) => b.date === initialDate) : undefined) ??

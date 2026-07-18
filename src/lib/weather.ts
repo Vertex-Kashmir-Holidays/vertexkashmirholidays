@@ -46,9 +46,9 @@ const WEATHER_CODES: Record<number, string> = {
 
 // Key Kashmir destinations for the homepage weather strip
 export const KASHMIR_LOCATIONS = [
-  { name: 'Srinagar', latitude: 34.0837, longitude: 74.7973 },
-  { name: 'Gulmarg', latitude: 34.0484, longitude: 74.3805 },
-  { name: 'Pahalgam', latitude: 34.0161, longitude: 75.3150 },
+  { name: "Srinagar", latitude: 34.0837, longitude: 74.7973 },
+  { name: "Gulmarg", latitude: 34.0484, longitude: 74.3805 },
+  { name: "Pahalgam", latitude: 34.0161, longitude: 75.315 },
 ] as const;
 
 /**
@@ -62,7 +62,7 @@ export async function getKashmirWeather(): Promise<
     KASHMIR_LOCATIONS.map(async (loc) => {
       const w = await getLiveWeather(loc.latitude, loc.longitude);
       return w ? { name: loc.name, temperature: w.temperature, condition: w.condition } : null;
-    })
+    }),
   );
   return results.filter((r): r is NonNullable<typeof r> => r !== null);
 }

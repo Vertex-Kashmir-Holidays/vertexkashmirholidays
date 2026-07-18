@@ -26,9 +26,9 @@ interface Props {
 }
 
 const PRESENCE_DOT: Record<PresenceStatus, string> = {
-  ONLINE:  "bg-green-500",
-  AWAY:    "bg-amber-400",
-  BUSY:    "bg-red-500",
+  ONLINE: "bg-green-500",
+  AWAY: "bg-amber-400",
+  BUSY: "bg-red-500",
   OFFLINE: "bg-zinc-400",
 };
 
@@ -61,21 +61,13 @@ function UserAvatar({
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt=""
-          className="rounded-full object-cover w-full h-full"
-        />
+        <img src={src} alt="" className="rounded-full object-cover w-full h-full" />
       ) : (
-        <div
-          className="rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-xs w-full h-full"
-        >
+        <div className="rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-xs w-full h-full">
           {(name ?? "?").charAt(0).toUpperCase()}
         </div>
       )}
-      {presenceStatus && presenceStatus !== "OFFLINE" && (
-        <PresenceDot status={presenceStatus} />
-      )}
+      {presenceStatus && presenceStatus !== "OFFLINE" && <PresenceDot status={presenceStatus} />}
     </div>
   );
 }
@@ -147,11 +139,7 @@ function RoomButton({
       )}
     >
       <div className="relative shrink-0">
-        <UserAvatar
-          {...avProps}
-          size={36}
-          presenceStatus={dmPresence}
-        />
+        <UserAvatar {...avProps} size={36} presenceStatus={dmPresence} />
         {room.type === "GROUP" && !avProps.avatarUrl && (
           <div className="absolute -bottom-0.5 -right-0.5 bg-card border border-border rounded-full p-0.5">
             <Users className="w-2.5 h-2.5 text-muted-foreground" />
@@ -176,9 +164,7 @@ function RoomButton({
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">
-          {lastMessagePreview(room)}
-        </p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMessagePreview(room)}</p>
       </div>
     </button>
   );
@@ -266,16 +252,17 @@ export function RoomList({
                   )}
                 />
               </button>
-              {showArchived && archivedRooms.map((room) => (
-                <RoomButton
-                  key={room.id}
-                  room={room}
-                  currentUserId={currentUserId}
-                  selectedRoomId={selectedRoomId}
-                  presenceMap={presenceMap}
-                  onSelect={onSelect}
-                />
-              ))}
+              {showArchived &&
+                archivedRooms.map((room) => (
+                  <RoomButton
+                    key={room.id}
+                    room={room}
+                    currentUserId={currentUserId}
+                    selectedRoomId={selectedRoomId}
+                    presenceMap={presenceMap}
+                    onSelect={onSelect}
+                  />
+                ))}
             </div>
           )}
 

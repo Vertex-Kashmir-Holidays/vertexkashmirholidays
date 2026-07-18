@@ -47,12 +47,31 @@ function fmtDate(d: Date) {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
-const STATUS_STYLES: Record<string, { label: string; className: string; Icon: typeof CheckCircle2 }> = {
-  PAID: { label: "Paid", className: "bg-green-500/15 text-green-700 dark:text-green-300", Icon: CheckCircle2 },
-  PENDING: { label: "Pending", className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300", Icon: Clock },
-  FAILED: { label: "Failed", className: "bg-red-500/15 text-red-700 dark:text-red-300", Icon: XCircle },
+const STATUS_STYLES: Record<
+  string,
+  { label: string; className: string; Icon: typeof CheckCircle2 }
+> = {
+  PAID: {
+    label: "Paid",
+    className: "bg-green-500/15 text-green-700 dark:text-green-300",
+    Icon: CheckCircle2,
+  },
+  PENDING: {
+    label: "Pending",
+    className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
+    Icon: Clock,
+  },
+  FAILED: {
+    label: "Failed",
+    className: "bg-red-500/15 text-red-700 dark:text-red-300",
+    Icon: XCircle,
+  },
   CANCELLED: { label: "Cancelled", className: "bg-muted text-muted-foreground", Icon: XCircle },
-  REFUNDED: { label: "Refunded", className: "bg-blue-500/15 text-blue-700 dark:text-blue-300", Icon: AlertCircle },
+  REFUNDED: {
+    label: "Refunded",
+    className: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    Icon: AlertCircle,
+  },
 };
 
 const LEAD_STATUS_STYLES: Record<string, string> = {
@@ -67,12 +86,37 @@ const LEAD_STATUS_STYLES: Record<string, string> = {
 };
 
 const QUICK_ACTIONS = [
-  { label: "New Package", Icon: Plus, href: "/admin/packages/new", color: "bg-primary/10 text-primary" },
-  { label: "Add Destination", Icon: MapPin, href: "/admin/destinations/new", color: "bg-link/10 text-link" },
-  { label: "Add Blog Post", Icon: FileText, href: "/admin/blogs/new", color: "bg-purple-500/15 text-purple-600 dark:text-purple-400" },
-  { label: "View Bookings", Icon: CalendarDays, href: "/admin/bookings", color: "bg-accent/10 text-accent" },
+  {
+    label: "New Package",
+    Icon: Plus,
+    href: "/admin/packages/new",
+    color: "bg-primary/10 text-primary",
+  },
+  {
+    label: "Add Destination",
+    Icon: MapPin,
+    href: "/admin/destinations/new",
+    color: "bg-link/10 text-link",
+  },
+  {
+    label: "Add Blog Post",
+    Icon: FileText,
+    href: "/admin/blogs/new",
+    color: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+  },
+  {
+    label: "View Bookings",
+    Icon: CalendarDays,
+    href: "/admin/bookings",
+    color: "bg-accent/10 text-accent",
+  },
   { label: "Export Report", Icon: Download, href: "#", color: "bg-muted text-muted-foreground" },
-  { label: "Site Settings", Icon: Settings, href: "/admin/settings", color: "bg-primary/10 text-foreground" },
+  {
+    label: "Site Settings",
+    Icon: Settings,
+    href: "/admin/settings",
+    color: "bg-primary/10 text-foreground",
+  },
 ];
 
 export default async function AdminDashboard() {
@@ -96,12 +140,27 @@ export default async function AdminDashboard() {
     pendingReviews,
     allPaidBookings,
   ] = await Promise.all([
-    prisma.booking.aggregate({ where: { status: BookingStatus.PAID, deletedAt: null }, _sum: { amount: true } }),
-    prisma.booking.aggregate({ where: { status: BookingStatus.PAID, deletedAt: null, createdAt: { gte: startOfMonth } }, _sum: { amount: true } }),
-    prisma.booking.aggregate({ where: { status: BookingStatus.PAID, deletedAt: null, createdAt: { gte: startOfLastMonth, lt: startOfMonth } }, _sum: { amount: true } }),
+    prisma.booking.aggregate({
+      where: { status: BookingStatus.PAID, deletedAt: null },
+      _sum: { amount: true },
+    }),
+    prisma.booking.aggregate({
+      where: { status: BookingStatus.PAID, deletedAt: null, createdAt: { gte: startOfMonth } },
+      _sum: { amount: true },
+    }),
+    prisma.booking.aggregate({
+      where: {
+        status: BookingStatus.PAID,
+        deletedAt: null,
+        createdAt: { gte: startOfLastMonth, lt: startOfMonth },
+      },
+      _sum: { amount: true },
+    }),
     prisma.booking.count({ where: { deletedAt: null } }),
     prisma.booking.count({ where: { deletedAt: null, createdAt: { gte: startOfMonth } } }),
-    prisma.booking.count({ where: { deletedAt: null, createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
+    prisma.booking.count({
+      where: { deletedAt: null, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
+    }),
     prisma.lead.count(),
     prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
@@ -111,7 +170,10 @@ export default async function AdminDashboard() {
       take: 8,
       orderBy: { createdAt: "desc" },
       select: {
-        id: true, status: true, amount: true, createdAt: true,
+        id: true,
+        status: true,
+        amount: true,
+        createdAt: true,
         tour: { select: { title: true, coverImage: true, slug: true } },
       },
     }),
@@ -125,7 +187,10 @@ export default async function AdminDashboard() {
       take: 5,
       orderBy: { createdAt: "desc" },
       select: {
-        id: true, name: true, rating: true, body: true,
+        id: true,
+        name: true,
+        rating: true,
+        body: true,
         tour: { select: { title: true } },
       },
     }),
@@ -139,7 +204,8 @@ export default async function AdminDashboard() {
   const revenueByMonth = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
     const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    const label = d.toLocaleString("en-IN", { month: "short" }) + " '" + String(d.getFullYear()).slice(2);
+    const label =
+      d.toLocaleString("en-IN", { month: "short" }) + " '" + String(d.getFullYear()).slice(2);
     const revenue = allPaidBookings
       .filter((b) => b.createdAt >= d && b.createdAt < nextMonth)
       .reduce((s, b) => s + b.amount, 0);
@@ -163,13 +229,27 @@ export default async function AdminDashboard() {
   const topTourDetails = topTourIds.length
     ? await prisma.tour.findMany({
         where: { id: { in: topTourIds } },
-        select: { id: true, title: true, slug: true, coverImage: true, rating: true, reviewCount: true },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          coverImage: true,
+          rating: true,
+          reviewCount: true,
+        },
       })
     : await prisma.tour.findMany({
         where: { published: true },
         take: 5,
         orderBy: { rating: "desc" },
-        select: { id: true, title: true, slug: true, coverImage: true, rating: true, reviewCount: true },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          coverImage: true,
+          rating: true,
+          reviewCount: true,
+        },
       });
 
   const topTours = topTourIds.length
@@ -182,8 +262,7 @@ export default async function AdminDashboard() {
   const totalRevenue = revenueAgg._sum.amount ?? 0;
   const thisMonthRev = thisMonthRevAgg._sum.amount ?? 0;
   const lastMonthRev = lastMonthRevAgg._sum.amount ?? 0;
-  const conversionRate =
-    totalLeads > 0 ? Math.round((paidCount / totalLeads) * 1000) / 10 : 0;
+  const conversionRate = totalLeads > 0 ? Math.round((paidCount / totalLeads) * 1000) / 10 : 0;
   const avgBooking = paidCount > 0 ? Math.round(totalRevenue / paidCount) : 0;
 
   const KPI = [
@@ -240,11 +319,15 @@ export default async function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">
-            Welcome back, {" "}
-            <span className="text-primary">Admin</span> 👋
+            Welcome back, <span className="text-primary">Admin</span> 👋
           </h2>
           <p className="text-muted-foreground text-xs mt-0.5">
-            {now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            {now.toLocaleDateString("en-IN", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </p>
         </div>
         <Link
@@ -277,8 +360,11 @@ export default async function AdminDashboard() {
                   ) : (
                     <TrendingDown className="w-3 h-3 text-red-400" />
                   )}
-                  <span className={`text-[12px] font-semibold ${change >= 0 ? "text-green-500" : "text-red-400"}`}>
-                    {change >= 0 ? "+" : ""}{change}%
+                  <span
+                    className={`text-[12px] font-semibold ${change >= 0 ? "text-green-500" : "text-red-400"}`}
+                  >
+                    {change >= 0 ? "+" : ""}
+                    {change}%
                   </span>
                   <span className="text-[12px] text-muted-foreground">{sub}</span>
                 </>
@@ -299,9 +385,7 @@ export default async function AdminDashboard() {
               <p className="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">
                 ● Revenue Overview
               </p>
-              <p className="font-display font-bold text-foreground text-base">
-                Last 6 Months
-              </p>
+              <p className="font-display font-bold text-foreground text-base">Last 6 Months</p>
             </div>
             <span className="text-xs text-muted-foreground bg-muted border border-border px-3 py-1 rounded-lg">
               {fmtINR(totalRevenue)} total
@@ -314,7 +398,10 @@ export default async function AdminDashboard() {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="font-display font-bold text-foreground text-sm">Recent Bookings</p>
-            <Link href="/admin/bookings" className="text-primary text-xs font-semibold hover:underline flex items-center gap-1">
+            <Link
+              href="/admin/bookings"
+              className="text-primary text-xs font-semibold hover:underline flex items-center gap-1"
+            >
               View all <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -343,7 +430,9 @@ export default async function AdminDashboard() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs font-bold text-foreground">{fmtINR(b.amount)}</p>
-                      <span className={`text-[12px] font-semibold px-1.5 py-0.5 rounded-md ${s.className}`}>
+                      <span
+                        className={`text-[12px] font-semibold px-1.5 py-0.5 rounded-md ${s.className}`}
+                      >
                         {s.label}
                       </span>
                     </div>
@@ -368,7 +457,10 @@ export default async function AdminDashboard() {
             <thead>
               <tr className="bg-muted border-b border-border">
                 {["Name", "Phone", "Source", "Travel Date", "Status", "Action"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wide text-[12px]">
+                  <th
+                    key={h}
+                    className="text-left px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wide text-[12px]"
+                  >
                     {h}
                   </th>
                 ))}
@@ -395,12 +487,17 @@ export default async function AdminDashboard() {
                       {lead.startDate ? fmtDate(lead.startDate) : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[12px] ${LEAD_STATUS_STYLES[lead.status] ?? "bg-muted text-muted-foreground"}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-md font-semibold text-[12px] ${LEAD_STATUS_STYLES[lead.status] ?? "bg-muted text-muted-foreground"}`}
+                      >
                         {lead.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Link href="/admin/leads" className="text-primary font-semibold hover:underline">
+                      <Link
+                        href="/admin/leads"
+                        className="text-primary font-semibold hover:underline"
+                      >
                         View
                       </Link>
                     </td>
@@ -418,7 +515,10 @@ export default async function AdminDashboard() {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <p className="font-display font-bold text-foreground text-sm">Top Performing Tours</p>
-            <Link href="/admin/packages" className="text-primary text-xs font-semibold hover:underline">
+            <Link
+              href="/admin/packages"
+              className="text-primary text-xs font-semibold hover:underline"
+            >
               Manage
             </Link>
           </div>
@@ -469,14 +569,19 @@ export default async function AdminDashboard() {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <p className="font-display font-bold text-foreground text-sm">Reviews Awaiting Approval</p>
+              <p className="font-display font-bold text-foreground text-sm">
+                Reviews Awaiting Approval
+              </p>
               {pendingReviews.length > 0 && (
                 <span className="bg-accent text-white text-[12px] font-bold px-1.5 py-0.5 rounded-full">
                   {pendingReviews.length}
                 </span>
               )}
             </div>
-            <Link href="/admin/reviews" className="text-primary text-xs font-semibold hover:underline">
+            <Link
+              href="/admin/reviews"
+              className="text-primary text-xs font-semibold hover:underline"
+            >
               Manage
             </Link>
           </div>
@@ -488,7 +593,10 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               pendingReviews.map((review) => (
-                <div key={review.id} className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0">
+                <div
+                  key={review.id}
+                  className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0"
+                >
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
                     {review.name.charAt(0).toUpperCase()}
                   </div>
@@ -501,8 +609,12 @@ export default async function AdminDashboard() {
                         ))}
                       </div>
                     </div>
-                    <p className="text-[12px] text-muted-foreground mb-1 truncate">{review.tour.title}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{review.body}</p>
+                    <p className="text-[12px] text-muted-foreground mb-1 truncate">
+                      {review.tour.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {review.body}
+                    </p>
                   </div>
                 </div>
               ))

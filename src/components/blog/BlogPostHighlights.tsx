@@ -1,7 +1,7 @@
 // src/components/sections/BlogPostHighlights.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface Highlight {
   label: string;
@@ -35,7 +35,15 @@ export function BlogPostHighlights({ id, title, items }: BlogPostHighlightsProps
             viewport={{ once: true }}
             transition={{ delay: i * 0.05 }}
           >
-            <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-brand-green2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-6 w-6 shrink-0 text-brand-green2"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d={item.icon} />
             </svg>
             <p className="text-[12px] font-semibold leading-snug">{item.label}</p>

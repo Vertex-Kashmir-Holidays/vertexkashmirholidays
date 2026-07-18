@@ -13,7 +13,12 @@ import {
   buildFAQPage,
 } from "@/components/seo/JsonLd";
 import { formatINR } from "@/lib/accents";
-import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } from "@/lib/destinations/content";
+import {
+  parseStringList,
+  parseTopAttractions,
+  parseFoodOrShop,
+  parseIdList,
+} from "@/lib/destinations/content";
 import { DestinationDetailGallery } from "@/components/destinations/DestinationDetailGallery";
 import { DestinationDetailHero } from "@/components/destinations/DestinationDetailHero";
 import { DestinationDetailOverview } from "@/components/destinations/DestinationDetailOverview";
@@ -65,8 +70,7 @@ const ICON = {
   star: "m12 3 2.7 5.6 6.3.9-4.5 4.4 1 6.1L12 17l-5.5 3 1-6.1L3 9.5l6.3-.9Z",
   package: "M3 11h18l-2 8H5ZM8 11V7a4 4 0 0 1 8 0v4",
   pin: "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0M12 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
-  camera:
-    "M3 3h18v18H3zM9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4M21 15l-3.8-3.8a2 2 0 0 0-2.8 0L6 20",
+  camera: "M3 3h18v18H3zM9 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4M21 15l-3.8-3.8a2 2 0 0 0-2.8 0L6 20",
   overview: "M12 12a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8v4l2.5 2.5",
   bolt: "m13 2-2 9h4l-4 11 1-8H8l5-12Z",
 };
@@ -89,9 +93,17 @@ const getDestination = cache(async (slug: string) => {
         select: {
           tour: {
             select: {
-              id: true, slug: true, title: true, badge: true, badgeColor: true,
-              duration: true, coverImage: true, rating: true, reviewCount: true,
-              priceFrom: true, priceWas: true,
+              id: true,
+              slug: true,
+              title: true,
+              badge: true,
+              badgeColor: true,
+              duration: true,
+              coverImage: true,
+              rating: true,
+              reviewCount: true,
+              priceFrom: true,
+              priceWas: true,
               destinations: { select: { destination: { select: { name: true } } } },
             },
           },
@@ -102,7 +114,14 @@ const getDestination = cache(async (slug: string) => {
         where: { activity: { published: true } },
         include: {
           activity: {
-            select: { id: true, slug: true, name: true, description: true, coverImage: true, duration: true },
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              description: true,
+              coverImage: true,
+              duration: true,
+            },
           },
         },
       },
@@ -177,7 +196,16 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     relatedBlogIds.length > 0
       ? prisma.blog.findMany({
           where: { id: { in: relatedBlogIds }, published: true },
-          select: { id: true, slug: true, title: true, excerpt: true, coverImage: true, category: true, publishedAt: true, readTime: true },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            excerpt: true,
+            coverImage: true,
+            category: true,
+            publishedAt: true,
+            readTime: true,
+          },
         })
       : Promise.resolve([]),
   ]);
@@ -185,7 +213,9 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   const nearbyDestinations: DestinationCardData[] = await Promise.all(
     nearbyRaw.map(async (d) => {
       const weather =
-        d.latitude != null && d.longitude != null ? await getLiveWeather(d.latitude, d.longitude) : null;
+        d.latitude != null && d.longitude != null
+          ? await getLiveWeather(d.latitude, d.longitude)
+          : null;
       return {
         slug: d.slug,
         name: d.name,
@@ -219,8 +249,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
 
   // ── Display facts: prefer explicit DB fields, fall back to deriving from
   // `location` for older records that predate the dedicated columns. ──────────
-  const region =
-    dest.region ?? (/ladakh/i.test(dest.location ?? "") ? "Ladakh" : "Kashmir Valley");
+  const region = dest.region ?? (/ladakh/i.test(dest.location ?? "") ? "Ladakh" : "Kashmir Valley");
   const altMatch = dest.location?.match(/([\d,]+)\s*m\b/i);
   const altitude = dest.altitude ?? (altMatch ? `${altMatch[1]} m` : "High Altitude");
   const season = dest.season ?? "Apr – Oct";
@@ -233,9 +262,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
 
   const tours = dest.tours.map((td) => td.tour);
   const totalReviews = tours.reduce((sum, t) => sum + t.reviewCount, 0);
-  const avgRating = tours.length
-    ? tours.reduce((sum, t) => sum + t.rating, 0) / tours.length
-    : 4.8;
+  const avgRating = tours.length ? tours.reduce((sum, t) => sum + t.rating, 0) / tours.length : 4.8;
 
   const heroImage = imgSrc(dest.coverImage);
 
@@ -342,7 +369,9 @@ export default async function DestinationDetailPage({ params }: PageProps) {
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={destinationJsonLd} />
       {faqs.length > 0 && (
-        <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />
+        <JsonLd
+          data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))}
+        />
       )}
 
       <DestinationDetailHero
@@ -387,7 +416,11 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               {/* 12. Travel Tips */}
               <DestinationTravelTips tips={travelTips} />
               {/* 13. Things To Do (existing ActivitiesShowcase) */}
-              <ActivitiesShowcase title={`Things to Do in ${dest.name}`} items={things} seeAllHref="/activities" />
+              <ActivitiesShowcase
+                title={`Things to Do in ${dest.name}`}
+                items={things}
+                seeAllHref="/activities"
+              />
               {/* 14. Nearby Destinations */}
               <DestinationNearby destinations={nearbyDestinations} />
               {/* 15. Gallery */}
@@ -405,11 +438,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
               <DestinationRelatedBlogs posts={relatedBlogs} />
             </div>
 
-            <DestinationDetailSidebar
-              name={dest.name}
-              quickInfo={quickInfo}
-              weather={weather}
-            />
+            <DestinationDetailSidebar name={dest.name} quickInfo={quickInfo} weather={weather} />
           </div>
         </div>
       </main>

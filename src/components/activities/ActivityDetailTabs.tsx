@@ -1,8 +1,8 @@
 // src/components/activities/ActivityDetailTabs.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface ActivityDetailTabsProps {
   sections: {
@@ -13,7 +13,7 @@ interface ActivityDetailTabsProps {
 
 // Same sticky-below-navbar tabs bar as TourDetailsTabs / DestinationDetailTabs.
 export function ActivityDetailTabs({ sections }: ActivityDetailTabsProps) {
-  const [activeTab, setActiveTab] = useState(sections[0]?.id ?? '');
+  const [activeTab, setActiveTab] = useState(sections[0]?.id ?? "");
 
   // Combined height of the fixed navbar + this sticky tabs bar, so the
   // scroll-spy threshold and scroll-to target both clear the same overlap.
@@ -35,17 +35,17 @@ export function ActivityDetailTabs({ sections }: ActivityDetailTabsProps) {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [sections]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       const top = element.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
-      window.scrollTo({ top, behavior: 'smooth' });
+      window.scrollTo({ top, behavior: "smooth" });
       setActiveTab(id);
     }
   };
@@ -61,7 +61,7 @@ export function ActivityDetailTabs({ sections }: ActivityDetailTabsProps) {
               key={section.id}
               onClick={() => scrollToSection(section.id)}
               className={`relative whitespace-nowrap pb-1 transition-colors ${
-                activeTab === section.id ? 'text-primary' : 'hover:text-foreground'
+                activeTab === section.id ? "text-primary" : "hover:text-foreground"
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -71,7 +71,7 @@ export function ActivityDetailTabs({ sections }: ActivityDetailTabsProps) {
                 <motion.span
                   className="absolute inset-x-0 -bottom-[1px] h-[2.5px] rounded-full bg-primary"
                   layoutId="activeActivityTab"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
             </motion.button>

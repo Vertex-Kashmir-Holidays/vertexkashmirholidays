@@ -26,7 +26,11 @@ export async function POST(_req: Request, { params }: Params) {
 
   const requestId = extractRequestId(row.platformResponse);
   if (!requestId) {
-    return NextResponse.json({ ok: false, status: "ERROR", message: "No request ID available for this row yet." });
+    return NextResponse.json({
+      ok: false,
+      status: "ERROR",
+      message: "No request ID available for this row yet.",
+    });
   }
 
   const result = await checkRequestStatus(row.platform, requestId);

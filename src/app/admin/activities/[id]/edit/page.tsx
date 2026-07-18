@@ -13,7 +13,10 @@ type Props = { params: Promise<{ id: string }> };
 const getActivity = cache(async (id: string) =>
   prisma.activity.findUnique({
     where: { id },
-    include: { destinations: { select: { destinationId: true } }, tours: { select: { tourId: true } } },
+    include: {
+      destinations: { select: { destinationId: true } },
+      tours: { select: { tourId: true } },
+    },
   }),
 );
 
@@ -38,8 +41,14 @@ export default async function EditActivityPage({ params }: Props) {
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/activities" className="hover:text-primary transition-colors">Activities</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/activities" className="hover:text-primary transition-colors">
+              Activities
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium truncate max-w-[200px]">{activity.name}</li>
         </ol>
       </nav>

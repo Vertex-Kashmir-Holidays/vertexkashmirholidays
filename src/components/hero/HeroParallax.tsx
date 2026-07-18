@@ -65,11 +65,17 @@ export function HeroParallax() {
         {/* Sun glow (plains) */}
         <div
           className="absolute left-[8%] top-[18%] w-72 h-72 rounded-full blur-3xl opacity-60"
-          style={{ background: "radial-gradient(circle, rgba(255,120,30,0.7), rgba(255,60,0,0.3), transparent 70%)" }}
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,120,30,0.7), rgba(255,60,0,0.3), transparent 70%)",
+          }}
         />
         <div
           className="absolute left-[14%] top-[24%] w-32 h-32 rounded-full blur-xl"
-          style={{ background: "radial-gradient(circle, rgba(255,200,80,0.9), rgba(255,140,0,0.6), transparent 60%)" }}
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,200,80,0.9), rgba(255,140,0,0.6), transparent 60%)",
+          }}
         />
         {/* Heat shimmer lines */}
         <div className="absolute left-[5%] bottom-[15%] w-[35%] h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent" />
@@ -124,7 +130,9 @@ export function HeroParallax() {
           {/* Glow core */}
           <div
             className="absolute inset-10 rounded-full blur-2xl opacity-40"
-            style={{ background: "radial-gradient(circle, hsl(158 64% 28% / 0.6), transparent 70%)" }}
+            style={{
+              background: "radial-gradient(circle, hsl(158 64% 28% / 0.6), transparent 70%)",
+            }}
           />
           {/* Temperature labels — desktop only */}
           <div className="hidden lg:flex absolute -left-36 top-1/2 -translate-y-1/2 flex-col items-center gap-1">
@@ -143,7 +151,10 @@ export function HeroParallax() {
       {/* Readability overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.35), transparent 45%, rgba(0,0,0,0.55))" }}
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.35), transparent 45%, rgba(0,0,0,0.55))",
+        }}
         aria-hidden
       />
 

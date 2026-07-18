@@ -127,7 +127,9 @@ function buildStaticCsp(): string {
   const scriptExtra = isDev ? " 'unsafe-eval'" : "";
 
   const directives = sharedCspDirectives();
-  directives.push(`script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} ${SCRIPT_HOSTS}`);
+  directives.push(
+    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${scriptExtra} ${SCRIPT_HOSTS}`,
+  );
   return directives.join("; ");
 }
 const STATIC_CSP = buildStaticCsp();

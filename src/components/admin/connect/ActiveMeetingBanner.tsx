@@ -9,7 +9,10 @@ export interface ActiveMeeting {
   type: "AUDIO" | "VIDEO";
   jitsiRoomId: string;
   createdById: string;
-  participants: Array<{ userId: string; user: { id: string; name: string | null; image: string | null } }>;
+  participants: Array<{
+    userId: string;
+    user: { id: string; name: string | null; image: string | null };
+  }>;
 }
 
 interface Props {
@@ -139,7 +142,10 @@ export function ActiveMeetingBanner({ roomId, roomType, currentUserId, onJoin, i
               </button>
             ) : roomType === "GROUP" && !isCreator ? (
               <button
-                onClick={() => { stopRing(); setDismissedId(meeting.id); }}
+                onClick={() => {
+                  stopRing();
+                  setDismissedId(meeting.id);
+                }}
                 disabled={joining || ending}
                 className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors font-medium disabled:opacity-50"
                 title="Dismiss"

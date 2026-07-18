@@ -26,13 +26,24 @@ export default async function EditCampaignPage({ params }: { params: Promise<{ i
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href="/admin/campaigns" className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary">
+          <Link
+            href="/admin/campaigns"
+            className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary"
+          >
             <ArrowLeft className="h-3 w-3" /> All Campaigns
           </Link>
-          <h2 className="font-display text-xl font-extrabold text-foreground">Edit: {campaign.name}</h2>
-          {!canEdit && <p className="text-xs text-amber-600 dark:text-amber-400">You have read-only access.</p>}
+          <h2 className="font-display text-xl font-extrabold text-foreground">
+            Edit: {campaign.name}
+          </h2>
+          {!canEdit && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">You have read-only access.</p>
+          )}
         </div>
-        <Link href={`/adventures/${campaign.slug}`} target="_blank" className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted">
+        <Link
+          href={`/adventures/${campaign.slug}`}
+          target="_blank"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
+        >
           View live <ExternalLink className="h-3 w-3" />
         </Link>
       </div>

@@ -58,7 +58,9 @@ export function ForceChangePasswordForm() {
         </div>
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="cp-new">New password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="cp-new">
+              New password
+            </label>
             <input
               id="cp-new"
               type="password"
@@ -71,7 +73,9 @@ export function ForceChangePasswordForm() {
             <p className="mt-1 text-[12px] text-muted-foreground">At least 8 characters.</p>
           </div>
           <div>
-            <label className="text-xs font-semibold text-foreground" htmlFor="cp-confirm">Confirm new password</label>
+            <label className="text-xs font-semibold text-foreground" htmlFor="cp-confirm">
+              Confirm new password
+            </label>
             <input
               id="cp-confirm"
               type="password"

@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import {
-  MAX_VERIFY_ATTEMPTS,
-  cleanupExpiredOtps,
-  verifyOtpHash,
-} from "@/lib/auth/otp";
+import { MAX_VERIFY_ATTEMPTS, cleanupExpiredOtps, verifyOtpHash } from "@/lib/auth/otp";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
 const verifySchema = z.object({
   email: z.string().trim().email("Please enter a valid email address").max(200),
-  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code"),
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter the 6-digit code"),
 });
 
 // Step 2 of registration: validate the code against the pending EmailOtp row.
@@ -65,8 +64,7 @@ export async function POST(req: NextRequest) {
       await prisma.emailOtp.delete({ where: { email } });
       return NextResponse.json(
         {
-          error:
-            "Too many incorrect attempts. Please request a new verification code.",
+          error: "Too many incorrect attempts. Please request a new verification code.",
         },
         { status: 429 },
       );

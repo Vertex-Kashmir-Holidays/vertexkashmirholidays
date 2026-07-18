@@ -69,33 +69,101 @@ export interface FailureClassification {
 type ClassifyRule = { code: string; title: string; match: (e: string) => boolean };
 
 const GOOGLE_RULES: ClassifyRule[] = [
-  { code: "API_DISABLED", title: "API Disabled", match: (e) => /has not been used|is disabled/i.test(e) },
-  { code: "PERMISSION_DENIED", title: "Permission Denied", match: (e) => /permission|PERMISSION_DENIED|not allowlisted|not have access/i.test(e) },
-  { code: "INVALID_CONVERSION_ACTION", title: "Invalid Conversion Action", match: (e) => /conversion action|productDestinationId|destination/i.test(e) },
+  {
+    code: "API_DISABLED",
+    title: "API Disabled",
+    match: (e) => /has not been used|is disabled/i.test(e),
+  },
+  {
+    code: "PERMISSION_DENIED",
+    title: "Permission Denied",
+    match: (e) => /permission|PERMISSION_DENIED|not allowlisted|not have access/i.test(e),
+  },
+  {
+    code: "INVALID_CONVERSION_ACTION",
+    title: "Invalid Conversion Action",
+    match: (e) => /conversion action|productDestinationId|destination/i.test(e),
+  },
   { code: "INVALID_GCLID", title: "Invalid GCLID", match: (e) => /gclid|click id/i.test(e) },
-  { code: "INVALID_TOKEN", title: "Invalid Token", match: (e) => /token|unauthorized|invalid_grant/i.test(e) },
-  { code: "RATE_LIMIT", title: "Rate Limited", match: (e) => /rate.?limit|quota|too many requests|RESOURCE_EXHAUSTED/i.test(e) },
-  { code: "INVALID_PAYLOAD", title: "Invalid Payload", match: (e) => /invalid_argument|invalid.*(field|argument|request)/i.test(e) },
-  { code: "TERMS_NOT_ACCEPTED", title: "Terms Not Accepted", match: (e) => /terms|not.?signed|data processing/i.test(e) },
-  { code: "NETWORK", title: "Network Error", match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e) },
-  { code: "NOT_CONFIGURED", title: "Not Configured", match: (e) => /not (fully )?configured/i.test(e) },
+  {
+    code: "INVALID_TOKEN",
+    title: "Invalid Token",
+    match: (e) => /token|unauthorized|invalid_grant/i.test(e),
+  },
+  {
+    code: "RATE_LIMIT",
+    title: "Rate Limited",
+    match: (e) => /rate.?limit|quota|too many requests|RESOURCE_EXHAUSTED/i.test(e),
+  },
+  {
+    code: "INVALID_PAYLOAD",
+    title: "Invalid Payload",
+    match: (e) => /invalid_argument|invalid.*(field|argument|request)/i.test(e),
+  },
+  {
+    code: "TERMS_NOT_ACCEPTED",
+    title: "Terms Not Accepted",
+    match: (e) => /terms|not.?signed|data processing/i.test(e),
+  },
+  {
+    code: "NETWORK",
+    title: "Network Error",
+    match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e),
+  },
+  {
+    code: "NOT_CONFIGURED",
+    title: "Not Configured",
+    match: (e) => /not (fully )?configured/i.test(e),
+  },
 ];
 
 const META_RULES: ClassifyRule[] = [
-  { code: "INVALID_ACCESS_TOKEN", title: "Invalid Access Token", match: (e) => /access token|unauthorized|token/i.test(e) },
+  {
+    code: "INVALID_ACCESS_TOKEN",
+    title: "Invalid Access Token",
+    match: (e) => /access token|unauthorized|token/i.test(e),
+  },
   { code: "PIXEL_NOT_FOUND", title: "Pixel Not Found", match: (e) => /pixel/i.test(e) },
-  { code: "INVALID_EVENT", title: "Invalid Event", match: (e) => /invalid.*(event|argument|request)/i.test(e) },
-  { code: "RATE_LIMIT", title: "Rate Limited", match: (e) => /rate.?limit|quota|too many requests/i.test(e) },
-  { code: "NETWORK", title: "Network Error", match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e) },
-  { code: "NOT_CONFIGURED", title: "Not Configured", match: (e) => /not (fully )?configured/i.test(e) },
+  {
+    code: "INVALID_EVENT",
+    title: "Invalid Event",
+    match: (e) => /invalid.*(event|argument|request)/i.test(e),
+  },
+  {
+    code: "RATE_LIMIT",
+    title: "Rate Limited",
+    match: (e) => /rate.?limit|quota|too many requests/i.test(e),
+  },
+  {
+    code: "NETWORK",
+    title: "Network Error",
+    match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e),
+  },
+  {
+    code: "NOT_CONFIGURED",
+    title: "Not Configured",
+    match: (e) => /not (fully )?configured/i.test(e),
+  },
 ];
 
 // Microsoft's adapter is still a TODO stub (see src/lib/offlineConversion/adapters/microsoft.ts)
 // — reuses the generic set until it has real error text of its own to classify against.
 const GENERIC_RULES: ClassifyRule[] = [
-  { code: "NOT_CONFIGURED", title: "Not Configured", match: (e) => /not (fully )?configured|not yet wired/i.test(e) },
-  { code: "RATE_LIMIT", title: "Rate Limited", match: (e) => /rate.?limit|quota|too many requests/i.test(e) },
-  { code: "NETWORK", title: "Network Error", match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e) },
+  {
+    code: "NOT_CONFIGURED",
+    title: "Not Configured",
+    match: (e) => /not (fully )?configured|not yet wired/i.test(e),
+  },
+  {
+    code: "RATE_LIMIT",
+    title: "Rate Limited",
+    match: (e) => /rate.?limit|quota|too many requests/i.test(e),
+  },
+  {
+    code: "NETWORK",
+    title: "Network Error",
+    match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e),
+  },
 ];
 
 const RULES_BY_PLATFORM: Record<OfflineConversionPlatform, ClassifyRule[]> = {
@@ -105,10 +173,15 @@ const RULES_BY_PLATFORM: Record<OfflineConversionPlatform, ClassifyRule[]> = {
 };
 
 /** Platform-aware short classification of a lastError string. UI-only — never touches the stored value. */
-export function classifyFailure(platform: OfflineConversionPlatform, error: string | null): FailureClassification {
+export function classifyFailure(
+  platform: OfflineConversionPlatform,
+  error: string | null,
+): FailureClassification {
   if (!error) return { code: "NONE", title: "—" };
   const rule = RULES_BY_PLATFORM[platform]?.find((r) => r.match(error));
-  return rule ? { code: rule.code, title: rule.title } : { code: "UNKNOWN", title: "Unknown Error" };
+  return rule
+    ? { code: rule.code, title: rule.title }
+    : { code: "UNKNOWN", title: "Unknown Error" };
 }
 
 // ── Request ID extraction ────────────────────────────────────────────────────
@@ -171,7 +244,17 @@ function csvEscape(value: string): string {
 
 /** Builds a CSV string for the given rows — no server round-trip, reuses whatever's already loaded in the browser. */
 export function buildCsv(rows: CsvRow[]): string {
-  const header = ["Lead", "Booking", "Platform", "Status", "Attempts", "Created", "Last Attempt", "Request ID", "Failure"];
+  const header = [
+    "Lead",
+    "Booking",
+    "Platform",
+    "Status",
+    "Attempts",
+    "Created",
+    "Last Attempt",
+    "Request ID",
+    "Failure",
+  ];
   const lines = rows.map((r) =>
     [
       r.leadName ?? "",

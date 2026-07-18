@@ -1,8 +1,8 @@
 // src/components/sections/DestinationDetailTabs.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface DestinationDetailTabsProps {
   sections: {
@@ -33,17 +33,17 @@ export function DestinationDetailTabs({ sections }: DestinationDetailTabsProps) 
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [sections]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       const top = element.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
-      window.scrollTo({ top, behavior: 'smooth' });
+      window.scrollTo({ top, behavior: "smooth" });
       setActiveTab(id);
     }
   };
@@ -61,13 +61,21 @@ export function DestinationDetailTabs({ sections }: DestinationDetailTabsProps) 
               onClick={() => scrollToSection(section.id)}
               className={`relative flex shrink-0 items-center gap-2 px-3 pb-3 pt-1 text-[14px] font-semibold ${
                 activeTab === section.id
-                  ? 'text-primary'
-                  : 'text-foreground/70 transition hover:text-foreground'
+                  ? "text-primary"
+                  : "text-foreground/70 transition hover:text-foreground"
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d={section.icon} />
               </svg>
               {section.label}
@@ -75,7 +83,7 @@ export function DestinationDetailTabs({ sections }: DestinationDetailTabsProps) 
                 <motion.span
                   className="absolute inset-x-3 bottom-0 h-[2.5px] rounded-full bg-primary"
                   layoutId="activeTab"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
             </motion.button>

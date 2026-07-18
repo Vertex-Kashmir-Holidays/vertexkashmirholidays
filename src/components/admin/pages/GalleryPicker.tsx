@@ -80,27 +80,36 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-card p-5 shadow-xl">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h4 className="font-display text-base font-bold text-foreground">
-            {title ?? `Choose ${type === "VIDEO" ? "a video" : type === "IMAGE" ? "an image" : "media"} from gallery`}
+            {title ??
+              `Choose ${type === "VIDEO" ? "a video" : type === "IMAGE" ? "an image" : "media"} from gallery`}
           </h4>
-          <button onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Close"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Source tabs — wrap (never scroll) so pills/emoji are never clipped. */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          {([
-            { key: "ALL",   label: "All" },
-            { key: "LOCAL", label: "💾 Local" },
-            { key: "STOCK", label: "🌐 Stock / Cloudinary" },
-          ] as const).map(({ key, label }) => (
+          {(
+            [
+              { key: "ALL", label: "All" },
+              { key: "LOCAL", label: "💾 Local" },
+              { key: "STOCK", label: "🌐 Stock / Cloudinary" },
+            ] as const
+          ).map(({ key, label }) => (
             <button
               key={key}
               type="button"
               onClick={() => setSource(key)}
               className={cn(
                 "rounded-full px-3.5 py-1.5 text-xs font-bold leading-normal transition-colors",
-                source === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80",
+                source === key
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
               )}
             >
               {label}
@@ -122,7 +131,9 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
           {filtered.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
               <ImageIcon className="h-8 w-8" />
-              <p className="text-sm">No {type === "VIDEO" ? "videos" : type === "IMAGE" ? "images" : "media"} found.</p>
+              <p className="text-sm">
+                No {type === "VIDEO" ? "videos" : type === "IMAGE" ? "images" : "media"} found.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -138,7 +149,13 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                   title={item.alt ?? item.url}
                 >
                   {item.type === "VIDEO" ? (
-                    <video src={item.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                    <video
+                      src={item.url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -147,12 +164,17 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                       className="h-full w-full object-cover"
                       onLoad={(e) => {
                         const { naturalWidth, naturalHeight } = e.currentTarget;
-                        setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
+                        setDims((prev) => ({
+                          ...prev,
+                          [item.id]: { width: naturalWidth, height: naturalHeight },
+                        }));
                       }}
                     />
                   )}
                   {item.type === "VIDEO" && (
-                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-bold text-white">VIDEO</span>
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-bold text-white">
+                      VIDEO
+                    </span>
                   )}
                   {item.type !== "VIDEO" && dims[item.id] && (
                     <ImageDimensionBadge
@@ -173,7 +195,9 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
             <button
               type="button"
               onClick={() => setPage((p) => p + 1)}
-              className={cn("rounded-xl border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted")}
+              className={cn(
+                "rounded-xl border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted",
+              )}
             >
               Load more
             </button>

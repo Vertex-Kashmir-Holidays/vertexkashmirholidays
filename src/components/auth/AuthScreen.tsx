@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { AuthImagePanel } from '@/components/auth/AuthImagePanel';
-import { AuthFormPanel } from '@/components/auth/AuthFormPanel';
-import { AuthTrustStrip } from '@/components/auth/AuthTrustStrip';
-import { AuthExplore } from '@/components/auth/AuthExplore';
+import { useState } from "react";
+import { AuthImagePanel } from "@/components/auth/AuthImagePanel";
+import { AuthFormPanel } from "@/components/auth/AuthFormPanel";
+import { AuthTrustStrip } from "@/components/auth/AuthTrustStrip";
+import { AuthExplore } from "@/components/auth/AuthExplore";
 
 interface AuthScreenProps {
   /** CSP nonce for this request — forwarded to Google One Tap's injected script. */
@@ -12,7 +12,7 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ nonce }: AuthScreenProps) {
-  const [view, setView] = useState<'login' | 'register'>('login');
+  const [view, setView] = useState<"login" | "register">("login");
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background font-sans text-foreground antialiased">

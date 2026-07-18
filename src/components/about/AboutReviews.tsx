@@ -1,10 +1,10 @@
 // src/components/about/AboutReviews.tsx
-import { ArrowRight } from 'lucide-react';
-import { RatingSummaryRow } from '@/components/reviews/RatingSummaryRow';
-import { ReviewCard } from '@/components/reviews/ReviewCard';
-import type { GooglePlaceRating } from '@/lib/reviews/googlePlaces';
-import type { ParsedTripadvisorWidget } from '@/lib/reviews/tripadvisorWidget';
-import type { ReviewListItem, ReviewStats } from '@/lib/reviews';
+import { ArrowRight } from "lucide-react";
+import { RatingSummaryRow } from "@/components/reviews/RatingSummaryRow";
+import { ReviewCard } from "@/components/reviews/ReviewCard";
+import type { GooglePlaceRating } from "@/lib/reviews/googlePlaces";
+import type { ParsedTripadvisorWidget } from "@/lib/reviews/tripadvisorWidget";
+import type { ReviewListItem, ReviewStats } from "@/lib/reviews";
 
 interface AboutReviewsProps {
   googleRating: GooglePlaceRating | null;
@@ -34,7 +34,9 @@ export function AboutReviews({
     <section className="mx-auto max-w-[1300px] px-6 py-14">
       <div className="text-center">
         <p className="text-[12px] font-bold tracking-[0.22em] text-primary">REAL FEEDBACK</p>
-        <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">What Our Travellers Say</h2>
+        <h2 className="h-display mt-3 font-display text-[18px] font-bold leading-snug">
+          What Our Travellers Say
+        </h2>
       </div>
 
       <RatingSummaryRow
@@ -57,7 +59,10 @@ export function AboutReviews({
         {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
             script, which only reliably initializes on a fresh page load,
             not a client-side (SPA) transition. */}
-        <a href="/reviews" className="inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
+        <a
+          href="/reviews"
+          className="inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
+        >
           Read all reviews
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </a>

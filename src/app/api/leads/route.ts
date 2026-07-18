@@ -143,10 +143,7 @@ export async function POST(req: NextRequest) {
   const signals = checkBotSignals(body);
   if (!signals.ok) {
     console.warn(`[leads] blocked bot signal (${signals.reason}) ip=${ip}`);
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 400 });
   }
 
   // 2) Per-IP burst limit (cheap work first, before validation/DB). Distinct
@@ -163,9 +160,7 @@ export async function POST(req: NextRequest) {
 
   // 3) Turnstile CAPTCHA (enforced only when TURNSTILE_SECRET_KEY is set).
   const turnstileToken =
-    body && typeof body === "object"
-      ? (body as Record<string, unknown>).turnstileToken
-      : undefined;
+    body && typeof body === "object" ? (body as Record<string, unknown>).turnstileToken : undefined;
   const captchaOk = await verifyTurnstile(
     typeof turnstileToken === "string" ? turnstileToken : undefined,
     ip,
@@ -270,10 +265,7 @@ export async function POST(req: NextRequest) {
 
   // Dedicated lead inbox; falls back to the admin/from address if unset.
   const leadsTo =
-    env.LEADS_EMAIL ??
-    env.MAIL_TO_ADMIN ??
-    env.MAIL_FROM ??
-    "leads@vertexkashmirholidays.com";
+    env.LEADS_EMAIL ?? env.MAIL_TO_ADMIN ?? env.MAIL_FROM ?? "leads@vertexkashmirholidays.com";
 
   const submittedAt = lead.createdAt.toLocaleString("en-IN", {
     dateStyle: "medium",

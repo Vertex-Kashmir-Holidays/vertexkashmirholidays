@@ -31,10 +31,22 @@ export default async function AdminFaqsPage() {
         placements: true,
         sortOrder: true,
         category: { select: { name: true } },
-        _count: { select: { tours: true, destinations: true, blogs: true, campaigns: true, activities: true } },
+        _count: {
+          select: {
+            tours: true,
+            destinations: true,
+            blogs: true,
+            campaigns: true,
+            activities: true,
+          },
+        },
       },
     }),
-    prisma.faqCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
+    prisma.faqCategory.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    }),
   ]);
 
   return (

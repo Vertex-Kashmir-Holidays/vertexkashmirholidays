@@ -7,9 +7,19 @@ type Params = { params: Promise<{ id: string; messageId: string }> };
 type ReactionMap = Record<string, string[]>;
 
 const msgSelect = {
-  id: true, roomId: true, senderId: true, body: true,
-  attachmentUrl: true, attachmentPublicId: true, attachmentType: true, attachmentName: true,
-  editedAt: true, deletedAt: true, reactions: true, createdAt: true, updatedAt: true,
+  id: true,
+  roomId: true,
+  senderId: true,
+  body: true,
+  attachmentUrl: true,
+  attachmentPublicId: true,
+  attachmentType: true,
+  attachmentName: true,
+  editedAt: true,
+  deletedAt: true,
+  reactions: true,
+  createdAt: true,
+  updatedAt: true,
   sender: { select: { id: true, name: true, image: true } },
 } as const;
 
@@ -42,14 +52,20 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const map: ReactionMap = (() => {
-    try { return message.reactions ? (JSON.parse(message.reactions) as ReactionMap) : {}; }
-    catch { return {}; }
+    try {
+      return message.reactions ? (JSON.parse(message.reactions) as ReactionMap) : {};
+    } catch {
+      return {};
+    }
   })();
 
   // Find and remove user's current reaction (if any)
   let currentEmoji: string | null = null;
   for (const [e, users] of Object.entries(map)) {
-    if (users.includes(userId)) { currentEmoji = e; break; }
+    if (users.includes(userId)) {
+      currentEmoji = e;
+      break;
+    }
   }
   if (currentEmoji) {
     map[currentEmoji] = map[currentEmoji].filter((u) => u !== userId);
