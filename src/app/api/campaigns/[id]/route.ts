@@ -32,7 +32,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }

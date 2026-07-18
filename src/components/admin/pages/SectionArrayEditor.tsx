@@ -58,11 +58,20 @@ function emptyItem(spec: ItemSpec): Row {
   if (spec.kind === "scalar") return "";
   if (spec.kind === "tuple") return spec.fields.map(() => "");
   const obj: Record<string, unknown> = {};
-  for (const f of spec.fields) obj[f.key] = f.type === "stringList" ? [] : f.type === "number" ? 0 : "";
+  for (const f of spec.fields)
+    obj[f.key] = f.type === "stringList" ? [] : f.type === "number" ? 0 : "";
   return obj;
 }
 
-export function SectionArrayEditor({ label, description, value, onChange, spec, folder = "campaigns", disabled }: Props) {
+export function SectionArrayEditor({
+  label,
+  description,
+  value,
+  onChange,
+  spec,
+  folder = "campaigns",
+  disabled,
+}: Props) {
   const rows = useMemo(() => parse(value), [value]);
 
   const commit = (next: Row[]) => onChange(JSON.stringify(next));
@@ -90,7 +99,11 @@ export function SectionArrayEditor({ label, description, value, onChange, spec, 
           {description && <p className="text-[12px] text-muted-foreground">{description}</p>}
         </div>
         {!disabled && (
-          <button type="button" onClick={add} className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary hover:text-primary">
+          <button
+            type="button"
+            onClick={add}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary hover:text-primary"
+          >
             <Plus className="h-3.5 w-3.5" /> Add
           </button>
         )}
@@ -102,16 +115,44 @@ export function SectionArrayEditor({ label, description, value, onChange, spec, 
         {rows.map((row, i) => (
           <div key={i} className="rounded-lg border border-border bg-card p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">#{i + 1}</span>
+              <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
+                #{i + 1}
+              </span>
               {!disabled && (
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => move(i, 1)} disabled={i === rows.length - 1} className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => remove(i)} className="rounded p-1 text-red-500 hover:bg-red-500/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button
+                    type="button"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                  >
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(i, 1)}
+                    disabled={i === rows.length - 1}
+                    className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(i)}
+                    className="rounded p-1 text-red-500 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               )}
             </div>
-            <RowFields spec={spec} row={row} folder={folder} disabled={disabled} onChange={(r) => update(i, r)} />
+            <RowFields
+              spec={spec}
+              row={row}
+              folder={folder}
+              disabled={disabled}
+              onChange={(r) => update(i, r)}
+            />
           </div>
         ))}
       </div>
@@ -119,13 +160,32 @@ export function SectionArrayEditor({ label, description, value, onChange, spec, 
   );
 }
 
-function RowFields({ spec, row, folder, disabled, onChange }: { spec: ItemSpec; row: Row; folder: string; disabled?: boolean; onChange: (r: Row) => void }) {
+function RowFields({
+  spec,
+  row,
+  folder,
+  disabled,
+  onChange,
+}: {
+  spec: ItemSpec;
+  row: Row;
+  folder: string;
+  disabled?: boolean;
+  onChange: (r: Row) => void;
+}) {
   if (spec.kind === "scalar") {
     const v = typeof row === "string" ? row : "";
     if (spec.type === "image") {
       return <ImageField value={v} onChange={(url) => onChange(url)} folder={folder} />;
     }
-    return <input value={v} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={inputCls} />;
+    return (
+      <input
+        value={v}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={inputCls}
+      />
+    );
   }
 
   if (spec.kind === "tuple") {
@@ -134,7 +194,9 @@ function RowFields({ spec, row, folder, disabled, onChange }: { spec: ItemSpec; 
       <div className="grid gap-2 sm:grid-cols-3">
         {spec.fields.map((f, idx) => (
           <div key={idx}>
-            <label className="mb-1 block text-[12px] font-semibold text-muted-foreground">{f.label}</label>
+            <label className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+              {f.label}
+            </label>
             <input
               value={arr[idx] ?? ""}
               disabled={disabled}
@@ -153,34 +215,72 @@ function RowFields({ spec, row, folder, disabled, onChange }: { spec: ItemSpec; 
   }
 
   // object
-  const obj = (row && typeof row === "object" && !Array.isArray(row) ? row : {}) as Record<string, unknown>;
+  const obj = (row && typeof row === "object" && !Array.isArray(row) ? row : {}) as Record<
+    string,
+    unknown
+  >;
   const set = (key: string, val: unknown) => onChange({ ...obj, [key]: val });
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {spec.fields.map((f) => {
         const type = f.type ?? "text";
-        const span = type === "textarea" || type === "image" || type === "stringList" ? "sm:col-span-2" : "";
+        const span =
+          type === "textarea" || type === "image" || type === "stringList" ? "sm:col-span-2" : "";
         return (
           <div key={f.key} className={span}>
-            <label className="mb-1 block text-[12px] font-semibold text-muted-foreground">{f.label}</label>
+            <label className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+              {f.label}
+            </label>
             {type === "image" ? (
-              <ImageField value={String(obj[f.key] ?? "")} onChange={(url) => set(f.key, url)} folder={folder} />
+              <ImageField
+                value={String(obj[f.key] ?? "")}
+                onChange={(url) => set(f.key, url)}
+                folder={folder}
+              />
             ) : type === "textarea" ? (
-              <textarea rows={2} value={String(obj[f.key] ?? "")} disabled={disabled} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value)} className={inputCls} />
+              <textarea
+                rows={2}
+                value={String(obj[f.key] ?? "")}
+                disabled={disabled}
+                placeholder={f.placeholder}
+                onChange={(e) => set(f.key, e.target.value)}
+                className={inputCls}
+              />
             ) : type === "number" ? (
-              <input type="number" value={obj[f.key] != null ? String(obj[f.key]) : ""} disabled={disabled} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value === "" ? 0 : Number(e.target.value))} className={inputCls} />
+              <input
+                type="number"
+                value={obj[f.key] != null ? String(obj[f.key]) : ""}
+                disabled={disabled}
+                placeholder={f.placeholder}
+                onChange={(e) => set(f.key, e.target.value === "" ? 0 : Number(e.target.value))}
+                className={inputCls}
+              />
             ) : type === "stringList" ? (
               <textarea
                 rows={3}
                 value={Array.isArray(obj[f.key]) ? (obj[f.key] as string[]).join("\n") : ""}
                 disabled={disabled}
                 placeholder={"One per line"}
-                onChange={(e) => set(f.key, e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))}
+                onChange={(e) =>
+                  set(
+                    f.key,
+                    e.target.value
+                      .split("\n")
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  )
+                }
                 className={`${inputCls} font-mono text-xs`}
               />
             ) : (
-              <input value={String(obj[f.key] ?? "")} disabled={disabled} placeholder={f.placeholder} onChange={(e) => set(f.key, e.target.value)} className={inputCls} />
+              <input
+                value={String(obj[f.key] ?? "")}
+                disabled={disabled}
+                placeholder={f.placeholder}
+                onChange={(e) => set(f.key, e.target.value)}
+                className={inputCls}
+              />
             )}
           </div>
         );

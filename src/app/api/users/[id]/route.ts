@@ -52,8 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   // Only a SUPERADMIN may grant SUPERADMIN access, modify another superadmin,
   // or reset a superadmin's MFA.
-  const touchesSuperadmin =
-    data.role === "SUPERADMIN" || existing.role === "SUPERADMIN";
+  const touchesSuperadmin = data.role === "SUPERADMIN" || existing.role === "SUPERADMIN";
   if (touchesSuperadmin && session.user?.role !== "SUPERADMIN") {
     return NextResponse.json(
       { error: "Only a Super Admin can manage Super Admin access" },
@@ -73,13 +72,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
         ...(data.role !== undefined ? { role: data.role as Role } : {}),
-        ...(data.bookingConversionPct !== undefined ? { bookingConversionPct: data.bookingConversionPct } : {}),
+        ...(data.bookingConversionPct !== undefined
+          ? { bookingConversionPct: data.bookingConversionPct }
+          : {}),
         ...(data.password
           ? { passwordHash: await bcrypt.hash(data.password, 12), mustChangePassword: true }
           : {}),
         ...(data.resetMfa ? { mfaSecret: null, mfaEnabledAt: null } : {}),
       },
-      select: { id: true, name: true, email: true, phone: true, role: true, bookingConversionPct: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        bookingConversionPct: true,
+      },
     });
     return NextResponse.json(updated);
   } catch (err) {

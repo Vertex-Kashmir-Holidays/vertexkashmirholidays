@@ -11,16 +11,16 @@ const recentFires = new Map<string, number>();
 const DEDUP_MS = 3000;
 
 /**
-* Drop this into any RSC tour/package page to fire a package_view event on mount.
-* Renders nothing — pure side-effect component.
-*/
+ * Drop this into any RSC tour/package page to fire a package_view event on mount.
+ * Renders nothing — pure side-effect component.
+ */
 export function PackageViewTracker({ packageName }: { packageName: string }) {
- useEffect(() => {
-   const now = Date.now();
-   const last = recentFires.get(packageName) ?? 0;
-   if (now - last < DEDUP_MS) return;
-   recentFires.set(packageName, now);
-   trackPackageView(packageName);
- }, [packageName]);
- return null;
+  useEffect(() => {
+    const now = Date.now();
+    const last = recentFires.get(packageName) ?? 0;
+    if (now - last < DEDUP_MS) return;
+    recentFires.set(packageName, now);
+    trackPackageView(packageName);
+  }, [packageName]);
+  return null;
 }

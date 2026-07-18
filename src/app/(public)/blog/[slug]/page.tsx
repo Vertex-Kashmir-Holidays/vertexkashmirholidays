@@ -1,21 +1,26 @@
 // src/app/(public)/blog/[slug]/page.tsx
 
-import type { Metadata } from 'next';
-import { cache } from 'react';
-import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
-import { buildMetadata, SITE_URL } from '@/lib/seo';
-import { JsonLd, buildBreadcrumbList, buildBlogPosting, buildFAQPage } from '@/components/seo/JsonLd';
-import { formatINR } from '@/lib/accents';
-import { imgSrc } from '@/lib/placeholder';
-import { BlogPostBody } from '@/components/blog/BlogPostBody';
-import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
-import { BlogPostQuickAnswer } from '@/components/blog/BlogPostQuickAnswer';
-import { BlogPostHero } from '@/components/blog/BlogPostHero';
-import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
-import { BlogPostSidebar } from '@/components/blog/BlogPostSidebar';
-import { TourDetailsRelatedTours } from '@/components/tours/TourDetailsRelatedTours';
-import { parseRelatedTours } from '@/lib/tours/content';
+import type { Metadata } from "next";
+import { cache } from "react";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import {
+  JsonLd,
+  buildBreadcrumbList,
+  buildBlogPosting,
+  buildFAQPage,
+} from "@/components/seo/JsonLd";
+import { formatINR } from "@/lib/accents";
+import { imgSrc } from "@/lib/placeholder";
+import { BlogPostBody } from "@/components/blog/BlogPostBody";
+import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
+import { BlogPostQuickAnswer } from "@/components/blog/BlogPostQuickAnswer";
+import { BlogPostHero } from "@/components/blog/BlogPostHero";
+import { BlogPostRelated } from "@/components/blog/BlogPostRelated";
+import { BlogPostSidebar } from "@/components/blog/BlogPostSidebar";
+import { TourDetailsRelatedTours } from "@/components/tours/TourDetailsRelatedTours";
+import { parseRelatedTours } from "@/lib/tours/content";
 
 export const revalidate = 1800;
 
@@ -32,28 +37,33 @@ export async function generateStaticParams() {
   return blogs.map((b) => ({ slug: b.slug }));
 }
 
-const BADGE_COLORS = ['orange', 'blue', 'green'] as const;
+const BADGE_COLORS = ["orange", "blue", "green"] as const;
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 const longDate = (d: Date | null) =>
-  d ? d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+  d ? d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
 
 const shortDate = (d: Date | null) =>
-  d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
 
 const slugify = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 // Injects ids into the body's <h2> headings and returns the table of contents.
 function withHeadingIds(html: string | null): {
   html: string;
   toc: { label: string; href: string }[];
 } {
-  if (!html) return { html: '', toc: [] };
+  if (!html) return { html: "", toc: [] };
   const toc: { label: string; href: string }[] = [];
   const out = html.replace(/<h2(\s[^>]*)?>([\s\S]*?)<\/h2>/gi, (_m, _attrs, inner) => {
-    const label = String(inner).replace(/<[^>]+>/g, '').trim();
+    const label = String(inner)
+      .replace(/<[^>]+>/g, "")
+      .trim();
     const id = slugify(label);
     toc.push({ label, href: `#${id}` });
     return `<h2 id="${id}">${inner}</h2>`;
@@ -68,8 +78,8 @@ const getBlogPost = cache(async (slug: string) => {
     where: { slug },
     include: {
       relatedFaqs: {
-        where: { status: 'PUBLISHED' },
-        orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
+        where: { status: "PUBLISHED" },
+        orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
         select: { id: true, question: true, shortAnswer: true, slug: true },
       },
     },
@@ -82,8 +92,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!post || !post.published) {
     return buildMetadata({
-      title: 'Article Not Found',
-      description: 'The Kashmir travel article you are looking for could not be found.',
+      title: "Article Not Found",
+      description: "The Kashmir travel article you are looking for could not be found.",
       canonical: `${SITE_URL}/blog/${slug}`,
       noindex: true,
     });
@@ -115,12 +125,12 @@ export default async function BlogPostPage({ params }: PageProps) {
         slug: { not: slug },
         ...(post.category ? { category: post.category } : {}),
       },
-      orderBy: { publishedAt: 'desc' },
+      orderBy: { publishedAt: "desc" },
       take: 4,
     }),
     prisma.tour.findFirst({
       where: { published: true },
-      orderBy: [{ bestseller: 'desc' }, { rating: 'desc' }],
+      orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
       include: { destinations: { include: { destination: { select: { name: true } } } } },
     }),
   ]);
@@ -130,7 +140,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (related.length < 4) {
     const fillers = await prisma.blog.findMany({
       where: { published: true, slug: { not: slug }, id: { notIn: related.map((r) => r.id) } },
-      orderBy: { publishedAt: 'desc' },
+      orderBy: { publishedAt: "desc" },
       take: 4 - related.length,
     });
     related = [...related, ...fillers];
@@ -142,12 +152,13 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   // Curated related-tours (editorial pairings), same convention as Tour.relatedTours.
   const relatedTourEntries = parseRelatedTours(post.relatedTours);
-  const relatedTourRows = relatedTourEntries.length > 0
-    ? await prisma.tour.findMany({
-        where: { id: { in: relatedTourEntries.map((r) => r.tourId) }, published: true },
-        include: { destinations: { include: { destination: { select: { name: true } } } } },
-      })
-    : [];
+  const relatedTourRows =
+    relatedTourEntries.length > 0
+      ? await prisma.tour.findMany({
+          where: { id: { in: relatedTourEntries.map((r) => r.tourId) }, published: true },
+          include: { destinations: { include: { destination: { select: { name: true } } } } },
+        })
+      : [];
   const relatedTourById = new Map(relatedTourRows.map((t) => [t.id, t]));
   const curatedRelatedTours = relatedTourEntries
     .map((entry) => {
@@ -156,16 +167,16 @@ export default async function BlogPostPage({ params }: PageProps) {
       return {
         ctaSentence: entry.ctaSentence,
         tour: {
-          badge: t.badge ?? 'Tour Package',
-          bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? '')
+          badge: t.badge ?? "Tour Package",
+          bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
             ? (t.badgeColor as (typeof BADGE_COLORS)[number])
-            : ('green' as const),
+            : ("green" as const),
           image: t.coverImage ?? undefined,
           detailHref: `/tours/${t.slug}`,
           bookHref: `/booking?tour=${t.slug}`,
           t: t.title,
           d: `${Math.max(t.duration - 1, 0)}N / ${t.duration}D`,
-          places: t.destinations.map((d) => d.destination.name).join(', '),
+          places: t.destinations.map((d) => d.destination.name).join(", "),
           r: t.rating.toFixed(1),
           n: String(t.reviewCount),
           old: t.priceWas ? formatINR(t.priceWas) : undefined,
@@ -179,13 +190,13 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const fullToc = [
     ...toc,
-    ...(faqs.length > 0 ? [{ label: 'FAQs', href: '#faqs' }] : []),
-    ...(tour ? [{ label: 'Related Tours', href: '#tourCard' }] : []),
+    ...(faqs.length > 0 ? [{ label: "FAQs", href: "#faqs" }] : []),
+    ...(tour ? [{ label: "Related Tours", href: "#tourCard" }] : []),
   ];
 
   const breadcrumbJsonLd = buildBreadcrumbList([
-    { name: 'Home', url: SITE_URL },
-    { name: 'Blog', url: `${SITE_URL}/blog` },
+    { name: "Home", url: SITE_URL },
+    { name: "Blog", url: `${SITE_URL}/blog` },
     { name: post.title, url: `${SITE_URL}/blog/${post.slug}` },
   ]);
 
@@ -193,7 +204,11 @@ export default async function BlogPostPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={buildBlogPosting(post)} />
       <JsonLd data={breadcrumbJsonLd} />
-      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
+      {faqs.length > 0 && (
+        <JsonLd
+          data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))}
+        />
+      )}
 
       <BlogPostHero
         category={post.category}
@@ -201,12 +216,12 @@ export default async function BlogPostPage({ params }: PageProps) {
         excerpt={post.excerpt}
         image={imgSrc(post.coverImage)}
         imageMobile={post.coverImageMobile}
-        author={{ name: post.author ?? 'Vertex Kashmir Holidays', role: post.authorRole, avatar }}
+        author={{ name: post.author ?? "Vertex Kashmir Holidays", role: post.authorRole, avatar }}
         readTime={post.readTime ? `${post.readTime} min read` : null}
         date={longDate(post.publishedAt)}
         crumbs={[
-          { label: 'Home', href: '/' },
-          { label: 'Blog', href: '/blog' },
+          { label: "Home", href: "/" },
+          { label: "Blog", href: "/blog" },
           ...(post.category
             ? [{ label: post.category, href: `/blog?category=${slugify(post.category)}` }]
             : []),
@@ -219,7 +234,10 @@ export default async function BlogPostPage({ params }: PageProps) {
             <BlogPostQuickAnswer html={post.quickAnswer} />
             <BlogPostBody html={html} />
             {faqs.length > 0 && (
-              <section id="faqs" className="scroll-mt-16 mt-8 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+              <section
+                id="faqs"
+                className="scroll-mt-16 mt-8 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+              >
                 <h2 className="text-[18px] font-bold">FAQs</h2>
                 <div className="mt-4">
                   <FaqPreviewList faqs={faqs} />
@@ -250,7 +268,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           <BlogPostSidebar
             toc={fullToc}
             author={{
-              name: post.author ?? 'Vertex Kashmir Holidays',
+              name: post.author ?? "Vertex Kashmir Holidays",
               role: post.authorRole,
               bio: post.authorBio,
               avatar,
@@ -259,7 +277,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             relatedTour={
               tour
                 ? {
-                    label: 'Plan this trip with us',
+                    label: "Plan this trip with us",
                     image: tour.coverImage,
                     href: `/tours/${tour.slug}`,
                     name: tour.title,
@@ -267,10 +285,10 @@ export default async function BlogPostPage({ params }: PageProps) {
                     price: formatINR(tour.priceFrom),
                     oldPrice: tour.priceWas ? formatINR(tour.priceWas) : undefined,
                     off: tour.discountPct ? `${tour.discountPct}% OFF` : undefined,
-                    route: tour.destinations.map((d) => d.destination.name).join(' · '),
+                    route: tour.destinations.map((d) => d.destination.name).join(" · "),
                     rating: tour.rating.toFixed(1),
                     reviews: `${tour.reviewCount} reviews`,
-                    note: 'Free cancellation up to 30 days',
+                    note: "Free cancellation up to 30 days",
                   }
                 : undefined
             }

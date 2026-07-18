@@ -1,11 +1,11 @@
 // src/components/contact/ContactTestimonials.tsx
-'use client';
+"use client";
 
-import type { ContactSectionHeading, ContactTestimonialData } from '@/types/contact';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Star } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import type { ContactSectionHeading, ContactTestimonialData } from "@/types/contact";
+import { AnimatePresence, motion } from "framer-motion";
+import { Star } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface ContactTestimonialsProps {
   heading: ContactSectionHeading;
@@ -74,7 +74,7 @@ export function ContactTestimonials({ heading, testimonials }: ContactTestimonia
             key={item.id}
             onClick={() => setCurrent(i)}
             className={`h-2 rounded-full transition-all ${
-              i === current ? 'w-2 bg-primary' : 'w-2 bg-border hover:bg-muted-foreground/40'
+              i === current ? "w-2 bg-primary" : "w-2 bg-border hover:bg-muted-foreground/40"
             }`}
             aria-label={`Review ${i + 1}`}
           />

@@ -79,6 +79,7 @@ The actual computation, in order (`computeBookingFinance`):
 7. `paymentStatus` = `computePaymentStatus(effectivePayable, paidAmount)` — `PENDING`/`PARTIAL`/`FULL`, always derived, never stored as a column.
 
 GST is a **separate, payment-level** calculation (`resolveGst`), not part of the sequence above:
+
 - Applies only to a non-cash `method` (anything other than `"Cash"`, case-insensitive).
 - Optional — a percent is chosen from `parseGstRates()` (configurable via `SiteSettings`, default `[5, 16, 18]`).
 - `gstAmount = round2(paymentAmount × gstPercent / 100)`, persisted on that `BookingPayment` row for reporting.
@@ -137,12 +138,12 @@ computeChargeable()
 
 ────────────────────────────────────
 
-
 ## Payment Flow
 
 Two distinct lifecycles exist — don't conflate them:
 
 **Direct website booking (online, Razorpay):**
+
 ```
 create-order (server computes chargeable amount)
   ↓
@@ -154,6 +155,7 @@ webhook (async confirmation)
 ```
 
 **Lead-converted booking (staff-recorded):**
+
 ```
 Lead conversion → booking created with a TOKEN payment (amount + optional GST if non-cash)
   ↓
@@ -171,7 +173,7 @@ Invoice generation (`src/lib/bookings/invoice-pdf.tsx`, `src/lib/pdf/InvoiceDocu
 - **Recomputing a total, discount, or GST value inline** instead of importing the shared function — the exact drift these utilities exist to prevent.
 - **Trusting a client-sent amount** for the online advance/full choice or a manually-recorded payment.
 - **Treating GST as part of the payable/balance formula** — it isn't; it's payment-level reporting metadata only.
-- **A likely real defect, not a deliberate rule — verify before relying on it:** `computeBookingFinance`'s `paidAmount` sums *all* payment rows, including `REFUND`-type ones, without sign-flipping. A recorded refund currently **increases** reported `paidAmount` instead of reducing it. Don't copy this behavior into a new calculation as if it were intentional — confirm the actual intended refund accounting before extending this code path.
+- **A likely real defect, not a deliberate rule — verify before relying on it:** `computeBookingFinance`'s `paidAmount` sums _all_ payment rows, including `REFUND`-type ones, without sign-flipping. A recorded refund currently **increases** reported `paidAmount` instead of reducing it. Don't copy this behavior into a new calculation as if it were intentional — confirm the actual intended refund accounting before extending this code path.
 - **Adding a new "final amount" field** that duplicates `effectivePayable` — there is already exactly one name for this concept.
 - **Skipping the `financial calculations` engineering rule from `../instructions/coding-standards.md` → Database Standards** by computing a total directly inside a component instead of calling the shared utility.
 

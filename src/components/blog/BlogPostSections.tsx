@@ -1,10 +1,10 @@
 // src/components/sections/BlogPostSections.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { Mountain, MapPin } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { Mountain, MapPin } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
 
 interface Section {
   title: string;
@@ -35,7 +35,10 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
         {title}
       </h2>
       <div className="relative mt-6">
-        <span className="absolute bottom-8 left-[26px] top-4 w-px bg-brand-line" aria-hidden="true"></span>
+        <span
+          className="absolute bottom-8 left-[26px] top-4 w-px bg-brand-line"
+          aria-hidden="true"
+        ></span>
         <div className="space-y-4">
           {sections.map((section, i) => (
             <motion.section
@@ -50,7 +53,9 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
               <span className="relative z-10 mt-1 grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-brand-green text-white shadow-card">
                 <span className="text-center leading-none">
                   {numberPrefix && (
-                    <span className="block text-[10px] font-bold tracking-wide">{numberPrefix}</span>
+                    <span className="block text-[10px] font-bold tracking-wide">
+                      {numberPrefix}
+                    </span>
                   )}
                   <span className="block text-[16px] font-extrabold">{i + 1}</span>
                 </span>
@@ -64,7 +69,9 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
                       {section.tag}
                     </p>
                   )}
-                  <p className="mt-2 text-[14px] leading-relaxed text-brand-ink/75">{section.body}</p>
+                  <p className="mt-2 text-[14px] leading-relaxed text-brand-ink/75">
+                    {section.body}
+                  </p>
                 </div>
                 {section.image && (
                   <div className="relative h-[88px] w-full shrink-0 overflow-hidden rounded-lg md:w-[150px]">

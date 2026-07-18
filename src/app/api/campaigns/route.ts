@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(created, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Create failed" }, { status: 500 });
   }
 }

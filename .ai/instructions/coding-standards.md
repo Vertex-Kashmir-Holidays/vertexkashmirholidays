@@ -164,13 +164,13 @@ Page and layout files are thin orchestrators — they fetch data and pass props;
 
 Caching:
 
-| Context | Setting |
-|---|---|
-| Public content pages | `export const revalidate = 300` |
+| Context                                                      | Setting                                  |
+| ------------------------------------------------------------ | ---------------------------------------- |
+| Public content pages                                         | `export const revalidate = 300`          |
 | Admin list, detail, and edit pages (Prisma or session reads) | `export const dynamic = "force-dynamic"` |
-| Admin create/new pages (no DB access) | no directive needed |
-| Account pages | `export const dynamic = "force-dynamic"` |
-| Booking/payment pages | `export const dynamic = "force-dynamic"` |
+| Admin create/new pages (no DB access)                        | no directive needed                      |
+| Account pages                                                | `export const dynamic = "force-dynamic"` |
+| Booking/payment pages                                        | `export const dynamic = "force-dynamic"` |
 
 Without `force-dynamic` on a page that queries Prisma or reads session state, Next.js may statically cache it and serve stale data — the create/new-page exemption above is the only case where that risk doesn't apply.
 
@@ -196,7 +196,10 @@ const [isPending, startTransition] = useTransition();
 // In-place mutation (delete, status change) — refresh, no navigation
 startTransition(async () => {
   const res = await fetch(`/api/resource/${id}`, { method: "DELETE" });
-  if (!res.ok) { toast.error("Failed."); return; }
+  if (!res.ok) {
+    toast.error("Failed.");
+    return;
+  }
   toast.success("Deleted.");
   router.refresh();
 });
@@ -204,7 +207,10 @@ startTransition(async () => {
 // Create/edit — navigate back to the list
 startTransition(async () => {
   const res = await fetch("/api/resource", { method: "POST" /* ... */ });
-  if (!res.ok) { toast.error("Save failed."); return; }
+  if (!res.ok) {
+    toast.error("Save failed.");
+    return;
+  }
   toast.success("Saved.");
   router.push("/admin/resource");
   router.refresh();
@@ -483,11 +489,11 @@ Keep edge-safe code isolated: `rbac.ts` (pure constants) and `auth.config.ts` ar
 
 Public / Account / Admin data boundary — three distinct areas, never mixed:
 
-| Area | Path prefix | Auth | Data access |
-|---|---|---|---|
-| Public site | `src/app/(public)/` | None | Published records only, ISR |
-| Customer account | `src/app/account/` | Any authenticated user | Own records (filtered by `userId`) |
-| Admin CMS | `src/app/admin/` | Staff roles only | All records, no `published` filter |
+| Area             | Path prefix         | Auth                   | Data access                        |
+| ---------------- | ------------------- | ---------------------- | ---------------------------------- |
+| Public site      | `src/app/(public)/` | None                   | Published records only, ISR        |
+| Customer account | `src/app/account/`  | Any authenticated user | Own records (filtered by `userId`) |
+| Admin CMS        | `src/app/admin/`    | Staff roles only       | All records, no `published` filter |
 
 Public queries always filter `published: true` — there is no draft-preview mechanism on the public site. Account queries always scope to `where: { userId: session.user.id }` and never call `requirePermission` (that's staff-only). Admin components (`src/components/admin/**`) never import from public-site component trees, and vice versa. The middleware (`src/proxy.ts`) enforces the redirect boundary (unauthenticated → `/login`; an authenticated customer hitting `/admin/*` → `/account`) — don't replicate that logic in individual pages.
 

@@ -6,7 +6,13 @@ import type { ParsedTripadvisorWidget } from "@/lib/reviews/tripadvisorWidget";
 // GoogleRatingCard, the rating content itself comes from Tripadvisor's own
 // widget script, not server-fetched data — this card only supplies the
 // consistent frame (and the "View on Tripadvisor" link) around it.
-export function TripadvisorRatingCard({ widget, profileUrl }: { widget: ParsedTripadvisorWidget; profileUrl?: string | null }) {
+export function TripadvisorRatingCard({
+  widget,
+  profileUrl,
+}: {
+  widget: ParsedTripadvisorWidget;
+  profileUrl?: string | null;
+}) {
   return (
     <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-6 text-center shadow-soft sm:min-w-0 sm:flex-1 sm:basis-0">
       {/* Sized to the widget's real measured content (136x108px, confirmed

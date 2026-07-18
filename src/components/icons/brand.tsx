@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react';
+import type { SVGProps } from "react";
 
 // Brand / social glyphs. lucide-react ships no brand icons, so these recognizable
 // marks live here as proper SVG components (currentColor, sized via className like

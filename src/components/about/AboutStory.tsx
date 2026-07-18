@@ -1,11 +1,11 @@
 // src/components/about/AboutStory.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { imgSrc } from '@/lib/placeholder';
-import { renderMint } from '@/lib/accents';
-import type { AboutStoryData, AboutStoryFeatureData } from '@/types/about';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { imgSrc } from "@/lib/placeholder";
+import { renderMint } from "@/lib/accents";
+import type { AboutStoryData, AboutStoryFeatureData } from "@/types/about";
 
 interface AboutStoryProps {
   data: AboutStoryData;
@@ -54,12 +54,22 @@ export function AboutStory({ data, features }: AboutStoryProps) {
                 transition={{ delay: i * 0.05 }}
               >
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-muted text-primary">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d={feat.icon} />
                   </svg>
                 </span>
                 <p className="mt-3 text-[14px] font-bold leading-snug">{feat.title}</p>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{feat.subtitle}</p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+                  {feat.subtitle}
+                </p>
               </motion.div>
             ))}
           </div>

@@ -1,19 +1,27 @@
 // src/components/sections/DestinationsFilterBar.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, ChevronDown } from 'lucide-react';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Search, ChevronDown } from "lucide-react";
 
 interface DestinationsFilterBarProps {
   onFilterChange: (chip: string, search: string) => void;
 }
 
 export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarProps) {
-  const [activeChip, setActiveChip] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeChip, setActiveChip] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const chips = ['All', 'Kashmir Valley', 'Gulmarg', 'Pahalgam', 'Sonmarg', 'Ladakh', 'Other States'];
+  const chips = [
+    "All",
+    "Kashmir Valley",
+    "Gulmarg",
+    "Pahalgam",
+    "Sonmarg",
+    "Ladakh",
+    "Other States",
+  ];
 
   const handleChipClick = (chip: string) => {
     setActiveChip(chip);
@@ -48,8 +56,8 @@ export function DestinationsFilterBar({ onFilterChange }: DestinationsFilterBarP
               onClick={() => handleChipClick(chip)}
               className={`shrink-0 rounded-full px-4 py-2 text-[14px] font-semibold shadow-soft transition ${
                 activeChip === chip
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border border-border bg-card text-foreground/80 hover:border-primary hover:text-primary'
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

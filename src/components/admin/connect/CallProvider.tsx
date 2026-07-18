@@ -64,7 +64,9 @@ export function CallProvider({ currentUserId, currentUserName, children }: Props
 
         if (res.status === 409 && data.meetingId) {
           // Active meeting already exists — join it instead
-          const joinRes = await fetch(`/api/connect/meetings/${data.meetingId}/join`, { method: "POST" });
+          const joinRes = await fetch(`/api/connect/meetings/${data.meetingId}/join`, {
+            method: "POST",
+          });
           if (joinRes.ok) {
             const joinData = await joinRes.json();
             setOpenMeeting({
@@ -90,7 +92,9 @@ export function CallProvider({ currentUserId, currentUserName, children }: Props
         clearNoAnswerTimer();
         noAnswerTimerRef.current = setTimeout(async () => {
           noAnswerTimerRef.current = null;
-          await fetch(`/api/connect/meetings/${newMeetingId}/end`, { method: "POST" }).catch(() => {});
+          await fetch(`/api/connect/meetings/${newMeetingId}/end`, { method: "POST" }).catch(
+            () => {},
+          );
           setOpenMeeting(null);
         }, 30_000);
         return {};
@@ -134,7 +138,9 @@ export function CallProvider({ currentUserId, currentUserName, children }: Props
   }, [clearNoAnswerTimer]);
 
   return (
-    <CallContext.Provider value={{ openMeeting, startMeeting, joinMeeting, leaveMeeting, endMeetingForAll }}>
+    <CallContext.Provider
+      value={{ openMeeting, startMeeting, joinMeeting, leaveMeeting, endMeetingForAll }}
+    >
       {children}
       {openMeeting && (
         <MeetingModal

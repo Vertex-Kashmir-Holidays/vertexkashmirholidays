@@ -67,15 +67,23 @@ async function getAccessToken(env: GoogleAdsEnv): Promise<string> {
     }),
   });
 
-  const json = (await res.json().catch(() => null)) as
-    | { access_token?: string; expires_in?: number; error?: string; error_description?: string }
-    | null;
+  const json = (await res.json().catch(() => null)) as {
+    access_token?: string;
+    expires_in?: number;
+    error?: string;
+    error_description?: string;
+  } | null;
 
   if (!res.ok || !json?.access_token) {
-    throw new Error(json?.error_description ?? json?.error ?? `Google token refresh failed (${res.status})`);
+    throw new Error(
+      json?.error_description ?? json?.error ?? `Google token refresh failed (${res.status})`,
+    );
   }
 
-  cachedToken = { token: json.access_token, expiresAt: Date.now() + (json.expires_in ?? 3600) * 1000 };
+  cachedToken = {
+    token: json.access_token,
+    expiresAt: Date.now() + (json.expires_in ?? 3600) * 1000,
+  };
   return cachedToken.token;
 }
 
@@ -123,7 +131,10 @@ export const googleAdapter: PlatformAdapter = {
   async send(event) {
     const env = readEnv();
     if (!isFullyConfigured(env)) {
-      return { success: false, error: "Google Ads credentials not fully configured (see .env.example)" };
+      return {
+        success: false,
+        error: "Google Ads credentials not fully configured (see .env.example)",
+      };
     }
 
     const clickId = event.attribution.gclid ?? event.attribution.gbraid ?? event.attribution.wbraid;
@@ -153,7 +164,8 @@ export const googleAdapter: PlatformAdapter = {
     };
 
     const userIdentifiers: UserIdentifier[] = [];
-    if (event.email) userIdentifiers.push({ emailAddress: sha256Hex(event.email.trim().toLowerCase()) });
+    if (event.email)
+      userIdentifiers.push({ emailAddress: sha256Hex(event.email.trim().toLowerCase()) });
     // Google wants E.164 (with leading +), unlike Meta which wants digits only —
     // our stored phone numbers are already E.164, so hash as-is.
     if (event.phone) userIdentifiers.push({ phoneNumber: sha256Hex(event.phone.trim()) });
@@ -186,11 +198,15 @@ export const googleAdapter: PlatformAdapter = {
         body: JSON.stringify({ destinations: [destination], events: [dmEvent], encoding: "HEX" }),
       });
 
-      const json = (await res.json().catch(() => null)) as (IngestEventsResponse & { error?: { message?: string } }) | null;
+      const json = (await res.json().catch(() => null)) as
+        (IngestEventsResponse & { error?: { message?: string } }) | null;
 
       if (!res.ok) {
         const message = json?.error?.message ?? `Data Manager API returned ${res.status}`;
-        console.error(`[offlineConversion:google] ingest HTTP ${res.status}:`, JSON.stringify(json));
+        console.error(
+          `[offlineConversion:google] ingest HTTP ${res.status}:`,
+          JSON.stringify(json),
+        );
         return { success: false, response: json, error: message };
       }
 
@@ -202,7 +218,9 @@ export const googleAdapter: PlatformAdapter = {
       // recommends waiting 30+ minutes, then polling with backoff up to 24h).
       // We do not poll that here — see the migration notes for why, and what
       // it would take to add.
-      console.log(`[offlineConversion:google] ingest accepted requestId=${json?.requestId ?? "n/a"} transactionId=${event.dedupeKey ?? "n/a"}`);
+      console.log(
+        `[offlineConversion:google] ingest accepted requestId=${json?.requestId ?? "n/a"} transactionId=${event.dedupeKey ?? "n/a"}`,
+      );
       return { success: true, response: json };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Data Manager API request failed";

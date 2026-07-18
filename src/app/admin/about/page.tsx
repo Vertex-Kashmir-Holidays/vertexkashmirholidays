@@ -97,13 +97,55 @@ export default async function AdminAboutPage() {
       <PageEditorHeader title="About Page" publicHref="/about" readOnly={!canEdit} />
       <ContentForm contentKey="about" groups={GROUPS} initial={content} canEdit={canEdit} />
       <div className="space-y-5">
-        <ListEditor title="Story Features" resource="aboutStoryFeatures" fields={FIELD_DEFS.aboutStoryFeatures} items={storyFeatures} {...perms} />
-        <ListEditor title="Stats" resource="aboutStats" fields={FIELD_DEFS.aboutStats} items={stats} {...perms} />
-        <ListEditor title="Values" resource="aboutValues" fields={FIELD_DEFS.aboutValues} items={values} {...perms} />
-        <ListEditor title="Certifications (additional, beyond the J&K Tourism registration shown automatically)" resource="certifications" fields={FIELD_DEFS.certifications} items={certs} {...perms} />
-        <ListEditor title="Team Members" resource="teamMembers" fields={FIELD_DEFS.teamMembers} items={team} {...perms} />
-        <ListEditor title="Journey Milestones" resource="journeyMilestones" fields={FIELD_DEFS.journeyMilestones} items={journey} {...perms} />
-        <ListEditor title="Press Logos" resource="pressLogos" fields={FIELD_DEFS.pressLogos} items={press} {...perms} />
+        <ListEditor
+          title="Story Features"
+          resource="aboutStoryFeatures"
+          fields={FIELD_DEFS.aboutStoryFeatures}
+          items={storyFeatures}
+          {...perms}
+        />
+        <ListEditor
+          title="Stats"
+          resource="aboutStats"
+          fields={FIELD_DEFS.aboutStats}
+          items={stats}
+          {...perms}
+        />
+        <ListEditor
+          title="Values"
+          resource="aboutValues"
+          fields={FIELD_DEFS.aboutValues}
+          items={values}
+          {...perms}
+        />
+        <ListEditor
+          title="Certifications (additional, beyond the J&K Tourism registration shown automatically)"
+          resource="certifications"
+          fields={FIELD_DEFS.certifications}
+          items={certs}
+          {...perms}
+        />
+        <ListEditor
+          title="Team Members"
+          resource="teamMembers"
+          fields={FIELD_DEFS.teamMembers}
+          items={team}
+          {...perms}
+        />
+        <ListEditor
+          title="Journey Milestones"
+          resource="journeyMilestones"
+          fields={FIELD_DEFS.journeyMilestones}
+          items={journey}
+          {...perms}
+        />
+        <ListEditor
+          title="Press Logos"
+          resource="pressLogos"
+          fields={FIELD_DEFS.pressLogos}
+          items={press}
+          {...perms}
+        />
       </div>
     </div>
   );

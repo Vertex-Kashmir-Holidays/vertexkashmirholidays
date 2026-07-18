@@ -1,10 +1,10 @@
 // src/components/sections/DestinationsGrid.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, type Variants } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
-import { DestinationCard } from '@/components/destinations/DestinationCard';
+import { useState } from "react";
+import { motion, type Variants } from "framer-motion";
+import { ChevronDown } from "lucide-react";
+import { DestinationCard } from "@/components/destinations/DestinationCard";
 
 export interface DestinationCardData {
   slug: string;

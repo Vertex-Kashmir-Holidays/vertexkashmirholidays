@@ -34,5 +34,12 @@ export default async function AdminPackagesPage() {
     can(role, "packages", "delete"),
   ]);
 
-  return <PackagesClient initialTours={tours} canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} />;
+  return (
+    <PackagesClient
+      initialTours={tours}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
+    />
+  );
 }

@@ -37,7 +37,11 @@ export function Toolbar({
     <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 no-print">
       <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
         <div className="flex min-w-0 flex-1 basis-[180px] items-center gap-3">
-          <Link href="/admin/itinerary" className="text-muted-foreground transition hover:text-foreground" aria-label="Back to list">
+          <Link
+            href="/admin/itinerary"
+            className="text-muted-foreground transition hover:text-foreground"
+            aria-label="Back to list"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <input
@@ -55,7 +59,9 @@ export function Toolbar({
             className="rounded-lg border border-border bg-card px-2 py-1.5 text-[12px] font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             {STATUSES.map((sVal) => (
-              <option key={sVal} value={sVal}>{sVal}</option>
+              <option key={sVal} value={sVal}>
+                {sVal}
+              </option>
             ))}
           </select>
 
@@ -66,12 +72,20 @@ export function Toolbar({
           </Button>
 
           <Button variant="outline" size="sm" onClick={onExport} disabled={isExporting}>
-            {isExporting ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1 h-3.5 w-3.5" />}
+            {isExporting ? (
+              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-1 h-3.5 w-3.5" />
+            )}
             PDF
           </Button>
 
           <Button size="sm" onClick={onSave} disabled={isSaving || !canSave}>
-            {isSaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1 h-3.5 w-3.5" />}
+            {isSaving ? (
+              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="mr-1 h-3.5 w-3.5" />
+            )}
             Save
           </Button>
         </div>

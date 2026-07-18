@@ -57,12 +57,19 @@ export async function PATCH(request: Request) {
   const guard = await requirePermission("settings", "edit");
   if (guard instanceof NextResponse) return guard;
   let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   // gstRates is stored as a JSON string column; serialise it before persisting.
   const { gstRates, ...rest } = parsed.data;
-  const data = { ...rest, ...(gstRates !== undefined ? { gstRates: JSON.stringify(gstRates) } : {}) };
+  const data = {
+    ...rest,
+    ...(gstRates !== undefined ? { gstRates: JSON.stringify(gstRates) } : {}),
+  };
   const updated = await prisma.siteSettings.upsert({
     where: { id: "singleton" },
     create: { id: "singleton", ...data },

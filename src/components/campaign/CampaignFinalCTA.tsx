@@ -1,8 +1,8 @@
 // src/components/campaign/CampaignFinalCTA.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 interface CampaignFinalCTAProps {
   title: string | null;
@@ -67,7 +67,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
           </Link>
           {phone && (
             <a
-              href={`tel:${phone.replace(/\s/g, '')}`}
+              href={`tel:${phone.replace(/\s/g, "")}`}
               className="rounded-full border border-white/20 bg-white/10 px-9 py-4 text-[16px] font-semibold text-white backdrop-blur-xl transition hover:bg-white/20"
             >
               Call {phone}

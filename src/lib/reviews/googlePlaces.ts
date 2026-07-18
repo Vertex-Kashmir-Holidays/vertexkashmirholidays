@@ -25,7 +25,9 @@ interface PlaceDetailsResponse {
   };
 }
 
-export async function getGooglePlaceRating(placeId: string | null | undefined): Promise<GooglePlaceRating | null> {
+export async function getGooglePlaceRating(
+  placeId: string | null | undefined,
+): Promise<GooglePlaceRating | null> {
   const apiKey = env.GOOGLE_PLACES_API_KEY;
   if (!apiKey || !placeId) return null;
 
@@ -86,7 +88,14 @@ export async function getGooglePlaceHoursAndLocation(
             // A period with no `close` means open 24h that day; skip it rather
             // than guess a close time schema.org would treat as authoritative.
             periods: (oh.periods ?? [])
-              .filter((p): p is { open: { day: number; time: string }; close: { day: number; time: string } } => Boolean(p.close))
+              .filter(
+                (
+                  p,
+                ): p is {
+                  open: { day: number; time: string };
+                  close: { day: number; time: string };
+                } => Boolean(p.close),
+              )
               .map((p) => ({ day: p.open.day, open: p.open.time, close: p.close.time })),
           }
         : null;

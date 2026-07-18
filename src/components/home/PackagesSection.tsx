@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { TourCard } from '@/components/ui/TourCard';
-import { formatINR, renderAccents } from '@/lib/accents';
-import type { HomeTourData, SectionHeading } from '@/types/home';
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { TourCard } from "@/components/ui/TourCard";
+import { formatINR, renderAccents } from "@/lib/accents";
+import type { HomeTourData, SectionHeading } from "@/types/home";
 
 interface PackagesSectionProps {
   heading: SectionHeading;
   tours: HomeTourData[];
 }
 
-const badgeColors = ['orange', 'blue', 'green'] as const;
+const badgeColors = ["orange", "blue", "green"] as const;
 
 export function PackagesSection({ heading, tours }: PackagesSectionProps) {
   const containerVariants = {
@@ -27,7 +27,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
   if (tours.length === 0) return null;
 
   return (
-    <section id="packages" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section
+      id="packages"
+      className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <motion.p
@@ -41,7 +44,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
           </motion.p>
           <motion.h2
             className="rv h-display mt-3 text-[18px] font-bold text-foreground"
-            style={{ '--rd': '0.08s' } as React.CSSProperties}
+            style={{ "--rd": "0.08s" } as React.CSSProperties}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -52,7 +55,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
           {heading.subtitle && (
             <motion.p
               className="rv mt-3 max-w-md text-sm text-muted-foreground"
-              style={{ '--rd': '0.14s' } as React.CSSProperties}
+              style={{ "--rd": "0.14s" } as React.CSSProperties}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -69,7 +72,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link href={heading.ctaHref ?? '#'} className="rv inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
+            <Link
+              href={heading.ctaHref ?? "#"}
+              className="rv inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+            >
               {heading.ctaLabel}
             </Link>
           </motion.div>
@@ -87,10 +93,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
           <TourCard
             key={tour.id}
             tour={{
-              badge: tour.badge ?? 'FEATURED',
-              bc: (badgeColors as readonly string[]).includes(tour.badgeColor ?? '')
-                ? (tour.badgeColor as 'orange' | 'blue' | 'green')
-                : 'green',
+              badge: tour.badge ?? "FEATURED",
+              bc: (badgeColors as readonly string[]).includes(tour.badgeColor ?? "")
+                ? (tour.badgeColor as "orange" | "blue" | "green")
+                : "green",
               image: tour.image ?? undefined,
               detailHref: `/tours/${tour.slug}`,
               bookHref: `/booking?tour=${tour.slug}`,

@@ -4,14 +4,34 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, ExternalLink, Trash2, ChevronDown, Pencil, Users, CalendarClock, TrendingUp, X } from "lucide-react";
+import {
+  Search,
+  Plus,
+  ExternalLink,
+  Trash2,
+  ChevronDown,
+  Pencil,
+  Users,
+  CalendarClock,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 
-type LeadStatus = "NEW" | "CONNECTED" | "NOT_CONNECTED" | "QUALIFIED" | "NEGOTIATION" | "ON_HOLD" | "CONVERTED" | "REJECTED";
+type LeadStatus =
+  | "NEW"
+  | "CONNECTED"
+  | "NOT_CONNECTED"
+  | "QUALIFIED"
+  | "NEGOTIATION"
+  | "ON_HOLD"
+  | "CONVERTED"
+  | "REJECTED";
 type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
-type LeadCategory = "HONEYMOON_TOUR" | "COUPLE" | "FAMILY_TOUR" | "GROUP_TOUR" | "SKI_TOUR" | "OFFBEAT_TOUR";
+type LeadCategory =
+  "HONEYMOON_TOUR" | "COUPLE" | "FAMILY_TOUR" | "GROUP_TOUR" | "SKI_TOUR" | "OFFBEAT_TOUR";
 
 interface Lead {
   id: string;
@@ -78,7 +98,17 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
 const selectCls =
   "pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none";
 
-function StatCard({ label, value, icon: Icon, accent }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; accent: string }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  accent: string;
+}) {
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-center gap-4">
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", accent)}>
@@ -92,7 +122,17 @@ function StatCard({ label, value, icon: Icon, accent }: { label: string; value: 
   );
 }
 
-export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCreate, canEdit, canDelete, isAdmin, initialIpFilter }: Props) {
+export function LeadsClient({
+  initialLeads,
+  totalCount,
+  staffUsers,
+  stats,
+  canCreate,
+  canEdit,
+  canDelete,
+  isAdmin,
+  initialIpFilter,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -121,7 +161,8 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
     return true;
   });
 
-  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } =
+    usePagination(filtered);
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -159,9 +200,24 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Total Leads" value={stats.total} icon={Users} accent="bg-blue-500/10 text-blue-600 dark:text-blue-400" />
-        <StatCard label="Today's Follow-ups" value={stats.todayFollowUps} icon={CalendarClock} accent="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
-        <StatCard label="Converted" value={stats.converted} icon={TrendingUp} accent="bg-green-500/10 text-green-600 dark:text-green-400" />
+        <StatCard
+          label="Total Leads"
+          value={stats.total}
+          icon={Users}
+          accent="bg-blue-500/10 text-blue-600 dark:text-blue-400"
+        />
+        <StatCard
+          label="Today's Follow-ups"
+          value={stats.todayFollowUps}
+          icon={CalendarClock}
+          accent="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+        />
+        <StatCard
+          label="Converted"
+          value={stats.converted}
+          icon={TrendingUp}
+          accent="bg-green-500/10 text-green-600 dark:text-green-400"
+        />
       </div>
 
       {initialIpFilter && (
@@ -171,7 +227,10 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
           </span>
           <button
             type="button"
-            onClick={() => { router.push("/admin/leads"); router.refresh(); }}
+            onClick={() => {
+              router.push("/admin/leads");
+              router.refresh();
+            }}
             className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors font-semibold"
           >
             <X className="w-3.5 h-3.5" /> Clear filter
@@ -194,7 +253,11 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
           </div>
 
           <div className="relative">
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={selectCls}
+            >
               <option value="ALL">All Status</option>
               <option value="NEW">New</option>
               <option value="CONNECTED">Connected</option>
@@ -209,7 +272,11 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
           </div>
 
           <div className="relative">
-            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className={selectCls}>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className={selectCls}
+            >
               <option value="ALL">All Sources</option>
               <option value="WEBSITE">Website</option>
               <option value="MANUAL">Manual</option>
@@ -223,18 +290,26 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
 
           {isAdmin && (
             <div className="relative">
-              <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className={selectCls}>
+              <select
+                value={assigneeFilter}
+                onChange={(e) => setAssigneeFilter(e.target.value)}
+                className={selectCls}
+              >
                 <option value="ALL">All Staff</option>
                 <option value="UNASSIGNED">Unassigned</option>
                 {staffUsers.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name ?? u.email}</option>
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.email}
+                  </option>
                 ))}
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+          <p className="text-xs text-muted-foreground self-center shrink-0">
+            {filtered.length} results
+          </p>
         </div>
 
         {/* Table */}
@@ -242,11 +317,16 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Ref", "Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
+                {["Ref", "Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -260,10 +340,19 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                 </tr>
               ) : (
                 pageItems.map((lead) => (
-                  <tr key={lead.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === lead.id && "bg-red-500/5")}>
+                  <tr
+                    key={lead.id}
+                    className={cn(
+                      "hover:bg-muted/50 transition-colors",
+                      confirmDelete === lead.id && "bg-red-500/5",
+                    )}
+                  >
                     {/* Ref */}
                     <td className="px-4 py-3">
-                      <span className="font-mono text-[12px] font-semibold text-foreground" title={lead.id}>
+                      <span
+                        className="font-mono text-[12px] font-semibold text-foreground"
+                        title={lead.id}
+                      >
                         #{lead.id.slice(-8).toUpperCase()}
                       </span>
                     </td>
@@ -271,10 +360,14 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
                     {/* Lead */}
                     <td className="px-4 py-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-xs truncate max-w-[160px]">{lead.name}</p>
+                        <p className="font-semibold text-foreground text-xs truncate max-w-[160px]">
+                          {lead.name}
+                        </p>
                         <p className="text-[12px] text-muted-foreground">{lead.phone}</p>
                         {lead.email && (
-                          <p className="text-[12px] text-muted-foreground truncate max-w-[160px]">{lead.email}</p>
+                          <p className="text-[12px] text-muted-foreground truncate max-w-[160px]">
+                            {lead.email}
+                          </p>
                         )}
                       </div>
                     </td>
@@ -297,7 +390,12 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
 
                     {/* Status */}
                     <td className="px-4 py-3">
-                      <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[lead.status])}>
+                      <span
+                        className={cn(
+                          "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                          STATUS_STYLES[lead.status],
+                        )}
+                      >
                         {lead.status.replace(/_/g, " ")}
                       </span>
                     </td>
@@ -311,7 +409,11 @@ export function LeadsClient({ initialLeads, totalCount, staffUsers, stats, canCr
 
                     {/* Last Updated */}
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(lead.updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      {new Date(lead.updatedAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </td>
 
                     {/* Actions */}

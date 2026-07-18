@@ -1,11 +1,11 @@
 // src/components/contact/ContactReachCards.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { Phone, Mail, MapPin, ArrowRight, type LucideIcon } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import type { ContactReachCardData, ContactSectionHeading } from '@/types/contact';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { Phone, Mail, MapPin, ArrowRight, type LucideIcon } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import type { ContactReachCardData, ContactSectionHeading } from "@/types/contact";
 
 interface ContactReachCardsProps {
   heading: ContactSectionHeading;
@@ -13,7 +13,7 @@ interface ContactReachCardsProps {
 }
 
 // Channel → icon. WhatsApp keeps its brand glyph; the rest use lucide.
-const ICONS: Record<ContactReachCardData['type'], LucideIcon | typeof WhatsAppIcon> = {
+const ICONS: Record<ContactReachCardData["type"], LucideIcon | typeof WhatsAppIcon> = {
   whatsapp: WhatsAppIcon,
   call: Phone,
   email: Mail,
@@ -45,7 +45,7 @@ export function ContactReachCards({ heading, cards }: ContactReachCardsProps) {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card, i) => {
           const Icon = ICONS[card.type];
-          const isWa = card.type === 'whatsapp';
+          const isWa = card.type === "whatsapp";
           return (
             <motion.article
               key={card.type}
@@ -55,15 +55,21 @@ export function ContactReachCards({ heading, cards }: ContactReachCardsProps) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <span className={`grid h-14 w-14 place-items-center rounded-full ${isWa ? 'bg-[#25D366] text-white' : 'bg-primary/10 text-primary'}`}>
+              <span
+                className={`grid h-14 w-14 place-items-center rounded-full ${isWa ? "bg-[#25D366] text-white" : "bg-primary/10 text-primary"}`}
+              >
                 <Icon className="h-7 w-7" strokeWidth={1.7} />
               </span>
               <p className="mt-3.5 text-[16px] font-bold">{card.title}</p>
-              <p className="mt-1.5 break-all text-[14px] font-semibold text-foreground/85">{card.value}</p>
-              <p className="mt-2 flex-1 text-[12px] leading-relaxed text-muted-foreground">{card.subtitle}</p>
+              <p className="mt-1.5 break-all text-[14px] font-semibold text-foreground/85">
+                {card.value}
+              </p>
+              <p className="mt-2 flex-1 text-[12px] leading-relaxed text-muted-foreground">
+                {card.subtitle}
+              </p>
               <Link
                 href={card.href}
-                target='_blank'
+                target="_blank"
                 className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-[12px] font-bold text-primary-foreground transition hover:brightness-110"
               >
                 {card.cta}

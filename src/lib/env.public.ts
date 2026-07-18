@@ -17,4 +17,5 @@ export const NEXT_PUBLIC_GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIEN
 export const NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY; // ContactOfficeMap
 export const NEXT_PUBLIC_RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID; // AffordabilityWidget
 export const NEXT_PUBLIC_GTM_ID = process.env.NEXT_PUBLIC_GTM_ID; // SiteAnalytics
-export const NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION = process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION; // src/app/layout.tsx
+export const NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION =
+  process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION; // src/app/layout.tsx

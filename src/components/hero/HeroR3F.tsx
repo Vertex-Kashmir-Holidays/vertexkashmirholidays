@@ -63,7 +63,7 @@ function useHeatGroundMaterial() {
           }
         `,
       }),
-    []
+    [],
   );
 }
 
@@ -73,11 +73,7 @@ function HeatPlains() {
     material.uniforms.uTime.value = clock.elapsedTime;
   });
   return (
-    <mesh
-      position={[-3.1, GROUND_Y, -1]}
-      rotation={[-1.18, 0, 0.05]}
-      material={material}
-    >
+    <mesh position={[-3.1, GROUND_Y, -1]} rotation={[-1.18, 0, 0.05]} material={material}>
       <planeGeometry args={[8.5, 6.5, 64, 48]} />
     </mesh>
   );
@@ -102,7 +98,11 @@ function KashmirMountains() {
             <meshStandardMaterial color={p.color} roughness={0.9} flatShading />
           </mesh>
           {p.snow && (
-            <mesh position={[0, p.h * 0.3, 0]} scale={[0.6, 0.4, 0.6]} rotation={[0, (i * Math.PI) / 7, 0]}>
+            <mesh
+              position={[0, p.h * 0.3, 0]}
+              scale={[0.6, 0.4, 0.6]}
+              rotation={[0, (i * Math.PI) / 7, 0]}
+            >
               <coneGeometry args={[p.r, p.h, 5]} />
               <meshStandardMaterial
                 color="#f4fbff"
@@ -148,7 +148,7 @@ function HeatEmbers() {
     const arr = geom.attributes.position.array as Float32Array;
     const t = clock.elapsedTime;
     for (let i = 0; i < EMBER_COUNT; i++) {
-      const offset = ((baseY[i] + 2.5 + t * speeds[i]) % span + span) % span;
+      const offset = (((baseY[i] + 2.5 + t * speeds[i]) % span) + span) % span;
       arr[i * 3 + 1] = offset - 2.5;
     }
     geom.attributes.position.needsUpdate = true;
@@ -183,7 +183,14 @@ function GlowPortal() {
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      const gradient = ctx.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size / 2,
+      );
       gradient.addColorStop(0, "rgba(56,176,128,0.85)");
       gradient.addColorStop(0.5, "rgba(56,176,128,0.22)");
       gradient.addColorStop(1, "rgba(56,176,128,0)");
@@ -204,7 +211,13 @@ function GlowPortal() {
   return (
     <group position={[0.2, 0.5, 1.2]}>
       <sprite scale={[6, 6, 1]}>
-        <spriteMaterial map={glowTexture} transparent depthWrite={false} blending={THREE.AdditiveBlending} opacity={0.6} />
+        <spriteMaterial
+          map={glowTexture}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          opacity={0.6}
+        />
       </sprite>
       <mesh ref={ringRef}>
         <torusGeometry args={[1.4, 0.035, 16, 80]} />
@@ -299,7 +312,10 @@ export function HeroR3F() {
       {/* Readability overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.4), transparent 45%, rgba(0,0,0,0.6))" }}
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.4), transparent 45%, rgba(0,0,0,0.6))",
+        }}
         aria-hidden
       />
 

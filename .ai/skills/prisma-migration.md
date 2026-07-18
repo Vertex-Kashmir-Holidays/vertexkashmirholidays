@@ -15,11 +15,13 @@ Last Updated: 2026-07-17
 ## Typical Scope
 
 Small
+
 - Add field
 - Add index
 - Nullable column
 
 Medium
+
 - New model
 - New relation
 - Enum update
@@ -98,6 +100,7 @@ Before touching `schema.prisma`:
 - String-encoded JSON columns (`gallery`, `itinerary`, `inclusions`, `exclusions`, `highlights` on `Tour`; the equivalent set on `Campaign` — see `../instructions/coding-standards.md` → JSON Columns for the full list) are declared `String`, never Prisma's `Json` type — this is a deliberate, repository-wide convention, not an oversight to "fix." `faqs` is **not** one of these — it's a real `Faq[]` relation on both models. `Itinerary.data` is the one model that genuinely uses `Json` — don't generalize from it.
 
 **Downstream consumers to check after any schema change:**
+
 - **Public pages** (`src/app/(public)/`) — any `findMany`/`findFirst` on `Tour`, `Blog`, `Destination`, or `Campaign` must keep `where: { published: true }`.
 - **Account pages** (`src/app/account/`) — every query stays scoped to `where: { userId: session.user.id }`; a new field must never expose another user's data.
 - **Admin pages** (`src/app/admin/`) — update the RSC's `select` projection and the corresponding `*Client.tsx` component's TypeScript interface.

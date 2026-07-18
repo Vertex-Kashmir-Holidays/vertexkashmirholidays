@@ -31,7 +31,12 @@ function assetSource(item: GalleryAsset): "LOCAL" | "STOCK" {
   return item.url.startsWith("/") ? "LOCAL" : "STOCK";
 }
 
-export function ImagePicker({ value, onChange, className, label = "Change image" }: ImagePickerProps) {
+export function ImagePicker({
+  value,
+  onChange,
+  className,
+  label = "Change image",
+}: ImagePickerProps) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("stock");
   const [uploading, setUploading] = useState(false);
@@ -102,7 +107,9 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
       onClick={() => setTab(t)}
       className={cn(
         "rounded-lg px-3 py-1.5 text-xs font-bold transition",
-        tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
+        tab === t
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-muted-foreground hover:text-foreground",
       )}
     >
       {text}
@@ -122,14 +129,23 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
         <ImageIcon className="h-3.5 w-3.5" /> {label}
       </button>
 
-      {open && mounted &&
+      {open &&
+        mounted &&
         createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true">
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 no-print"
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="absolute inset-0 bg-black/50" onClick={close} />
             <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-2xl">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground">Choose an image</h3>
-                <button onClick={close} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+                <button
+                  onClick={close}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Close"
+                >
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -148,7 +164,9 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                       onClick={() => select(img.src)}
                       className={cn(
                         "group relative overflow-hidden rounded-lg border-2 transition",
-                        value === img.src ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-primary/50",
+                        value === img.src
+                          ? "border-primary ring-2 ring-primary/30"
+                          : "border-transparent hover:border-primary/50",
                       )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -159,7 +177,10 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                         loading="lazy"
                         onLoad={(e) => {
                           const { naturalWidth, naturalHeight } = e.currentTarget;
-                          setDims((prev) => ({ ...prev, [img.src]: { width: naturalWidth, height: naturalHeight } }));
+                          setDims((prev) => ({
+                            ...prev,
+                            [img.src]: { width: naturalWidth, height: naturalHeight },
+                          }));
                         }}
                       />
                       {dims[img.src] && (
@@ -179,71 +200,90 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
                 <div className="mt-4 max-h-[55vh] overflow-y-auto">
                   {/* Source filter tabs */}
                   <div className="mb-3 flex items-center gap-1.5 overflow-x-auto">
-                    {([
-                      { key: "ALL",   label: "All" },
-                      { key: "LOCAL", label: "💾 Local" },
-                      { key: "STOCK", label: "🌐 Stock / Cloudinary" },
-                    ] as const).map(({ key, label }) => (
+                    {(
+                      [
+                        { key: "ALL", label: "All" },
+                        { key: "LOCAL", label: "💾 Local" },
+                        { key: "STOCK", label: "🌐 Stock / Cloudinary" },
+                      ] as const
+                    ).map(({ key, label }) => (
                       <button
                         key={key}
                         type="button"
                         onClick={() => setGallerySource(key)}
                         className={cn(
                           "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors",
-                          gallerySource === key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80",
+                          gallerySource === key
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80",
                         )}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
-                  {galleryItems.filter((i) => gallerySource === "ALL" || assetSource(i) === gallerySource).length === 0 && !galleryLoading ? (
+                  {galleryItems.filter(
+                    (i) => gallerySource === "ALL" || assetSource(i) === gallerySource,
+                  ).length === 0 && !galleryLoading ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
                       <ImageIcon className="h-8 w-8" />
-                      <p className="text-xs">No gallery images yet. Add some in the Gallery module.</p>
+                      <p className="text-xs">
+                        No gallery images yet. Add some in the Gallery module.
+                      </p>
                     </div>
                   ) : (
                     <>
                       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                        {galleryItems.filter((i) => gallerySource === "ALL" || assetSource(i) === gallerySource).map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => select(item.url)}
-                            className={cn(
-                              "group relative overflow-hidden rounded-lg border-2 transition",
-                              value === item.url ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-primary/50",
-                            )}
-                            title={item.alt ?? item.url}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.url}
-                              alt={item.alt ?? ""}
-                              className="h-20 w-full object-cover"
-                              loading="lazy"
-                              onLoad={(e) => {
-                                const { naturalWidth, naturalHeight } = e.currentTarget;
-                                setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
-                              }}
-                            />
-                            {dims[item.id] && (
-                              <ImageDimensionBadge
-                                width={dims[item.id].width}
-                                height={dims[item.id].height}
-                                className="absolute top-1 right-1"
+                        {galleryItems
+                          .filter(
+                            (i) => gallerySource === "ALL" || assetSource(i) === gallerySource,
+                          )
+                          .map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => select(item.url)}
+                              className={cn(
+                                "group relative overflow-hidden rounded-lg border-2 transition",
+                                value === item.url
+                                  ? "border-primary ring-2 ring-primary/30"
+                                  : "border-transparent hover:border-primary/50",
+                              )}
+                              title={item.alt ?? item.url}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.url}
+                                alt={item.alt ?? ""}
+                                className="h-20 w-full object-cover"
+                                loading="lazy"
+                                onLoad={(e) => {
+                                  const { naturalWidth, naturalHeight } = e.currentTarget;
+                                  setDims((prev) => ({
+                                    ...prev,
+                                    [item.id]: { width: naturalWidth, height: naturalHeight },
+                                  }));
+                                }}
                               />
-                            )}
-                            {item.category && (
-                              <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                                {item.category}
-                              </span>
-                            )}
-                          </button>
-                        ))}
+                              {dims[item.id] && (
+                                <ImageDimensionBadge
+                                  width={dims[item.id].width}
+                                  height={dims[item.id].height}
+                                  className="absolute top-1 right-1"
+                                />
+                              )}
+                              {item.category && (
+                                <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                  {item.category}
+                                </span>
+                              )}
+                            </button>
+                          ))}
                       </div>
                       <div className="mt-3 flex items-center justify-center gap-3">
-                        {galleryLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                        {galleryLoading && (
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        )}
                         {!galleryLoading && galleryPage < galleryPages && (
                           <button
                             type="button"
@@ -260,17 +300,29 @@ export function ImagePicker({ value, onChange, className, label = "Change image"
               )}
 
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <p className="text-xs text-muted-foreground">Upload JPG · PNG · WebP (max 500 KB).</p>
+                <p className="text-xs text-muted-foreground">
+                  Upload JPG · PNG · WebP (max 500 KB).
+                </p>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
                 >
-                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {uploading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" />
+                  )}
                   {uploading ? "Uploading…" : "Upload image"}
                 </button>
-                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUpload} />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleUpload}
+                />
               </div>
             </div>
           </div>,

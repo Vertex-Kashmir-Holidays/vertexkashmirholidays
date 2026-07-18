@@ -15,7 +15,11 @@ export default async function NewFaqPage() {
   if (!role || !(await can(role, "faqs", "create"))) redirect("/admin/faqs");
 
   const [categories, tours, destinations, blogs, campaigns, activities] = await Promise.all([
-    prisma.faqCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
+    prisma.faqCategory.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    }),
     prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
     prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
@@ -27,8 +31,14 @@ export default async function NewFaqPage() {
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/faqs" className="hover:text-primary transition-colors">FAQs</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/faqs" className="hover:text-primary transition-colors">
+              FAQs
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium">New</li>
         </ol>
       </nav>

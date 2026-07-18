@@ -1,11 +1,11 @@
 // src/components/destinations/DestinationNearby.tsx
-'use client';
+"use client";
 
-import { DestinationCard } from '@/components/destinations/DestinationCard';
-import type { DestinationCardData } from '@/components/destinations/DestinationsGrid';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { DestinationCard } from "@/components/destinations/DestinationCard";
+import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface DestinationNearbyProps {
   destinations: DestinationCardData[];
@@ -24,26 +24,33 @@ export function DestinationNearby({ destinations }: DestinationNearbyProps) {
       else setItemsPerView(3);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   if (destinations.length === 0) return null;
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + itemsPerView >= destinations.length ? 0 : prev + itemsPerView));
+    setCurrentIndex((prev) =>
+      prev + itemsPerView >= destinations.length ? 0 : prev + itemsPerView,
+    );
   };
 
   const prevSlide = () => {
     setCurrentIndex((prev) =>
-      prev - itemsPerView < 0 ? Math.max(0, destinations.length - itemsPerView) : prev - itemsPerView,
+      prev - itemsPerView < 0
+        ? Math.max(0, destinations.length - itemsPerView)
+        : prev - itemsPerView,
     );
   };
 
   const visibleDestinations = destinations.slice(currentIndex, currentIndex + itemsPerView);
 
   return (
-    <section id="nearby" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+    <section
+      id="nearby"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+    >
       <div className="flex items-center justify-between">
         <h2 className="text-[18px] font-bold">Nearby Destinations</h2>
         {destinations.length > itemsPerView && (
@@ -93,7 +100,9 @@ export function DestinationNearby({ destinations }: DestinationNearbyProps) {
                 key={i}
                 onClick={() => setCurrentIndex(i * itemsPerView)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === Math.floor(currentIndex / itemsPerView) ? 'w-4 bg-primary' : 'w-1.5 bg-border'
+                  i === Math.floor(currentIndex / itemsPerView)
+                    ? "w-4 bg-primary"
+                    : "w-1.5 bg-border"
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />

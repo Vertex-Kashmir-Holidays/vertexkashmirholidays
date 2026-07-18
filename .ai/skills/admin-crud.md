@@ -12,7 +12,6 @@ Version: 1.0.0
 
 Last Updated: 2026-07-17
 
-
 ## Purpose
 
 This Skill defines how a new, first-class Admin CRUD module is added in Vertex — one that gets its own sidebar entry, its own RBAC module key, its own API route pair, and its own list/create/edit pages. It keeps every module consistent in architecture, permissions, and user experience instead of each one reinventing the pattern slightly differently.
@@ -58,6 +57,7 @@ Before creating a module, read:
 - A canonical existing module to copy the shape of — `src/app/admin/destinations/` (pages) and `src/components/admin/destinations/` (client components) is the reference implementation this Skill is based on.
 
 Decide, before writing code:
+
 - **Does it need a public page?** Only if visitors browse this entity (Tours/Destinations: yes. Bookings/Users: no). A public page always filters `where: { published: true }` and uses `revalidate = 300`.
 - **Does it need a customer account page?** Only if a logged-in customer owns records of this type — every query then scopes to `where: { userId: session.user.id }`.
 - **Does the entity need a `published` boolean or a status enum?** If a status enum, plan for a Zod `z.enum` in both route schemas, a `STATUS_STYLES` display map, and an `ALLOWED_TRANSITIONS` map if staff can change status.

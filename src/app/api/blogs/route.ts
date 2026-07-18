@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 
 const createSchema = z.object({
   title: z.string().min(3),
-  slug: z.string().min(3).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
+  slug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
   excerpt: z.string().optional(),
   body: z.string().optional(),
   coverImage: z.string().optional(),
@@ -53,9 +56,7 @@ export async function GET(req: NextRequest) {
     where,
     orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
     take: take + 1,
-    ...(cursor
-      ? { cursor: { id: cursor }, skip: 1 }
-      : {}),
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
       id: true,
       title: true,
@@ -79,7 +80,11 @@ export async function POST(request: Request) {
   const guard = await requirePermission("blogs", "create");
   if (guard instanceof NextResponse) return guard;
   let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   try {
@@ -94,7 +99,8 @@ export async function POST(request: Request) {
     return NextResponse.json(blog, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Create failed" }, { status: 500 });
   }
 }

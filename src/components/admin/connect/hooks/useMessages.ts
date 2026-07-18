@@ -145,5 +145,15 @@ export function useMessages(roomId: string | null) {
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
   }, []);
 
-  return { messages, loading, hasMore, loadMore, appendOptimistic, replaceOptimistic, updateMessage, removeMessage, typing };
+  return {
+    messages,
+    loading,
+    hasMore,
+    loadMore,
+    appendOptimistic,
+    replaceOptimistic,
+    updateMessage,
+    removeMessage,
+    typing,
+  };
 }

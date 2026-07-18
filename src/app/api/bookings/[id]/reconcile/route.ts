@@ -48,7 +48,11 @@ export async function POST(_req: NextRequest, { params }: Params) {
       items?: Array<Record<string, unknown>>;
     };
     const item = (res.items ?? []).find((p) => p.status === "captured");
-    if (item) captured = { id: String(item.id), method: typeof item.method === "string" ? item.method : undefined };
+    if (item)
+      captured = {
+        id: String(item.id),
+        method: typeof item.method === "string" ? item.method : undefined,
+      };
   } catch (err) {
     console.error("[reconcile] razorpay fetch failed", err);
     return NextResponse.json({ error: "Could not reach the payment gateway." }, { status: 502 });
@@ -62,7 +66,10 @@ export async function POST(_req: NextRequest, { params }: Params) {
       orderId: booking.razorpayOrderId,
       detail: "no captured payment found",
     });
-    return NextResponse.json({ reconciled: false, message: "No captured payment found for this order." });
+    return NextResponse.json({
+      reconciled: false,
+      message: "No captured payment found for this order.",
+    });
   }
 
   // Record the ledger row AND mark the booking paid in a single transaction.
@@ -81,5 +88,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ reconciled: true, recorded: true });
   }
   // Already in the ledger — nothing new, but the booking is confirmed paid.
-  return NextResponse.json({ reconciled: true, recorded: false, message: "Payment already recorded." });
+  return NextResponse.json({
+    reconciled: true,
+    recorded: false,
+    message: "Payment already recorded.",
+  });
 }

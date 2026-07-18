@@ -12,7 +12,11 @@ const priceField = z.preprocess(
 
 const patchSchema = z.object({
   name: z.string().min(2).optional(),
-  slug: z.string().min(2).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   description: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
   coverImageMobile: z.string().optional().nullable(),
@@ -78,15 +82,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...data,
         // Re-sync the join tables only when the client sent the link arrays.
         ...(destinationIds
-          ? { destinations: { deleteMany: {}, create: destinationIds.map((destinationId) => ({ destinationId })) } }
+          ? {
+              destinations: {
+                deleteMany: {},
+                create: destinationIds.map((destinationId) => ({ destinationId })),
+              },
+            }
           : {}),
-        ...(tourIds ? { tours: { deleteMany: {}, create: tourIds.map((tourId) => ({ tourId })) } } : {}),
+        ...(tourIds
+          ? { tours: { deleteMany: {}, create: tourIds.map((tourId) => ({ tourId })) } }
+          : {}),
       },
     });
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }

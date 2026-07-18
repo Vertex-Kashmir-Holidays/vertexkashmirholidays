@@ -16,7 +16,13 @@ interface FaqRow {
   placements: string[];
   sortOrder: number;
   category: { name: string } | null;
-  _count: { tours: number; destinations: number; blogs: number; campaigns: number; activities: number };
+  _count: {
+    tours: number;
+    destinations: number;
+    blogs: number;
+    campaigns: number;
+    activities: number;
+  };
 }
 
 interface Props {
@@ -53,7 +59,10 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
     startTransition(async () => {
       try {
         const res = await fetch(`/api/faqs/${id}`, { method: "DELETE" });
-        if (res.status === 403) { toast.error("You don't have permission to delete FAQs. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to delete FAQs. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error();
         toast.success("FAQ deleted.");
         router.refresh();
@@ -74,7 +83,10 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: next }),
         });
-        if (res.status === 403) { toast.error("You don't have permission to change status. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to change status. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error();
         toast.success(next === "PUBLISHED" ? "FAQ published!" : "FAQ unpublished.");
         router.refresh();
@@ -119,14 +131,20 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
             <input
               type="text"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setVisibleCount(PAGE_SIZE);
+              }}
               placeholder="Search questions..."
               className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
             />
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setVisibleCount(PAGE_SIZE); }}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as typeof statusFilter);
+              setVisibleCount(PAGE_SIZE);
+            }}
             className="text-sm border border-border rounded-xl px-3 py-2 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             <option value="ALL">All statuses</option>
@@ -135,15 +153,22 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
           </select>
           <select
             value={categoryFilter}
-            onChange={(e) => { setCategoryFilter(e.target.value); setVisibleCount(PAGE_SIZE); }}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setVisibleCount(PAGE_SIZE);
+            }}
             className="text-sm border border-border rounded-xl px-3 py-2 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             <option value="ALL">All categories</option>
             {categoryOptions.map((c) => (
-              <option key={c.id} value={c.name}>{c.name}</option>
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
             ))}
           </select>
-          <p className="text-xs text-muted-foreground shrink-0 ml-auto">{filtered.length} of {initialFaqs.length}</p>
+          <p className="text-xs text-muted-foreground shrink-0 ml-auto">
+            {filtered.length} of {initialFaqs.length}
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -151,7 +176,10 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Question", "Category", "Attached To", "Status", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
                     {h}
                   </th>
                 ))}
@@ -161,29 +189,45 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
               {visible.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search || statusFilter !== "ALL" || categoryFilter !== "ALL" ? "No FAQs match your filters." : "No FAQs yet."}
+                    {search || statusFilter !== "ALL" || categoryFilter !== "ALL"
+                      ? "No FAQs match your filters."
+                      : "No FAQs yet."}
                   </td>
                 </tr>
               ) : (
                 visible.map((faq) => {
                   const attachedCount =
-                    faq._count.tours + faq._count.destinations + faq._count.blogs + faq._count.campaigns + faq._count.activities;
+                    faq._count.tours +
+                    faq._count.destinations +
+                    faq._count.blogs +
+                    faq._count.campaigns +
+                    faq._count.activities;
                   return (
                     <tr key={faq.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="min-w-0 flex items-center gap-1.5">
-                          {faq.featured && <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />}
+                          {faq.featured && (
+                            <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />
+                          )}
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[280px]">{faq.question}</p>
-                            <p className="text-[12px] text-muted-foreground truncate">/faq#{faq.slug}</p>
+                            <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[280px]">
+                              {faq.question}
+                            </p>
+                            <p className="text-[12px] text-muted-foreground truncate">
+                              /faq#{faq.slug}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{faq.category?.name ?? "—"}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {faq.placements.length > 0 && `${faq.placements.length} page${faq.placements.length === 1 ? "" : "s"}`}
+                        {faq.category?.name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {faq.placements.length > 0 &&
+                          `${faq.placements.length} page${faq.placements.length === 1 ? "" : "s"}`}
                         {faq.placements.length > 0 && attachedCount > 0 && " · "}
-                        {attachedCount > 0 && `${attachedCount} record${attachedCount === 1 ? "" : "s"}`}
+                        {attachedCount > 0 &&
+                          `${attachedCount} record${attachedCount === 1 ? "" : "s"}`}
                         {faq.placements.length === 0 && attachedCount === 0 && "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -191,7 +235,13 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                           onClick={() => canEdit && handleToggleStatus(faq.id, faq.status)}
                           disabled={isPending || !canEdit}
                           className="focus:outline-none"
-                          title={!canEdit ? "No permission to change status" : faq.status === "PUBLISHED" ? "Click to unpublish" : "Click to publish"}
+                          title={
+                            !canEdit
+                              ? "No permission to change status"
+                              : faq.status === "PUBLISHED"
+                                ? "Click to unpublish"
+                                : "Click to publish"
+                          }
                         >
                           {faq.status === "PUBLISHED" ? (
                             <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full hover:bg-green-500/15 transition-colors">
@@ -207,26 +257,47 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                       <td className="px-4 py-3">
                         {confirmDelete === faq.id ? (
                           <div className="flex items-center gap-1.5">
-                            <button onClick={() => handleDelete(faq.id)} disabled={isPending} className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
+                            <button
+                              onClick={() => handleDelete(faq.id)}
+                              disabled={isPending}
+                              className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                            >
                               {isPending ? "…" : "Delete"}
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
+                            >
                               Cancel
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1">
                             {canEdit && (
-                              <Link href={`/admin/faqs/${faq.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
+                              <Link
+                                href={`/admin/faqs/${faq.id}/edit`}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                title="Edit"
+                              >
                                 <Pencil className="w-3.5 h-3.5" />
                               </Link>
                             )}
                             {canDelete && (
-                              <button onClick={() => setConfirmDelete(faq.id)} className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors")} title="Delete">
+                              <button
+                                onClick={() => setConfirmDelete(faq.id)}
+                                className={cn(
+                                  "w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors",
+                                )}
+                                title="Delete"
+                              >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
-                            {!canEdit && !canDelete && <span className="text-[12px] text-muted-foreground italic">View only</span>}
+                            {!canEdit && !canDelete && (
+                              <span className="text-[12px] text-muted-foreground italic">
+                                View only
+                              </span>
+                            )}
                           </div>
                         )}
                       </td>
@@ -244,7 +315,8 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
               className="text-xs font-semibold text-primary hover:underline"
             >
-              Load {Math.min(PAGE_SIZE, filtered.length - visible.length)} more ({visible.length} of {filtered.length})
+              Load {Math.min(PAGE_SIZE, filtered.length - visible.length)} more ({visible.length} of{" "}
+              {filtered.length})
             </button>
           </div>
         )}

@@ -18,7 +18,7 @@ Last Updated: 2026-07-16
 
 ## Purpose
 
-This document defines business *behaviour*, not implementation. It describes what the business needs to be true — statuses, ownership, pricing, and lifecycle rules — independent of which file or function currently enforces them.
+This document defines business _behaviour_, not implementation. It describes what the business needs to be true — statuses, ownership, pricing, and lifecycle rules — independent of which file or function currently enforces them.
 
 Business rules always take precedence over implementation assumptions. Where the repository's actual behaviour is ambiguous or looks like an oversight rather than a deliberate rule, this document says so explicitly rather than guessing.
 
@@ -53,16 +53,16 @@ Business rules always take precedence over implementation assumptions. Where the
 - **Token payment at lead conversion:** converting a lead requires a token amount that must be strictly less than the booking amount; it's recorded as the booking's first payment (`PaymentType.TOKEN`).
 - **Remaining balance:** tracked as `effectivePayable (amount − discount) − sum(all recorded payments)`. A payment can never be recorded for more than the remaining balance.
 - **Offline payments ARE supported:** staff can manually record a payment against a booking with method `Cash`, `UPI`, `Card`, `Bank Transfer`, or `Online` — this is not Razorpay-only.
-- **GST is a payment-level rule, not a booking-level rule** (a common assumption to double-check against): GST is optional, applies **only to non-cash payment methods**, and is computed per individual payment row — not once against the whole booking. The percent is chosen from a configurable list (default 5/16/18%) and the computed amount is persisted alongside the raw percent for reporting. GST does **not** change the payable/balance calculation — it's recorded as a tax breakdown *within* the amount received, not added on top of it.
+- **GST is a payment-level rule, not a booking-level rule** (a common assumption to double-check against): GST is optional, applies **only to non-cash payment methods**, and is computed per individual payment row — not once against the whole booking. The percent is chosen from a configurable list (default 5/16/18%) and the computed amount is persisted alongside the raw percent for reporting. GST does **not** change the payable/balance calculation — it's recorded as a tax breakdown _within_ the amount received, not added on top of it.
 - **"Final amount" clarification:** the balance/payable calculation is `bookingAmount − discountAmount`, full stop — GST is not part of that formula. Do not assume "Final Amount = Base − Discount + GST"; GST is reporting metadata on a payment, independent of the payable total.
-- **Refund behaviour:** implemented as a manually staff-recorded `BookingPayment` with `type: "REFUND"`. Refund entries are explicitly excluded from the "can't exceed remaining balance" check (a refund isn't a collection against the payable). **Flag — likely defect, not a deliberate rule:** the booking-finance summary (`computeBookingFinance`) sums *all* payment rows including refunds into `paidAmount` without sign-flipping, so a recorded refund currently *increases* the reported paid amount rather than decreasing it. This should be verified against real usage before being relied on for financial reporting.
+- **Refund behaviour:** implemented as a manually staff-recorded `BookingPayment` with `type: "REFUND"`. Refund entries are explicitly excluded from the "can't exceed remaining balance" check (a refund isn't a collection against the payable). **Flag — likely defect, not a deliberate rule:** the booking-finance summary (`computeBookingFinance`) sums _all_ payment rows including refunds into `paidAmount` without sign-flipping, so a recorded refund currently _increases_ the reported paid amount rather than decreasing it. This should be verified against real usage before being relied on for financial reporting.
 
 ## 4. Customer Rules — Implemented, but no dedicated Customer entity
 
 - **There is no separate "Customer" or "Traveller" model in the schema.** A customer is a `User` row with `role: CUSTOMER`. Guest bookings (no account) exist purely as `guestName`/`guestEmail`/`guestPhone` fields on the `Booking` row, with `userId` left null.
 - **Customer uniqueness / duplicate prevention differs by booking origin, deliberately:**
   - **Lead conversion** (staff-vetted): match an existing user first by email (globally unique), then by phone among existing `CUSTOMER`-role users; only create a new account if no match and an email is present.
-  - **Direct website booking** (unverified visitor): match **strictly by email only** — phone matching is deliberately *not* used here, because phone isn't unique/verified and matching by phone alone on a public flow could link a stranger's booking to someone else's account. This asymmetry between the two paths is intentional, not an inconsistency.
+  - **Direct website booking** (unverified visitor): match **strictly by email only** — phone matching is deliberately _not_ used here, because phone isn't unique/verified and matching by phone alone on a public flow could link a stranger's booking to someone else's account. This asymmetry between the two paths is intentional, not an inconsistency.
 - A newly auto-created customer account gets a system-generated temporary password and `mustChangePassword: true`; credentials are emailed, never left for the customer to guess.
 - **Requires Business Decision — Primary/Additional traveller detail:** the schema only stores a traveller **headcount** (`Booking.travellers: Int`, derived from `Lead.adults + Lead.children` at conversion). There is no structured "primary traveller" vs "additional traveller" record (names, ages, ID documents per traveller). If the business needs per-traveller detail (e.g. for group bookings or visa/permit paperwork), that is unbuilt and needs a product decision before implementation.
 
@@ -107,7 +107,7 @@ Dashboard, Packages (Tours), Destinations, Activities, Bookings, Leads, Itinerar
 
 ## 9. Marketing Rules — Implemented
 
-- **GA4 and Meta Pixel (client-side)** are configured as tags *inside* the Google Tag Manager container — not hardcoded in the application. GTM itself is the only script this codebase injects directly.
+- **GA4 and Meta Pixel (client-side)** are configured as tags _inside_ the Google Tag Manager container — not hardcoded in the application. GTM itself is the only script this codebase injects directly.
 - **UTM and click-ID attribution** (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `msclkid`, `landingPage`, `referrer`) is captured **once, at Lead or direct-Booking creation**, and never re-derived. A lead-converted booking copies its lead's attribution verbatim at conversion time rather than capturing it a second time.
 - **Google Ads Offline Conversions** and **Meta Conversions API** are implemented server-side, queued via the `OfflineConversion` model and uploaded per-lead/per-booking, independent of whether the client-side pixel fired (ad-blocker/ITP resilient).
 - **Not production-ready:** a Microsoft/Bing Ads offline-conversion adapter exists in code but its actual upload call is an intentional stub — do not treat Microsoft/Bing conversion tracking as live.

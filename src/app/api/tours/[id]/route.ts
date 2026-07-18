@@ -8,8 +8,23 @@ type Params = { params: Promise<{ id: string }> };
 
 const patchSchema = z.object({
   title: z.string().min(3).optional(),
-  slug: z.string().min(3).regex(/^[a-z0-9-]+$/).optional(),
-  category: z.enum(["HONEYMOON", "FAMILY", "ADVENTURE", "LUXURY", "BUDGET", "GROUP", "PILGRIMAGE", "PREMIUM"]).optional(),
+  slug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
+  category: z
+    .enum([
+      "HONEYMOON",
+      "FAMILY",
+      "ADVENTURE",
+      "LUXURY",
+      "BUDGET",
+      "GROUP",
+      "PILGRIMAGE",
+      "PREMIUM",
+    ])
+    .optional(),
   duration: z.coerce.number().int().min(1).optional(),
   excerpt: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
@@ -102,14 +117,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...rest,
         ...(category ? { category: category as TourCategory } : {}),
         ...(activityIds
-          ? { activities: { deleteMany: {}, create: activityIds.map((activityId) => ({ activityId })) } }
+          ? {
+              activities: {
+                deleteMany: {},
+                create: activityIds.map((activityId) => ({ activityId })),
+              },
+            }
           : {}),
       },
     });
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }

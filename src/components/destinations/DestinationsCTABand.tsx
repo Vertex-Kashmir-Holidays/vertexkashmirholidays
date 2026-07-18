@@ -1,17 +1,17 @@
 // src/components/sections/DestinationsCTABand.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { FileCheck, FileText, BadgeIndianRupee, Clock } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { imgSrc } from '@/lib/placeholder';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { FileCheck, FileText, BadgeIndianRupee, Clock } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { imgSrc } from "@/lib/placeholder";
 
 export function DestinationsCTABand() {
   const features = [
-    { t: 'Free Consultation', s: 'No obligation', Icon: FileCheck },
-    { t: 'Custom Itineraries', s: 'Tailored for you', Icon: FileText },
-    { t: 'Best Price Guarantee', s: 'Always', Icon: BadgeIndianRupee },
+    { t: "Free Consultation", s: "No obligation", Icon: FileCheck },
+    { t: "Custom Itineraries", s: "Tailored for you", Icon: FileText },
+    { t: "Best Price Guarantee", s: "Always", Icon: BadgeIndianRupee },
   ];
 
   return (
@@ -24,13 +24,7 @@ export function DestinationsCTABand() {
         transition={{ duration: 0.6 }}
       >
         <div className="absolute inset-y-0 right-0 hidden w-[55%] lg:block">
-          <Image
-            src={imgSrc()}
-            alt=""
-            fill
-            sizes="55vw"
-            className="object-cover"
-          />
+          <Image src={imgSrc()} alt="" fill sizes="55vw" className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-green via-brand-green/95 to-brand-green/20"></div>
         </div>
         <div className="relative grid items-center gap-8 p-9 lg:grid-cols-[1.1fr_1.3fr] lg:p-11">

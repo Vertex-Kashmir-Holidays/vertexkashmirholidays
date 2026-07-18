@@ -11,11 +11,7 @@ import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
 import type { FooterSettings } from "@/components/layout/Footer";
 
-export default async function PublicLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const [s, strip, promos, categoryRows, homeContent] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
@@ -83,8 +79,15 @@ export default async function PublicLayout({
   // used for "preferred site name" in Search); it's rendered in
   // (public)/page.tsx instead. Putting it on every page (as before) worked
   // against spec even though it never produced conflicting values.
-  const sameAs = [s?.facebook, s?.instagram, s?.twitter, s?.youtube, s?.tripadvisor, s?.googleReviews, s?.googleBusinessProfile]
-    .filter((u): u is string => Boolean(u && u.startsWith("http")));
+  const sameAs = [
+    s?.facebook,
+    s?.instagram,
+    s?.twitter,
+    s?.youtube,
+    s?.tripadvisor,
+    s?.googleReviews,
+    s?.googleBusinessProfile,
+  ].filter((u): u is string => Boolean(u && u.startsWith("http")));
 
   const organizationJsonLd = buildTravelAgency({
     telephone: s?.sitePhone,
@@ -100,12 +103,7 @@ export default async function PublicLayout({
   });
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <SiteAnalytics />
       <SiteSettingsProvider
         value={{

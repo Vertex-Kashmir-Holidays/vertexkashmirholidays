@@ -1,14 +1,26 @@
 // src/components/tours/TourDetailsSidebar.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Star, ShieldCheck, Calendar, Lock, Users, Car, BadgeCheck, Clock, ArrowRight, Flame, type LucideIcon } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
-import { LeadForm } from '@/components/leads/LeadForm';
-import { trackWhatsappClick, trackTourInquiry, trackBookingStarted } from '@/lib/analytics';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Star,
+  ShieldCheck,
+  Calendar,
+  Lock,
+  Users,
+  Car,
+  BadgeCheck,
+  Clock,
+  ArrowRight,
+  Flame,
+  type LucideIcon,
+} from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { LeadForm } from "@/components/leads/LeadForm";
+import { trackWhatsappClick, trackTourInquiry, trackBookingStarted } from "@/lib/analytics";
 
 interface TourDetailsSidebarProps {
   price: number;
@@ -21,7 +33,7 @@ interface TourDetailsSidebarProps {
   /** Slug used to deep-link into the /booking checkout page. */
   tourSlug: string;
   /** Which lead forms to expose. Defaults to showing both. */
-  formMode?: 'BOOKING_ONLY' | 'INQUIRY_ONLY' | 'BOTH';
+  formMode?: "BOOKING_ONLY" | "INQUIRY_ONLY" | "BOTH";
   /** Nearest upcoming departure, if any batches are configured. Only rendered as urgency when status is 'filling' — never fabricated. */
   nextDeparture?: { date: string; seats: number; status: string } | null;
   bestTime: string;
@@ -43,7 +55,7 @@ export function TourDetailsSidebar({
   tourId,
   tourName,
   tourSlug,
-  formMode = 'BOTH',
+  formMode = "BOTH",
   nextDeparture,
   bestTime,
   tourType,
@@ -51,26 +63,24 @@ export function TourDetailsSidebar({
   helpPhone,
 }: TourDetailsSidebarProps) {
   const router = useRouter();
-  const showInquiry = formMode !== 'BOOKING_ONLY';
-  const showBook = formMode !== 'INQUIRY_ONLY';
-  const [activeTab, setActiveTab] = useState<'inquiry' | 'book'>(
-    showInquiry ? 'inquiry' : 'book',
-  );
-  const [bookDate, setBookDate] = useState('');
-  const [bookPax, setBookPax] = useState('2');
+  const showInquiry = formMode !== "BOOKING_ONLY";
+  const showBook = formMode !== "INQUIRY_ONLY";
+  const [activeTab, setActiveTab] = useState<"inquiry" | "book">(showInquiry ? "inquiry" : "book");
+  const [bookDate, setBookDate] = useState("");
+  const [bookPax, setBookPax] = useState("2");
   // Bookings need ≥7 days' lead time (server-enforced on /booking).
   const minBookDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0];
+    return d.toISOString().split("T")[0];
   })();
   const advanceAmount = Math.round(price * (parseInt(bookPax, 10) || 2) * (ADVANCE_PCT / 100));
 
   function goToBooking() {
     trackBookingStarted(tourName);
     const params = new URLSearchParams({ tour: tourSlug });
-    if (bookDate) params.set('date', bookDate);
-    if (bookPax) params.set('travellers', bookPax);
+    if (bookDate) params.set("date", bookDate);
+    if (bookPax) params.set("travellers", bookPax);
     router.push(`/booking?${params.toString()}`);
   }
 
@@ -78,17 +88,17 @@ export function TourDetailsSidebar({
   const helpHref = wa(`Hi! I'd like help with the "${tourName}" Kashmir tour. Please assist.`);
 
   const trustItems: { t: string; s?: string; Icon: LucideIcon }[] = [
-    { t: 'Transparent Pricing', s: 'No hidden charges', Icon: BadgeCheck },
-    { t: 'Secure Payments', s: 'Powered by Razorpay', Icon: Lock },
-    { t: 'Free Cancellation', s: 'T&C Apply', Icon: Clock },
+    { t: "Transparent Pricing", s: "No hidden charges", Icon: BadgeCheck },
+    { t: "Secure Payments", s: "Powered by Razorpay", Icon: Lock },
+    { t: "Free Cancellation", s: "T&C Apply", Icon: Clock },
   ];
 
-  const isFilling = nextDeparture?.status === 'filling' && nextDeparture.seats > 0;
+  const isFilling = nextDeparture?.status === "filling" && nextDeparture.seats > 0;
 
   const infoCards: { t: string; s: string; Icon: LucideIcon }[] = [
-    { t: 'Best Time to Visit', s: bestTime, Icon: Calendar },
-    { t: 'Tour Type', s: tourType, Icon: Users },
-    { t: 'Pickup/Drop', s: pickupDrop, Icon: Car },
+    { t: "Best Time to Visit", s: bestTime, Icon: Calendar },
+    { t: "Tour Type", s: tourType, Icon: Users },
+    { t: "Pickup/Drop", s: pickupDrop, Icon: Car },
   ];
 
   return (
@@ -106,12 +116,14 @@ export function TourDetailsSidebar({
           </span>
         ) : null}
         <p className="mt-3 flex items-baseline gap-2">
-          <span className="text-[30px] font-extrabold leading-none">₹{price.toLocaleString('en-IN')}</span>
+          <span className="text-[30px] font-extrabold leading-none">
+            ₹{price.toLocaleString("en-IN")}
+          </span>
           <span className="text-[14px] font-medium text-muted-foreground">per person</span>
         </p>
         {oldPrice && (
           <p className="mt-1.5 text-[16px] font-semibold text-muted-foreground line-through">
-            ₹{oldPrice.toLocaleString('en-IN')}
+            ₹{oldPrice.toLocaleString("en-IN")}
           </p>
         )}
 
@@ -122,7 +134,9 @@ export function TourDetailsSidebar({
           </p>
           <div className="leading-tight">
             <p className="text-[14px] font-bold">Excellent</p>
-            <p className="text-[12px] text-muted-foreground">{reviews.toLocaleString('en-IN')} reviews</p>
+            <p className="text-[12px] text-muted-foreground">
+              {reviews.toLocaleString("en-IN")} reviews
+            </p>
           </div>
         </div>
 
@@ -137,8 +151,11 @@ export function TourDetailsSidebar({
           <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-orange-500/10 px-4 py-3 text-orange-700 dark:text-orange-400">
             <Flame className="h-5 w-5 shrink-0" strokeWidth={2} />
             <p className="text-[14px] font-semibold leading-snug">
-              Filling fast — only {nextDeparture.seats} seats left for{' '}
-              {new Date(nextDeparture.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+              Filling fast — only {nextDeparture.seats} seats left for{" "}
+              {new Date(nextDeparture.date).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+              })}
             </p>
           </div>
         )}
@@ -146,110 +163,122 @@ export function TourDetailsSidebar({
         {/* Forms area — hidden on mobile (the sticky BookingMobileBar + modal
             handle phones); shown inline from lg up. */}
         <div className="hidden lg:block">
-        {/* Tabs — only shown when both forms are enabled. */}
-        {showInquiry && showBook && (
-          <div className="mt-5 flex border-b border-border text-[16px] font-bold">
-            <button
-             onClick={() => { setActiveTab('inquiry'); if (activeTab !== 'inquiry') trackTourInquiry(tourName, tourId); }}
-              className={`relative flex-1 pb-3 transition ${
-                activeTab === 'inquiry' ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              Inquiry
-              {activeTab === 'inquiry' && (
-                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('book')}
-              className={`relative flex-1 pb-3 transition ${
-                activeTab === 'book' ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              Book
-              {activeTab === 'book' && (
-                <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Inquiry Form — shared <LeadForm /> posting to /api/leads */}
-        {showInquiry && (
-        <motion.div
-          className="mt-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: activeTab === 'inquiry' ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-          style={{ display: activeTab === 'inquiry' ? 'block' : 'none' }}
-        >
-          <LeadForm
-            source="tour-detail"
-            context={{ tourId, tourName }}
-            buttonLabel="Send Inquiry"
-          />
-        </motion.div>
-        )}
-
-        {/* Book — pick date + travellers, then continue to secure checkout.
-            Full details + payment are collected on the /booking page. */}
-        {showBook && (
-        <motion.div
-          className="mt-4 space-y-3.5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: activeTab === 'book' ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-          style={{ display: activeTab === 'book' ? 'block' : 'none' }}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="bkDate" className="text-[14px] font-semibold">
-                Start Date
-              </label>
-              <div className="mt-1.5 flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                <input
-                  id="bkDate"
-                  type="date"
-                  min={minBookDate}
-                  value={bookDate}
-                  onChange={(e) => setBookDate(e.target.value)}
-                  className="w-full px-3 py-2.5 text-[14px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
-                />
-                <Calendar className="mr-3 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="bkPax" className="text-[14px] font-semibold">
-                Travellers
-              </label>
-              <select
-                id="bkPax"
-                value={bookPax}
-                onChange={(e) => setBookPax(e.target.value)}
-                className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          {/* Tabs — only shown when both forms are enabled. */}
+          {showInquiry && showBook && (
+            <div className="mt-5 flex border-b border-border text-[16px] font-bold">
+              <button
+                onClick={() => {
+                  setActiveTab("inquiry");
+                  if (activeTab !== "inquiry") trackTourInquiry(tourName, tourId);
+                }}
+                className={`relative flex-1 pb-3 transition ${
+                  activeTab === "inquiry" ? "text-primary" : "text-muted-foreground"
+                }`}
               >
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
+                Inquiry
+                {activeTab === "inquiry" && (
+                  <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("book")}
+                className={`relative flex-1 pb-3 transition ${
+                  activeTab === "book" ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                Book
+                {activeTab === "book" && (
+                  <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary" />
+                )}
+              </button>
             </div>
-          </div>
-          <motion.button
-            type="button"
-            onClick={goToBooking}
-            className="!mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Lock className="h-4 w-4" strokeWidth={2} />
-            Book Now — Pay {ADVANCE_PCT}% Advance
-            <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
-          </motion.button>
-          <p className="text-center text-[12px] text-muted-foreground">
-            Secure checkout via Razorpay · Pay {advanceAmount > 0 ? `₹${advanceAmount.toLocaleString('en-IN')}` : `${ADVANCE_PCT}%`} advance now, balance later
-          </p>
-        </motion.div>
-        )}
+          )}
+
+          {/* Inquiry Form — shared <LeadForm /> posting to /api/leads */}
+          {showInquiry && (
+            <motion.div
+              className="mt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: activeTab === "inquiry" ? 1 : 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ display: activeTab === "inquiry" ? "block" : "none" }}
+            >
+              <LeadForm
+                source="tour-detail"
+                context={{ tourId, tourName }}
+                buttonLabel="Send Inquiry"
+              />
+            </motion.div>
+          )}
+
+          {/* Book — pick date + travellers, then continue to secure checkout.
+            Full details + payment are collected on the /booking page. */}
+          {showBook && (
+            <motion.div
+              className="mt-4 space-y-3.5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: activeTab === "book" ? 1 : 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ display: activeTab === "book" ? "block" : "none" }}
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="bkDate" className="text-[14px] font-semibold">
+                    Start Date
+                  </label>
+                  <div className="mt-1.5 flex items-center overflow-hidden rounded-lg border border-border transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <input
+                      id="bkDate"
+                      type="date"
+                      min={minBookDate}
+                      value={bookDate}
+                      onChange={(e) => setBookDate(e.target.value)}
+                      className="w-full px-3 py-2.5 text-[14px] outline-none [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                    <Calendar
+                      className="mr-3 h-4 w-4 shrink-0 text-muted-foreground"
+                      strokeWidth={2}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="bkPax" className="text-[14px] font-semibold">
+                    Travellers
+                  </label>
+                  <select
+                    id="bkPax"
+                    value={bookPax}
+                    onChange={(e) => setBookPax(e.target.value)}
+                    className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <motion.button
+                type="button"
+                onClick={goToBooking}
+                className="!mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-card transition hover:brightness-110"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Lock className="h-4 w-4" strokeWidth={2} />
+                Book Now — Pay {ADVANCE_PCT}% Advance
+                <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+              </motion.button>
+              <p className="text-center text-[12px] text-muted-foreground">
+                Secure checkout via Razorpay · Pay{" "}
+                {advanceAmount > 0
+                  ? `₹${advanceAmount.toLocaleString("en-IN")}`
+                  : `${ADVANCE_PCT}%`}{" "}
+                advance now, balance later
+              </p>
+            </motion.div>
+          )}
         </div>
       </motion.div>
 
@@ -278,7 +307,7 @@ export function TourDetailsSidebar({
         href={helpHref}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => trackWhatsappClick('tour_sidebar')}
+        onClick={() => trackWhatsappClick("tour_sidebar")}
         className="flex items-center gap-3.5 rounded-2xl bg-primary/10 p-5 transition hover:bg-primary/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -290,7 +319,9 @@ export function TourDetailsSidebar({
         </span>
         <span>
           <span className="block text-[16px] font-bold text-foreground">Need Help?</span>
-          <span className="block text-[14px] text-muted-foreground">Chat with our travel expert</span>
+          <span className="block text-[14px] text-muted-foreground">
+            Chat with our travel expert
+          </span>
           <span className="mt-0.5 block text-[14px] font-bold text-primary">{helpPhone}</span>
         </span>
       </motion.a>

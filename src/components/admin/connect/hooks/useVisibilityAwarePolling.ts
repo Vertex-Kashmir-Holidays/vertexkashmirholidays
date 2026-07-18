@@ -35,7 +35,7 @@ export function useVisibilityAwarePolling(
     }
 
     function apply() {
-      schedule(document.hidden ? hiddenIntervalMs ?? null : intervalMs);
+      schedule(document.hidden ? (hiddenIntervalMs ?? null) : intervalMs);
     }
 
     function onVisibilityChange() {

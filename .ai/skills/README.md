@@ -22,7 +22,7 @@ A Skill is a step-by-step, repository-aware implementation guide for one recurri
 
 A Skill is **not**:
 
-- **A generic framework or library tutorial.** It assumes the reader already knows Next.js, Prisma, React, and Zod — it documents Vertex's specific conventions layered on top of that knowledge (e.g. *this repo's* JSON-string-column convention), not how Prisma or Next.js work in general.
+- **A generic framework or library tutorial.** It assumes the reader already knows Next.js, Prisma, React, and Zod — it documents Vertex's specific conventions layered on top of that knowledge (e.g. _this repo's_ JSON-string-column convention), not how Prisma or Next.js work in general.
 - **A substitute for reading the actual code it references.** Every Skill points at real files (`src/lib/rbac.ts`, `prisma/schema.prisma`, a canonical existing module) — the Skill orients the reader toward those files, it doesn't replace them.
 - **A static, load-once document.** A Skill must be corrected the moment it's found to describe removed or renamed code — this already happened once: `crm-ticket.md` originally referenced an `ALLOWED_TRANSITIONS` map and `/api/inquiries/*` routes that no longer exist, and was corrected against the live codebase during its 2026-07-17 port from `.claude/skills/`, rather than preserved as stale history.
 - **A place for one-off or non-recurring implementation notes.** Something that will only ever happen once belongs in a PR description, a commit message, or a project memory — not a Skill. A Skill is only worth writing for a pattern that recurs.
@@ -64,14 +64,14 @@ Not every Skill uses every optional section (e.g. `booking-finance.md` adds a `F
 
 ## Current Skills
 
-| Skill | Covers |
-|---|---|
-| `admin-crud.md` | Building a first-class Admin CRUD module — its own sidebar entry, RBAC key, API route pair, list/create/edit pages. |
-| `api-route.md` | The Route Handler pattern shared by every API endpoint — public, admin, account, and webhook. |
-| `analytics-event.md` | Adding a new client- or server-side tracked event (GA4/GTM/Meta Pixel/CAPI/Google Ads offline conversions). |
-| `booking-finance.md` | Booking pricing, discount, and payment calculations — the shared finance utilities that must not be recomputed inline. |
-| `crm-ticket.md` | Orienting a CRM/admin/business-workflow ticket — identifying the owning surface and RBAC module before deciding whether it needs `admin-crud.md`'s full build sequence or a smaller change to an existing module. |
-| `prisma-migration.md` | Changing `prisma/schema.prisma` safely — nullable/defaulted columns, migration commands, downstream consumers, the dev/production Neon database split. |
+| Skill                 | Covers                                                                                                                                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `admin-crud.md`       | Building a first-class Admin CRUD module — its own sidebar entry, RBAC key, API route pair, list/create/edit pages.                                                                                               |
+| `api-route.md`        | The Route Handler pattern shared by every API endpoint — public, admin, account, and webhook.                                                                                                                     |
+| `analytics-event.md`  | Adding a new client- or server-side tracked event (GA4/GTM/Meta Pixel/CAPI/Google Ads offline conversions).                                                                                                       |
+| `booking-finance.md`  | Booking pricing, discount, and payment calculations — the shared finance utilities that must not be recomputed inline.                                                                                            |
+| `crm-ticket.md`       | Orienting a CRM/admin/business-workflow ticket — identifying the owning surface and RBAC module before deciding whether it needs `admin-crud.md`'s full build sequence or a smaller change to an existing module. |
+| `prisma-migration.md` | Changing `prisma/schema.prisma` safely — nullable/defaulted columns, migration commands, downstream consumers, the dev/production Neon database split.                                                            |
 
 ────────────────────────────────────
 

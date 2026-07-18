@@ -1,11 +1,11 @@
 // src/components/tours/TourDetailsReviews.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
+import { useState } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
 
 interface Review {
   seed: string;
@@ -38,9 +38,9 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
       transition={{ duration: 0.5 }}
     >
       <h2 className="text-[18px] font-bold">
-        Reviews{' '}
+        Reviews{" "}
         <span className="text-[14px] font-semibold text-muted-foreground">
-          ({totalReviews.toLocaleString('en-IN')})
+          ({totalReviews.toLocaleString("en-IN")})
         </span>
       </h2>
 
@@ -76,9 +76,7 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
               </div>
             </div>
 
-            <p className="mt-3 text-[14px] leading-relaxed text-foreground/75">
-              {review.quote}
-            </p>
+            <p className="mt-3 text-[14px] leading-relaxed text-foreground/75">{review.quote}</p>
             <a
               href="#"
               className="mt-2 inline-block text-[14px] font-bold text-primary hover:underline"
@@ -108,7 +106,7 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
               onClick={() => setCurrentReview(i)}
               aria-label={`Go to review ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === currentReview ? 'w-4 bg-primary' : 'w-1.5 bg-border'
+                i === currentReview ? "w-4 bg-primary" : "w-1.5 bg-border"
               }`}
             />
           ))}

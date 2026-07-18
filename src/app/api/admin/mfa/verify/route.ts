@@ -30,7 +30,10 @@ export async function POST(req: NextRequest) {
 
   const limit = await rateLimit(`mfa-verify:${guard.user.id}`, 10, "10 m");
   if (!limit.success) {
-    return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many attempts. Please try again later." },
+      { status: 429 },
+    );
   }
 
   const body = await req.json().catch(() => null);

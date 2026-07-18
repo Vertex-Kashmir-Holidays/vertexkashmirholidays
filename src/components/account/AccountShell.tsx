@@ -34,7 +34,9 @@ export function AccountShell({ children, userName, userEmail }: AccountShellProp
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="min-w-0 text-right">
               <p className="truncate text-xs font-semibold text-foreground">{userName}</p>
-              <p className="hidden truncate text-[12px] text-muted-foreground sm:block">{userEmail}</p>
+              <p className="hidden truncate text-[12px] text-muted-foreground sm:block">
+                {userEmail}
+              </p>
             </div>
             <ThemeToggle />
             <button
@@ -91,7 +93,9 @@ export function AccountShell({ children, userName, userEmail }: AccountShellProp
                   isActive ? "text-primary" : "text-foreground/55",
                 )}
               >
-                {isActive && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-primary" />}
+                {isActive && (
+                  <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-primary" />
+                )}
                 <Icon className="h-5 w-5" strokeWidth={isActive ? 2.4 : 2} />
                 {short}
               </Link>

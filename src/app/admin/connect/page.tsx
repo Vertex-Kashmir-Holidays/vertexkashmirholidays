@@ -9,10 +9,7 @@ export const dynamic = "force-dynamic";
 type PageProps = { searchParams: Promise<{ room?: string }> };
 
 export default async function ConnectPage({ searchParams }: PageProps) {
-  const [session, { room: initialRoomId }] = await Promise.all([
-    auth(),
-    searchParams,
-  ]);
+  const [session, { room: initialRoomId }] = await Promise.all([auth(), searchParams]);
   const currentUserId = session?.user?.id ?? "";
 
   const staffUsers = await prisma.user.findMany({

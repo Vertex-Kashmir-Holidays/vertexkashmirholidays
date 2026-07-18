@@ -13,7 +13,11 @@ const coord = z.preprocess(
 
 const patchSchema = z.object({
   name: z.string().min(2).optional(),
-  slug: z.string().min(2).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   description: z.string().optional().nullable(),
   excerpt: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
@@ -57,7 +61,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const existing = await prisma.destination.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   const { activityIds, ...data } = parsed.data;
@@ -67,14 +75,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data: {
         ...data,
         ...(activityIds
-          ? { activities: { deleteMany: {}, create: activityIds.map((activityId) => ({ activityId })) } }
+          ? {
+              activities: {
+                deleteMany: {},
+                create: activityIds.map((activityId) => ({ activityId })),
+              },
+            }
           : {}),
       },
     });
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }

@@ -42,7 +42,12 @@ export function VideoField({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Video URL or embed link" className={inputCls} />
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Video URL or embed link"
+          className={inputCls}
+        />
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
@@ -52,7 +57,11 @@ export function VideoField({
           Gallery
         </button>
         <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted">
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
           Upload
           <input
             type="file"
@@ -63,9 +72,19 @@ export function VideoField({
         </label>
       </div>
       {value && canPreview && (
-        <video src={value} controls playsInline className="h-20 w-auto rounded-lg border border-border object-cover" />
+        <video
+          src={value}
+          controls
+          playsInline
+          className="h-20 w-auto rounded-lg border border-border object-cover"
+        />
       )}
-      <GalleryPicker open={pickerOpen} type="VIDEO" onSelect={onChange} onClose={() => setPickerOpen(false)} />
+      <GalleryPicker
+        open={pickerOpen}
+        type="VIDEO"
+        onSelect={onChange}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

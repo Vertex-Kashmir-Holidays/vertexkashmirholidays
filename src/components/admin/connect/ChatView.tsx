@@ -1,6 +1,17 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ArrowLeft, Users, Info, Phone, Video, Loader2, Search, Archive, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Users,
+  Info,
+  Phone,
+  Video,
+  Loader2,
+  Search,
+  Archive,
+  Trash2,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMessages } from "./hooks/useMessages";
 import { useNotificationSound } from "./hooks/useNotificationSound";
@@ -23,16 +34,16 @@ interface StaffUser {
 }
 
 const PRESENCE_COLORS: Record<PresenceStatus, string> = {
-  ONLINE:  "bg-green-500",
-  AWAY:    "bg-amber-400",
-  BUSY:    "bg-red-500",
+  ONLINE: "bg-green-500",
+  AWAY: "bg-amber-400",
+  BUSY: "bg-red-500",
   OFFLINE: "bg-zinc-400",
 };
 
 const PRESENCE_LABELS: Record<PresenceStatus, string> = {
-  ONLINE:  "Active now",
-  AWAY:    "Away",
-  BUSY:    "Busy",
+  ONLINE: "Active now",
+  AWAY: "Away",
+  BUSY: "Busy",
   OFFLINE: "Offline",
 };
 
@@ -88,8 +99,25 @@ function sameDay(a: string, b: string) {
   );
 }
 
-export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack, onRefresh }: Props) {
-  const { messages, loading, hasMore, loadMore, appendOptimistic, replaceOptimistic, updateMessage, removeMessage, typing } = useMessages(room.id);
+export function ChatView({
+  room,
+  currentUserId,
+  staffUsers,
+  presenceMap,
+  onBack,
+  onRefresh,
+}: Props) {
+  const {
+    messages,
+    loading,
+    hasMore,
+    loadMore,
+    appendOptimistic,
+    replaceOptimistic,
+    updateMessage,
+    removeMessage,
+    typing,
+  } = useMessages(room.id);
   const { playMention } = useNotificationSound();
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -108,11 +136,8 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false);
 
-  const currentUserName =
-    room.members.find((m) => m.userId === currentUserId)?.user.name ?? null;
-  const selfSlug = currentUserName
-    ? currentUserName.trim().split(/\s+/)[0].toLowerCase()
-    : null;
+  const currentUserName = room.members.find((m) => m.userId === currentUserId)?.user.name ?? null;
+  const selfSlug = currentUserName ? currentUserName.trim().split(/\s+/)[0].toLowerCase() : null;
 
   // Mark room as read on mount + whenever room changes
   useEffect(() => {
@@ -139,8 +164,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
         );
       if (hasMention) playMention();
 
-      const distFromBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight;
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
       if (distFromBottom < 200) {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       }
@@ -157,7 +181,13 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
 
   const currentUserMember = room.members.find((m) => m.userId === currentUserId);
 
-  function handleSending({ tempId, body, attachmentUrl, attachmentType, attachmentName }: import("./MessageInput").SendingPayload) {
+  function handleSending({
+    tempId,
+    body,
+    attachmentUrl,
+    attachmentType,
+    attachmentName,
+  }: import("./MessageInput").SendingPayload) {
     appendOptimistic({
       id: tempId,
       roomId: room.id,
@@ -196,14 +226,20 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
     if (!prev) return;
 
     const map: Record<string, string[]> = (() => {
-      try { return prev.reactions ? (JSON.parse(prev.reactions) as Record<string, string[]>) : {}; }
-      catch { return {}; }
+      try {
+        return prev.reactions ? (JSON.parse(prev.reactions) as Record<string, string[]>) : {};
+      } catch {
+        return {};
+      }
     })();
 
     // Remove any existing reaction from this user
     let oldEmoji: string | null = null;
     for (const [e, users] of Object.entries(map)) {
-      if (users.includes(currentUserId)) { oldEmoji = e; break; }
+      if (users.includes(currentUserId)) {
+        oldEmoji = e;
+        break;
+      }
     }
     if (oldEmoji) {
       map[oldEmoji] = map[oldEmoji].filter((u) => u !== currentUserId);
@@ -215,12 +251,13 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
 
     updateMessage({ ...prev, reactions: Object.keys(map).length ? JSON.stringify(map) : null });
 
-    const res = await fetch(
-      `/api/connect/rooms/${room.id}/messages/${messageId}/react`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ emoji }) },
-    );
+    const res = await fetch(`/api/connect/rooms/${room.id}/messages/${messageId}/react`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji }),
+    });
     if (res.ok) {
-      updateMessage(await res.json() as ConnectMessage);
+      updateMessage((await res.json()) as ConnectMessage);
     } else {
       updateMessage(prev); // revert on error
     }
@@ -237,34 +274,48 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
     setConfirmDeleteId(messageId);
   }, []);
 
-  const doDelete = useCallback(async (messageId: string) => {
-    const res = await fetch(`/api/connect/rooms/${room.id}/messages/${messageId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) return;
-    const updated = await res.json();
-    updateMessage(updated as ConnectMessage);
-  }, [room.id, updateMessage]);
+  const doDelete = useCallback(
+    async (messageId: string) => {
+      const res = await fetch(`/api/connect/rooms/${room.id}/messages/${messageId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) return;
+      const updated = await res.json();
+      updateMessage(updated as ConnectMessage);
+    },
+    [room.id, updateMessage],
+  );
 
-  const handleEdited = useCallback((msg: unknown) => {
-    updateMessage(msg as ConnectMessage);
-  }, [updateMessage]);
+  const handleEdited = useCallback(
+    (msg: unknown) => {
+      updateMessage(msg as ConnectMessage);
+    },
+    [updateMessage],
+  );
 
   // ─── Search ─────────────────────────────────────────────────────────────────
 
-  const handleSearch = useCallback(async (q: string) => {
-    if (!q.trim()) { setSearchResults(null); return; }
-    setSearching(true);
-    try {
-      const res = await fetch(`/api/connect/rooms/${room.id}/messages?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      setSearchResults(data.messages);
-    } catch {
-      // best-effort
-    } finally {
-      setSearching(false);
-    }
-  }, [room.id]);
+  const handleSearch = useCallback(
+    async (q: string) => {
+      if (!q.trim()) {
+        setSearchResults(null);
+        return;
+      }
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `/api/connect/rooms/${room.id}/messages?q=${encodeURIComponent(q)}`,
+        );
+        const data = await res.json();
+        setSearchResults(data.messages);
+      } catch {
+        // best-effort
+      } finally {
+        setSearching(false);
+      }
+    },
+    [room.id],
+  );
 
   // ─── Archive ────────────────────────────────────────────────────────────────
 
@@ -275,7 +326,9 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
   // Delete chat for me — leaves the DM (sets leftAt) so it disappears from own list only
   const doDeleteChat = useCallback(async () => {
     setShowDeleteChatConfirm(false);
-    await fetch(`/api/connect/rooms/${room.id}/members/${currentUserId}`, { method: "DELETE" }).catch(() => {});
+    await fetch(`/api/connect/rooms/${room.id}/members/${currentUserId}`, {
+      method: "DELETE",
+    }).catch(() => {});
     onRefresh?.();
     onBack?.();
   }, [room.id, currentUserId, onRefresh, onBack]);
@@ -361,10 +414,7 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
             {dmPresence && (
               <div className="flex items-center gap-1 mt-0.5">
                 <span
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full shrink-0",
-                    PRESENCE_COLORS[dmPresence],
-                  )}
+                  className={cn("w-1.5 h-1.5 rounded-full shrink-0", PRESENCE_COLORS[dmPresence])}
                 />
                 <span className="text-[12px] text-muted-foreground">
                   {PRESENCE_LABELS[dmPresence]}
@@ -400,7 +450,11 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
               )}
             </button>
             <button
-              onClick={() => { setSearchQuery(""); setSearchResults(null); setShowSearch((v) => !v); }}
+              onClick={() => {
+                setSearchQuery("");
+                setSearchResults(null);
+                setShowSearch((v) => !v);
+              }}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               title="Search messages"
             >
@@ -449,10 +503,15 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
               placeholder="Search messages…"
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
-            {searching && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" />}
+            {searching && (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" />
+            )}
             {searchQuery && (
               <button
-                onClick={() => { setSearchQuery(""); setSearchResults(null); }}
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchResults(null);
+                }}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
@@ -529,7 +588,10 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
                 const showDateDivider = !prev || !sameDay(prev.createdAt, msg.createdAt);
                 const isFirstInGroup = showDateDivider || !prev || prev.senderId !== msg.senderId;
                 return (
-                  <div key={msg.id} className={i === 0 ? "mt-0" : isFirstInGroup ? "mt-3" : "mt-1.5"}>
+                  <div
+                    key={msg.id}
+                    className={i === 0 ? "mt-0" : isFirstInGroup ? "mt-3" : "mt-1.5"}
+                  >
                     {showDateDivider && <DateDivider iso={msg.createdAt} />}
                     <MessageBubble
                       message={msg}
@@ -578,7 +640,9 @@ export function ChatView({ room, currentUserId, staffUsers, presenceMap, onBack,
           currentUserId={currentUserId}
           staffUsers={staffUsers}
           onClose={() => setShowGroupInfo(false)}
-          onRefresh={async () => { await onRefresh?.(); }}
+          onRefresh={async () => {
+            await onRefresh?.();
+          }}
         />
       )}
 

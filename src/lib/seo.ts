@@ -30,7 +30,12 @@ export function buildMetadata({
   authors,
   noindex,
 }: BuildMetadataOptions): Metadata {
-  const image = ogImage && ogImage.startsWith("http") ? ogImage : ogImage ? `${SITE_URL}${ogImage}` : DEFAULT_OG_IMAGE;
+  const image =
+    ogImage && ogImage.startsWith("http")
+      ? ogImage
+      : ogImage
+        ? `${SITE_URL}${ogImage}`
+        : DEFAULT_OG_IMAGE;
   const socialTitle = ogTitle ?? title;
   const socialDescription = ogDescription ?? description;
 

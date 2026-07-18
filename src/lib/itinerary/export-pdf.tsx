@@ -7,7 +7,13 @@ import { getPaymentQr } from "@/lib/itinerary/payment";
 import type { ItineraryData } from "@/types/itinerary";
 
 function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "itinerary";
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "itinerary"
+  );
 }
 
 /**
@@ -47,15 +53,25 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   // Brand assets (icon watermark, horizontal lockups, payment-partner strip)
   // embed losslessly via data URLs so PNG transparency survives.
   const [coverImages, smallImages, logos] = await Promise.all([
-    compressMany([data.coverImage].filter(Boolean), { maxWidth: 900, maxHeight: 1300, quality: 0.6 }),
-    compressMany(srcs.filter((s) => s !== data.coverImage), { maxWidth: 640, maxHeight: 480, quality: 0.7 }),
+    compressMany([data.coverImage].filter(Boolean), {
+      maxWidth: 900,
+      maxHeight: 1300,
+      quality: 0.6,
+    }),
+    compressMany(
+      srcs.filter((s) => s !== data.coverImage),
+      { maxWidth: 640, maxHeight: 480, quality: 0.7 },
+    ),
     Promise.all(
       LOGO_ASSETS.map((src) =>
         fetchAsDataUrl(src).catch((err) => {
           // Silent-drop fallback stays (one missing brand asset shouldn't
           // abort the whole export), but log so this doesn't go unnoticed
           // the way the payment-partner strip did before.
-          console.warn(`[itinerary-pdf] Failed to embed brand asset "${src}" — it will be omitted from the PDF.`, err);
+          console.warn(
+            `[itinerary-pdf] Failed to embed brand asset "${src}" — it will be omitted from the PDF.`,
+            err,
+          );
           return "";
         }),
       ),

@@ -13,7 +13,10 @@ import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { TOUR_CATEGORY_META, type TourCategoryMeta } from "@/lib/tours/categories";
 import { TourCategoryHero } from "@/components/tours/TourCategoryHero";
 import { TourCategoryHubIntro } from "@/components/tours/TourCategoryHubIntro";
-import { TourCategoryHubGrid, type TourCategoryCardData } from "@/components/tours/TourCategoryHubGrid";
+import {
+  TourCategoryHubGrid,
+  type TourCategoryCardData,
+} from "@/components/tours/TourCategoryHubGrid";
 import { TourCategoryHubWhyChoose } from "@/components/tours/TourCategoryHubWhyChoose";
 import { TourCategoryHubFaq } from "@/components/tours/TourCategoryHubFaq";
 import { TourCategoryHubSpotlight } from "@/components/tours/TourCategoryHubSpotlight";

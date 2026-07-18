@@ -58,10 +58,7 @@ export async function POST(request: Request) {
   }
 
   // Display name from the account, falling back to the email local part.
-  const name =
-    session.user.name?.trim() ||
-    session.user.email?.split("@")[0] ||
-    "Traveller";
+  const name = session.user.name?.trim() || session.user.email?.split("@")[0] || "Traveller";
 
   try {
     const review = await prisma.review.create({

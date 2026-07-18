@@ -29,9 +29,18 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type LeadStatus = "NEW" | "CONNECTED" | "NOT_CONNECTED" | "QUALIFIED" | "NEGOTIATION" | "ON_HOLD" | "CONVERTED" | "REJECTED";
+type LeadStatus =
+  | "NEW"
+  | "CONNECTED"
+  | "NOT_CONNECTED"
+  | "QUALIFIED"
+  | "NEGOTIATION"
+  | "ON_HOLD"
+  | "CONVERTED"
+  | "REJECTED";
 type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
-type LeadCategory = "HONEYMOON_TOUR" | "COUPLE" | "FAMILY_TOUR" | "GROUP_TOUR" | "SKI_TOUR" | "OFFBEAT_TOUR";
+type LeadCategory =
+  "HONEYMOON_TOUR" | "COUPLE" | "FAMILY_TOUR" | "GROUP_TOUR" | "SKI_TOUR" | "OFFBEAT_TOUR";
 type LeadActivityType =
   | "STATUS_CHANGE"
   | "ASSIGNMENT_CHANGE"
@@ -172,7 +181,11 @@ function fmtCategory(c: LeadCategory | null) {
 
 function fmtDate(d: Date | string | null) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function fmtDateTime(d: Date | string) {
@@ -209,7 +222,15 @@ function activityLabel(a: Activity): string {
 const selectCls =
   "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
 
-export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canManage, gstRates, ipDuplicates }: Props) {
+export function LeadDetail({
+  lead,
+  staffUsers,
+  canManageItinerary,
+  isAdmin,
+  canManage,
+  gstRates,
+  ipDuplicates,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const converted = lead.status === "CONVERTED";
@@ -273,7 +294,12 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
     patch({ status: val });
   }
 
-  function handleConvert(bookingAmount: number, tokenAmount: number, paymentMethod: string, gstPercent: number | null) {
+  function handleConvert(
+    bookingAmount: number,
+    tokenAmount: number,
+    paymentMethod: string,
+    gstPercent: number | null,
+  ) {
     startTransition(async () => {
       try {
         const res = await fetch(`/api/leads/${lead.id}/convert`, {
@@ -362,7 +388,12 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">{lead.name}</h2>
           <div className="flex items-center gap-2 mt-1">
-            <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[status])}>
+            <span
+              className={cn(
+                "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                STATUS_STYLES[status],
+              )}
+            >
               {status.replace(/_/g, " ")}
             </span>
             {locked && (
@@ -407,7 +438,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     setShowConvert(true);
                   }}
                   disabled={isPending}
-                  title={itinerary ? undefined : "An itinerary is required before converting this lead."}
+                  title={
+                    itinerary ? undefined : "An itinerary is required before converting this lead."
+                  }
                   className="flex items-center gap-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -420,7 +453,11 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                   disabled={isPending}
                   className="flex items-center gap-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
                 >
-                  {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
+                  {isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Unlock className="w-3.5 h-3.5" />
+                  )}
                   Unlock
                 </button>
               )}
@@ -465,7 +502,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
             <p className="font-semibold text-amber-700 dark:text-amber-300">This lead is locked</p>
             <p className="text-muted-foreground mt-0.5">
               It has been converted to a booking, so its details are read-only.{" "}
-              {isAdmin ? "Unlock the lead to make changes." : "Ask an admin to unlock it before any changes can be made."}
+              {isAdmin
+                ? "Unlock the lead to make changes."
+                : "Ask an admin to unlock it before any changes can be made."}
             </p>
           </div>
         </div>
@@ -480,14 +519,20 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-xs">
               <div>
                 <p className="text-muted-foreground mb-0.5">Phone</p>
-                <a href={`tel:${lead.phone}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="font-semibold text-foreground hover:text-primary transition-colors"
+                >
                   {lead.phone}
                 </a>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Email</p>
                 {lead.email ? (
-                  <a href={`mailto:${lead.email}`} className="font-semibold text-foreground hover:text-primary transition-colors truncate block max-w-full">
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="font-semibold text-foreground hover:text-primary transition-colors truncate block max-w-full"
+                  >
                     {lead.email}
                   </a>
                 ) : (
@@ -502,7 +547,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <div>
                   <p className="text-muted-foreground mb-0.5">IP Address</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-foreground">{lead.ipAddress}</span>
+                    <span className="font-mono text-xs font-semibold text-foreground">
+                      {lead.ipAddress}
+                    </span>
                     {ipDuplicates.length === 1 && (
                       <Link
                         href={`/admin/leads/${ipDuplicates[0].id}`}
@@ -524,7 +571,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               )}
               <div>
                 <p className="text-muted-foreground mb-0.5">Category</p>
-                <p className="font-semibold text-foreground capitalize">{fmtCategory(lead.category)}</p>
+                <p className="font-semibold text-foreground capitalize">
+                  {fmtCategory(lead.category)}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Adults</p>
@@ -579,10 +628,13 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     >
                       {lead.booking.id}
                     </Link>
-                    <span className={cn(
-                      "text-[12px] font-bold px-1.5 py-0.5 rounded-full",
-                      BOOKING_STATUS_STYLES[lead.booking.status] ?? "bg-muted text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "text-[12px] font-bold px-1.5 py-0.5 rounded-full",
+                        BOOKING_STATUS_STYLES[lead.booking.status] ??
+                          "bg-muted text-muted-foreground",
+                      )}
+                    >
                       {lead.booking.status}
                     </span>
                   </div>
@@ -591,12 +643,14 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               <div>
                 <p className="text-muted-foreground mb-0.5">Follow-up</p>
                 {lead.followUpAt ? (
-                  <p className={cn(
-                    "font-semibold",
-                    new Date(lead.followUpAt) < new Date()
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-foreground",
-                  )}>
+                  <p
+                    className={cn(
+                      "font-semibold",
+                      new Date(lead.followUpAt) < new Date()
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-foreground",
+                    )}
+                  >
                     {fmtDate(lead.followUpAt)}
                   </p>
                 ) : (
@@ -680,7 +734,8 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
 
                 {converted && (
                   <p className="text-[12px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> Final itinerary for the converted lead — locked and no longer editable.
+                    <Lock className="w-3 h-3" /> Final itinerary for the converted lead — locked and
+                    no longer editable.
                   </p>
                 )}
 
@@ -692,7 +747,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                     <ol className="mt-2 space-y-2 border-l border-border pl-3">
                       {itinerary.history.map((h) => (
                         <li key={h.id} className="text-[12px]">
-                          <p className="font-semibold text-foreground">{fmtDateTime(h.createdAt)}</p>
+                          <p className="font-semibold text-foreground">
+                            {fmtDateTime(h.createdAt)}
+                          </p>
                           <p className="text-muted-foreground">by {h.editedByName}</p>
                         </li>
                       ))}
@@ -702,14 +759,20 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-xs text-muted-foreground mb-3">No itinerary yet for this lead.</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  No itinerary yet for this lead.
+                </p>
                 {canManageItinerary && !converted ? (
                   <button
                     onClick={handleGenerateItinerary}
                     disabled={isPending}
                     className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
                   >
-                    {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    {isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5" />
+                    )}
                     Generate Itinerary
                   </button>
                 ) : (
@@ -732,7 +795,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               rows={4}
               disabled={!canManage || locked}
               className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none disabled:opacity-60"
-              placeholder={canManage ? "Add notes about this lead..." : "Only the assignee can add notes."}
+              placeholder={
+                canManage ? "Add notes about this lead..." : "Only the assignee can add notes."
+              }
             />
             <div className="flex justify-end mt-2">
               <button
@@ -752,7 +817,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               Activity{lead.activities.length > 0 && ` (${lead.activities.length})`}
             </h3>
             {lead.activities.length === 0 ? (
-              <p className="text-muted-foreground text-xs py-4 text-center">No activity recorded yet.</p>
+              <p className="text-muted-foreground text-xs py-4 text-center">
+                No activity recorded yet.
+              </p>
             ) : (
               <ol className="space-y-3">
                 {(showAllActivity ? lead.activities : lead.activities.slice(0, 3)).map((a) => {
@@ -764,7 +831,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                       </div>
                       <div className="flex-1 min-w-0 pb-3 border-b border-border last:border-0 last:pb-0">
                         <p className="text-xs font-semibold text-foreground">{activityLabel(a)}</p>
-                        {a.note && <p className="text-[12px] text-muted-foreground mt-0.5">{a.note}</p>}
+                        {a.note && (
+                          <p className="text-[12px] text-muted-foreground mt-0.5">{a.note}</p>
+                        )}
                         <p className="text-[12px] text-muted-foreground mt-0.5">
                           by {a.performedByName} · {fmtDateTime(a.performedAt)}
                         </p>
@@ -779,9 +848,7 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 onClick={() => setShowAllActivity((v) => !v)}
                 className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
               >
-                {showAllActivity
-                  ? "View Less"
-                  : `View More (${lead.activities.length - 3} older)`}
+                {showAllActivity ? "View Less" : `View More (${lead.activities.length - 3} older)`}
               </button>
             )}
           </div>
@@ -805,7 +872,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
 
             {/* Status */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Status</label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Status
+              </label>
               <div className="relative">
                 <select
                   value={status}
@@ -829,13 +898,21 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
 
             {/* Assigned To */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Assigned To</label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Assigned To
+              </label>
               <div className="relative">
                 <select
                   value={assignedToId}
                   onChange={(e) => handleAssignChange(e.target.value)}
                   disabled={isPending || !isAdmin || locked}
-                  title={locked ? "Unlock the lead before reassigning." : isAdmin ? undefined : "Only an admin can change the assignee."}
+                  title={
+                    locked
+                      ? "Unlock the lead before reassigning."
+                      : isAdmin
+                        ? undefined
+                        : "Only an admin can change the assignee."
+                  }
                   className={selectCls}
                 >
                   <option value="">Unassigned</option>
@@ -851,7 +928,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
 
             {/* Category */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Category</label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Category
+              </label>
               <div className="relative">
                 <select
                   value={category}
@@ -884,13 +963,17 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                 <div>
                   <p className="text-muted-foreground mb-0.5">Negotiated</p>
                   <p className="font-bold text-foreground">
-                    {lead.negotiatedAmount != null ? `₹${lead.negotiatedAmount.toLocaleString("en-IN")}` : "—"}
+                    {lead.negotiatedAmount != null
+                      ? `₹${lead.negotiatedAmount.toLocaleString("en-IN")}`
+                      : "—"}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground mb-0.5">Token</p>
                   <p className="font-bold text-foreground">
-                    {lead.tokenAmount != null ? `₹${lead.tokenAmount.toLocaleString("en-IN")}` : "—"}
+                    {lead.tokenAmount != null
+                      ? `₹${lead.tokenAmount.toLocaleString("en-IN")}`
+                      : "—"}
                   </p>
                 </div>
               </div>
@@ -906,7 +989,10 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
               <h3 className="font-bold text-foreground text-sm">Follow-up</h3>
               {lead.followUpAt && canManage && !locked && (
                 <button
-                  onClick={() => { setFollowUpAt(""); patch({ followUpAt: null }); }}
+                  onClick={() => {
+                    setFollowUpAt("");
+                    patch({ followUpAt: null });
+                  }}
                   disabled={isPending}
                   className="text-[12px] text-muted-foreground hover:text-red-500 transition-colors"
                 >
@@ -923,7 +1009,13 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
             />
             <button
               onClick={() => patch({ followUpAt: followUpAt || null })}
-              disabled={isPending || !canManage || locked || followUpAt === (lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "")}
+              disabled={
+                isPending ||
+                !canManage ||
+                locked ||
+                followUpAt ===
+                  (lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "")
+              }
               className="w-full flex items-center justify-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
             >
               {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -952,10 +1044,13 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
                   <span className="font-mono text-[12px] text-muted-foreground">
                     ...{lead.booking.id.slice(-8)}
                   </span>
-                  <span className={cn(
-                    "text-[12px] font-bold px-2 py-0.5 rounded-full",
-                    BOOKING_STATUS_STYLES[lead.booking.status] ?? "bg-muted text-muted-foreground",
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                      BOOKING_STATUS_STYLES[lead.booking.status] ??
+                        "bg-muted text-muted-foreground",
+                    )}
+                  >
                     {lead.booking.status}
                   </span>
                 </div>
@@ -977,7 +1072,9 @@ export function LeadDetail({ lead, staffUsers, canManageItinerary, isAdmin, canM
             ) : (
               <>
                 <p className="text-[12px] text-muted-foreground">
-                  {canManage ? "Paste a booking ID to link this lead to a booking." : "Only the assignee can link a booking."}
+                  {canManage
+                    ? "Paste a booking ID to link this lead to a booking."
+                    : "Only the assignee can link a booking."}
                 </p>
                 <input
                   type="text"
@@ -1037,7 +1134,12 @@ function ConvertModal({
   gstRates: number[];
   isPending: boolean;
   onClose: () => void;
-  onConfirm: (bookingAmount: number, tokenAmount: number, paymentMethod: string, gstPercent: number | null) => void;
+  onConfirm: (
+    bookingAmount: number,
+    tokenAmount: number,
+    paymentMethod: string,
+    gstPercent: number | null,
+  ) => void;
 }) {
   const [bookingAmount, setBookingAmount] = useState(
     defaultBookingAmount != null ? String(defaultBookingAmount) : "",
@@ -1067,7 +1169,10 @@ function ConvertModal({
     "w-full px-3 py-2 text-sm border border-border rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
@@ -1076,13 +1181,16 @@ function ConvertModal({
         <div>
           <h3 className="font-display font-bold text-foreground">Convert lead</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Convert <span className="font-semibold text-foreground">{leadName}</span> into a booking. This locks the lead and its itinerary.
+            Convert <span className="font-semibold text-foreground">{leadName}</span> into a
+            booking. This locks the lead and its itinerary.
           </p>
         </div>
 
         <div className="space-y-3">
           <label className="block">
-            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Booking Amount (₹)</span>
+            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
+              Booking Amount (₹)
+            </span>
             <input
               type="number"
               min={0}
@@ -1095,7 +1203,9 @@ function ConvertModal({
             />
           </label>
           <label className="block">
-            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Token / Advance Amount (₹)</span>
+            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
+              Token / Advance Amount (₹)
+            </span>
             <input
               type="number"
               min={0}
@@ -1105,21 +1215,34 @@ function ConvertModal({
               placeholder="e.g. 9000"
               className={`${inputCls} mt-1`}
             />
-            <span className="text-[12px] text-muted-foreground">Recorded as the first payment. Must be less than the booking amount.</span>
+            <span className="text-[12px] text-muted-foreground">
+              Recorded as the first payment. Must be less than the booking amount.
+            </span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">Payment Mode</span>
+              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
+                Payment Mode
+              </span>
               <select
                 value={paymentMethod}
-                onChange={(e) => { setPaymentMethod(e.target.value); if (isCashMethod(e.target.value)) setGstPercent(""); }}
+                onChange={(e) => {
+                  setPaymentMethod(e.target.value);
+                  if (isCashMethod(e.target.value)) setGstPercent("");
+                }}
                 className={`${inputCls} mt-1`}
               >
-                {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="block">
-              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">GST</span>
+              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
+                GST
+              </span>
               <select
                 value={gstPercent}
                 onChange={(e) => setGstPercent(e.target.value)}
@@ -1128,22 +1251,36 @@ function ConvertModal({
                 className={`${inputCls} mt-1`}
               >
                 <option value="">No GST</option>
-                {gstRates.map((r) => <option key={r} value={r}>{r}%</option>)}
+                {gstRates.map((r) => (
+                  <option key={r} value={r}>
+                    {r}%
+                  </option>
+                ))}
               </select>
             </label>
           </div>
           {!gstEligible && (
-            <p className="text-[12px] text-muted-foreground">GST applies to non-cash payments only.</p>
+            <p className="text-[12px] text-muted-foreground">
+              GST applies to non-cash payments only.
+            </p>
           )}
         </div>
 
         {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={isPending} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+          >
             {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Convert &amp; Create Booking
           </button>

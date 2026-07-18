@@ -69,7 +69,15 @@ const DELEGATES: Record<keyof typeof FIELD_DEFS, Delegate> = {
 export const RESOURCES: Record<string, ResourceDef> = Object.fromEntries(
   Object.keys(FIELD_DEFS).map((key) => {
     const meta = getMeta(key);
-    return [key, { model: DELEGATES[key], schema: buildItemSchema(FIELD_DEFS[key], meta), meta, module: RESOURCE_MODULE[key] }];
+    return [
+      key,
+      {
+        model: DELEGATES[key],
+        schema: buildItemSchema(FIELD_DEFS[key], meta),
+        meta,
+        module: RESOURCE_MODULE[key],
+      },
+    ];
   }),
 );
 

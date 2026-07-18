@@ -2,11 +2,7 @@
 // No server-only imports (no prisma/bcrypt) so this is safe to bundle into a
 // client component. The OTP/crypto/rate-limit helpers live in ./otp.
 
-import {
-  isValidPhoneNumber,
-  parsePhoneNumber,
-  type CountryCode,
-} from "libphonenumber-js";
+import { isValidPhoneNumber, parsePhoneNumber, type CountryCode } from "libphonenumber-js";
 
 // ── Email domain allowlist ───────────────────────────────────────────────────
 
@@ -37,9 +33,7 @@ export const ALLOWED_EMAIL_DOMAINS = [
 /** True when the email's domain is in {@link ALLOWED_EMAIL_DOMAINS}. */
 export function isAllowedEmailDomain(email: string): boolean {
   const domain = email.split("@")[1]?.toLowerCase().trim();
-  return (
-    !!domain && (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(domain)
-  );
+  return !!domain && (ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(domain);
 }
 
 /**
@@ -114,5 +108,4 @@ export function isValidE164(value: string): boolean {
   }
 }
 
-export const PHONE_MESSAGE =
-  "Please enter a valid phone number for the selected country.";
+export const PHONE_MESSAGE = "Please enter a valid phone number for the selected country.";

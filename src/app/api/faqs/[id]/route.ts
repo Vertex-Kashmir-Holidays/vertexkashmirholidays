@@ -52,11 +52,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
 
-  const { tourIds, destinationIds, blogIds, campaignIds, activityIds, lastReviewedAt, question, ...rest } = parsed.data;
+  const {
+    tourIds,
+    destinationIds,
+    blogIds,
+    campaignIds,
+    activityIds,
+    lastReviewedAt,
+    question,
+    ...rest
+  } = parsed.data;
 
   try {
     // Re-slugging on every question edit would break existing external/
@@ -69,10 +82,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data: {
         ...rest,
         ...(question ? { question } : {}),
-        ...(lastReviewedAt !== undefined ? { lastReviewedAt: lastReviewedAt ? new Date(lastReviewedAt) : null } : {}),
+        ...(lastReviewedAt !== undefined
+          ? { lastReviewedAt: lastReviewedAt ? new Date(lastReviewedAt) : null }
+          : {}),
         updatedById: guard.user.id,
         ...(tourIds ? { tours: { set: tourIds.map((tid) => ({ id: tid })) } } : {}),
-        ...(destinationIds ? { destinations: { set: destinationIds.map((did) => ({ id: did })) } } : {}),
+        ...(destinationIds
+          ? { destinations: { set: destinationIds.map((did) => ({ id: did })) } }
+          : {}),
         ...(blogIds ? { blogs: { set: blogIds.map((bid) => ({ id: bid })) } } : {}),
         ...(campaignIds ? { campaigns: { set: campaignIds.map((cid) => ({ id: cid })) } } : {}),
         ...(activityIds ? { activities: { set: activityIds.map((aid) => ({ id: aid })) } } : {}),
@@ -81,7 +98,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "A FAQ with this slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "A FAQ with this slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }

@@ -83,9 +83,9 @@ function withLeadFacts(data: ItineraryData, lead: LeadItinerarySeed): ItineraryD
     preparedFor: f.preparedFor,
     travelDates: f.travelDates,
     travelers: f.travelers,
-   // When category is null (direct booking), preserve the existing packageType so
-   // a tour-name seeded at creation isn't reset to "CUSTOM PACKAGE" on every sync.
-   packageType: lead.category ? f.packageType : (data.packageType || f.packageType),
+    // When category is null (direct booking), preserve the existing packageType so
+    // a tour-name seeded at creation isn't reset to "CUSTOM PACKAGE" on every sync.
+    packageType: lead.category ? f.packageType : data.packageType || f.packageType,
     // Keep the info strip's Duration tile in sync with the cover.
     info: data.info.map((it) => (it.id === "info-1" ? { ...it, value: f.durationPlain } : it)),
   };
@@ -101,6 +101,9 @@ export function buildLeadItineraryData(lead: LeadItinerarySeed): ItineraryData {
  * travellers, package type) after the lead changes. Days, hotels, pricing and
  * all other edited content are preserved.
  */
-export function applyLeadFactsToItinerary(data: ItineraryData, lead: LeadItinerarySeed): ItineraryData {
+export function applyLeadFactsToItinerary(
+  data: ItineraryData,
+  lead: LeadItinerarySeed,
+): ItineraryData {
   return withLeadFacts(data, lead);
 }

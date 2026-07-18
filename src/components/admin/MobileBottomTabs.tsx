@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, Package, Inbox, CalendarDays, MessageSquare, type LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  Inbox,
+  CalendarDays,
+  MessageSquare,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ModuleKey, PermissionMap } from "@/lib/rbac";
 

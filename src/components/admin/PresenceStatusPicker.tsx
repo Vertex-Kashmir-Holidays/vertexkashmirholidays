@@ -12,26 +12,22 @@ interface Props {
 
 const STATUS_COLORS: Record<PresenceStatus, string> = {
   ONLINE: "bg-green-500",
-  AWAY:   "bg-amber-400",
-  BUSY:   "bg-red-500",
+  AWAY: "bg-amber-400",
+  BUSY: "bg-red-500",
   OFFLINE: "bg-zinc-400",
 };
 
 const STATUS_LABELS: Record<PresenceStatus, string> = {
-  ONLINE:  "Online",
-  AWAY:    "Away",
-  BUSY:    "Busy",
+  ONLINE: "Online",
+  AWAY: "Away",
+  BUSY: "Busy",
   OFFLINE: "Offline",
 };
 
 function Dot({ status, className }: { status: PresenceStatus; className?: string }) {
   return (
     <span
-      className={cn(
-        "rounded-full border-2 border-card shrink-0",
-        STATUS_COLORS[status],
-        className,
-      )}
+      className={cn("rounded-full border-2 border-card shrink-0", STATUS_COLORS[status], className)}
     />
   );
 }
@@ -46,7 +42,9 @@ export function PresenceStatusPicker({ userImage, userName }: Props) {
   useEffect(() => {
     fetch("/api/connect/presence")
       .then((r) => r.json())
-      .then((d) => { if (d.status) setStatus(d.status as PresenceStatus); })
+      .then((d) => {
+        if (d.status) setStatus(d.status as PresenceStatus);
+      })
       .catch(() => {});
   }, []);
 
@@ -99,10 +97,7 @@ export function PresenceStatusPicker({ userImage, userName }: Props) {
           </div>
         )}
         {/* Presence dot overlaid on the avatar */}
-        <Dot
-          status={status}
-          className="absolute bottom-0 right-0 w-2.5 h-2.5"
-        />
+        <Dot status={status} className="absolute bottom-0 right-0 w-2.5 h-2.5" />
       </button>
 
       {open && (

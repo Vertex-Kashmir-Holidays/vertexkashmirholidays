@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Tag } from 'lucide-react';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import { imgSrc } from '@/lib/placeholder';
-import { formatINR } from '@/lib/accents';
-import type { CampaignListItemData } from '@/types/campaign';
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { ArrowRight, Sparkles, Tag } from "lucide-react";
+import { Tilt3D } from "@/components/ui/3DTilt";
+import { imgSrc } from "@/lib/placeholder";
+import { formatINR } from "@/lib/accents";
+import type { CampaignListItemData } from "@/types/campaign";
 
 interface CampaignCardProps {
   campaign: CampaignListItemData;

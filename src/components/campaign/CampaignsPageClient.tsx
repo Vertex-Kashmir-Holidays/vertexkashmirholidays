@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { AffordabilityWidget } from '@/components/payments/AffordabilityWidget';
-import { CampaignCard } from '@/components/campaign/CampaignCard';
-import type { CampaignListItemData } from '@/types/campaign';
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
+import { CampaignCard } from "@/components/campaign/CampaignCard";
+import type { CampaignListItemData } from "@/types/campaign";
 
 interface CampaignsPageClientProps {
   campaigns: CampaignListItemData[];
@@ -18,9 +18,7 @@ export function CampaignsPageClient({ campaigns }: CampaignsPageClientProps) {
 
   // Lowest campaign price anchors the EMI estimate, matching the tours page.
   const emiAmount = useMemo(() => {
-    const prices = campaigns
-      .map((c) => c.priceFrom)
-      .filter((p): p is number => p != null && p > 0);
+    const prices = campaigns.map((c) => c.priceFrom).filter((p): p is number => p != null && p > 0);
     return prices.length ? Math.min(...prices) : 0;
   }, [campaigns]);
 
@@ -39,9 +37,9 @@ export function CampaignsPageClient({ campaigns }: CampaignsPageClientProps) {
 
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="h-display text-[26px] font-bold">
-          All Campaigns{' '}
+          All Campaigns{" "}
           <span className="font-sans text-[14px] font-semibold text-primary">
-            ({campaigns.length} {campaigns.length === 1 ? 'Campaign' : 'Campaigns'})
+            ({campaigns.length} {campaigns.length === 1 ? "Campaign" : "Campaigns"})
           </span>
         </h2>
       </div>
@@ -86,11 +84,11 @@ export function CampaignsPageClient({ campaigns }: CampaignsPageClientProps) {
             <motion.button
               key={p}
               onClick={() => setPage(p)}
-              aria-current={p === currentPage ? 'page' : undefined}
+              aria-current={p === currentPage ? "page" : undefined}
               className={`${
                 p === currentPage
-                  ? 'bg-primary text-primary-foreground shadow-card'
-                  : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
+                  ? "bg-primary text-primary-foreground shadow-card"
+                  : "border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary"
               } grid h-10 w-10 place-items-center rounded-full text-[14px] font-semibold transition-all duration-200`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

@@ -93,7 +93,7 @@ export const authConfig = {
       }
 
       return session;
-    }
+    },
   },
 
   providers: [],

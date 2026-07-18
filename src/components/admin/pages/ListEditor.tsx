@@ -51,7 +51,17 @@ function buildViewHref(template: string, item: Item): string | null {
   return missing ? null : filled;
 }
 
-export function ListEditor({ title, description, resource, fields, items, canCreate, canEdit, canDelete, viewHrefTemplate }: Props) {
+export function ListEditor({
+  title,
+  description,
+  resource,
+  fields,
+  items,
+  canCreate,
+  canEdit,
+  canDelete,
+  viewHrefTemplate,
+}: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<Item | "new" | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -106,7 +116,9 @@ export function ListEditor({ title, description, resource, fields, items, canCre
     setBusy(true);
     try {
       const isNew = editing === "new";
-      const url = isNew ? `/api/pages/${resource}` : `/api/pages/${resource}/${(editing as Item).id}`;
+      const url = isNew
+        ? `/api/pages/${resource}`
+        : `/api/pages/${resource}/${(editing as Item).id}`;
       const res = await fetch(url, {
         method: isNew ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -176,56 +188,92 @@ export function ListEditor({ title, description, resource, fields, items, canCre
           items.map((item) => {
             const viewHref = viewHrefTemplate ? buildViewHref(viewHrefTemplate, item) : null;
             return (
-            <div key={item.id} className="flex items-center gap-3 px-5 py-3">
-              {meta.sortable && (
-                <span className="w-6 shrink-0 text-[12px] font-medium text-muted-foreground/60">{item.sortOrder ?? 0}</span>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className={cn("truncate text-sm font-medium", item.isActive === false ? "text-muted-foreground" : "text-foreground")}>
-                  {String(item[primaryKey] ?? "—")}
-                </p>
-                {fields[1] && (
-                  <p className="truncate text-xs text-muted-foreground">{String(item[fields[1].key] ?? "")}</p>
-                )}
-              </div>
-              {meta.activatable && item.isActive === false && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[12px] font-semibold text-muted-foreground">Hidden</span>
-              )}
-              {viewHref && (
-                <Link
-                  href={viewHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary"
-                  aria-label="View"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-              )}
-              {meta.activatable && canEdit && (
-                <button onClick={() => toggleActive(item)} className="text-muted-foreground hover:text-primary" aria-label="Toggle visibility">
-                  {item.isActive === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              )}
-              {canEdit && (
-                <button onClick={() => openEdit(item)} className="text-muted-foreground hover:text-foreground" aria-label="Edit">
-                  <Pencil className="h-4 w-4" />
-                </button>
-              )}
-              {canDelete &&
-                (confirmDelete === item.id ? (
-                  <span className="flex items-center gap-1">
-                    <button onClick={() => remove(item.id)} disabled={busy} className="rounded bg-red-600 px-2 py-0.5 text-[12px] font-bold text-white">
-                      Delete
-                    </button>
-                    <button onClick={() => setConfirmDelete(null)} className="text-[12px] text-muted-foreground">Cancel</button>
+              <div key={item.id} className="flex items-center gap-3 px-5 py-3">
+                {meta.sortable && (
+                  <span className="w-6 shrink-0 text-[12px] font-medium text-muted-foreground/60">
+                    {item.sortOrder ?? 0}
                   </span>
-                ) : (
-                  <button onClick={() => setConfirmDelete(item.id)} className="text-muted-foreground hover:text-red-500 dark:text-red-400" aria-label="Delete">
-                    <Trash2 className="h-4 w-4" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      item.isActive === false ? "text-muted-foreground" : "text-foreground",
+                    )}
+                  >
+                    {String(item[primaryKey] ?? "—")}
+                  </p>
+                  {fields[1] && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {String(item[fields[1].key] ?? "")}
+                    </p>
+                  )}
+                </div>
+                {meta.activatable && item.isActive === false && (
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[12px] font-semibold text-muted-foreground">
+                    Hidden
+                  </span>
+                )}
+                {viewHref && (
+                  <Link
+                    href={viewHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary"
+                    aria-label="View"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                )}
+                {meta.activatable && canEdit && (
+                  <button
+                    onClick={() => toggleActive(item)}
+                    className="text-muted-foreground hover:text-primary"
+                    aria-label="Toggle visibility"
+                  >
+                    {item.isActive === false ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
-                ))}
-            </div>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={() => openEdit(item)}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                )}
+                {canDelete &&
+                  (confirmDelete === item.id ? (
+                    <span className="flex items-center gap-1">
+                      <button
+                        onClick={() => remove(item.id)}
+                        disabled={busy}
+                        className="rounded bg-red-600 px-2 py-0.5 text-[12px] font-bold text-white"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(null)}
+                        className="text-[12px] text-muted-foreground"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDelete(item.id)}
+                      className="text-muted-foreground hover:text-red-500 dark:text-red-400"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ))}
+              </div>
             );
           })
         )}
@@ -240,24 +288,37 @@ export function ListEditor({ title, description, resource, fields, items, canCre
               <h4 className="font-display text-base font-bold text-foreground">
                 {editing === "new" ? `Add to ${title}` : `Edit ${title}`}
               </h4>
-              <button onClick={close} className="text-muted-foreground hover:text-muted-foreground"><X className="h-5 w-5" /></button>
+              <button onClick={close} className="text-muted-foreground hover:text-muted-foreground">
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             <div className="space-y-3.5">
               {fields.map((f) => (
                 <div key={f.key}>
                   <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                    {f.label}{f.required && <span className="text-red-400"> *</span>}
+                    {f.label}
+                    {f.required && <span className="text-red-400"> *</span>}
                   </label>
                   {f.type === "image" ? (
-                    <ImageField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} folder={resource} />
+                    <ImageField
+                      value={form[f.key] ?? ""}
+                      onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
+                      folder={resource}
+                    />
                   ) : f.type === "video" ? (
-                    <VideoField value={form[f.key] ?? ""} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} folder={resource} />
+                    <VideoField
+                      value={form[f.key] ?? ""}
+                      onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
+                      folder={resource}
+                    />
                   ) : f.type === "boolean" ? (
                     <input
                       type="checkbox"
                       checked={form[f.key] === "true"}
-                      onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.checked ? "true" : "false" }))}
+                      onChange={(e) =>
+                        setForm((s) => ({ ...s, [f.key]: e.target.checked ? "true" : "false" }))
+                      }
                       className="h-4 w-4 accent-primary"
                     />
                   ) : f.type === "textarea" ? (
@@ -284,13 +345,25 @@ export function ListEditor({ title, description, resource, fields, items, canCre
                 <div className="flex items-center gap-4">
                   {meta.sortable && (
                     <div className="w-28">
-                      <label className="mb-1 block text-xs font-semibold text-muted-foreground">Sort order</label>
-                      <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className={inputCls} />
+                      <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                        Sort order
+                      </label>
+                      <input
+                        type="number"
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                        className={inputCls}
+                      />
                     </div>
                   )}
                   {meta.activatable && (
                     <label className="mt-5 flex items-center gap-2 text-sm font-medium text-foreground">
-                      <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-primary" />
+                      <input
+                        type="checkbox"
+                        checked={active}
+                        onChange={(e) => setActive(e.target.checked)}
+                        className="h-4 w-4 accent-primary"
+                      />
                       Visible on site
                     </label>
                   )}
@@ -299,7 +372,12 @@ export function ListEditor({ title, description, resource, fields, items, canCre
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={close} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground">Cancel</button>
+              <button
+                onClick={close}
+                className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground"
+              >
+                Cancel
+              </button>
               <button
                 onClick={save}
                 disabled={busy}

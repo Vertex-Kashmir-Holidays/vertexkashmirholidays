@@ -11,11 +11,17 @@ import { Loader2, Upload, Eye, Images, Plus, Trash2 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import sanitizeHtml from "sanitize-html";
 
-const relatedTourItemSchema = z.object({ tourId: z.string().optional(), ctaSentence: z.string().optional() });
+const relatedTourItemSchema = z.object({
+  tourId: z.string().optional(),
+  ctaSentence: z.string().optional(),
+});
 
 const schema = z.object({
   title: z.string().min(3, "Title is required"),
-  slug: z.string().min(3).regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
+  slug: z
+    .string()
+    .min(3)
+    .regex(/^[a-z0-9-]+$/, "Slug: lowercase, numbers, hyphens only"),
   author: z.string().optional(),
   authorRole: z.string().optional(),
   authorBio: z.string().optional(),
@@ -47,7 +53,10 @@ interface Props {
 }
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: Props) {
@@ -57,7 +66,9 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
   const [previewBody, setPreviewBody] = useState(false);
   // Which field the gallery picker is currently feeding ("body" inserts an
   // <img> tag into the HTML content).
-  const [picker, setPicker] = useState<null | "coverImage" | "coverImageMobile" | "ogImage" | "authorImage" | "body">(null);
+  const [picker, setPicker] = useState<
+    null | "coverImage" | "coverImageMobile" | "ogImage" | "authorImage" | "body"
+  >(null);
   const isEdit = !!defaults?.id;
 
   const {
@@ -80,7 +91,10 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
       readTime: defaults?.readTime ?? "",
       featured: defaults?.featured ?? false,
       trending: defaults?.trending ?? false,
-      relatedTours: (defaults?.relatedTours ?? []).map((r) => ({ tourId: r.tourId, ctaSentence: r.ctaSentence })),
+      relatedTours: (defaults?.relatedTours ?? []).map((r) => ({
+        tourId: r.tourId,
+        ctaSentence: r.ctaSentence,
+      })),
       excerpt: defaults?.excerpt ?? "",
       quickAnswer: defaults?.quickAnswer ?? "",
       body: defaults?.body ?? "",
@@ -95,7 +109,11 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
     },
   });
 
-  const { fields: relatedFields, append: addRelated, remove: removeRelated } = useFieldArray({ control, name: "relatedTours" });
+  const {
+    fields: relatedFields,
+    append: addRelated,
+    remove: removeRelated,
+  } = useFieldArray({ control, name: "relatedTours" });
 
   const titleVal = watch("title");
   useEffect(() => {
@@ -108,7 +126,10 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
   const bodyVal = watch("body");
   const publishedVal = watch("published");
 
-  async function uploadFile(file: File, field: "coverImage" | "coverImageMobile" | "ogImage" | "authorImage") {
+  async function uploadFile(
+    file: File,
+    field: "coverImage" | "coverImageMobile" | "ogImage" | "authorImage",
+  ) {
     setUploading(true);
     try {
       const fd = new FormData();
@@ -116,7 +137,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
       fd.append("folder", "blog");
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       if (!res.ok) throw new Error();
-      const data = await res.json() as { url: string };
+      const data = (await res.json()) as { url: string };
       setValue(field, data.url);
       toast.success("Image uploaded.");
     } catch {
@@ -145,7 +166,9 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
     const payload = {
       ...rest,
       readTime: readTime ? Number(readTime) : undefined,
-      relatedTours: JSON.stringify((relatedTours ?? []).filter((r) => r.tourId && r.ctaSentence?.trim())),
+      relatedTours: JSON.stringify(
+        (relatedTours ?? []).filter((r) => r.tourId && r.ctaSentence?.trim()),
+      ),
     };
     startTransition(async () => {
       try {
@@ -158,10 +181,12 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         });
         if (!res.ok) {
           if (res.status === 403) {
-            toast.error("You don't have permission to save blog posts. Contact your administrator.");
+            toast.error(
+              "You don't have permission to save blog posts. Contact your administrator.",
+            );
             return;
           }
-          const err = await res.json() as { error?: string | Record<string, unknown> };
+          const err = (await res.json()) as { error?: string | Record<string, unknown> };
           const msg = typeof err.error === "string" ? err.error : "Save failed";
           toast.error(msg);
           return;
@@ -184,27 +209,54 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
           <h3 className="font-bold text-foreground text-sm">Post Details</h3>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Title *</label>
-            <input {...register("title")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Why 7 Days in Kashmir is Perfect" />
-            {errors.title && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.title.message}</p>}
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Title *
+            </label>
+            <input
+              {...register("title")}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+              placeholder="e.g. Why 7 Days in Kashmir is Perfect"
+            />
+            {errors.title && (
+              <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
+                {errors.title.message}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Slug *</label>
-              <input {...register("slug")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" />
-              {errors.slug && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.slug.message}</p>}
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Slug *
+              </label>
+              <input
+                {...register("slug")}
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono"
+              />
+              {errors.slug && (
+                <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
+                  {errors.slug.message}
+                </p>
+              )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Author</label>
-              <input {...register("author")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Wani Owais" />
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Author
+              </label>
+              <input
+                {...register("author")}
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                placeholder="e.g. Wani Owais"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-semibold text-muted-foreground">Category</label>
+                <label className="block text-xs font-semibold text-muted-foreground">
+                  Category
+                </label>
                 <Link
                   href="/admin/blog-categories"
                   target="_blank"
@@ -214,29 +266,63 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
                   + Add New
                 </Link>
               </div>
-              <select {...register("category")} className="w-full px-3 py-2 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition">
+              <select
+                {...register("category")}
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+              >
                 <option value="">— No category —</option>
                 {categoryOptions.map((c) => (
-                  <option key={c.slug} value={c.name}>{c.name}</option>
+                  <option key={c.slug} value={c.name}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Read Time (minutes)</label>
-              <input {...register("readTime")} inputMode="numeric" className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono" placeholder="e.g. 8" />
-              {errors.readTime && <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">{errors.readTime.message}</p>}
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Read Time (minutes)
+              </label>
+              <input
+                {...register("readTime")}
+                inputMode="numeric"
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition font-mono"
+                placeholder="e.g. 8"
+              />
+              {errors.readTime && (
+                <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
+                  {errors.readTime.message}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Excerpt</label>
-            <textarea {...register("excerpt")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="Short description for cards and meta..." />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Excerpt
+            </label>
+            <textarea
+              {...register("excerpt")}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
+              placeholder="Short description for cards and meta..."
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Quick Answer</label>
-            <p className="text-[12px] text-muted-foreground mb-1">Short direct-answer callout shown near the top of the article, right before the body. HTML is accepted. Leave the "## Quick Answer" heading out of the Body field below if you fill this in.</p>
-            <textarea {...register("quickAnswer")} rows={3} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="e.g. The best time to visit Kashmir is..." />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Quick Answer
+            </label>
+            <p className="text-[12px] text-muted-foreground mb-1">
+              Short direct-answer callout shown near the top of the article, right before the body.
+              HTML is accepted. Leave the "## Quick Answer" heading out of the Body field below if
+              you fill this in.
+            </p>
+            <textarea
+              {...register("quickAnswer")}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
+              placeholder="e.g. The best time to visit Kashmir is..."
+            />
           </div>
         </div>
 
@@ -244,15 +330,35 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <h3 className="font-bold text-foreground text-sm">Cover Image</h3>
           <div className="flex gap-3">
-            <input {...register("coverImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
-            <button type="button" onClick={() => setPicker("coverImage")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+            <input
+              {...register("coverImage")}
+              className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+              placeholder="https://... or /uploads/..."
+            />
+            <button
+              type="button"
+              onClick={() => setPicker("coverImage")}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary"
+            >
               <Images className="w-3.5 h-3.5" />
               Gallery
             </button>
-            <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
-              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            <label
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}
+            >
+              {uploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
               Upload
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")} />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImage")}
+              />
             </label>
           </div>
           {coverImage && (
@@ -267,24 +373,53 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div>
             <h3 className="font-bold text-foreground text-sm">Cover Image (Mobile)</h3>
-            <p className="text-[12px] text-muted-foreground mt-0.5">Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop image.</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Shown on phones instead of the desktop Cover Image. Leave blank to reuse the desktop
+              image.
+            </p>
           </div>
           <div className="flex gap-3">
-            <input {...register("coverImageMobile")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
-            <button type="button" onClick={() => setPicker("coverImageMobile")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+            <input
+              {...register("coverImageMobile")}
+              className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+              placeholder="https://... or /uploads/..."
+            />
+            <button
+              type="button"
+              onClick={() => setPicker("coverImageMobile")}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary"
+            >
               <Images className="w-3.5 h-3.5" />
               Gallery
             </button>
-            <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
-              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            <label
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}
+            >
+              {uploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
               Upload
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "coverImageMobile")} />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) =>
+                  e.target.files?.[0] && uploadFile(e.target.files[0], "coverImageMobile")
+                }
+              />
             </label>
           </div>
           {coverImageMobile && (
             <div className="relative h-40 w-40 mx-auto rounded-xl overflow-hidden bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverImageMobile} alt="Mobile cover preview" className="w-full h-full object-cover" />
+              <img
+                src={coverImageMobile}
+                alt="Mobile cover preview"
+                className="w-full h-full object-cover"
+              />
             </div>
           )}
         </div>
@@ -293,36 +428,79 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <div>
             <h3 className="font-bold text-foreground text-sm">Author</h3>
-            <p className="text-[12px] text-muted-foreground mt-0.5">Shown on the public "About the Author" card and the article byline.</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Shown on the public "About the Author" card and the article byline.
+            </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Author Role</label>
-              <input {...register("authorRole")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="e.g. Local Travel Expert" />
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                Author Role
+              </label>
+              <input
+                {...register("authorRole")}
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                placeholder="e.g. Local Travel Expert"
+              />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Author Bio</label>
-            <textarea {...register("authorBio")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" placeholder="Short bio shown on the author card..." />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Author Bio
+            </label>
+            <textarea
+              {...register("authorBio")}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
+              placeholder="Short bio shown on the author card..."
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Author Image</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Author Image
+            </label>
             <div className="flex gap-3">
-              <input {...register("authorImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" placeholder="https://... or /uploads/..." />
-              <button type="button" onClick={() => setPicker("authorImage")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+              <input
+                {...register("authorImage")}
+                className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                placeholder="https://... or /uploads/..."
+              />
+              <button
+                type="button"
+                onClick={() => setPicker("authorImage")}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary"
+              >
                 <Images className="w-3.5 h-3.5" />
                 Gallery
               </button>
-              <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
-                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              <label
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}
+              >
+                {uploading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
                 Upload
-                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "authorImage")} />
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) =>
+                    e.target.files?.[0] && uploadFile(e.target.files[0], "authorImage")
+                  }
+                />
               </label>
             </div>
             {authorImage && (
               <div className="relative mt-3 h-20 w-20 rounded-full overflow-hidden bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={authorImage} alt="Author preview" className="w-full h-full object-cover" />
+                <img
+                  src={authorImage}
+                  alt="Author preview"
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
           </div>
@@ -355,11 +533,29 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
           {previewBody ? (
             <div
               className="prose prose-sm max-w-none min-h-[300px] p-4 border border-border rounded-xl bg-muted/50 text-sm text-foreground"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(bodyVal ?? "", {
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "code", "figure", "figcaption"]),
-                allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, "*": ["class"], img: ["src", "alt", "title", "width", "height", "loading"] },
-                allowedSchemes: ["http", "https", "mailto", "tel"],
-              }) }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeHtml(bodyVal ?? "", {
+                  allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+                    "img",
+                    "h1",
+                    "h2",
+                    "h3",
+                    "h4",
+                    "h5",
+                    "h6",
+                    "pre",
+                    "code",
+                    "figure",
+                    "figcaption",
+                  ]),
+                  allowedAttributes: {
+                    ...sanitizeHtml.defaults.allowedAttributes,
+                    "*": ["class"],
+                    img: ["src", "alt", "title", "width", "height", "loading"],
+                  },
+                  allowedSchemes: ["http", "https", "mailto", "tel"],
+                }),
+              }}
             />
           ) : (
             <textarea
@@ -369,7 +565,9 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
               placeholder="<p>Your blog content here. HTML is supported.</p>"
             />
           )}
-          <p className="text-[12px] text-muted-foreground">HTML is rendered as-is on the public blog page.</p>
+          <p className="text-[12px] text-muted-foreground">
+            HTML is rendered as-is on the public blog page.
+          </p>
         </div>
 
         {/* Related Tours */}
@@ -386,20 +584,28 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
               </button>
             )}
           </div>
-          <p className="text-[12px] text-muted-foreground -mt-2">Up to 3 curated pairings shown at the end of the article. Each links to a tour with a custom &ldquo;why it fits&rdquo; sentence — not an automatic feed.</p>
+          <p className="text-[12px] text-muted-foreground -mt-2">
+            Up to 3 curated pairings shown at the end of the article. Each links to a tour with a
+            custom &ldquo;why it fits&rdquo; sentence — not an automatic feed.
+          </p>
           {relatedFields.length === 0 ? (
             <p className="text-xs text-muted-foreground py-2">No related tours added yet.</p>
           ) : (
             <div className="space-y-2">
               {relatedFields.map((field, i) => (
-                <div key={field.id} className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-1 sm:grid-cols-[1fr_2fr_32px] gap-2 items-start">
+                <div
+                  key={field.id}
+                  className="border border-border rounded-xl p-3 bg-muted/50 grid grid-cols-1 sm:grid-cols-[1fr_2fr_32px] gap-2 items-start"
+                >
                   <select
                     {...register(`relatedTours.${i}.tourId`)}
                     className="w-full px-3 py-2 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
                   >
                     <option value="">Select a tour…</option>
                     {tourOptions.map((t) => (
-                      <option key={t.id} value={t.id}>{t.title}</option>
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
                     ))}
                   </select>
                   <input
@@ -407,7 +613,11 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
                     className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
                     placeholder='Why it fits — e.g. "Planning a comfortable family vacation?"'
                   />
-                  <button type="button" onClick={() => removeRelated(i)} className="text-muted-foreground/60 hover:text-red-400 transition-colors justify-self-start sm:mt-2">
+                  <button
+                    type="button"
+                    onClick={() => removeRelated(i)}
+                    className="text-muted-foreground/60 hover:text-red-400 transition-colors justify-self-start sm:mt-2"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -420,37 +630,80 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
           <h3 className="font-bold text-foreground text-sm">SEO</h3>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Meta Title</label>
-            <input {...register("metaTitle")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Meta Title
+            </label>
+            <input
+              {...register("metaTitle")}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">Meta Description</label>
-            <textarea {...register("metaDesc")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              Meta Description
+            </label>
+            <textarea
+              {...register("metaDesc")}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Image URL</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              OG Image URL
+            </label>
             <div className="flex gap-3">
-              <input {...register("ogImage")} className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
-              <button type="button" onClick={() => setPicker("ogImage")} className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary">
+              <input
+                {...register("ogImage")}
+                className="flex-1 px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+              />
+              <button
+                type="button"
+                onClick={() => setPicker("ogImage")}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors hover:border-primary hover:text-primary"
+              >
                 <Images className="w-3.5 h-3.5" />
                 Gallery
               </button>
-              <label className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}>
+              <label
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-xl border border-border cursor-pointer transition-colors ${uploading ? "opacity-50" : "hover:border-primary hover:text-primary"}`}
+              >
                 <Upload className="w-3.5 h-3.5" />
                 Upload
-                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "ogImage")} />
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "ogImage")}
+                />
               </label>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Title</label>
-            <p className="text-[12px] text-muted-foreground mb-1">Overrides Meta Title for social shares. Leave blank to reuse Meta Title.</p>
-            <input {...register("ogTitle")} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              OG Title
+            </label>
+            <p className="text-[12px] text-muted-foreground mb-1">
+              Overrides Meta Title for social shares. Leave blank to reuse Meta Title.
+            </p>
+            <input
+              {...register("ogTitle")}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">OG Description</label>
-            <p className="text-[12px] text-muted-foreground mb-1">Overrides Meta Description for social shares. Leave blank to reuse Meta Description.</p>
-            <textarea {...register("ogDescription")} rows={2} className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none" />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+              OG Description
+            </label>
+            <p className="text-[12px] text-muted-foreground mb-1">
+              Overrides Meta Description for social shares. Leave blank to reuse Meta Description.
+            </p>
+            <textarea
+              {...register("ogDescription")}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none"
+            />
           </div>
         </div>
       </form>
@@ -461,7 +714,9 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
           <h3 className="font-bold text-foreground text-sm">Publish</h3>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-medium">Status</span>
-            <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
+            <span
+              className={`text-[12px] font-bold px-2 py-0.5 rounded-full ${publishedVal ? "bg-green-500/15 text-green-700 dark:text-green-300" : "bg-muted text-muted-foreground"}`}
+            >
               {publishedVal ? "Published" : "Draft"}
             </span>
           </div>

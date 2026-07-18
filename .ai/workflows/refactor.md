@@ -1,4 +1,3 @@
-
 This document defines the standard workflow for refactoring existing code in Vertex Kashmir Holidays.
 
 Unlike Feature Development, refactoring must improve engineering quality WITHOUT changing business behaviour.

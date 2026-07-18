@@ -88,7 +88,11 @@ export async function enqueueForBooking(bookingId: string): Promise<void> {
  * that implements "Lead-based bookings use Lead attribution; direct bookings
  * use Booking attribution."
  */
-async function buildEvent(row: { id: string; leadId: string | null; bookingId: string | null }): Promise<ConversionEvent | null> {
+async function buildEvent(row: {
+  id: string;
+  leadId: string | null;
+  bookingId: string | null;
+}): Promise<ConversionEvent | null> {
   if (row.leadId) {
     const lead = await prisma.lead.findUnique({ where: { id: row.leadId } });
     if (!lead) return null;
@@ -138,7 +142,9 @@ async function processRow(row: OfflineConversion): Promise<"sent" | "failed"> {
       data: {
         status: "FAILED",
         attempts: { increment: 1 },
-        lastError: !event ? "Originating Lead/Booking no longer exists" : `${row.platform} adapter not configured`,
+        lastError: !event
+          ? "Originating Lead/Booking no longer exists"
+          : `${row.platform} adapter not configured`,
       },
     });
     return "failed";
@@ -161,7 +167,11 @@ async function processRow(row: OfflineConversion): Promise<"sent" | "failed"> {
 
   await prisma.offlineConversion.update({
     where: { id: row.id },
-    data: { status: "FAILED", attempts: { increment: 1 }, lastError: result.error ?? "Unknown error" },
+    data: {
+      status: "FAILED",
+      attempts: { increment: 1 },
+      lastError: result.error ?? "Unknown error",
+    },
   });
   return "failed";
 }
@@ -184,7 +194,9 @@ export async function retryRow(id: string): Promise<"sent" | "failed" | "not_fou
  * (see vercel.json), so today this only runs if invoked manually. Kept fully
  * intact so re-adding the cron entry on Pro requires no implementation change.
  */
-export async function processPending(limit = 50): Promise<{ processed: number; sent: number; failed: number }> {
+export async function processPending(
+  limit = 50,
+): Promise<{ processed: number; sent: number; failed: number }> {
   const rows = await prisma.offlineConversion.findMany({
     where: {
       OR: [{ status: "PENDING" }, { status: "FAILED", attempts: { lt: MAX_ATTEMPTS } }],

@@ -28,7 +28,8 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const rendered = await renderBookingSummaryPdf(booking.id);
-  if (!rendered) return NextResponse.json({ error: "Could not generate the invoice." }, { status: 500 });
+  if (!rendered)
+    return NextResponse.json({ error: "Could not generate the invoice." }, { status: 500 });
 
   return new NextResponse(new Uint8Array(rendered.buffer), {
     status: 200,

@@ -20,8 +20,8 @@ export default async function ChangePasswordPage() {
           Set your password
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your account was created with a temporary password. For your security,
-          please choose a new password before continuing.
+          Your account was created with a temporary password. For your security, please choose a new
+          password before continuing.
         </p>
       </div>
       <ForceChangePasswordForm />

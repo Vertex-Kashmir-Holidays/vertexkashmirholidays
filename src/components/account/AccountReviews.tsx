@@ -26,7 +26,15 @@ interface Props {
 }
 
 // Clickable 1-5 star selector.
-function StarInput({ value, onChange, disabled }: { value: number; onChange: (n: number) => void; disabled?: boolean }) {
+function StarInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="flex items-center gap-1">
       {Array.from({ length: 5 }).map((_, i) => {
@@ -40,7 +48,12 @@ function StarInput({ value, onChange, disabled }: { value: number; onChange: (n:
             aria-label={`${n} star${n > 1 ? "s" : ""}`}
             className="transition hover:scale-110 disabled:cursor-not-allowed"
           >
-            <Star className={cn("h-6 w-6", n <= value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")} />
+            <Star
+              className={cn(
+                "h-6 w-6",
+                n <= value ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40",
+              )}
+            />
           </button>
         );
       })}
@@ -52,7 +65,13 @@ function StarsRow({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} className={cn("h-3.5 w-3.5", i < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")} />
+        <Star
+          key={i}
+          className={cn(
+            "h-3.5 w-3.5",
+            i < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40",
+          )}
+        />
       ))}
     </div>
   );
@@ -94,7 +113,8 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
           body: JSON.stringify({ tourId: newTourId, rating: newRating, body: newBody.trim() }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not submit review.");
+        if (!res.ok)
+          throw new Error(typeof data.error === "string" ? data.error : "Could not submit review.");
         toast.success(data.message ?? "Review submitted.");
         resetAdd();
         router.refresh();
@@ -122,7 +142,8 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
           body: JSON.stringify({ rating: editRating, body: editBody.trim() }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Could not update review.");
+        if (!res.ok)
+          throw new Error(typeof data.error === "string" ? data.error : "Could not update review.");
         toast.success(data.message ?? "Review updated.");
         setEditingId(null);
         router.refresh();
@@ -174,26 +195,40 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-bold text-foreground">Write a review</h2>
-            <button onClick={resetAdd} className="text-muted-foreground hover:text-foreground" aria-label="Cancel">
+            <button
+              onClick={resetAdd}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Cancel"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-xs font-semibold text-muted-foreground">Tour</label>
-              <select value={newTourId} onChange={(e) => setNewTourId(e.target.value)} className={inputCls}>
+              <select
+                value={newTourId}
+                onChange={(e) => setNewTourId(e.target.value)}
+                className={inputCls}
+              >
                 <option value="">Select a tour…</option>
                 {reviewableTours.map((t) => (
-                  <option key={t.id} value={t.id}>{t.title}</option>
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Rating</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                Rating
+              </label>
               <StarInput value={newRating} onChange={setNewRating} disabled={isPending} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Your review</label>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                Your review
+              </label>
               <textarea
                 rows={4}
                 value={newBody}
@@ -202,7 +237,9 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                 placeholder="Tell other travellers about your experience…"
                 className={cn(inputCls, "resize-none")}
               />
-              <p className="mt-1 text-[12px] text-muted-foreground">{newBody.trim().length}/2000 · minimum 10 characters</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">
+                {newBody.trim().length}/2000 · minimum 10 characters
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -212,7 +249,10 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
               >
                 {isPending && <Loader2 className="h-4 w-4 animate-spin" />} Submit review
               </button>
-              <button onClick={resetAdd} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted">
+              <button
+                onClick={resetAdd}
+                className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted"
+              >
                 Cancel
               </button>
             </div>
@@ -241,9 +281,19 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-foreground">{r.tourTitle}</p>
                     <p className="mt-0.5 text-[12px] text-muted-foreground">
-                      {new Date(r.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                      {new Date(r.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
                       {" · "}
-                      <span className={r.approved ? "font-semibold text-green-600 dark:text-green-400" : "font-semibold text-amber-600 dark:text-amber-400"}>
+                      <span
+                        className={
+                          r.approved
+                            ? "font-semibold text-green-600 dark:text-green-400"
+                            : "font-semibold text-amber-600 dark:text-amber-400"
+                        }
+                      >
                         {r.approved ? "Published" : "Pending review"}
                       </span>
                     </p>
@@ -258,10 +308,17 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                       </button>
                       {confirmDelete === r.id ? (
                         <>
-                          <button onClick={() => handleDelete(r.id)} disabled={isPending} className="rounded-lg bg-red-500 px-2 py-1.5 text-[12px] font-bold text-white transition hover:bg-red-600">
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            disabled={isPending}
+                            className="rounded-lg bg-red-500 px-2 py-1.5 text-[12px] font-bold text-white transition hover:bg-red-600"
+                          >
                             {isPending ? "…" : "Confirm"}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="rounded-lg border border-border px-2 py-1.5 text-[12px] text-muted-foreground transition hover:bg-muted">
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="rounded-lg border border-border px-2 py-1.5 text-[12px] text-muted-foreground transition hover:bg-muted"
+                          >
                             Cancel
                           </button>
                         </>
@@ -298,7 +355,10 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                       >
                         {isPending && <Loader2 className="h-4 w-4 animate-spin" />} Save changes
                       </button>
-                      <button onClick={() => setEditingId(null)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted">
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted"
+                      >
                         Cancel
                       </button>
                     </div>
@@ -306,7 +366,9 @@ export function AccountReviews({ reviews, reviewableTours }: Props) {
                 ) : (
                   <div className="mt-3">
                     <StarsRow rating={r.rating} />
-                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                      {r.body}
+                    </p>
                   </div>
                 )}
               </div>

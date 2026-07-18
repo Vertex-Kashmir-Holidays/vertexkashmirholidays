@@ -25,7 +25,10 @@ function loadEnvFile(file: string): void {
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
     let value = trimmed.slice(eq + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
     if (!(key in process.env)) process.env[key] = value;
@@ -55,7 +58,11 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 
 function openBrowser(url: string): void {
   const cmd =
-    process.platform === "darwin" ? `open "${url}"` : process.platform === "win32" ? `start "" "${url}"` : `xdg-open "${url}"`;
+    process.platform === "darwin"
+      ? `open "${url}"`
+      : process.platform === "win32"
+        ? `start "" "${url}"`
+        : `xdg-open "${url}"`;
   exec(cmd, (err) => {
     if (err) console.log("Could not auto-open a browser. Open this URL manually:\n" + url);
   });
@@ -85,9 +92,11 @@ async function exchangeCode(code: string): Promise<string> {
       grant_type: "authorization_code",
     }),
   });
-  const json = (await res.json().catch(() => null)) as
-    | { refresh_token?: string; error?: string; error_description?: string }
-    | null;
+  const json = (await res.json().catch(() => null)) as {
+    refresh_token?: string;
+    error?: string;
+    error_description?: string;
+  } | null;
 
   if (!res.ok || !json?.refresh_token) {
     throw new Error(
@@ -111,7 +120,9 @@ const server = createServer((req, res) => {
   const error = url.searchParams.get("error");
 
   if (error) {
-    res.writeHead(400, { "Content-Type": "text/html" }).end(`<h1>Authorization failed</h1><p>${error}</p>`);
+    res
+      .writeHead(400, { "Content-Type": "text/html" })
+      .end(`<h1>Authorization failed</h1><p>${error}</p>`);
     console.error(`Google returned an error: ${error}`);
     server.close(() => process.exit(1));
     return;
@@ -126,7 +137,9 @@ const server = createServer((req, res) => {
     .then((refreshToken) => {
       res
         .writeHead(200, { "Content-Type": "text/html" })
-        .end("<h1>Success</h1><p>Refresh token printed to your terminal. You can close this tab.</p>");
+        .end(
+          "<h1>Success</h1><p>Refresh token printed to your terminal. You can close this tab.</p>",
+        );
       console.log("\nGOOGLE_ADS_REFRESH_TOKEN generated. Add this to .env.local:\n");
       console.log(`GOOGLE_ADS_REFRESH_TOKEN="${refreshToken}"\n`);
     })
@@ -141,7 +154,9 @@ const server = createServer((req, res) => {
 
 server.on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`Port ${PORT} is already in use — stop \`next dev\` (or anything else on :${PORT}) and re-run this script.`);
+    console.error(
+      `Port ${PORT} is already in use — stop \`next dev\` (or anything else on :${PORT}) and re-run this script.`,
+    );
   } else {
     console.error(err);
   }

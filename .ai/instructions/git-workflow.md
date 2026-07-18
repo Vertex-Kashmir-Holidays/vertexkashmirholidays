@@ -29,9 +29,11 @@ This document standardizes source control practices across the project — branc
 ## Branch Strategy
 
 **main**
+
 - Production. Every deploy of the live site builds from this branch.
 
 **dev**
+
 - Integration branch. Every feature/bugfix branch merges here first; `dev` is periodically merged into `main` once its contents are verified.
 
 **Working branches** — a single flat prefix, no `type/` folder nesting (this matches the ~90 branches already in this repository's history — don't introduce a nested scheme that contradicts it):

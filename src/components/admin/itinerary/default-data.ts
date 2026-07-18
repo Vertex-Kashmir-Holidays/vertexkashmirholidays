@@ -91,14 +91,37 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   ],
 
   hotels: [
-    { id: "h-1", destination: "Srinagar (3N)", hotelDetails: "Hotel Grand MS / Hotel Royal Heritage / Similar", nights: "3", roomType: "Double Sharing" },
-    { id: "h-2", destination: "Gulmarg (1N)", hotelDetails: "Hotel Grand Hill View / Hotel Welcome Resort / Similar", nights: "1", roomType: "Double Sharing" },
-    { id: "h-3", destination: "Pahalgam (1N)", hotelDetails: "Hotel Pahalgam / Similar", nights: "1", roomType: "Double Sharing" },
+    {
+      id: "h-1",
+      destination: "Srinagar (3N)",
+      hotelDetails: "Hotel Grand MS / Hotel Royal Heritage / Similar",
+      nights: "3",
+      roomType: "Double Sharing",
+    },
+    {
+      id: "h-2",
+      destination: "Gulmarg (1N)",
+      hotelDetails: "Hotel Grand Hill View / Hotel Welcome Resort / Similar",
+      nights: "1",
+      roomType: "Double Sharing",
+    },
+    {
+      id: "h-3",
+      destination: "Pahalgam (1N)",
+      hotelDetails: "Hotel Pahalgam / Similar",
+      nights: "1",
+      roomType: "Double Sharing",
+    },
   ],
 
   trust: [
     { id: "t-1", title: "Handpicked Hotels", subtitle: "Comfortable & Well Located", icon: "home" },
-    { id: "t-2", title: "Verified Properties", subtitle: "Trusted by 1000+ Travellers", icon: "shield" },
+    {
+      id: "t-2",
+      title: "Verified Properties",
+      subtitle: "Trusted by 1000+ Travellers",
+      icon: "shield",
+    },
     { id: "t-3", title: "Best Price Guarantee", subtitle: "Value for Money Always", icon: "medal" },
     { id: "t-4", title: "24/7 Support", subtitle: "We're here for you Always", icon: "support" },
   ],

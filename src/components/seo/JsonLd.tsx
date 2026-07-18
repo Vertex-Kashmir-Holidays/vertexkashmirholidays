@@ -9,10 +9,7 @@ interface JsonLdProps {
 
 export function JsonLd({ data }: JsonLdProps) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeLdJson(data) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeLdJson(data) }} />
   );
 }
 
@@ -97,7 +94,12 @@ export function buildOrganizationReviews(opts: {
           review: opts.reviews.map((r) => ({
             "@type": "Review",
             author: { "@type": "Person", name: r.author },
-            reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: r.rating,
+              bestRating: 5,
+              worstRating: 1,
+            },
             reviewBody: r.body,
             datePublished: r.datePublished,
           })),
@@ -171,9 +173,17 @@ export function buildOrganizationPeople(opts: {
   return {
     "@context": "https://schema.org",
     "@id": `${siteUrl}/#organization`,
-    ...(opts.founder ? { founder: { "@type": "Person", name: opts.founder.name, jobTitle: opts.founder.jobTitle } } : {}),
+    ...(opts.founder
+      ? { founder: { "@type": "Person", name: opts.founder.name, jobTitle: opts.founder.jobTitle } }
+      : {}),
     ...(opts.employees && opts.employees.length > 0
-      ? { employee: opts.employees.map((e) => ({ "@type": "Person", name: e.name, jobTitle: e.jobTitle })) }
+      ? {
+          employee: opts.employees.map((e) => ({
+            "@type": "Person",
+            name: e.name,
+            jobTitle: e.jobTitle,
+          })),
+        }
       : {}),
   };
 }
@@ -192,10 +202,7 @@ export function buildWebSite() {
   };
 }
 
-export function buildItemList(
-  items: { name: string; url: string }[],
-  name?: string,
-) {
+export function buildItemList(items: { name: string; url: string }[], name?: string) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -320,35 +327,36 @@ export function buildCampaignProduct(campaign: {
 }) {
   const parsePrice = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10);
 
-  const offers = campaign.tiers.length > 0
-    ? campaign.tiers.map((t) => {
-        const price = parsePrice(t.price);
-        return {
-          "@type": "Offer",
-          name: t.name,
-          description: t.desc,
-          priceCurrency: "INR",
-          ...(isNaN(price) ? {} : { price }),
-          availability: "https://schema.org/InStock",
-          seller: { "@id": `${siteUrl}/#organization` },
-          ...(campaign.offerDeadline
-            ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
-            : {}),
-          url: `${siteUrl}/adventures/${campaign.slug}`,
-        };
-      })
-    : [
-        {
-          "@type": "Offer",
-          priceCurrency: "INR",
-          availability: "https://schema.org/InStock",
-          seller: { "@id": `${siteUrl}/#organization` },
-          ...(campaign.offerDeadline
-            ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
-            : {}),
-          url: `${siteUrl}/adventures/${campaign.slug}`,
-        },
-      ];
+  const offers =
+    campaign.tiers.length > 0
+      ? campaign.tiers.map((t) => {
+          const price = parsePrice(t.price);
+          return {
+            "@type": "Offer",
+            name: t.name,
+            description: t.desc,
+            priceCurrency: "INR",
+            ...(isNaN(price) ? {} : { price }),
+            availability: "https://schema.org/InStock",
+            seller: { "@id": `${siteUrl}/#organization` },
+            ...(campaign.offerDeadline
+              ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+              : {}),
+            url: `${siteUrl}/adventures/${campaign.slug}`,
+          };
+        })
+      : [
+          {
+            "@type": "Offer",
+            priceCurrency: "INR",
+            availability: "https://schema.org/InStock",
+            seller: { "@id": `${siteUrl}/#organization` },
+            ...(campaign.offerDeadline
+              ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+              : {}),
+            url: `${siteUrl}/adventures/${campaign.slug}`,
+          },
+        ];
 
   return {
     "@context": "https://schema.org",
@@ -376,8 +384,8 @@ export function buildCampaignEvents(campaign: {
         b.status === "sold"
           ? "https://schema.org/SoldOut"
           : b.status === "filling"
-          ? "https://schema.org/LimitedAvailability"
-          : "https://schema.org/InStock";
+            ? "https://schema.org/LimitedAvailability"
+            : "https://schema.org/InStock";
       return {
         "@context": "https://schema.org",
         "@type": "Event",
@@ -427,11 +435,7 @@ export function buildFAQPage(faqs: { question: string; answer: string }[]) {
 // Hub/listing pages that aggregate other pages (e.g. /tours/category) — pair
 // with buildItemList for the actual entries, same "one node per concern"
 // pattern as the rest of this file.
-export function buildCollectionPage(opts: {
-  name: string;
-  description?: string;
-  url: string;
-}) {
+export function buildCollectionPage(opts: { name: string; description?: string; url: string }) {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -442,9 +446,7 @@ export function buildCollectionPage(opts: {
   };
 }
 
-export function buildBreadcrumbList(
-  items: { name: string; url: string }[],
-) {
+export function buildBreadcrumbList(items: { name: string; url: string }[]) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -498,8 +500,8 @@ export function buildTouristDestination(dest: {
     dest.latitude != null && dest.longitude != null
       ? { "@type": "GeoCoordinates", latitude: dest.latitude, longitude: dest.longitude }
       : dest.location
-      ? { "@type": "GeoCoordinates", description: dest.location }
-      : undefined;
+        ? { "@type": "GeoCoordinates", description: dest.location }
+        : undefined;
 
   return {
     "@context": "https://schema.org",
@@ -528,7 +530,10 @@ export function buildTouristAttraction(activity: {
     image: activity.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/activities/${activity.slug}`,
     ...(activity.location
-      ? { touristType: "General", geo: { "@type": "GeoCoordinates", description: activity.location } }
+      ? {
+          touristType: "General",
+          geo: { "@type": "GeoCoordinates", description: activity.location },
+        }
       : {}),
     provider: { "@id": `${siteUrl}/#organization` },
   };

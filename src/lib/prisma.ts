@@ -22,6 +22,7 @@ function datasourceUrl(): string {
   return url.toString();
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ datasourceUrl: datasourceUrl() });
+export const prisma =
+  globalForPrisma.prisma ?? new PrismaClient({ datasourceUrl: datasourceUrl() });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

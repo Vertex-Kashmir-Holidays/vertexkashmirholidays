@@ -1,12 +1,12 @@
 // src/components/campaign/CampaignPricing.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import Link from 'next/link';
-import { AffordabilityWidget } from '@/components/payments/AffordabilityWidget';
-import type { CampaignTier } from '@/types/campaign';
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
+import { Tilt3D } from "@/components/ui/3DTilt";
+import Link from "next/link";
+import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
+import type { CampaignTier } from "@/types/campaign";
 
 interface CampaignPricingProps {
   tiers: CampaignTier[];
@@ -15,9 +15,7 @@ interface CampaignPricingProps {
 export function CampaignPricing({ tiers }: CampaignPricingProps) {
   // Cheapest tier price (tiers store prices as "₹28,999"-style strings) → EMI widget.
   const minPrice = Math.min(
-    ...tiers
-      .map((t) => Number(String(t.price).replace(/[^\d]/g, "")))
-      .filter((n) => n > 0),
+    ...tiers.map((t) => Number(String(t.price).replace(/[^\d]/g, ""))).filter((n) => n > 0),
   );
   const emiAmount = Number.isFinite(minPrice) ? minPrice : 0;
 
@@ -54,7 +52,7 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
       </div>
       <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-3">
         {tiers.map((tier, i) => {
-          const popular = tier.tag === 'MOST POPULAR';
+          const popular = tier.tag === "MOST POPULAR";
           return (
             <motion.div
               key={i}
@@ -65,8 +63,8 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
             >
               <Tilt3D intensity={6}>
                 <div
-                  className={`relative flex flex-col rounded-3xl p-7 ${popular ? 'glass-strong shadow-glow' : 'glass shadow-card'}`}
-                  style={popular ? { border: '1.5px solid var(--camp-accent)' } : {}}
+                  className={`relative flex flex-col rounded-3xl p-7 ${popular ? "glass-strong shadow-glow" : "glass shadow-card"}`}
+                  style={popular ? { border: "1.5px solid var(--camp-accent)" } : {}}
                 >
                   <div className="flex h-full flex-col">
                     {tier.tag && (
@@ -77,14 +75,23 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
                     <h3 className="text-[18px] font-bold text-foreground">{tier.name}</h3>
                     <p className="mt-1 text-[14px] text-muted-foreground">{tier.desc}</p>
                     <p className="mt-5 flex items-baseline gap-2">
-                      <span className="text-[30px] font-extrabold text-foreground">{tier.price}</span>
-                      {tier.old && <span className="text-[14px] text-muted-foreground line-through">{tier.old}</span>}
+                      <span className="text-[30px] font-extrabold text-foreground">
+                        {tier.price}
+                      </span>
+                      {tier.old && (
+                        <span className="text-[14px] text-muted-foreground line-through">
+                          {tier.old}
+                        </span>
+                      )}
                       <span className="text-[12px] text-muted-foreground">/person</span>
                     </p>
                     <ul className="mt-5 flex-1 space-y-2.5 text-[14px] text-foreground/75">
                       {tier.feats.map((feat, j) => (
                         <li key={j} className="flex items-start gap-2.5">
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-glow" strokeWidth={2.5} />
+                          <Check
+                            className="mt-0.5 h-4 w-4 shrink-0 text-green-glow"
+                            strokeWidth={2.5}
+                          />
                           {feat}
                         </li>
                       ))}
@@ -93,8 +100,8 @@ export function CampaignPricing({ tiers }: CampaignPricingProps) {
                       href="#reserve"
                       className={`${
                         popular
-                          ? 'sweep bg-accent-grad text-white ring-inner shadow-glow'
-                          : 'glass text-foreground hover:bg-foreground/10'
+                          ? "sweep bg-accent-grad text-white ring-inner shadow-glow"
+                          : "glass text-foreground hover:bg-foreground/10"
                       } mt-7 rounded-xl py-3 text-center text-[14px] font-extrabold transition hover:scale-[1.02]`}
                     >
                       Choose {tier.name}

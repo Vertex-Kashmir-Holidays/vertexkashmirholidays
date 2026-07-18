@@ -18,7 +18,11 @@ export function ImageDimensionBadge({ width, height, className }: Props) {
         isWide ? "bg-sky-600/80 text-white" : "bg-fuchsia-600/80 text-white",
         className,
       )}
-      title={isWide ? "Landscape — suited for desktop hero images" : "Portrait — suited for mobile hero images"}
+      title={
+        isWide
+          ? "Landscape — suited for desktop hero images"
+          : "Portrait — suited for mobile hero images"
+      }
     >
       {width}×{height} · {isWide ? "Desktop" : "Mobile"}
     </span>

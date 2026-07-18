@@ -11,12 +11,12 @@ interface EditableFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement>
   rows?: number;
 }
 
-export function EditableField({ 
-  value, 
-  onValueChange, 
-  className, 
-  rows = 1, 
-  ...props 
+export function EditableField({
+  value,
+  onValueChange,
+  className,
+  rows = 1,
+  ...props
 }: EditableFieldProps) {
   const [internalValue, setInternalValue] = useState(value);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -52,7 +52,7 @@ export function EditableField({
       className={cn(
         "w-full rounded-md bg-transparent px-1 outline-none transition-all focus:bg-muted/30 focus:ring-1 focus:ring-primary/30",
         "print:bg-transparent print:p-0 print:focus:ring-0", // Print optimization
-        className
+        className,
       )}
       {...props}
     />

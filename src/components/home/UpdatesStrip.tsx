@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { parseMarqueeItem } from '@/lib/marqueeIcons';
+import { parseMarqueeItem } from "@/lib/marqueeIcons";
 
 interface UpdatesStripProps {
   items: string[];

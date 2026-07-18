@@ -63,9 +63,12 @@ export function UsersClient({
     });
   }, [source, search, showDeleted]);
 
-  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } =
+    usePagination(filtered);
   // Reset to the first page when switching tabs so you don't land mid-list.
-  useEffect(() => { setPage(1); }, [tab, setPage]);
+  useEffect(() => {
+    setPage(1);
+  }, [tab, setPage]);
 
   const deletedCount = source.filter((u) => u.deletedAt).length;
 
@@ -99,7 +102,11 @@ export function UsersClient({
 
   function handlePermanentDelete(u: UserRow) {
     if (u.id === currentUserId) return toast.error("You cannot delete your own account.");
-    if (!confirm(`PERMANENTLY delete ${u.name ?? u.email}? This cannot be undone. Their bookings and reviews will be unlinked and any itineraries deleted.`))
+    if (
+      !confirm(
+        `PERMANENTLY delete ${u.name ?? u.email}? This cannot be undone. Their bookings and reviews will be unlinked and any itineraries deleted.`,
+      )
+    )
       return;
     runAction("Permanent delete", () =>
       fetch(`/api/users/${u.id}?permanent=1`, { method: "DELETE" }),
@@ -163,13 +170,18 @@ export function UsersClient({
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border">
-        {([
-          ["customers", "Customers", initialCustomers.length],
-          ["employees", "Employees", initialEmployees.length],
-        ] as const).map(([key, label, count]) => (
+        {(
+          [
+            ["customers", "Customers", initialCustomers.length],
+            ["employees", "Employees", initialEmployees.length],
+          ] as const
+        ).map(([key, label, count]) => (
           <button
             key={key}
-            onClick={() => { setTab(key); setSearch(""); }}
+            onClick={() => {
+              setTab(key);
+              setSearch("");
+            }}
             className={cn(
               "px-4 py-2 text-sm font-semibold -mb-px border-b-2 transition-colors",
               tab === key
@@ -206,7 +218,9 @@ export function UsersClient({
             />
             Show deleted{deletedCount > 0 ? ` (${deletedCount})` : ""}
           </label>
-          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+          <p className="text-xs text-muted-foreground self-center shrink-0">
+            {filtered.length} results
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -217,14 +231,22 @@ export function UsersClient({
                   ? ["User", "Phone", "Bookings", "Reviews", "Joined", "Actions"]
                   : ["User", "Role", "Phone", "Joined", "Actions"]
                 ).map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={tab === "customers" ? 6 : 5} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td
+                    colSpan={tab === "customers" ? 6 : 5}
+                    className="px-4 py-12 text-center text-muted-foreground text-sm"
+                  >
                     No {tab} found.
                   </td>
                 </tr>
@@ -235,42 +257,91 @@ export function UsersClient({
                   // Non-superadmins cannot act on a superadmin row.
                   const lockedSuper = u.role === "SUPERADMIN" && !isSuperadmin;
                   return (
-                    <tr key={u.id} className={cn("hover:bg-muted/50 transition-colors", isDeleted && "opacity-60")}>
+                    <tr
+                      key={u.id}
+                      className={cn(
+                        "hover:bg-muted/50 transition-colors",
+                        isDeleted && "opacity-60",
+                      )}
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", isStaff(u.role) ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
-                            {isStaff(u.role) ? <Shield className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                              isStaff(u.role)
+                                ? "bg-primary text-white"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {isStaff(u.role) ? (
+                              <Shield className="w-4 h-4" />
+                            ) : (
+                              <User className="w-4 h-4" />
+                            )}
                           </div>
                           <div className="min-w-0">
-                            <p className={cn("font-semibold text-foreground text-xs", isDeleted && "line-through")}>
+                            <p
+                              className={cn(
+                                "font-semibold text-foreground text-xs",
+                                isDeleted && "line-through",
+                              )}
+                            >
                               {u.name ?? "—"}
-                              {isDeleted && <span className="ml-2 text-[10px] font-bold text-destructive uppercase">deleted</span>}
-                              {isSelf && <span className="ml-2 text-[10px] text-muted-foreground/60">you</span>}
+                              {isDeleted && (
+                                <span className="ml-2 text-[10px] font-bold text-destructive uppercase">
+                                  deleted
+                                </span>
+                              )}
+                              {isSelf && (
+                                <span className="ml-2 text-[10px] text-muted-foreground/60">
+                                  you
+                                </span>
+                              )}
                             </p>
-                            <p className="text-[12px] text-muted-foreground truncate max-w-[180px]">{u.email}</p>
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[180px]">
+                              {u.email}
+                            </p>
                           </div>
                         </div>
                       </td>
 
                       {tab === "employees" && (
                         <td className="px-4 py-3">
-                          <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", isStaff(u.role) ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                          <span
+                            className={cn(
+                              "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                              isStaff(u.role)
+                                ? "bg-primary text-white"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
                             {u.role}
                           </span>
                         </td>
                       )}
 
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.phone ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        {u.phone ?? "—"}
+                      </td>
 
                       {tab === "customers" && (
                         <>
-                          <td className="px-4 py-3 text-xs font-semibold text-foreground">{u._count.bookings}</td>
-                          <td className="px-4 py-3 text-xs font-semibold text-foreground">{u._count.reviews}</td>
+                          <td className="px-4 py-3 text-xs font-semibold text-foreground">
+                            {u._count.bookings}
+                          </td>
+                          <td className="px-4 py-3 text-xs font-semibold text-foreground">
+                            {u._count.reviews}
+                          </td>
                         </>
                       )}
 
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
+                        {new Date(u.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "2-digit",
+                        })}
                       </td>
 
                       <td className="px-4 py-3">
@@ -385,14 +456,21 @@ function DeleteModal({
   const who = user.name ?? user.email;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
       >
         <div className="flex items-center justify-between">
           <h3 className="font-display font-bold text-foreground">Delete {who}</h3>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -418,14 +496,21 @@ function DeleteModal({
                 disabled={isPending}
                 className="w-full text-left rounded-xl border border-destructive/40 p-3 hover:bg-red-500 disabled:opacity-50"
               >
-                <span className="block text-sm font-semibold text-destructive">Permanent delete</span>
+                <span className="block text-sm font-semibold text-destructive">
+                  Permanent delete
+                </span>
                 <span className="block text-[12px] text-muted-foreground mt-0.5">
-                  Remove the row for good. Bookings and reviews are unlinked; itineraries are deleted. Cannot be undone.
+                  Remove the row for good. Bookings and reviews are unlinked; itineraries are
+                  deleted. Cannot be undone.
                 </span>
               </button>
             </div>
             <div className="flex justify-end pt-1">
-              <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+              >
                 Cancel
               </button>
             </div>
@@ -433,10 +518,15 @@ function DeleteModal({
         ) : (
           <>
             <p className="text-sm text-foreground">
-              Permanently delete <span className="font-semibold">{who}</span>? This <span className="font-semibold">cannot be undone</span>.
+              Permanently delete <span className="font-semibold">{who}</span>? This{" "}
+              <span className="font-semibold">cannot be undone</span>.
             </p>
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setConfirmPermanent(false)} className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted">
+              <button
+                type="button"
+                onClick={() => setConfirmPermanent(false)}
+                className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+              >
                 Back
               </button>
               <button
@@ -526,28 +616,53 @@ function EditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
         className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-foreground">Edit {isEmployee ? "employee" : "customer"}</h3>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <h3 className="font-display font-bold text-foreground">
+            Edit {isEmployee ? "employee" : "customer"}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="space-y-3">
           <Field label="Name">
-            <input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className={inputCls}
+            />
           </Field>
           <Field label="Email">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={inputCls}
+            />
           </Field>
           <Field label="Phone">
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className={inputCls} />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Optional"
+              className={inputCls}
+            />
           </Field>
           {isEmployee && (
             <Field label="Role">
@@ -560,7 +675,9 @@ function EditModal({
                 {/* Keep the current role selectable even if not in the option list. */}
                 {!roleOptions.includes(role) && <option value={role}>{role}</option>}
                 {roleOptions.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
               </select>
             </Field>
@@ -595,10 +712,18 @@ function EditModal({
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={isPending} className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
+          >
             {isPending ? "Saving…" : "Save changes"}
           </button>
         </div>
@@ -640,12 +765,16 @@ function AddEmployeeModal({
       phone: phone.trim(),
       role,
       password,
-      bookingConversionPct: bookingConversionPct.trim() === "" ? null : parseFloat(bookingConversionPct),
+      bookingConversionPct:
+        bookingConversionPct.trim() === "" ? null : parseFloat(bookingConversionPct),
     });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
@@ -653,25 +782,51 @@ function AddEmployeeModal({
       >
         <div className="flex items-center justify-between">
           <h3 className="font-display font-bold text-foreground">Add employee</h3>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="space-y-3">
           <Field label="Name">
-            <input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className={inputCls}
+            />
           </Field>
           <Field label="Email">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={inputCls}
+            />
           </Field>
           <Field label="Phone">
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className={inputCls} />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Optional"
+              className={inputCls}
+            />
           </Field>
           <Field label="Role">
-            <select value={role} onChange={(e) => setRole(e.target.value as Role)} className={inputCls}>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as Role)}
+              className={inputCls}
+            >
               {roleOptions.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>
+                  {r}
+                </option>
               ))}
             </select>
           </Field>
@@ -704,10 +859,18 @@ function AddEmployeeModal({
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={isPending} className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
+          >
             {isPending ? "Adding…" : "Add employee"}
           </button>
         </div>
@@ -722,7 +885,9 @@ const inputCls =
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
+        {label}
+      </span>
       <div className="mt-1">{children}</div>
     </label>
   );

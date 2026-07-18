@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { TourCard } from '@/components/ui/TourCard';
-import { formatINR } from '@/lib/accents';
-import { motion } from 'framer-motion';
-import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { TourListItemData, TourSortOption } from '@/types/tours';
+import { TourCard } from "@/components/ui/TourCard";
+import { formatINR } from "@/lib/accents";
+import { motion } from "framer-motion";
+import { SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import type { TourListItemData, TourSortOption } from "@/types/tours";
 
 interface ToursGridSectionProps {
   tours: TourListItemData[];
@@ -18,13 +18,13 @@ interface ToursGridSectionProps {
   onClearFilters?: () => void;
 }
 
-const badgeColors = ['orange', 'blue', 'green'] as const;
+const badgeColors = ["orange", "blue", "green"] as const;
 
 const sortLabels: Record<TourSortOption, string> = {
-  popular: 'Popular',
-  'price-asc': 'Price: Low to High',
-  'price-desc': 'Price: High to Low',
-  rating: 'Highest Rated',
+  popular: "Popular",
+  "price-asc": "Price: Low to High",
+  "price-desc": "Price: High to Low",
+  rating: "Highest Rated",
 };
 
 export function ToursGridSection({
@@ -57,7 +57,10 @@ export function ToursGridSection({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          All Tours <span className="font-sans text-[14px] font-semibold text-primary">({totalCount} {totalCount === 1 ? 'Package' : 'Packages'})</span>
+          All Tours{" "}
+          <span className="font-sans text-[14px] font-semibold text-primary">
+            ({totalCount} {totalCount === 1 ? "Package" : "Packages"})
+          </span>
         </motion.h2>
 
         <div className="flex items-center gap-2.5 text-[14px]">
@@ -70,7 +73,9 @@ export function ToursGridSection({
             <span>Filters</span>
           </button>
 
-        <label htmlFor="tours-sort" className="sr-only sm:not-sr-only sm:text-muted-foreground">Sort by:</label>
+          <label htmlFor="tours-sort" className="sr-only sm:not-sr-only sm:text-muted-foreground">
+            Sort by:
+          </label>
           <select
             id="tours-sort"
             value={sort}
@@ -89,7 +94,9 @@ export function ToursGridSection({
       {tours.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
           <p className="text-[18px] font-bold">No tours match your filters</p>
-          <p className="text-[14px] text-muted-foreground">Try removing a filter or searching for something else.</p>
+          <p className="text-[14px] text-muted-foreground">
+            Try removing a filter or searching for something else.
+          </p>
           <button
             onClick={onClearFilters}
             className="rounded-lg border-[1.5px] border-primary px-5 py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
@@ -109,10 +116,10 @@ export function ToursGridSection({
             <TourCard
               key={tour.id}
               tour={{
-                badge: tour.badge ?? 'FEATURED',
+                badge: tour.badge ?? "FEATURED",
                 bc: badgeColors.includes(tour.badgeColor as (typeof badgeColors)[number])
                   ? (tour.badgeColor as (typeof badgeColors)[number])
-                  : 'green',
+                  : "green",
                 image: tour.image ?? undefined,
                 detailHref: `/tours/${tour.slug}`,
                 bookHref: `/booking?tour=${tour.slug}`,
@@ -147,11 +154,11 @@ export function ToursGridSection({
             <motion.button
               key={p}
               onClick={() => onPageChange(p)}
-              aria-current={p === page ? 'page' : undefined}
+              aria-current={p === page ? "page" : undefined}
               className={`${
                 p === page
-                  ? 'bg-primary text-primary-foreground shadow-card'
-                  : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
+                  ? "bg-primary text-primary-foreground shadow-card"
+                  : "border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary"
               } grid h-10 w-10 place-items-center rounded-full text-[14px] font-semibold transition-all duration-200`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

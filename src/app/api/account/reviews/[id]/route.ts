@@ -37,7 +37,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (owned instanceof NextResponse) return owned;
 
   let raw: unknown;
-  try { raw = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
 

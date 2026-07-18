@@ -7,6 +7,6 @@ const INTERNAL_ROUTE_PREFIXES = ["/admin"];
 
 export function isInternalRoute(pathname: string): boolean {
   return INTERNAL_ROUTE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }

@@ -24,7 +24,10 @@ type Props = { params: Promise<{ id: string }> };
 // Wrapped in React's cache() so generateMetadata() and the page component
 // share one query per request instead of each fetching this row separately.
 const getTour = cache(async (id: string) =>
-  prisma.tour.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
+  prisma.tour.findUnique({
+    where: { id },
+    include: { activities: { select: { activityId: true } } },
+  }),
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -38,7 +41,11 @@ export default async function EditPackagePage({ params }: Props) {
   const [tour, activities, otherTours] = await Promise.all([
     getTour(id),
     prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.tour.findMany({ where: { id: { not: id } }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
+    prisma.tour.findMany({
+      where: { id: { not: id } },
+      orderBy: { title: "asc" },
+      select: { id: true, title: true },
+    }),
   ]);
   if (!tour) notFound();
 
@@ -62,9 +69,12 @@ export default async function EditPackagePage({ params }: Props) {
     inclusions: parseStringList(tour.inclusions),
     exclusions: parseStringList(tour.exclusions),
     gallery: parseJson<unknown[]>(tour.gallery, []).map((item) =>
-      typeof item === "string" ? { url: item, alt: "" } : (item as { url: string; alt: string })
+      typeof item === "string" ? { url: item, alt: "" } : (item as { url: string; alt: string }),
     ),
-    batches: parseJson<{ date: string; seats: number; price: string; status: string }[]>(tour.batches, []),
+    batches: parseJson<{ date: string; seats: number; price: string; status: string }[]>(
+      tour.batches,
+      [],
+    ),
     metaTitle: tour.metaTitle ?? "",
     metaDesc: tour.metaDesc ?? "",
     ogImage: tour.ogImage ?? "",
@@ -107,8 +117,14 @@ export default async function EditPackagePage({ params }: Props) {
       {/* Breadcrumb */}
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/packages" className="hover:text-primary transition-colors">Packages</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/packages" className="hover:text-primary transition-colors">
+              Packages
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium line-clamp-1 max-w-[200px]">{tour.title}</li>
         </ol>
       </nav>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { renderAccents } from '@/lib/accents';
-import { imgSrc } from '@/lib/placeholder';
-import type { DestinationCardData, SectionHeading } from '@/types/home';
+import Link from "next/link";
+import Image from "next/image";
+import { renderAccents } from "@/lib/accents";
+import { imgSrc } from "@/lib/placeholder";
+import type { DestinationCardData, SectionHeading } from "@/types/home";
 
 interface DestinationsSectionProps {
   heading: SectionHeading;
@@ -12,22 +12,34 @@ interface DestinationsSectionProps {
 }
 
 // First card spans the bento grid; the rest fill single cells.
-const cellClasses = ['md:col-span-2 md:row-span-2 h-[260px] md:h-full', 'h-[200px]'];
+const cellClasses = ["md:col-span-2 md:row-span-2 h-[260px] md:h-full", "h-[200px]"];
 
 export function DestinationsSection({ heading, destinations }: DestinationsSectionProps) {
   if (destinations.length === 0) return null;
 
   return (
-    <section id="destinations" className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section
+      id="destinations"
+      className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">
+            {heading.kicker}
+          </p>
+          <h2
+            className="rv h-display mt-3 text-[18px] font-bold text-foreground"
+            style={{ "--rd": "0.08s" } as React.CSSProperties}
+          >
             {renderAccents(heading.title)}
           </h2>
         </div>
         {heading.ctaLabel && (
-          <Link href={heading.ctaHref ?? '#'} className="rv text-sm font-bold text-primary hover:underline" style={{ '--rd': '0.16s' } as React.CSSProperties}>
+          <Link
+            href={heading.ctaHref ?? "#"}
+            className="rv text-sm font-bold text-primary hover:underline"
+            style={{ "--rd": "0.16s" } as React.CSSProperties}
+          >
             {heading.ctaLabel}
           </Link>
         )}
@@ -38,7 +50,7 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
             key={d.id}
             href={`/destinations/${d.slug}`}
             className={`rv group relative block overflow-hidden rounded-3xl border border-border ${cellClasses[Math.min(i, 1)]}`}
-            style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}
+            style={{ "--rd": `${i * 0.07}s` } as React.CSSProperties}
           >
             <Image
               src={imgSrc(d.coverImage)}

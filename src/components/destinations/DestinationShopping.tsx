@@ -1,8 +1,8 @@
 // src/components/destinations/DestinationShopping.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react';
+import { motion } from "framer-motion";
+import { ShoppingBag } from "lucide-react";
 
 interface ShopItem {
   name: string;
@@ -40,7 +40,9 @@ export function DestinationShopping({ items }: DestinationShoppingProps) {
               <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" strokeWidth={2} />
               <div>
                 <p className="text-[14px] font-bold">{item.name}</p>
-                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{item.description}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             </div>
           </motion.div>

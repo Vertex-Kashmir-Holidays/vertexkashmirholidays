@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { PLACEHOLDER_IMAGE } from '@/lib/placeholder';
-import { ImageDimensionBadge } from './ImageDimensionBadge';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { X, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { PLACEHOLDER_IMAGE } from "@/lib/placeholder";
+import { ImageDimensionBadge } from "./ImageDimensionBadge";
 
 export interface LightboxImage {
   src: string;
@@ -22,20 +22,17 @@ interface GalleryLightboxProps {
   onClose: () => void;
 }
 
-export function GalleryLightbox({
-  images,
-  initialIndex = 0,
-  open,
-  onClose,
-}: GalleryLightboxProps) {
-  const [mounted,   setMounted]   = useState(false);
-  const [current,   setCurrent]   = useState(initialIndex);
+export function GalleryLightbox({ images, initialIndex = 0, open, onClose }: GalleryLightboxProps) {
+  const [mounted, setMounted] = useState(false);
+  const [current, setCurrent] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const closeRef  = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   // Portal requires document — only available after mount
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync to initialIndex each time the lightbox opens
   useEffect(() => {
@@ -50,18 +47,20 @@ export function GalleryLightbox({
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   const prev = useCallback(() => {
     setDirection(-1);
-    setCurrent(c => (c - 1 + images.length) % images.length);
+    setCurrent((c) => (c - 1 + images.length) % images.length);
   }, [images.length]);
 
   const next = useCallback(() => {
     setDirection(1);
-    setCurrent(c => (c + 1) % images.length);
+    setCurrent((c) => (c + 1) % images.length);
   }, [images.length]);
 
   // Keyboard: Escape / arrows / Tab focus-trap
@@ -69,11 +68,20 @@ export function GalleryLightbox({
     if (!open) return;
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape')     { onClose(); return; }
-      if (e.key === 'ArrowLeft')  { prev();    return; }
-      if (e.key === 'ArrowRight') { next();    return; }
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        prev();
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        next();
+        return;
+      }
 
-      if (e.key === 'Tab') {
+      if (e.key === "Tab") {
         const dialog = dialogRef.current;
         if (!dialog) return;
         const focusable = Array.from(
@@ -83,23 +91,29 @@ export function GalleryLightbox({
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
-        const last  = focusable[focusable.length - 1];
+        const last = focusable[focusable.length - 1];
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
         } else {
-          if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
     };
 
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose, prev, next]);
 
   // Don't render on SSR, or when closed, or when there's nothing to show
   if (!mounted || !open || images.length === 0) return null;
 
-  const image   = images[current];
+  const image = images[current];
   const hasMany = images.length > 1;
   const isPlaceholder = image.src === PLACEHOLDER_IMAGE;
 
@@ -127,15 +141,15 @@ export function GalleryLightbox({
             key={current}
             custom={direction}
             variants={{
-              enter:  (d: number) => ({ opacity: 0, x: d * 48 }),
+              enter: (d: number) => ({ opacity: 0, x: d * 48 }),
               center: { opacity: 1, x: 0 },
-              exit:   (d: number) => ({ opacity: 0, x: d * -48 }),
+              exit: (d: number) => ({ opacity: 0, x: d * -48 }),
             }}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            style={{ pointerEvents: 'none' }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            style={{ pointerEvents: "none" }}
           >
             {isPlaceholder ? (
               /* No-photo card shown instead of the branding placeholder SVG */
@@ -147,7 +161,7 @@ export function GalleryLightbox({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={image.src}
-                alt={image.alt ?? ''}
+                alt={image.alt ?? ""}
                 className="max-h-[80vh] max-w-[88vw] rounded-xl object-contain shadow-2xl sm:max-w-[80vw]"
                 draggable={false}
               />
@@ -157,9 +171,7 @@ export function GalleryLightbox({
 
         {/* Caption — only when alt text is set and this is a real image */}
         {!isPlaceholder && image.alt && (
-          <p className="max-w-[80vw] text-center text-[14px] text-white/75">
-            {image.alt}
-          </p>
+          <p className="max-w-[80vw] text-center text-[14px] text-white/75">{image.alt}</p>
         )}
       </div>
 

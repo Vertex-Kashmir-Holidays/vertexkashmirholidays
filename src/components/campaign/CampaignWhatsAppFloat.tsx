@@ -1,8 +1,8 @@
 // src/components/campaign/CampaignWhatsAppFloat.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { WhatsAppIcon } from '@/components/icons/brand';
+import Link from "next/link";
+import { WhatsAppIcon } from "@/components/icons/brand";
 
 interface CampaignWhatsAppFloatProps {
   href: string;

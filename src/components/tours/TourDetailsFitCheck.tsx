@@ -1,8 +1,8 @@
 // src/components/sections/TourDetailsFitCheck.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ThumbsDown, ThumbsUp } from 'lucide-react';
+import { motion } from "framer-motion";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 interface TourDetailsFitCheckProps {
   perfectFor: string[];

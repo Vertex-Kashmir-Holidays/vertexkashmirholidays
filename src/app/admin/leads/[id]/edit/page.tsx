@@ -119,14 +119,19 @@ export default async function EditLeadPage({ params }: PageProps) {
             <ChevronRight className="w-3 h-3" />
           </li>
           <li>
-            <Link href={`/admin/leads/${lead.id}`} className="hover:text-primary transition-colors truncate max-w-[160px] inline-block align-bottom">
+            <Link
+              href={`/admin/leads/${lead.id}`}
+              className="hover:text-primary transition-colors truncate max-w-[160px] inline-block align-bottom"
+            >
               {lead.name}
             </Link>
           </li>
           <li aria-hidden>
             <ChevronRight className="w-3 h-3" />
           </li>
-          <li className="text-foreground font-medium">{readOnly ? "View" : assignOnly ? "Reassign" : "Edit"}</li>
+          <li className="text-foreground font-medium">
+            {readOnly ? "View" : assignOnly ? "Reassign" : "Edit"}
+          </li>
         </ol>
       </nav>
 

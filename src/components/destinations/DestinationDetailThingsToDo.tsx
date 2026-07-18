@@ -1,11 +1,11 @@
 // src/components/sections/DestinationDetailThingsToDo.tsx
-'use client';
+"use client";
 
-import { imgSrc } from '@/lib/placeholder';
-import { motion } from 'framer-motion';
-import { ArrowRight, ChevronRight, Clock } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { imgSrc } from "@/lib/placeholder";
+import { motion } from "framer-motion";
+import { ArrowRight, ChevronRight, Clock } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface ThingToDo {
   id: string;
@@ -23,11 +23,11 @@ interface DestinationDetailThingsToDoProps {
 export function DestinationDetailThingsToDo({ name, things }: DestinationDetailThingsToDoProps) {
   if (things.length === 0) return null;
 
-  const scroll = (direction: 'prev' | 'next') => {
-    const row = document.getElementById('thingsRow');
+  const scroll = (direction: "prev" | "next") => {
+    const row = document.getElementById("thingsRow");
     if (!row) return;
     const width = (row.firstElementChild as HTMLElement)?.offsetWidth || 160;
-    row.scrollBy({ left: (direction === 'next' ? 1 : -1) * (width + 16) * 2, behavior: 'smooth' });
+    row.scrollBy({ left: (direction === "next" ? 1 : -1) * (width + 16) * 2, behavior: "smooth" });
   };
 
   return (
@@ -41,7 +41,10 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
     >
       <div className="flex items-center justify-between">
         <h2 className="text-[18px] font-bold">Things to Do in {name}</h2>
-        <Link href="/activities" className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline">
+        <Link
+          href="/activities"
+          className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
+        >
           View all
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
         </Link>
@@ -72,12 +75,14 @@ export function DestinationDetailThingsToDo({ name, things }: DestinationDetailT
                 )}
               </div>
               <h3 className="mt-3 text-[14px] font-bold leading-snug">{thing.title}</h3>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">{thing.description}</p>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+                {thing.description}
+              </p>
             </motion.article>
           ))}
         </div>
         <motion.button
-          onClick={() => scroll('next')}
+          onClick={() => scroll("next")}
           aria-label="Next"
           className="absolute -right-3 top-[72px] grid h-10 w-10 place-items-center rounded-full bg-card text-foreground shadow-card transition hover:text-primary"
           whileHover={{ scale: 1.05 }}

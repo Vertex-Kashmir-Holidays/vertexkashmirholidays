@@ -37,18 +37,19 @@ export function NewsletterWidget() {
     <div className="bg-brand-navy rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-2">
         <Mail className="w-4 h-4 text-brand-green" />
-        <span className="text-xs font-bold text-brand-green uppercase tracking-wider">Newsletter</span>
+        <span className="text-xs font-bold text-brand-green uppercase tracking-wider">
+          Newsletter
+        </span>
       </div>
-      <h3 className="font-display font-bold text-white text-base mb-1">
-        Subscribe to Newsletter
-      </h3>
+      <h3 className="font-display font-bold text-white text-base mb-1">Subscribe to Newsletter</h3>
       <p className="text-white/55 text-xs mb-4 leading-relaxed">
         Get the latest travel tips, exclusive deals, and Kashmir updates.
       </p>
 
       {done ? (
         <p className="flex items-center gap-1.5 text-brand-green text-sm font-semibold py-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.2} /> Subscribed! Welcome to the Kashmir community.
+          <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.2} /> Subscribed! Welcome to the
+          Kashmir community.
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-2">

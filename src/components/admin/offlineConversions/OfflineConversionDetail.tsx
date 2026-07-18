@@ -4,7 +4,16 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, RotateCw, CheckCircle2, XCircle, Clock, RefreshCcw, PlusCircle, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  RotateCw,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  RefreshCcw,
+  PlusCircle,
+  Search,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/admin/offlineConversions/CopyButton";
 import { JsonView } from "@/components/admin/offlineConversions/JsonView";
@@ -81,10 +90,25 @@ interface Props {
 
 function fmtDate(d: Date | string | null) {
   if (!d) return "—";
-  return new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return new Date(d).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
-function Section({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  right,
+}: {
+  title: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+}) {
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
       <div className="flex items-center justify-between mb-3.5">
@@ -96,12 +120,24 @@ function Section({ title, children, right }: { title: string; children: React.Re
   );
 }
 
-function Field({ label, value, mono, copy }: { label: string; value: React.ReactNode; mono?: boolean; copy?: string | null }) {
+function Field({
+  label,
+  value,
+  mono,
+  copy,
+}: {
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+  copy?: string | null;
+}) {
   return (
     <div className="flex items-start justify-between gap-3 py-1.5 text-xs">
       <span className="text-muted-foreground shrink-0">{label}</span>
       <span className="flex items-center gap-1.5 text-right">
-        <span className={cn("text-foreground font-medium break-all", mono && "font-mono")}>{value ?? "—"}</span>
+        <span className={cn("text-foreground font-medium break-all", mono && "font-mono")}>
+          {value ?? "—"}
+        </span>
         {copy && <CopyButton value={copy} label={label} />}
       </span>
     </div>
@@ -149,7 +185,9 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
   async function checkStatus() {
     setChecking(true);
     try {
-      const res = await fetch(`/api/offline-conversions/${row.id}/check-status`, { method: "POST" });
+      const res = await fetch(`/api/offline-conversions/${row.id}/check-status`, {
+        method: "POST",
+      });
       const json = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
       if (json.ok) toast.success(json.message ?? "Checked.", { duration: 8000 });
       else toast.error(json.message ?? "Could not check status.", { duration: 8000 });
@@ -165,8 +203,18 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
   // for this module), so individual "Attempt #2 at <time>"-style entries
   // aren't available; this shows the attempt count against the one timestamp
   // we do have (the most recent update), rather than fabricate timestamps.
-  const timeline: { label: string; timestamp: string; icon: React.ComponentType<{ className?: string }>; tone: string }[] = [
-    { label: "Created & queued", timestamp: fmtDate(row.createdAt), icon: PlusCircle, tone: "text-muted-foreground" },
+  const timeline: {
+    label: string;
+    timestamp: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tone: string;
+  }[] = [
+    {
+      label: "Created & queued",
+      timestamp: fmtDate(row.createdAt),
+      icon: PlusCircle,
+      tone: "text-muted-foreground",
+    },
   ];
   for (let i = 1; i <= row.attempts; i++) {
     const isLast = i === row.attempts;
@@ -180,19 +228,42 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
     });
   }
   if (row.status === "FAILED") {
-    timeline.push({ label: `Failed — ${failure.title}`, timestamp: fmtDate(row.updatedAt), icon: XCircle, tone: "text-red-500" });
+    timeline.push({
+      label: `Failed — ${failure.title}`,
+      timestamp: fmtDate(row.updatedAt),
+      icon: XCircle,
+      tone: "text-red-500",
+    });
   }
   if (row.status === "SENT") {
-    timeline.push({ label: "Succeeded", timestamp: fmtDate(row.sentAt), icon: CheckCircle2, tone: "text-green-500" });
+    timeline.push({
+      label: "Succeeded",
+      timestamp: fmtDate(row.sentAt),
+      icon: CheckCircle2,
+      tone: "text-green-500",
+    });
   }
   if (row.status === "PENDING" && row.attempts === 0) {
-    timeline.push({ label: "Awaiting first attempt", timestamp: "—", icon: Clock, tone: "text-amber-500" });
+    timeline.push({
+      label: "Awaiting first attempt",
+      timestamp: "—",
+      icon: Clock,
+      tone: "text-amber-500",
+    });
   }
 
   const requestDataGroups = attribution
     ? {
-        Customer: row.lead ? { Name: row.lead.name, Email: row.lead.email, Phone: row.lead.phone } : { Name: row.booking?.guestName, Email: row.booking?.guestEmail, Phone: row.booking?.guestPhone },
-        ...(row.booking ? { Booking: { Amount: row.booking.amount, Currency: row.booking.currency } } : {}),
+        Customer: row.lead
+          ? { Name: row.lead.name, Email: row.lead.email, Phone: row.lead.phone }
+          : {
+              Name: row.booking?.guestName,
+              Email: row.booking?.guestEmail,
+              Phone: row.booking?.guestPhone,
+            },
+        ...(row.booking
+          ? { Booking: { Amount: row.booking.amount, Currency: row.booking.currency } }
+          : {}),
         Conversion: {
           value: row.lead ? row.lead.negotiatedAmount : row.booking?.amount,
           currency: row.booking?.currency ?? "INR",
@@ -257,7 +328,9 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
 
       {/* Quick Health Panel */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
-        <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3.5">Health Summary</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3.5">
+          Health Summary
+        </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <p className="text-[12px] text-muted-foreground mb-1">Platform</p>
@@ -265,15 +338,31 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
           </div>
           <div>
             <p className="text-[12px] text-muted-foreground mb-1">Status</p>
-            <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[row.status])}>{STATUS_LABELS[row.status]}</span>
+            <span
+              className={cn(
+                "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                STATUS_STYLES[row.status],
+              )}
+            >
+              {STATUS_LABELS[row.status]}
+            </span>
           </div>
           <div>
             <p className="text-[12px] text-muted-foreground mb-1">Failure Type</p>
-            <p className="text-xs font-bold text-foreground">{row.status === "FAILED" ? failure.title : "—"}</p>
+            <p className="text-xs font-bold text-foreground">
+              {row.status === "FAILED" ? failure.title : "—"}
+            </p>
           </div>
           <div>
             <p className="text-[12px] text-muted-foreground mb-1">Retryable</p>
-            <p className={cn("text-xs font-bold", isRetryable(row.status) ? "text-green-600 dark:text-green-400" : "text-muted-foreground")}>
+            <p
+              className={cn(
+                "text-xs font-bold",
+                isRetryable(row.status)
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-muted-foreground",
+              )}
+            >
               {isRetryable(row.status) ? "YES" : "NO"}
             </p>
           </div>
@@ -294,7 +383,9 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
           <div>
             <p className="text-[12px] text-muted-foreground mb-1">GCLID</p>
             <span className="flex items-center gap-1">
-              <span className="text-xs font-mono font-bold text-foreground truncate max-w-[100px]">{gclid ?? "—"}</span>
+              <span className="text-xs font-mono font-bold text-foreground truncate max-w-[100px]">
+                {gclid ?? "—"}
+              </span>
               {gclid && <CopyButton value={gclid} label="GCLID" />}
             </span>
           </div>
@@ -310,7 +401,9 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
             onClick={() => setTab(t.key)}
             className={cn(
               "px-3.5 py-2 text-xs font-bold border-b-2 -mb-px transition-colors",
-              tab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
+              tab === t.key
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}
@@ -322,10 +415,50 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
         <div className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <Section title="General">
-              <Field label="Lead" value={row.lead ? <Link href={`/admin/leads/${row.lead.id}`} className="text-primary hover:underline">{row.lead.name}</Link> : "—"} />
-              <Field label="Booking" value={row.booking ? <Link href={`/admin/bookings/${row.booking.id}`} className="text-primary hover:underline">{row.booking.guestName}</Link> : "—"} />
+              <Field
+                label="Lead"
+                value={
+                  row.lead ? (
+                    <Link
+                      href={`/admin/leads/${row.lead.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {row.lead.name}
+                    </Link>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <Field
+                label="Booking"
+                value={
+                  row.booking ? (
+                    <Link
+                      href={`/admin/bookings/${row.booking.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {row.booking.guestName}
+                    </Link>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
               <Field label="Platform" value={<PlatformBadge platform={row.platform} />} />
-              <Field label="Status" value={<span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full", STATUS_STYLES[row.status])}>{STATUS_LABELS[row.status]}</span>} />
+              <Field
+                label="Status"
+                value={
+                  <span
+                    className={cn(
+                      "text-[12px] font-bold px-2 py-0.5 rounded-full",
+                      STATUS_STYLES[row.status],
+                    )}
+                  >
+                    {STATUS_LABELS[row.status]}
+                  </span>
+                }
+              />
               <Field label="Attempts" value={row.attempts} />
               <Field label="Created" value={fmtDate(row.createdAt)} />
               <Field label="Updated" value={fmtDate(row.updatedAt)} />
@@ -342,7 +475,10 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
           </div>
 
           {row.lastError && (
-            <Section title="Last Error" right={<CopyButton value={row.lastError} label="Last Error" />}>
+            <Section
+              title="Last Error"
+              right={<CopyButton value={row.lastError} label="Last Error" />}
+            >
               <p className="text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap break-words font-mono bg-red-500/5 rounded-xl p-3 border border-red-500/10">
                 {row.lastError}
               </p>
@@ -353,7 +489,9 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
           <details className="bg-card rounded-2xl border border-border shadow-sm p-5 group">
             <summary className="text-xs font-bold uppercase tracking-wide text-muted-foreground cursor-pointer select-none list-none flex items-center justify-between">
               Advanced Debug
-              <span className="text-[12px] font-normal normal-case text-muted-foreground/70 group-open:hidden">click to expand</span>
+              <span className="text-[12px] font-normal normal-case text-muted-foreground/70 group-open:hidden">
+                click to expand
+              </span>
             </summary>
             <div className="mt-4 space-y-4">
               <div>
@@ -364,17 +502,31 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-muted-foreground mb-1.5 flex items-center justify-between">
-                  Platform Response {row.platformResponse && <CopyButton value={row.platformResponse} label="Platform Response" />}
+                  Platform Response{" "}
+                  {row.platformResponse && (
+                    <CopyButton value={row.platformResponse} label="Platform Response" />
+                  )}
                 </p>
-                {row.platformResponse ? <JsonView value={row.platformResponse} /> : <p className="text-xs text-muted-foreground">No response captured.</p>}
+                {row.platformResponse ? (
+                  <JsonView value={row.platformResponse} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">No response captured.</p>
+                )}
               </div>
               <div>
-                <p className="text-[12px] font-semibold text-muted-foreground mb-1.5">Stack Trace</p>
-                <p className="text-xs text-muted-foreground">Not captured — adapters only persist the platform's error message, not a stack trace.</p>
+                <p className="text-[12px] font-semibold text-muted-foreground mb-1.5">
+                  Stack Trace
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Not captured — adapters only persist the platform's error message, not a stack
+                  trace.
+                </p>
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-muted-foreground mb-1.5">Headers</p>
-                <p className="text-xs text-muted-foreground">Not currently captured (reserved for a future enhancement).</p>
+                <p className="text-xs text-muted-foreground">
+                  Not currently captured (reserved for a future enhancement).
+                </p>
               </div>
             </div>
           </details>
@@ -384,37 +536,61 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
       {tab === "request" && (
         <Section
           title="Request Data (reconstructed from source attribution)"
-          right={requestDataGroups ? <CopyButton value={JSON.stringify(requestDataGroups, null, 2)} label="Request Data JSON" /> : undefined}
+          right={
+            requestDataGroups ? (
+              <CopyButton
+                value={JSON.stringify(requestDataGroups, null, 2)}
+                label="Request Data JSON"
+              />
+            ) : undefined
+          }
         >
           {requestDataGroups ? (
             <div className="space-y-4">
               {Object.entries(requestDataGroups).map(([group, fields]) => (
                 <div key={group}>
-                  <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
+                  <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
+                    {group}
+                  </p>
                   <JsonView value={fields} />
                 </div>
               ))}
               <p className="text-[12px] text-muted-foreground italic">
-                This is reconstructed from the source Lead/Booking's current attribution data — the exact historical wire payload isn't persisted.
+                This is reconstructed from the source Lead/Booking's current attribution data — the
+                exact historical wire payload isn't persisted.
               </p>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">Originating Lead/Booking no longer exists.</p>
+            <p className="text-xs text-muted-foreground">
+              Originating Lead/Booking no longer exists.
+            </p>
           )}
         </Section>
       )}
 
       {tab === "response" && (
         <div className="space-y-5">
-          <Section title="Platform Response" right={row.platformResponse && <CopyButton value={row.platformResponse} label="Platform Response" />}>
+          <Section
+            title="Platform Response"
+            right={
+              row.platformResponse && (
+                <CopyButton value={row.platformResponse} label="Platform Response" />
+              )
+            }
+          >
             {row.platformResponse ? (
               <JsonView value={row.platformResponse} className="max-h-96" />
             ) : (
-              <p className="text-xs text-muted-foreground">No response captured{row.status === "FAILED" ? " — see Last Error." : "."}</p>
+              <p className="text-xs text-muted-foreground">
+                No response captured{row.status === "FAILED" ? " — see Last Error." : "."}
+              </p>
             )}
           </Section>
           {row.lastError && (
-            <Section title="Last Error" right={<CopyButton value={row.lastError} label="Last Error" />}>
+            <Section
+              title="Last Error"
+              right={<CopyButton value={row.lastError} label="Last Error" />}
+            >
               <p className="text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap break-words font-mono bg-red-500/5 rounded-xl p-3 border border-red-500/10">
                 {row.lastError}
               </p>
@@ -438,7 +614,10 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
       )}
 
       {tab === "json" && (
-        <Section title="Raw JSON" right={<CopyButton value={JSON.stringify(row, null, 2)} label="Raw JSON" />}>
+        <Section
+          title="Raw JSON"
+          right={<CopyButton value={JSON.stringify(row, null, 2)} label="Raw JSON" />}
+        >
           <JsonView value={row} className="max-h-[32rem]" />
         </Section>
       )}

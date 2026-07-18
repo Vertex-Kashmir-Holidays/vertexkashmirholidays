@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { imgSrc } from '@/lib/placeholder';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { imgSrc } from "@/lib/placeholder";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export interface ShowcaseActivity {
   id: string;
@@ -39,8 +39,8 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
       else setItemsPerView(3);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   if (items.length === 0) return null;
@@ -50,7 +50,9 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - itemsPerView < 0 ? Math.max(0, items.length - itemsPerView) : prev - itemsPerView));
+    setCurrentIndex((prev) =>
+      prev - itemsPerView < 0 ? Math.max(0, items.length - itemsPerView) : prev - itemsPerView,
+    );
   };
 
   const visibleItems = items.slice(currentIndex, currentIndex + itemsPerView);
@@ -160,7 +162,9 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
                 key={i}
                 onClick={() => setCurrentIndex(i * itemsPerView)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === Math.floor(currentIndex / itemsPerView) ? 'w-4 bg-primary' : 'w-1.5 bg-border'
+                  i === Math.floor(currentIndex / itemsPerView)
+                    ? "w-4 bg-primary"
+                    : "w-1.5 bg-border"
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />

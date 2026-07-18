@@ -52,7 +52,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 
@@ -116,7 +119,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     select: { id: true, payments: { where: { id: paymentId }, select: { id: true } } },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-  if (booking.payments.length === 0) return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+  if (booking.payments.length === 0)
+    return NextResponse.json({ error: "Payment not found" }, { status: 404 });
 
   await prisma.bookingPayment.delete({ where: { id: paymentId } });
   return NextResponse.json({ ok: true });

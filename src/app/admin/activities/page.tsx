@@ -31,5 +31,12 @@ export default async function AdminActivitiesPage() {
     can(role, "activities", "delete"),
   ]);
 
-  return <ActivitiesClient initialActivities={activities} canCreate={canCreate} canEdit={canEdit} canDelete={canDelete} />;
+  return (
+    <ActivitiesClient
+      initialActivities={activities}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
+    />
+  );
 }

@@ -1,12 +1,12 @@
 // src/components/blog/BlogSidebar.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { PenLine, ArrowRight, ShieldCheck } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
-import type { BlogCategoryData, BlogPageContent, BlogTrendingData } from '@/types/blog';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { PenLine, ArrowRight, ShieldCheck } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
+import type { BlogCategoryData, BlogPageContent, BlogTrendingData } from "@/types/blog";
 
 interface BlogSidebarProps {
   content: BlogPageContent;
@@ -36,7 +36,7 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
             </p>
             {content.aboutCtaLabel && (
               <Link
-                href={content.aboutCtaHref ?? '#'}
+                href={content.aboutCtaHref ?? "#"}
                 className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
               >
                 {content.aboutCtaLabel}
@@ -117,7 +117,9 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
                     <p className="text-[14px] font-bold transition group-hover:text-primary">
                       {item.title}
                     </p>
-                    {item.dateLabel && <p className="mt-1 text-[12px] text-muted-foreground">{item.dateLabel}</p>}
+                    {item.dateLabel && (
+                      <p className="mt-1 text-[12px] text-muted-foreground">{item.dateLabel}</p>
+                    )}
                   </div>
                 </Link>
               </motion.li>

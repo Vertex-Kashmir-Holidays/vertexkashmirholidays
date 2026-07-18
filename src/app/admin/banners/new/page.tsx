@@ -17,7 +17,10 @@ export default async function NewBannerPage() {
   return (
     <div className="space-y-5">
       <div>
-        <Link href="/admin/banners" className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary">
+        <Link
+          href="/admin/banners"
+          className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary"
+        >
           <ArrowLeft className="h-3 w-3" /> All Banners
         </Link>
         <h2 className="font-display text-xl font-extrabold text-foreground">New Banner</h2>

@@ -43,7 +43,10 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
     startTransition(async () => {
       try {
         const res = await fetch(`/api/blogs/${id}`, { method: "DELETE" });
-        if (res.status === 403) { toast.error("You don't have permission to delete posts. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to delete posts. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error();
         toast.success("Blog post deleted.");
         router.refresh();
@@ -63,7 +66,10 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ published: !published }),
         });
-        if (res.status === 403) { toast.error("You don't have permission to publish posts. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to publish posts. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error();
         toast.success(published ? "Blog unpublished." : "Blog published!");
         router.refresh();
@@ -78,7 +84,9 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Blog Posts</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">Manage all blog content and articles</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Manage all blog content and articles
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Link
@@ -111,7 +119,9 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
               className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
             />
           </div>
-          <p className="text-xs text-muted-foreground shrink-0">{filtered.length} of {initialBlogs.length}</p>
+          <p className="text-xs text-muted-foreground shrink-0">
+            {filtered.length} of {initialBlogs.length}
+          </p>
         </div>
 
         <div className="overflow-x-auto">
@@ -119,7 +129,10 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Title", "Author", "Status", "Published", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
                     {h}
                   </th>
                 ))}
@@ -129,27 +142,47 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search ? "No posts match your search." : "No blog posts yet. Write your first one!"}
+                    {search
+                      ? "No posts match your search."
+                      : "No blog posts yet. Write your first one!"}
                   </td>
                 </tr>
               ) : (
                 filtered.map((blog) => (
-                  <tr key={blog.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === blog.id && "bg-red-500/10/30")}>
+                  <tr
+                    key={blog.id}
+                    className={cn(
+                      "hover:bg-muted/50 transition-colors",
+                      confirmDelete === blog.id && "bg-red-500/10/30",
+                    )}
+                  >
                     <td className="px-4 py-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[220px]">{blog.title}</p>
-                        <p className="text-[12px] text-muted-foreground truncate">/blog/{blog.slug}</p>
+                        <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[220px]">
+                          {blog.title}
+                        </p>
+                        <p className="text-[12px] text-muted-foreground truncate">
+                          /blog/{blog.slug}
+                        </p>
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{blog.author ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {blog.author ?? "—"}
+                    </td>
 
                     <td className="px-4 py-3">
                       <button
                         onClick={() => canEdit && handleTogglePublish(blog.id, blog.published)}
                         disabled={isPending || !canEdit}
                         className="focus:outline-none"
-                        title={!canEdit ? "No permission to change status" : blog.published ? "Click to unpublish" : "Click to publish"}
+                        title={
+                          !canEdit
+                            ? "No permission to change status"
+                            : blog.published
+                              ? "Click to unpublish"
+                              : "Click to publish"
+                        }
                       >
                         {blog.published ? (
                           <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full hover:bg-green-500/15 transition-colors">
@@ -165,34 +198,55 @@ export function BlogsClient({ initialBlogs, canCreate, canEdit, canDelete }: Pro
 
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {blog.publishedAt
-                        ? new Date(blog.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })
+                        ? new Date(blog.publishedAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "2-digit",
+                          })
                         : "—"}
                     </td>
 
                     <td className="px-4 py-3">
                       {confirmDelete === blog.id ? (
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleDelete(blog.id)} disabled={isPending} className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors">
+                          <button
+                            onClick={() => handleDelete(blog.id)}
+                            disabled={isPending}
+                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
+                          >
                             {isPending ? "…" : "Delete"}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors">
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
+                          >
                             Cancel
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
                           {canEdit && (
-                            <Link href={`/admin/blogs/${blog.id}/edit`} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
+                            <Link
+                              href={`/admin/blogs/${blog.id}/edit`}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              title="Edit"
+                            >
                               <Pencil className="w-3.5 h-3.5" />
                             </Link>
                           )}
                           {canDelete && (
-                            <button onClick={() => setConfirmDelete(blog.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete">
+                            <button
+                              onClick={() => setConfirmDelete(blog.id)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                              title="Delete"
+                            >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[12px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">
+                              View only
+                            </span>
                           )}
                         </div>
                       )}

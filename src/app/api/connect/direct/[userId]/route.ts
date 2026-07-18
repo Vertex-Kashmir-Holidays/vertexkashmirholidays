@@ -61,7 +61,10 @@ export async function POST(_req: Request, { params }: Params) {
         members: existing.members.filter((m) => !m.leftAt),
       });
     }
-    const refreshed = await prisma.chatRoom.findUnique({ where: { directKey }, include: DM_INCLUDE });
+    const refreshed = await prisma.chatRoom.findUnique({
+      where: { directKey },
+      include: DM_INCLUDE,
+    });
     return NextResponse.json(refreshed);
   }
 

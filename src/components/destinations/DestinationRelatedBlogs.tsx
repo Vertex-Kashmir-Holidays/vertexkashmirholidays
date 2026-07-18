@@ -1,6 +1,6 @@
 // src/components/destinations/DestinationRelatedBlogs.tsx
-import { BlogPostRelated } from '@/components/blog/BlogPostRelated';
-import type { BlogArticleData } from '@/types/blog';
+import { BlogPostRelated } from "@/components/blog/BlogPostRelated";
+import type { BlogArticleData } from "@/types/blog";
 
 interface DestinationRelatedBlogsProps {
   posts: BlogArticleData[];

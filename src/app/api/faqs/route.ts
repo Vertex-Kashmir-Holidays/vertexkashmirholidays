@@ -31,11 +31,16 @@ export async function POST(request: Request) {
   if (guard instanceof NextResponse) return guard;
 
   let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
 
-  const { tourIds, destinationIds, blogIds, campaignIds, activityIds, lastReviewedAt, ...rest } = parsed.data;
+  const { tourIds, destinationIds, blogIds, campaignIds, activityIds, lastReviewedAt, ...rest } =
+    parsed.data;
 
   try {
     const slug = await generateFaqSlug(rest.question);
@@ -56,7 +61,8 @@ export async function POST(request: Request) {
     return NextResponse.json(faq, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "A FAQ with this slug already exists" }, { status: 409 });
+    if (msg.includes("P2002"))
+      return NextResponse.json({ error: "A FAQ with this slug already exists" }, { status: 409 });
     return NextResponse.json({ error: "Create failed" }, { status: 500 });
   }
 }
@@ -74,7 +80,13 @@ export async function GET(req: NextRequest) {
       status: "PUBLISHED",
       ...(categorySlug ? { category: { slug: categorySlug } } : {}),
     },
-    select: { id: true, question: true, shortAnswer: true, slug: true, category: { select: { name: true, slug: true } } },
+    select: {
+      id: true,
+      question: true,
+      shortAnswer: true,
+      slug: true,
+      category: { select: { name: true, slug: true } },
+    },
     orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
   });
 

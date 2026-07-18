@@ -48,7 +48,8 @@ export default function AdminSeoPage() {
       <div>
         <h2 className="font-display font-extrabold text-foreground text-xl">SEO & Pages</h2>
         <p className="text-muted-foreground text-xs mt-0.5">
-          Meta titles, descriptions, and OG images are managed per entity in their respective sections.
+          Meta titles, descriptions, and OG images are managed per entity in their respective
+          sections.
         </p>
       </div>
 
@@ -60,11 +61,15 @@ export default function AdminSeoPage() {
             className="bg-card rounded-2xl border border-border shadow-sm p-6 hover:shadow-md hover:border-primary/30 transition-all group"
           >
             <div className="flex items-start gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}
+              >
                 <Icon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">{title}</h3>
+                <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                  {title}
+                </h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</p>
               </div>
             </div>
@@ -75,10 +80,25 @@ export default function AdminSeoPage() {
       <div className="bg-primary/5 rounded-2xl p-5 border border-primary/10">
         <h3 className="font-bold text-foreground text-sm mb-2">How SEO works in this app</h3>
         <ul className="space-y-1.5 text-xs text-muted-foreground">
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Each tour, destination, and blog post has its own <code className="bg-card px-1 py-0.5 rounded text-foreground">metaTitle</code>, <code className="bg-card px-1 py-0.5 rounded text-foreground">metaDesc</code>, and <code className="bg-card px-1 py-0.5 rounded text-foreground">ogImage</code> field.</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> If those are empty, the page falls back to generated metadata from the entity&apos;s title and excerpt.</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Structured data (JSON-LD) is auto-generated for tours, destinations, and blog posts.</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Sitemap is auto-generated at <code className="bg-card px-1 py-0.5 rounded text-foreground">/sitemap.xml</code> from published content.</li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary mt-0.5">✓</span> Each tour, destination, and blog post has
+            its own <code className="bg-card px-1 py-0.5 rounded text-foreground">metaTitle</code>,{" "}
+            <code className="bg-card px-1 py-0.5 rounded text-foreground">metaDesc</code>, and{" "}
+            <code className="bg-card px-1 py-0.5 rounded text-foreground">ogImage</code> field.
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary mt-0.5">✓</span> If those are empty, the page falls back
+            to generated metadata from the entity&apos;s title and excerpt.
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary mt-0.5">✓</span> Structured data (JSON-LD) is
+            auto-generated for tours, destinations, and blog posts.
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-primary mt-0.5">✓</span> Sitemap is auto-generated at{" "}
+            <code className="bg-card px-1 py-0.5 rounded text-foreground">/sitemap.xml</code> from
+            published content.
+          </li>
         </ul>
       </div>
     </div>

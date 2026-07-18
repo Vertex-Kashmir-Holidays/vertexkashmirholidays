@@ -15,11 +15,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const booking = await prisma.booking.findUnique({
     where: { id },
-    select: { id: true, amount: true, servicesLocked: true, services: { select: { id: true, amount: true } } },
+    select: {
+      id: true,
+      amount: true,
+      servicesLocked: true,
+      services: { select: { id: true, amount: true } },
+    },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
-    return NextResponse.json({ error: "Services are locked and cannot be changed." }, { status: 423 });
+    return NextResponse.json(
+      { error: "Services are locked and cannot be changed." },
+      { status: 423 },
+    );
   }
   const service = booking.services.find((s) => s.id === serviceId);
   if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 });
@@ -32,13 +40,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
   const parsed = serviceUpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 
   // Re-check the cap with the new amount (others + this one).
   if (d.amount !== undefined) {
-    const othersTotal = booking.services.filter((s) => s.id !== serviceId).reduce((s, x) => s + x.amount, 0);
+    const othersTotal = booking.services
+      .filter((s) => s.id !== serviceId)
+      .reduce((s, x) => s + x.amount, 0);
     const newTotal = round2(othersTotal + d.amount);
     if (newTotal > booking.amount) {
       return NextResponse.json(
@@ -79,7 +92,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
-    return NextResponse.json({ error: "Services are locked and cannot be changed." }, { status: 423 });
+    return NextResponse.json(
+      { error: "Services are locked and cannot be changed." },
+      { status: 423 },
+    );
   }
   if (!booking.services.some((s) => s.id === serviceId)) {
     return NextResponse.json({ error: "Service not found" }, { status: 404 });

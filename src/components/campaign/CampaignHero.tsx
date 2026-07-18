@@ -1,17 +1,17 @@
 // src/components/campaign/CampaignHero.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { Star, Check, Lock, Phone } from 'lucide-react';
-import { Turnstile } from '@marsidev/react-turnstile';
-import { imgSrc } from '@/lib/placeholder';
-import { toE164 } from '@/lib/auth/validation';
-import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
-import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from '@/lib/env.public';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Star, Check, Lock, Phone } from "lucide-react";
+import { Turnstile } from "@marsidev/react-turnstile";
+import { imgSrc } from "@/lib/placeholder";
+import { toE164 } from "@/lib/auth/validation";
+import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -23,13 +23,13 @@ interface CampaignHeroProps {
   filmDur: string | null;
   heroImage: string | null;
   heroImageMobile: string | null;
-  particles: 'snow' | 'embers';
+  particles: "snow" | "embers";
   phone: string | null;
   onFilmClick: () => void;
 }
 
 // Fixed dark "glass" — the hero sits over a dark image overlay in both themes.
-const darkGlass = 'border border-white/15 bg-white/10 backdrop-blur-xl';
+const darkGlass = "border border-white/15 bg-white/10 backdrop-blur-xl";
 
 export function CampaignHero({
   badge,
@@ -54,9 +54,14 @@ export function CampaignHero({
   const renderedAt = useRef<number>(Date.now());
 
   useEffect(() => {
-    const createParticles = (container: HTMLDivElement, className: string, count: number, isEmber: boolean) => {
+    const createParticles = (
+      container: HTMLDivElement,
+      className: string,
+      count: number,
+      isEmber: boolean,
+    ) => {
       for (let i = 0; i < count; i++) {
-        const el = document.createElement('i');
+        const el = document.createElement("i");
         el.className = className;
         const z = Math.random();
         if (isEmber) {
@@ -67,56 +72,58 @@ export function CampaignHero({
         container.appendChild(el);
       }
     };
-    if (particles === 'snow' && flakesRef.current) createParticles(flakesRef.current, 'flake', 30, false);
-    if (particles === 'embers' && embersRef.current) createParticles(embersRef.current, 'ember', 30, true);
+    if (particles === "snow" && flakesRef.current)
+      createParticles(flakesRef.current, "flake", 30, false);
+    if (particles === "embers" && embersRef.current)
+      createParticles(embersRef.current, "ember", 30, true);
   }, [particles]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const name = String(fd.get('name') ?? '').trim();
-    const phoneVal = String(fd.get('phone') ?? '').trim();
-    const agree = fd.get('agree') === 'on';
+    const name = String(fd.get("name") ?? "").trim();
+    const phoneVal = String(fd.get("phone") ?? "").trim();
+    const agree = fd.get("agree") === "on";
     // Campaign form has no country selector — assume India and normalize to E.164.
-    const e164 = toE164(phoneVal, 'IN');
+    const e164 = toE164(phoneVal, "IN");
     if (name.length < 2) {
-      toast.error('Please enter your name.');
+      toast.error("Please enter your name.");
       return;
     }
     if (!e164) {
-      toast.error('Please enter a valid phone number.');
+      toast.error("Please enter a valid phone number.");
       return;
     }
     if (!agree) {
-      toast.error('Please accept the Terms & Conditions and Privacy Policy.');
+      toast.error("Please accept the Terms & Conditions and Privacy Policy.");
       return;
     }
     if (siteKey && !captchaToken) {
-      toast.error('Please complete the verification challenge.');
+      toast.error("Please complete the verification challenge.");
       return;
     }
     setSubmitting(true);
     try {
-      const travellers = String(fd.get('travellers') ?? '');
-      const res = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const travellers = String(fd.get("travellers") ?? "");
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
           phone: e164,
           travellers: travellers && /^\d+$/.test(travellers) ? Number(travellers) : undefined,
           agree,
-          source: 'campaign',
-          [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ''),
+          source: "campaign",
+          [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ""),
           [TIMETRAP_FIELD]: renderedAt.current,
           turnstileToken: captchaToken ?? undefined,
         }),
       });
-      if (!res.ok) throw new Error('Request failed');
+      if (!res.ok) throw new Error("Request failed");
       toast.success("Reserved! We'll call you back within 30 minutes.");
       setSent(true);
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -130,22 +137,60 @@ export function CampaignHero({
             className="absolute inset-0"
             initial={{ scale: 1 }}
             animate={{ scale: 1.14 }}
-            transition={{ duration: 16, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+            transition={{
+              duration: 16,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut",
+            }}
           >
             {heroImageMobile ? (
               <>
-                <Image src={heroImageMobile} alt="Campaign hero" fill priority sizes="100vw" className="object-cover sm:hidden" />
-                <Image src={heroImage} alt="Campaign hero" fill priority sizes="100vw" className="hidden object-cover sm:block" />
+                <Image
+                  src={heroImageMobile}
+                  alt="Campaign hero"
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover sm:hidden"
+                />
+                <Image
+                  src={heroImage}
+                  alt="Campaign hero"
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="hidden object-cover sm:block"
+                />
               </>
             ) : (
-              <Image src={heroImage} alt="Campaign hero" fill priority sizes="100vw" className="object-cover" />
+              <Image
+                src={heroImage}
+                alt="Campaign hero"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover"
+              />
             )}
           </motion.div>
         )}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(100deg,hsl(202 50% 5% / .92) 8%,hsl(202 50% 5% / .55) 45%,hsl(202 50% 5% / .25) 75%)' }}></div>
-        <div className="absolute inset-x-0 bottom-0 h-48" style={{ background: 'linear-gradient(transparent,hsl(202 50% 5%))' }}></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(100deg,hsl(202 50% 5% / .92) 8%,hsl(202 50% 5% / .55) 45%,hsl(202 50% 5% / .25) 75%)",
+          }}
+        ></div>
+        <div
+          className="absolute inset-x-0 bottom-0 h-48"
+          style={{ background: "linear-gradient(transparent,hsl(202 50% 5%))" }}
+        ></div>
         <div id="particles" className="absolute inset-0">
-          <div ref={particles === 'snow' ? flakesRef : embersRef} className="absolute inset-0"></div>
+          <div
+            ref={particles === "snow" ? flakesRef : embersRef}
+            className="absolute inset-0"
+          ></div>
         </div>
       </div>
 
@@ -154,7 +199,7 @@ export function CampaignHero({
           {badge && (
             <span
               className={`${darkGlass} hero-reveal inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-extrabold tracking-[0.16em] text-white`}
-              style={{ '--hr-y': '20px', '--hr-duration': '0.5s' } as React.CSSProperties}
+              style={{ "--hr-y": "20px", "--hr-duration": "0.5s" } as React.CSSProperties}
             >
               {badge}
             </span>
@@ -162,14 +207,14 @@ export function CampaignHero({
           {titleHTML && (
             <h1
               className="hero-reveal h-display mt-6 max-w-2xl text-[42px] font-extrabold text-white sm:text-[58px]"
-              style={{ '--hr-y': '30px', '--hr-delay': '0.1s' } as React.CSSProperties}
+              style={{ "--hr-y": "30px", "--hr-delay": "0.1s" } as React.CSSProperties}
               dangerouslySetInnerHTML={{ __html: titleHTML }}
             />
           )}
           {sub && (
             <p
               className="hero-reveal mt-6 max-w-md text-[16px] leading-relaxed text-white/75"
-              style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
+              style={{ "--hr-delay": "0.2s" } as React.CSSProperties}
             >
               {sub}
             </p>
@@ -178,10 +223,13 @@ export function CampaignHero({
           {facts.length > 0 && (
             <div
               className="hero-reveal mt-7 flex flex-wrap gap-2.5"
-              style={{ '--hr-y': '20px', '--hr-delay': '0.3s' } as React.CSSProperties}
+              style={{ "--hr-y": "20px", "--hr-delay": "0.3s" } as React.CSSProperties}
             >
               {facts.map((fact, i) => (
-                <span key={i} className={`${darkGlass} rounded-full px-3.5 py-1.5 text-[14px] font-semibold text-white`}>
+                <span
+                  key={i}
+                  className={`${darkGlass} rounded-full px-3.5 py-1.5 text-[14px] font-semibold text-white`}
+                >
                   {fact}
                 </span>
               ))}
@@ -190,7 +238,7 @@ export function CampaignHero({
 
           <div
             className="hero-reveal mt-9 flex flex-wrap items-center gap-3.5"
-            style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
+            style={{ "--hr-y": "20px", "--hr-delay": "0.4s" } as React.CSSProperties}
           >
             <Link
               href="#pricing"
@@ -214,17 +262,29 @@ export function CampaignHero({
           {proofCount && (
             <div
               className="hero-reveal mt-9 flex flex-wrap items-center gap-5"
-              style={{ '--hr-y': '20px', '--hr-delay': '0.5s' } as React.CSSProperties}
+              style={{ "--hr-y": "20px", "--hr-delay": "0.5s" } as React.CSSProperties}
             >
               <div className="flex -space-x-2.5">
-                {['sp1', 'sp2', 'sp3'].map((s) => (
-                  <Image key={s} width={36} height={36} className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover" src={imgSrc()} alt="" />
+                {["sp1", "sp2", "sp3"].map((s) => (
+                  <Image
+                    key={s}
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 rounded-full border-2 border-[hsl(202_50%_6%)] object-cover"
+                    src={imgSrc()}
+                    alt=""
+                  />
                 ))}
-                <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[12px] font-extrabold text-white">2k+</span>
+                <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[12px] font-extrabold text-white">
+                  2k+
+                </span>
               </div>
               <p className="text-[14px] leading-snug text-white/70">
-                <span className="inline-flex items-center gap-1 font-bold text-amber-300"><Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} /> 4.9</span> from{' '}
-                <span className="font-bold text-white">{proofCount}</span> travellers on this trip last season
+                <span className="inline-flex items-center gap-1 font-bold text-amber-300">
+                  <Star className="h-3.5 w-3.5 fill-current" strokeWidth={0} /> 4.9
+                </span>{" "}
+                from <span className="font-bold text-white">{proofCount}</span> travellers on this
+                trip last season
               </p>
             </div>
           )}
@@ -238,15 +298,24 @@ export function CampaignHero({
             transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="flex items-center gap-2 text-[12px] font-extrabold tracking-[0.2em] text-camp-accent">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--camp-accent)' }}></span>
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: "var(--camp-accent)" }}
+              ></span>
               PLAN YOUR TRIP
             </p>
-            <h2 className="h-display mt-3 text-[24px] font-bold leading-snug text-white">Get a quote in 60 seconds</h2>
-            <p className="mt-1.5 text-[14px] text-white/60">Free callback from our local expert within 30 minutes.</p>
+            <h2 className="h-display mt-3 text-[24px] font-bold leading-snug text-white">
+              Get a quote in 60 seconds
+            </h2>
+            <p className="mt-1.5 text-[14px] text-white/60">
+              Free callback from our local expert within 30 minutes.
+            </p>
 
             {sent ? (
               <div className="py-10 text-center">
-                <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-accent-grad text-white"><Check className="h-6 w-6" strokeWidth={2.5} /></div>
+                <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-accent-grad text-white">
+                  <Check className="h-6 w-6" strokeWidth={2.5} />
+                </div>
                 <p className="text-[16px] font-bold text-white">Request received!</p>
                 <p className="mt-1 text-[14px] text-white/60">We&apos;ll call you back shortly.</p>
               </div>
@@ -258,13 +327,13 @@ export function CampaignHero({
                   tabIndex={-1}
                   autoComplete="off"
                   aria-hidden="true"
-                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                  style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
                 />
                 <input
                   name="name"
                   required
                   className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[14px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
-                  style={{ '--tw-ring-color': 'var(--camp-accent)' } as React.CSSProperties}
+                  style={{ "--tw-ring-color": "var(--camp-accent)" } as React.CSSProperties}
                   placeholder="Your Name *"
                 />
                 <input
@@ -272,30 +341,44 @@ export function CampaignHero({
                   type="tel"
                   required
                   className="w-full rounded-xl border border-white/12 bg-white/[.06] px-4 py-3 text-[14px] text-white outline-none transition placeholder:text-white/45 focus:bg-white/10 focus:ring-2"
-                  style={{ '--tw-ring-color': 'var(--camp-accent)' } as React.CSSProperties}
+                  style={{ "--tw-ring-color": "var(--camp-accent)" } as React.CSSProperties}
                   placeholder="Phone Number *"
                 />
                 <select
                   name="travellers"
                   defaultValue=""
                   className="w-full appearance-none rounded-xl border border-white/12 bg-white/[.06] px-3 py-3 text-[14px] text-white/60 outline-none transition focus:bg-white/10 focus:ring-2"
-                  style={{ '--tw-ring-color': 'var(--camp-accent)' } as React.CSSProperties}
+                  style={{ "--tw-ring-color": "var(--camp-accent)" } as React.CSSProperties}
                 >
-                  <option value="" className="text-black">Travellers</option>
+                  <option value="" className="text-black">
+                    Travellers
+                  </option>
                   {[1, 2, 3, 4].map((n) => (
-                    <option key={n} value={n} className="text-black">{n}</option>
+                    <option key={n} value={n} className="text-black">
+                      {n}
+                    </option>
                   ))}
-                  <option value="5" className="text-black">5+</option>
+                  <option value="5" className="text-black">
+                    5+
+                  </option>
                 </select>
                 <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-white/65">
                   <input type="checkbox" name="agree" required className="cbx mt-0.5 shrink-0" />
                   <span>
-                    I agree to the{' '}
-                    <Link href="/terms-and-conditions" target="_blank" className="font-semibold text-white underline underline-offset-2">
+                    I agree to the{" "}
+                    <Link
+                      href="/terms-and-conditions"
+                      target="_blank"
+                      className="font-semibold text-white underline underline-offset-2"
+                    >
                       Terms &amp; Conditions
-                    </Link>{' '}
-                    and{' '}
-                    <Link href="/privacy-policy" target="_blank" className="font-semibold text-white underline underline-offset-2">
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      href="/privacy-policy"
+                      target="_blank"
+                      className="font-semibold text-white underline underline-offset-2"
+                    >
                       Privacy Policy
                     </Link>
                     .
@@ -304,7 +387,7 @@ export function CampaignHero({
                 {siteKey && (
                   <Turnstile
                     siteKey={siteKey}
-                    options={{ size: 'flexible', theme: 'auto' }}
+                    options={{ size: "flexible", theme: "auto" }}
                     onSuccess={(t) => setCaptchaToken(t)}
                     onError={() => setCaptchaToken(null)}
                     onExpire={() => setCaptchaToken(null)}
@@ -315,14 +398,22 @@ export function CampaignHero({
                   disabled={submitting || (!!siteKey && !captchaToken)}
                   className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-accent-grad py-3.5 text-[16px] font-extrabold text-white ring-inner shadow-glow transition hover:brightness-110 disabled:opacity-60"
                 >
-                  {submitting ? 'Reserving…' : 'Reserve My Seat →'}
+                  {submitting ? "Reserving…" : "Reserve My Seat →"}
                 </button>
               </form>
             )}
             <p className="mt-3.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[12px] font-semibold text-white/55">
-              <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" strokeWidth={2.2} /> Razorpay secured</span>
-              <span className="inline-flex items-center gap-1"><Check className="h-3 w-3" strokeWidth={2.5} /> J&amp;K licensed</span>
-              {phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" strokeWidth={2.2} /> {phone}</span>}
+              <span className="inline-flex items-center gap-1">
+                <Lock className="h-3 w-3" strokeWidth={2.2} /> Razorpay secured
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Check className="h-3 w-3" strokeWidth={2.5} /> J&amp;K licensed
+              </span>
+              {phone && (
+                <span className="inline-flex items-center gap-1">
+                  <Phone className="h-3 w-3" strokeWidth={2.2} /> {phone}
+                </span>
+              )}
             </p>
           </motion.div>
         </div>

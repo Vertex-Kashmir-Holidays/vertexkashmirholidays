@@ -44,7 +44,9 @@ function decodeHtmlEntities(s: string): string {
 }
 
 /** Extracts the widget's script src and sanitizes the remaining static markup. Returns null if no script tag is found (nothing to render). */
-export function parseTripadvisorWidget(raw: string | null | undefined): ParsedTripadvisorWidget | null {
+export function parseTripadvisorWidget(
+  raw: string | null | undefined,
+): ParsedTripadvisorWidget | null {
   if (!raw) return null;
   const match = raw.match(SCRIPT_TAG);
   if (!match) return null;

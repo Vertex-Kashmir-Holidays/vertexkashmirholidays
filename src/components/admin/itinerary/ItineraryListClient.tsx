@@ -74,10 +74,15 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-extrabold text-foreground">Itineraries</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{initialItems.length} saved {initialItems.length === 1 ? "itinerary" : "itineraries"}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {initialItems.length} saved {initialItems.length === 1 ? "itinerary" : "itineraries"}
+          </p>
         </div>
         {canCreate && (
-          <Link href="/admin/itinerary/new" className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:opacity-90">
+          <Link
+            href="/admin/itinerary/new"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:opacity-90"
+          >
             <Plus className="h-4 w-4" /> New Itinerary
           </Link>
         )}
@@ -100,7 +105,9 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
             className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             {STATUSES.map((sVal) => (
-              <option key={sVal} value={sVal}>{sVal === "ALL" ? "All Statuses" : sVal}</option>
+              <option key={sVal} value={sVal}>
+                {sVal === "ALL" ? "All Statuses" : sVal}
+              </option>
             ))}
           </select>
         </div>
@@ -111,46 +118,91 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
               <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
               <p className="mt-2 text-sm text-muted-foreground">No itineraries yet.</p>
               {canCreate && (
-                <Link href="/admin/itinerary/new" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+                <Link
+                  href="/admin/itinerary/new"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                >
                   <Plus className="h-4 w-4" /> Create your first itinerary
                 </Link>
               )}
             </div>
           ) : (
             filtered.map((item) => (
-              <div key={item.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={item.id}
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <Link href={`/admin/itinerary/${item.id}`} className="min-w-0 flex-1 group">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">{item.title}</p>
-                    <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-bold", STATUS_STYLES[item.status])}>{item.status}</span>
+                    <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">
+                      {item.title}
+                    </p>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[12px] font-bold",
+                        STATUS_STYLES[item.status],
+                      )}
+                    >
+                      {item.status}
+                    </span>
                   </div>
                   <p className="mt-1 text-[12px] text-muted-foreground">
                     {showOwner && item.ownerName ? `${item.ownerName} · ` : ""}
-                    Updated {new Date(item.updatedAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    Updated{" "}
+                    {new Date(item.updatedAt).toLocaleString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </Link>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                  <Link href={`/admin/itinerary/${item.id}`} className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-primary" aria-label="Edit">
+                  <Link
+                    href={`/admin/itinerary/${item.id}`}
+                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
+                    aria-label="Edit"
+                  >
                     <Pencil className="h-4 w-4" />
                   </Link>
                   {canCreate && (
-                    <button onClick={() => duplicate(item)} disabled={isPending} className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50" aria-label="Duplicate">
+                    <button
+                      onClick={() => duplicate(item)}
+                      disabled={isPending}
+                      className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+                      aria-label="Duplicate"
+                    >
                       <Copy className="h-4 w-4" />
                     </button>
                   )}
-                  {canDelete && (
-                    confirmDelete === item.id ? (
+                  {canDelete &&
+                    (confirmDelete === item.id ? (
                       <span className="flex items-center gap-1">
-                        <button onClick={() => remove(item)} disabled={isPending} className="rounded-lg bg-red-600 px-2 py-1 text-[12px] font-bold text-white hover:bg-red-700 disabled:opacity-50">Confirm</button>
-                        <button onClick={() => setConfirmDelete(null)} className="rounded-lg border border-border px-2 py-1 text-[12px] font-semibold text-muted-foreground">Cancel</button>
+                        <button
+                          onClick={() => remove(item)}
+                          disabled={isPending}
+                          className="rounded-lg bg-red-600 px-2 py-1 text-[12px] font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          className="rounded-lg border border-border px-2 py-1 text-[12px] font-semibold text-muted-foreground"
+                        >
+                          Cancel
+                        </button>
                       </span>
                     ) : (
-                      <button onClick={() => setConfirmDelete(item.id)} className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-red-500" aria-label="Delete">
+                      <button
+                        onClick={() => setConfirmDelete(item.id)}
+                        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-red-500"
+                        aria-label="Delete"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                    )
-                  )}
+                    ))}
                 </div>
               </div>
             ))

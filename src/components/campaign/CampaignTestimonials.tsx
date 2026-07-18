@@ -1,10 +1,10 @@
 // src/components/campaign/CampaignTestimonials.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { Star } from 'lucide-react';
-import type { CampaignTestimonial } from '@/types/campaign';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { Star } from "lucide-react";
+import type { CampaignTestimonial } from "@/types/campaign";
 
 interface CampaignTestimonialsProps {
   testimonials: CampaignTestimonial[];
@@ -48,10 +48,18 @@ export function CampaignTestimonials({ testimonials }: CampaignTestimonialsProps
                 <Star key={s} className="h-3.5 w-3.5 fill-current" strokeWidth={0} />
               ))}
             </p>
-            <p className="mt-3 text-[14px] leading-relaxed text-foreground/80">&ldquo;{testimonial.quote}&rdquo;</p>
+            <p className="mt-3 text-[14px] leading-relaxed text-foreground/80">
+              &ldquo;{testimonial.quote}&rdquo;
+            </p>
             <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {testimonial.image && (
-                <Image src={testimonial.image} alt="" width={40} height={40} className="h-10 w-10 rounded-full border border-border object-cover" />
+                <Image
+                  src={testimonial.image}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full border border-border object-cover"
+                />
               )}
               <div>
                 <p className="text-[14px] font-bold text-foreground">{testimonial.name}</p>

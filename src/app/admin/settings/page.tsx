@@ -18,7 +18,9 @@ export default async function AdminSettingsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Site Settings</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">Configure site-wide settings, social links, and default SEO</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Configure site-wide settings, social links, and default SEO
+          </p>
         </div>
         <FlushCacheButton />
       </div>

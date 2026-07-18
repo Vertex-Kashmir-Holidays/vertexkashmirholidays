@@ -76,16 +76,32 @@ export function NotificationBell() {
           </div>
           <div className="max-h-96 overflow-y-auto divide-y divide-border">
             {items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-xs text-muted-foreground">No notifications yet.</p>
+              <p className="px-4 py-8 text-center text-xs text-muted-foreground">
+                No notifications yet.
+              </p>
             ) : (
               items.map((n) => {
                 const body = (
-                  <div className={cn("flex gap-2.5 px-4 py-3 hover:bg-muted/50 transition-colors", !n.readAt && "bg-primary/5")}>
-                    <span className={cn("mt-1.5 w-1.5 h-1.5 rounded-full shrink-0", n.readAt ? "bg-transparent" : "bg-primary")} />
+                  <div
+                    className={cn(
+                      "flex gap-2.5 px-4 py-3 hover:bg-muted/50 transition-colors",
+                      !n.readAt && "bg-primary/5",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-1.5 w-1.5 h-1.5 rounded-full shrink-0",
+                        n.readAt ? "bg-transparent" : "bg-primary",
+                      )}
+                    />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-foreground">{n.title}</p>
-                      <p className="text-[12px] text-muted-foreground mt-0.5 break-words">{n.body}</p>
-                      <p className="text-[12px] text-muted-foreground/70 mt-1">{timeAgo(n.createdAt)}</p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5 break-words">
+                        {n.body}
+                      </p>
+                      <p className="text-[12px] text-muted-foreground/70 mt-1">
+                        {timeAgo(n.createdAt)}
+                      </p>
                     </div>
                   </div>
                 );

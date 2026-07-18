@@ -74,7 +74,10 @@ export async function compressMany(
         // aborting the export — but log it so a silent drop (like the QR
         // card quietly disappearing) is visible in devtools instead of
         // looking like an unexplained missing element in the PDF.
-        console.warn(`[itinerary-pdf] Failed to embed image "${src}" — it will be omitted from the PDF.`, err);
+        console.warn(
+          `[itinerary-pdf] Failed to embed image "${src}" — it will be omitted from the PDF.`,
+          err,
+        );
       }
     }),
   );

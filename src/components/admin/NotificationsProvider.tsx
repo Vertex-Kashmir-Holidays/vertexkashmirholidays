@@ -51,7 +51,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
-    setItems((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n)));
+    setItems((prev) =>
+      prev.map((n) => (ids.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n)),
+    );
   }, []);
 
   const markReadOptimistic = useCallback((ids: string[]) => {
@@ -61,7 +63,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     }).catch(() => {});
-    setItems((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n)));
+    setItems((prev) =>
+      prev.map((n) => (ids.includes(n.id) ? { ...n, readAt: new Date().toISOString() } : n)),
+    );
   }, []);
 
   return (

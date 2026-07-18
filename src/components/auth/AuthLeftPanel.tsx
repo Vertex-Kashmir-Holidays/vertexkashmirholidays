@@ -50,9 +50,7 @@ export function AuthLeftPanel({ headline, subheadline }: AuthLeftPanelProps) {
         <h1 className="font-display font-extrabold text-white text-4xl xl:text-5xl leading-[1.08] max-w-sm mb-4">
           {headline}
         </h1>
-        <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-          {subheadline}
-        </p>
+        <p className="text-white/60 text-sm leading-relaxed max-w-xs">{subheadline}</p>
       </div>
 
       {/* Stats strip */}
@@ -60,7 +58,9 @@ export function AuthLeftPanel({ headline, subheadline }: AuthLeftPanelProps) {
         <div className="grid grid-cols-4 gap-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-4 mb-5">
           {STATS.map(({ value, label }) => (
             <div key={label} className="text-center">
-              <p className="font-display font-extrabold text-white text-lg leading-tight">{value}</p>
+              <p className="font-display font-extrabold text-white text-lg leading-tight">
+                {value}
+              </p>
               <p className="text-white/55 text-[12px] font-medium">{label}</p>
             </div>
           ))}

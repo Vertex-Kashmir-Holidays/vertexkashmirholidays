@@ -114,7 +114,15 @@ interface NavGroup {
 
 // Small circular avatar showing the user's picture, or their initial as a
 // fallback. Used in both the sidebar and the topbar.
-function Avatar({ src, name, className }: { src: string | null; name: string; className?: string }) {
+function Avatar({
+  src,
+  name,
+  className,
+}: {
+  src: string | null;
+  name: string;
+  className?: string;
+}) {
   if (src) {
     return (
       <Image
@@ -128,7 +136,12 @@ function Avatar({ src, name, className }: { src: string | null; name: string; cl
     );
   }
   return (
-    <div className={cn("rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0", className)}>
+    <div
+      className={cn(
+        "rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0",
+        className,
+      )}
+    >
       {name.charAt(0).toUpperCase()}
     </div>
   );
@@ -155,7 +168,10 @@ function SidebarContent({
       <div className="flex items-center justify-between px-5 py-5 border-b border-border">
         <Logo variant="auto" />
         {onClose && (
-          <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
+          <button
+            onClick={onClose}
+            className="lg:hidden text-muted-foreground hover:text-foreground"
+          >
             <X className="w-5 h-5" />
           </button>
         )}
@@ -171,7 +187,8 @@ function SidebarContent({
               </p>
             )}
             {group.items.map(({ href, label, Icon }) => {
-              const isActive = pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
+              const isActive =
+                pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
@@ -184,7 +201,12 @@ function SidebarContent({
                       : "text-muted-foreground hover:text-foreground hover:bg-muted",
                   )}
                 >
-                  <Icon className={cn("w-4.5 h-4.5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                  <Icon
+                    className={cn(
+                      "w-4.5 h-4.5 shrink-0",
+                      isActive ? "text-primary-foreground" : "text-muted-foreground",
+                    )}
+                  />
                   {label}
                 </Link>
               );
@@ -238,11 +260,19 @@ function SidebarContent({
   );
 }
 
-export function AdminShell({ children, userId, userName, userEmail, userImage, permissions }: AdminShellProps) {
+export function AdminShell({
+  children,
+  userId,
+  userName,
+  userEmail,
+  userImage,
+  permissions,
+}: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { unlock } = useNotificationSound();
-  const pageTitle = pathname === "/admin/profile" ? "My Profile" : PAGE_TITLES[pathname] ?? "Admin";
+  const pageTitle =
+    pathname === "/admin/profile" ? "My Profile" : (PAGE_TITLES[pathname] ?? "Admin");
 
   // Only show modules the current role may view, grouped into sidebar sections.
   // A group is dropped entirely if none of its modules are visible to this role.
@@ -258,79 +288,85 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
 
   return (
     <NotificationsProvider>
-    <CallProvider currentUserId={userId} currentUserName={userName}>
-    <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-56 shrink-0">
-        <SidebarContent pathname={pathname} navGroups={navGroups} userName={userName} userEmail={userEmail} userImage={userImage} />
-      </aside>
-
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <aside className="relative z-10 w-56 flex flex-col">
+      <CallProvider currentUserId={userId} currentUserName={userName}>
+        <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
+          {/* Desktop sidebar */}
+          <aside className="hidden lg:flex flex-col w-56 shrink-0">
             <SidebarContent
               pathname={pathname}
               navGroups={navGroups}
               userName={userName}
               userEmail={userEmail}
               userImage={userImage}
-              onClose={() => setSidebarOpen(false)}
             />
           </aside>
+
+          {/* Mobile sidebar overlay */}
+          {sidebarOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden flex">
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <aside className="relative z-10 w-56 flex flex-col">
+                <SidebarContent
+                  pathname={pathname}
+                  navGroups={navGroups}
+                  userName={userName}
+                  userEmail={userEmail}
+                  userImage={userImage}
+                  onClose={() => setSidebarOpen(false)}
+                />
+              </aside>
+            </div>
+          )}
+
+          {/* Main content */}
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Topbar */}
+            <header className="h-14 bg-card border-b border-border flex items-center justify-between px-5 shrink-0 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden text-muted-foreground hover:text-foreground"
+                  aria-label="Open sidebar"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <h1 className="font-display font-bold text-foreground text-base">{pageTitle}</h1>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:inline"
+                >
+                  View Site
+                </Link>
+                <ThemeToggle />
+                <ChatInbox />
+                <NotificationBell />
+                <PresenceStatusPicker userImage={userImage} userName={userName} />
+                <PresenceHeartbeat />
+              </div>
+            </header>
+
+            {/* Page content — extra bottom padding on mobile so content clears the fixed bottom tab bar */}
+            <main className="flex-1 overflow-y-auto px-1 sm:px-5 pt-1 sm:pt-5 pb-20 lg:p-6">
+              {children}
+            </main>
+          </div>
+
+          {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
+          <MobileBottomTabs pathname={pathname} permissions={permissions} />
+
+          {/* Global incoming call notification — rings from any page in the admin */}
+          <Suspense>
+            <GlobalCallNotification currentUserId={userId} />
+          </Suspense>
         </div>
-      )}
-
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Topbar */}
-        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-5 shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-muted-foreground hover:text-foreground"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="font-display font-bold text-foreground text-base">{pageTitle}</h1>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/"
-              target="_blank"
-              className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:inline"
-            >
-              View Site
-            </Link>
-            <ThemeToggle />
-            <ChatInbox />
-            <NotificationBell />
-            <PresenceStatusPicker userImage={userImage} userName={userName} />
-            <PresenceHeartbeat />
-          </div>
-        </header>
-
-        {/* Page content — extra bottom padding on mobile so content clears the fixed bottom tab bar */}
-        <main className="flex-1 overflow-y-auto px-1 sm:px-5 pt-1 sm:pt-5 pb-20 lg:p-6">
-          {children}
-        </main>
-      </div>
-
-      {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
-      <MobileBottomTabs pathname={pathname} permissions={permissions} />
-
-      {/* Global incoming call notification — rings from any page in the admin */}
-      <Suspense>
-        <GlobalCallNotification currentUserId={userId} />
-      </Suspense>
-    </div>
-    </CallProvider>
+      </CallProvider>
     </NotificationsProvider>
   );
 }

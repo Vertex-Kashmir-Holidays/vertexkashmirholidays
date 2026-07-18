@@ -41,7 +41,8 @@ export function serviceFields(s: DisplayService): ServiceField[] {
     case "HOTEL":
       if (s.location) fields.push({ label: "Location", value: s.location });
       if (s.roomType) fields.push({ label: "Room Type", value: s.roomType });
-      if (s.nights != null) fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
+      if (s.nights != null)
+        fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
       break;
     case "TRANSPORT":
       if (s.pickup) fields.push({ label: "Pickup", value: s.pickup });
@@ -67,7 +68,11 @@ export function serviceDetailLine(s: DisplayService): string {
 /** Group services by kind in a stable order, dropping empty groups. */
 export function groupServices<T extends DisplayService>(services: T[]) {
   return (["HOTEL", "TRANSPORT", "ACTIVITY", "OTHER"] as const)
-    .map((kind) => ({ kind, label: SERVICE_KIND_LABELS[kind], items: services.filter((x) => x.kind === kind) }))
+    .map((kind) => ({
+      kind,
+      label: SERVICE_KIND_LABELS[kind],
+      items: services.filter((x) => x.kind === kind),
+    }))
     .filter((g) => g.items.length > 0);
 }
 
@@ -87,7 +92,12 @@ const DASH = "—";
 export function serviceRow(s: DisplayService): string[] {
   switch (s.kind) {
     case "HOTEL":
-      return [s.name, s.location || DASH, s.roomType || DASH, s.nights != null ? String(s.nights) : DASH];
+      return [
+        s.name,
+        s.location || DASH,
+        s.roomType || DASH,
+        s.nights != null ? String(s.nights) : DASH,
+      ];
     case "TRANSPORT":
       return [s.name, s.pickup || DASH, s.dropoff || DASH];
     case "ACTIVITY":
