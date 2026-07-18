@@ -11,6 +11,7 @@ import { isStaff } from "@/lib/rbac";
 import { isAllowedGoogleDomain } from "@/lib/auth/validation";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/security/turnstile";
+import { env } from "@/lib/env";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -54,7 +55,7 @@ async function verifyGoogleIdToken(idToken: string) {
   try {
     const { payload } = await jwtVerify(idToken, GOOGLE_JWKS, {
       issuer: ["https://accounts.google.com", "accounts.google.com"],
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: env.GOOGLE_CLIENT_ID,
     });
     return payload as { email?: string; email_verified?: boolean; name?: string };
   } catch {
@@ -89,8 +90,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
     }),
     // Google One Tap: the client posts the signed ID token it received from
     // Google's Identity Services script (see GoogleOneTap.tsx); it never goes

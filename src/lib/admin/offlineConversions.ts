@@ -1,5 +1,4 @@
 import type { OfflineConversionPlatform, OfflineConversionStatus } from "@prisma/client";
-import { checkGoogleRequestStatus, type RequestStatusResult } from "@/lib/admin/googleRequestStatus";
 
 // Shared, platform-agnostic display/diagnostic helpers for the admin Offline
 // Conversions module (src/app/admin/offline-conversions,
@@ -7,6 +6,11 @@ import { checkGoogleRequestStatus, type RequestStatusResult } from "@/lib/admin/
 // only — never imports an adapter, never touches the queue/service, never
 // writes to the OfflineConversion table. New platforms only need one line
 // added to each map/switch below — no UI changes required.
+//
+// Client-safe by design — this file is imported directly by
+// OfflineConversionsClient.tsx / OfflineConversionDetail.tsx. Anything that
+// reads a secret env var or makes a real network call belongs in
+// ./offlineConversionsServer.ts instead, never here.
 
 export const PLATFORM_LABELS: Record<OfflineConversionPlatform, string> = {
   GOOGLE: "Google Ads",
@@ -40,25 +44,6 @@ export const STATUS_STYLES: Record<string, string> = {
   RETRYING: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
   CANCELLED: "bg-muted text-muted-foreground",
 };
-
-/**
- * The identifier each platform's conversion was sent against — Google's
- * conversion action ID today, a Meta Pixel ID tomorrow, etc. Each platform's
- * adapter owns its own env var; this only reads it for display, exactly the
- * way the adapters already do — no new config, no adapter changes.
- */
-export function getPlatformDestinationId(platform: OfflineConversionPlatform): string | null {
-  switch (platform) {
-    case "GOOGLE":
-      return process.env.GOOGLE_ADS_CONVERSION_ACTION_ID || null;
-    case "META":
-      return process.env.META_CAPI_PIXEL_ID || null;
-    case "MICROSOFT":
-      return process.env.MICROSOFT_ADS_CONVERSION_ID || null;
-    default:
-      return null;
-  }
-}
 
 /** "Lead Conversion" vs "Booking Payment" — derived from which FK is set, not a stored field. */
 export function deriveEventName(row: { leadId: string | null; bookingId: string | null }): string {
@@ -150,26 +135,6 @@ export function extractHttpStatus(error: string | null): string | null {
   if (!error) return null;
   const match = error.match(/\b([1-5]\d{2})\b/);
   return match ? match[1] : null;
-}
-
-// ── Live status check (server-only — reads env, makes a real network call) ──
-
-/**
- * Dispatches to the platform's own read-only status-check API, if one
- * exists. Purely diagnostic — never mutates the queue row. Only Google is
- * wired today (Meta/Microsoft have no equivalent request-status endpoint
- * integrated yet); adding one later is a new case here, not a UI change.
- */
-export async function checkRequestStatus(
-  platform: OfflineConversionPlatform,
-  requestId: string,
-): Promise<RequestStatusResult> {
-  if (platform === "GOOGLE") return checkGoogleRequestStatus(requestId);
-  return {
-    ok: false,
-    status: "ERROR",
-    message: `Live status checks aren't available for ${PLATFORM_LABELS[platform]} yet.`,
-  };
 }
 
 // ── Relative time ─────────────────────────────────────────────────────────────

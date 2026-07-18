@@ -147,6 +147,11 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
   const [drafts, setDrafts] = useState<Service[]>([]);
+  // Draft ids that have completed their first auto-save (i.e. are now genuinely
+  // persisted server-side) — the draft itself stays in `drafts` for rendering,
+  // but this lets hasHotel/hasTransport below see it without waiting for a
+  // page refresh to re-fetch `booking.services`.
+  const [savedDraftIds, setSavedDraftIds] = useState<Set<string>>(new Set());
   // Live amounts lifted from rows on blur (keyed by row id, drafts included), so
   // totals recalc as soon as an amount field is edited. Each row also persists
   // itself on blur (auto-save) — there is no per-row manual Save step.
@@ -223,6 +228,10 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
     ]);
   }
 
+  function markDraftSaved(id: string) {
+    setSavedDraftIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  }
+
 
   // ── discount / inclusions persistence ──
   function saveBookingMeta(patch: Record<string, unknown>) {
@@ -271,8 +280,15 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
 
 
   // At least one persisted HOTEL and one TRANSPORT row must exist before locking.
-  const hasHotel = services.some((s) => s.kind === "HOTEL");
-  const hasTransport = services.some((s) => s.kind === "TRANSPORT");
+  // A draft counts once its first auto-save has completed (savedDraftIds) — it's
+  // genuinely persisted server-side by then, even though it still renders from
+  // the `drafts` array until the next full data refetch.
+  const hasHotel =
+    services.some((s) => s.kind === "HOTEL") ||
+    drafts.some((d) => d.kind === "HOTEL" && savedDraftIds.has(d.id));
+  const hasTransport =
+    services.some((s) => s.kind === "TRANSPORT") ||
+    drafts.some((d) => d.kind === "TRANSPORT" && savedDraftIds.has(d.id));
   const canLock = hasHotel && hasTransport;
 
 
@@ -436,6 +452,7 @@ export function BookingServicesClient({ booking, gstRates }: { booking: BookingD
                   capError={capError}
                   onAmountBlur={setLiveAmount}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
+                  onSaved={() => markDraftSaved(svc.id)}
                 />
               ))}
             </div>
@@ -1149,6 +1166,7 @@ function ServiceRow({
   capError,
   onAmountBlur,
   onRemoved,
+  onSaved,
 }: {
   bookingId: string;
   record: Service;
@@ -1158,6 +1176,7 @@ function ServiceRow({
   capError: (amount: number, excludeId: string | null) => string | null;
   onAmountBlur: (id: string, amount: number) => void;
   onRemoved: () => void;
+  onSaved?: () => void;
 }) {
   const [form, setForm] = useState<RowForm>({
     name: record.name,
@@ -1221,7 +1240,10 @@ function ServiceRow({
           return;
         }
         const saved = j as Service;
-        if (!serverId && saved.id) setServerId(saved.id);
+        if (!serverId && saved.id) {
+          setServerId(saved.id);
+          onSaved?.();
+        }
         setSavedSnapshot(snapshot);
         setError(null);
       } catch {

@@ -2,6 +2,7 @@ import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 import { v2 as cloudinary, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
+import { env } from "@/lib/env";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Media storage abstraction.
@@ -37,7 +38,7 @@ export const DEFAULT_FOLDER = "general";
 // (e.g. "vertex-kashmir/dev" vs "vertex-kashmir/prod"). Falls back to the legacy
 // root so existing uploads aren't orphaned if the var is missing.
 function getCloudinaryRoot(): string {
-  return process.env.CLOUDINARY_FOLDER?.trim() || "vertexkashmir";
+  return env.CLOUDINARY_FOLDER?.trim() || "vertexkashmir";
 }
 
 /** Full Cloudinary folder path for a given module folder/category — shared by
@@ -52,10 +53,10 @@ export function cloudinaryUploadFolder(rawFolder: string): string {
  */
 export function isCloudinaryConfigured(): boolean {
   return Boolean(
-    process.env.CLOUDINARY_URL ||
-      (process.env.CLOUDINARY_CLOUD_NAME &&
-        process.env.CLOUDINARY_API_KEY &&
-        process.env.CLOUDINARY_API_SECRET),
+    env.CLOUDINARY_URL ||
+      (env.CLOUDINARY_CLOUD_NAME &&
+        env.CLOUDINARY_API_KEY &&
+        env.CLOUDINARY_API_SECRET),
   );
 }
 
@@ -64,11 +65,11 @@ export function ensureCloudinaryConfig() {
   if (cloudinaryReady) return;
   // CLOUDINARY_URL is picked up automatically by the SDK; only configure the
   // discrete vars explicitly when the URL form is absent.
-  if (!process.env.CLOUDINARY_URL) {
+  if (!env.CLOUDINARY_URL) {
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
+      cloud_name: env.CLOUDINARY_CLOUD_NAME,
+      api_key: env.CLOUDINARY_API_KEY,
+      api_secret: env.CLOUDINARY_API_SECRET,
       secure: true,
     });
   } else {

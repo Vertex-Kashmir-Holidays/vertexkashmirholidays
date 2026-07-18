@@ -5,20 +5,13 @@
 import { prisma } from "@/lib/prisma";
 import {
   sendMail,
+  siteUrl,
   leadAssignedHtml,
   leadAssignedText,
   leadUnassignedHtml,
   leadUnassignedText,
   type LeadAssignmentData,
 } from "@/lib/mail";
-
-function siteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXTAUTH_URL ??
-    "https://vertexkashmirholidays.com"
-  ).replace(/\/$/, "");
-}
 
 const fmtDate = (d: Date | null | undefined): string | null =>
   d ? d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;

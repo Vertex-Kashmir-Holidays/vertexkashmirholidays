@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import type { Role } from "@/lib/rbac";
-import { getPlatformDestinationId } from "@/lib/admin/offlineConversions";
+import { getPlatformDestinationId } from "@/lib/admin/offlineConversionsServer";
 import { OfflineConversionDetail } from "@/components/admin/offlineConversions/OfflineConversionDetail";
 
 export const metadata: Metadata = { title: "Offline Conversion Detail — Admin" };

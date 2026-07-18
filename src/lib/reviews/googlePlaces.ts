@@ -5,6 +5,8 @@
 // Never throws: any failure (missing key, bad placeId, quota, network) just
 // returns null so /reviews degrades gracefully instead of breaking the page.
 
+import { env } from "@/lib/env";
+
 export interface GooglePlaceRating {
   rating: number;
   total: number;
@@ -24,7 +26,7 @@ interface PlaceDetailsResponse {
 }
 
 export async function getGooglePlaceRating(placeId: string | null | undefined): Promise<GooglePlaceRating | null> {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const apiKey = env.GOOGLE_PLACES_API_KEY;
   if (!apiKey || !placeId) return null;
 
   try {
@@ -64,7 +66,7 @@ export interface GooglePlaceLocation {
 export async function getGooglePlaceHoursAndLocation(
   placeId: string | null | undefined,
 ): Promise<{ hours: GooglePlaceHours | null; location: GooglePlaceLocation | null }> {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const apiKey = env.GOOGLE_PLACES_API_KEY;
   if (!apiKey || !placeId) return { hours: null, location: null };
 
   try {

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { SITE_URL } from "@/lib/seo";
 
 const SITE_HOST = (() => {
-  try { return new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vertexkashmirholidays.com").hostname; } catch { return "vertexkashmirholidays.com"; }
+  try { return new URL(SITE_URL).hostname; } catch { return "vertexkashmirholidays.com"; }
 })();
 
 function isValidAttachmentUrl(raw: string | undefined): boolean {

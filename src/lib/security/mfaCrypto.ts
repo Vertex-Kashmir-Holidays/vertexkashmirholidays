@@ -6,16 +6,15 @@
 // environment variable is needed.
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
+import { env } from "@/lib/env";
 
 const ALGO = "aes-256-gcm";
 const IV_LENGTH = 12; // recommended IV size for GCM
 
+// AUTH_SECRET is guaranteed set by the time this runs — importing `env`
+// above throws at module load if it's missing.
 function encryptionKey(): Buffer {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) {
-    throw new Error("AUTH_SECRET is not set — required to encrypt/decrypt MFA secrets.");
-  }
-  return createHash("sha256").update(secret).digest();
+  return createHash("sha256").update(env.AUTH_SECRET).digest();
 }
 
 /** Encrypts `plain` (the base32 TOTP secret) into a single stored string: iv:authTag:ciphertext (all hex). */

@@ -13,6 +13,7 @@ import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
 import { LeadStatus } from "@prisma/client";
+import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -269,9 +270,9 @@ export async function POST(req: NextRequest) {
 
   // Dedicated lead inbox; falls back to the admin/from address if unset.
   const leadsTo =
-    process.env.LEADS_EMAIL ??
-    process.env.MAIL_TO_ADMIN ??
-    process.env.MAIL_FROM ??
+    env.LEADS_EMAIL ??
+    env.MAIL_TO_ADMIN ??
+    env.MAIL_FROM ??
     "leads@vertexkashmirholidays.com";
 
   const submittedAt = lead.createdAt.toLocaleString("en-IN", {

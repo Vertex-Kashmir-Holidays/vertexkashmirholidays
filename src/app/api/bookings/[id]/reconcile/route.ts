@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/permissions";
 import { recordOnlinePayment } from "@/lib/bookings/online-payment";
 import { finalizeOnlinePayment } from "@/lib/bookings/notify";
 import { logPaymentAudit } from "@/lib/bookings/audit";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -33,15 +34,15 @@ export async function POST(_req: NextRequest, { params }: Params) {
       { status: 422 },
     );
   }
-  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_SECRET) {
+  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_SECRET) {
     return NextResponse.json({ error: "Razorpay is not configured." }, { status: 503 });
   }
 
   let captured: { id: string; method?: string } | null = null;
   try {
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_SECRET,
+      key_id: env.RAZORPAY_KEY_ID,
+      key_secret: env.RAZORPAY_SECRET,
     });
     const res = (await razorpay.orders.fetchPayments(booking.razorpayOrderId)) as unknown as {
       items?: Array<Record<string, unknown>>;

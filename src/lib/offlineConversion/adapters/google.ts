@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { PlatformAdapter } from "../types";
+import { env as appEnv } from "@/lib/env";
 
 // Google Ads offline conversions / enhanced conversions for leads — via the
 // Data Manager API. Google deprecated new access to the legacy
@@ -23,12 +24,12 @@ interface GoogleAdsEnv {
 
 function readEnv(): Partial<GoogleAdsEnv> {
   return {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN,
-    loginCustomerId: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
-    customerId: process.env.GOOGLE_ADS_CUSTOMER_ID,
-    conversionActionId: process.env.GOOGLE_ADS_CONVERSION_ACTION_ID,
+    clientId: appEnv.GOOGLE_CLIENT_ID,
+    clientSecret: appEnv.GOOGLE_CLIENT_SECRET,
+    refreshToken: appEnv.GOOGLE_ADS_REFRESH_TOKEN,
+    loginCustomerId: appEnv.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+    customerId: appEnv.GOOGLE_ADS_CUSTOMER_ID,
+    conversionActionId: appEnv.GOOGLE_ADS_CONVERSION_ACTION_ID,
   };
 }
 

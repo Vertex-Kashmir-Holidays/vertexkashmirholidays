@@ -8,6 +8,8 @@
 //
 // Verified against developers.google.com/data-manager/api/reference/rest/v1/requestStatus/retrieve.
 
+import { env } from "@/lib/env";
+
 const STATUS_URL = "https://datamanager.googleapis.com/v1/requestStatus:retrieve";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -28,9 +30,9 @@ async function getAccessToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN!,
+      client_id: env.GOOGLE_CLIENT_ID!,
+      client_secret: env.GOOGLE_CLIENT_SECRET!,
+      refresh_token: env.GOOGLE_ADS_REFRESH_TOKEN!,
       grant_type: "refresh_token",
     }),
   });
@@ -50,7 +52,7 @@ export interface RequestStatusResult {
 
 /** Checks the real outcome of a previously-accepted Google Data Manager API request. */
 export async function checkGoogleRequestStatus(requestId: string): Promise<RequestStatusResult> {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_ADS_REFRESH_TOKEN) {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_ADS_REFRESH_TOKEN) {
     return { ok: false, status: "ERROR", message: "Google Ads credentials not configured." };
   }
 

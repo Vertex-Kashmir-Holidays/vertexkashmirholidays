@@ -11,6 +11,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { imgSrc } from '@/lib/placeholder';
 import { toE164 } from '@/lib/auth/validation';
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from '@/lib/env.public';
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -48,7 +49,7 @@ export function CampaignHero({
   const flakesRef = useRef<HTMLDivElement>(null);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const renderedAt = useRef<number>(Date.now());
 
