@@ -224,7 +224,7 @@ export async function deleteFromCloudinary(publicIds: string[]): Promise<number>
       // resource_type "image" covers images; raw covers PDFs/docs. Try both.
       await Promise.allSettled([
         cloudinary.api.delete_resources(batch, { resource_type: "image" }),
-        cloudinary.api.delete_resources(batch, { resource_type: "raw"src/lib/admin/googleRequestStatus.ts }),
+        cloudinary.api.delete_resources(batch, { resource_type: "raw" }),
         cloudinary.api.delete_resources(batch, { resource_type: "video" }),
       ]);
       deleted += batch.length;

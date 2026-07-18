@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { extractRequestId, checkRequestStatus } from "@/lib/admin/offlineConversions";
+import { extractRequestId } from "@/lib/admin/offlineConversions";
+import { checkRequestStatus } from "@/lib/admin/offlineConversionsServer";
 
 export const dynamic = "force-dynamic";
 
