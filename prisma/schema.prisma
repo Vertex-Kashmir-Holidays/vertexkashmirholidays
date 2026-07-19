@@ -733,6 +733,42 @@ model Blog {
   @@index([category])
 }
 
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+model Job {
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  department       String
+  employmentType   EmploymentType
+  experience       String // free text, e.g. "1-3 years" — ranges vary too much for an enum
+  location         String
+  salary           String?
+  shortDescription String // listing-card summary
+  aboutRole        String
+  // Stringified JSON arrays — same convention as Destination.whyVisit/topAttractions
+  // (coding-standards.md → JSON Columns: String, never Prisma Json, for this shape).
+  responsibilities String         @default("[]")
+  requirements     String         @default("[]")
+  preferredSkills  String         @default("[]")
+  benefits         String         @default("[]")
+  published        Boolean        @default(false)
+  publishedAt      DateTime? // also serves as the public "Posted Date"
+  metaTitle        String?
+  metaDesc         String?
+  ogImage          String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // slug already has a unique index via @unique above — no separate @@index needed.
+  @@index([published])
+}
+
 model BlogContent {
   id                    String   @id @default("singleton")
   heroKicker            String?

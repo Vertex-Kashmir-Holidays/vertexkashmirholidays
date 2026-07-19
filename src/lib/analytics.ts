@@ -82,3 +82,13 @@ export function trackBookingCompleted(bookingId: string, value: number, packageN
     items: [{ item_name: packageName, price: value, quantity: 1 }],
   });
 }
+
+/** Fire when the careers listing page loads. */
+export function trackCareersViewed(): void {
+  push({ event: "careers_viewed" });
+}
+
+/** Fire when a job detail page loads. */
+export function trackJobViewed(jobTitle: string, jobId: string): void {
+  push({ event: "job_viewed", job_title: jobTitle, job_id: jobId });
+}

@@ -51,6 +51,7 @@ export const MODULES = [
   { key: "seo", label: "SEO & Pages", href: "/admin/seo" },
   { key: "settings", label: "Settings", href: "/admin/settings" },
   { key: "roles", label: "Roles & Permissions", href: "/admin/roles" },
+  { key: "careers", label: "Careers", href: "/admin/careers" },
 ] as const;
 
 export type ModuleKey = (typeof MODULES)[number]["key"];

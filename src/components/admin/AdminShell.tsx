@@ -35,6 +35,7 @@ import {
   Flag,
   Target,
   HelpCircle,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -72,6 +73,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   seo: Globe,
   settings: Settings,
   roles: ShieldCheck,
+  careers: Briefcase,
 };
 
 const PAGE_TITLES: Record<string, string> = Object.fromEntries(
@@ -87,7 +89,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
   { label: "CRM", keys: ["leads", "itinerary", "bookings"] },
   { label: "Marketing", keys: ["offlineConversions"] },
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
-  { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews"] },
+  { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews", "careers"] },
   { label: "Admin", keys: ["users", "settings", "roles"] },
 ];
 

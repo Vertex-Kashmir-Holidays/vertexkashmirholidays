@@ -80,6 +80,7 @@ async function main() {
       seo: ALL,
       settings: ALL,
       roles: ALL,
+      careers: ALL,
     },
     DEVELOPER: {
       dashboard: VIEW,
@@ -104,6 +105,7 @@ async function main() {
       seo: ALL,
       settings: ALL,
       roles: NONE,
+      careers: ALL,
     },
     SALES: {
       dashboard: VIEW,
@@ -128,6 +130,7 @@ async function main() {
       seo: NONE,
       settings: NONE,
       roles: NONE,
+      careers: VIEW,
     },
     EDITOR: {
       dashboard: VIEW,
@@ -152,6 +155,7 @@ async function main() {
       seo: ALL,
       settings: NONE,
       roles: NONE,
+      careers: ALL,
     },
   };
 
