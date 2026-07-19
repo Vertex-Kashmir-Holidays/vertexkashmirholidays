@@ -7,6 +7,7 @@ import { requiresMfa } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { decryptMfaSecret } from "@/lib/security/mfaCrypto";
 import { verifyTotp } from "@/lib/security/mfaTotp";
+import { TOTP_CODE_REGEX } from "@/lib/security/mfaValidation";
 import { rateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ const bodySchema = z.object({
   code: z
     .string()
     .trim()
-    .regex(/^\d{6}$/, "Enter the 6-digit code"),
+    .regex(TOTP_CODE_REGEX, "Enter the 6-digit code"),
 });
 
 const RECOVERY_CODE_COUNT = 8;

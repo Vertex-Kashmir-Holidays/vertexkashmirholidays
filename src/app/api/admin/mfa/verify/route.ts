@@ -6,6 +6,7 @@ import { requiresMfa } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { decryptMfaSecret } from "@/lib/security/mfaCrypto";
 import { verifyTotp } from "@/lib/security/mfaTotp";
+import { TOTP_CODE_REGEX } from "@/lib/security/mfaValidation";
 import { rateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   const input = parsed.data.code.trim();
 
-  if (/^\d{6}$/.test(input)) {
+  if (TOTP_CODE_REGEX.test(input)) {
     const secretBase32 = decryptMfaSecret(user.mfaSecret);
     if (verifyTotp(secretBase32, input, user.email)) {
       return NextResponse.json({ success: true });

@@ -158,7 +158,8 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
           </div>
 
           <p className="mt-6 text-[12px] text-white/55">
-            © 2026 Vertex Kashmir Holidays. All rights reserved.
+            © {new Date().getFullYear()} Vertex Kashmir Holidays, operated by Vertex Kashmir Tour &
+            Travels. All rights reserved.
           </p>
         </div>
       </div>

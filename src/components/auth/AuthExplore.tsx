@@ -2,8 +2,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export function AuthExplore() {
   return (
@@ -14,10 +15,12 @@ export function AuthExplore() {
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <img
+      <Image
         src="/hero/gulmarg-lg.webp"
         alt="Meadows of Gulmarg, Kashmir"
-        className="absolute inset-y-0 left-0 hidden h-full w-[42%] rounded-r-[40%] object-cover sm:block"
+        height={100}
+        width={100} 
+        className="absolute inset-y-0 left-0 hidden h-full w-[42%] object-cover sm:block"
       />
       <div className="relative ml-0 sm:ml-[44%]">
         <h2 className="font-display text-[20px] font-bold leading-snug">

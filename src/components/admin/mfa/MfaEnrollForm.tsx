@@ -2,25 +2,49 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, Copy, Check } from "lucide-react";
+import { totpCodeSchema } from "@/lib/security/mfaValidation";
 
 const inputClass =
   "mt-1.5 w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
 type Step = "loading" | "scan" | "recovery";
 
+const codeSchema = z.object({ code: totpCodeSchema });
+type CodeValues = z.infer<typeof codeSchema>;
+
+const recoverySchema = z.object({
+  savedConfirmed: z.boolean().refine((v) => v === true, {
+    message: "Please confirm you've saved your recovery codes.",
+  }),
+});
+type RecoveryValues = z.infer<typeof recoverySchema>;
+
 export function MfaEnrollForm() {
   const { update } = useSession();
   const [step, setStep] = useState<Step>("loading");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [manualKey, setManualKey] = useState("");
-  const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
-  const [savedConfirmed, setSavedConfirmed] = useState(false);
   const [finishing, setFinishing] = useState(false);
+
+  const {
+    register: registerCode,
+    handleSubmit: handleCodeSubmit,
+    formState: { isValid: codeValid },
+  } = useForm<CodeValues>({ resolver: zodResolver(codeSchema), mode: "onChange" });
+
+  const {
+    register: registerRecovery,
+    handleSubmit: handleRecoverySubmit,
+    formState: { isValid: recoveryValid },
+  } = useForm<RecoveryValues>({ resolver: zodResolver(recoverySchema), mode: "onChange" });
 
   useEffect(() => {
     let cancelled = false;
@@ -41,8 +65,7 @@ export function MfaEnrollForm() {
     };
   }, []);
 
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleVerify({ code }: CodeValues) {
     setVerifying(true);
     try {
       const res = await fetch("/api/admin/mfa/confirm", {
@@ -93,7 +116,7 @@ export function MfaEnrollForm() {
 
   if (step === "scan") {
     return (
-      <form onSubmit={handleVerify} className="space-y-5">
+      <form onSubmit={handleCodeSubmit(handleVerify)} className="space-y-5">
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center gap-2 text-primary">
             <ShieldCheck className="h-5 w-5" />
@@ -131,17 +154,20 @@ export function MfaEnrollForm() {
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className={`${inputClass} text-center tracking-[0.4em]`}
               placeholder="------"
               autoFocus
+              {...registerCode("code", {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                },
+              })}
             />
           </div>
         </div>
         <button
           type="submit"
-          disabled={verifying || code.length !== 6}
+          disabled={verifying || !codeValid}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {verifying && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -153,7 +179,7 @@ export function MfaEnrollForm() {
 
   // step === "recovery"
   return (
-    <div className="space-y-5">
+    <form onSubmit={handleRecoverySubmit(handleFinish)} className="space-y-5">
       <div className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2 text-primary">
           <ShieldCheck className="h-5 w-5" />
@@ -177,24 +203,18 @@ export function MfaEnrollForm() {
           {copied ? "Copied" : "Copy all codes"}
         </button>
         <label className="mt-4 flex items-start gap-2.5 text-xs text-foreground/80">
-          <input
-            type="checkbox"
-            className="mt-0.5"
-            checked={savedConfirmed}
-            onChange={(e) => setSavedConfirmed(e.target.checked)}
-          />
+          <input type="checkbox" className="mt-0.5" {...registerRecovery("savedConfirmed")} />
           I&apos;ve saved these recovery codes somewhere safe.
         </label>
       </div>
       <button
-        type="button"
-        onClick={handleFinish}
-        disabled={!savedConfirmed || finishing}
+        type="submit"
+        disabled={!recoveryValid || finishing}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-soft transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {finishing && <Loader2 className="h-4 w-4 animate-spin" />}
         Continue to dashboard
       </button>
-    </div>
+    </form>
   );
 }

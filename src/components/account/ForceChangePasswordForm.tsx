@@ -2,26 +2,34 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 
+const schema = z
+  .object({
+    newPassword: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+type FormValues = z.infer<typeof schema>;
+
 export function ForceChangePasswordForm() {
   const { update } = useSession();
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onChange" });
 
+  async function onSubmit({ newPassword }: FormValues) {
     setSaving(true);
     try {
       const res = await fetch("/api/account/change-password", {
@@ -50,7 +58,7 @@ export function ForceChangePasswordForm() {
     "mt-1.5 w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2 text-primary">
           <ShieldCheck className="h-5 w-5" />
@@ -64,13 +72,16 @@ export function ForceChangePasswordForm() {
             <input
               id="cp-new"
               type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
               className={inputClass}
               autoComplete="new-password"
               autoFocus
+              {...register("newPassword")}
             />
-            <p className="mt-1 text-[12px] text-muted-foreground">At least 8 characters.</p>
+            {errors.newPassword ? (
+              <p className="mt-1 text-[12px] text-rose-500">{errors.newPassword.message}</p>
+            ) : (
+              <p className="mt-1 text-[12px] text-muted-foreground">At least 8 characters.</p>
+            )}
           </div>
           <div>
             <label className="text-xs font-semibold text-foreground" htmlFor="cp-confirm">
@@ -79,11 +90,13 @@ export function ForceChangePasswordForm() {
             <input
               id="cp-confirm"
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
               className={inputClass}
               autoComplete="new-password"
+              {...register("confirmPassword")}
             />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-[12px] text-rose-500">{errors.confirmPassword.message}</p>
+            )}
           </div>
         </div>
       </div>
