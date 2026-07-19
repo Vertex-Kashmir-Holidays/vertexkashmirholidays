@@ -301,7 +301,7 @@ export function Footer({
             <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
               <li>
                 <Link href="/blog" className="transition hover:text-primary">
-                  Travel Blog
+                  Travel Stories
                 </Link>
               </li>
               <li>
