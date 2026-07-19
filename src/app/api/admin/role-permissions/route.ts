@@ -74,11 +74,44 @@ export async function PUT(req: NextRequest) {
     canDelete,
   };
 
-  const saved = await prisma.rolePermission.upsert({
-    // role/module come from validated enums; cast for the typed Prisma client.
-    where: { role_module: { role: role as never, module } },
-    update: data,
-    create: { role: role as never, module, ...data },
+  const performedByName = guard.user?.name ?? guard.user?.email ?? "Unknown";
+
+  const saved = await prisma.$transaction(async (tx) => {
+    // Captured before the upsert so the audit row can show "from" — a
+    // missing row today means every action was implicitly false.
+    const existingRow = await tx.rolePermission.findUnique({
+      where: { role_module: { role: role as never, module } },
+    });
+
+    const savedRow = await tx.rolePermission.upsert({
+      // role/module come from validated enums; cast for the typed Prisma client.
+      where: { role_module: { role: role as never, module } },
+      update: data,
+      create: { role: role as never, module, ...data },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        action: "PERMISSION_EDIT",
+        performedById: guard.user?.id,
+        performedByName,
+        metadata: {
+          role,
+          module,
+          from: existingRow
+            ? {
+                canView: existingRow.canView,
+                canCreate: existingRow.canCreate,
+                canEdit: existingRow.canEdit,
+                canDelete: existingRow.canDelete,
+              }
+            : null,
+          to: data,
+        },
+      },
+    });
+
+    return savedRow;
   });
 
   revalidateTag("role-permissions", "max");
