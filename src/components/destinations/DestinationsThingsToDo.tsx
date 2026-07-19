@@ -2,6 +2,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import {
   Sailboat,
   CableCar,
@@ -41,7 +42,7 @@ export function DestinationsThingsToDo() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.4, ease: EASE_BRAND },
     },
   };
 

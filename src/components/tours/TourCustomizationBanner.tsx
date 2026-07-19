@@ -4,8 +4,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { trackWhatsappClick } from "@/lib/analytics";
-
-const EASE = [0.22, 1, 0.36, 1] as const;
+import { EASE_BRAND as EASE } from "@/lib/motion";
 
 interface TourCustomizationBannerProps {
   tourName: string;
@@ -31,7 +30,7 @@ export function TourCustomizationBanner({ tourName }: TourCustomizationBannerPro
       transition={{ duration: 0.5, ease: EASE }}
       className="mb-6"
     >
-      <div className="sweep glass-strong relative overflow-hidden rounded-[2rem] px-5 py-4 text-center shadow-glass sm:px-8 sm:py-5">
+      <div className="sweep glass-strong relative overflow-hidden rounded-4xl px-5 py-4 text-center shadow-glass sm:px-8 sm:py-5">
         <div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
         <div aria-hidden className="orb orb-gold absolute -right-14 -bottom-14 h-52 w-52" />
         <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center gap-2">

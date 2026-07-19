@@ -18,7 +18,7 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
       id="about"
       className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24"
     >
-      <div className="glass relative overflow-hidden rounded-[2rem] p-8 lg:p-12">
+      <div className="glass relative overflow-hidden rounded-4xl p-8 lg:p-12">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-green-bright/15 blur-3xl"></div>
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>

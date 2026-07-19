@@ -98,7 +98,7 @@ export function Navbar() {
         }`}
       >
         <nav
-          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-5 lg:px-6 ${
+          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-[250ms] ease-brand motion-reduce:transition-none sm:px-5 lg:px-6 ${
             overHero ? "bg-transparent" : "nav-pill-solid"
           }`}
         >

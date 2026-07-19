@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { useState, useEffect } from "react";
 import { Search, RotateCcw, X, ArrowRight } from "lucide-react";
 import type { TourCategory } from "@prisma/client";
@@ -204,7 +205,7 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
           className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, ease: EASE_BRAND }}
         >
           <FilterContent {...props} idPrefix="desktop" />
         </motion.aside>

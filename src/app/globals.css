@@ -36,6 +36,10 @@
   --glass-deep-1: 45 86% 97% / 0.92;
   --glass-deep-2: 43 55% 90% / 0.82;
   --glass-border: 0 0% 100% / 0.6;
+
+  /* Shared motion easing — see docs/DESIGN_SYSTEM.md → Motion. Same curve as
+     EASE_BRAND (src/lib/motion.ts) and the ease-brand Tailwind utility class. */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
@@ -556,7 +560,7 @@ body {
   }
 }
 .hero-reveal {
-  animation: hero-reveal var(--hr-duration, 0.6s) cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hero-reveal var(--hr-duration, 0.6s) var(--ease-brand) both;
   animation-delay: var(--hr-delay, 0s);
 }
 
@@ -574,7 +578,7 @@ body {
   }
 }
 .hero-reveal-x {
-  animation: hero-reveal-x var(--hr-duration, 0.5s) cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hero-reveal-x var(--hr-duration, 0.5s) var(--ease-brand) both;
   animation-delay: var(--hr-delay, 0s);
 }
 

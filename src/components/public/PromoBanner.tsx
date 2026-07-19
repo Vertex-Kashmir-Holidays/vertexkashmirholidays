@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { EASE_BRAND as EASE } from "@/lib/motion";
 
 export interface PromoBannerData {
   id: string;
@@ -14,8 +15,6 @@ export interface PromoBannerData {
   imageUrl: string | null; // desktop background
   imageMobileUrl: string | null; // ≤640px background (falls back to imageUrl)
 }
-
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
  * A single promotional banner — a floating, rounded glass card (matching the
@@ -45,7 +44,7 @@ export function PromoBannerCard({
   return (
     // Floating card: 32px radius on all corners, image clipped by overflow-hidden,
     // subtle glass edge (inset white ring) and the site's soft `shadow-glass`.
-    <div className="relative overflow-hidden rounded-[2rem] bg-brand-dark shadow-glass ring-1 ring-inset ring-white/10">
+    <div className="relative overflow-hidden rounded-4xl bg-brand-dark shadow-glass ring-1 ring-inset ring-white/10">
       {/* Background image — absolutely positioned so text overlays it. */}
       {(desktopSrc || mobileSrc) &&
         (stacked ? (

@@ -16,7 +16,7 @@ export function CampaignFilm({ poster, title, dur, onFilmClick }: CampaignFilmPr
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20">
       <motion.button
         onClick={onFilmClick}
-        className="group relative block h-[300px] w-full overflow-hidden rounded-[2rem] border border-border shadow-card lg:h-[440px]"
+        className="group relative block h-[300px] w-full overflow-hidden rounded-4xl border border-border shadow-card lg:h-[440px]"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}

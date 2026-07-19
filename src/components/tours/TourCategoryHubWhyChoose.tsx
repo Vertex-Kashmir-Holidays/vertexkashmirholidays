@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { Compass, ShieldCheck, BedDouble, CarFront, Headphones, PenLine } from "lucide-react";
 
 const WHY_CHOOSE_ITEMS = [
@@ -39,7 +40,7 @@ const containerVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_BRAND } },
 };
 
 // Static trust section for the /tours/category hub — same visual language as

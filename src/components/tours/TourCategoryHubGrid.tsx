@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { ArrowRight } from "lucide-react";
 import { Tilt3D } from "@/components/ui/3DTilt";
 import { imgSrc } from "@/lib/placeholder";
@@ -27,7 +28,7 @@ const containerVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_BRAND } },
 };
 
 // Dynamic grid for the /tours/category hub — renders whatever categories
