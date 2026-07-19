@@ -113,6 +113,16 @@ const config: Config = {
         "card-tours": "0 14px 36px -16px rgba(11,31,58,.18)",
         gold: "0 0 36px -10px hsl(43 49% 53% / .5)",
       },
+      // Formalizes the rounded-[2rem] value already hand-copied identically
+      // across 5 components (docs/DESIGN_SYSTEM.md → Radius).
+      borderRadius: {
+        "4xl": "2rem",
+      },
+      // Tailwind-utility-class counterpart to EASE_BRAND (src/lib/motion.ts)
+      // and --ease-brand (globals.css) — same curve, for pure-CSS transitions.
+      transitionTimingFunction: {
+        brand: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
       animation: {
         float: "float 6s ease-in-out infinite",
         "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",

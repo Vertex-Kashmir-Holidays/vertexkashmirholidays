@@ -2,6 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { useEffect, useState } from "react";
 
 interface MorphingShapeProps {
@@ -35,7 +36,7 @@ export function MorphingShape({ className = "", duration = 8 }: MorphingShapePro
         d={path}
         fill="url(#grad)"
         animate={{ d: path }}
-        transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 2, ease: EASE_BRAND }}
       />
       <defs>
         <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">

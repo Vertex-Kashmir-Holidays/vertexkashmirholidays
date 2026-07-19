@@ -6,6 +6,7 @@ import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import { renderAccents } from "@/lib/accents";
 import type { HeroContentData, HeroSlideData, SiteStatData } from "@/types/home";
 import { motion, AnimatePresence } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -73,7 +74,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
               initial={{ opacity: mounted ? 0 : 1, scale: 1.05 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.5, ease: EASE_BRAND }}
             >
               <Image
                 src={currentSlide.image}

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ export function ToursNewsletter() {
         className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.5, ease: EASE_BRAND }}
       >
         <Image src={imgSrc()} alt="" fill sizes="100vw" className="object-cover" />
       </motion.div>

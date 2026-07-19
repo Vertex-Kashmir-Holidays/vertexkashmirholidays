@@ -2,6 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
 import { imgSrc } from "@/lib/placeholder";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
@@ -38,7 +39,7 @@ export function DestinationDetailHero({
         className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.5, ease: EASE_BRAND }}
       >
         {imageMobile ? (
           <>

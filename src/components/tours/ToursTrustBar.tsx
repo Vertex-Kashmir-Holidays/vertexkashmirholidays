@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { ShieldCheck, Headphones, PenLine, Lock } from "lucide-react";
 
 export function ToursTrustBar() {
@@ -26,7 +27,7 @@ export function ToursTrustBar() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.5, ease: EASE_BRAND },
     },
   };
 
