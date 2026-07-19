@@ -104,7 +104,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           <span className="text-foreground font-medium truncate">{job.title}</span>
         </nav>
 
-        <div className="mt-4 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
+        <div className="mt-4 grid grid-cols-1 gap-10 lg:grid-cols-[3fr_2fr]">
           <article className="min-w-0">
             <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] font-bold text-primary">
               {job.department}

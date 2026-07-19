@@ -4,9 +4,10 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, MapPin, CheckCircle2, Clock } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, MapPin, CheckCircle2, Clock, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EmploymentType } from "@prisma/client";
+import { JobApplicationsModal } from "./JobApplicationsModal";
 
 const EMPLOYMENT_LABELS: Record<EmploymentType, string> = {
   FULL_TIME: "Full-time",
@@ -39,6 +40,7 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [viewingJob, setViewingJob] = useState<Job | null>(null);
 
   const filtered = initialJobs.filter(
     (j) =>
@@ -224,6 +226,13 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setViewingJob(job)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            title="View Applications"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
                           {canEdit && (
                             <Link
                               href={`/admin/careers/${job.id}/edit`}
@@ -257,6 +266,15 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
           </table>
         </div>
       </div>
+
+      {viewingJob && (
+        <JobApplicationsModal
+          jobId={viewingJob.id}
+          jobTitle={viewingJob.title}
+          canDelete={canDelete}
+          onClose={() => setViewingJob(null)}
+        />
+      )}
     </div>
   );
 }

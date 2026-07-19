@@ -107,3 +107,8 @@ export function trackOtpRequested(jobId: string): void {
 export function trackOtpVerified(jobId: string): void {
   push({ event: "otp_verified", job_id: jobId });
 }
+
+/** Fire once a job application is fully submitted (resume + details sent). */
+export function trackApplicationSubmitted(jobTitle: string, jobId: string): void {
+  push({ event: "application_submitted", job_title: jobTitle, job_id: jobId });
+}

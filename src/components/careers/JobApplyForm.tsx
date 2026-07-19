@@ -6,14 +6,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { Loader2, Upload, CheckCircle2, FileText, X } from "lucide-react";
+import { Loader2, Upload, CheckCircle2, FileText, X, MessageCircle } from "lucide-react";
 import type { CountryCode } from "libphonenumber-js";
 import { PhoneInput } from "@/components/auth/PhoneInput";
 import { toE164 } from "@/lib/auth/validation";
 import { nameField, phoneField } from "@/lib/leads/schema";
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
-import { trackApplyStarted, trackOtpRequested, trackOtpVerified } from "@/lib/analytics";
+import {
+  trackApplyStarted,
+  trackOtpRequested,
+  trackOtpVerified,
+  trackApplicationSubmitted,
+} from "@/lib/analytics";
 
 const MAX_RESUME_BYTES = 1 * 1024 * 1024; // 1 MB, per project direction (overrides the original 5MB spec)
 const ALLOWED_RESUME_TYPES = [
@@ -26,10 +31,8 @@ const schema = z.object({
   fullName: nameField,
   email: z.string().trim().toLowerCase().email("Please enter a valid email address"),
   phone: phoneField,
-  currentCity: z.string().optional(),
   experience: z.string().min(1, "Please enter your total experience"),
   currentCompany: z.string().optional(),
-  expectedSalary: z.string().optional(),
   noticePeriod: z.string().optional(),
   coverLetter: z.string().optional(),
   agree: z.boolean().refine((v) => v === true, {
@@ -64,6 +67,11 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState<{ fullName: string; whatsappUrl: string } | null>(
+    null,
+  );
+
   const {
     register,
     handleSubmit,
@@ -77,10 +85,8 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
       fullName: "",
       email: "",
       phone: "",
-      currentCity: "",
       experience: "",
       currentCompany: "",
-      expectedSalary: "",
       noticePeriod: "",
       coverLetter: "",
       agree: false,
@@ -198,14 +204,69 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
     }
   }
 
-  function onSubmit() {
-    // Intentional stub for this ticket — resume upload/storage, HR email, and
-    // WhatsApp notification are wired in a later ticket. This confirms the
-    // gating (Submit only reachable once verified + form valid) works.
-    toast.info("Thanks! We're finishing this up — applications open very soon.");
+  async function onSubmit(values: FormValues) {
+    if (!resumeFile || otpStep !== "verified" || !verificationToken) return;
+
+    setSubmitting(true);
+    try {
+      const body = new FormData();
+      body.set("jobId", jobId);
+      body.set("fullName", values.fullName);
+      body.set("email", values.email);
+      body.set("phone", values.phone);
+      body.set("experience", values.experience);
+      if (values.currentCompany) body.set("currentCompany", values.currentCompany);
+      if (values.noticePeriod) body.set("noticePeriod", values.noticePeriod);
+      if (values.coverLetter) body.set("coverLetter", values.coverLetter);
+      body.set("agree", String(values.agree));
+      body.set("verificationToken", verificationToken);
+      body.set("resume", resumeFile);
+      body.set(HONEYPOT_FIELD, honeypotRef.current?.value ?? "");
+      body.set(TIMETRAP_FIELD, String(renderedAt.current));
+
+      const res = await fetch("/api/careers/apply", { method: "POST", body });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(resData.error ?? "Could not submit your application. Please try again.");
+        return;
+      }
+
+      trackApplicationSubmitted(jobTitle, jobId);
+      setSubmitted({ fullName: values.fullName, whatsappUrl: resData.whatsappUrl });
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const submitDisabled = otpStep !== "verified" || !isValid || !resumeFile || !!resumeError;
+  const submitDisabled =
+    otpStep !== "verified" || !isValid || !resumeFile || !!resumeError || submitting;
+
+  if (submitted) {
+    return (
+      <div className="mt-6 space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 text-center">
+        <CheckCircle2 className="mx-auto h-9 w-9 text-primary" />
+        <div>
+          <h3 className="font-bold text-foreground">Application Received!</h3>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            Thank you, {submitted.fullName}. Your application for <strong>{jobTitle}</strong> at
+            Vertex Kashmir Holidays has been received. Our HR team will review your details and
+            reach out to you soon.
+          </p>
+        </div>
+        <a
+          href={submitted.whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-105"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Confirm on WhatsApp
+        </a>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -303,76 +364,64 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
         </div>
       )}
 
-      {siteKey && otpStep !== "verified" && (
-        <Turnstile
-          siteKey={siteKey}
-          options={{ size: "flexible", theme: "auto" }}
-          onSuccess={(t) => setCaptchaToken(t)}
-          onError={() => setCaptchaToken(null)}
-          onExpire={() => setCaptchaToken(null)}
-        />
-      )}
+      <div className="grid grid-cols-[3fr_2fr] gap-3">
+        <div>
+          <label
+            htmlFor="af-phone"
+            className="mb-1 block text-xs font-semibold text-foreground/90"
+          >
+            Phone Number *
+          </label>
+          <PhoneInput
+            id="af-phone"
+            country={country}
+            onCountryChange={(c) => syncPhone(national, c)}
+            value={national}
+            onChange={(v) => syncPhone(v, country)}
+            invalid={!!errors.phone}
+          />
+          <input type="hidden" {...register("phone")} />
+          {errors.phone && (
+            <p className="mt-1 text-[12px] text-rose-500">{errors.phone.message}</p>
+          )}
+        </div>
 
-      <div>
-        <label htmlFor="af-phone" className="mb-1 block text-xs font-semibold text-foreground/90">
-          Phone Number *
-        </label>
-        <PhoneInput
-          id="af-phone"
-          country={country}
-          onCountryChange={(c) => syncPhone(national, c)}
-          value={national}
-          onChange={(v) => syncPhone(v, country)}
-          invalid={!!errors.phone}
-        />
-        <input type="hidden" {...register("phone")} />
-        {errors.phone && <p className="mt-1 text-[12px] text-rose-500">{errors.phone.message}</p>}
+        <div>
+          <label
+            htmlFor="af-experience"
+            className="mb-1 block text-xs font-semibold text-foreground/90"
+          >
+            Total Experience *
+          </label>
+          <input
+            id="af-experience"
+            className={inputClass}
+            placeholder="e.g. 2 years"
+            {...register("experience")}
+          />
+          {errors.experience && (
+            <p className="mt-1 text-[12px] text-rose-500">{errors.experience.message}</p>
+          )}
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="af-city" className="mb-1 block text-xs font-semibold text-foreground/90">
-          Current City
-        </label>
-        <input id="af-city" className={inputClass} {...register("currentCity")} />
-      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label
+            htmlFor="af-company"
+            className="mb-1 block text-xs font-semibold text-foreground/90"
+          >
+            Current Company <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <input id="af-company" className={inputClass} {...register("currentCompany")} />
+        </div>
 
-      <div>
-        <label
-          htmlFor="af-experience"
-          className="mb-1 block text-xs font-semibold text-foreground/90"
-        >
-          Total Experience *
-        </label>
-        <input
-          id="af-experience"
-          className={inputClass}
-          placeholder="e.g. 2 years"
-          {...register("experience")}
-        />
-        {errors.experience && (
-          <p className="mt-1 text-[12px] text-rose-500">{errors.experience.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="af-company" className="mb-1 block text-xs font-semibold text-foreground/90">
-          Current Company <span className="font-normal text-muted-foreground">(optional)</span>
-        </label>
-        <input id="af-company" className={inputClass} {...register("currentCompany")} />
-      </div>
-
-      <div>
-        <label htmlFor="af-salary" className="mb-1 block text-xs font-semibold text-foreground/90">
-          Expected Salary <span className="font-normal text-muted-foreground">(optional)</span>
-        </label>
-        <input id="af-salary" className={inputClass} {...register("expectedSalary")} />
-      </div>
-
-      <div>
-        <label htmlFor="af-notice" className="mb-1 block text-xs font-semibold text-foreground/90">
-          Notice Period <span className="font-normal text-muted-foreground">(optional)</span>
-        </label>
-        <input id="af-notice" className={inputClass} {...register("noticePeriod")} />
+        <div>
+          <label htmlFor="af-notice" className="mb-1 block text-xs font-semibold text-foreground/90">
+            Notice Period <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <input id="af-notice" className={inputClass} {...register("noticePeriod")} />
+        </div>
       </div>
 
       <div>
@@ -419,23 +468,29 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
       </label>
       {errors.agree && <p className="text-[12px] text-rose-500">{errors.agree.message}</p>}
 
+      {siteKey && otpStep !== "verified" && (
+        <Turnstile
+          siteKey={siteKey}
+          options={{ size: "flexible", theme: "auto" }}
+          onSuccess={(t) => setCaptchaToken(t)}
+          onError={() => setCaptchaToken(null)}
+          onExpire={() => setCaptchaToken(null)}
+        />
+      )}
+
       <button
         type="submit"
         disabled={submitDisabled}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {verifyingOtp && <Loader2 className="h-4 w-4 animate-spin" />}
-        Submit Application
+        {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+        {submitting ? "Submitting…" : "Submit Application"}
       </button>
       {otpStep !== "verified" && (
         <p className="text-center text-[12px] text-muted-foreground">
           Verify your email above to enable submission.
         </p>
       )}
-
-      {/* verificationToken is held for the application-submit endpoint added in
-          a later ticket; unused in this ticket beyond confirming the OTP flow. */}
-      <input type="hidden" value={verificationToken ?? ""} readOnly />
     </form>
   );
 }
