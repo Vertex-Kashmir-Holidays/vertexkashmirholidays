@@ -32,9 +32,6 @@ const schema = z.object({
   email: z.string().trim().toLowerCase().email("Please enter a valid email address"),
   phone: phoneField,
   experience: z.string().min(1, "Please enter your total experience"),
-  currentCompany: z.string().optional(),
-  noticePeriod: z.string().optional(),
-  coverLetter: z.string().optional(),
   agree: z.boolean().refine((v) => v === true, {
     message: "Please accept the Privacy Policy.",
   }),
@@ -86,9 +83,6 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
       email: "",
       phone: "",
       experience: "",
-      currentCompany: "",
-      noticePeriod: "",
-      coverLetter: "",
       agree: false,
     },
   });
@@ -215,9 +209,6 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
       body.set("email", values.email);
       body.set("phone", values.phone);
       body.set("experience", values.experience);
-      if (values.currentCompany) body.set("currentCompany", values.currentCompany);
-      if (values.noticePeriod) body.set("noticePeriod", values.noticePeriod);
-      if (values.coverLetter) body.set("coverLetter", values.coverLetter);
       body.set("agree", String(values.agree));
       body.set("verificationToken", verificationToken);
       body.set("resume", resumeFile);
@@ -298,6 +289,78 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
         )}
       </div>
 
+      <div className="grid grid-cols-[3fr_2fr] gap-3">
+        <div>
+          <label
+            htmlFor="af-phone"
+            className="mb-1 block text-xs font-semibold text-foreground/90"
+          >
+            Phone Number *
+          </label>
+          <PhoneInput
+            id="af-phone"
+            country={country}
+            onCountryChange={(c) => syncPhone(national, c)}
+            value={national}
+            onChange={(v) => syncPhone(v, country)}
+            invalid={!!errors.phone}
+          />
+          <input type="hidden" {...register("phone")} />
+          {errors.phone && (
+            <p className="mt-1 text-[12px] text-rose-500">{errors.phone.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="af-experience"
+            className="mb-1 block text-xs font-semibold text-foreground/90"
+          >
+            Total Experience *
+          </label>
+          <input
+            id="af-experience"
+            className={inputClass}
+            placeholder="e.g. 2 years"
+            {...register("experience")}
+          />
+          {errors.experience && (
+            <p className="mt-1 text-[12px] text-rose-500">{errors.experience.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-foreground/90">Resume *</label>
+        {resumeFile ? (
+          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-3.5 py-2.5">
+            <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
+              <FileText className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate">{resumeFile.name}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setResumeFile(null)}
+              className="shrink-0 text-muted-foreground hover:text-rose-500"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border px-3.5 py-4 text-[13px] font-semibold text-muted-foreground transition hover:border-primary hover:text-primary">
+            <Upload className="h-4 w-4" />
+            Upload PDF, DOC, or DOCX (max 1 MB)
+            <input
+              type="file"
+              accept="application/pdf,.doc,.docx"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleResumeSelect(e.target.files[0])}
+            />
+          </label>
+        )}
+        {resumeError && <p className="mt-1 text-[12px] text-rose-500">{resumeError}</p>}
+      </div>
+
       <div>
         <label htmlFor="af-email" className="mb-1 block text-xs font-semibold text-foreground/90">
           Email *
@@ -363,104 +426,6 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
           </button>
         </div>
       )}
-
-      <div className="grid grid-cols-[3fr_2fr] gap-3">
-        <div>
-          <label
-            htmlFor="af-phone"
-            className="mb-1 block text-xs font-semibold text-foreground/90"
-          >
-            Phone Number *
-          </label>
-          <PhoneInput
-            id="af-phone"
-            country={country}
-            onCountryChange={(c) => syncPhone(national, c)}
-            value={national}
-            onChange={(v) => syncPhone(v, country)}
-            invalid={!!errors.phone}
-          />
-          <input type="hidden" {...register("phone")} />
-          {errors.phone && (
-            <p className="mt-1 text-[12px] text-rose-500">{errors.phone.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="af-experience"
-            className="mb-1 block text-xs font-semibold text-foreground/90"
-          >
-            Total Experience *
-          </label>
-          <input
-            id="af-experience"
-            className={inputClass}
-            placeholder="e.g. 2 years"
-            {...register("experience")}
-          />
-          {errors.experience && (
-            <p className="mt-1 text-[12px] text-rose-500">{errors.experience.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label
-            htmlFor="af-company"
-            className="mb-1 block text-xs font-semibold text-foreground/90"
-          >
-            Current Company <span className="font-normal text-muted-foreground">(optional)</span>
-          </label>
-          <input id="af-company" className={inputClass} {...register("currentCompany")} />
-        </div>
-
-        <div>
-          <label htmlFor="af-notice" className="mb-1 block text-xs font-semibold text-foreground/90">
-            Notice Period <span className="font-normal text-muted-foreground">(optional)</span>
-          </label>
-          <input id="af-notice" className={inputClass} {...register("noticePeriod")} />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="af-cover" className="mb-1 block text-xs font-semibold text-foreground/90">
-          Cover Letter <span className="font-normal text-muted-foreground">(optional)</span>
-        </label>
-        <textarea id="af-cover" rows={3} className={inputClass} {...register("coverLetter")} />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-foreground/90">Resume *</label>
-        {resumeFile ? (
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-3.5 py-2.5">
-            <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
-              <FileText className="h-4 w-4 shrink-0 text-primary" />
-              <span className="truncate">{resumeFile.name}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setResumeFile(null)}
-              className="shrink-0 text-muted-foreground hover:text-rose-500"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border px-3.5 py-4 text-[13px] font-semibold text-muted-foreground transition hover:border-primary hover:text-primary">
-            <Upload className="h-4 w-4" />
-            Upload PDF, DOC, or DOCX (max 1 MB)
-            <input
-              type="file"
-              accept="application/pdf,.doc,.docx"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleResumeSelect(e.target.files[0])}
-            />
-          </label>
-        )}
-        {resumeError && <p className="mt-1 text-[12px] text-rose-500">{resumeError}</p>}
-      </div>
 
       <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-muted-foreground">
         <input type="checkbox" className="cbx mt-0.5 shrink-0" {...register("agree")} />
