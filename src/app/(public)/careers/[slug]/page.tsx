@@ -8,6 +8,7 @@ import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { parseStringList } from "@/lib/tours/content";
 import { JobViewedTracker } from "@/components/careers/JobViewedTracker";
+import { JobApplyForm } from "@/components/careers/JobApplyForm";
 
 export const revalidate = 300;
 
@@ -150,14 +151,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 </div>
               )}
             </dl>
-            {/* Apply form lands here in the next ticket — anchor target for now. */}
-            <a
-              id="apply"
-              href="#apply"
-              className="mt-6 flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-glow transition hover:brightness-110"
-            >
-              Apply Now
-            </a>
+            <JobApplyForm jobId={job.id} jobTitle={job.title} />
           </aside>
         </div>
       </div>

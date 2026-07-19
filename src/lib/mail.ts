@@ -1085,6 +1085,68 @@ export function passwordResetOtpHtml(data: { name: string; code: string; ttlMinu
   });
 }
 
+// ── Careers application email verification ─────────────────────────────────────
+// Sent when a candidate clicks "Verify Email" on a job application form
+// (src/components/careers/JobApplyForm.tsx). Same shape as the password-reset
+// OTP email above, Careers-specific copy only.
+
+export function careersOtpText(data: { code: string; ttlMinutes: number }) {
+  return [
+    "Verify your email to complete your job application",
+    "",
+    "Use this code to verify your email for your application to",
+    "Vertex Kashmir Holidays:",
+    "",
+    `    ${data.code}`,
+    "",
+    `This code expires in ${data.ttlMinutes} minutes and can be used only once.`,
+    "If you didn't request this, you can ignore this email.",
+    "",
+    "— Vertex Kashmir Holidays",
+    "https://vertexkashmirholidays.com",
+  ].join("\n");
+}
+
+export function careersOtpHtml(data: { code: string; ttlMinutes: number }) {
+  const code = escapeHtml(data.code);
+  const preheader = `Your application verification code is ${code} (expires in ${data.ttlMinutes} minutes).`;
+
+  const content = `          <tr>
+           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Verify your email</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
+               Use the verification code below to confirm your email address and
+               complete your job application with Vertex Kashmir Holidays.
+             </p>
+           </td>
+         </tr>
+         <tr>
+           <td align="center" style="padding:8px 32px 8px">
+             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+               <tr>
+                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+               </tr>
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
+               This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
+               used only once. If you didn't request this, you can safely ignore this
+               email.
+             </p>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: "Verify your email",
+    preheader,
+    contentHtml: content,
+    maxWidth: 480,
+  });
+}
+
 // ── New-customer default credentials ───────────────────────────────────────────
 // Sent when a lead is converted and a brand-new customer account is created. The
 // customer can log in with these credentials and is encouraged to change the

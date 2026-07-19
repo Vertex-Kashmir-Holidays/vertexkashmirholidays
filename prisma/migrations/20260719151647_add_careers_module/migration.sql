@@ -1,12 +1,16 @@
--- Careers Ticket 1: Job model + EmploymentType enum. Purely additive.
--- Generated via `prisma migrate diff` against the live dev database rather
--- than `prisma migrate dev`, because this branch (VERTE-feature-careers-1)
--- was cut from `dev` and doesn't have the AuditLog model that a separate,
--- still-unmerged branch (VERTE-17) already applied directly to this same
--- shared dev database — the raw diff output included `DROP TABLE "AuditLog"`
--- / `DROP TYPE "AuditAction"`, which is cross-branch noise, not a real
--- schema change this migration should make. Those two statements were
--- excluded; only the genuine Job/EmploymentType additions are below.
+-- Careers module (VERTE-97 + VERTE-98), squashed into one migration per
+-- project convention (one migration file per module rather than one per
+-- ticket). Purely additive — new enum, new table, one new enum value on an
+-- existing enum.
+--
+-- Originally generated as two separate migrations via `prisma migrate diff`
+-- against the live dev database (not `prisma migrate dev`), because this
+-- branch lineage doesn't have the AuditLog model that a separate,
+-- still-unmerged branch (VERTE-17) already applied directly to the same
+-- shared dev database — the raw diff output both times included
+-- `DROP TABLE "AuditLog"` / `DROP TYPE "AuditAction"`, cross-branch noise
+-- excluded from both. Squashed here since VERTE-97 hadn't merged to dev yet,
+-- so no downstream environment has applied the two separate files.
 
 -- CreateEnum
 CREATE TYPE "EmploymentType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP');
@@ -43,3 +47,6 @@ CREATE UNIQUE INDEX "Job_slug_key" ON "Job"("slug");
 
 -- CreateIndex
 CREATE INDEX "Job_published_idx" ON "Job"("published");
+
+-- AlterEnum
+ALTER TYPE "OtpPurpose" ADD VALUE 'CAREERS';

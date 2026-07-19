@@ -92,3 +92,18 @@ export function trackCareersViewed(): void {
 export function trackJobViewed(jobTitle: string, jobId: string): void {
   push({ event: "job_viewed", job_title: jobTitle, job_id: jobId });
 }
+
+/** Fire once, on the first field interaction with a job's apply form. */
+export function trackApplyStarted(jobTitle: string, jobId: string): void {
+  push({ event: "apply_started", job_title: jobTitle, job_id: jobId });
+}
+
+/** Fire when an apply-form OTP request succeeds. */
+export function trackOtpRequested(jobId: string): void {
+  push({ event: "otp_requested", job_id: jobId });
+}
+
+/** Fire when an apply-form OTP verification succeeds. */
+export function trackOtpVerified(jobId: string): void {
+  push({ event: "otp_verified", job_id: jobId });
+}
