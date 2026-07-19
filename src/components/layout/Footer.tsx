@@ -69,7 +69,7 @@ export function Footer({
   return (
     <footer className="relative z-[2] mt-16">
       <div className="mx-auto max-w-[1300px] px-6">
-        <div className="sweep glass-strong relative overflow-hidden rounded-[2rem] p-10 text-center shadow-glass">
+        <div className="sweep glass-strong relative overflow-hidden rounded-4xl p-10 text-center shadow-glass">
           <div className="pointer-events-none absolute -left-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-3xl"></div>
           <div aria-hidden className="orb orb-gold absolute -right-16 -bottom-16 h-64 w-64"></div>
           <h2 className="rv h-display text-4xl font-bold text-foreground">

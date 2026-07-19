@@ -1,11 +1,15 @@
 # Vertex Kashmir Holidays — Design System
 
-Authoritative reference for brand, color, and typography. New UI should be built from
-these tokens rather than one-off arbitrary values. Source of truth for each:
+Authoritative reference for brand, color, typography, spacing, radius, shadow,
+breakpoints, and motion timing. New UI should be built from these tokens rather
+than one-off arbitrary values. Source of truth for each:
 
 - Brand/logo: `public/brand/README.md` + `public/brand/Vertex-Logo-Kit-Preview.html`
 - Color tokens: `src/app/globals.css` (`:root` / `.dark`) + `tailwind.config.ts`
 - Type scale: `tailwind.config.ts` (`theme.extend.fontSize`) + this doc
+- Spacing / breakpoints: Tailwind's unmodified defaults + this doc
+- Radius / shadow: `tailwind.config.ts` (`theme.extend.borderRadius` / `boxShadow`) + this doc
+- Motion timing: `src/lib/motion.ts` (framer-motion) + `--ease-brand` (`globals.css`) + `ease-brand` (`tailwind.config.ts`) + this doc
 
 ## Brand
 
@@ -83,6 +87,73 @@ Always prefer the semantic tokens (`background`, `foreground`, `primary`, `accen
 - Arbitrary `text-[Npx]` values were remapped to a clean even ladder end to end: 10px (unchanged), 12px (was 11–12px), 14px (was 13–14px), 16px (was 15–16px), 18px (was 17–18px, the section-heading anchor), 20px (was 19–20px), 22px (was 21–22px), 24px (was 23–24px). Everything 24px and above was already even and untouched.
 
 **Usage rule:** when a design needs a size, use an existing scale step first. If nothing fits, add the new step to this table (and to `tailwind.config.ts` if it should become a named token) rather than writing a new one-off `text-[Npx]` value — that's exactly the fragmentation this doc exists to prevent.
+
+## Spacing
+
+No custom Tailwind spacing scale exists — `tailwind.config.ts` has no `spacing` key, so every `p-*`/`m-*`/`gap-*` utility is Tailwind's own default scale. This is already the de facto convention codebase-wide (arbitrary `p-[Npx]` appears in only ~59 files out of the full component tree, almost entirely for genuine one-offs — safe-area insets, a precise hero pixel offset — not general layout spacing).
+
+**Usage rule:** reach for the default scale first (`p-4`, `gap-6`, `mt-10`, …). Arbitrary bracket values are reserved for a real one-off that doesn't map to any scale step (e.g. `pb-[calc(0.75rem+env(safe-area-inset-bottom))]` for a fixed bottom bar) — not a substitute for picking the nearest scale step.
+
+## Radius
+
+The established scale in use (1181 occurrences codebase-wide) is Tailwind's default `rounded-lg` through `rounded-full`, plus one added token:
+
+| Token          | Value    | Use                                                                              |
+| -------------- | -------- | --------------------------------------------------------------------------------- |
+| `rounded-xl`   | 0.75rem  | Buttons, inputs, small cards                                                     |
+| `rounded-2xl`  | 1rem     | Standard card/panel surfaces — the most common container radius site-wide       |
+| `rounded-3xl`  | 1.5rem   | Larger feature cards, hero panels                                               |
+| `rounded-4xl`  | 2rem     | Large glass/CTA panels (Footer newsletter card, promo banners, film thumbnails) |
+| `rounded-full` | 9999px   | Pills, avatars, icon badges                                                      |
+
+`rounded-4xl` was added to `tailwind.config.ts` to formalize `rounded-[2rem]`, which had been hand-copied identically across 5 components — same value, now one named token instead of a repeated arbitrary one.
+
+**Usage rule:** use an existing step first; only add a new named step to `tailwind.config.ts` (and this table) if a genuinely new radius is needed — don't reach for a fresh `rounded-[Npx]`.
+
+## Shadow
+
+A named `boxShadow` scale already exists in `tailwind.config.ts` — it just hadn't been documented:
+
+| Token               | Use                                                                        |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `shadow-glass`      | Frosted glass panels (CTA banners, hero lead cards) — pairs with `.glass-strong`/`.glass-cream` |
+| `shadow-glow`       | Primary CTA button hover accent (a soft brand-green bloom)                |
+| `shadow-card`       | Standard elevated card/tile surface                                       |
+| `shadow-soft`       | A subtler card elevation — form panels, info cards, default tour-card state |
+| `shadow-card-tours` | Defined but **currently unused** anywhere in the codebase — a candidate for removal or its first real use, not a gap to silently fill |
+| `shadow-gold`       | Gold/premium CTA hover glow (pricing, booking accents)                    |
+
+**Known gap:** 3 fixed bottom-bar components each hand-copy a *different* arbitrary shadow instead of using a shared token — `src/components/tours/BookingMobileBar.tsx`, `src/components/admin/MobileBottomTabs.tsx`, `src/components/account/AccountShell.tsx` (differing blur radius and opacity per file). Left as-is deliberately: whether these should visually match is a design decision, not something this doc should silently decide by forcing them to one value. Flagging here so the next person who touches one of these doesn't assume the difference is accidental without checking.
+
+**Usage rule:** use a named shadow token first; a new `shadow-[...]` arbitrary value is a signal either an existing token fits after all, or a new named step belongs in `tailwind.config.ts`.
+
+## Breakpoints
+
+No `screens` override exists in `tailwind.config.ts` — pure Tailwind v3 defaults:
+
+| Token | Min width | Use                                                    |
+| ----- | --------- | ------------------------------------------------------- |
+| `sm`  | 640px     | Small phone → large phone adjustments                   |
+| `md`  | 768px     | Tablet portrait                                         |
+| `lg`  | 1024px    | **Primary mobile/desktop split** — the codebase's `lg:hidden`/`lg:block` pattern (fixed bottom bars, mobile nav) treats this as the real breakpoint, not `md` |
+| `xl`  | 1280px    | Desktop content-width adjustments                        |
+| `2xl` | 1536px    | Large desktop                                            |
+
+**Usage rule:** use the Tailwind defaults as-is; don't override `screens` in `tailwind.config.ts` without a strong reason — none of the current design needs a non-standard breakpoint.
+
+## Motion
+
+The framer-motion easing curve `[0.22, 1, 0.36, 1]` (an "ease-out-expo"-style curve) is the one motion value used consistently sitewide for entrance/reveal animations. Before this doc, it was hand-copied inline in 23+ separate component files with no shared source. It now has exactly one canonical definition, exposed three ways for the three ways it gets consumed:
+
+| Consumption path         | Source                                                    | Use                                                    |
+| ------------------------ | ---------------------------------------------------------- | ------------------------------------------------------- |
+| framer-motion (JS)       | `EASE_BRAND` — `src/lib/motion.ts`                        | Any `motion.*` component's `transition={{ ease: ... }}` |
+| Tailwind utility (CSS)   | `ease-brand` — `tailwind.config.ts` `transitionTimingFunction.brand` | Plain CSS transitions on non-framer-motion elements (e.g. `Navbar.tsx`'s scroll-state transition) |
+| Raw CSS custom property  | `--ease-brand` — `src/app/globals.css` `:root`            | Keyframe animations declared in `globals.css` (`.hero-reveal`/`.hero-reveal-x`) |
+
+Durations and delays are **not** centralized — they vary intentionally per component (a hero reveal might run 1.5s, a card stagger 0.4s) and were never actually duplicated the way the curve was. Reach for a value that reads right for the specific animation; there's no "wrong" duration the way a hand-copied easing array was a real, silent source of drift.
+
+**Usage rule:** import `EASE_BRAND` from `@/lib/motion` for any new framer-motion `transition` — never hand-copy the bezier array again. Use the `ease-brand` utility class for plain CSS transitions instead of an arbitrary `ease-[cubic-bezier(...)]`.
 
 ## Out of scope
 

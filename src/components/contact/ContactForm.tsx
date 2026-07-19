@@ -17,6 +17,7 @@ import { toE164 } from "@/lib/auth/validation";
 import { nameField, phoneField } from "@/lib/leads/schema";
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import type { ContactFormContent } from "@/types/contact";
 import { trackLeadSubmit } from "@/lib/analytics";
 
@@ -46,6 +47,7 @@ export function ContactForm({ content }: ContactFormProps) {
 
   const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
   const honeypotRef = useRef<HTMLInputElement>(null);
   const renderedAt = useRef<number>(Date.now());
 
@@ -234,7 +236,7 @@ export function ContactForm({ content }: ContactFormProps) {
           {errors.agree && <p className="mt-1 text-[12px] text-rose-500">{errors.agree.message}</p>}
         </div>
 
-        {siteKey && (
+        {siteKey && isOnline && (
           <Turnstile
             siteKey={siteKey}
             options={{ size: "flexible", theme: "auto" }}
@@ -243,10 +245,15 @@ export function ContactForm({ content }: ContactFormProps) {
             onExpire={() => setCaptchaToken(null)}
           />
         )}
+        {siteKey && !isOnline && (
+          <p className="text-[12px] text-muted-foreground">
+            Waiting for a connection to load verification…
+          </p>
+        )}
 
         <motion.button
           type="submit"
-          disabled={isSubmitting || (!!siteKey && !captchaToken)}
+          disabled={isSubmitting || (!!siteKey && (!isOnline || !captchaToken))}
           className="!mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}

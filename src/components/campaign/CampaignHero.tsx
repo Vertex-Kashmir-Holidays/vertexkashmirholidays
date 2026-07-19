@@ -2,6 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -12,6 +13,7 @@ import { imgSrc } from "@/lib/placeholder";
 import { toE164 } from "@/lib/auth/validation";
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -51,6 +53,7 @@ export function CampaignHero({
   const [submitting, setSubmitting] = useState(false);
   const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
   const renderedAt = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -98,8 +101,12 @@ export function CampaignHero({
       toast.error("Please accept the Terms & Conditions and Privacy Policy.");
       return;
     }
-    if (siteKey && !captchaToken) {
-      toast.error("Please complete the verification challenge.");
+    if (siteKey && (!isOnline || !captchaToken)) {
+      toast.error(
+        !isOnline
+          ? "You appear to be offline. Please reconnect and try again."
+          : "Please complete the verification challenge.",
+      );
       return;
     }
     setSubmitting(true);
@@ -295,7 +302,7 @@ export function CampaignHero({
             className="sweep sweep-on-dark relative rounded-3xl border border-white/12 bg-[hsl(202_50%_8%/0.6)] p-6 shadow-glass backdrop-blur-xl"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.8, delay: 0.6, ease: EASE_BRAND }}
           >
             <p className="flex items-center gap-2 text-[12px] font-extrabold tracking-[0.2em] text-camp-accent">
               <span
@@ -384,7 +391,7 @@ export function CampaignHero({
                     .
                   </span>
                 </label>
-                {siteKey && (
+                {siteKey && isOnline && (
                   <Turnstile
                     siteKey={siteKey}
                     options={{ size: "flexible", theme: "auto" }}
@@ -393,9 +400,14 @@ export function CampaignHero({
                     onExpire={() => setCaptchaToken(null)}
                   />
                 )}
+                {siteKey && !isOnline && (
+                  <p className="text-[12px] text-white/60">
+                    Waiting for a connection to load verification…
+                  </p>
+                )}
                 <button
                   type="submit"
-                  disabled={submitting || (!!siteKey && !captchaToken)}
+                  disabled={submitting || (!!siteKey && (!isOnline || !captchaToken))}
                   className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-accent-grad py-3.5 text-[16px] font-extrabold text-white ring-inner shadow-glow transition hover:brightness-110 disabled:opacity-60"
                 >
                   {submitting ? "Reserving…" : "Reserve My Seat →"}

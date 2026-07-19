@@ -2,6 +2,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { useState, useEffect } from "react";
 import { Clock, Star } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -43,7 +44,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
         className="absolute inset-0 h-full w-full object-cover"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.5, ease: EASE_BRAND }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/55 via-brand-dark/25 to-brand-dark/80"></div>
 
@@ -158,7 +159,8 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
           </div>
 
           <p className="mt-6 text-[12px] text-white/55">
-            © 2026 Vertex Kashmir Holidays. All rights reserved.
+            © {new Date().getFullYear()} Vertex Kashmir Holidays, operated by Vertex Kashmir Tour &
+            Travels. All rights reserved.
           </p>
         </div>
       </div>

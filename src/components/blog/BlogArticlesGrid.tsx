@@ -2,6 +2,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, Bookmark } from "lucide-react";
@@ -40,7 +41,7 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.5, ease: EASE_BRAND },
     },
   };
 

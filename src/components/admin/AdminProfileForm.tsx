@@ -3,9 +3,12 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Upload, Loader2, Images, Trash2, UserCircle, Save } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { profileFormSchema, type ProfileFormValues } from "@/lib/account/profileSchema";
 import type { Role } from "@/lib/rbac";
 
 interface Props {
@@ -20,15 +23,31 @@ const inputCls =
 
 export function AdminProfileForm({ initialName, email, initialImage, role }: Props) {
   const router = useRouter();
-  const [name, setName] = useState(initialName);
-  const [image, setImage] = useState(initialImage);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    resetField,
+    watch,
+    formState: { errors, dirtyFields },
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: initialName,
+      image: initialImage,
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const image = watch("image");
 
   async function uploadAvatar(file: File) {
     setUploading(true);
@@ -39,7 +58,7 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
-      setImage(data.url);
+      setValue("image", data.url, { shouldDirty: true });
       toast.success("Picture uploaded. Save to apply.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -49,20 +68,13 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (newPassword && newPassword !== confirmPassword) {
-      toast.error("New passwords do not match.");
-      return;
-    }
-
+  async function onSubmit(data: ProfileFormValues) {
     const payload: Record<string, string> = {};
-    if (name !== initialName) payload.name = name;
-    if (image !== initialImage) payload.image = image;
-    if (newPassword) {
-      payload.currentPassword = currentPassword;
-      payload.newPassword = newPassword;
+    if (dirtyFields.name) payload.name = data.name;
+    if (dirtyFields.image) payload.image = data.image ?? "";
+    if (data.newPassword) {
+      payload.currentPassword = data.currentPassword ?? "";
+      payload.newPassword = data.newPassword;
     }
 
     if (Object.keys(payload).length === 0) {
@@ -77,13 +89,13 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error);
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(resData.error);
 
       toast.success("Profile updated.");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      resetField("currentPassword");
+      resetField("newPassword");
+      resetField("confirmPassword");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : "Update failed.");
@@ -93,7 +105,7 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-5">
       {/* Personal details */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="font-display font-bold text-foreground">Personal details</h2>
@@ -143,7 +155,7 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
                 {image && (
                   <button
                     type="button"
-                    onClick={() => setImage("")}
+                    onClick={() => setValue("image", "", { shouldDirty: true })}
                     className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:bg-red-500/10 hover:text-red-500"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Remove
@@ -167,11 +179,13 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
               </label>
               <input
                 id="ap-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 className={inputCls}
                 placeholder="Your name"
+                {...register("name")}
               />
+              {errors.name && (
+                <p className="mt-1 text-[12px] text-rose-500">{errors.name.message}</p>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground" htmlFor="ap-email">
@@ -208,11 +222,13 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
             <input
               id="ap-current"
               type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
               className={inputCls}
               autoComplete="current-password"
+              {...register("currentPassword")}
             />
+            {errors.currentPassword && (
+              <p className="mt-1 text-[12px] text-rose-500">{errors.currentPassword.message}</p>
+            )}
           </div>
           <div>
             <label className="text-xs font-semibold text-foreground" htmlFor="ap-new">
@@ -221,11 +237,13 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
             <input
               id="ap-new"
               type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
               className={inputCls}
               autoComplete="new-password"
+              {...register("newPassword")}
             />
+            {errors.newPassword && (
+              <p className="mt-1 text-[12px] text-rose-500">{errors.newPassword.message}</p>
+            )}
           </div>
           <div>
             <label className="text-xs font-semibold text-foreground" htmlFor="ap-confirm">
@@ -234,11 +252,13 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
             <input
               id="ap-confirm"
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
               className={inputCls}
               autoComplete="new-password"
+              {...register("confirmPassword")}
             />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-[12px] text-rose-500">{errors.confirmPassword.message}</p>
+            )}
           </div>
         </div>
       </div>
@@ -255,7 +275,7 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
       <GalleryPicker
         open={pickerOpen}
         type="IMAGE"
-        onSelect={setImage}
+        onSelect={(url) => setValue("image", url, { shouldDirty: true })}
         onClose={() => setPickerOpen(false)}
       />
     </form>

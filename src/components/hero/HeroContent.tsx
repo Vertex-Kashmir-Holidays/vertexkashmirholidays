@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, type MotionValue } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -75,7 +76,7 @@ export function HeroContent({ cardTilt }: HeroContentProps) {
               <motion.h1
                 initial={{ opacity: 0, y: 32 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.7, delay: 0.2, ease: EASE_BRAND }}
                 className="h-display text-5xl sm:text-6xl xl:text-[4.25rem] font-extrabold text-white mb-6"
               >
                 While the plains <span className="grad-orange">scorch,</span>
@@ -128,7 +129,7 @@ export function HeroContent({ cardTilt }: HeroContentProps) {
             <motion.div
               initial={{ opacity: 0, x: 36 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.7, delay: 0.28, ease: EASE_BRAND }}
               style={cardTilt ? { x: cardTilt } : undefined}
               className="will-change-transform"
             >

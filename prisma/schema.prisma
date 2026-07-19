@@ -681,6 +681,31 @@ model LeadActivity {
   @@index([performedAt])
 }
 
+model AuditLog {
+  id     String      @id @default(cuid())
+  action AuditAction
+  // Deliberately plain strings, not a relation to User — a hard FK would
+  // either cascade-delete this row when the target is permanently deleted
+  // (destroying the exact record this model exists to preserve) or block
+  // the delete outright. Denormalized name/email survive regardless of
+  // what happens to the underlying User row afterward.
+  targetUserId    String?
+  targetUserName  String?
+  targetUserEmail String?
+  performedById   String?
+  performedByName String
+  // Genuinely variable shape per action (role change: {fromRole,toRole};
+  // permission edit: {module,from,to}) — real Json, matching the precedent
+  // set by Itinerary.data, not the String-encoded-JSON convention used for
+  // the specific enumerated Tour/Campaign fields.
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([targetUserId])
+  @@index([createdAt])
+}
+
 model Review {
   id        String   @id @default(cuid())
   tourId    String
@@ -1487,6 +1512,14 @@ enum LeadActivityType {
   CALL_LOGGED
   EMAIL_SENT
   BOOKING_LINKED
+}
+
+enum AuditAction {
+  ROLE_CHANGE
+  PERMISSION_EDIT
+  USER_SOFT_DELETE
+  USER_PERMANENT_DELETE
+  USER_RESTORE
 }
 
 enum ItineraryStatus {
