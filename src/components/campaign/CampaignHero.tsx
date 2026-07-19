@@ -12,6 +12,7 @@ import { imgSrc } from "@/lib/placeholder";
 import { toE164 } from "@/lib/auth/validation";
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 interface CampaignHeroProps {
   badge: string | null;
@@ -51,6 +52,7 @@ export function CampaignHero({
   const [submitting, setSubmitting] = useState(false);
   const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
   const renderedAt = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -98,8 +100,12 @@ export function CampaignHero({
       toast.error("Please accept the Terms & Conditions and Privacy Policy.");
       return;
     }
-    if (siteKey && !captchaToken) {
-      toast.error("Please complete the verification challenge.");
+    if (siteKey && (!isOnline || !captchaToken)) {
+      toast.error(
+        !isOnline
+          ? "You appear to be offline. Please reconnect and try again."
+          : "Please complete the verification challenge.",
+      );
       return;
     }
     setSubmitting(true);
@@ -384,7 +390,7 @@ export function CampaignHero({
                     .
                   </span>
                 </label>
-                {siteKey && (
+                {siteKey && isOnline && (
                   <Turnstile
                     siteKey={siteKey}
                     options={{ size: "flexible", theme: "auto" }}
@@ -393,9 +399,14 @@ export function CampaignHero({
                     onExpire={() => setCaptchaToken(null)}
                   />
                 )}
+                {siteKey && !isOnline && (
+                  <p className="text-[12px] text-white/60">
+                    Waiting for a connection to load verification…
+                  </p>
+                )}
                 <button
                   type="submit"
-                  disabled={submitting || (!!siteKey && !captchaToken)}
+                  disabled={submitting || (!!siteKey && (!isOnline || !captchaToken))}
                   className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-accent-grad py-3.5 text-[16px] font-extrabold text-white ring-inner shadow-glow transition hover:brightness-110 disabled:opacity-60"
                 >
                   {submitting ? "Reserving…" : "Reserve My Seat →"}

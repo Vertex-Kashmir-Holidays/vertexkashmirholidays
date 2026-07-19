@@ -8,6 +8,7 @@ import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { BannerStrip, type StripBannerData } from "@/components/public/BannerStrip";
 import { PromoBannerSlot, type SlotBanner } from "@/components/public/PromoBannerSlot";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 interface PublicChromeProps {
   children: React.ReactNode;
@@ -33,11 +34,17 @@ export function PublicChrome({
   const isStandalone = /^\/adventures\/[^/]+/.test(pathname ?? "");
 
   if (isStandalone) {
-    return <>{children}</>;
+    return (
+      <>
+        <OfflineBanner />
+        {children}
+      </>
+    );
   }
 
   return (
     <>
+      <OfflineBanner />
       {strip && <BannerStrip banner={strip} />}
       <AuroraBackground />
       <Navbar />

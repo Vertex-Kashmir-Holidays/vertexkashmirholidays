@@ -8,6 +8,7 @@ import { isStaff } from "@/lib/rbac";
 import { getRolePermissions } from "@/lib/permissions";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 // GTM must never load here — this route group is intentionally the only one
 // of the four (public / admin / account / login) that doesn't render
@@ -40,6 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         disableTransitionOnChange
         nonce={nonce}
       >
+        <OfflineBanner />
         <AdminShell
           userId={session.user.id}
           userName={profile?.name ?? session.user.name ?? "Admin"}

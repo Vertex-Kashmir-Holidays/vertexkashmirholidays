@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { AccountShell } from "@/components/account/AccountShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 // This layout already calls auth() (fully dynamic on every request
 // regardless), so reading the CSP nonce via headers() here costs nothing
@@ -33,6 +34,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         nonce={nonce}
       >
         <SiteAnalytics nonce={nonce} />
+        <OfflineBanner />
         <AccountShell
           userName={session.user.name ?? "Traveller"}
           userEmail={session.user.email ?? ""}

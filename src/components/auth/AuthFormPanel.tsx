@@ -36,6 +36,7 @@ import {
   toE164,
 } from "@/lib/auth/validation";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 type FieldErrors = Partial<
   Record<"name" | "email" | "phone" | "password" | "confirm" | "terms", string>
@@ -67,6 +68,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
   // Turnstile (rendered + enforced only when the public site key is set).
   const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
 
   // Login fields
   const [loginEmail, setLoginEmail] = useState("");
@@ -196,17 +198,24 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
     onViewChange(next);
   }
 
-  // Turnstile widget, shown on each form step when configured.
-  const captcha = siteKey ? (
-    <Turnstile
-      siteKey={siteKey}
-      options={{ size: "flexible", theme: "auto" }}
-      onSuccess={(t) => setCaptchaToken(t)}
-      onError={() => setCaptchaToken(null)}
-      onExpire={() => setCaptchaToken(null)}
-    />
-  ) : null;
-  const captchaPending = !!siteKey && !captchaToken;
+  // Turnstile widget, shown on each form step when configured. Not attempted
+  // while offline (it can't load), so the step shows an explanatory note
+  // instead of a silently-disabled button.
+  const captcha =
+    siteKey && isOnline ? (
+      <Turnstile
+        siteKey={siteKey}
+        options={{ size: "flexible", theme: "auto" }}
+        onSuccess={(t) => setCaptchaToken(t)}
+        onError={() => setCaptchaToken(null)}
+        onExpire={() => setCaptchaToken(null)}
+      />
+    ) : siteKey && !isOnline ? (
+      <p className="text-[12px] text-muted-foreground">
+        Waiting for a connection to load verification…
+      </p>
+    ) : null;
+  const captchaPending = !!siteKey && (!isOnline || !captchaToken);
 
   // After a successful sign-in, send the user to the page they came from
   // (?callbackUrl=…), or to the role-aware landing endpoint which routes staff
@@ -539,7 +548,25 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
       <button
         type="button"
         className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-2.5 text-[14px] font-semibold transition hover:bg-muted"
-        onClick={() => signIn("google", { callbackUrl: destination() })}
+        onClick={async () => {
+          setError(null);
+          // Without this check, signIn()'s own CSRF-token fetch fails silently
+          // offline and NextAuth hard-redirects to /api/auth/error?error=Configuration
+          // — a misleading "server misconfigured" page for what's just no internet.
+          if (!isOnline) {
+            setError("You're offline. Please reconnect to sign in with Google.");
+            return;
+          }
+          // redirect: false (same pattern as the Google One Tap flow below) so we
+          // own the error UX instead of letting NextAuth navigate to its generic
+          // error page on any failure, not just the offline case.
+          const result = await signIn("google", { callbackUrl: destination(), redirect: false });
+          if (result?.error) {
+            setError("Couldn't sign in with Google. Please try again.");
+            return;
+          }
+          window.location.assign(result?.url ?? destination());
+        }}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5">
           <path

@@ -24,6 +24,7 @@ import { readAttributionClient } from "@/lib/attribution";
 import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -69,6 +70,7 @@ export function LeadForm({
   // ── Anti-bot ───────────────────────────────────────────────────────────────
   const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
   const honeypotRef = useRef<HTMLInputElement>(null);
   const renderedAt = useRef<number>(Date.now());
 
@@ -330,8 +332,9 @@ export function LeadForm({
           {errors.agree && <p className="mt-1 text-[12px] text-red-500">{errors.agree.message}</p>}
         </div>
 
-        {/* Turnstile CAPTCHA — only when configured. */}
-        {siteKey && (
+        {/* Turnstile CAPTCHA — only when configured, and only once we're online
+            (it can't load offline, so don't attempt it). */}
+        {siteKey && isOnline && (
           <Turnstile
             siteKey={siteKey}
             options={{ size: "flexible", theme: "auto" }}
@@ -340,11 +343,16 @@ export function LeadForm({
             onExpire={() => setCaptchaToken(null)}
           />
         )}
+        {siteKey && !isOnline && (
+          <p className="text-[12px] text-muted-foreground">
+            Waiting for a connection to load verification…
+          </p>
+        )}
 
         {/* Submit */}
         <button
           type="submit"
-          disabled={isSubmitting || !isValid || (!!siteKey && !captchaToken)}
+          disabled={isSubmitting || !isValid || (!!siteKey && (!isOnline || !captchaToken))}
           className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
         >
           {isSubmitting ? (
