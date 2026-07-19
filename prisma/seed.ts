@@ -80,6 +80,7 @@ async function main() {
       seo: ALL,
       settings: ALL,
       roles: ALL,
+      auditLog: VIEW,
     },
     DEVELOPER: {
       dashboard: VIEW,
@@ -104,6 +105,7 @@ async function main() {
       seo: ALL,
       settings: ALL,
       roles: NONE,
+      auditLog: NONE,
     },
     SALES: {
       dashboard: VIEW,
@@ -128,6 +130,7 @@ async function main() {
       seo: NONE,
       settings: NONE,
       roles: NONE,
+      auditLog: NONE,
     },
     EDITOR: {
       dashboard: VIEW,
@@ -152,6 +155,7 @@ async function main() {
       seo: ALL,
       settings: NONE,
       roles: NONE,
+      auditLog: NONE,
     },
   };
 
@@ -3125,7 +3129,7 @@ async function main() {
       source: "WEBSITE" as const,
       category: "FAMILY_TOUR" as const,
       adults: 3,
-      children: 2,
+    children: 2,
       startDate: new Date("2026-08-01"),
       status: "NEW" as const,
       notes: "Family holiday enquiry through website.",
