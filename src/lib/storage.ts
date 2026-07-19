@@ -1,4 +1,4 @@
-import { writeFile, mkdir, readFile } from "fs/promises";
+import { writeFile, mkdir, readFile, readdir, stat } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 import { v2 as cloudinary, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
@@ -237,4 +237,102 @@ async function saveToLocalDisk(
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), buffer);
   return { url: `/uploads/${slug}/${filename}`, folder: slug, publicId: null };
+}
+
+export interface JsonRecord<T> {
+  url: string;
+  publicId: string | null;
+  createdAt: string;
+  data: T;
+}
+
+/**
+ * Persists an arbitrary JSON-serializable record as a small raw file, keyed
+ * by `publicId` within `folder`. Used where a full DB row would be overkill
+ * — e.g. Careers applications, which by design keep zero candidate PII in
+ * the database (see src/app/api/careers/apply/route.ts) and instead treat
+ * this record + the resume upload as the record of the application.
+ */
+export async function saveJson(
+  data: unknown,
+  { folder, publicId }: { folder: string; publicId: string },
+): Promise<{ url: string; publicId: string | null }> {
+  const slug = folderSlug(folder);
+  const buffer = Buffer.from(JSON.stringify(data));
+
+  if (isCloudinaryConfigured()) {
+    ensureCloudinaryConfig();
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: cloudinaryUploadFolder(slug),
+          resource_type: "raw",
+          public_id: `${publicId}.json`,
+        },
+        (error, uploaded) => {
+          if (error || !uploaded) {
+            reject(new Error(error?.message ?? "Cloudinary upload failed"));
+            return;
+          }
+          resolve(uploaded);
+        },
+      );
+      stream.end(buffer);
+    });
+    return { url: result.secure_url, publicId: result.public_id ?? null };
+  }
+
+  const dir = path.join(process.cwd(), "public", "uploads", slug);
+  await mkdir(dir, { recursive: true });
+  const filename = `${publicId}.json`;
+  await writeFile(path.join(dir, filename), buffer);
+  return { url: `/uploads/${slug}/${filename}`, publicId: null };
+}
+
+/** Lists JSON records previously saved via `saveJson` under `folder`, newest first. */
+export async function listJsonRecords<T>(folder: string): Promise<JsonRecord<T>[]> {
+  const slug = folderSlug(folder);
+
+  if (isCloudinaryConfigured()) {
+    ensureCloudinaryConfig();
+    const prefix = `${cloudinaryUploadFolder(slug)}/`;
+    const { resources } = await cloudinary.api.resources({
+      type: "upload",
+      resource_type: "raw",
+      prefix,
+      max_results: 500,
+    });
+    const records = await Promise.all(
+      (resources as { secure_url: string; public_id: string; created_at: string }[]).map(
+        async (r): Promise<JsonRecord<T>> => {
+          const res = await fetch(r.secure_url);
+          const data = (await res.json()) as T;
+          return { url: r.secure_url, publicId: r.public_id, createdAt: r.created_at, data };
+        },
+      ),
+    );
+    return records.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+
+  const dir = path.join(process.cwd(), "public", "uploads", slug);
+  try {
+    const files = await readdir(dir);
+    const records = await Promise.all(
+      files
+        .filter((f) => f.endsWith(".json"))
+        .map(async (f): Promise<JsonRecord<T>> => {
+          const filePath = path.join(dir, f);
+          const [raw, stats] = await Promise.all([readFile(filePath, "utf-8"), stat(filePath)]);
+          return {
+            url: `/uploads/${slug}/${f}`,
+            publicId: null,
+            createdAt: stats.mtime.toISOString(),
+            data: JSON.parse(raw) as T,
+          };
+        }),
+    );
+    return records.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  } catch {
+    return [];
+  }
 }

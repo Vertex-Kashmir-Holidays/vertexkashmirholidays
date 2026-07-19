@@ -29,7 +29,13 @@ export type AnalyticsEvent =
       currency: "INR";
       package_name: string;
       items: { item_name: string; price: number; quantity: number }[];
-    };
+    }
+  | { event: "careers_viewed" }
+  | { event: "job_viewed"; job_title: string; job_id: string }
+  | { event: "apply_started"; job_title: string; job_id: string }
+  | { event: "otp_requested"; job_id: string }
+  | { event: "otp_verified"; job_id: string }
+  | { event: "application_submitted"; job_title: string; job_id: string };
 
 // Extend the global Window type so dataLayer is typed everywhere.
 // Optional modifier matches @next/third-parties/google ga.d.ts declaration

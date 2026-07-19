@@ -36,6 +36,13 @@ export const RESEND_COOLDOWN_SECONDS = RESEND_COOLDOWN_MS / 1_000;
 // be used to change a password long after the fact.
 export const RESET_TOKEN_TTL_MS = RESET_OTP_TTL_MS;
 
+// Same "verified, proof token issued" shape as RESET, but for the Careers
+// apply form (src/components/careers/JobApplyForm.tsx). Given a longer window
+// here deliberately: the candidate typically verifies email early in a long
+// multi-field form (plus a resume upload), so RESET_TOKEN_TTL_MS's 5 minutes
+// would expire before most people finish filling it out.
+export const CAREERS_TOKEN_TTL_MS = 30 * 60 * 1000;
+
 // ── OTP generation & hashing ─────────────────────────────────────────────────
 
 /** Cryptographically-secure, zero-padded 6-digit code (000000–999999). */

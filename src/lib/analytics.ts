@@ -82,3 +82,33 @@ export function trackBookingCompleted(bookingId: string, value: number, packageN
     items: [{ item_name: packageName, price: value, quantity: 1 }],
   });
 }
+
+/** Fire when the careers listing page loads. */
+export function trackCareersViewed(): void {
+  push({ event: "careers_viewed" });
+}
+
+/** Fire when a job detail page loads. */
+export function trackJobViewed(jobTitle: string, jobId: string): void {
+  push({ event: "job_viewed", job_title: jobTitle, job_id: jobId });
+}
+
+/** Fire once, on the first field interaction with a job's apply form. */
+export function trackApplyStarted(jobTitle: string, jobId: string): void {
+  push({ event: "apply_started", job_title: jobTitle, job_id: jobId });
+}
+
+/** Fire when an apply-form OTP request succeeds. */
+export function trackOtpRequested(jobId: string): void {
+  push({ event: "otp_requested", job_id: jobId });
+}
+
+/** Fire when an apply-form OTP verification succeeds. */
+export function trackOtpVerified(jobId: string): void {
+  push({ event: "otp_verified", job_id: jobId });
+}
+
+/** Fire once a job application is fully submitted (resume + details sent). */
+export function trackApplicationSubmitted(jobTitle: string, jobId: string): void {
+  push({ event: "application_submitted", job_title: jobTitle, job_id: jobId });
+}

@@ -273,6 +273,11 @@ export function Footer({
                       Privacy Policy
                     </Link>
                   </li>
+                  <li>
+                    <Link href="/faq" className="transition hover:text-primary">
+                      FAQs
+                    </Link>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -297,7 +302,7 @@ export function Footer({
             />
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Get valley updates</p>
+            <p className="text-sm font-bold text-foreground">Company</p>
             <ul className="mt-4 space-y-2.5 text-[14px] text-muted-foreground">
               <li>
                 <Link href="/blog" className="transition hover:text-primary">
@@ -305,13 +310,13 @@ export function Footer({
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="transition hover:text-primary">
-                  FAQs
+                <Link href="/adventures" className="transition hover:text-primary">
+                  Adventures
                 </Link>
               </li>
               <li>
-                <Link href="/adventures" className="transition hover:text-primary">
-                  Adventures
+                <Link href="/careers" className="transition hover:text-primary">
+                  Careers
                 </Link>
               </li>
             </ul>

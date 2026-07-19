@@ -1085,6 +1085,145 @@ export function passwordResetOtpHtml(data: { name: string; code: string; ttlMinu
   });
 }
 
+// ── Careers application email verification ─────────────────────────────────────
+// Sent when a candidate clicks "Verify Email" on a job application form
+// (src/components/careers/JobApplyForm.tsx). Same shape as the password-reset
+// OTP email above, Careers-specific copy only.
+
+export function careersOtpText(data: { code: string; ttlMinutes: number }) {
+  return [
+    "Verify your email to complete your job application",
+    "",
+    "Use this code to verify your email for your application to",
+    "Vertex Kashmir Holidays:",
+    "",
+    `    ${data.code}`,
+    "",
+    `This code expires in ${data.ttlMinutes} minutes and can be used only once.`,
+    "If you didn't request this, you can ignore this email.",
+    "",
+    "— Vertex Kashmir Holidays",
+    "https://vertexkashmirholidays.com",
+  ].join("\n");
+}
+
+export function careersOtpHtml(data: { code: string; ttlMinutes: number }) {
+  const code = escapeHtml(data.code);
+  const preheader = `Your application verification code is ${code} (expires in ${data.ttlMinutes} minutes).`;
+
+  const content = `          <tr>
+           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Verify your email</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
+               Use the verification code below to confirm your email address and
+               complete your job application with Vertex Kashmir Holidays.
+             </p>
+           </td>
+         </tr>
+         <tr>
+           <td align="center" style="padding:8px 32px 8px">
+             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+               <tr>
+                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+               </tr>
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
+               This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
+               used only once. If you didn't request this, you can safely ignore this
+               email.
+             </p>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: "Verify your email",
+    preheader,
+    contentHtml: content,
+    maxWidth: 480,
+  });
+}
+
+// ── Careers application notification (HR-facing) ─────────────────────────────
+// Sent when a candidate completes the Apply form (email already OTP-verified).
+// By design there is no candidate record in the database — this email plus
+// the Cloudinary-hosted resume ARE the record, so all candidate details a
+// staff member needs are laid out here.
+
+interface CareersApplicationData {
+  jobTitle: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  experience: string;
+  currentCompany?: string;
+  noticePeriod?: string;
+  coverLetter?: string;
+  resumeUrl: string;
+  submittedAt: string;
+}
+
+export function careersApplicationText(data: CareersApplicationData): string {
+  const lines = [
+    `New job application — ${data.jobTitle}`,
+    "",
+    `Name: ${data.fullName}`,
+    `Email: ${data.email}`,
+    `Phone: ${data.phone}`,
+  ];
+  lines.push(`Experience: ${data.experience}`);
+  if (data.currentCompany) lines.push(`Current Company: ${data.currentCompany}`);
+  if (data.noticePeriod) lines.push(`Notice Period: ${data.noticePeriod}`);
+  lines.push("", `Resume: ${data.resumeUrl}`);
+  if (data.coverLetter) lines.push("", "Cover Letter:", data.coverLetter);
+  lines.push("", `Submitted: ${data.submittedAt}`);
+  return lines.join("\n");
+}
+
+export function careersApplicationHtml(data: CareersApplicationData): string {
+  const coverLetterRow = data.coverLetter
+    ? `          <tr>
+           <td style="padding:10px 12px;border-bottom:1px solid #eeeeee;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#666666;vertical-align:top"><strong>Cover Letter</strong></td>
+           <td style="padding:10px 12px;border-bottom:1px solid #eeeeee;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#222222;vertical-align:top">${escapeHtml(data.coverLetter).replace(/\n/g, "<br />")}</td>
+         </tr>`
+    : "";
+
+  const content = `          <tr>
+           <td style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0;color:${BRAND};font-size:20px;font-weight:700">New Job Application</h1>
+             <p style="margin:6px 0 0;color:#666666;font-size:13px;line-height:1.5">A candidate applied for <strong>${escapeHtml(data.jobTitle)}</strong> on vertexkashmirholidays.com.</p>
+           </td>
+         </tr>
+         <tr>
+           <td style="padding:4px 28px 28px">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Name", data.fullName)}
+${detailRow("Email", data.email)}
+${detailRow("Phone", data.phone)}
+${detailRow("Experience", data.experience)}
+${data.currentCompany ? detailRow("Current Company", data.currentCompany) : ""}
+${data.noticePeriod ? detailRow("Notice Period", data.noticePeriod) : ""}
+${coverLetterRow}
+${detailRow("Submitted", data.submittedAt)}
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             <a href="${escapeHtml(data.resumeUrl)}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">Download Resume</a>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: "New Job Application — Vertex Kashmir Holidays",
+    preheader: `${escapeHtml(data.fullName)} applied for ${escapeHtml(data.jobTitle)}`,
+    contentHtml: content,
+  });
+}
+
 // ── New-customer default credentials ───────────────────────────────────────────
 // Sent when a lead is converted and a brand-new customer account is created. The
 // customer can log in with these credentials and is encouraged to change the

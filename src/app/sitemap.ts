@@ -6,38 +6,44 @@ import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tours, destinations, blogs, campaigns, activities, tourCategoryRows] = await Promise.all([
-    prisma.tour.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.destination.findMany({
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.blog.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.campaign.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.activity.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.tour.groupBy({
-      by: ["category"],
-      where: { published: true },
-      _count: true,
-      _max: { updatedAt: true },
-    }),
-  ]);
+  const [tours, destinations, blogs, campaigns, activities, jobs, tourCategoryRows] =
+    await Promise.all([
+      prisma.tour.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.destination.findMany({
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.blog.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.campaign.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.activity.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.job.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.tour.groupBy({
+        by: ["category"],
+        where: { published: true },
+        _count: true,
+        _max: { updatedAt: true },
+      }),
+    ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
@@ -61,6 +67,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     { url: `${SITE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
+    {
+      url: `${SITE_URL}/careers`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
     {
       url: `${SITE_URL}/reviews`,
       lastModified: new Date(),
@@ -135,6 +147,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const careerRoutes: MetadataRoute.Sitemap = jobs.map((j) => ({
+    url: `${SITE_URL}/careers/${j.slug}`,
+    lastModified: j.updatedAt,
+    changeFrequency: "weekly",
+    priority: 0.5,
+  }));
+
   const tourCategoryRoutes: MetadataRoute.Sitemap = tourCategoryRows
     .filter((c) => c._count > 0)
     .map((c) => ({
@@ -152,5 +171,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...destinationRoutes,
     ...activityRoutes,
     ...blogRoutes,
+    ...careerRoutes,
   ];
 }
