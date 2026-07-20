@@ -144,7 +144,12 @@ async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
 
 export async function saveUpload(
   buffer: Buffer,
-  { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
+  {
+    folder,
+    ext,
+    isImage,
+    resourceType,
+  }: { folder: string; ext: string; isImage?: boolean; resourceType?: "auto" | "raw" },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
   // Every image upload is watermarked, regardless of folder — no exemptions.
@@ -165,19 +170,31 @@ export async function saveUpload(
   }
 
   if (isCloudinaryConfigured()) {
-    return saveToCloudinary(processedBuffer, slug);
+    return saveToCloudinary(processedBuffer, slug, resourceType);
   }
 
   return saveToLocalDisk(processedBuffer, slug, ext);
 }
 
-async function saveToCloudinary(buffer: Buffer, slug: string): Promise<SaveUploadResult> {
+async function saveToCloudinary(
+  buffer: Buffer,
+  slug: string,
+  resourceType: "auto" | "raw" = "auto",
+): Promise<SaveUploadResult> {
   ensureCloudinaryConfig();
+
+  // Deliberately no file extension on the public_id: Cloudinary's "Allow
+  // delivery of PDF and ZIP files" security setting blocks any URL ending in
+  // .pdf/.zip by extension match, regardless of resource_type — confirmed by
+  // testing (raw + ".pdf" public_id → 401; raw + no extension → 200, correct
+  // bytes). Leaving the extension off the public_id is what actually works
+  // without requiring that account-level setting to be enabled.
+  const publicId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const uploadOptions: UploadApiOptions = {
     folder: cloudinaryUploadFolder(slug),
-    resource_type: "auto",
-    public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    resource_type: resourceType,
+    public_id: publicId,
   };
 
   console.log(`[upload] → Cloudinary folder=${uploadOptions.folder} size=${buffer.length}b`);

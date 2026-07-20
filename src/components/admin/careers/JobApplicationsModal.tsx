@@ -196,26 +196,10 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
                       {isExpanded && (
                         <tr className="bg-muted/30">
                           <td colSpan={5} className="px-4 py-4">
-                            <dl className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
+                            <dl className="grid grid-cols-2 gap-4 text-xs">
                               <div>
                                 <dt className="font-semibold text-muted-foreground">Experience</dt>
                                 <dd className="mt-0.5 text-foreground">{app.experience || "—"}</dd>
-                              </div>
-                              <div>
-                                <dt className="font-semibold text-muted-foreground">
-                                  Current Company
-                                </dt>
-                                <dd className="mt-0.5 text-foreground">
-                                  {app.currentCompany || "—"}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt className="font-semibold text-muted-foreground">
-                                  Notice Period
-                                </dt>
-                                <dd className="mt-0.5 text-foreground">
-                                  {app.noticePeriod || "—"}
-                                </dd>
                               </div>
                               <div>
                                 <dt className="font-semibold text-muted-foreground">Submitted</dt>
@@ -227,16 +211,6 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
                                 </dd>
                               </div>
                             </dl>
-                            {app.coverLetter && (
-                              <div className="mt-3">
-                                <p className="text-xs font-semibold text-muted-foreground">
-                                  Cover Letter
-                                </p>
-                                <p className="mt-1 whitespace-pre-line text-xs text-foreground">
-                                  {app.coverLetter}
-                                </p>
-                              </div>
-                            )}
                           </td>
                         </tr>
                       )}

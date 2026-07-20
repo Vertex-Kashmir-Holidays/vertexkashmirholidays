@@ -1159,9 +1159,6 @@ interface CareersApplicationData {
   email: string;
   phone: string;
   experience: string;
-  currentCompany?: string;
-  noticePeriod?: string;
-  coverLetter?: string;
   resumeUrl: string;
   submittedAt: string;
 }
@@ -1175,22 +1172,12 @@ export function careersApplicationText(data: CareersApplicationData): string {
     `Phone: ${data.phone}`,
   ];
   lines.push(`Experience: ${data.experience}`);
-  if (data.currentCompany) lines.push(`Current Company: ${data.currentCompany}`);
-  if (data.noticePeriod) lines.push(`Notice Period: ${data.noticePeriod}`);
   lines.push("", `Resume: ${data.resumeUrl}`);
-  if (data.coverLetter) lines.push("", "Cover Letter:", data.coverLetter);
   lines.push("", `Submitted: ${data.submittedAt}`);
   return lines.join("\n");
 }
 
 export function careersApplicationHtml(data: CareersApplicationData): string {
-  const coverLetterRow = data.coverLetter
-    ? `          <tr>
-           <td style="padding:10px 12px;border-bottom:1px solid #eeeeee;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#666666;vertical-align:top"><strong>Cover Letter</strong></td>
-           <td style="padding:10px 12px;border-bottom:1px solid #eeeeee;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#222222;vertical-align:top">${escapeHtml(data.coverLetter).replace(/\n/g, "<br />")}</td>
-         </tr>`
-    : "";
-
   const content = `          <tr>
            <td style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0;color:${BRAND};font-size:20px;font-weight:700">New Job Application</h1>
@@ -1204,9 +1191,6 @@ ${detailRow("Name", data.fullName)}
 ${detailRow("Email", data.email)}
 ${detailRow("Phone", data.phone)}
 ${detailRow("Experience", data.experience)}
-${data.currentCompany ? detailRow("Current Company", data.currentCompany) : ""}
-${data.noticePeriod ? detailRow("Notice Period", data.noticePeriod) : ""}
-${coverLetterRow}
 ${detailRow("Submitted", data.submittedAt)}
              </table>
            </td>

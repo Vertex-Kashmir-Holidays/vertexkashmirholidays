@@ -9,9 +9,6 @@ export interface CareersApplicationRecord {
   email: string;
   phone: string;
   experience: string;
-  currentCompany?: string;
-  noticePeriod?: string;
-  coverLetter?: string;
   resumeUrl: string;
   resumePublicId: string | null;
   submittedAt: string;

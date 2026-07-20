@@ -38,9 +38,6 @@ const fieldsSchema = z.object({
   email: z.string().trim().toLowerCase().email("Please enter a valid email address").max(200),
   phone: phoneField,
   experience: z.string().trim().min(1, "Please enter your total experience").max(120),
-  currentCompany: z.string().trim().max(160).optional(),
-  noticePeriod: z.string().trim().max(120).optional(),
-  coverLetter: z.string().trim().max(4000).optional(),
   agree: z.boolean().refine((v) => v === true, {
     message: "Please accept the Privacy Policy.",
   }),
@@ -93,9 +90,6 @@ export async function POST(req: NextRequest) {
       email: str(formData.get("email")),
       phone: str(formData.get("phone")),
       experience: str(formData.get("experience")),
-      currentCompany: str(formData.get("currentCompany")),
-      noticePeriod: str(formData.get("noticePeriod")),
-      coverLetter: str(formData.get("coverLetter")),
       agree: formData.get("agree") === "true",
       verificationToken: str(formData.get("verificationToken")),
     });
@@ -163,10 +157,15 @@ export async function POST(req: NextRequest) {
     let resumeUrl: string;
     let resumePublicId: string | null;
     try {
+      // resourceType: "raw" — Cloudinary's "auto" detection stores PDFs under
+      // resource_type "image" by default, which its PDF/ZIP delivery-security
+      // setting blocks unless separately enabled in the Cloudinary console.
+      // "raw" serves the file as-is with no such restriction.
       ({ url: resumeUrl, publicId: resumePublicId } = await saveUpload(buffer, {
         folder: "careers/resumes",
         ext,
         isImage: false,
+        resourceType: "raw",
       }));
     } catch (err) {
       console.error("[careers/apply] resume upload failed:", err);
@@ -193,9 +192,6 @@ export async function POST(req: NextRequest) {
       email: data.email,
       phone: data.phone,
       experience: data.experience,
-      currentCompany: data.currentCompany,
-      noticePeriod: data.noticePeriod,
-      coverLetter: data.coverLetter,
       resumeUrl,
       resumePublicId,
       submittedAt: submittedAtIso,
@@ -217,18 +213,17 @@ export async function POST(req: NextRequest) {
       email: data.email,
       phone: data.phone,
       experience: data.experience,
-      currentCompany: data.currentCompany,
-      noticePeriod: data.noticePeriod,
-      coverLetter: data.coverLetter,
       resumeUrl,
       submittedAt,
     };
 
-    // Dedicated lead inbox; falls back to the admin/from address if unset. The
-    // resume is already safely in Cloudinary at this point, so a mail failure
-    // here must never fail the candidate's request.
-    const careersTo =
-      env.LEADS_EMAIL ?? env.MAIL_TO_ADMIN ?? env.MAIL_FROM ?? "leads@vertexkashmirholidays.com";
+    // Dedicated HR inbox — distinct from LEADS_EMAIL, which is for travel
+    // enquiries only. No MAIL_TO_ADMIN/MAIL_FROM fallback here on purpose:
+    // those resolve to unrelated addresses (e.g. the noreply sender) and
+    // would silently misroute applications away from HR. The resume is
+    // already safely in Cloudinary at this point, so a mail failure here
+    // must never fail the candidate's request.
+    const careersTo = env.CAREERS_EMAIL ?? "hr@vertexkashmirholidays.com";
     try {
       await sendMail({
         to: stripHeader(careersTo),

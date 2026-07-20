@@ -69,6 +69,7 @@ const schema = z.object({
   MAIL_REPLY_TO: z.string().optional(),
   LEADS_EMAIL: z.string().optional(),
   BOOKING_EMAIL: z.string().optional(),
+  CAREERS_EMAIL: z.string().optional(),
 
   // ── Turnstile (CAPTCHA) ──────────────────────────────────────────────
   TURNSTILE_SECRET_KEY: z.string().optional(),
