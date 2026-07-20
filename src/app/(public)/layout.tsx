@@ -1,6 +1,6 @@
 import { Toaster } from "sonner";
 import { prisma } from "@/lib/prisma";
-import { getSiteSettings } from "@/lib/siteSettings";
+import { getSiteSettings, buildFooterSettings } from "@/lib/siteSettings";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -9,7 +9,6 @@ import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
 import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
-import type { FooterSettings } from "@/components/layout/Footer";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const [s, strip, promos, categoryRows, homeContent] = await Promise.all([
@@ -44,30 +43,7 @@ export default async function PublicLayout({ children }: { children: React.React
     pages: parseBannerPages(b.pages),
   }));
 
-  const settings: FooterSettings | null = s
-    ? {
-        siteName: s.siteName,
-        siteTagline: s.siteTagline,
-        siteEmail: s.siteEmail,
-        sitePhone: s.sitePhone,
-        siteAddress: s.siteAddress,
-        whatsapp: s.whatsapp,
-        facebook: s.facebook,
-        instagram: s.instagram,
-        twitter: s.twitter,
-        youtube: s.youtube,
-        googleReviews: s.googleReviews,
-        tripadvisor: s.tripadvisor,
-        legalName: s.legalName,
-        tourismRegNumber: s.tourismRegNumber,
-        gstNumber: s.gstNumber,
-        addressLine1: s.addressLine1,
-        addressCity: s.addressCity,
-        addressState: s.addressState,
-        addressPincode: s.addressPincode,
-        addressCountry: s.addressCountry,
-      }
-    : null;
+  const settings = buildFooterSettings(s);
 
   // Sitewide Organization JSON-LD — injected once here (not per-page) so every
   // public page's own JSON-LD graph can resolve the "@id" references used by
