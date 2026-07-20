@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       amount: true,
       discountType: true,
       discountValue: true,
-      payments: { select: { amount: true } },
+      payments: { select: { amount: true, type: true } },
       services: { select: { amount: true } },
     },
   });

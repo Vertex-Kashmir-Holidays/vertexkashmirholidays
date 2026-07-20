@@ -63,7 +63,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
       where: { id: bookingId },
       include: {
         services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-        payments: { select: { amount: true } },
+        payments: { select: { amount: true, type: true } },
         user: { select: { name: true, email: true } },
       },
     });

@@ -55,7 +55,7 @@ Business rules always take precedence over implementation assumptions. Where the
 - **Offline payments ARE supported:** staff can manually record a payment against a booking with method `Cash`, `UPI`, `Card`, `Bank Transfer`, or `Online` — this is not Razorpay-only.
 - **GST is a payment-level rule, not a booking-level rule** (a common assumption to double-check against): GST is optional, applies **only to non-cash payment methods**, and is computed per individual payment row — not once against the whole booking. The percent is chosen from a configurable list (default 5/16/18%) and the computed amount is persisted alongside the raw percent for reporting. GST does **not** change the payable/balance calculation — it's recorded as a tax breakdown _within_ the amount received, not added on top of it.
 - **"Final amount" clarification:** the balance/payable calculation is `bookingAmount − discountAmount`, full stop — GST is not part of that formula. Do not assume "Final Amount = Base − Discount + GST"; GST is reporting metadata on a payment, independent of the payable total.
-- **Refund behaviour:** implemented as a manually staff-recorded `BookingPayment` with `type: "REFUND"`. Refund entries are explicitly excluded from the "can't exceed remaining balance" check (a refund isn't a collection against the payable). **Flag — likely defect, not a deliberate rule:** the booking-finance summary (`computeBookingFinance`) sums _all_ payment rows including refunds into `paidAmount` without sign-flipping, so a recorded refund currently _increases_ the reported paid amount rather than decreasing it. This should be verified against real usage before being relied on for financial reporting.
+- **Refund behaviour:** implemented as a manually staff-recorded `BookingPayment` with `type: "REFUND"`, stored as a positive amount. Refund entries are excluded from the "can't exceed remaining balance" check (a refund isn't a collection against the payable), and `computeBookingFinance` **subtracts** REFUND rows from `paidAmount` — a refund reduces the net amount received (and correspondingly raises the outstanding balance), it does not add to it. Any caller feeding payments into `computeBookingFinance` must select `type` alongside `amount` for this netting to apply.
 
 ## 4. Customer Rules — Implemented, but no dedicated Customer entity
 
@@ -89,7 +89,7 @@ Verified formulas, from `src/lib/bookings/finance.ts` and `src/lib/payments/gst.
 
 - `discountAmount` = a `FLAT` rupee value, or a `PERCENT` of the booking amount — always clamped between `0` and the booking amount.
 - `effectivePayable` = `bookingAmount − discountAmount`.
-- `paidAmount` = sum of all recorded payment rows (see the refund caveat in Payment Rules above).
+- `paidAmount` = sum of collection rows minus REFUND rows (net amount received; see Payment Rules above).
 - `balance` = `effectivePayable − paidAmount`.
 - `servicesTotal` = sum of all `BookingService` line-item amounts — tracked separately, not netted against the payable total (services are cost/margin tracking, not customer-facing charges by default).
 - **Online advance option:** a fixed **10%** of the total (`ADVANCE_PERCENT`), computed server-side, never client-supplied.

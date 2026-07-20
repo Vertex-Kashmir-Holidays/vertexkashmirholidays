@@ -41,7 +41,7 @@ export default async function AdminBookingsPage() {
         createdAt: true,
         tour: { select: { title: true, slug: true, coverImage: true } },
         user: { select: { name: true, email: true } },
-        payments: { select: { amount: true } },
+        payments: { select: { amount: true, type: true } },
       },
     }),
     prisma.booking.count({ where: { deletedAt: null } }),
