@@ -4,12 +4,11 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { getSiteSettings } from '@/lib/siteSettings';
+import { getSiteSettings, buildFooterSettings } from '@/lib/siteSettings';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
 import { JsonLd, buildBreadcrumbList, buildCampaignProduct, buildCampaignEvents, buildFAQPage } from '@/components/seo/JsonLd';
 import { getDisplayReviews } from '@/lib/reviews';
-import type { FooterSettings } from '@/components/layout/Footer';
 import { sanitizeInlineHtml } from '@/lib/sanitize';
 import type {
   CampaignActivity,
@@ -77,22 +76,7 @@ export default async function CampaignPage({ params }: PageProps) {
   ]);
   if (!c || !c.published) notFound();
 
-  const footerSettings: FooterSettings | null = s
-    ? {
-        siteName: s.siteName,
-        siteTagline: s.siteTagline,
-        siteEmail: s.siteEmail,
-        sitePhone: s.sitePhone,
-        siteAddress: s.siteAddress,
-        whatsapp: s.whatsapp,
-        facebook: s.facebook,
-        instagram: s.instagram,
-        twitter: s.twitter,
-        youtube: s.youtube,
-        googleReviews: s.googleReviews,
-        tripadvisor: s.tripadvisor,
-      }
-    : null;
+  const footerSettings = buildFooterSettings(s);
 
   // Campaign "traveller stories" now pull from the global Review module rather
   // than a per-campaign JSON field — reviews are admin/customer managed.
