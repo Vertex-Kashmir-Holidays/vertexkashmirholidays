@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       amount: true,
       discountType: true,
       discountValue: true,
-      payments: { select: { amount: true } },
+      payments: { select: { amount: true, type: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });

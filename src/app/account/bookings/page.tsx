@@ -41,7 +41,7 @@ export default async function AccountBookingsPage() {
     orderBy: { createdAt: "desc" },
     include: {
       tour: { select: { title: true, slug: true, coverImage: true } },
-      payments: { select: { amount: true } },
+      payments: { select: { amount: true, type: true } },
     },
   });
   const bookings = rows.map((b) => ({
