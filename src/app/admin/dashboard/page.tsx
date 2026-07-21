@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@prisma/client";
-import { RevenueChart } from "@/components/admin/RevenueChart";
+import { RevenueChart } from "@/components/admin/RevenueChartLazy";
 
 export const metadata: Metadata = { title: "Dashboard — Admin" };
 export const dynamic = "force-dynamic";

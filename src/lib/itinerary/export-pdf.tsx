@@ -1,7 +1,9 @@
 "use client";
 
-import { pdf } from "@react-pdf/renderer";
-import { ItineraryPdf, LOGO_ASSETS } from "@/components/admin/itinerary/ItineraryPdf";
+// @react-pdf/renderer and the ItineraryPdf document tree are imported
+// dynamically inside downloadItineraryPdf (below) rather than at module top, so
+// the heavy PDF renderer only loads when the user actually exports — keeping it
+// out of the itinerary editor's initial JS bundle.
 import { compressMany } from "@/lib/itinerary/compress-image";
 import { getPaymentQr } from "@/lib/itinerary/payment";
 import type { ItineraryData } from "@/types/itinerary";
@@ -42,6 +44,12 @@ export interface ExportResult {
  * the 1 MB budget.
  */
 export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportResult> {
+  // Lazily pull in the PDF renderer and the document template only on export.
+  const [{ pdf }, { ItineraryPdf, LOGO_ASSETS }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("@/components/admin/itinerary/ItineraryPdf"),
+  ]);
+
   const srcs = [
     data.coverImage,
     data.transportImage,
