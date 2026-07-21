@@ -48,6 +48,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["sharp"],
+  experimental: {
+    // Barrel-optimize these icon/animation/chart packages so importing a few
+    // symbols doesn't pull the whole package into a route's bundle. recharts is
+    // the meaningful add here (framer-motion and lucide-react are already in
+    // Next's built-in default list); keeping all three explicit documents intent.
+    optimizePackageImports: ["framer-motion", "lucide-react", "recharts"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

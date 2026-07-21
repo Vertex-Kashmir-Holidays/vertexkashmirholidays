@@ -166,7 +166,7 @@ Every Route Handler:
 
 ## 12. Performance
 
-- **Lazy loading** — `next/dynamic` with `ssr: false` for heavy, rarely-needed client bundles (Three.js hero mode, PDF renderer, chart library). Target state — not yet applied anywhere in the codebase today (see architecture review).
+- **Lazy loading** — `next/dynamic` with `ssr: false` for heavy, rarely-needed client bundles. Applied to the admin revenue chart (Recharts, via the `RevenueChartLazy` client wrapper) and the client-side itinerary PDF export (`@react-pdf/renderer`, dynamically `import()`ed inside `downloadItineraryPdf`), both code-split out of initial JS as of VERTE-24. The Three.js hero mode (`HeroR3F`) is currently orphaned — not imported by any route, so it ships nowhere; wire it in behind the same `ssr: false` boundary if it is ever reintroduced.
 - **Image optimization** — `next/image` + `sharp`, project-wide on the public site; a handful of campaign marketing components still use a raw `<img>` (tracked gap).
 - **Bundle splitting** — `@next/bundle-analyzer`, already wired into `next.config.ts` (`ANALYZE=true yarn build`).
 - **Caching** — ISR (`revalidate = 300`) on published public content; `force-dynamic` on admin/account/booking pages that read session or real-time data (see `coding-standards.md` → Next.js Standards).
