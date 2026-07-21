@@ -13,6 +13,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         select: { slug: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
       }),
+      // Destinations have no published/draft concept — the model has no
+      // `published` field and the public /destinations listing shows every row.
+      // So there is intentionally no `where` filter here, unlike tours/blogs/etc.
       prisma.destination.findMany({
         select: { slug: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
