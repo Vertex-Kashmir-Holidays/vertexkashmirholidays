@@ -3,7 +3,7 @@
 
 import { motion } from "framer-motion";
 import { Logo } from "@/components/brand/Logo";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { useEffect, useState } from "react";
 
 interface CampaignNavProps {

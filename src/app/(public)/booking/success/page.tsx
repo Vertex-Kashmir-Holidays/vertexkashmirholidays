@@ -4,7 +4,7 @@ import Image from "next/image";
 import { CheckCircle2, Mail, FileText, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { BookingCompletedEvent } from "@/components/booking/BookingCompletedEvent";
 import { ShareTripButton } from "@/components/booking/ShareTripButton";
 import { SITE_URL } from "@/lib/seo";

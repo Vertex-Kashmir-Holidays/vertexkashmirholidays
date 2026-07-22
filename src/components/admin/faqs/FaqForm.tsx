@@ -8,7 +8,9 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
 import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
+import { Input } from "@/components/ui/atoms/input";
+import { Label } from "@/components/ui/atoms/label";
 import { cn } from "@/lib/utils";
 
 const PLACEMENT_OPTIONS = [
@@ -65,10 +67,10 @@ interface FaqFormProps {
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-xs font-semibold text-foreground mb-1.5">
+    <Label className="mb-1.5 text-foreground">
       {children}
       {required && <span className="text-accent ml-0.5">*</span>}
-    </label>
+    </Label>
   );
 }
 
@@ -171,10 +173,9 @@ export function FaqForm({
             <h3 className="font-bold text-foreground text-sm">Content</h3>
             <div>
               <FieldLabel required>Question</FieldLabel>
-              <input
+              <Input
                 {...register("question")}
                 placeholder="e.g. Is Kashmir safe for family travel?"
-                className={inputCls}
               />
               <FieldError message={errors.question?.message} />
               {isEdit && defaults?.slug && (
@@ -300,15 +301,11 @@ export function FaqForm({
             </label>
             <div>
               <FieldLabel>Sort Order</FieldLabel>
-              <input
-                type="number"
-                {...register("sortOrder", { valueAsNumber: true })}
-                className={inputCls}
-              />
+              <Input type="number" {...register("sortOrder", { valueAsNumber: true })} />
             </div>
             <div>
               <FieldLabel>Last Reviewed</FieldLabel>
-              <input type="date" {...register("lastReviewedAt")} className={inputCls} />
+              <Input type="date" {...register("lastReviewedAt")} />
               <p className="text-[12px] text-muted-foreground mt-1">
                 Optional freshness signal — not updated automatically.
               </p>

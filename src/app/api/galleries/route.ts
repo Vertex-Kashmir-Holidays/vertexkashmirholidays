@@ -1,56 +1,111 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
 import { z } from "zod";
+import { FaqStatus, FaqPlacement } from "@prisma/client";
 
-export const dynamic = "force-dynamic";
+type Params = { params: Promise<{ id: string }> };
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category") ?? "";
-  const type = searchParams.get("type") ?? "";
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-  const take = 24;
-  const skip = (page - 1) * take;
+const idArray = z.array(z.string()).optional();
 
-  const where = {
-    ...(category ? { category } : {}),
-    ...(type === "IMAGE" || type === "VIDEO" ? { type } : {}),
-  };
-  const [items, total] = await Promise.all([
-    prisma.gallery.findMany({
-      where,
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-      take,
-      skip,
-    }),
-    prisma.gallery.count({ where }),
-  ]);
-
-  return NextResponse.json({ items, total, page, pages: Math.ceil(total / take) });
-}
-
-const createSchema = z.object({
-  url: z.string().min(1),
-  publicId: z.string().optional(),
-  type: z.enum(["IMAGE", "VIDEO"]).optional(),
-  alt: z.string().optional(),
-  caption: z.string().optional(),
-  category: z.string().optional(),
+const patchSchema = z.object({
+  question: z.string().min(3).optional(),
+  shortAnswer: z.string().min(1).optional(),
+  answer: z.string().min(1).optional(),
+  categoryId: z.string().min(1).optional(),
+  status: z.nativeEnum(FaqStatus).optional(),
+  featured: z.boolean().optional(),
+  placements: z.array(z.nativeEnum(FaqPlacement)).optional(),
   sortOrder: z.coerce.number().int().optional(),
+  lastReviewedAt: z.string().optional().nullable(),
+  tourIds: idArray,
+  destinationIds: idArray,
+  blogIds: idArray,
+  campaignIds: idArray,
+  activityIds: idArray,
 });
 
-export async function POST(request: Request) {
-  const guard = await requirePermission("galleries", "create");
+export async function GET(_req: NextRequest, { params }: Params) {
+  const guard = await requirePermission("faqs", "view");
   if (guard instanceof NextResponse) return guard;
-  let body: unknown;
+  const { id } = await params;
+  const faq = await requireExisting(() =>
+    prisma.faq.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        tours: { select: { id: true, title: true } },
+        destinations: { select: { id: true, name: true } },
+        blogs: { select: { id: true, title: true } },
+        campaigns: { select: { id: true, name: true } },
+        activities: { select: { id: true, name: true } },
+      },
+    }),
+  );
+  if (!faq.ok) return faq.response;
+  return NextResponse.json(faq.data);
+}
+
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const guard = await requirePermission("faqs", "edit");
+  if (guard instanceof NextResponse) return guard;
+  const { id } = await params;
+  const existing = await requireExisting(() => prisma.faq.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
+
+  const body = await parseJsonBody(req);
+  if (!body.ok) return body.response;
+  const parsed = parseWithSchema(patchSchema, body.data);
+  if (!parsed.ok) return parsed.response;
+
+  const {
+    tourIds,
+    destinationIds,
+    blogIds,
+    campaignIds,
+    activityIds,
+    lastReviewedAt,
+    question,
+    ...rest
+  } = parsed.data;
+
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    // Re-slugging on every question edit would break existing external/
+    // internal links to this FAQ's detail page — slug is generated once at
+    // creation and left stable afterward, matching how Tour/Blog slugs work
+    // (auto-suggested once, then editable independently — here it's simply
+    // never auto-regenerated after creation).
+    const updated = await prisma.faq.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(question ? { question } : {}),
+        ...(lastReviewedAt !== undefined
+          ? { lastReviewedAt: lastReviewedAt ? new Date(lastReviewedAt) : null }
+          : {}),
+        updatedById: guard.user.id,
+        ...(tourIds ? { tours: { set: tourIds.map((tid) => ({ id: tid })) } } : {}),
+        ...(destinationIds
+          ? { destinations: { set: destinationIds.map((did) => ({ id: did })) } }
+          : {}),
+        ...(blogIds ? { blogs: { set: blogIds.map((bid) => ({ id: bid })) } } : {}),
+        ...(campaignIds ? { campaigns: { set: campaignIds.map((cid) => ({ id: cid })) } } : {}),
+        ...(activityIds ? { activities: { set: activityIds.map((aid) => ({ id: aid })) } } : {}),
+      },
+    });
+    return NextResponse.json(updated);
+  } catch (err) {
+    return mapPrismaError(err, "A FAQ with this slug already exists", "Update failed");
   }
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  const item = await prisma.gallery.create({ data: parsed.data });
-  return NextResponse.json(item, { status: 201 });
+}
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const guard = await requirePermission("faqs", "delete");
+  if (guard instanceof NextResponse) return guard;
+  const { id } = await params;
+  const existing = await requireExisting(() => prisma.faq.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
+  await prisma.faq.delete({ where: { id } });
+  return NextResponse.json({ success: true });
 }

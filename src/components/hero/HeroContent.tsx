@@ -20,7 +20,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 
 // ─── Inquiry form schema ───────────────────────────────────────────────────────
 const schema = z.object({

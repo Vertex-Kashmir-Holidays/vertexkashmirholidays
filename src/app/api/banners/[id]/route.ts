@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema, requireExisting } from "@/lib/api/route-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -42,20 +43,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
 
-  const existing = await prisma.banner.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const existing = await requireExisting(() => prisma.banner.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await parseJsonBody(req);
+  if (!body.ok) return body.response;
 
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  }
+  const parsed = parseWithSchema(patchSchema, body.data);
+  if (!parsed.ok) return parsed.response;
 
   const d = parsed.data;
   const data: Prisma.BannerUpdateInput = {};
@@ -76,7 +71,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (endsAt !== undefined) data.endsAt = endsAt;
 
   // A STRIP banner never carries images — clear them if the type flips to STRIP.
-  const finalType = d.type ?? existing.type;
+  const finalType = d.type ?? existing.data.type;
   if (finalType === "STRIP") {
     data.imageUrl = null;
     data.imageMobileUrl = null;
@@ -91,8 +86,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
 
-  const existing = await prisma.banner.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const existing = await requireExisting(() => prisma.banner.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
 
   await prisma.banner.delete({ where: { id } });
   return NextResponse.json({ success: true });

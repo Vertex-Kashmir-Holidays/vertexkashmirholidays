@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Images } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
-import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
+import { GalleryLightbox } from "@/components/ui/organisms/GalleryLightbox";
 
 interface GalleryItem {
   url: string;

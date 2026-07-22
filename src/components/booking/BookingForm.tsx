@@ -26,7 +26,7 @@ import {
   Star,
   Flame,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
 import { readAttributionClient } from "@/lib/attribution";
 

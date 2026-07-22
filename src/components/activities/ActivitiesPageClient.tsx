@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, RotateCcw } from "lucide-react";
-import { PriceRangeSlider } from "@/components/ui/PriceRangeSlider";
+import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
 import { ActivityCard, type ActivityCardData } from "@/components/activities/ActivityCard";
 
 const PRICE_STEP = 1000;

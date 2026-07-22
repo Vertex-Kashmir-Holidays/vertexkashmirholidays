@@ -89,7 +89,7 @@ const config: Config = {
           blue: "hsl(214 88% 34% / <alpha-value>)",
           green: "hsl(158 55% 26%)",
           green2: "hsl(152 60% 32%)",
-          bright: "hsl(151 70% 38%)",
+          bright: "hsl(151 70% 31%)",
           mint: "hsl(140 45% 80%)",
           ink: "hsl(214 68% 14%)",
           mute: "hsl(45 20% 35%)",

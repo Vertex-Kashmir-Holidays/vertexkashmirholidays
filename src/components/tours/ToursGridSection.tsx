@@ -1,6 +1,6 @@
 "use client";
 
-import { TourCard } from "@/components/ui/TourCard";
+import { TourCard } from "@/components/ui/organisms/TourCard";
 import { formatINR } from "@/lib/accents";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";

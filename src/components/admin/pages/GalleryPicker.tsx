@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, X, Search, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
+import { ErrorState } from "@/components/ui/molecules/error-state";
 
 type SourceFilter = "ALL" | "LOCAL" | "STOCK";
 
@@ -33,11 +34,13 @@ interface Props {
 export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
   const [items, setItems] = useState<GalleryAsset[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [q, setQ] = useState("");
   const [source, setSource] = useState<SourceFilter>("ALL");
   const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Load (or append) a page of gallery assets whenever the modal opens or the
   // page advances. Closing resets back to the first page.
@@ -50,17 +53,27 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
       return;
     }
     setLoading(true);
+    setLoadError(false);
     const params = new URLSearchParams({ page: String(page) });
     if (type) params.set("type", type);
     fetch(`/api/galleries?${params.toString()}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((d: { items: GalleryAsset[]; pages: number }) => {
         setItems((prev) => (page === 1 ? d.items : [...prev, ...d.items]));
         setPages(d.pages ?? 1);
       })
-      .catch(() => toast.error("Couldn't load the gallery."))
+      .catch(() => {
+        // A failed first load leaves nothing on screen — show a blocking
+        // retry state. A failed "load more" still has the earlier page
+        // visible, so a toast is enough; don't wipe it with ErrorState.
+        if (page === 1) setLoadError(true);
+        else toast.error("Couldn't load more media.");
+      })
       .finally(() => setLoading(false));
-  }, [open, page, type]);
+  }, [open, page, type, reloadKey]);
 
   if (!open) return null;
 
@@ -128,7 +141,13 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
         </div>
 
         <div className="-mx-1 flex-1 overflow-y-auto px-1">
-          {filtered.length === 0 && !loading ? (
+          {loadError ? (
+            <ErrorState
+              title="Couldn't load the gallery."
+              className="py-16"
+              onRetry={() => setReloadKey((k) => k + 1)}
+            />
+          ) : filtered.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
               <ImageIcon className="h-8 w-8" />
               <p className="text-sm">

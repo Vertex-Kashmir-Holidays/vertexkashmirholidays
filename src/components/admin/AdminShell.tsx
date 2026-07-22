@@ -5,7 +5,6 @@ import { useNotificationSound } from "@/components/admin/connect/hooks/useNotifi
 import { GlobalCallNotification } from "@/components/admin/connect/GlobalCallNotification";
 import { CallProvider } from "@/components/admin/connect/CallProvider";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -40,7 +39,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ChatInbox } from "@/components/admin/ChatInbox";
 import { NotificationsProvider } from "@/components/admin/NotificationsProvider";
@@ -49,6 +48,7 @@ import { PresenceStatusPicker } from "@/components/admin/PresenceStatusPicker";
 import { PresenceHeartbeat } from "@/components/admin/connect/PresenceHeartbeat";
 import { cn } from "@/lib/utils";
 import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/atoms/avatar";
 
 const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -114,41 +114,6 @@ interface NavItem {
 interface NavGroup {
   label: string | null;
   items: NavItem[];
-}
-
-// Small circular avatar showing the user's picture, or their initial as a
-// fallback. Used in both the sidebar and the topbar.
-function Avatar({
-  src,
-  name,
-  className,
-}: {
-  src: string | null;
-  name: string;
-  className?: string;
-}) {
-  if (src) {
-    return (
-      <Image
-        src={src}
-        alt=""
-        width={32}
-        height={32}
-        unoptimized
-        className={cn("rounded-full object-cover shrink-0", className)}
-      />
-    );
-  }
-  return (
-    <div
-      className={cn(
-        "rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0",
-        className,
-      )}
-    >
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
 }
 
 function SidebarContent({
@@ -246,7 +211,12 @@ function SidebarContent({
           className="flex flex-1 min-w-0 items-center gap-3 rounded-lg -mx-1 px-1 py-1 transition-colors hover:bg-muted"
           title="My profile"
         >
-          <Avatar src={userImage} name={userName} className="w-8 h-8" />
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={userImage ?? undefined} alt="" />
+            <AvatarFallback className="bg-primary text-xs font-bold text-primary-foreground">
+              {userName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-foreground text-xs font-semibold truncate">{userName}</p>
             <p className="text-muted-foreground text-[12px] truncate">{userEmail}</p>

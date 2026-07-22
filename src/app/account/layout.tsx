@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { AccountShell } from "@/components/account/AccountShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
+import { CookieConsentManager } from "@/components/providers/CookieConsentManager";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 // This layout already calls auth() (fully dynamic on every request
@@ -34,6 +35,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         nonce={nonce}
       >
         <SiteAnalytics nonce={nonce} />
+        <CookieConsentManager />
         <OfflineBanner />
         <AccountShell
           userName={session.user.name ?? "Traveller"}

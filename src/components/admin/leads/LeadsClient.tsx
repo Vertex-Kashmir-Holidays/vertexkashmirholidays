@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Search,
   Plus,
   ExternalLink,
   Trash2,
-  ChevronDown,
   Pencil,
   Users,
   CalendarClock,
@@ -19,6 +17,12 @@ import {
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/organisms/select";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/atoms/tooltip";
+import { PageHeader } from "@/components/ui/molecules/page-header";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import { StatCard } from "@/components/ui/molecules/stat-card";
+import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
 
 type LeadStatus =
   | "NEW"
@@ -95,33 +99,6 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
   REFERRAL: "Referral",
 };
 
-const selectCls =
-  "pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none";
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: string;
-}) {
-  return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-center gap-4">
-      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", accent)}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-2xl font-extrabold text-foreground leading-none">{value}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-      </div>
-    </div>
-  );
-}
-
 export function LeadsClient({
   initialLeads,
   totalCount,
@@ -182,21 +159,21 @@ export function LeadsClient({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display font-extrabold text-foreground text-xl">Leads</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">{totalCount} total leads</p>
-        </div>
-        {canCreate && (
-          <Link
-            href="/admin/leads/new"
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            New Lead
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Leads"
+        description={`${totalCount} total leads`}
+        action={
+          canCreate && (
+            <Link
+              href="/admin/leads/new"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              New Lead
+            </Link>
+          )
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -241,70 +218,60 @@ export function LeadsClient({
       <div className="bg-card rounded-2xl border border-border shadow-sm">
         {/* Filter bar */}
         <div className="flex flex-wrap gap-3 p-4">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, phone, email, ref..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
-            />
-          </div>
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name, phone, email, ref..."
+            className="min-w-[180px]"
+          />
 
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={selectCls}
-            >
-              <option value="ALL">All Status</option>
-              <option value="NEW">New</option>
-              <option value="CONNECTED">Connected</option>
-              <option value="NOT_CONNECTED">Not Connected</option>
-              <option value="QUALIFIED">Qualified</option>
-              <option value="NEGOTIATION">Negotiation</option>
-              <option value="ON_HOLD">On Hold</option>
-              <option value="CONVERTED">Converted</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-auto min-w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Status</SelectItem>
+              <SelectItem value="NEW">New</SelectItem>
+              <SelectItem value="CONNECTED">Connected</SelectItem>
+              <SelectItem value="NOT_CONNECTED">Not Connected</SelectItem>
+              <SelectItem value="QUALIFIED">Qualified</SelectItem>
+              <SelectItem value="NEGOTIATION">Negotiation</SelectItem>
+              <SelectItem value="ON_HOLD">On Hold</SelectItem>
+              <SelectItem value="CONVERTED">Converted</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
 
-          <div className="relative">
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className={selectCls}
-            >
-              <option value="ALL">All Sources</option>
-              <option value="WEBSITE">Website</option>
-              <option value="MANUAL">Manual</option>
-              <option value="GOOGLE_ADS">Google</option>
-              <option value="META_ADS">Meta</option>
-              <option value="THIRD_PARTY">3rd Party</option>
-              <option value="REFERRAL">Referral</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-auto min-w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Sources</SelectItem>
+              <SelectItem value="WEBSITE">Website</SelectItem>
+              <SelectItem value="MANUAL">Manual</SelectItem>
+              <SelectItem value="GOOGLE_ADS">Google</SelectItem>
+              <SelectItem value="META_ADS">Meta</SelectItem>
+              <SelectItem value="THIRD_PARTY">3rd Party</SelectItem>
+              <SelectItem value="REFERRAL">Referral</SelectItem>
+            </SelectContent>
+          </Select>
 
           {isAdmin && (
-            <div className="relative">
-              <select
-                value={assigneeFilter}
-                onChange={(e) => setAssigneeFilter(e.target.value)}
-                className={selectCls}
-              >
-                <option value="ALL">All Staff</option>
-                <option value="UNASSIGNED">Unassigned</option>
+            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <SelectTrigger className="w-auto min-w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Staff</SelectItem>
+                <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
                 {staffUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
+                  <SelectItem key={u.id} value={u.id}>
                     {u.name ?? u.email}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            </div>
+              </SelectContent>
+            </Select>
           )}
 
           <p className="text-xs text-muted-foreground self-center shrink-0">
@@ -418,51 +385,50 @@ export function LeadsClient({
 
                     {/* Actions */}
                     <td className="px-4 py-3">
-                      {confirmDelete === lead.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleDelete(lead.id)}
-                            disabled={isPending}
-                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
-                          >
-                            {isPending ? "…" : "Delete"}
-                          </button>
-                          <button
-                            onClick={() => setConfirmDelete(null)}
-                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Link
-                            href={`/admin/leads/${lead.id}`}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                            title="View detail"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
-                          {canEdit && (
+                      <InlineConfirmActions
+                        confirming={confirmDelete === lead.id}
+                        onConfirm={() => handleDelete(lead.id)}
+                        onCancel={() => setConfirmDelete(null)}
+                        pending={isPending}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Link
-                              href={`/admin/leads/${lead.id}/edit`}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
-                              title="Edit"
+                              href={`/admin/leads/${lead.id}`}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
-                              <Pencil className="w-3.5 h-3.5" />
+                              <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => setConfirmDelete(lead.id)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      )}
+                          </TooltipTrigger>
+                          <TooltipContent>View detail</TooltipContent>
+                        </Tooltip>
+                        {canEdit && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                href={`/admin/leads/${lead.id}/edit`}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {canDelete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => setConfirmDelete(lead.id)}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </InlineConfirmActions>
                     </td>
                   </tr>
                 ))

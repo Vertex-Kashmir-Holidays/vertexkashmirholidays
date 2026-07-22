@@ -5,7 +5,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { Upload, Loader2, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
 
 const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";

@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
 import { LinkChecklist, type LinkOption } from "@/components/admin/activities/LinkChecklist";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { cn } from "@/lib/utils";
 import { stringifyList } from "@/lib/tours/content";
 

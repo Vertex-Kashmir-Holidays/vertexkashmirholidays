@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { RefreshCw, Download, Save, Loader2, ArrowLeft } from "lucide-react";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import type { ItineraryStatus } from "@/types/itinerary";
 
 const STATUSES: ItineraryStatus[] = ["DRAFT", "SENT", "CONFIRMED"];

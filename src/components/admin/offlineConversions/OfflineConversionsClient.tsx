@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { StatCard } from "@/components/ui/molecules/stat-card";
 import { PlatformBadge } from "@/components/admin/offlineConversions/PlatformBadge";
 import {
   STATUS_LABELS,
@@ -113,30 +114,6 @@ const chipCls = (active: boolean) =>
       ? "bg-primary/10 border-primary/30 text-primary"
       : "border-border text-muted-foreground hover:bg-muted",
   );
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: string;
-}) {
-  return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm p-4 flex items-center gap-3">
-      <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", accent)}>
-        <Icon className="w-4.5 h-4.5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xl font-extrabold text-foreground leading-none truncate">{value}</p>
-        <p className="text-[12px] text-muted-foreground mt-0.5">{label}</p>
-      </div>
-    </div>
-  );
-}
 
 function PeriodCard({ label, stat }: { label: string; stat: PeriodStat }) {
   return (
@@ -489,48 +466,56 @@ export function OfflineConversionsClient({
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard
+          size="sm"
           label="Total"
           value={stats.total}
           icon={Layers}
           accent="bg-slate-500/10 text-slate-600 dark:text-slate-400"
         />
         <StatCard
+          size="sm"
           label="Pending"
           value={stats.pending}
           icon={Clock}
           accent="bg-amber-500/10 text-amber-600 dark:text-amber-400"
         />
         <StatCard
+          size="sm"
           label="Processing"
           value={stats.processing}
           icon={RotateCw}
           accent="bg-blue-500/10 text-blue-600 dark:text-blue-400"
         />
         <StatCard
+          size="sm"
           label="Sent"
           value={stats.sent}
           icon={CheckCircle2}
           accent="bg-green-500/10 text-green-600 dark:text-green-400"
         />
         <StatCard
+          size="sm"
           label="Failed"
           value={stats.failed}
           icon={XCircle}
           accent="bg-red-500/10 text-red-600 dark:text-red-400"
         />
         <StatCard
+          size="sm"
           label="Success Rate"
           value={`${stats.successRate}%`}
           icon={Percent}
           accent="bg-green-500/10 text-green-600 dark:text-green-400"
         />
         <StatCard
+          size="sm"
           label="Failed Rate"
           value={`${stats.failedRate}%`}
           icon={Percent}
           accent="bg-red-500/10 text-red-600 dark:text-red-400"
         />
         <StatCard
+          size="sm"
           label="Avg. Attempts"
           value={stats.avgAttempts}
           icon={Repeat}

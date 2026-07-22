@@ -6,7 +6,7 @@ import { EASE_BRAND } from "@/lib/motion";
 import { useState, useEffect } from "react";
 import { Search, RotateCcw, X, ArrowRight } from "lucide-react";
 import type { TourCategory } from "@prisma/client";
-import { PriceRangeSlider } from "@/components/ui/PriceRangeSlider";
+import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import type { CategoryOption, DurationOption } from "@/types/tours";
 

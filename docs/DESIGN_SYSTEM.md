@@ -9,7 +9,7 @@ than one-off arbitrary values. Source of truth for each:
 - Type scale: `tailwind.config.ts` (`theme.extend.fontSize`) + this doc
 - Spacing / breakpoints: Tailwind's unmodified defaults + this doc
 - Radius / shadow: `tailwind.config.ts` (`theme.extend.borderRadius` / `boxShadow`) + this doc
-- Motion timing: `src/lib/motion.ts` (framer-motion) + `--ease-brand` (`globals.css`) + `ease-brand` (`tailwind.config.ts`) + this doc
+- Motion timing & scroll-reveal variants: `src/lib/motion.ts` (framer-motion) + `--ease-brand` (`globals.css`) + `ease-brand` (`tailwind.config.ts`) + this doc
 
 ## Brand
 
@@ -154,6 +154,35 @@ The framer-motion easing curve `[0.22, 1, 0.36, 1]` (an "ease-out-expo"-style cu
 Durations and delays are **not** centralized — they vary intentionally per component (a hero reveal might run 1.5s, a card stagger 0.4s) and were never actually duplicated the way the curve was. Reach for a value that reads right for the specific animation; there's no "wrong" duration the way a hand-copied easing array was a real, silent source of drift.
 
 **Usage rule:** import `EASE_BRAND` from `@/lib/motion` for any new framer-motion `transition` — never hand-copy the bezier array again. Use the `ease-brand` utility class for plain CSS transitions instead of an arbitrary `ease-[cubic-bezier(...)]`.
+
+### Scroll-reveal variants
+
+The same duplication happened one level up: the `initial`/`whileInView` shape pair for the "hidden until scrolled into view" pattern was hand-copied inline across 100+ components. `src/lib/motion.ts` now also exports the shapes actually reused sitewide:
+
+| Variant     | Shape (`hidden` → `visible`)          |
+| ----------- | -------------------------------------- |
+| `fadeUp`    | `{ opacity: 0, y: 20 }` → `{ opacity: 1, y: 0 }` |
+| `fadeUpSm`  | `{ opacity: 0, y: 10 }` → `{ opacity: 1, y: 0 }` |
+| `fadeUpLg`  | `{ opacity: 0, y: 30 }` → `{ opacity: 1, y: 0 }` |
+| `fadeIn`    | `{ opacity: 0 }` → `{ opacity: 1 }`     |
+| `fadeLeft`  | `{ opacity: 0, x: -10 }` → `{ opacity: 1, x: 0 }` |
+| `fadeRight` | `{ opacity: 0, x: 20 }` → `{ opacity: 1, x: 0 }` |
+
+Plus `viewportOnce` (`{ once: true }`) for the identically hand-copied `viewport` prop.
+
+Same rule as durations above: **transition timing is never baked into these variants** — it stays on the component's own `transition` prop (duration, delay, stagger index) since that varies intentionally per usage. Only the shape (the opacity/x/y values) is shared.
+
+```tsx
+<motion.div
+  variants={fadeUp}
+  initial="hidden"
+  whileInView="visible"
+  viewport={viewportOnce}
+  transition={{ duration: 0.5 }}
+>
+```
+
+**Usage rule:** for any new component with a scroll-reveal animation, import the matching shape from `@/lib/motion` instead of inlining `initial`/`whileInView` objects. If a genuinely new shape is needed (not one of the six above), inline it as before — don't force an odd one-off into this list.
 
 ## Out of scope
 

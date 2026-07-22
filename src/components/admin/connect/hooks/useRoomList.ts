@@ -33,6 +33,10 @@ export interface ConnectRoom {
 export function useRoomList(enabled = true) {
   const [rooms, setRooms] = useState<ConnectRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  // Only meaningful when `rooms` is still empty — a background poll failing
+  // after rooms have already loaded once shouldn't blank out a working UI,
+  // so callers should gate on `error && rooms.length === 0`, not `error` alone.
+  const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -40,11 +44,13 @@ export function useRoomList(enabled = true) {
         fetch("/api/connect/rooms"),
         fetch("/api/connect/rooms?archived=true"),
       ]);
-      const active: ConnectRoom[] = activeRes.ok ? await activeRes.json() : [];
-      const archived: ConnectRoom[] = archivedRes.ok ? await archivedRes.json() : [];
+      if (!activeRes.ok || !archivedRes.ok) throw new Error();
+      const active: ConnectRoom[] = await activeRes.json();
+      const archived: ConnectRoom[] = await archivedRes.json();
       setRooms([...active, ...archived]);
+      setError(false);
     } catch {
-      // best-effort
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -57,5 +63,5 @@ export function useRoomList(enabled = true) {
     return () => clearInterval(id);
   }, [enabled, load]);
 
-  return { rooms, loading, refetch: load };
+  return { rooms, loading, error, refetch: load };
 }

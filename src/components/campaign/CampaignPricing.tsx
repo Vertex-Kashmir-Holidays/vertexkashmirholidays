@@ -3,7 +3,7 @@
 
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { Tilt3D } from "@/components/ui/3DTilt";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
 import Link from "next/link";
 import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import type { CampaignTier } from "@/types/campaign";

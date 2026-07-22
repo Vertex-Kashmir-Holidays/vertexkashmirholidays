@@ -9,6 +9,7 @@ import { getRolePermissions } from "@/lib/permissions";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
+import { TooltipProvider } from "@/components/ui/atoms/tooltip";
 
 // GTM must never load here — this route group is intentionally the only one
 // of the four (public / admin / account / login) that doesn't render
@@ -41,18 +42,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         disableTransitionOnChange
         nonce={nonce}
       >
-        <OfflineBanner />
-        <AdminShell
-          userId={session.user.id}
-          userName={profile?.name ?? session.user.name ?? "Admin"}
-          userEmail={session.user.email ?? ""}
-          userImage={profile?.image ?? null}
-          role={session.user.role}
-          permissions={permissions}
-        >
-          {children}
-        </AdminShell>
-        <Toaster richColors position="top-right" />
+        <TooltipProvider delayDuration={200}>
+          <OfflineBanner />
+          <AdminShell
+            userId={session.user.id}
+            userName={profile?.name ?? session.user.name ?? "Admin"}
+            userEmail={session.user.email ?? ""}
+            userImage={profile?.image ?? null}
+            role={session.user.role}
+            permissions={permissions}
+          >
+            {children}
+          </AdminShell>
+          <Toaster richColors position="top-right" />
+        </TooltipProvider>
       </ThemeProvider>
     </SessionProvider>
   );

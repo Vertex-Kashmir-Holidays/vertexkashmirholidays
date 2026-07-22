@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Menu, X, Home, ShoppingBag, MapPin, type LucideIcon } from "lucide-react";

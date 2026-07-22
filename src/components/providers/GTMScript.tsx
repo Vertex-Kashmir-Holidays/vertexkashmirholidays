@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getCookieConsent, onCookieConsentChange } from "@/lib/cookieConsent";
 
 interface GTMScriptProps {
   gtmId: string;
@@ -8,7 +9,18 @@ interface GTMScriptProps {
 }
 
 export function GTMScript({ gtmId, nonce }: GTMScriptProps) {
+  // Starts false so nothing loads until an explicit choice is on file; flips
+  // to true immediately if the visitor accepts analytics mid-session (no
+  // refresh needed), via the same consent-change event CookieConsentManager
+  // dispatches on save.
+  const [analyticsAllowed, setAnalyticsAllowed] = useState(
+    () => getCookieConsent()?.analytics ?? false,
+  );
+
+  useEffect(() => onCookieConsentChange((consent) => setAnalyticsAllowed(consent.analytics)), []);
+
   useEffect(() => {
+    if (!analyticsAllowed) return;
     if (document.getElementById("gtm-init")) return;
 
     window.dataLayer = window.dataLayer ?? [];
@@ -21,7 +33,7 @@ export function GTMScript({ gtmId, nonce }: GTMScriptProps) {
     if (nonce) script.setAttribute("nonce", nonce);
 
     document.head.insertBefore(script, document.head.firstChild);
-  }, [gtmId, nonce]);
+  }, [analyticsAllowed, gtmId, nonce]);
 
   return null;
 }

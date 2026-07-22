@@ -5,15 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Search, Trash2, Pencil, Copy, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
 import type { ItinerarySummary, ItineraryStatus } from "@/types/itinerary";
 
 const STATUSES: ("ALL" | ItineraryStatus)[] = ["ALL", "DRAFT", "SENT", "CONFIRMED"];
 
-const STATUS_STYLES: Record<ItineraryStatus, string> = {
-  DRAFT: "bg-muted text-muted-foreground",
-  SENT: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  CONFIRMED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+const STATUS_VARIANT: Record<ItineraryStatus, BadgeProps["variant"]> = {
+  DRAFT: "default",
+  SENT: "warning",
+  CONFIRMED: "success",
 };
 
 interface Props {
@@ -137,14 +137,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
                     <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">
                       {item.title}
                     </p>
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[12px] font-bold",
-                        STATUS_STYLES[item.status],
-                      )}
-                    >
-                      {item.status}
-                    </span>
+                    <Badge variant={STATUS_VARIANT[item.status]}>{item.status}</Badge>
                   </div>
                   <p className="mt-1 text-[12px] text-muted-foreground">
                     {showOwner && item.ownerName ? `${item.ownerName} · ` : ""}

@@ -23,7 +23,7 @@ interface Props {
 }
 
 export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Props) {
-  const { rooms, loading, refetch } = useRoomList();
+  const { rooms, loading, error, refetch } = useRoomList();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(initialRoomId ?? null);
   const [showList, setShowList] = useState(!initialRoomId);
   const { playMessage, unlock } = useNotificationSound();
@@ -122,6 +122,8 @@ export function ConnectClient({ currentUserId, staffUsers, initialRoomId }: Prop
         <RoomList
           rooms={rooms}
           loading={loading}
+          error={error}
+          onRetry={refetch}
           selectedRoomId={selectedRoomId}
           currentUserId={currentUserId}
           staffUsers={staffUsers}

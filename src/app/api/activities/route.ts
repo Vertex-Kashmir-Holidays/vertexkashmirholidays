@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema, mapPrismaError } from "@/lib/api/route-helpers";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -67,14 +68,10 @@ export async function POST(request: Request) {
   const guard = await requirePermission("activities", "create");
   if (guard instanceof NextResponse) return guard;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  const body = await parseJsonBody(request);
+  if (!body.ok) return body.response;
+  const parsed = parseWithSchema(createSchema, body.data);
+  if (!parsed.ok) return parsed.response;
 
   const { destinationIds = [], tourIds = [], ...data } = parsed.data;
 
@@ -88,9 +85,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(activity, { status: 201 });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002"))
-      return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
-    return NextResponse.json({ error: "Create failed" }, { status: 500 });
+    return mapPrismaError(err, "Slug already exists", "Create failed");
   }
 }

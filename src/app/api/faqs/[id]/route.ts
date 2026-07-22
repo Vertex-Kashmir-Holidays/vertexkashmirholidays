@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
 import { z } from "zod";
 import { FaqStatus, FaqPlacement } from "@prisma/client";
 
@@ -29,36 +30,34 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("faqs", "view");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const faq = await prisma.faq.findUnique({
-    where: { id },
-    include: {
-      category: true,
-      tours: { select: { id: true, title: true } },
-      destinations: { select: { id: true, name: true } },
-      blogs: { select: { id: true, title: true } },
-      campaigns: { select: { id: true, name: true } },
-      activities: { select: { id: true, name: true } },
-    },
-  });
-  if (!faq) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(faq);
+  const faq = await requireExisting(() =>
+    prisma.faq.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        tours: { select: { id: true, title: true } },
+        destinations: { select: { id: true, name: true } },
+        blogs: { select: { id: true, title: true } },
+        campaigns: { select: { id: true, name: true } },
+        activities: { select: { id: true, name: true } },
+      },
+    }),
+  );
+  if (!faq.ok) return faq.response;
+  return NextResponse.json(faq.data);
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("faqs", "edit");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.faq.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const existing = await requireExisting(() => prisma.faq.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  const body = await parseJsonBody(req);
+  if (!body.ok) return body.response;
+  const parsed = parseWithSchema(patchSchema, body.data);
+  if (!parsed.ok) return parsed.response;
 
   const {
     tourIds,
@@ -97,10 +96,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
     return NextResponse.json(updated);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002"))
-      return NextResponse.json({ error: "A FAQ with this slug already exists" }, { status: 409 });
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return mapPrismaError(err, "A FAQ with this slug already exists", "Update failed");
   }
 }
 
@@ -108,8 +104,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("faqs", "delete");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.faq.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const existing = await requireExisting(() => prisma.faq.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
   await prisma.faq.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

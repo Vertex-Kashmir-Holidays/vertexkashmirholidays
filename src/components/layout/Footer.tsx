@@ -9,6 +9,8 @@ import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon } from "@/compon
 import { trackWhatsappClick, trackPhoneClick, trackEmailClick } from "@/lib/analytics";
 import { formatBusinessAddress } from "@/lib/businessAddress";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
+import { Container } from "@/components/ui/layout/Container";
+import { openCookiePreferences } from "@/lib/cookieConsent";
 
 // The three category sitelinks we actively want Google to pick up. Rendered
 // only if that category actually has a published tour (checked via
@@ -68,7 +70,7 @@ export function Footer({
 
   return (
     <footer className="relative z-[2] mt-16">
-      <div className="mx-auto max-w-[1300px] px-6">
+      <Container>
         <div className="sweep glass-strong relative overflow-hidden rounded-4xl p-10 text-center shadow-glass">
           <div className="pointer-events-none absolute -left-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-3xl"></div>
           <div aria-hidden className="orb orb-gold absolute -right-16 -bottom-16 h-64 w-64"></div>
@@ -102,7 +104,7 @@ export function Footer({
             </Link>
           </div>
         </div>
-      </div>
+      </Container>
 
       <div className="mt-16 border-t border-border bg-card/60 backdrop-blur">
         <div className="mx-auto grid max-w-[1300px] gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
@@ -274,6 +276,15 @@ export function Footer({
                     </Link>
                   </li>
                   <li>
+                    <button
+                      type="button"
+                      onClick={openCookiePreferences}
+                      className="transition hover:text-primary"
+                    >
+                      Cookie Preferences
+                    </button>
+                  </li>
+                  <li>
                     <Link href="/faq" className="transition hover:text-primary">
                       FAQs
                     </Link>
@@ -343,7 +354,7 @@ export function Footer({
           </div>
         </div>
         <div className="border-t border-border pt-5 pb-20 lg:pb-5">
-          <div className="mx-auto max-w-[1300px] px-6">
+          <Container>
             <p className="text-[16px] text-muted-foreground">
               © {new Date().getFullYear()} {siteName}
               {settings?.legalName && settings.legalName !== siteName
@@ -354,7 +365,7 @@ export function Footer({
                 : " · J&K Tourism Licensed"}
               {" · "}Razorpay Secured Payments
             </p>
-          </div>
+          </Container>
         </div>
       </div>
     </footer>

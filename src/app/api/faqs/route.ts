@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { generateFaqSlug } from "@/lib/faqs";
+import { parseJsonBody, parseWithSchema, mapPrismaError } from "@/lib/api/route-helpers";
 import { z } from "zod";
 import { FaqStatus, FaqPlacement } from "@prisma/client";
 
@@ -30,14 +31,10 @@ export async function POST(request: Request) {
   const guard = await requirePermission("faqs", "create");
   if (guard instanceof NextResponse) return guard;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  const body = await parseJsonBody(request);
+  if (!body.ok) return body.response;
+  const parsed = parseWithSchema(createSchema, body.data);
+  if (!parsed.ok) return parsed.response;
 
   const { tourIds, destinationIds, blogIds, campaignIds, activityIds, lastReviewedAt, ...rest } =
     parsed.data;
@@ -60,10 +57,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(faq, { status: 201 });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002"))
-      return NextResponse.json({ error: "A FAQ with this slug already exists" }, { status: 409 });
-    return NextResponse.json({ error: "Create failed" }, { status: 500 });
+    return mapPrismaError(err, "A FAQ with this slug already exists", "Create failed");
   }
 }
 

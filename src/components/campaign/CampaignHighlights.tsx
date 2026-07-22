@@ -3,7 +3,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Tilt3D } from "@/components/ui/3DTilt";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
 import { imgSrc } from "@/lib/placeholder";
 import type { CampaignHighlight } from "@/types/campaign";
 

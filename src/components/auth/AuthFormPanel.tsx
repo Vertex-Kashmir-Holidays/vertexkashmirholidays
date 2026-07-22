@@ -19,7 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { Logo } from "@/components/brand/Logo";
 import { PhoneInput } from "@/components/auth/PhoneInput";
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
