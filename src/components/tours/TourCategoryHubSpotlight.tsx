@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { TourCard } from "@/components/ui/TourCard";
+import { TourCard } from "@/components/ui/organisms/TourCard";
 import { formatINR } from "@/lib/accents";
 import { imgSrc } from "@/lib/placeholder";
 

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { isStaff, type Role } from "@/lib/rbac";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
 
 const STAFF_ROLE_OPTIONS: Role[] = ["ADMIN", "SALES", "EDITOR"];
 
@@ -456,24 +457,11 @@ function DeleteModal({
   const who = user.name ?? user.email;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-foreground">Delete {who}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md space-y-4">
+        <DialogHeader>
+          <DialogTitle>Delete {who}</DialogTitle>
+        </DialogHeader>
 
         {!confirmPermanent ? (
           <>
@@ -540,8 +528,8 @@ function DeleteModal({
             </div>
           </>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

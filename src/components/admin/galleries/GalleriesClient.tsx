@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film, ImageOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
-import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
+import { GalleryLightbox } from "@/components/ui/organisms/GalleryLightbox";
 import { uploadVideoDirect } from "@/lib/uploadVideoDirect";
 
 type MediaType = "IMAGE" | "VIDEO";

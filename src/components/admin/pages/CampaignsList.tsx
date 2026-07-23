@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/atoms/badge";
 
 interface CampaignRow {
   id: string;
@@ -49,16 +49,9 @@ export function CampaignsList({ items, canDelete }: { items: CampaignRow[]; canD
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <p className="truncate text-sm font-bold text-foreground">{c.name}</p>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[12px] font-bold",
-                  c.published
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
+              <Badge variant={c.published ? "success" : "default"}>
                 {c.published ? "Published" : "Draft"}
-              </span>
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">/adventures/{c.slug}</p>
           </div>

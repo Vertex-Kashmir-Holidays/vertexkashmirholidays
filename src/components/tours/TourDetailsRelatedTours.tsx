@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { TourCard } from "@/components/ui/TourCard";
+import { TourCard } from "@/components/ui/organisms/TourCard";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 
 interface RelatedTourCard {

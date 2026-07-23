@@ -1,7 +1,7 @@
 // src/components/sections/DestinationDetailGallery.tsx
 "use client";
 
-import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
+import { GalleryLightbox } from "@/components/ui/organisms/GalleryLightbox";
 import { imgSrc } from "@/lib/placeholder";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";

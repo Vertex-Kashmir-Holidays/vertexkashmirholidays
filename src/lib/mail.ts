@@ -1159,6 +1159,9 @@ interface CareersApplicationData {
   email: string;
   phone: string;
   experience: string;
+  currentCompany?: string;
+  noticePeriod?: string;
+  coverLetter?: string;
   resumeUrl: string;
   submittedAt: string;
 }
@@ -1172,7 +1175,10 @@ export function careersApplicationText(data: CareersApplicationData): string {
     `Phone: ${data.phone}`,
   ];
   lines.push(`Experience: ${data.experience}`);
+  if (data.currentCompany) lines.push(`Current Company: ${data.currentCompany}`);
+  if (data.noticePeriod) lines.push(`Notice Period: ${data.noticePeriod}`);
   lines.push("", `Resume: ${data.resumeUrl}`);
+  if (data.coverLetter) lines.push("", `Cover Letter:`, data.coverLetter);
   lines.push("", `Submitted: ${data.submittedAt}`);
   return lines.join("\n");
 }
@@ -1191,6 +1197,8 @@ ${detailRow("Name", data.fullName)}
 ${detailRow("Email", data.email)}
 ${detailRow("Phone", data.phone)}
 ${detailRow("Experience", data.experience)}
+${data.currentCompany ? detailRow("Current Company", data.currentCompany) : ""}
+${data.noticePeriod ? detailRow("Notice Period", data.noticePeriod) : ""}
 ${detailRow("Submitted", data.submittedAt)}
              </table>
            </td>
@@ -1199,7 +1207,17 @@ ${detailRow("Submitted", data.submittedAt)}
            <td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <a href="${escapeHtml(data.resumeUrl)}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">Download Resume</a>
            </td>
-         </tr>`;
+         </tr>
+         ${
+           data.coverLetter
+             ? `<tr>
+           <td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#222222">Cover Letter</p>
+             <p style="margin:0;font-size:13px;line-height:1.6;color:#444444;white-space:pre-wrap">${escapeHtml(data.coverLetter)}</p>
+           </td>
+         </tr>`
+             : ""
+         }`;
 
   return emailShell({
     title: "New Job Application — Vertex Kashmir Holidays",

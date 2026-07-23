@@ -3,6 +3,7 @@
 
 import { motion } from "framer-motion";
 import { renderMint } from "@/lib/accents";
+import { fadeUp, fadeUpSm, viewportOnce } from "@/lib/motion";
 import type { AboutSectionHeading, AboutValueData } from "@/types/about";
 
 interface AboutValuesProps {
@@ -17,9 +18,10 @@ export function AboutValues({ heading, values }: AboutValuesProps) {
     <section className="mx-auto mt-14 max-w-[1300px] px-6">
       <motion.div
         className="rounded-2xl bg-muted p-7 lg:p-9"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
         transition={{ duration: 0.5 }}
       >
         <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
@@ -37,9 +39,10 @@ export function AboutValues({ heading, values }: AboutValuesProps) {
               <motion.div
                 key={val.id}
                 className="rounded-xl bg-card p-5 text-center shadow-soft transition hover:-translate-y-0.5 hover:shadow-card"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                variants={fadeUpSm}
+                initial="hidden"
+                whileInView="visible"
+                viewport={viewportOnce}
                 transition={{ delay: i * 0.05 }}
               >
                 <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">

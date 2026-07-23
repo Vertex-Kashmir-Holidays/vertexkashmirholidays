@@ -165,6 +165,7 @@ export default async function AboutPage() {
           businessName: settings?.legalName ?? settings?.siteName ?? null,
           registrationNumber: settings?.tourismRegNumber ?? null,
           authority: settings?.tourismRegAuthority ?? null,
+          gstNumber: settings?.gstNumber ?? null,
         }}
         certifications={certifications.map((c) => ({
           id: c.id,

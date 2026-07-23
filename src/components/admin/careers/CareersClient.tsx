@@ -4,8 +4,13 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, MapPin, CheckCircle2, Clock, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, CheckCircle2, Clock, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/atoms/tooltip";
+import { EmptyState } from "@/components/ui/molecules/empty-state";
+import { PageHeader } from "@/components/ui/molecules/page-header";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
 import type { EmploymentType } from "@prisma/client";
 import { JobApplicationsModal } from "./JobApplicationsModal";
 
@@ -92,34 +97,30 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display font-extrabold text-foreground text-xl">Careers</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">Manage job openings</p>
-        </div>
-        {canCreate && (
-          <Link
-            href="/admin/careers/new"
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            New Job
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Careers"
+        description="Manage job openings"
+        action={
+          canCreate && (
+            <Link
+              href="/admin/careers/new"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              New Job
+            </Link>
+          )
+        }
+      />
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
         <div className="flex items-center gap-3 p-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search jobs..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
-            />
-          </div>
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search jobs..."
+            className="max-w-sm"
+          />
           <p className="text-xs text-muted-foreground shrink-0">
             {filtered.length} of {initialJobs.length}
           </p>
@@ -142,8 +143,10 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search ? "No jobs match your search." : "No jobs yet. Create your first one!"}
+                  <td colSpan={5}>
+                    <EmptyState
+                      title={search ? "No jobs match your search." : "No jobs yet. Create your first one!"}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -208,56 +211,53 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
                     </td>
 
                     <td className="px-4 py-3">
-                      {confirmDelete === job.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleDelete(job.id)}
-                            disabled={isPending}
-                            className="text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg transition-colors"
-                          >
-                            {isPending ? "…" : "Delete"}
-                          </button>
-                          <button
-                            onClick={() => setConfirmDelete(null)}
-                            className="text-[12px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setViewingJob(job)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                            title="View Applications"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          {canEdit && (
-                            <Link
-                              href={`/admin/careers/${job.id}/edit`}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Link>
-                          )}
-                          {canDelete && (
+                      <InlineConfirmActions
+                        confirming={confirmDelete === job.id}
+                        onConfirm={() => handleDelete(job.id)}
+                        onCancel={() => setConfirmDelete(null)}
+                        pending={isPending}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <button
-                              onClick={() => setConfirmDelete(job.id)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
-                              title="Delete"
+                              onClick={() => setViewingJob(job)}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Eye className="w-3.5 h-3.5" />
                             </button>
-                          )}
-                          {!canEdit && !canDelete && (
-                            <span className="text-[12px] text-muted-foreground italic">
-                              View only
-                            </span>
-                          )}
-                        </div>
-                      )}
+                          </TooltipTrigger>
+                          <TooltipContent>View Applications</TooltipContent>
+                        </Tooltip>
+                        {canEdit && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                href={`/admin/careers/${job.id}/edit`}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {canDelete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => setConfirmDelete(job.id)}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {!canEdit && !canDelete && (
+                          <span className="text-[12px] text-muted-foreground italic">View only</span>
+                        )}
+                      </InlineConfirmActions>
                     </td>
                   </tr>
                 ))

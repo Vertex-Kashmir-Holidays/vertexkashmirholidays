@@ -6,7 +6,7 @@ import { ImageIcon, Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { STOCK_IMAGES } from "@/types/itinerary";
 import { cn } from "@/lib/utils";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
 
 interface ImagePickerProps {
   value: string;

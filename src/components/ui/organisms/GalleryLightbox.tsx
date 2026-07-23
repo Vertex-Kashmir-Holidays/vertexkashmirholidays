@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PLACEHOLDER_IMAGE } from "@/lib/placeholder";
-import { ImageDimensionBadge } from "./ImageDimensionBadge";
+import { ImageDimensionBadge } from "../atoms/ImageDimensionBadge";
 
 export interface LightboxImage {
   src: string;

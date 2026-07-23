@@ -44,3 +44,7 @@ prisma/dev.db-journal
 .lighthouseci*
 
 .claude
+
+
+*storybook.log
+storybook-static

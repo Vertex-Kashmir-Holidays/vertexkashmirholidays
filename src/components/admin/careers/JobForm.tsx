@@ -2,13 +2,16 @@
 
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { stringifyList } from "@/lib/tours/content";
 import { EmploymentType } from "@prisma/client";
+import { Input } from "@/components/ui/atoms/input";
+import { Label } from "@/components/ui/atoms/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/organisms/select";
 
 const listItemSchema = z.object({ value: z.string() });
 
@@ -243,14 +246,8 @@ export function JobForm({ defaults }: Props) {
             <h3 className="font-bold text-foreground text-sm">Basic Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Title *
-                </label>
-                <input
-                  {...register("title")}
-                  className={inputCls}
-                  placeholder="e.g. Sales Executive"
-                />
+                <Label>Title *</Label>
+                <Input {...register("title")} placeholder="e.g. Sales Executive" />
                 {errors.title && (
                   <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
                     {errors.title.message}
@@ -258,12 +255,10 @@ export function JobForm({ defaults }: Props) {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Slug *
-                </label>
-                <input
+                <Label>Slug *</Label>
+                <Input
                   {...register("slug")}
-                  className={`${inputCls} font-mono`}
+                  className="font-mono"
                   placeholder="e.g. sales-executive"
                 />
                 {errors.slug && (
@@ -275,14 +270,8 @@ export function JobForm({ defaults }: Props) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Department *
-                </label>
-                <input
-                  {...register("department")}
-                  className={inputCls}
-                  placeholder="e.g. Sales"
-                />
+                <Label>Department *</Label>
+                <Input {...register("department")} placeholder="e.g. Sales" />
                 {errors.department && (
                   <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
                     {errors.department.message}
@@ -290,28 +279,31 @@ export function JobForm({ defaults }: Props) {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Employment Type *
-                </label>
-                <select {...register("employmentType")} className={inputCls}>
-                  {EMPLOYMENT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <Label>Employment Type *</Label>
+                <Controller
+                  control={control}
+                  name="employmentType"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMPLOYMENT_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Experience *
-                </label>
-                <input
-                  {...register("experience")}
-                  className={inputCls}
-                  placeholder="e.g. 1-3 years"
-                />
+                <Label>Experience *</Label>
+                <Input {...register("experience")} placeholder="e.g. 1-3 years" />
                 {errors.experience && (
                   <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
                     {errors.experience.message}
@@ -319,14 +311,8 @@ export function JobForm({ defaults }: Props) {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Location *
-                </label>
-                <input
-                  {...register("location")}
-                  className={inputCls}
-                  placeholder="e.g. Srinagar, J&K"
-                />
+                <Label>Location *</Label>
+                <Input {...register("location")} placeholder="e.g. Srinagar, J&K" />
                 {errors.location && (
                   <p className="text-[12px] text-red-500 dark:text-red-400 mt-1">
                     {errors.location.message}
@@ -335,12 +321,9 @@ export function JobForm({ defaults }: Props) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Salary
-              </label>
-              <input
+              <Label>Salary</Label>
+              <Input
                 {...register("salary")}
-                className={inputCls}
                 placeholder="e.g. ₹25,000 - ₹35,000/month (optional)"
               />
             </div>

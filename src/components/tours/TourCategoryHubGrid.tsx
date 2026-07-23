@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import { ArrowRight } from "lucide-react";
-import { Tilt3D } from "@/components/ui/3DTilt";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
 import { imgSrc } from "@/lib/placeholder";
 
 export interface TourCategoryCardData {

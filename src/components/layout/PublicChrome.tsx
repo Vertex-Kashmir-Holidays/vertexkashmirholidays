@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import type { TourCategory } from "@prisma/client";
 import { Footer, type FooterSettings } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
-import { AuroraBackground } from "@/components/ui/AuroraBackground";
+import { AuroraBackground } from "@/components/ui/effects/AuroraBackground";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { BannerStrip, type StripBannerData } from "@/components/public/BannerStrip";
 import { PromoBannerSlot, type SlotBanner } from "@/components/public/PromoBannerSlot";

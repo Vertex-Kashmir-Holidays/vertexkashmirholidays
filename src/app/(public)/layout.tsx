@@ -1,14 +1,17 @@
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/atoms/tooltip";
 import { prisma } from "@/lib/prisma";
-import { getSiteSettings, buildFooterSettings } from "@/lib/siteSettings";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
+import { CookieConsentManager } from "@/components/providers/CookieConsentManager";
 import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
 import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
+import type { FooterSettings } from "@/components/layout/Footer";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const [s, strip, promos, categoryRows, homeContent] = await Promise.all([
@@ -43,7 +46,30 @@ export default async function PublicLayout({ children }: { children: React.React
     pages: parseBannerPages(b.pages),
   }));
 
-  const settings = buildFooterSettings(s);
+  const settings: FooterSettings | null = s
+    ? {
+        siteName: s.siteName,
+        siteTagline: s.siteTagline,
+        siteEmail: s.siteEmail,
+        sitePhone: s.sitePhone,
+        siteAddress: s.siteAddress,
+        whatsapp: s.whatsapp,
+        facebook: s.facebook,
+        instagram: s.instagram,
+        twitter: s.twitter,
+        youtube: s.youtube,
+        googleReviews: s.googleReviews,
+        tripadvisor: s.tripadvisor,
+        legalName: s.legalName,
+        tourismRegNumber: s.tourismRegNumber,
+        gstNumber: s.gstNumber,
+        addressLine1: s.addressLine1,
+        addressCity: s.addressCity,
+        addressState: s.addressState,
+        addressPincode: s.addressPincode,
+        addressCountry: s.addressCountry,
+      }
+    : null;
 
   // Sitewide Organization JSON-LD — injected once here (not per-page) so every
   // public page's own JSON-LD graph can resolve the "@id" references used by
@@ -80,39 +106,42 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <SiteAnalytics />
-      <SiteSettingsProvider
-        value={{
-          siteName: s?.siteName ?? "Vertex Kashmir Holidays",
-          whatsapp: s?.whatsapp ?? null,
-          sitePhone: s?.sitePhone ?? null,
-          showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
-          announcementMessage: s?.announcementMessage ?? null,
-          formAvatars,
-        }}
-      >
-        <JsonLd data={organizationJsonLd} />
-        <PublicChrome
-          settings={settings}
-          promoBanners={promoBanners}
-          tourCategories={tourCategories}
-          strip={
-            strip
-              ? {
-                  id: strip.id,
-                  title: strip.title,
-                  body: strip.body,
-                  ctaLabel: strip.ctaLabel,
-                  ctaUrl: strip.ctaUrl,
-                }
-              : null
-          }
+      <TooltipProvider delayDuration={200}>
+        <SiteAnalytics />
+        <CookieConsentManager />
+        <SiteSettingsProvider
+          value={{
+            siteName: s?.siteName ?? "Vertex Kashmir Holidays",
+            whatsapp: s?.whatsapp ?? null,
+            sitePhone: s?.sitePhone ?? null,
+            showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
+            announcementMessage: s?.announcementMessage ?? null,
+            formAvatars,
+          }}
         >
-          {children}
-        </PublicChrome>
-        <AnnouncementModal />
-      </SiteSettingsProvider>
-      <Toaster richColors position="top-right" />
+          <JsonLd data={organizationJsonLd} />
+          <PublicChrome
+            settings={settings}
+            promoBanners={promoBanners}
+            tourCategories={tourCategories}
+            strip={
+              strip
+                ? {
+                    id: strip.id,
+                    title: strip.title,
+                    body: strip.body,
+                    ctaLabel: strip.ctaLabel,
+                    ctaUrl: strip.ctaUrl,
+                  }
+                : null
+            }
+          >
+            {children}
+          </PublicChrome>
+          <AnnouncementModal />
+        </SiteSettingsProvider>
+        <Toaster richColors position="top-right" />
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

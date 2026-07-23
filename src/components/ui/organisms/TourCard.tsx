@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Tilt3D } from "./3DTilt";
+import { fadeUpLg, viewportOnce } from "@/lib/motion";
+import { Tilt3D } from "../effects/3DTilt";
 import { Heart, Car, Hotel, Utensils, Sailboat, Calendar } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
@@ -69,9 +70,10 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      variants={fadeUpLg}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
       transition={{ duration: 0.5, delay: index * 0.05 }}
     >
       <Tilt3D intensity={isHome ? 8 : 6}>

@@ -2,7 +2,10 @@
 
 import { Fragment, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { X, Download, ChevronDown, ChevronUp, Trash2, Loader2, Inbox } from "lucide-react";
+import { Download, ChevronDown, ChevronUp, Trash2, Loader2, Inbox } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/organisms/dialog";
+import { EmptyState } from "@/components/ui/molecules/empty-state";
+import { ErrorState } from "@/components/ui/molecules/error-state";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import type { CareersApplicationRecord } from "@/lib/careers/applications";
@@ -20,20 +23,25 @@ interface Props {
 
 export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Props) {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [applications, setApplications] = useState<Application[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
     (async () => {
       try {
         const res = await fetch(`/api/careers/${jobId}/applications`);
-        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error();
+        const data = await res.json();
         if (!cancelled) setApplications(data.applications ?? []);
       } catch {
-        if (!cancelled) toast.error("Could not load applications.");
+        if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -41,7 +49,7 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
     return () => {
       cancelled = true;
     };
-  }, [jobId]);
+  }, [jobId, reloadKey]);
 
   const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(
     applications,
@@ -76,38 +84,28 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-4xl max-h-[85vh] flex-col rounded-2xl border border-border bg-card shadow-xl"
-      >
-        <div className="flex items-center justify-between border-b border-border p-5">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[85vh] max-w-4xl flex-col gap-0 p-0">
+        <DialogHeader className="border-b border-border p-5">
           <div className="min-w-0">
-            <h3 className="font-display font-bold text-foreground">Applications</h3>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{jobTitle}</p>
+            <DialogTitle>Applications</DialogTitle>
+            <DialogDescription className="mt-0.5 truncate">{jobTitle}</DialogDescription>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading applications…
             </div>
+          ) : loadError ? (
+            <ErrorState
+              title="Could not load applications."
+              className="py-16"
+              onRetry={() => setReloadKey((k) => k + 1)}
+            />
           ) : applications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-              <Inbox className="h-8 w-8" />
-              No applications yet.
-            </div>
+            <EmptyState icon={Inbox} title="No applications yet." className="py-16" />
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -196,10 +194,26 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
                       {isExpanded && (
                         <tr className="bg-muted/30">
                           <td colSpan={5} className="px-4 py-4">
-                            <dl className="grid grid-cols-2 gap-4 text-xs">
+                            <dl className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
                               <div>
                                 <dt className="font-semibold text-muted-foreground">Experience</dt>
                                 <dd className="mt-0.5 text-foreground">{app.experience || "—"}</dd>
+                              </div>
+                              <div>
+                                <dt className="font-semibold text-muted-foreground">
+                                  Current Company
+                                </dt>
+                                <dd className="mt-0.5 text-foreground">
+                                  {app.currentCompany || "—"}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt className="font-semibold text-muted-foreground">
+                                  Notice Period
+                                </dt>
+                                <dd className="mt-0.5 text-foreground">
+                                  {app.noticePeriod || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt className="font-semibold text-muted-foreground">Submitted</dt>
@@ -211,6 +225,16 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
                                 </dd>
                               </div>
                             </dl>
+                            {app.coverLetter && (
+                              <div className="mt-3">
+                                <p className="text-xs font-semibold text-muted-foreground">
+                                  Cover Letter
+                                </p>
+                                <p className="mt-1 whitespace-pre-line text-xs text-foreground">
+                                  {app.coverLetter}
+                                </p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}
@@ -231,7 +255,7 @@ export function JobApplicationsModal({ jobId, jobTitle, canDelete, onClose }: Pr
           onPageSize={changePageSize}
           noun="applications"
         />
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

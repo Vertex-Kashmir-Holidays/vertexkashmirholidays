@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema } from "@/lib/api/route-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -47,17 +48,11 @@ export async function POST(request: Request) {
   const guard = await requirePermission("banners", "create");
   if (guard instanceof NextResponse) return guard;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await parseJsonBody(request);
+  if (!body.ok) return body.response;
 
-  const parsed = bannerSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  }
+  const parsed = parseWithSchema(bannerSchema, body.data);
+  if (!parsed.ok) return parsed.response;
 
   const d = parsed.data;
   const banner = await prisma.banner.create({

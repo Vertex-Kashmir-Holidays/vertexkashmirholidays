@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, Megaphone, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/atoms/badge";
 import { cn } from "@/lib/utils";
 
 type BannerType = "STRIP" | "PROMO";
@@ -94,16 +95,7 @@ export function BannerList({
 
   // Shared presentational bits so the desktop table and mobile cards stay in sync.
   const typeBadge = (t: BannerType) => (
-    <span
-      className={cn(
-        "inline-block shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold",
-        t === "STRIP"
-          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-          : "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-      )}
-    >
-      {t}
-    </span>
+    <Badge variant={t === "STRIP" ? "success" : "warning"}>{t}</Badge>
   );
 
   const toggle = (b: BannerRow) => (

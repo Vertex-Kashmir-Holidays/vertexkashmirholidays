@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { TourCard } from "@/components/ui/TourCard";
+import { TourCard } from "@/components/ui/organisms/TourCard";
 import { formatINR, renderAccents } from "@/lib/accents";
+import { fadeUp, fadeUpLg, fadeIn, fadeRight, viewportOnce } from "@/lib/motion";
 import type { HomeTourData, SectionHeading } from "@/types/home";
 
 interface PackagesSectionProps {
@@ -35,9 +36,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
         <div>
           <motion.p
             className="rv text-[12px] font-bold tracking-[0.22em] text-primary"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportOnce}
             transition={{ duration: 0.5 }}
           >
             {heading.kicker}
@@ -45,9 +47,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
           <motion.h2
             className="rv h-display mt-3 text-[18px] font-bold text-foreground"
             style={{ "--rd": "0.08s" } as React.CSSProperties}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            variants={fadeUpLg}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportOnce}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             {renderAccents(heading.title)}
@@ -56,9 +59,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             <motion.p
               className="rv mt-3 max-w-md text-sm text-muted-foreground"
               style={{ "--rd": "0.14s" } as React.CSSProperties}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
+              variants={fadeIn}
+              initial="hidden"
+              whileInView="visible"
+              viewport={viewportOnce}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               {heading.subtitle}
@@ -67,9 +71,10 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
         </div>
         {heading.ctaLabel && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            variants={fadeRight}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportOnce}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Link

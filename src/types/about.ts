@@ -57,6 +57,7 @@ export interface LicensesData {
   businessName: string | null;
   registrationNumber: string | null;
   authority: string | null;
+  gstNumber: string | null;
 }
 
 export interface TeamMemberData {

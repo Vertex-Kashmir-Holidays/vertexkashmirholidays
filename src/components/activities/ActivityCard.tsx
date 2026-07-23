@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Tilt3D } from "@/components/ui/3DTilt";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
 import { MapPin, Clock, ArrowRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";

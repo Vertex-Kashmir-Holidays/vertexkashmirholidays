@@ -1,7 +1,7 @@
 // src/components/sections/DestinationDetailTours.tsx
 "use client";
 
-import { TourCard } from "@/components/ui/TourCard";
+import { TourCard } from "@/components/ui/organisms/TourCard";
 import { motion } from "framer-motion";
 
 export interface DestinationTour {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema } from "@/lib/api/route-helpers";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -43,14 +44,10 @@ const createSchema = z.object({
 export async function POST(request: Request) {
   const guard = await requirePermission("galleries", "create");
   if (guard instanceof NextResponse) return guard;
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  const body = await parseJsonBody(request);
+  if (!body.ok) return body.response;
+  const parsed = parseWithSchema(createSchema, body.data);
+  if (!parsed.ok) return parsed.response;
   const item = await prisma.gallery.create({ data: parsed.data });
   return NextResponse.json(item, { status: 201 });
 }

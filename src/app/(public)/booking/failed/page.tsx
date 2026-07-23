@@ -3,7 +3,7 @@ import Link from "next/link";
 import { XCircle, RefreshCcw, CreditCard, Headphones, ArrowRight, HelpCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 
 export const metadata: Metadata = {
   title: "Payment Failed — Vertex Kashmir Holidays",

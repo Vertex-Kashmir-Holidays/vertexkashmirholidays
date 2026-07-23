@@ -3,6 +3,7 @@
 
 import { motion } from "framer-motion";
 import { BadgeCheck } from "lucide-react";
+import { fadeUp, fadeUpSm, viewportOnce } from "@/lib/motion";
 import type { CertificationData, LicensesData } from "@/types/about";
 
 interface AboutCertificationsProps {
@@ -15,15 +16,16 @@ interface AboutCertificationsProps {
 // SiteSettings data (never duplicated into the Certification list model
 // below, which exists only for additional future-ready credentials).
 export function AboutCertifications({ licenses, certifications }: AboutCertificationsProps) {
-  if (!licenses.registrationNumber) return null;
+  if (!licenses.registrationNumber && !licenses.gstNumber) return null;
 
   return (
     <section className="mx-auto mt-14 max-w-[1300px] px-6">
       <motion.div
         className="rounded-2xl bg-muted p-7 lg:p-9"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
         transition={{ duration: 0.5 }}
       >
         <div className="grid gap-8 lg:grid-cols-[230px_1fr]">
@@ -39,32 +41,52 @@ export function AboutCertifications({ licenses, certifications }: AboutCertifica
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl bg-card p-5 text-center shadow-soft sm:col-span-2 lg:col-span-2">
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
-                <BadgeCheck className="h-6 w-6" strokeWidth={1.7} />
-              </span>
-              <p className="mt-4 text-[16px] font-bold">J&amp;K Tourism Registration</p>
-              {licenses.businessName && (
-                <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-                  {licenses.businessName}
+            {licenses.registrationNumber && (
+              <div className="rounded-xl bg-card p-5 text-center shadow-soft sm:col-span-2 lg:col-span-2">
+                <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
+                  <BadgeCheck className="h-6 w-6" strokeWidth={1.7} />
+                </span>
+                <p className="mt-4 text-[16px] font-bold">J&amp;K Tourism Registration</p>
+                {licenses.businessName && (
+                  <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                    {licenses.businessName}
+                  </p>
+                )}
+                <p className="mt-1 text-[14px] font-bold text-primary">
+                  {licenses.registrationNumber}
                 </p>
-              )}
-              <p className="mt-1 text-[14px] font-bold text-primary">
-                {licenses.registrationNumber}
-              </p>
-              {licenses.authority && (
+                {licenses.authority && (
+                  <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                    Issued by {licenses.authority}
+                  </p>
+                )}
+              </div>
+            )}
+            {licenses.gstNumber && (
+              <div className="rounded-xl bg-card p-5 text-center shadow-soft sm:col-span-2 lg:col-span-2">
+                <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
+                  <BadgeCheck className="h-6 w-6" strokeWidth={1.7} />
+                </span>
+                <p className="mt-4 text-[16px] font-bold">GST Registration</p>
+                {licenses.businessName && (
+                  <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                    {licenses.businessName}
+                  </p>
+                )}
+                <p className="mt-1 text-[14px] font-bold text-primary">{licenses.gstNumber}</p>
                 <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-                  Issued by {licenses.authority}
+                  Issued by Government of India
                 </p>
-              )}
-            </div>
+              </div>
+            )}
             {certifications.map((cert, i) => (
               <motion.div
                 key={cert.id}
                 className="rounded-xl bg-card p-5 text-center shadow-soft transition hover:-translate-y-0.5 hover:shadow-card"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                variants={fadeUpSm}
+                initial="hidden"
+                whileInView="visible"
+                viewport={viewportOnce}
                 transition={{ delay: i * 0.05 }}
               >
                 <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">

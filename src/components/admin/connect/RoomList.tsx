@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Users, MessageSquare, Plus, ChevronDown } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/atoms/avatar";
+import { ErrorState } from "@/components/ui/molecules/error-state";
 import type { ConnectRoom } from "./hooks/useRoomList";
 import type { PresenceMap, PresenceStatus } from "./hooks/usePresence";
 import { NewGroupDialog } from "./NewGroupDialog";
@@ -16,6 +18,9 @@ interface StaffUser {
 interface Props {
   rooms: ConnectRoom[];
   loading: boolean;
+  /** Only meaningful when `rooms` is empty — see useRoomList's error comment. */
+  error?: boolean;
+  onRetry?: () => void;
   selectedRoomId: string | null;
   currentUserId: string;
   staffUsers: StaffUser[];
@@ -59,14 +64,12 @@ function UserAvatar({
   const src = avatarUrl ?? image;
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" className="rounded-full object-cover w-full h-full" />
-      ) : (
-        <div className="rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-xs w-full h-full">
+      <Avatar className="h-full w-full">
+        <AvatarImage src={src ?? undefined} alt="" />
+        <AvatarFallback className="text-xs font-semibold">
           {(name ?? "?").charAt(0).toUpperCase()}
-        </div>
-      )}
+        </AvatarFallback>
+      </Avatar>
       {presenceStatus && presenceStatus !== "OFFLINE" && <PresenceDot status={presenceStatus} />}
     </div>
   );
@@ -173,6 +176,8 @@ function RoomButton({
 export function RoomList({
   rooms,
   loading,
+  error,
+  onRetry,
   selectedRoomId,
   currentUserId,
   staffUsers,
@@ -218,7 +223,15 @@ export function RoomList({
             <div className="p-4 text-sm text-muted-foreground">Loading…</div>
           )}
 
-          {!loading && rooms.length === 0 && (
+          {!loading && error && rooms.length === 0 && (
+            <ErrorState
+              title="Couldn't load conversations."
+              className="py-8"
+              onRetry={onRetry}
+            />
+          )}
+
+          {!loading && !error && rooms.length === 0 && (
             <div className="p-4 text-sm text-muted-foreground">
               No conversations yet. Start a DM or create a group.
             </div>
