@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, RotateCcw } from 'lucide-react';
-import { PriceRangeSlider } from '@/components/ui/PriceRangeSlider';
-import { ActivityCard, type ActivityCardData } from '@/components/activities/ActivityCard';
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Search, RotateCcw } from "lucide-react";
+import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
+import { ActivityCard, type ActivityCardData } from "@/components/activities/ActivityCard";
 
 const PRICE_STEP = 1000;
 const PAGE_SIZE = 9;
 
-type SortOption = 'popular' | 'price-asc' | 'price-desc';
+type SortOption = "popular" | "price-asc" | "price-desc";
 const sortLabels: Record<SortOption, string> = {
-  popular: 'Popular',
-  'price-asc': 'Price: Low to High',
-  'price-desc': 'Price: High to Low',
+  popular: "Popular",
+  "price-asc": "Price: Low to High",
+  "price-desc": "Price: High to Low",
 };
 
 export function ActivitiesPageClient({ activities }: { activities: ActivityCardData[] }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
-  const [sort, setSort] = useState<SortOption>('popular');
+  const [sort, setSort] = useState<SortOption>("popular");
   const [page, setPage] = useState(1);
 
   // Price bounds from priced activities only, snapped to the ₹1000 step.
@@ -39,15 +39,14 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
     const [lo, hi] = priceRange ?? [priceBounds.min, priceBounds.max];
     const result = activities.filter((a) => {
       const searchMatch =
-        !q ||
-        a.name.toLowerCase().includes(q) ||
-        (a.location ?? '').toLowerCase().includes(q);
+        !q || a.name.toLowerCase().includes(q) || (a.location ?? "").toLowerCase().includes(q);
       // Activities without a price ("On request") are never filtered out by price.
       const priceMatch = a.price == null || (a.price >= lo && a.price <= hi);
       return searchMatch && priceMatch;
     });
-    if (sort === 'price-asc') result.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
-    if (sort === 'price-desc') result.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
+    if (sort === "price-asc") result.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+    if (sort === "price-desc")
+      result.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
     return result;
   }, [activities, search, priceRange, priceBounds, sort]);
 
@@ -56,7 +55,7 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const clear = () => {
-    setSearch('');
+    setSearch("");
     setPriceRange(null);
     setPage(1);
   };
@@ -82,7 +81,8 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
 
           <div className="mt-7 border-t border-border pt-6">
             <p className="text-[16px] font-bold">
-              Price Range <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
+              Price Range{" "}
+              <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
             </p>
             <PriceRangeSlider
               min={priceBounds.min}
@@ -109,13 +109,15 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="h-display text-[18px] font-bold">
-              All Activities{' '}
+              All Activities{" "}
               <span className="font-sans text-[14px] font-semibold text-primary">
-                ({filtered.length} {filtered.length === 1 ? 'Activity' : 'Activities'})
+                ({filtered.length} {filtered.length === 1 ? "Activity" : "Activities"})
               </span>
             </h2>
             <div className="flex items-center gap-2.5 text-[14px]">
-              <label htmlFor="act-sort" className="hidden text-muted-foreground sm:inline">Sort by:</label>
+              <label htmlFor="act-sort" className="hidden text-muted-foreground sm:inline">
+                Sort by:
+              </label>
               <select
                 id="act-sort"
                 value={sort}
@@ -126,7 +128,9 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
                 className="cursor-pointer appearance-none rounded-lg border border-border bg-card px-3.5 py-2 font-semibold shadow-soft outline-none transition hover:border-primary"
               >
                 {Object.entries(sortLabels).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -151,16 +155,19 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
           )}
 
           {pageCount > 1 && (
-            <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Pagination">
+            <nav
+              className="mt-10 flex flex-wrap items-center justify-center gap-2"
+              aria-label="Pagination"
+            >
               {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  aria-current={p === currentPage ? 'page' : undefined}
+                  aria-current={p === currentPage ? "page" : undefined}
                   className={`${
                     p === currentPage
-                      ? 'bg-primary text-primary-foreground shadow-card'
-                      : 'border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary'
+                      ? "bg-primary text-primary-foreground shadow-card"
+                      : "border border-border bg-card text-foreground shadow-soft hover:border-primary hover:text-primary"
                   } grid h-10 w-10 place-items-center rounded-full text-[14px] font-semibold transition`}
                 >
                   {p}

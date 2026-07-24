@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { renderAccents } from '@/lib/accents';
-import type { SectionHeading, VideoReviewData } from '@/types/home';
+import { useState } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { renderAccents } from "@/lib/accents";
+import type { SectionHeading, VideoReviewData } from "@/types/home";
 
 interface VideoReviewsSectionProps {
   heading: SectionHeading;
@@ -13,23 +13,24 @@ interface VideoReviewsSectionProps {
 
 // Map a stored video URL to something playable. YouTube/Vimeo links become
 // embeddable iframe URLs; anything else is treated as a direct video file.
-function resolveVideo(url: string): { kind: 'iframe' | 'file'; src: string } {
+function resolveVideo(url: string): { kind: "iframe" | "file"; src: string } {
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
-  if (yt) return { kind: 'iframe', src: `https://www.youtube.com/embed/${yt[1]}?autoplay=1&rel=0` };
+  if (yt) return { kind: "iframe", src: `https://www.youtube.com/embed/${yt[1]}?autoplay=1&rel=0` };
   const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (vimeo) return { kind: 'iframe', src: `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1` };
-  return { kind: 'file', src: url };
+  if (vimeo)
+    return { kind: "iframe", src: `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1` };
+  return { kind: "file", src: url };
 }
 
 export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProps) {
   // Id of the card currently playing inline (only one plays at a time).
   const [playingId, setPlayingId] = useState<string | null>(null);
 
-  const scroll = (direction: 'prev' | 'next') => {
-    const row = document.getElementById('vrow');
+  const scroll = (direction: "prev" | "next") => {
+    const row = document.getElementById("vrow");
     if (!row) return;
     const width = (row.firstElementChild as HTMLElement)?.offsetWidth || 260;
-    row.scrollBy({ left: (direction === 'next' ? 1 : -1) * (width + 20) * 2, behavior: 'smooth' });
+    row.scrollBy({ left: (direction === "next" ? 1 : -1) * (width + 20) * 2, behavior: "smooth" });
   };
 
   if (videos.length === 0) return null;
@@ -38,26 +39,34 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
     <section className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
-          <h2 className="rv h-display mt-3 text-[18px] font-bold text-foreground" style={{ '--rd': '0.08s' } as React.CSSProperties}>
+          <p className="rv text-[12px] font-bold tracking-[0.22em] text-primary">
+            {heading.kicker}
+          </p>
+          <h2
+            className="rv h-display mt-3 text-[18px] font-bold text-foreground"
+            style={{ "--rd": "0.08s" } as React.CSSProperties}
+          >
             {renderAccents(heading.title)}
           </h2>
           {heading.subtitle && (
-            <p className="rv mt-3 max-w-md text-sm text-muted-foreground" style={{ '--rd': '0.14s' } as React.CSSProperties}>
+            <p
+              className="rv mt-3 max-w-md text-sm text-muted-foreground"
+              style={{ "--rd": "0.14s" } as React.CSSProperties}
+            >
               {heading.subtitle}
             </p>
           )}
         </div>
-        <div className="rv flex gap-2" style={{ '--rd': '0.2s' } as React.CSSProperties}>
+        <div className="rv flex gap-2" style={{ "--rd": "0.2s" } as React.CSSProperties}>
           <button
-            onClick={() => scroll('prev')}
+            onClick={() => scroll("prev")}
             aria-label="Previous videos"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={2.2} />
           </button>
           <button
-            onClick={() => scroll('next')}
+            onClick={() => scroll("next")}
             aria-label="Next videos"
             className="glass grid h-11 w-11 place-items-center rounded-full text-foreground transition hover:bg-foreground/10"
           >
@@ -73,11 +82,11 @@ export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProp
             <article
               key={v.id}
               className="rv group relative h-[420px] w-[240px] shrink-0 overflow-hidden rounded-3xl border border-border shadow-card"
-              style={{ '--rd': `${i * 0.07}s` } as React.CSSProperties}
+              style={{ "--rd": `${i * 0.07}s` } as React.CSSProperties}
             >
               {isPlaying && resolved ? (
                 <>
-                  {resolved.kind === 'iframe' ? (
+                  {resolved.kind === "iframe" ? (
                     <iframe
                       className="absolute inset-0 h-full w-full"
                       src={resolved.src}

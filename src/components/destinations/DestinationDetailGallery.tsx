@@ -1,12 +1,12 @@
 // src/components/sections/DestinationDetailGallery.tsx
-'use client';
+"use client";
 
-import { GalleryLightbox } from '@/components/ui/GalleryLightbox';
-import { imgSrc } from '@/lib/placeholder';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { GalleryLightbox } from "@/components/ui/organisms/GalleryLightbox";
+import { imgSrc } from "@/lib/placeholder";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface DestinationDetailGalleryProps {
   name: string;
@@ -27,8 +27,8 @@ export function DestinationDetailGallery({ name, images }: DestinationDetailGall
       else setItemsPerView(3);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const lightboxImages = images.map((src) => ({ src: imgSrc(src), alt: name }));
@@ -40,7 +40,9 @@ export function DestinationDetailGallery({ name, images }: DestinationDetailGall
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - itemsPerView < 0 ? Math.max(0, images.length - itemsPerView) : prev - itemsPerView));
+    setCurrentIndex((prev) =>
+      prev - itemsPerView < 0 ? Math.max(0, images.length - itemsPerView) : prev - itemsPerView,
+    );
   };
 
   const visibleImages = images.slice(currentIndex, currentIndex + itemsPerView);
@@ -128,7 +130,9 @@ export function DestinationDetailGallery({ name, images }: DestinationDetailGall
                   key={i}
                   onClick={() => setCurrentIndex(i * itemsPerView)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === Math.floor(currentIndex / itemsPerView) ? 'w-4 bg-primary' : 'w-1.5 bg-border'
+                    i === Math.floor(currentIndex / itemsPerView)
+                      ? "w-4 bg-primary"
+                      : "w-1.5 bg-border"
                   }`}
                   aria-label={`Go to slide ${i + 1}`}
                 />

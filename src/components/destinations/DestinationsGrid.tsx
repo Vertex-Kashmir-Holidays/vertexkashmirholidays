@@ -1,10 +1,11 @@
 // src/components/sections/DestinationsGrid.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, type Variants } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
-import { DestinationCard } from '@/components/destinations/DestinationCard';
+import { useState } from "react";
+import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import { ChevronDown } from "lucide-react";
+import { DestinationCard } from "@/components/destinations/DestinationCard";
 
 export interface DestinationCardData {
   slug: string;
@@ -44,7 +45,7 @@ export function DestinationsGrid({ destinations }: DestinationsGridProps) {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.5, ease: EASE_BRAND },
     },
   };
 

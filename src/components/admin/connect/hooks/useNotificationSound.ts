@@ -53,7 +53,7 @@ export function useNotificationSound() {
       const ctx = getCtx();
       if (!ctx || ctx.state !== "running") return;
       const t = ctx.currentTime;
-      beep(ctx, 1046.5, t, 0.22, 0.55);        // C6
+      beep(ctx, 1046.5, t, 0.22, 0.55); // C6
       beep(ctx, 1318.5, t + 0.24, 0.26, 0.45); // E6
     } catch {
       // best-effort
@@ -77,7 +77,7 @@ export function useNotificationSound() {
       const ctx = getCtx();
       if (!ctx || ctx.state !== "running") return;
       const t = ctx.currentTime;
-      beep(ctx, 659.25, t, 0.28, 0.45);        // E5
+      beep(ctx, 659.25, t, 0.28, 0.45); // E5
       beep(ctx, 523.25, t + 0.24, 0.32, 0.38); // C5
     } catch {
       // best-effort
@@ -107,12 +107,12 @@ export function useNotificationSound() {
         const ctx = getCtx();
         if (!ctx || ctx.state !== "running") return;
         const t = ctx.currentTime;
-        beep(ctx, 392, t,        0.18, 0.5);  // G4
-        beep(ctx, 523, t,        0.18, 0.4);  // C5
-        beep(ctx, 440, t + 0.22, 0.18, 0.5);  // A4
-        beep(ctx, 587, t + 0.22, 0.18, 0.4);  // D5
-        beep(ctx, 494, t + 0.44, 0.18, 0.5);  // B4
-        beep(ctx, 659, t + 0.44, 0.18, 0.4);  // E5
+        beep(ctx, 392, t, 0.18, 0.5); // G4
+        beep(ctx, 523, t, 0.18, 0.4); // C5
+        beep(ctx, 440, t + 0.22, 0.18, 0.5); // A4
+        beep(ctx, 587, t + 0.22, 0.18, 0.4); // D5
+        beep(ctx, 494, t + 0.44, 0.18, 0.5); // B4
+        beep(ctx, 659, t + 0.44, 0.18, 0.4); // E5
         beep(ctx, 523, t + 0.66, 0.22, 0.45); // C5
         beep(ctx, 784, t + 0.66, 0.22, 0.35); // G5
       } catch {

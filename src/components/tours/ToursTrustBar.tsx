@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
-import { motion, type Variants } from 'framer-motion';
-import { ShieldCheck, Headphones, PenLine, Lock } from 'lucide-react';
+import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import { ShieldCheck, Headphones, PenLine, Lock } from "lucide-react";
 
 export function ToursTrustBar() {
   const trustItems = [
-    { t: 'Best Price Guarantee', s: 'No hidden charges', Icon: ShieldCheck },
-    { t: '24/7 On-ground Support', s: "We're with you always", Icon: Headphones },
-    { t: 'Customised Itineraries', s: 'Made just for you', Icon: PenLine },
-    { t: 'Secure Payments', s: 'Powered by Razorpay', Icon: Lock },
+    { t: "Best Price Guarantee", s: "No hidden charges", Icon: ShieldCheck },
+    { t: "24/7 On-ground Support", s: "We're with you always", Icon: Headphones },
+    { t: "Customised Itineraries", s: "Made just for you", Icon: PenLine },
+    { t: "Secure Payments", s: "Powered by Razorpay", Icon: Lock },
   ];
 
   const containerVariants = {
@@ -26,7 +27,7 @@ export function ToursTrustBar() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.5, ease: EASE_BRAND },
     },
   };
 
@@ -48,7 +49,7 @@ export function ToursTrustBar() {
             <motion.span
               className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-card text-primary shadow-soft"
               whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 300 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
               <x.Icon className="h-5 w-5" strokeWidth={1.8} />
             </motion.span>

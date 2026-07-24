@@ -50,7 +50,9 @@ export const attributionSchema: z.ZodType<AttributionData> = z.object({
 });
 
 /** Picks only the attribution fields off any Lead/Booking-shaped record. */
-export function pickAttribution(record: Partial<Record<AttributionField, string | null>>): AttributionData {
+export function pickAttribution(
+  record: Partial<Record<AttributionField, string | null>>,
+): AttributionData {
   const out: AttributionData = {};
   for (const field of ATTRIBUTION_FIELDS) {
     const value = record[field];

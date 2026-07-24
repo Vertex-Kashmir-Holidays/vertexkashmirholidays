@@ -18,14 +18,22 @@ export default async function NewActivityPage() {
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/activities" className="hover:text-primary transition-colors">Activities</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/activities" className="hover:text-primary transition-colors">
+              Activities
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium">Add New</li>
         </ol>
       </nav>
       <div>
         <h2 className="font-display font-extrabold text-foreground text-xl">Add Activity</h2>
-        <p className="text-muted-foreground text-xs mt-0.5">Create a thing to do and link it to destinations &amp; tours</p>
+        <p className="text-muted-foreground text-xs mt-0.5">
+          Create a thing to do and link it to destinations &amp; tours
+        </p>
       </div>
       <ActivityForm
         destinationOptions={destinations.map((d) => ({ id: d.id, label: d.name }))}

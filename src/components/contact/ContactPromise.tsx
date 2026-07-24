@@ -1,8 +1,9 @@
 // src/components/contact/ContactPromise.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import type { ContactPromiseItemData, ContactSectionHeading } from '@/types/contact';
+import { motion } from "framer-motion";
+import { fadeUp, fadeUpSm, viewportOnce } from "@/lib/motion";
+import type { ContactPromiseItemData, ContactSectionHeading } from "@/types/contact";
 
 interface ContactPromiseProps {
   heading: ContactSectionHeading;
@@ -15,9 +16,10 @@ export function ContactPromise({ heading, items }: ContactPromiseProps) {
   return (
     <motion.div
       className="mt-7 rounded-2xl bg-muted p-6 lg:p-7"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
       transition={{ duration: 0.5 }}
     >
       <p className="text-[12px] font-bold tracking-[0.22em] text-primary">{heading.kicker}</p>
@@ -27,13 +29,22 @@ export function ContactPromise({ heading, items }: ContactPromiseProps) {
           <motion.div
             key={p.id}
             className="flex items-start gap-3"
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            variants={fadeUpSm}
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewportOnce}
             transition={{ delay: i * 0.05 }}
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-[1.5px] border-primary/40 text-primary">
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[18px] w-[18px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d={p.icon} />
               </svg>
             </span>

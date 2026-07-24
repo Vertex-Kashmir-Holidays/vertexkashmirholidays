@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, X, Search, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
+import { ErrorState } from "@/components/ui/molecules/error-state";
 
 type SourceFilter = "ALL" | "LOCAL" | "STOCK";
 
@@ -33,11 +34,13 @@ interface Props {
 export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
   const [items, setItems] = useState<GalleryAsset[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [q, setQ] = useState("");
   const [source, setSource] = useState<SourceFilter>("ALL");
   const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Load (or append) a page of gallery assets whenever the modal opens or the
   // page advances. Closing resets back to the first page.
@@ -50,17 +53,27 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
       return;
     }
     setLoading(true);
+    setLoadError(false);
     const params = new URLSearchParams({ page: String(page) });
     if (type) params.set("type", type);
     fetch(`/api/galleries?${params.toString()}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((d: { items: GalleryAsset[]; pages: number }) => {
         setItems((prev) => (page === 1 ? d.items : [...prev, ...d.items]));
         setPages(d.pages ?? 1);
       })
-      .catch(() => toast.error("Couldn't load the gallery."))
+      .catch(() => {
+        // A failed first load leaves nothing on screen — show a blocking
+        // retry state. A failed "load more" still has the earlier page
+        // visible, so a toast is enough; don't wipe it with ErrorState.
+        if (page === 1) setLoadError(true);
+        else toast.error("Couldn't load more media.");
+      })
       .finally(() => setLoading(false));
-  }, [open, page, type]);
+  }, [open, page, type, reloadKey]);
 
   if (!open) return null;
 
@@ -80,27 +93,36 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-card p-5 shadow-xl">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h4 className="font-display text-base font-bold text-foreground">
-            {title ?? `Choose ${type === "VIDEO" ? "a video" : type === "IMAGE" ? "an image" : "media"} from gallery`}
+            {title ??
+              `Choose ${type === "VIDEO" ? "a video" : type === "IMAGE" ? "an image" : "media"} from gallery`}
           </h4>
-          <button onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Close"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Source tabs — wrap (never scroll) so pills/emoji are never clipped. */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          {([
-            { key: "ALL",   label: "All" },
-            { key: "LOCAL", label: "💾 Local" },
-            { key: "STOCK", label: "🌐 Stock / Cloudinary" },
-          ] as const).map(({ key, label }) => (
+          {(
+            [
+              { key: "ALL", label: "All" },
+              { key: "LOCAL", label: "💾 Local" },
+              { key: "STOCK", label: "🌐 Stock / Cloudinary" },
+            ] as const
+          ).map(({ key, label }) => (
             <button
               key={key}
               type="button"
               onClick={() => setSource(key)}
               className={cn(
                 "rounded-full px-3.5 py-1.5 text-xs font-bold leading-normal transition-colors",
-                source === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80",
+                source === key
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
               )}
             >
               {label}
@@ -119,10 +141,18 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
         </div>
 
         <div className="-mx-1 flex-1 overflow-y-auto px-1">
-          {filtered.length === 0 && !loading ? (
+          {loadError ? (
+            <ErrorState
+              title="Couldn't load the gallery."
+              className="py-16"
+              onRetry={() => setReloadKey((k) => k + 1)}
+            />
+          ) : filtered.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
               <ImageIcon className="h-8 w-8" />
-              <p className="text-sm">No {type === "VIDEO" ? "videos" : type === "IMAGE" ? "images" : "media"} found.</p>
+              <p className="text-sm">
+                No {type === "VIDEO" ? "videos" : type === "IMAGE" ? "images" : "media"} found.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -138,7 +168,13 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                   title={item.alt ?? item.url}
                 >
                   {item.type === "VIDEO" ? (
-                    <video src={item.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                    <video
+                      src={item.url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -147,12 +183,17 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                       className="h-full w-full object-cover"
                       onLoad={(e) => {
                         const { naturalWidth, naturalHeight } = e.currentTarget;
-                        setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
+                        setDims((prev) => ({
+                          ...prev,
+                          [item.id]: { width: naturalWidth, height: naturalHeight },
+                        }));
                       }}
                     />
                   )}
                   {item.type === "VIDEO" && (
-                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-bold text-white">VIDEO</span>
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-bold text-white">
+                      VIDEO
+                    </span>
                   )}
                   {item.type !== "VIDEO" && dims[item.id] && (
                     <ImageDimensionBadge
@@ -173,7 +214,9 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
             <button
               type="button"
               onClick={() => setPage((p) => p + 1)}
-              className={cn("rounded-xl border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted")}
+              className={cn(
+                "rounded-xl border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted",
+              )}
             >
               Load more
             </button>

@@ -9,8 +9,7 @@ const STORAGE_KEY = "vkh_announcement_dismissed";
 const OPEN_DELAY_MS = 1.5 * 60 * 1000;
 
 export function AnnouncementModal() {
-  const { showAnnouncementBanner, announcementMessage, whatsapp, sitePhone } =
-    useSiteSettings();
+  const { showAnnouncementBanner, announcementMessage, whatsapp, sitePhone } = useSiteSettings();
   const buildWhatsApp = useWhatsAppLink();
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -43,7 +42,9 @@ export function AnnouncementModal() {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   // Focus the dialog on open so keyboard/AT users land inside it
@@ -58,7 +59,10 @@ export function AnnouncementModal() {
     if (!open) return;
 
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { dismiss(); return; }
+      if (e.key === "Escape") {
+        dismiss();
+        return;
+      }
 
       if (e.key === "Tab") {
         const dialog = dialogRef.current;
@@ -72,9 +76,15 @@ export function AnnouncementModal() {
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
         } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
     };

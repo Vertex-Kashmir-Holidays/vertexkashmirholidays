@@ -78,7 +78,12 @@ export async function GET(req: NextRequest) {
       payments,
       services: [],
     });
-    return { ...b, paymentStatus: finance.paymentStatus, paidAmount: finance.paidAmount, balance: finance.balance };
+    return {
+      ...b,
+      paymentStatus: finance.paymentStatus,
+      paidAmount: finance.paidAmount,
+      balance: finance.balance,
+    };
   });
 
   return NextResponse.json({ bookings, total, page, pages: Math.ceil(total / take) });

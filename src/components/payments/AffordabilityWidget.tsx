@@ -3,13 +3,11 @@
 import { motion } from "framer-motion";
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
+import { NEXT_PUBLIC_RAZORPAY_KEY_ID } from "@/lib/env.public";
 
 declare global {
   interface Window {
-    RazorpayAffordabilitySuite: new (config: {
-      key: string;
-      amount: number;
-    }) => { render(): void };
+    RazorpayAffordabilitySuite: new (config: { key: string; amount: number }) => { render(): void };
   }
 }
 
@@ -20,9 +18,11 @@ interface AffordabilityWidgetProps {
   title?: string;
 }
 
-export function AffordabilityWidget({ amount,
-  title = "Easy EMI Available", }: AffordabilityWidgetProps) {
-  const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
+export function AffordabilityWidget({
+  amount,
+  title = "Easy EMI Available",
+}: AffordabilityWidgetProps) {
+  const key = NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
   const amountPaise = Math.round(amount * 100);
   const initialized = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,7 +65,7 @@ export function AffordabilityWidget({ amount,
 
   if (!key) return null;
 
- return (
+  return (
     <>
       {shouldLoad && (
         <Script
@@ -74,7 +74,7 @@ export function AffordabilityWidget({ amount,
           onLoad={initWidget}
         />
       )}
-     <motion.div
+      <motion.div
         ref={containerRef}
         className="mt-6 mx-auto max-w-2xl"
         initial={{ opacity: 0, y: 24 }}
@@ -82,14 +82,10 @@ export function AffordabilityWidget({ amount,
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            {title && (
-              <p className="mb-4 text-center text-[14px] font-bold">
-                {title}
-              </p>
-            )}
-            <div className="text-center" id="razorpay-affordability-widget" />
-          </div>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          {title && <p className="mb-4 text-center text-[14px] font-bold">{title}</p>}
+          <div className="text-center" id="razorpay-affordability-widget" />
+        </div>
       </motion.div>
     </>
   );

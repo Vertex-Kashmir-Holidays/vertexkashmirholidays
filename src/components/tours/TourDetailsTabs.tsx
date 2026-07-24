@@ -1,8 +1,10 @@
 // src/components/sections/TourDetailsTabs.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
+import { Container } from "@/components/ui/layout/Container";
 
 interface TourDetailsTabsProps {
   sections: {
@@ -33,49 +35,43 @@ export function TourDetailsTabs({ sections }: TourDetailsTabsProps) {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [sections]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       const top = element.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
-      window.scrollTo({ top, behavior: 'smooth' });
+      window.scrollTo({ top, behavior: "smooth" });
       setActiveTab(id);
     }
   };
 
   return (
     <div className="sticky top-24 z-40 border-b border-border bg-card shadow-sm">
-      <div className="mx-auto max-w-[1180px] px-6">
-        <div className="scrollbar-none flex gap-7 overflow-x-auto py-3 text-[16px] font-semibold text-muted-foreground">
-          {sections.map((section) => (
-            <motion.button
-              key={section.id}
-              onClick={() => scrollToSection(section.id)}
-              className={`relative whitespace-nowrap pb-1 transition-colors ${
-                activeTab === section.id
-                  ? 'text-primary'
-                  : 'hover:text-foreground'
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {section.label}
-              {activeTab === section.id && (
-                <motion.span
-                  className="absolute inset-x-0 -bottom-[1px] h-[2.5px] rounded-full bg-primary"
-                  layoutId="activeTab"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                />
-              )}
-            </motion.button>
-          ))}
-        </div>
-      </div>
+      <Container>
+        <Tabs value={activeTab} onValueChange={scrollToSection}>
+          <TabsList className="py-3">
+            {sections.map((section) => (
+              <TabsTrigger key={section.id} value={section.id} asChild>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  {section.label}
+                  {activeTab === section.id && (
+                    <motion.span
+                      className="absolute inset-x-0 -bottom-[1px] h-[2.5px] rounded-full bg-primary"
+                      layoutId="activeTab"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                </motion.button>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </Container>
     </div>
   );
 }

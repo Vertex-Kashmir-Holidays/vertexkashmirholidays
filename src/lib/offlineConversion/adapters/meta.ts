@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { PlatformAdapter } from "../types";
+import { env } from "@/lib/env";
 
 // Meta Conversions API — https://developers.facebook.com/docs/marketing-api/conversions-api
 // A plain REST POST; no SDK dependency needed.
@@ -13,12 +14,12 @@ export const metaAdapter: PlatformAdapter = {
   platform: "META",
 
   isConfigured(): boolean {
-    return Boolean(process.env.META_CAPI_PIXEL_ID && process.env.META_CAPI_ACCESS_TOKEN);
+    return Boolean(env.META_CAPI_PIXEL_ID && env.META_CAPI_ACCESS_TOKEN);
   },
 
   async send(event) {
-    const pixelId = process.env.META_CAPI_PIXEL_ID;
-    const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
+    const pixelId = env.META_CAPI_PIXEL_ID;
+    const accessToken = env.META_CAPI_ACCESS_TOKEN;
     if (!pixelId || !accessToken) {
       return { success: false, error: "META_CAPI_PIXEL_ID/META_CAPI_ACCESS_TOKEN not configured" };
     }
@@ -50,8 +51,8 @@ export const metaAdapter: PlatformAdapter = {
     };
     // Set only while actively testing in Events Manager's Test Events tab —
     // Meta excludes test_event_code-tagged events from real reporting/optimization.
-    if (process.env.META_CAPI_TEST_EVENT_CODE) {
-      body.test_event_code = process.env.META_CAPI_TEST_EVENT_CODE;
+    if (env.META_CAPI_TEST_EVENT_CODE) {
+      body.test_event_code = env.META_CAPI_TEST_EVENT_CODE;
     }
 
     try {
@@ -69,7 +70,10 @@ export const metaAdapter: PlatformAdapter = {
       }
       return { success: true, response: json };
     } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : "Meta CAPI request failed" };
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Meta CAPI request failed",
+      };
     }
   },
 };

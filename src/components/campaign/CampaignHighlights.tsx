@@ -1,11 +1,11 @@
 // src/components/campaign/CampaignHighlights.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import { imgSrc } from '@/lib/placeholder';
-import type { CampaignHighlight } from '@/types/campaign';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
+import { imgSrc } from "@/lib/placeholder";
+import type { CampaignHighlight } from "@/types/campaign";
 
 interface CampaignHighlightsProps {
   title: string | null;
@@ -47,14 +47,22 @@ export function CampaignHighlights({ title, highlights }: CampaignHighlightsProp
             <Tilt3D intensity={6}>
               <article className="glass relative overflow-hidden rounded-3xl shadow-card">
                 <div className="relative h-36 overflow-hidden">
-                  <Image src={imgSrc(highlight.image)} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px" className="object-cover" />
+                  <Image
+                    src={imgSrc(highlight.image)}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+                    className="object-cover"
+                  />
                   <span className="glass-strong absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-xl text-xl">
                     {highlight.emoji}
                   </span>
                 </div>
                 <div className="p-5">
                   <h3 className="text-[16px] font-bold text-foreground">{highlight.title}</h3>
-                  <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{highlight.description}</p>
+                  <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+                    {highlight.description}
+                  </p>
                 </div>
               </article>
             </Tilt3D>

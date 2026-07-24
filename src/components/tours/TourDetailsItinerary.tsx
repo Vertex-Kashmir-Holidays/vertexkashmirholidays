@@ -1,10 +1,10 @@
 // src/components/sections/TourDetailsItinerary.tsx
-'use client';
+"use client";
 
-import { AnimatePresence, motion } from 'framer-motion';
-import Image from 'next/image';
-import { useState } from 'react';
-import { imgSrc } from '@/lib/placeholder';
+import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+import { useState } from "react";
+import { imgSrc } from "@/lib/placeholder";
 
 interface ItineraryDay {
   day: number;
@@ -34,7 +34,8 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
     >
       <div className="flex items-center justify-between">
         <h2 className="text-[18px] font-bold">
-          Itinerary <span className="text-[14px] font-semibold text-muted-foreground">(Day by Day)</span>
+          Itinerary{" "}
+          <span className="text-[14px] font-semibold text-muted-foreground">(Day by Day)</span>
         </h2>
         <button
           onClick={() => setOpenDay(0)}
@@ -52,9 +53,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
             <motion.div
               key={day.day}
               className={`overflow-hidden rounded-xl ${
-                isOpen
-                  ? 'border-l-[3px] border-primary bg-muted'
-                  : 'border border-border'
+                isOpen ? "border-l-[3px] border-primary bg-muted" : "border border-border"
               }`}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -65,20 +64,14 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                 onClick={() => setOpenDay(isOpen ? 0 : day.day)}
                 className="flex w-full cursor-pointer items-center gap-4 px-4 py-3.5"
               >
-                <span
-                  className={`text-[14px] font-extrabold ${
-                    isOpen ? 'text-primary' : ''
-                  }`}
-                >
+                <span className={`text-[14px] font-extrabold ${isOpen ? "text-primary" : ""}`}>
                   Day {day.day}
                 </span>
-                <span className="flex-1 text-[14px] font-bold text-left">
-                  {day.title}
-                </span>
+                <span className="flex-1 text-[14px] font-bold text-left">{day.title}</span>
                 <motion.svg
                   viewBox="0 0 24 24"
                   className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${
-                    isOpen ? 'rotate-180' : ''
+                    isOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
                   stroke="currentColor"
@@ -92,16 +85,14 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
               <AnimatePresence>
                 {isOpen && (
                   <motion.div
-                    className={`grid grid-cols-1 gap-4 px-4 pb-4 ${day.image ? 'md:grid-cols-[3fr_2fr]' : ''}`}
+                    className={`grid grid-cols-1 gap-4 px-4 pb-4 ${day.image ? "md:grid-cols-[3fr_2fr]" : ""}`}
                     initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
+                    animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
                     <div className="min-w-0 space-y-2.5">
-                      <p className="text-[14px] leading-relaxed text-foreground/70">
-                        {day.body}
-                      </p>
+                      <p className="text-[14px] leading-relaxed text-foreground/70">{day.body}</p>
                       {(day.meals || day.stay) && (
                         <div className="flex flex-wrap gap-2">
                           {day.meals && (

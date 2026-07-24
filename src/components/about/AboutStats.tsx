@@ -1,9 +1,9 @@
 // src/components/about/AboutStats.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import type { AboutStatData } from '@/types/about';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import type { AboutStatData } from "@/types/about";
 
 interface AboutStatsProps {
   stats: AboutStatData[];
@@ -23,13 +23,7 @@ export function AboutStats({ stats, image }: AboutStatsProps) {
         transition={{ duration: 0.6 }}
       >
         {image && (
-          <Image
-            src={image}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover opacity-25"
-          />
+          <Image src={image} alt="" fill sizes="100vw" className="object-cover opacity-25" />
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/60 via-transparent to-brand-dark/60"></div>
         <div className="relative grid grid-cols-2 gap-y-7 px-6 py-8 sm:grid-cols-3 lg:grid-cols-5 lg:divide-x lg:divide-white/15">
@@ -42,7 +36,15 @@ export function AboutStats({ stats, image }: AboutStatsProps) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
             >
-              <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-7 w-7 shrink-0 text-emerald-300"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d={stat.icon} />
               </svg>
               <div className="leading-tight">

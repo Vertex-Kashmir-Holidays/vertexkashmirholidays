@@ -1,21 +1,19 @@
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/atoms/tooltip";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
+import { CookieConsentManager } from "@/components/providers/CookieConsentManager";
 import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
 import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
 import type { FooterSettings } from "@/components/layout/Footer";
 
-export default async function PublicLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const [s, strip, promos, categoryRows, homeContent] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
@@ -83,8 +81,15 @@ export default async function PublicLayout({
   // used for "preferred site name" in Search); it's rendered in
   // (public)/page.tsx instead. Putting it on every page (as before) worked
   // against spec even though it never produced conflicting values.
-  const sameAs = [s?.facebook, s?.instagram, s?.twitter, s?.youtube, s?.tripadvisor, s?.googleReviews, s?.googleBusinessProfile]
-    .filter((u): u is string => Boolean(u && u.startsWith("http")));
+  const sameAs = [
+    s?.facebook,
+    s?.instagram,
+    s?.twitter,
+    s?.youtube,
+    s?.tripadvisor,
+    s?.googleReviews,
+    s?.googleBusinessProfile,
+  ].filter((u): u is string => Boolean(u && u.startsWith("http")));
 
   const organizationJsonLd = buildTravelAgency({
     telephone: s?.sitePhone,
@@ -100,45 +105,43 @@ export default async function PublicLayout({
   });
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <SiteAnalytics />
-      <SiteSettingsProvider
-        value={{
-          siteName: s?.siteName ?? "Vertex Kashmir Holidays",
-          whatsapp: s?.whatsapp ?? null,
-          sitePhone: s?.sitePhone ?? null,
-          showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
-          announcementMessage: s?.announcementMessage ?? null,
-          formAvatars,
-        }}
-      >
-        <JsonLd data={organizationJsonLd} />
-        <PublicChrome
-          settings={settings}
-          promoBanners={promoBanners}
-          tourCategories={tourCategories}
-          strip={
-            strip
-              ? {
-                  id: strip.id,
-                  title: strip.title,
-                  body: strip.body,
-                  ctaLabel: strip.ctaLabel,
-                  ctaUrl: strip.ctaUrl,
-                }
-              : null
-          }
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <TooltipProvider delayDuration={200}>
+        <SiteAnalytics />
+        <CookieConsentManager />
+        <SiteSettingsProvider
+          value={{
+            siteName: s?.siteName ?? "Vertex Kashmir Holidays",
+            whatsapp: s?.whatsapp ?? null,
+            sitePhone: s?.sitePhone ?? null,
+            showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
+            announcementMessage: s?.announcementMessage ?? null,
+            formAvatars,
+          }}
         >
-          {children}
-        </PublicChrome>
-        <AnnouncementModal />
-      </SiteSettingsProvider>
-      <Toaster richColors position="top-right" />
+          <JsonLd data={organizationJsonLd} />
+          <PublicChrome
+            settings={settings}
+            promoBanners={promoBanners}
+            tourCategories={tourCategories}
+            strip={
+              strip
+                ? {
+                    id: strip.id,
+                    title: strip.title,
+                    body: strip.body,
+                    ctaLabel: strip.ctaLabel,
+                    ctaUrl: strip.ctaUrl,
+                  }
+                : null
+            }
+          >
+            {children}
+          </PublicChrome>
+          <AnnouncementModal />
+        </SiteSettingsProvider>
+        <Toaster richColors position="top-right" />
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

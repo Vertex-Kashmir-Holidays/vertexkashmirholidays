@@ -4,7 +4,7 @@
 // Rules:
 //   discountAmount   = FLAT value, or PERCENT of bookingAmount (clamped 0..amount)
 //   effectivePayable = bookingAmount - discountAmount
-//   paidAmount       = sum of all payment rows
+//   paidAmount       = sum of collection rows minus REFUND rows (net received)
 //   servicesTotal    = sum of all service rows
 //   balance          = effectivePayable - paidAmount
 
@@ -31,7 +31,7 @@ export interface BookingFinanceInput {
   amount: number; // raw booking amount
   discountType?: string | null; // "FLAT" | "PERCENT" | null
   discountValue?: number | null;
-  payments: { amount: number }[];
+  payments: { amount: number; type?: string | null }[];
   services: { amount: number }[];
 }
 
@@ -83,11 +83,31 @@ export function computeDiscountAmount(
 
 export function computeBookingFinance(input: BookingFinanceInput): BookingFinance {
   const bookingAmount = round2(Math.max(0, input.amount));
-  const discountAmount = computeDiscountAmount(bookingAmount, input.discountType, input.discountValue);
+  const discountAmount = computeDiscountAmount(
+    bookingAmount,
+    input.discountType,
+    input.discountValue,
+  );
   const effectivePayable = round2(bookingAmount - discountAmount);
-  const paidAmount = round2(input.payments.reduce((s, p) => s + (p.amount || 0), 0));
+  // Refunds are stored as positive amounts on a REFUND-type row; they are money
+  // returned to the customer, so they NET OUT of the amount received rather than
+  // adding to it. Every other type (TOKEN/PARTIAL/FINAL) is a collection.
+  const paidAmount = round2(
+    input.payments.reduce(
+      (s, p) => s + (p.type === "REFUND" ? -(p.amount || 0) : p.amount || 0),
+      0,
+    ),
+  );
   const servicesTotal = round2(input.services.reduce((s, p) => s + (p.amount || 0), 0));
   const balance = round2(effectivePayable - paidAmount);
   const paymentStatus = computePaymentStatus(effectivePayable, paidAmount);
-  return { bookingAmount, discountAmount, effectivePayable, paidAmount, servicesTotal, balance, paymentStatus };
+  return {
+    bookingAmount,
+    discountAmount,
+    effectivePayable,
+    paidAmount,
+    servicesTotal,
+    balance,
+    paymentStatus,
+  };
 }

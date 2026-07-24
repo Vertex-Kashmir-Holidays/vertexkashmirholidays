@@ -6,48 +6,113 @@ import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tours, destinations, blogs, campaigns, activities, tourCategoryRows] = await Promise.all([
-    prisma.tour.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.destination.findMany({
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.blog.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.campaign.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.activity.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.tour.groupBy({ by: ["category"], where: { published: true }, _count: true, _max: { updatedAt: true } }),
-  ]);
+  const [tours, destinations, blogs, campaigns, activities, jobs, tourCategoryRows] =
+    await Promise.all([
+      prisma.tour.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      // Destinations have no published/draft concept — the model has no
+      // `published` field and the public /destinations listing shows every row.
+      // So there is intentionally no `where` filter here, unlike tours/blogs/etc.
+      prisma.destination.findMany({
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.blog.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.campaign.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.activity.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.job.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.tour.groupBy({
+        by: ["category"],
+        where: { published: true },
+        _count: true,
+        _max: { updatedAt: true },
+      }),
+    ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${SITE_URL}/tours`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${SITE_URL}/tours/category`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
-    { url: `${SITE_URL}/adventures`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
-    { url: `${SITE_URL}/destinations`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
+    {
+      url: `${SITE_URL}/tours/category`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${SITE_URL}/adventures`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/destinations`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
     { url: `${SITE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    { url: `${SITE_URL}/reviews`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${SITE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+    {
+      url: `${SITE_URL}/careers`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
+    {
+      url: `${SITE_URL}/reviews`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
+      url: `${SITE_URL}/about`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${SITE_URL}/contact`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
     { url: `${SITE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE_URL}/terms-and-conditions`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE_URL}/privacy-policy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE_URL}/refund-and-cancellation`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
+    {
+      url: `${SITE_URL}/terms-and-conditions`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/privacy-policy`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${SITE_URL}/refund-and-cancellation`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 
   const tourRoutes: MetadataRoute.Sitemap = tours.map((t) => ({
@@ -85,6 +150,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const careerRoutes: MetadataRoute.Sitemap = jobs.map((j) => ({
+    url: `${SITE_URL}/careers/${j.slug}`,
+    lastModified: j.updatedAt,
+    changeFrequency: "weekly",
+    priority: 0.5,
+  }));
+
   const tourCategoryRoutes: MetadataRoute.Sitemap = tourCategoryRows
     .filter((c) => c._count > 0)
     .map((c) => ({
@@ -102,5 +174,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...destinationRoutes,
     ...activityRoutes,
     ...blogRoutes,
+    ...careerRoutes,
   ];
 }

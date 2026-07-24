@@ -62,7 +62,14 @@ export async function resolveLeadCustomer(
   const created = await tx.user.create({
     // mustChangePassword: the account ships with a system-generated temp password
     // emailed to the customer, so they must set their own on first login.
-    data: { email, name: lead.name, phone, passwordHash, role: "CUSTOMER", mustChangePassword: true },
+    data: {
+      email,
+      name: lead.name,
+      phone,
+      passwordHash,
+      role: "CUSTOMER",
+      mustChangePassword: true,
+    },
     select: { id: true },
   });
   return { customerId: created.id, created: true, tempPassword };

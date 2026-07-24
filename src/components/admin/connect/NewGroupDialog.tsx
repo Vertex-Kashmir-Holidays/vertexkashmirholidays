@@ -1,7 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
-import { X, Upload, Loader2, Users } from "lucide-react";
+import { Upload, Loader2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/atoms/avatar";
 
 interface StaffUser {
   id: string;
@@ -60,8 +62,14 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError("Group name is required."); return; }
-    if (selectedIds.size === 0) { setError("Select at least one member."); return; }
+    if (!name.trim()) {
+      setError("Group name is required.");
+      return;
+    }
+    if (selectedIds.size === 0) {
+      setError("Select at least one member.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -88,21 +96,14 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative z-10 w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
+        <DialogHeader className="border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-sm">New Group</h2>
+            <DialogTitle className="text-sm">New Group</DialogTitle>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        </DialogHeader>
 
         <form onSubmit={submit} className="flex flex-col gap-4 p-5">
           {/* Group avatar + name row */}
@@ -174,14 +175,12 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
                       onChange={() => toggleMember(u.id)}
                       className="accent-primary"
                     />
-                    {u.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={u.image} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={u.image ?? undefined} alt="" />
+                      <AvatarFallback className="text-xs font-semibold">
                         {(u.name ?? "?").charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                      </AvatarFallback>
+                    </Avatar>
                     <span className="text-sm">{u.name ?? u.id}</span>
                     <span className="ml-auto text-[12px] text-muted-foreground capitalize">
                       {u.role.toLowerCase()}
@@ -216,7 +215,7 @@ export function NewGroupDialog({ staffUsers, currentUserId, onCreated, onClose }
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

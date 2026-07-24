@@ -1,7 +1,8 @@
-import { writeFile, mkdir, readFile } from "fs/promises";
+import { writeFile, mkdir, readFile, readdir, stat } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 import { v2 as cloudinary, type UploadApiResponse, type UploadApiOptions } from "cloudinary";
+import { env } from "@/lib/env";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Media storage abstraction.
@@ -37,7 +38,7 @@ export const DEFAULT_FOLDER = "general";
 // (e.g. "vertex-kashmir/dev" vs "vertex-kashmir/prod"). Falls back to the legacy
 // root so existing uploads aren't orphaned if the var is missing.
 function getCloudinaryRoot(): string {
-  return process.env.CLOUDINARY_FOLDER?.trim() || "vertexkashmir";
+  return env.CLOUDINARY_FOLDER?.trim() || "vertexkashmir";
 }
 
 /** Full Cloudinary folder path for a given module folder/category — shared by
@@ -52,10 +53,8 @@ export function cloudinaryUploadFolder(rawFolder: string): string {
  */
 export function isCloudinaryConfigured(): boolean {
   return Boolean(
-    process.env.CLOUDINARY_URL ||
-      (process.env.CLOUDINARY_CLOUD_NAME &&
-        process.env.CLOUDINARY_API_KEY &&
-        process.env.CLOUDINARY_API_SECRET),
+    env.CLOUDINARY_URL ||
+    (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET),
   );
 }
 
@@ -64,11 +63,11 @@ export function ensureCloudinaryConfig() {
   if (cloudinaryReady) return;
   // CLOUDINARY_URL is picked up automatically by the SDK; only configure the
   // discrete vars explicitly when the URL form is absent.
-  if (!process.env.CLOUDINARY_URL) {
+  if (!env.CLOUDINARY_URL) {
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
+      cloud_name: env.CLOUDINARY_CLOUD_NAME,
+      api_key: env.CLOUDINARY_API_KEY,
+      api_secret: env.CLOUDINARY_API_SECRET,
       secure: true,
     });
   } else {
@@ -145,7 +144,12 @@ async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
 
 export async function saveUpload(
   buffer: Buffer,
-  { folder, ext, isImage }: { folder: string; ext: string; isImage?: boolean },
+  {
+    folder,
+    ext,
+    isImage,
+    resourceType,
+  }: { folder: string; ext: string; isImage?: boolean; resourceType?: "auto" | "raw" },
 ): Promise<SaveUploadResult> {
   const slug = folderSlug(folder);
   // Every image upload is watermarked, regardless of folder — no exemptions.
@@ -156,7 +160,7 @@ export async function saveUpload(
       processedBuffer = await Promise.race([
         applyWatermark(buffer, ext),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000)
+          setTimeout(() => reject(new Error("watermark timeout after 8s")), 8000),
         ),
       ]);
       console.log(`[upload] watermark applied (${ext}, folder=${slug})`);
@@ -166,7 +170,7 @@ export async function saveUpload(
   }
 
   if (isCloudinaryConfigured()) {
-    return saveToCloudinary(processedBuffer, slug);
+    return saveToCloudinary(processedBuffer, slug, resourceType);
   }
 
   return saveToLocalDisk(processedBuffer, slug, ext);
@@ -175,30 +179,36 @@ export async function saveUpload(
 async function saveToCloudinary(
   buffer: Buffer,
   slug: string,
+  resourceType: "auto" | "raw" = "auto",
 ): Promise<SaveUploadResult> {
   ensureCloudinaryConfig();
 
+  // Deliberately no file extension on the public_id: Cloudinary's "Allow
+  // delivery of PDF and ZIP files" security setting blocks any URL ending in
+  // .pdf/.zip by extension match, regardless of resource_type — confirmed by
+  // testing (raw + ".pdf" public_id → 401; raw + no extension → 200, correct
+  // bytes). Leaving the extension off the public_id is what actually works
+  // without requiring that account-level setting to be enabled.
+  const publicId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
   const uploadOptions: UploadApiOptions = {
     folder: cloudinaryUploadFolder(slug),
-    resource_type: "auto",
-    public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    resource_type: resourceType,
+    public_id: publicId,
   };
 
   console.log(`[upload] → Cloudinary folder=${uploadOptions.folder} size=${buffer.length}b`);
 
   const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      uploadOptions,
-      (error, uploaded) => {
-        if (error || !uploaded) {
-          console.error("[upload] Cloudinary error:", JSON.stringify(error));
-          reject(new Error(error?.message ?? "Cloudinary upload failed"));
-          return;
-        }
-        console.log(`[upload] Cloudinary ok → ${uploaded.secure_url}`);
-        resolve(uploaded);
-      },
-    );
+    const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, uploaded) => {
+      if (error || !uploaded) {
+        console.error("[upload] Cloudinary error:", JSON.stringify(error));
+        reject(new Error(error?.message ?? "Cloudinary upload failed"));
+        return;
+      }
+      console.log(`[upload] Cloudinary ok → ${uploaded.secure_url}`);
+      resolve(uploaded);
+    });
     stream.end(buffer);
   });
 
@@ -244,4 +254,102 @@ async function saveToLocalDisk(
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), buffer);
   return { url: `/uploads/${slug}/${filename}`, folder: slug, publicId: null };
+}
+
+export interface JsonRecord<T> {
+  url: string;
+  publicId: string | null;
+  createdAt: string;
+  data: T;
+}
+
+/**
+ * Persists an arbitrary JSON-serializable record as a small raw file, keyed
+ * by `publicId` within `folder`. Used where a full DB row would be overkill
+ * — e.g. Careers applications, which by design keep zero candidate PII in
+ * the database (see src/app/api/careers/apply/route.ts) and instead treat
+ * this record + the resume upload as the record of the application.
+ */
+export async function saveJson(
+  data: unknown,
+  { folder, publicId }: { folder: string; publicId: string },
+): Promise<{ url: string; publicId: string | null }> {
+  const slug = folderSlug(folder);
+  const buffer = Buffer.from(JSON.stringify(data));
+
+  if (isCloudinaryConfigured()) {
+    ensureCloudinaryConfig();
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: cloudinaryUploadFolder(slug),
+          resource_type: "raw",
+          public_id: `${publicId}.json`,
+        },
+        (error, uploaded) => {
+          if (error || !uploaded) {
+            reject(new Error(error?.message ?? "Cloudinary upload failed"));
+            return;
+          }
+          resolve(uploaded);
+        },
+      );
+      stream.end(buffer);
+    });
+    return { url: result.secure_url, publicId: result.public_id ?? null };
+  }
+
+  const dir = path.join(process.cwd(), "public", "uploads", slug);
+  await mkdir(dir, { recursive: true });
+  const filename = `${publicId}.json`;
+  await writeFile(path.join(dir, filename), buffer);
+  return { url: `/uploads/${slug}/${filename}`, publicId: null };
+}
+
+/** Lists JSON records previously saved via `saveJson` under `folder`, newest first. */
+export async function listJsonRecords<T>(folder: string): Promise<JsonRecord<T>[]> {
+  const slug = folderSlug(folder);
+
+  if (isCloudinaryConfigured()) {
+    ensureCloudinaryConfig();
+    const prefix = `${cloudinaryUploadFolder(slug)}/`;
+    const { resources } = await cloudinary.api.resources({
+      type: "upload",
+      resource_type: "raw",
+      prefix,
+      max_results: 500,
+    });
+    const records = await Promise.all(
+      (resources as { secure_url: string; public_id: string; created_at: string }[]).map(
+        async (r): Promise<JsonRecord<T>> => {
+          const res = await fetch(r.secure_url);
+          const data = (await res.json()) as T;
+          return { url: r.secure_url, publicId: r.public_id, createdAt: r.created_at, data };
+        },
+      ),
+    );
+    return records.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+
+  const dir = path.join(process.cwd(), "public", "uploads", slug);
+  try {
+    const files = await readdir(dir);
+    const records = await Promise.all(
+      files
+        .filter((f) => f.endsWith(".json"))
+        .map(async (f): Promise<JsonRecord<T>> => {
+          const filePath = path.join(dir, f);
+          const [raw, stats] = await Promise.all([readFile(filePath, "utf-8"), stat(filePath)]);
+          return {
+            url: `/uploads/${slug}/${f}`,
+            publicId: null,
+            createdAt: stats.mtime.toISOString(),
+            data: JSON.parse(raw) as T,
+          };
+        }),
+    );
+    return records.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  } catch {
+    return [];
+  }
 }

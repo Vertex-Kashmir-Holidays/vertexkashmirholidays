@@ -35,35 +35,29 @@ const fetchRolePermissionRows = unstable_cache(
  * Everyone else is resolved from the RolePermission table.
  * Wrapped in React cache() so repeated calls within one request hit the DB once.
  */
-export const getRolePermissions = cache(
-  async (role: Role): Promise<PermissionMap> => {
-    if (role === "SUPERADMIN") return fullPermissionMap();
+export const getRolePermissions = cache(async (role: Role): Promise<PermissionMap> => {
+  if (role === "SUPERADMIN") return fullPermissionMap();
 
-    const rows = await fetchRolePermissionRows(role);
-    const map = emptyPermissionMap();
+  const rows = await fetchRolePermissionRows(role);
+  const map = emptyPermissionMap();
 
-    for (const row of rows) {
-      const key = row.module as ModuleKey;
-      if (key in map) {
-        map[key] = {
-          view: row.canView,
-          create: row.canCreate,
-          edit: row.canEdit,
-          delete: row.canDelete,
-        };
-      }
+  for (const row of rows) {
+    const key = row.module as ModuleKey;
+    if (key in map) {
+      map[key] = {
+        view: row.canView,
+        create: row.canCreate,
+        edit: row.canEdit,
+        delete: row.canDelete,
+      };
     }
+  }
 
-    return map;
-  },
-);
+  return map;
+});
 
 /** True if `role` may perform `action` on `module`. */
-export async function can(
-  role: Role,
-  module: ModuleKey,
-  action: Action,
-): Promise<boolean> {
+export async function can(role: Role, module: ModuleKey, action: Action): Promise<boolean> {
   if (role === "SUPERADMIN") return true;
   if (!isStaff(role)) return false;
   const perms = await getRolePermissions(role);

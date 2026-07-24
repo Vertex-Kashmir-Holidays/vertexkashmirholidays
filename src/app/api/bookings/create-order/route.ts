@@ -8,6 +8,8 @@ import { computeChargeable, round2, type PaymentOption } from "@/lib/bookings/fi
 import { logPaymentAudit } from "@/lib/bookings/audit";
 import { attributionSchema } from "@/lib/attribution";
 import { buildAttributionCreateInput } from "@/lib/attribution.server";
+import { env } from "@/lib/env";
+import { NEXT_PUBLIC_RAZORPAY_KEY_ID } from "@/lib/env.public";
 
 // Booking business rules:
 //   • A booking's travel date must be at least MIN_LEAD_DAYS away (lead time).
@@ -101,7 +103,14 @@ export async function POST(req: NextRequest) {
 
   const tour = await prisma.tour.findUnique({
     where: { id: tourId },
-    select: { id: true, title: true, priceFrom: true, duration: true, minPersons: true, published: true },
+    select: {
+      id: true,
+      title: true,
+      priceFrom: true,
+      duration: true,
+      minPersons: true,
+      published: true,
+    },
   });
 
   if (!tour || !tour.published) {
@@ -110,7 +119,9 @@ export async function POST(req: NextRequest) {
 
   if (travellers < tour.minPersons) {
     return NextResponse.json(
-      { error: `This tour requires a minimum of ${tour.minPersons} traveller${tour.minPersons > 1 ? "s" : ""}.` },
+      {
+        error: `This tour requires a minimum of ${tour.minPersons} traveller${tour.minPersons > 1 ? "s" : ""}.`,
+      },
       { status: 422 },
     );
   }
@@ -181,10 +192,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid booking amount" }, { status: 400 });
   }
 
-  if (
-    !process.env.RAZORPAY_KEY_ID ||
-    process.env.RAZORPAY_KEY_ID.includes("REPLACE_ME")
-  ) {
+  if (!env.RAZORPAY_KEY_ID || env.RAZORPAY_KEY_ID.includes("REPLACE_ME")) {
     return NextResponse.json(
       { error: "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_SECRET in .env." },
       { status: 503 },
@@ -192,8 +200,8 @@ export async function POST(req: NextRequest) {
   }
 
   const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_SECRET!,
+    key_id: env.RAZORPAY_KEY_ID,
+    key_secret: env.RAZORPAY_SECRET!,
   });
 
   const rzpOrder = await razorpay.orders.create({
@@ -244,6 +252,6 @@ export async function POST(req: NextRequest) {
     paymentOption: option,
     total,
     chargeable,
-    keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    keyId: NEXT_PUBLIC_RAZORPAY_KEY_ID,
   });
 }

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -23,6 +24,8 @@ import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/ana
 import { readAttributionClient } from "@/lib/attribution";
 import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { WhatsAppIcon } from "@/components/icons/brand";
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -66,8 +69,9 @@ export function LeadForm({
   const wa = useWhatsAppLink();
 
   // ── Anti-bot ───────────────────────────────────────────────────────────────
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
   const honeypotRef = useRef<HTMLInputElement>(null);
   const renderedAt = useRef<number>(Date.now());
 
@@ -174,25 +178,23 @@ export function LeadForm({
 
   if (sent) {
     const successWaHref = wa(
-      `Hi! I'm ${sentName}. I just submitted a travel inquiry on your website and wanted to connect on WhatsApp.`
+      `Hi! I'm ${sentName}. I just submitted a travel inquiry on your website and wanted to connect on WhatsApp.`,
     );
     return (
       <div className={className}>
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.4, ease: EASE_BRAND }}
           className="py-6 text-center"
         >
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
             <Check className="h-7 w-7" strokeWidth={2.5} />
           </div>
-          <p className="text-[18px] font-bold text-foreground">
-            Thank you, {sentName}! 🌿
-          </p>
+          <p className="text-[18px] font-bold text-foreground">Thank you, {sentName}! 🌿</p>
           <p className="mx-auto mt-1.5 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
-            Our local Kashmir expert will connect with you on WhatsApp shortly —
-            usually within 30 minutes.
+            Our local Kashmir expert will connect with you on WhatsApp shortly — usually within 30
+            minutes.
           </p>
           <a
             href={successWaHref}
@@ -216,9 +218,7 @@ export function LeadForm({
           <span className="h-1.5 w-1.5 rounded-full bg-primary" /> {kicker}
         </p>
       )}
-      {title && (
-        <h2 className="h-display mt-3 text-[24px] font-bold text-foreground">{title}</h2>
-      )}
+      {title && <h2 className="h-display mt-3 text-[24px] font-bold text-foreground">{title}</h2>}
       {subtitle && <p className="mt-1 text-[14px] text-muted-foreground">{subtitle}</p>}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-5 space-y-3">
@@ -235,7 +235,10 @@ export function LeadForm({
 
         {/* Name */}
         <div>
-          <label htmlFor={`lf-name-${source}`} className="mb-1.5 block text-[14px] font-semibold text-foreground/90">
+          <label
+            htmlFor={`lf-name-${source}`}
+            className="mb-1.5 block text-[14px] font-semibold text-foreground/90"
+          >
             Full Name <span className="text-primary">*</span>
           </label>
           <div className="relative">
@@ -250,14 +253,15 @@ export function LeadForm({
               {...register("name")}
             />
           </div>
-          {errors.name && (
-            <p className="mt-1 text-[12px] text-red-500">{errors.name.message}</p>
-          )}
+          {errors.name && <p className="mt-1 text-[12px] text-red-500">{errors.name.message}</p>}
         </div>
 
         {/* Phone (country-aware, reuses PhoneInput) */}
         <div>
-          <label htmlFor={`lf-phone-${source}`} className="mb-1.5 block text-[14px] font-semibold text-foreground/90">
+          <label
+            htmlFor={`lf-phone-${source}`}
+            className="mb-1.5 block text-[14px] font-semibold text-foreground/90"
+          >
             Phone <span className="text-primary">*</span>
           </label>
           <PhoneInput
@@ -270,14 +274,15 @@ export function LeadForm({
           />
           {/* RHF holds the E.164 string the schema validates. */}
           <input type="hidden" {...register("phone")} />
-          {errors.phone && (
-            <p className="mt-1 text-[12px] text-red-500">{errors.phone.message}</p>
-          )}
+          {errors.phone && <p className="mt-1 text-[12px] text-red-500">{errors.phone.message}</p>}
         </div>
 
         {/* Email (optional) */}
         <div>
-          <label htmlFor={`lf-email-${source}`} className="mb-1.5 block text-[14px] font-semibold text-foreground/90">
+          <label
+            htmlFor={`lf-email-${source}`}
+            className="mb-1.5 block text-[14px] font-semibold text-foreground/90"
+          >
             Email <span className="font-medium text-muted-foreground">(optional)</span>
           </label>
           <div className="relative">
@@ -292,9 +297,7 @@ export function LeadForm({
               {...register("email")}
             />
           </div>
-          {errors.email && (
-            <p className="mt-1 text-[12px] text-red-500">{errors.email.message}</p>
-          )}
+          {errors.email && <p className="mt-1 text-[12px] text-red-500">{errors.email.message}</p>}
         </div>
 
         {/* Consent */}
@@ -309,23 +312,30 @@ export function LeadForm({
             />
             <span>
               I agree to the{" "}
-              <Link href="/terms-and-conditions" className="font-semibold text-primary underline-offset-2 hover:underline" target="_blank">
+              <Link
+                href="/terms-and-conditions"
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+                target="_blank"
+              >
                 Terms &amp; Conditions
               </Link>{" "}
               and{" "}
-              <Link href="/privacy-policy" className="font-semibold text-primary underline-offset-2 hover:underline" target="_blank">
+              <Link
+                href="/privacy-policy"
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+                target="_blank"
+              >
                 Privacy Policy
               </Link>
               .
             </span>
           </label>
-          {errors.agree && (
-            <p className="mt-1 text-[12px] text-red-500">{errors.agree.message}</p>
-          )}
+          {errors.agree && <p className="mt-1 text-[12px] text-red-500">{errors.agree.message}</p>}
         </div>
 
-        {/* Turnstile CAPTCHA — only when configured. */}
-        {siteKey && (
+        {/* Turnstile CAPTCHA — only when configured, and only once we're online
+            (it can't load offline, so don't attempt it). */}
+        {siteKey && isOnline && (
           <Turnstile
             siteKey={siteKey}
             options={{ size: "flexible", theme: "auto" }}
@@ -334,11 +344,16 @@ export function LeadForm({
             onExpire={() => setCaptchaToken(null)}
           />
         )}
+        {siteKey && !isOnline && (
+          <p className="text-[12px] text-muted-foreground">
+            Waiting for a connection to load verification…
+          </p>
+        )}
 
         {/* Submit */}
         <button
           type="submit"
-          disabled={isSubmitting || !isValid || (!!siteKey && !captchaToken)}
+          disabled={isSubmitting || !isValid || (!!siteKey && (!isOnline || !captchaToken))}
           className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
         >
           {isSubmitting ? (

@@ -1,22 +1,32 @@
 // src/components/sections/AuthImagePanel.tsx
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { Clock, Star } from 'lucide-react';
-import { Logo } from '@/components/brand/Logo';
+import { motion, AnimatePresence } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import { useState, useEffect } from "react";
+import { Clock, Star } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 interface AuthImagePanelProps {
-  view: 'login' | 'register';
+  view: "login" | "register";
 }
 
 export function AuthImagePanel({ view }: AuthImagePanelProps) {
   const [testimonialIndex, setTestimonialIndex] = useState(0);
 
   const testimonials = [
-    { quote: '"Vertex Kashmir made our honeymoon absolutely magical. Every detail was perfect!"', author: '– Arav & Meera, Bangalore' },
-    { quote: '"Booked for my parents — the team handled everything like family. Flawless trip."', author: '– Rohit S., Pune' },
-    { quote: '"Gondola tickets, houseboat, snow day — all sorted before we even landed."', author: '– Sana & Imran, Hyderabad' },
+    {
+      quote: '"Vertex Kashmir made our honeymoon absolutely magical. Every detail was perfect!"',
+      author: "– Arav & Meera, Bangalore",
+    },
+    {
+      quote: '"Booked for my parents — the team handled everything like family. Flawless trip."',
+      author: "– Rohit S., Pune",
+    },
+    {
+      quote: '"Gondola tickets, houseboat, snow day — all sorted before we even landed."',
+      author: "– Sana & Imran, Hyderabad",
+    },
   ];
 
   useEffect(() => {
@@ -34,7 +44,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
         className="absolute inset-0 h-full w-full object-cover"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.5, ease: EASE_BRAND }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/55 via-brand-dark/25 to-brand-dark/80"></div>
 
@@ -53,7 +63,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
             >
-              {view === 'login' ? 'Welcome back!' : 'Join our family'}
+              {view === "login" ? "Welcome back!" : "Join our family"}
             </motion.p>
           </AnimatePresence>
           <AnimatePresence mode="wait">
@@ -65,13 +75,15 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
             >
-              {view === 'login'
+              {view === "login"
                 ? "Let's continue your Kashmir journey"
                 : "Let's start your Kashmir adventure"}
             </motion.h1>
           </AnimatePresence>
           <p className="mt-5 text-[16px] leading-relaxed text-white/85">
-            Handcrafted trips. Honest pricing.<br/>Unforgettable memories.
+            Handcrafted trips. Honest pricing.
+            <br />
+            Unforgettable memories.
           </p>
         </div>
 
@@ -139,7 +151,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
                 key={i}
                 onClick={() => setTestimonialIndex(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === testimonialIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/40'
+                  i === testimonialIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
                 }`}
                 aria-label={`Testimonial ${i + 1}`}
               />
@@ -147,7 +159,8 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
           </div>
 
           <p className="mt-6 text-[12px] text-white/55">
-            © 2026 Vertex Kashmir Holidays. All rights reserved.
+            © {new Date().getFullYear()} Vertex Kashmir Holidays, operated by Vertex Kashmir Tour &
+            Travels. All rights reserved.
           </p>
         </div>
       </div>

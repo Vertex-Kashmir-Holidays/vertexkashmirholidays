@@ -1,8 +1,8 @@
 // src/components/sections/TourDetailsInclusions.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Check, X } from "lucide-react";
 
 interface TourDetailsInclusionsProps {
   inclusions: string[];

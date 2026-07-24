@@ -32,7 +32,16 @@ interface UploadResult {
   publicId: string | null;
 }
 
-export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed, editingMessage, onCancelEdit, onEdited }: Props) {
+export function MessageInput({
+  roomId,
+  disabled,
+  onSending,
+  onSent,
+  onSendFailed,
+  editingMessage,
+  onCancelEdit,
+  onEdited,
+}: Props) {
   const [text, setText] = useState("");
   const [, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -79,11 +88,13 @@ export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed
       if (!res.ok) throw new Error("Upload failed");
       const data = (await res.json()) as UploadResult;
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-      const attachType =
-        file.type.startsWith("image/") ? "image"
-        : ext === "pdf" ? "pdf"
-        : "file";
-      setAttachment({ url: data.url, publicId: data.publicId ?? null, name: file.name, type: attachType });
+      const attachType = file.type.startsWith("image/") ? "image" : ext === "pdf" ? "pdf" : "file";
+      setAttachment({
+        url: data.url,
+        publicId: data.publicId ?? null,
+        name: file.name,
+        type: attachType,
+      });
     } catch {
       toast.error("Upload failed. Please try again.");
     } finally {
@@ -123,7 +134,7 @@ export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed
           body: JSON.stringify({ body: trimmed }),
         });
         if (!res.ok) {
-          const data = await res.json().catch(() => ({})) as { error?: string };
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
           throw new Error(data.error ?? "Edit failed");
         }
         const msg = await res.json();
@@ -201,106 +212,109 @@ export function MessageInput({ roomId, disabled, onSending, onSent, onSendFailed
 
   return (
     <div className="relative">
-      {showEmoji && (
-        <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
-      )}
+      {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />}
       <div className="p-3 border-t border-border bg-background">
-      {editingMessage && (
-        <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs">
-          <Pencil className="w-3 h-3 text-primary shrink-0" />
-          <span className="flex-1 text-primary">Editing message</span>
-          <button onClick={onCancelEdit} className="text-muted-foreground hover:text-foreground">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {attachment && !editingMessage && (
-        <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm">
-          <Paperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <span className="truncate flex-1 text-xs">{attachment.name}</span>
-          <button
-            onClick={() => setAttachment(null)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      <div className="flex items-end gap-2">
-        {!editingMessage && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => fileRef.current?.click()}
-            className={cn(
-              "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
-              busy && "opacity-50 cursor-not-allowed",
-            )}
-            title="Attach file"
-          >
-            <Paperclip className="w-4 h-4" />
-          </button>
-        )}
-        {!editingMessage && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setShowEmoji((v) => !v)}
-            className={cn(
-              "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
-              busy && "opacity-50 cursor-not-allowed",
-              showEmoji && "text-foreground bg-muted",
-            )}
-            title="Emoji"
-          >
-            <Smile className="w-4 h-4" />
-          </button>
+        {editingMessage && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs">
+            <Pencil className="w-3 h-3 text-primary shrink-0" />
+            <span className="flex-1 text-primary">Editing message</span>
+            <button onClick={onCancelEdit} className="text-muted-foreground hover:text-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
 
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={handleChange}
-          onKeyDown={onKeyDown}
-          disabled={busy}
-          placeholder={editingMessage ? "Edit message… (Esc to cancel)" : "Message… (Enter to send, Shift+Enter for new line)"}
-          rows={1}
-          className={cn(
-            "flex-1 resize-none rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-sm",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30",
-            "overflow-y-auto",
-            busy && "opacity-50 cursor-not-allowed",
+        {attachment && !editingMessage && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm">
+            <Paperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="truncate flex-1 text-xs">{attachment.name}</span>
+            <button
+              onClick={() => setAttachment(null)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-end gap-2">
+          {!editingMessage && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+              className={cn(
+                "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
+                busy && "opacity-50 cursor-not-allowed",
+              )}
+              title="Attach file"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
           )}
-          style={{ minHeight: 40, maxHeight: 200 }}
+          {!editingMessage && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setShowEmoji((v) => !v)}
+              className={cn(
+                "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0",
+                busy && "opacity-50 cursor-not-allowed",
+                showEmoji && "text-foreground bg-muted",
+              )}
+              title="Emoji"
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+          )}
+
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={handleChange}
+            onKeyDown={onKeyDown}
+            disabled={busy}
+            placeholder={
+              editingMessage
+                ? "Edit message… (Esc to cancel)"
+                : "Message… (Enter to send, Shift+Enter for new line)"
+            }
+            rows={1}
+            className={cn(
+              "flex-1 resize-none rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-sm",
+              "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30",
+              "overflow-y-auto",
+              busy && "opacity-50 cursor-not-allowed",
+            )}
+            style={{ minHeight: 40, maxHeight: 200 }}
+          />
+
+          <button
+            type="button"
+            disabled={busy || (!text.trim() && !attachment && !editingMessage)}
+            onClick={send}
+            className={cn(
+              "p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0",
+              (busy || (!text.trim() && !attachment && !editingMessage)) &&
+                "opacity-50 cursor-not-allowed",
+            )}
+            title={editingMessage ? "Save edit" : "Send"}
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,.pdf,.doc,.docx,.txt"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+            e.target.value = "";
+          }}
         />
-
-        <button
-          type="button"
-          disabled={busy || (!text.trim() && !attachment && !editingMessage)}
-          onClick={send}
-          className={cn(
-            "p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0",
-            (busy || (!text.trim() && !attachment && !editingMessage)) && "opacity-50 cursor-not-allowed",
-          )}
-          title={editingMessage ? "Save edit" : "Send"}
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </div>
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*,.pdf,.doc,.docx,.txt"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-          e.target.value = "";
-        }}
-      />
       </div>
     </div>
   );

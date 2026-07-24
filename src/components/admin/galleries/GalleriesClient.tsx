@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film, ImageOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
-import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
+import { GalleryLightbox } from "@/components/ui/organisms/GalleryLightbox";
 import { uploadVideoDirect } from "@/lib/uploadVideoDirect";
 
 type MediaType = "IMAGE" | "VIDEO";
@@ -39,7 +39,14 @@ interface Props {
   canDelete: boolean;
 }
 
-export function GalleriesClient({ initialItems, totalCount, categories, canCreate, canEdit, canDelete }: Props) {
+export function GalleriesClient({
+  initialItems,
+  totalCount,
+  categories,
+  canCreate,
+  canEdit,
+  canDelete,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -59,7 +66,7 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
     (i) =>
       (categoryFilter === "ALL" || i.category === categoryFilter) &&
       (typeFilter === "ALL" || i.type === typeFilter) &&
-      (sourceTab === "ALL" || getSource(i) === sourceTab)
+      (sourceTab === "ALL" || getSource(i) === sourceTab),
   );
 
   // Lightbox only shows real, loadable images — videos and broken images are excluded,
@@ -141,7 +148,10 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
     startTransition(async () => {
       try {
         const res = await fetch(`/api/galleries/${id}`, { method: "DELETE" });
-        if (res.status === 403) { toast.error("You don't have permission to delete media. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to delete media. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error();
         toast.success("Image removed.");
         router.refresh();
@@ -161,7 +171,10 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ alt: item.alt, caption: item.caption, category: item.category }),
         });
-        if (res.status === 403) { toast.error("You don't have permission to edit media. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error("You don't have permission to edit media. Contact your administrator.");
+          return;
+        }
         if (!res.ok) throw new Error();
         toast.success("Saved.");
         setEditItem(null);
@@ -177,7 +190,9 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Gallery</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">{totalCount} items across {categories.length} categories</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            {totalCount} items across {categories.length} categories
+          </p>
         </div>
       </div>
 
@@ -186,15 +201,22 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           {/* Source tab strip */}
           <div className="flex items-center gap-2 p-4 pb-0 overflow-x-auto border-b border-border">
-            {([
-              { key: "ALL",   label: "All sources" },
-              { key: "LOCAL", label: "💾 Local" },
-              { key: "STOCK", label: "🌐 Stock / Cloudinary" },
-            ] as const).map(({ key, label }) => (
+            {(
+              [
+                { key: "ALL", label: "All sources" },
+                { key: "LOCAL", label: "💾 Local" },
+                { key: "STOCK", label: "🌐 Stock / Cloudinary" },
+              ] as const
+            ).map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setSourceTab(key)}
-                className={cn("text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors", sourceTab === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted")}
+                className={cn(
+                  "text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors",
+                  sourceTab === key
+                    ? "bg-primary text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted",
+                )}
               >
                 {label}
               </button>
@@ -203,15 +225,22 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
 
           {/* Type filter strip */}
           <div className="flex items-center gap-2 p-4 pb-0 overflow-x-auto">
-            {([
-              { key: "ALL", label: "All media" },
-              { key: "IMAGE", label: "Images" },
-              { key: "VIDEO", label: "Videos" },
-            ] as const).map(({ key, label }) => (
+            {(
+              [
+                { key: "ALL", label: "All media" },
+                { key: "IMAGE", label: "Images" },
+                { key: "VIDEO", label: "Videos" },
+              ] as const
+            ).map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setTypeFilter(key)}
-                className={cn("text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors", typeFilter === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted")}
+                className={cn(
+                  "text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors",
+                  typeFilter === key
+                    ? "bg-primary text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted",
+                )}
               >
                 {label}
               </button>
@@ -222,7 +251,12 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
           <div className="flex items-center gap-2 p-4 border-b border-border overflow-x-auto">
             <button
               onClick={() => setCategoryFilter("ALL")}
-              className={cn("text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors", categoryFilter === "ALL" ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted")}
+              className={cn(
+                "text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors",
+                categoryFilter === "ALL"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted",
+              )}
             >
               All ({totalCount})
             </button>
@@ -230,7 +264,12 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
-                className={cn("text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors", categoryFilter === cat ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted")}
+                className={cn(
+                  "text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-colors",
+                  categoryFilter === cat
+                    ? "bg-primary text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted",
+                )}
               >
                 {cat}
               </button>
@@ -239,7 +278,9 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
 
           {/* Image grid */}
           {filtered.length === 0 ? (
-            <div className="py-20 text-center text-muted-foreground text-sm">No media yet. Upload some!</div>
+            <div className="py-20 text-center text-muted-foreground text-sm">
+              No media yet. Upload some!
+            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-4">
               {filtered.map((item) => (
@@ -256,7 +297,13 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                   }}
                 >
                   {item.type === "VIDEO" ? (
-                    <video src={item.url} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                    <video
+                      src={item.url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                    />
                   ) : brokenIds.has(item.id) ? (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-red-50 dark:bg-red-950/30 text-red-400">
                       <ImageOff className="w-6 h-6" />
@@ -271,7 +318,10 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                       onError={() => setBrokenIds((prev) => new Set([...prev, item.id]))}
                       onLoad={(e) => {
                         const { naturalWidth, naturalHeight } = e.currentTarget;
-                        setDims((prev) => ({ ...prev, [item.id]: { width: naturalWidth, height: naturalHeight } }));
+                        setDims((prev) => ({
+                          ...prev,
+                          [item.id]: { width: naturalWidth, height: naturalHeight },
+                        }));
                       }}
                     />
                   )}
@@ -282,7 +332,8 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                       brokenIds.has(item.id)
                         ? "bg-black/30 opacity-100" // always visible for broken images
                         : "bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100",
-                    )}>
+                    )}
+                  >
                     {item.type !== "VIDEO" && !brokenIds.has(item.id) && (
                       <button
                         onClick={() => {
@@ -300,7 +351,11 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                       className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
                       title="Copy URL"
                     >
-                      {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedId === item.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                     </button>
                     {canEdit && (
                       <button
@@ -311,24 +366,32 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                         <Tag className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {canDelete && (confirmDelete === item.id ? (
-                      <>
-                        <button onClick={() => handleDelete(item.id)} disabled={isPending} className="w-7 h-7 rounded-lg bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors">
+                    {canDelete &&
+                      (confirmDelete === item.id ? (
+                        <>
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            disabled={isPending}
+                            className="w-7 h-7 rounded-lg bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-muted-foreground hover:bg-card"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDelete(item.id)}
+                          className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-red-500 dark:text-red-400 hover:bg-card transition-colors"
+                          title="Delete"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => setConfirmDelete(null)} className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-muted-foreground hover:bg-card">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => setConfirmDelete(item.id)}
-                        className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-red-500 dark:text-red-400 hover:bg-card transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    ))}
+                      ))}
                   </div>
                   {item.type === "VIDEO" && (
                     <span className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md pointer-events-none">
@@ -356,65 +419,91 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Upload */}
-          {canCreate && <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
-            <h3 className="font-bold text-foreground text-sm">Upload Media</h3>
+          {canCreate && (
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
+              <h3 className="font-bold text-foreground text-sm">Upload Media</h3>
 
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Default Category <span className="text-red-500">*</span>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Default Category <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="e.g. Landscapes, Food..."
+                  required
+                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Alt Text
+                </label>
+                <input
+                  type="text"
+                  value={newAlt}
+                  onChange={(e) => setNewAlt(e.target.value)}
+                  placeholder="Image description..."
+                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                />
+              </div>
+
+              <label
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border rounded-xl transition-colors",
+                  uploading || !newCategory.trim()
+                    ? "opacity-50 pointer-events-none"
+                    : "cursor-pointer hover:border-primary hover:bg-primary/5",
+                )}
+              >
+                {uploading ? (
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                ) : (
+                  <Upload className="w-6 h-6 text-muted-foreground" />
+                )}
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {uploading
+                    ? "Uploading..."
+                    : !newCategory.trim()
+                      ? "Enter a category above to enable upload"
+                      : "Click to select files"}
+                </p>
+                <p className="text-[12px] text-muted-foreground">
+                  PNG · SVG · WebP (max 500 KB) • Video (max 10 MB)
+                </p>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,video/*"
+                  multiple
+                  className="hidden"
+                  disabled={uploading || !newCategory.trim()}
+                  onChange={(e) => e.target.files && handleUpload(e.target.files)}
+                />
               </label>
-              <input
-                type="text"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="e.g. Landscapes, Food..."
-                required
-                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
-              />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Alt Text</label>
-              <input
-                type="text"
-                value={newAlt}
-                onChange={(e) => setNewAlt(e.target.value)}
-                placeholder="Image description..."
-                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
-              />
-            </div>
-
-            <label
-              className={cn(
-                "flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border rounded-xl transition-colors",
-                uploading || !newCategory.trim() ? "opacity-50 pointer-events-none" : "cursor-pointer hover:border-primary hover:bg-primary/5",
-              )}
-            >
-              {uploading ? <Loader2 className="w-6 h-6 text-primary animate-spin" /> : <Upload className="w-6 h-6 text-muted-foreground" />}
-              <p className="text-xs font-semibold text-muted-foreground">
-                {uploading ? "Uploading..." : !newCategory.trim() ? "Enter a category above to enable upload" : "Click to select files"}
-              </p>
-              <p className="text-[12px] text-muted-foreground">PNG · SVG · WebP (max 500 KB) • Video (max 10 MB)</p>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,video/*"
-                multiple
-                className="hidden"
-                disabled={uploading || !newCategory.trim()}
-                onChange={(e) => e.target.files && handleUpload(e.target.files)}
-              />
-            </label>
-          </div>}
+          )}
 
           {/* Edit item */}
           {editItem && (
             <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-foreground text-sm">Edit Image</h3>
-                <button onClick={() => setEditItem(null)} className="text-muted-foreground hover:text-muted-foreground"><X className="w-4 h-4" /></button>
+                <button
+                  onClick={() => setEditItem(null)}
+                  className="text-muted-foreground hover:text-muted-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
               <div className="aspect-video rounded-xl overflow-hidden bg-muted">
                 {editItem.type === "VIDEO" ? (
-                  <video src={editItem.url} controls playsInline className="w-full h-full object-cover" />
+                  <video
+                    src={editItem.url}
+                    controls
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={editItem.url} alt="" className="w-full h-full object-cover" />
@@ -424,11 +513,17 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                 onClick={() => handleCopyUrl(editItem)}
                 className="w-full flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground text-xs font-bold px-4 py-2 rounded-xl transition-colors"
               >
-                {copiedId === editItem.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedId === editItem.id ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
                 Copy URL
               </button>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Alt Text</label>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Alt Text
+                </label>
                 <input
                   value={editItem.alt ?? ""}
                   onChange={(e) => setEditItem({ ...editItem, alt: e.target.value })}
@@ -436,7 +531,9 @@ export function GalleriesClient({ initialItems, totalCount, categories, canCreat
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">Category</label>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Category
+                </label>
                 <input
                   value={editItem.category ?? ""}
                   onChange={(e) => setEditItem({ ...editItem, category: e.target.value })}

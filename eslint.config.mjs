@@ -1,3 +1,6 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import storybook from "eslint-plugin-storybook";
+
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
@@ -27,9 +30,13 @@ const eslintConfig = [
       "@next/next/no-html-link-for-pages": "warn",
       // Established codebase convention (~50 existing call sites) for
       // intentionally-unused parameters, e.g. `(_req: NextRequest)`.
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
     },
   },
+  ...storybook.configs["flat/recommended"],
 ];
 
 export default eslintConfig;

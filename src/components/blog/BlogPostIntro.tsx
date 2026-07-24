@@ -1,7 +1,7 @@
 // src/components/sections/BlogPostIntro.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface BlogPostIntroProps {
   paragraphs: string[];
@@ -17,7 +17,7 @@ export function BlogPostIntro({ paragraphs }: BlogPostIntroProps) {
       transition={{ duration: 0.5 }}
     >
       {paragraphs.map((p, i) => (
-        <p key={i} className={i === 0 ? 'dropcap' : ''}>
+        <p key={i} className={i === 0 ? "dropcap" : ""}>
           {p}
         </p>
       ))}

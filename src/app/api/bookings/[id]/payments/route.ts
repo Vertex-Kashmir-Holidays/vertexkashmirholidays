@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       amount: true,
       discountType: true,
       discountValue: true,
-      payments: { select: { amount: true } },
+      payments: { select: { amount: true, type: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -47,7 +47,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 

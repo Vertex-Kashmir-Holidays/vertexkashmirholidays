@@ -1,23 +1,25 @@
 // src/components/contact/ContactForm.tsx
-'use client';
+"use client";
 
-import { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { Turnstile } from '@marsidev/react-turnstile';
-import { ShieldCheck, ArrowRight } from 'lucide-react';
-import type { CountryCode } from 'libphonenumber-js';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { PhoneInput } from '@/components/auth/PhoneInput';
-import { toE164 } from '@/lib/auth/validation';
-import { nameField, phoneField } from '@/lib/leads/schema';
-import { HONEYPOT_FIELD, TIMETRAP_FIELD } from '@/lib/security/formGuard';
-import type { ContactFormContent } from '@/types/contact';
-import { trackLeadSubmit } from '@/lib/analytics';
+import { useRef, useState } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { Turnstile } from "@marsidev/react-turnstile";
+import { ShieldCheck, ArrowRight } from "lucide-react";
+import type { CountryCode } from "libphonenumber-js";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { PhoneInput } from "@/components/auth/PhoneInput";
+import { toE164 } from "@/lib/auth/validation";
+import { nameField, phoneField } from "@/lib/leads/schema";
+import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
+import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
+import type { ContactFormContent } from "@/types/contact";
+import { trackLeadSubmit } from "@/lib/analytics";
 
 // Reuses the shared lead primitives (name sanitize + E.164 phone) so the
 // contact form validates identically to the rest of the site. Email is required
@@ -25,26 +27,27 @@ import { trackLeadSubmit } from '@/lib/analytics';
 const schema = z.object({
   name: nameField,
   phone: phoneField,
-  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
   message: z.string().trim().max(2000).optional(),
   agree: z.boolean().refine((v) => v === true, {
-    message: 'Please accept the Terms & Conditions and Privacy Policy.',
+    message: "Please accept the Terms & Conditions and Privacy Policy.",
   }),
 });
 type FormValues = z.input<typeof schema>;
 
-const formTrust = ['No spam. Ever.', 'We reply within 2 hours', '100% free advice'];
+const formTrust = ["No spam. Ever.", "We reply within 2 hours", "100% free advice"];
 
 interface ContactFormProps {
   content: ContactFormContent;
 }
 
 export function ContactForm({ content }: ContactFormProps) {
-  const [country, setCountry] = useState<CountryCode>('IN');
-  const [national, setNational] = useState('');
+  const [country, setCountry] = useState<CountryCode>("IN");
+  const [national, setNational] = useState("");
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const isOnline = useOnlineStatus();
   const honeypotRef = useRef<HTMLInputElement>(null);
   const renderedAt = useRef<number>(Date.now());
 
@@ -56,28 +59,28 @@ export function ContactForm({ content }: ContactFormProps) {
     setError,
     trigger,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: 'onChange' });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onChange" });
 
   function syncPhone(nextNational: string, nextCountry: CountryCode) {
     setNational(nextNational);
     setCountry(nextCountry);
     const e164 = toE164(nextNational, nextCountry);
-    setValue('phone', e164 ?? nextNational, { shouldValidate: true });
+    setValue("phone", e164 ?? nextNational, { shouldValidate: true });
   }
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const res = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: data.name,
           phone: data.phone,
           email: data.email,
           message: data.message || undefined,
           agree: data.agree,
-          source: 'contact',
-          [HONEYPOT_FIELD]: honeypotRef.current?.value ?? '',
+          source: "contact",
+          [HONEYPOT_FIELD]: honeypotRef.current?.value ?? "",
           [TIMETRAP_FIELD]: renderedAt.current,
           turnstileToken: captchaToken ?? undefined,
         }),
@@ -90,25 +93,25 @@ export function ContactForm({ content }: ContactFormProps) {
         };
         // Map validation failures onto their fields (inline, no stack traces).
         if (j.fieldErrors) {
-          for (const key of ['name', 'phone', 'email', 'message', 'agree'] as const) {
+          for (const key of ["name", "phone", "email", "message", "agree"] as const) {
             const msg = j.fieldErrors[key]?.[0];
-            if (msg) setError(key, { type: 'server', message: msg });
+            if (msg) setError(key, { type: "server", message: msg });
           }
           return;
         }
-        throw new Error(j.error ?? 'Request failed');
-      }  
+        throw new Error(j.error ?? "Request failed");
+      }
       trackLeadSubmit("contact");
       toast.success("Message sent! We'll reply within 2 hours.");
       reset();
-      setNational('');
+      setNational("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     }
   };
 
   const inputClass =
-    'mt-1.5 w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-[14px] text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20';
+    "mt-1.5 w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-[14px] text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20";
 
   return (
     <aside className="rounded-2xl border border-border bg-card p-5 shadow-card lg:sticky lg:top-24">
@@ -139,20 +142,31 @@ export function ContactForm({ content }: ContactFormProps) {
           tabIndex={-1}
           autoComplete="off"
           aria-hidden="true"
-          style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+          style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
         />
         <div>
           <label htmlFor="cName" className="text-[14px] font-semibold">
             Your Name <span className="text-rose-500">*</span>
           </label>
-          <input id="cName" className={inputClass} placeholder="Enter your name" {...register('name')} />
+          <input
+            id="cName"
+            className={inputClass}
+            placeholder="Enter your name"
+            {...register("name")}
+          />
           {errors.name && <p className="mt-1 text-[12px] text-rose-500">{errors.name.message}</p>}
         </div>
         <div>
           <label htmlFor="cEmail" className="text-[14px] font-semibold">
             Email Address <span className="text-rose-500">*</span>
           </label>
-          <input id="cEmail" type="email" className={inputClass} placeholder="Enter your email" {...register('email')} />
+          <input
+            id="cEmail"
+            type="email"
+            className={inputClass}
+            placeholder="Enter your email"
+            {...register("email")}
+          />
           {errors.email && <p className="mt-1 text-[12px] text-rose-500">{errors.email.message}</p>}
         </div>
         <div>
@@ -167,7 +181,7 @@ export function ContactForm({ content }: ContactFormProps) {
             onChange={(v) => syncPhone(v, country)}
             invalid={!!errors.phone}
           />
-          <input type="hidden" {...register('phone')} />
+          <input type="hidden" {...register("phone")} />
           {errors.phone && <p className="mt-1 text-[12px] text-rose-500">{errors.phone.message}</p>}
         </div>
         <div>
@@ -179,7 +193,7 @@ export function ContactForm({ content }: ContactFormProps) {
             rows={4}
             className={`${inputClass} resize-none`}
             placeholder="Tell us about your dream trip..."
-            {...register('message')}
+            {...register("message")}
           />
         </div>
 
@@ -197,15 +211,23 @@ export function ContactForm({ content }: ContactFormProps) {
             <input
               type="checkbox"
               className="cbx mt-0.5 shrink-0"
-              {...register('agree', { onChange: () => trigger('agree') })}
+              {...register("agree", { onChange: () => trigger("agree") })}
             />
             <span>
-              I agree to the{' '}
-              <Link href="/terms-and-conditions" target="_blank" className="font-semibold text-primary underline-offset-2 hover:underline">
+              I agree to the{" "}
+              <Link
+                href="/terms-and-conditions"
+                target="_blank"
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
                 Terms &amp; Conditions
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy-policy" target="_blank" className="font-semibold text-primary underline-offset-2 hover:underline">
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy-policy"
+                target="_blank"
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
                 Privacy Policy
               </Link>
               .
@@ -214,24 +236,29 @@ export function ContactForm({ content }: ContactFormProps) {
           {errors.agree && <p className="mt-1 text-[12px] text-rose-500">{errors.agree.message}</p>}
         </div>
 
-        {siteKey && (
+        {siteKey && isOnline && (
           <Turnstile
             siteKey={siteKey}
-            options={{ size: 'flexible', theme: 'auto' }}
+            options={{ size: "flexible", theme: "auto" }}
             onSuccess={(t) => setCaptchaToken(t)}
             onError={() => setCaptchaToken(null)}
             onExpire={() => setCaptchaToken(null)}
           />
         )}
+        {siteKey && !isOnline && (
+          <p className="text-[12px] text-muted-foreground">
+            Waiting for a connection to load verification…
+          </p>
+        )}
 
         <motion.button
           type="submit"
-          disabled={isSubmitting || (!!siteKey && !captchaToken)}
+          disabled={isSubmitting || (!!siteKey && (!isOnline || !captchaToken))}
           className="!mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[14px] font-bold text-primary-foreground shadow-card transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          {isSubmitting ? 'Sending…' : 'Send Message'}
+          {isSubmitting ? "Sending…" : "Send Message"}
           {!isSubmitting && <ArrowRight className="h-4 w-4" strokeWidth={2.2} />}
         </motion.button>
       </form>
@@ -239,7 +266,7 @@ export function ContactForm({ content }: ContactFormProps) {
       {content.note && (
         <p className="mt-3.5 flex items-center justify-center gap-2 text-[14px] text-muted-foreground">
           <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
-          {content.note}{' '}
+          {content.note}{" "}
           <Link href={content.whatsappHref} className="font-bold text-primary hover:underline">
             Chat instantly
           </Link>

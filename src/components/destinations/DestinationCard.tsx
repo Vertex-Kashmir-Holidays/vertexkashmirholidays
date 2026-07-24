@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Heart, Thermometer, Calendar } from 'lucide-react';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import { imgSrc } from '@/lib/placeholder';
-import type { DestinationCardData } from '@/components/destinations/DestinationsGrid';
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Heart, Thermometer, Calendar } from "lucide-react";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
+import { imgSrc } from "@/lib/placeholder";
+import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
 
 interface DestinationCardProps {
   dest: DestinationCardData;
@@ -19,7 +19,11 @@ export function DestinationCard({ dest }: DestinationCardProps) {
 
   return (
     <Tilt3D intensity={6}>
-      <Link href={`/destinations/${dest.slug}`} aria-label={`View ${dest.name}`} className="block h-full">
+      <Link
+        href={`/destinations/${dest.slug}`}
+        aria-label={`View ${dest.name}`}
+        className="block h-full"
+      >
         <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
           <div className="relative h-44 overflow-hidden">
             <Image
@@ -30,7 +34,7 @@ export function DestinationCard({ dest }: DestinationCardProps) {
               className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">
-              {dest.tours} {dest.tours === 1 ? 'Tour' : 'Tours'}
+              {dest.tours} {dest.tours === 1 ? "Tour" : "Tours"}
             </span>
             <motion.button
               aria-label={`Save ${dest.name}`}
@@ -47,8 +51,14 @@ export function DestinationCard({ dest }: DestinationCardProps) {
           </div>
           <div className="flex flex-1 flex-col p-4">
             <h3 className="text-[18px] font-bold">{dest.name}</h3>
-            {dest.tagline && <p className="mt-0.5 text-[14px] font-medium text-muted-foreground">{dest.tagline}</p>}
-            {dest.description && <p className="mt-2 min-h-[40px] text-[14px] leading-relaxed text-foreground/70">{dest.description}</p>}
+            {dest.tagline && (
+              <p className="mt-0.5 text-[14px] font-medium text-muted-foreground">{dest.tagline}</p>
+            )}
+            {dest.description && (
+              <p className="mt-2 min-h-[40px] text-[14px] leading-relaxed text-foreground/70">
+                {dest.description}
+              </p>
+            )}
             {(dest.temperature != null || dest.season) && (
               <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[12px] font-semibold text-foreground/75">
                 {dest.temperature != null && (

@@ -5,14 +5,22 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DestinationForm } from "@/components/admin/destinations/DestinationForm";
-import { parseStringList, parseTopAttractions, parseFoodOrShop, parseIdList } from "@/lib/destinations/content";
+import {
+  parseStringList,
+  parseTopAttractions,
+  parseFoodOrShop,
+  parseIdList,
+} from "@/lib/destinations/content";
 
 type Props = { params: Promise<{ id: string }> };
 
 // Wrapped in React's cache() so generateMetadata() and the page component
 // share one query per request instead of each fetching this row separately.
 const getDestination = cache(async (id: string) =>
-  prisma.destination.findUnique({ where: { id }, include: { activities: { select: { activityId: true } } } }),
+  prisma.destination.findUnique({
+    where: { id },
+    include: { activities: { select: { activityId: true } } },
+  }),
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -28,7 +36,11 @@ export default async function EditDestinationPage({ params }: Props) {
   const [dest, activities, blogs] = await Promise.all([
     getDestination(id),
     prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.blog.findMany({ where: { published: true }, orderBy: { title: "asc" }, select: { id: true, title: true } }),
+    prisma.blog.findMany({
+      where: { published: true },
+      orderBy: { title: "asc" },
+      select: { id: true, title: true },
+    }),
   ]);
   if (!dest) notFound();
 
@@ -36,8 +48,14 @@ export default async function EditDestinationPage({ params }: Props) {
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/destinations" className="hover:text-primary transition-colors">Destinations</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/destinations" className="hover:text-primary transition-colors">
+              Destinations
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium truncate max-w-[200px]">{dest.name}</li>
         </ol>
       </nav>
@@ -46,7 +64,12 @@ export default async function EditDestinationPage({ params }: Props) {
           <h2 className="font-display font-extrabold text-foreground text-xl">Edit Destination</h2>
           <p className="text-muted-foreground text-xs mt-0.5">{dest.name}</p>
         </div>
-        <a href={`/destinations/${dest.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-semibold hover:underline shrink-0">
+        <a
+          href={`/destinations/${dest.slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-primary font-semibold hover:underline shrink-0"
+        >
           View Live ↗
         </a>
       </div>

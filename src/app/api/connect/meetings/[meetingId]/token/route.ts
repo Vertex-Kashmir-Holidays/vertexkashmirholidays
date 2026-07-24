@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, importPKCS8 } from "jose";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 
 type Params = { params: Promise<{ meetingId: string }> };
 
@@ -35,9 +36,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  const appId = process.env.JAAS_APP_ID;
-  const keyId = process.env.JAAS_KEY_ID;
-  const rawPrivateKey = process.env.JAAS_PRIVATE_KEY;
+  const appId = env.JAAS_APP_ID;
+  const keyId = env.JAAS_KEY_ID;
+  const rawPrivateKey = env.JAAS_PRIVATE_KEY;
 
   if (!appId || !keyId || !rawPrivateKey) {
     return NextResponse.json({ error: "JaaS not configured" }, { status: 500 });

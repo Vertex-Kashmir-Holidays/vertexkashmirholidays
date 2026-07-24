@@ -1,15 +1,14 @@
-// src/app/(public)/campaign/[slug]/page.tsx
+// src/app/(public)/adventures/[slug]/page.tsx
 
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { getSiteSettings } from '@/lib/siteSettings';
+import { getSiteSettings, buildFooterSettings } from '@/lib/siteSettings';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
 import { JsonLd, buildBreadcrumbList, buildCampaignProduct, buildCampaignEvents, buildFAQPage } from '@/components/seo/JsonLd';
 import { getDisplayReviews } from '@/lib/reviews';
-import type { FooterSettings } from '@/components/layout/Footer';
 import { sanitizeInlineHtml } from '@/lib/sanitize';
 import type {
   CampaignActivity,
@@ -56,14 +55,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return buildMetadata({
       title: 'Campaign Not Found',
       description: 'This campaign could not be found.',
-      canonical: `${SITE_URL}/campaign/${slug}`,
+      canonical: `${SITE_URL}/adventures/${slug}`,
       noindex: true,
     });
   }
   return buildMetadata({
     title: c.metaTitle ?? c.name,
     description: c.metaDesc ?? c.sub ?? `${c.name} — a curated Kashmir experience by Vertex Kashmir Holidays.`,
-    canonical: `${SITE_URL}/campaign/${slug}`,
+    canonical: `${SITE_URL}/adventures/${slug}`,
     ogImage: c.ogImage ?? c.heroImage ?? null,
   });
 }
@@ -77,22 +76,7 @@ export default async function CampaignPage({ params }: PageProps) {
   ]);
   if (!c || !c.published) notFound();
 
-  const footerSettings: FooterSettings | null = s
-    ? {
-        siteName: s.siteName,
-        siteTagline: s.siteTagline,
-        siteEmail: s.siteEmail,
-        sitePhone: s.sitePhone,
-        siteAddress: s.siteAddress,
-        whatsapp: s.whatsapp,
-        facebook: s.facebook,
-        instagram: s.instagram,
-        twitter: s.twitter,
-        youtube: s.youtube,
-        googleReviews: s.googleReviews,
-        tripadvisor: s.tripadvisor,
-      }
-    : null;
+  const footerSettings = buildFooterSettings(s);
 
   // Campaign "traveller stories" now pull from the global Review module rather
   // than a per-campaign JSON field — reviews are admin/customer managed.
@@ -153,7 +137,7 @@ export default async function CampaignPage({ params }: PageProps) {
 
   const breadcrumbLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
-    { name: data.name, url: `${SITE_URL}/campaign/${data.slug}` },
+    { name: data.name, url: `${SITE_URL}/adventures/${data.slug}` },
   ]);
   const productLd = buildCampaignProduct({
     name: data.name,

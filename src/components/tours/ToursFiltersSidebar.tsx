@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { Search, RotateCcw, X, ArrowRight } from 'lucide-react';
-import type { TourCategory } from '@prisma/client';
-import { PriceRangeSlider } from '@/components/ui/PriceRangeSlider';
-import { TOUR_CATEGORY_META } from '@/lib/tours/categories';
-import type { CategoryOption, DurationOption } from '@/types/tours';
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import { useState, useEffect } from "react";
+import { Search, RotateCcw, X, ArrowRight } from "lucide-react";
+import type { TourCategory } from "@prisma/client";
+import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
+import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
+import type { CategoryOption, DurationOption } from "@/types/tours";
 
 interface ToursFiltersSidebarProps {
   browseCategories: TourCategory[];
@@ -112,7 +113,10 @@ function FilterContent({
                 onChange={() => onToggleCategory(c.id)}
                 id={`${idPrefix}-cat-${c.id}`}
               />
-              <label htmlFor={`${idPrefix}-cat-${c.id}`} className="flex w-full cursor-pointer items-center gap-2 text-foreground/85">
+              <label
+                htmlFor={`${idPrefix}-cat-${c.id}`}
+                className="flex w-full cursor-pointer items-center gap-2 text-foreground/85"
+              >
                 <c.Icon size={18} strokeWidth={1.75} className="shrink-0 text-foreground/70" />
                 {c.label}
               </label>
@@ -141,7 +145,10 @@ function FilterContent({
                 onChange={() => onToggleDuration(d.id)}
                 id={`${idPrefix}-dur-${d.id}`}
               />
-              <label htmlFor={`${idPrefix}-dur-${d.id}`} className="w-full cursor-pointer text-foreground/85">
+              <label
+                htmlFor={`${idPrefix}-dur-${d.id}`}
+                className="w-full cursor-pointer text-foreground/85"
+              >
                 {d.label}
               </label>
               <span className="text-[14px] text-muted-foreground">{d.count}</span>
@@ -153,7 +160,8 @@ function FilterContent({
       {/* Price */}
       <div className="mt-7 border-t border-border pt-6">
         <p className="text-[16px] font-bold">
-          Price Range <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
+          Price Range{" "}
+          <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
         </p>
         <PriceRangeSlider
           min={priceMin}
@@ -186,8 +194,8 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
       setIsMobile(window.innerWidth < 1024);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   if (!isMobile) {
@@ -197,7 +205,7 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
           className="h-fit rounded-2xl border border-border bg-card p-5 shadow-soft"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, ease: EASE_BRAND }}
         >
           <FilterContent {...props} idPrefix="desktop" />
         </motion.aside>
@@ -222,10 +230,10 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
           {/* Drawer */}
           <motion.div
             className="fixed inset-y-0 left-0 z-50 w-full max-w-[320px] overflow-y-auto bg-card shadow-2xl lg:hidden"
-            initial={{ x: '-100%' }}
+            initial={{ x: "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             {/* Drawer Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card p-4">

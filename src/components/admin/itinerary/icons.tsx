@@ -45,7 +45,11 @@ interface ItineraryIconProps {
   strokeWidth?: number;
 }
 
-export function ItineraryIcon({ icon, className = "h-6 w-6", strokeWidth = 1.6 }: ItineraryIconProps) {
+export function ItineraryIcon({
+  icon,
+  className = "h-6 w-6",
+  strokeWidth = 1.6,
+}: ItineraryIconProps) {
   const d = pathFor(icon);
   return (
     <svg

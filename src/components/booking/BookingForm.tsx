@@ -26,7 +26,7 @@ import {
   Star,
   Flame,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
 import { readAttributionClient } from "@/lib/attribution";
 
@@ -117,7 +117,9 @@ export function BookingForm({
   const router = useRouter();
   const [step, setStep] = useState<Step>("idle");
   const [date, setDate] = useState(initialDate);
-  const [travellers, setTravellers] = useState(String(Math.max(initialTravellers || 1, minPersons)));
+  const [travellers, setTravellers] = useState(
+    String(Math.max(initialTravellers || 1, minPersons)),
+  );
   const [paymentOption, setPaymentOption] = useState<PaymentOption>("ADVANCE");
 
   const nights = duration - 1;
@@ -160,7 +162,9 @@ export function BookingForm({
       return;
     }
     if (date < minBookingDate) {
-      toast.error(`Please choose a travel date on or after ${new Date(minBookingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`);
+      toast.error(
+        `Please choose a travel date on or after ${new Date(minBookingDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+      );
       return;
     }
     if (date > maxBookingDate) {
@@ -303,9 +307,15 @@ export function BookingForm({
               </h3>
               {rating > 0 && reviewCount > 0 && (
                 <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground mb-3">
-                  <Star className="w-3.5 h-3.5 text-amber-400" fill="currentColor" strokeWidth={0} />
+                  <Star
+                    className="w-3.5 h-3.5 text-amber-400"
+                    fill="currentColor"
+                    strokeWidth={0}
+                  />
                   {rating.toFixed(1)}
-                  <span className="font-normal">· {reviewCount.toLocaleString("en-IN")} reviews</span>
+                  <span className="font-normal">
+                    · {reviewCount.toLocaleString("en-IN")} reviews
+                  </span>
                 </p>
               )}
               {departureStatus === "filling" && departureSeats != null && departureSeats > 0 && (
@@ -319,13 +329,19 @@ export function BookingForm({
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Duration</dt>
-                  <dd className="font-medium text-foreground">{duration}D · {nights}N</dd>
+                  <dd className="font-medium text-foreground">
+                    {duration}D · {nights}N
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Travel Date</dt>
                   <dd className="font-medium text-foreground">
                     {date
-                      ? new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                      ? new Date(date).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
                       : "—"}
                   </dd>
                 </div>
@@ -339,7 +355,10 @@ export function BookingForm({
               <div className="mt-4 border-t border-border pt-3 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">
-                    Tour Cost <span className="text-xs">({inr(priceFrom)} × {count})</span>
+                    Tour Cost{" "}
+                    <span className="text-xs">
+                      ({inr(priceFrom)} × {count})
+                    </span>
                   </dt>
                   <dd className="font-medium text-foreground">{inr(total)}</dd>
                 </div>
@@ -403,25 +422,49 @@ export function BookingForm({
               {/* Name */}
               <Field label="Full Name" htmlFor="bf-name" error={errors.name?.message}>
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input id="bf-name" type="text" {...register("name")} placeholder="e.g. Priya Sharma" className={inputClass} />
+                <input
+                  id="bf-name"
+                  type="text"
+                  {...register("name")}
+                  placeholder="e.g. Priya Sharma"
+                  className={inputClass}
+                />
               </Field>
 
               {/* Email + Phone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Email Address" htmlFor="bf-email" error={errors.email?.message}>
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input id="bf-email" type="email" {...register("email")} placeholder="you@example.com" className={inputClass} />
+                  <input
+                    id="bf-email"
+                    type="email"
+                    {...register("email")}
+                    placeholder="you@example.com"
+                    className={inputClass}
+                  />
                 </Field>
                 <Field label="Phone / WhatsApp" htmlFor="bf-phone" error={errors.phone?.message}>
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input id="bf-phone" type="tel" {...register("phone")} placeholder="+91 98000 00000" className={inputClass} />
+                  <input
+                    id="bf-phone"
+                    type="tel"
+                    {...register("phone")}
+                    placeholder="+91 98000 00000"
+                    className={inputClass}
+                  />
                 </Field>
               </div>
 
               {/* Address */}
               <Field label="Billing Address (optional)" htmlFor="bf-address">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input id="bf-address" type="text" {...register("address")} placeholder="City, State, PIN" className={inputClass} />
+                <input
+                  id="bf-address"
+                  type="text"
+                  {...register("address")}
+                  placeholder="City, State, PIN"
+                  className={inputClass}
+                />
               </Field>
 
               {/* Date + Travellers */}
@@ -438,7 +481,10 @@ export function BookingForm({
                     className={`${inputClass} pr-2 [color-scheme:light] dark:[color-scheme:dark]`}
                   />
                 </Field>
-                <Field label={`Travellers${minPersons > 1 ? ` (min. ${minPersons})` : ""}`} htmlFor="bf-travellers">
+                <Field
+                  label={`Travellers${minPersons > 1 ? ` (min. ${minPersons})` : ""}`}
+                  htmlFor="bf-travellers"
+                >
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <select
                     id="bf-travellers"
@@ -446,9 +492,13 @@ export function BookingForm({
                     onChange={(e) => setTravellers(e.target.value)}
                     className={`${inputClass} pr-2 appearance-none`}
                   >
-                    {Array.from({ length: 20 - minPersons + 1 }, (_, i) => i + minPersons).map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
+                    {Array.from({ length: 20 - minPersons + 1 }, (_, i) => i + minPersons).map(
+                      (n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ),
+                    )}
                   </select>
                 </Field>
               </div>
@@ -496,7 +546,9 @@ export function BookingForm({
                   <span className="text-sm text-muted-foreground">
                     {paymentOption === "ADVANCE" ? `${ADVANCE_PERCENT}% advance` : "Full payment"}
                   </span>
-                  <span className="font-display font-bold text-foreground text-xl">{inr(payable)}</span>
+                  <span className="font-display font-bold text-foreground text-xl">
+                    {inr(payable)}
+                  </span>
                 </div>
 
                 <Button
@@ -551,7 +603,10 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+      <label
+        htmlFor={htmlFor}
+        className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
+      >
         {label}
       </label>
       <div className="relative">{children}</div>
@@ -589,7 +644,10 @@ function PaymentChoice({
           <Check className="h-3 w-3" strokeWidth={3} />
         </span>
       )}
-      <Icon className={`h-5 w-5 ${selected ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2} />
+      <Icon
+        className={`h-5 w-5 ${selected ? "text-primary" : "text-muted-foreground"}`}
+        strokeWidth={2}
+      />
       <span className="text-[14px] font-bold text-foreground">{title}</span>
       <span className="text-[18px] font-extrabold text-primary">{amount}</span>
       <span className="text-[12px] text-muted-foreground">{sub}</span>

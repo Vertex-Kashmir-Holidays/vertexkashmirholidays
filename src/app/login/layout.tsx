@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
+import { CookieConsentManager } from "@/components/providers/CookieConsentManager";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 // login/page.tsx already calls auth() directly and sets `dynamic = "force-dynamic"`,
 // so this route is fully dynamic regardless — reading the CSP nonce via
@@ -20,6 +22,8 @@ export default async function LoginLayout({ children }: { children: React.ReactN
       nonce={nonce}
     >
       <SiteAnalytics nonce={nonce} />
+      <CookieConsentManager />
+      <OfflineBanner />
       {children}
       <Toaster richColors position="top-right" />
     </ThemeProvider>

@@ -30,7 +30,10 @@ function loadEnvFile(file: string): void {
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
     let value = trimmed.slice(eq + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
     if (!(key in process.env)) process.env[key] = value;
@@ -81,11 +84,15 @@ async function getAccessToken(): Promise<string> {
       grant_type: "refresh_token",
     }),
   });
-  const json = (await res.json().catch(() => null)) as
-    | { access_token?: string; error?: string; error_description?: string }
-    | null;
+  const json = (await res.json().catch(() => null)) as {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  } | null;
   if (!res.ok || !json?.access_token) {
-    throw new Error(json?.error_description ?? json?.error ?? `Token refresh failed (${res.status})`);
+    throw new Error(
+      json?.error_description ?? json?.error ?? `Token refresh failed (${res.status})`,
+    );
   }
   return json.access_token;
 }
@@ -94,33 +101,39 @@ interface MutateConversionActionsResponse {
   results?: { resourceName?: string }[];
 }
 
-async function createConversionAction(accessToken: string, name: string): Promise<MutateConversionActionsResponse> {
+async function createConversionAction(
+  accessToken: string,
+  name: string,
+): Promise<MutateConversionActionsResponse> {
   const customerId = digitsOnly(CUSTOMER_ID!);
   const loginCustomerId = digitsOnly(LOGIN_CUSTOMER_ID!);
 
-  const res = await fetch(`https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/conversionActions:mutate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      "developer-token": DEVELOPER_TOKEN!,
-      "login-customer-id": loginCustomerId,
-    },
-    body: JSON.stringify({
-      operations: [
-        {
-          create: {
-            name,
-            type: "UPLOAD_CLICKS",
-            category: "DEFAULT",
-            status: "ENABLED",
-            viewThroughLookbackWindowDays: 15,
-            valueSettings: { defaultValue: 0, alwaysUseDefaultValue: false },
+  const res = await fetch(
+    `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/conversionActions:mutate`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "developer-token": DEVELOPER_TOKEN!,
+        "login-customer-id": loginCustomerId,
+      },
+      body: JSON.stringify({
+        operations: [
+          {
+            create: {
+              name,
+              type: "UPLOAD_CLICKS",
+              category: "DEFAULT",
+              status: "ENABLED",
+              viewThroughLookbackWindowDays: 15,
+              valueSettings: { defaultValue: 0, alwaysUseDefaultValue: false },
+            },
           },
-        },
-      ],
-    }),
-  });
+        ],
+      }),
+    },
+  );
 
   const json = await res.json().catch(() => null);
   if (!res.ok) {

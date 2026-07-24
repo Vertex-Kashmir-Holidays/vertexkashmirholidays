@@ -10,7 +10,10 @@ import { ActivitySafetyTips } from "@/components/activities/ActivitySafetyTips";
 import { ActivitySuitableFor } from "@/components/activities/ActivitySuitableFor";
 import { ActivityWhatToCarry } from "@/components/activities/ActivityWhatToCarry";
 import { ActivityWhyExperience } from "@/components/activities/ActivityWhyExperience";
-import { DestinationDetailTours, type DestinationTour } from "@/components/destinations/DestinationDetailTours";
+import {
+  DestinationDetailTours,
+  type DestinationTour,
+} from "@/components/destinations/DestinationDetailTours";
 import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRelatedBlogs";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
@@ -56,7 +59,14 @@ const getActivity = cache(async (slug: string) => {
       destinations: {
         include: {
           destination: {
-            select: { id: true, slug: true, name: true, tagline: true, coverImage: true, relatedBlogIds: true },
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              tagline: true,
+              coverImage: true,
+              relatedBlogIds: true,
+            },
           },
         },
       },
@@ -99,7 +109,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   if (!activity) notFound();
 
   const gallery = parseJson<string[]>(activity.images, []);
-  const activityHighlights = parseJson<{ name: string; description: string }[]>(activity.activityHighlights, []);
+  const activityHighlights = parseJson<{ name: string; description: string }[]>(
+    activity.activityHighlights,
+    [],
+  );
   const suitableFor = parseJson<string[]>(activity.suitableFor, []);
   const safetyTips = parseJson<string[]>(activity.safetyTips, []);
   const whatToCarry = parseJson<string[]>(activity.whatToCarry, []);
@@ -127,18 +140,27 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   // Nearby Activities — derived from shared destinations, no new relation.
   const destinationIds = relatedDestinations.map((d) => d.id);
-  const nearbyRaw = destinationIds.length > 0
-    ? await prisma.activity.findMany({
-        where: {
-          published: true,
-          slug: { not: slug },
-          destinations: { some: { destinationId: { in: destinationIds } } },
-        },
-        orderBy: { sortOrder: "asc" },
-        take: 4,
-        select: { id: true, slug: true, name: true, location: true, duration: true, price: true, coverImage: true },
-      })
-    : [];
+  const nearbyRaw =
+    destinationIds.length > 0
+      ? await prisma.activity.findMany({
+          where: {
+            published: true,
+            slug: { not: slug },
+            destinations: { some: { destinationId: { in: destinationIds } } },
+          },
+          orderBy: { sortOrder: "asc" },
+          take: 4,
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            location: true,
+            duration: true,
+            price: true,
+            coverImage: true,
+          },
+        })
+      : [];
   const nearbyActivities = nearbyRaw.map((a) => ({
     id: a.id,
     slug: a.slug,
@@ -152,16 +174,24 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   // Related Blogs — derived editorially from the linked destinations'
   // curated relatedBlogIds, not a new Activity ↔ Blog relation.
   const relatedBlogIds = Array.from(
-    new Set(
-      relatedDestinations.flatMap((d) => parseJson<string[]>(d.relatedBlogIds, [])),
-    ),
+    new Set(relatedDestinations.flatMap((d) => parseJson<string[]>(d.relatedBlogIds, []))),
   );
-  const relatedBlogsRaw = relatedBlogIds.length > 0
-    ? await prisma.blog.findMany({
-        where: { id: { in: relatedBlogIds }, published: true },
-        select: { id: true, slug: true, title: true, excerpt: true, coverImage: true, category: true, publishedAt: true, readTime: true },
-      })
-    : [];
+  const relatedBlogsRaw =
+    relatedBlogIds.length > 0
+      ? await prisma.blog.findMany({
+          where: { id: { in: relatedBlogIds }, published: true },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            excerpt: true,
+            coverImage: true,
+            category: true,
+            publishedAt: true,
+            readTime: true,
+          },
+        })
+      : [];
   const relatedBlogs = relatedBlogsRaw.map((b) => ({
     id: b.id,
     slug: b.slug,
@@ -170,7 +200,11 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     coverImage: b.coverImage,
     category: b.category,
     dateLabel: b.publishedAt
-      ? b.publishedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      ? b.publishedAt.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
       : null,
     readTime: b.readTime,
   }));
@@ -193,8 +227,13 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={attractionJsonLd} />
-      {gallery.length > 0 && buildImageObjectList(gallery).map((img, i) => <JsonLd key={i} data={img} />)}
-      {faqs.length > 0 && <JsonLd data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
+      {gallery.length > 0 &&
+        buildImageObjectList(gallery).map((img, i) => <JsonLd key={i} data={img} />)}
+      {faqs.length > 0 && (
+        <JsonLd
+          data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))}
+        />
+      )}
 
       <SecondaryHero
         image={activity.coverImage ?? "/hero/gulmarg-lg.webp"}
@@ -203,9 +242,13 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         aside={<HeroLeadCard source="activity-detail" buttonLabel="Enquire Now" />}
       >
         <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
-          <Link href="/" className="transition hover:text-white">Home</Link>
+          <Link href="/" className="transition hover:text-white">
+            Home
+          </Link>
           <span>›</span>
-          <Link href="/activities" className="transition hover:text-white">Activities</Link>
+          <Link href="/activities" className="transition hover:text-white">
+            Activities
+          </Link>
           <span>›</span>
           <span className="font-semibold text-white">{activity.name}</span>
         </nav>
@@ -235,7 +278,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* 3 + 4. Overview & Why Experience This — merged into one card */}
         {(activity.description || activity.whyExperience) && (
-          <section id="overview" className="mt-6 space-y-5 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+          <section
+            id="overview"
+            className="mt-6 space-y-5 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+          >
             {activity.description && (
               <div>
                 <h2 className="text-[18px] font-bold">About this experience</h2>
@@ -274,12 +320,17 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         </div>
 
         {/* Featured Tours — moved here, right before Gallery */}
-        {relatedTours.length > 0 && <DestinationDetailTours name={activity.name} tours={relatedTours} />}
+        {relatedTours.length > 0 && (
+          <DestinationDetailTours name={activity.name} tours={relatedTours} />
+        )}
 
         {/* 13 + 16. Gallery (60%) | Where to Experience This (40%) */}
         <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
           {gallery.length > 0 && (
-            <TourDetailsGallery images={gallery.map((src) => ({ url: src, alt: activity.name }))} noTopMargin />
+            <TourDetailsGallery
+              images={gallery.map((src) => ({ url: src, alt: activity.name }))}
+              noTopMargin
+            />
           )}
           <ActivityRelatedDestinations destinations={relatedDestinations} />
         </div>
@@ -292,7 +343,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* 14. FAQs — moved to last */}
         {faqs.length > 0 && (
-          <section id="faqs" className="scroll-mt-16 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+          <section
+            id="faqs"
+            className="scroll-mt-16 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+          >
             <h2 className="text-[18px] font-bold">FAQs</h2>
             <div className="mt-4">
               <FaqPreviewList faqs={faqs} />

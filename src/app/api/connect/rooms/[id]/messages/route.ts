@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { SITE_URL } from "@/lib/seo";
 
 const SITE_HOST = (() => {
-  try { return new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vertexkashmirholidays.com").hostname; } catch { return "vertexkashmirholidays.com"; }
+  try {
+    return new URL(SITE_URL).hostname;
+  } catch {
+    return "vertexkashmirholidays.com";
+  }
 })();
 
 function isValidAttachmentUrl(raw: string | undefined): boolean {
   if (!raw) return false;
   try {
     const u = new URL(raw);
-    return u.protocol === "https:" && (
-      u.hostname === "res.cloudinary.com" || u.hostname === SITE_HOST
+    return (
+      u.protocol === "https:" && (u.hostname === "res.cloudinary.com" || u.hostname === SITE_HOST)
     );
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 type Params = { params: Promise<{ id: string }> };
@@ -232,8 +239,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const senderName = guard.user.name ?? "A colleague";
   const notifBody = bodyText
-    ? bodyText.length > 100 ? bodyText.slice(0, 97) + "…" : bodyText
-    : attachmentName ?? "Sent an attachment";
+    ? bodyText.length > 100
+      ? bodyText.slice(0, 97) + "…"
+      : bodyText
+    : (attachmentName ?? "Sent an attachment");
 
   // Resolve @mentions — deduplicated, unknown names silently ignored
   const mentionedIds = bodyText ? resolveMentions(bodyText, others) : [];

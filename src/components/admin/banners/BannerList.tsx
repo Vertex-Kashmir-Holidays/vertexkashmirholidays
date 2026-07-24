@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, Megaphone, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/atoms/badge";
 import { cn } from "@/lib/utils";
 
 type BannerType = "STRIP" | "PROMO";
@@ -33,7 +34,11 @@ function formatPages(raw: string): string {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function BannerList({
@@ -59,7 +64,11 @@ export function BannerList({
         body: JSON.stringify({ isActive: next }),
       });
       if (!res.ok) {
-        toast.error(res.status === 403 ? "You don't have permission to change this banner." : "Couldn't update the banner. Please try again.");
+        toast.error(
+          res.status === 403
+            ? "You don't have permission to change this banner."
+            : "Couldn't update the banner. Please try again.",
+        );
         return;
       }
       toast.success(next ? "Banner is now live." : "Banner hidden from the site.");
@@ -71,7 +80,11 @@ export function BannerList({
     startTransition(async () => {
       const res = await fetch(`/api/banners/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        toast.error(res.status === 403 ? "You don't have permission to delete banners." : "Couldn't delete the banner. Please try again.");
+        toast.error(
+          res.status === 403
+            ? "You don't have permission to delete banners."
+            : "Couldn't delete the banner. Please try again.",
+        );
         return;
       }
       toast.success("Banner deleted.");
@@ -82,16 +95,7 @@ export function BannerList({
 
   // Shared presentational bits so the desktop table and mobile cards stay in sync.
   const typeBadge = (t: BannerType) => (
-    <span
-      className={cn(
-        "inline-block shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold",
-        t === "STRIP"
-          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-          : "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-      )}
-    >
-      {t}
-    </span>
+    <Badge variant={t === "STRIP" ? "success" : "warning"}>{t}</Badge>
   );
 
   const toggle = (b: BannerRow) => (
@@ -203,7 +207,10 @@ export function BannerList({
                   </span>
                 </td>
                 <td className="px-4 py-3">{typeBadge(b.type)}</td>
-                <td className="truncate px-4 py-3 text-xs text-muted-foreground" title={formatPages(b.pages)}>
+                <td
+                  className="truncate px-4 py-3 text-xs text-muted-foreground"
+                  title={formatPages(b.pages)}
+                >
                   {formatPages(b.pages)}
                 </td>
                 <td className="px-4 py-3">{toggle(b)}</td>
@@ -227,7 +234,9 @@ export function BannerList({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="break-words font-semibold text-foreground">{b.title}</p>
-                <p className="mt-0.5 break-words text-xs text-muted-foreground">{formatPages(b.pages)}</p>
+                <p className="mt-0.5 break-words text-xs text-muted-foreground">
+                  {formatPages(b.pages)}
+                </p>
               </div>
               {typeBadge(b.type)}
             </div>
@@ -248,7 +257,9 @@ export function BannerList({
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
               <div className="flex items-center gap-2">
                 {toggle(b)}
-                <span className="text-xs font-medium text-foreground">{b.isActive ? "Active" : "Hidden"}</span>
+                <span className="text-xs font-medium text-foreground">
+                  {b.isActive ? "Active" : "Hidden"}
+                </span>
               </div>
               <div className="flex items-center gap-1">{actions(b)}</div>
             </div>

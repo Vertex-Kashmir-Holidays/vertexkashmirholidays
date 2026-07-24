@@ -3,7 +3,7 @@ import Link from "next/link";
 import { XCircle, RefreshCcw, CreditCard, Headphones, ArrowRight, HelpCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 
 export const metadata: Metadata = {
   title: "Payment Failed — Vertex Kashmir Holidays",
@@ -61,7 +61,10 @@ export default async function BookingFailedPage({
   const retryHref = booking?.tour
     ? `/booking?tour=${booking.tour.slug}&date=${booking.travelDate.toISOString().split("T")[0]}&travellers=${booking.travellers}`
     : "/tours";
-  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
+  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(
+    /\D/g,
+    "",
+  );
   const waText = encodeURIComponent(
     `Hi! My payment failed for "${booking?.tour?.title ?? "a Kashmir tour"}". Booking ref: ${ref ?? "N/A"}. Can you help?`,
   );
@@ -105,11 +108,13 @@ export default async function BookingFailedPage({
             Oops! Payment Failed
           </h1>
           <p className="text-rose-600/80 dark:text-rose-300/80 text-lg">
-            Don&apos;t worry — your booking details are saved. You can retry anytime or contact us for help.
+            Don&apos;t worry — your booking details are saved. You can retry anytime or contact us
+            for help.
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
-            If you were charged, your booking will be confirmed automatically within a few minutes — you&apos;ll
-            receive a confirmation email, and it will appear in your account. No need to pay again.
+            If you were charged, your booking will be confirmed automatically within a few minutes —
+            you&apos;ll receive a confirmation email, and it will appear in your account. No need to
+            pay again.
           </p>
           {ref && (
             <div className="mt-4 inline-block bg-rose-500/15 border border-rose-500/25 text-rose-600 dark:text-rose-300 text-sm font-mono font-bold px-5 py-2.5 rounded-full">
@@ -129,7 +134,9 @@ export default async function BookingFailedPage({
             <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <div>
                 <dt className="text-muted-foreground text-xs">Tour</dt>
-                <dd className="font-semibold text-foreground">{booking.tour?.title ?? "Custom booking"}</dd>
+                <dd className="font-semibold text-foreground">
+                  {booking.tour?.title ?? "Custom booking"}
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground text-xs">Duration</dt>
@@ -184,13 +191,19 @@ export default async function BookingFailedPage({
                   primary ? "bg-primary-foreground/20" : "bg-muted"
                 }`}
               >
-                <Icon className={`w-5 h-5 ${primary ? "text-primary-foreground" : "text-foreground"}`} />
+                <Icon
+                  className={`w-5 h-5 ${primary ? "text-primary-foreground" : "text-foreground"}`}
+                />
               </div>
               <div>
-                <p className={`text-sm font-bold ${primary ? "text-primary-foreground" : "text-foreground"}`}>
+                <p
+                  className={`text-sm font-bold ${primary ? "text-primary-foreground" : "text-foreground"}`}
+                >
                   {label}
                 </p>
-                <p className={`text-xs mt-0.5 ${primary ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                <p
+                  className={`text-xs mt-0.5 ${primary ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                >
                   {sub}
                 </p>
               </div>

@@ -1,7 +1,7 @@
 // src/components/destinations/DestinationTravelTips.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface DestinationTravelTipsProps {
   tips: string[];

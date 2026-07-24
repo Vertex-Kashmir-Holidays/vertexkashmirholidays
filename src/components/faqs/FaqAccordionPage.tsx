@@ -73,7 +73,10 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
   return (
     <div className="space-y-8">
       <div className="relative mx-auto max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2.2} />
+        <Search
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          strokeWidth={2.2}
+        />
         <input
           type="text"
           value={search}
@@ -85,75 +88,89 @@ export function FaqAccordionPage({ categories }: FaqAccordionPageProps) {
 
       {search.trim() && (
         <p className="text-center text-[14px] text-muted-foreground">
-          {totalMatches === 0 ? "No questions match your search." : `${totalMatches} question${totalMatches === 1 ? "" : "s"} found`}
+          {totalMatches === 0
+            ? "No questions match your search."
+            : `${totalMatches} question${totalMatches === 1 ? "" : "s"} found`}
         </p>
       )}
 
       <div className="space-y-12">
-      {filteredCategories.map((cat) => (
-        <section key={cat.id}>
-          <h2 className="h-display font-display text-[22px] font-bold text-foreground">{cat.name}</h2>
-          {cat.description && <p className="mt-1.5 text-[14px] text-muted-foreground">{cat.description}</p>}
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-x-5">
-            {cat.faqs.map((faq) => {
-              const open = openSlug === faq.slug;
-              return (
-                <div
-                  key={faq.id}
-                  id={faq.slug}
-                  className="scroll-mt-24 self-start rounded-lg border border-border bg-card shadow-soft transition-colors hover:border-primary/30"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenSlug(open ? null : faq.slug)}
-                    aria-expanded={open}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
-                  >
-                    <span className="text-[14px] font-bold text-foreground">{faq.question}</span>
-                    <ChevronDown
-                      className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")}
-                      strokeWidth={2.4}
-                    />
-                  </button>
+        {filteredCategories.map((cat) => (
+          <section key={cat.id}>
+            <h2 className="h-display font-display text-[22px] font-bold text-foreground">
+              {cat.name}
+            </h2>
+            {cat.description && (
+              <p className="mt-1.5 text-[14px] text-muted-foreground">{cat.description}</p>
+            )}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-x-5">
+              {cat.faqs.map((faq) => {
+                const open = openSlug === faq.slug;
+                return (
                   <div
-                    className={cn("grid transition-[grid-template-rows] duration-300 ease-in-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+                    key={faq.id}
+                    id={faq.slug}
+                    className="scroll-mt-24 self-start rounded-lg border border-border bg-card shadow-soft transition-colors hover:border-primary/30"
                   >
-                    <div className="overflow-hidden">
-                      <div className="border-t border-border px-4 pb-4 pt-3">
-                        <p className="whitespace-pre-line text-[14px] leading-relaxed text-foreground/80">{faq.answer}</p>
-                        {(faq.tours.length > 0 || faq.destinations.length > 0) && (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {faq.tours.map((t) => (
-                              <Link
-                                key={t.id}
-                                href={`/tours/${t.slug}`}
-                                className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                              >
-                                {t.title}
-                                <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
-                              </Link>
-                            ))}
-                            {faq.destinations.map((d) => (
-                              <Link
-                                key={d.id}
-                                href={`/destinations/${d.slug}`}
-                                className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                              >
-                                {d.name}
-                                <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
-                              </Link>
-                            ))}
-                          </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenSlug(open ? null : faq.slug)}
+                      aria-expanded={open}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+                    >
+                      <span className="text-[14px] font-bold text-foreground">{faq.question}</span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300",
+                          open && "rotate-180 text-primary",
                         )}
+                        strokeWidth={2.4}
+                      />
+                    </button>
+                    <div
+                      className={cn(
+                        "grid transition-[grid-template-rows] duration-300 ease-in-out",
+                        open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                      )}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="border-t border-border px-4 pb-4 pt-3">
+                          <p className="whitespace-pre-line text-[14px] leading-relaxed text-foreground/80">
+                            {faq.answer}
+                          </p>
+                          {(faq.tours.length > 0 || faq.destinations.length > 0) && (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {faq.tours.map((t) => (
+                                <Link
+                                  key={t.id}
+                                  href={`/tours/${t.slug}`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                >
+                                  {t.title}
+                                  <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
+                                </Link>
+                              ))}
+                              {faq.destinations.map((d) => (
+                                <Link
+                                  key={d.id}
+                                  href={`/destinations/${d.slug}`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                >
+                                  {d.name}
+                                  <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

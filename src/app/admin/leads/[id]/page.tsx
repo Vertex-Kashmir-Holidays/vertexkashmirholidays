@@ -23,7 +23,9 @@ const getLead = cache(async (id: string) =>
     include: {
       activities: { orderBy: { performedAt: "desc" } },
       assignedTo: { select: { id: true, name: true, email: true } },
-      booking: { select: { id: true, status: true, amount: true, travelDate: true, guestName: true } },
+      booking: {
+        select: { id: true, status: true, amount: true, travelDate: true, guestName: true },
+      },
       itinerary: {
         select: {
           id: true,
@@ -76,7 +78,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
           take: 10,
         })
       : Promise.resolve([]),
-      getSiteSettings(),
+    getSiteSettings(),
   ]);
   const gstRates = parseGstRates(settings?.gstRates);
 
@@ -93,8 +95,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
   const isAssignee = !!session?.user?.id && lead.assignedToId === session.user.id;
   const isAdmin = !!role && isAdminRole(role);
   const canManage = isAssignee || (isAdmin && !lead.assignedToId);
-  const canManageItinerary =
-    !!role && (await can(role, "itinerary", "edit")) && canManage;
+  const canManageItinerary = !!role && (await can(role, "itinerary", "edit")) && canManage;
 
   return (
     <div className="space-y-5">

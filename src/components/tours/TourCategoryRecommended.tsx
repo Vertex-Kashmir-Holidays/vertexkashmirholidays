@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { TourCard } from '@/components/ui/TourCard';
+import { motion } from "framer-motion";
+import { TourCard } from "@/components/ui/organisms/TourCard";
 
 interface TourCategoryRecommendedProps {
-  tours: React.ComponentProps<typeof TourCard>['tour'][];
+  tours: React.ComponentProps<typeof TourCard>["tour"][];
 }
 
 export function TourCategoryRecommended({ tours }: TourCategoryRecommendedProps) {

@@ -31,7 +31,15 @@ interface Props {
 const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:bg-muted disabled:text-muted-foreground";
 
-function PageCard({ page, canEdit, defaultOpen }: { page: LegalPageItem; canEdit: boolean; defaultOpen: boolean }) {
+function PageCard({
+  page,
+  canEdit,
+  defaultOpen,
+}: {
+  page: LegalPageItem;
+  canEdit: boolean;
+  defaultOpen: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
   const [title, setTitle] = useState(page.title);
@@ -84,14 +92,21 @@ function PageCard({ page, canEdit, defaultOpen }: { page: LegalPageItem; canEdit
           <h3 className="truncate text-sm font-bold text-foreground">{page.navLabel}</h3>
           <p className="truncate text-xs text-muted-foreground">/{page.slug}</p>
         </div>
-        <ChevronDown className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+        />
       </button>
 
       {open && (
         <div className="space-y-4 border-t border-border p-5">
           {/* Banner / hero image — replaceable, picked from the media gallery. */}
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Hero Banner</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+              Hero Banner
+            </label>
             <div className="flex flex-wrap items-start gap-4">
               <BannerSlot
                 heading="Desktop"
@@ -116,13 +131,22 @@ function PageCard({ page, canEdit, defaultOpen }: { page: LegalPageItem; canEdit
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Page Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={!canEdit} className={inputCls} />
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+              Page Title
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={!canEdit}
+              className={inputCls}
+            />
           </div>
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="block text-xs font-semibold text-muted-foreground">Content (HTML)</label>
+              <label className="block text-xs font-semibold text-muted-foreground">
+                Content (HTML)
+              </label>
               <button
                 type="button"
                 onClick={() => setPreview((p) => !p)}
@@ -146,7 +170,8 @@ function PageCard({ page, canEdit, defaultOpen }: { page: LegalPageItem; canEdit
               />
             )}
             <p className="mt-1 text-[12px] text-muted-foreground">
-              Use headings (&lt;h2&gt;), paragraphs (&lt;p&gt;), lists (&lt;ul&gt;/&lt;li&gt;) and links. Rendered with the site theme.
+              Use headings (&lt;h2&gt;), paragraphs (&lt;p&gt;), lists (&lt;ul&gt;/&lt;li&gt;) and
+              links. Rendered with the site theme.
             </p>
           </div>
 

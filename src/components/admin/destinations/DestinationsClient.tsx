@@ -46,7 +46,12 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
     startTransition(async () => {
       try {
         const res = await fetch(`/api/destinations/${id}`, { method: "DELETE" });
-        if (res.status === 403) { toast.error("You don't have permission to delete destinations. Contact your administrator."); return; }
+        if (res.status === 403) {
+          toast.error(
+            "You don't have permission to delete destinations. Contact your administrator.",
+          );
+          return;
+        }
         if (!res.ok) throw new Error("Delete failed");
         toast.success("Destination deleted.");
         router.refresh();
@@ -63,7 +68,9 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Destinations</h2>
-          <p className="text-muted-foreground text-xs mt-0.5">Manage Kashmir destinations and their content</p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Manage Kashmir destinations and their content
+          </p>
         </div>
         {canCreate && (
           <Link
@@ -98,7 +105,10 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Destination", "Location", "Tours", "Date", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
                     {h}
                   </th>
                 ))}
@@ -108,20 +118,38 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search ? "No destinations match your search." : "No destinations yet. Create your first one!"}
+                    {search
+                      ? "No destinations match your search."
+                      : "No destinations yet. Create your first one!"}
                   </td>
                 </tr>
               ) : (
                 filtered.map((dest) => (
-                  <tr key={dest.id} className={cn("hover:bg-muted/50 transition-colors", confirmDelete === dest.id && "bg-red-500/10/30")}>
+                  <tr
+                    key={dest.id}
+                    className={cn(
+                      "hover:bg-muted/50 transition-colors",
+                      confirmDelete === dest.id && "bg-red-500/10/30",
+                    )}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 max-w-xs">
                         <div className="relative w-10 h-8 rounded-lg overflow-hidden shrink-0">
-                          <Image src={dest.coverImage ?? PLACEHOLDER} alt={dest.name} fill sizes="40px" className="object-cover" />
+                          <Image
+                            src={dest.coverImage ?? PLACEHOLDER}
+                            alt={dest.name}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">{dest.name}</p>
-                          <p className="text-[12px] text-muted-foreground truncate">/destinations/{dest.slug}</p>
+                          <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[160px]">
+                            {dest.name}
+                          </p>
+                          <p className="text-[12px] text-muted-foreground truncate">
+                            /destinations/{dest.slug}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -138,7 +166,11 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
                     </td>
 
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(dest.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
+                      {new Date(dest.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "2-digit",
+                      })}
                     </td>
 
                     <td className="px-4 py-3">
@@ -179,7 +211,9 @@ export function DestinationsClient({ initialDestinations, canCreate, canEdit, ca
                             </button>
                           )}
                           {!canEdit && !canDelete && (
-                            <span className="text-[12px] text-muted-foreground italic">View only</span>
+                            <span className="text-[12px] text-muted-foreground italic">
+                              View only
+                            </span>
                           )}
                         </div>
                       )}

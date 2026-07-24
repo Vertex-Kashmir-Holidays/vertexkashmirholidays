@@ -5,6 +5,8 @@
 // Never throws: any failure (missing key, bad placeId, quota, network) just
 // returns null so /reviews degrades gracefully instead of breaking the page.
 
+import { env } from "@/lib/env";
+
 export interface GooglePlaceRating {
   rating: number;
   total: number;
@@ -23,8 +25,10 @@ interface PlaceDetailsResponse {
   };
 }
 
-export async function getGooglePlaceRating(placeId: string | null | undefined): Promise<GooglePlaceRating | null> {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+export async function getGooglePlaceRating(
+  placeId: string | null | undefined,
+): Promise<GooglePlaceRating | null> {
+  const apiKey = env.GOOGLE_PLACES_API_KEY;
   if (!apiKey || !placeId) return null;
 
   try {
@@ -64,7 +68,7 @@ export interface GooglePlaceLocation {
 export async function getGooglePlaceHoursAndLocation(
   placeId: string | null | undefined,
 ): Promise<{ hours: GooglePlaceHours | null; location: GooglePlaceLocation | null }> {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const apiKey = env.GOOGLE_PLACES_API_KEY;
   if (!apiKey || !placeId) return { hours: null, location: null };
 
   try {
@@ -84,7 +88,14 @@ export async function getGooglePlaceHoursAndLocation(
             // A period with no `close` means open 24h that day; skip it rather
             // than guess a close time schema.org would treat as authoritative.
             periods: (oh.periods ?? [])
-              .filter((p): p is { open: { day: number; time: string }; close: { day: number; time: string } } => Boolean(p.close))
+              .filter(
+                (
+                  p,
+                ): p is {
+                  open: { day: number; time: string };
+                  close: { day: number; time: string };
+                } => Boolean(p.close),
+              )
               .map((p) => ({ day: p.open.day, open: p.open.time, close: p.close.time })),
           }
         : null;

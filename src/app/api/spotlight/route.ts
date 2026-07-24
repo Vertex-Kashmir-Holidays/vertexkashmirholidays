@@ -42,13 +42,17 @@ export async function GET() {
           where: { published: true },
           orderBy: { id: "asc" },
           skip: Math.floor(Math.random() * blogCount),
-          select: { id: true, slug: true, title: true, excerpt: true, coverImage: true, readTime: true },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            excerpt: true,
+            coverImage: true,
+            readTime: true,
+          },
         })
       : null,
   ]);
 
-  return NextResponse.json(
-    { tour, blog },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return NextResponse.json({ tour, blog }, { headers: { "Cache-Control": "no-store" } });
 }

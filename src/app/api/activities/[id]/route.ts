@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
 import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
@@ -12,7 +13,11 @@ const priceField = z.preprocess(
 
 const patchSchema = z.object({
   name: z.string().min(2).optional(),
-  slug: z.string().min(2).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   description: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
   coverImageMobile: z.string().optional().nullable(),
@@ -42,32 +47,30 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("activities", "view");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const activity = await prisma.activity.findUnique({
-    where: { id },
-    include: {
-      destinations: { select: { destinationId: true } },
-      tours: { select: { tourId: true } },
-    },
-  });
-  if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(activity);
+  const activity = await requireExisting(() =>
+    prisma.activity.findUnique({
+      where: { id },
+      include: {
+        destinations: { select: { destinationId: true } },
+        tours: { select: { tourId: true } },
+      },
+    }),
+  );
+  if (!activity.ok) return activity.response;
+  return NextResponse.json(activity.data);
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("activities", "edit");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.activity.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const existing = await requireExisting(() => prisma.activity.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  const body = await parseJsonBody(req);
+  if (!body.ok) return body.response;
+  const parsed = parseWithSchema(patchSchema, body.data);
+  if (!parsed.ok) return parsed.response;
 
   const { destinationIds, tourIds, ...data } = parsed.data;
 
@@ -78,16 +81,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...data,
         // Re-sync the join tables only when the client sent the link arrays.
         ...(destinationIds
-          ? { destinations: { deleteMany: {}, create: destinationIds.map((destinationId) => ({ destinationId })) } }
+          ? {
+              destinations: {
+                deleteMany: {},
+                create: destinationIds.map((destinationId) => ({ destinationId })),
+              },
+            }
           : {}),
-        ...(tourIds ? { tours: { deleteMany: {}, create: tourIds.map((tourId) => ({ tourId })) } } : {}),
+        ...(tourIds
+          ? { tours: { deleteMany: {}, create: tourIds.map((tourId) => ({ tourId })) } }
+          : {}),
       },
     });
     return NextResponse.json(updated);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("P2002")) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return mapPrismaError(err, "Slug already exists", "Update failed");
   }
 }
 
@@ -95,8 +103,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("activities", "delete");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await prisma.activity.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const existing = await requireExisting(() => prisma.activity.findUnique({ where: { id } }));
+  if (!existing.ok) return existing.response;
   await prisma.activity.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

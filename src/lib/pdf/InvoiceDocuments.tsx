@@ -5,14 +5,7 @@
 // URL). Note: the built-in Helvetica font has no rupee glyph, so money is
 // formatted as "Rs." (see assets.inr) — never the ₹ symbol here.
 
-import {
-  Document,
-  Page,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-} from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { PDF_COLORS as C, PDF_CONTACT as CONTACT, inr } from "./assets";
 import { groupServiceTables } from "@/lib/bookings/serviceDisplay";
 
@@ -57,12 +50,35 @@ export interface PaymentInvoicePdfData {
 }
 
 const s = StyleSheet.create({
-  page: { paddingVertical: 40, paddingHorizontal: 44, fontSize: 10, color: C.ink, fontFamily: "Helvetica" },
+  page: {
+    paddingVertical: 40,
+    paddingHorizontal: 44,
+    fontSize: 10,
+    color: C.ink,
+    fontFamily: "Helvetica",
+  },
 
   // Header band
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", borderBottomWidth: 2, borderBottomColor: C.green, paddingBottom: 14, marginBottom: 18 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    borderBottomWidth: 2,
+    borderBottomColor: C.green,
+    paddingBottom: 14,
+    marginBottom: 18,
+  },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  logoBox: { width: 38, height: 38, borderRadius: 7, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  logoBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 7,
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   logoImg: { width: 30, height: 30, objectFit: "contain" },
   brandName: { fontSize: 16, fontFamily: "Helvetica-Bold", color: C.green },
   brandSub: { fontSize: 7, letterSpacing: 2, color: C.muted, marginTop: 2 },
@@ -76,11 +92,24 @@ const s = StyleSheet.create({
   metaLabel: { fontSize: 7.5, letterSpacing: 1, color: C.muted, textTransform: "uppercase" },
   metaValue: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginTop: 2 },
 
-  sectionHead: { fontSize: 12, fontFamily: "Helvetica-Bold", color: C.green, marginBottom: 8, marginTop: 6 },
+  sectionHead: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: C.green,
+    marginBottom: 8,
+    marginTop: 6,
+  },
 
   // Services
   svcGroup: { marginBottom: 12 },
-  svcGroupTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.green, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 5 },
+  svcGroupTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: C.green,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 5,
+  },
   svcDot: { fontSize: 9, color: C.mint, fontFamily: "Helvetica-Bold", width: 8 },
   svcDetail: { fontSize: 8.5, color: C.muted, marginTop: 1 },
 
@@ -88,7 +117,14 @@ const s = StyleSheet.create({
   tbl: { borderWidth: 1, borderColor: C.border, borderRadius: 6, overflow: "hidden" },
   tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.border },
   trHead: { backgroundColor: C.lightGreen },
-  th: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, paddingVertical: 5, paddingHorizontal: 7, textTransform: "uppercase" },
+  th: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: C.green,
+    paddingVertical: 5,
+    paddingHorizontal: 7,
+    textTransform: "uppercase",
+  },
   td: { fontSize: 9, paddingVertical: 5, paddingHorizontal: 7 },
   colW2: { flexGrow: 2, flexBasis: 0 },
   colW1: { flexGrow: 1.4, flexBasis: 0 },
@@ -99,19 +135,45 @@ const s = StyleSheet.create({
   incText: { fontSize: 9, color: "#444" },
 
   // Summary box
-  summaryBox: { borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 14, marginTop: 6, backgroundColor: C.cream },
+  summaryBox: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 14,
+    marginTop: 6,
+    backgroundColor: C.cream,
+  },
   sumRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
   sumLabel: { fontSize: 10, color: C.muted },
   sumValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.ink },
   sumDivider: { borderTopWidth: 1, borderTopColor: C.border, marginTop: 4, marginBottom: 8 },
   sumTotalLabel: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.green },
   sumTotalValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.green },
-  statusPill: { alignSelf: "flex-start", marginTop: 10, backgroundColor: C.lightGreen, color: C.green, fontSize: 8.5, fontFamily: "Helvetica-Bold", paddingVertical: 3, paddingHorizontal: 9, borderRadius: 10 },
+  statusPill: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    backgroundColor: C.lightGreen,
+    color: C.green,
+    fontSize: 8.5,
+    fontFamily: "Helvetica-Bold",
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+    borderRadius: 10,
+  },
 
   note: { fontSize: 8, color: C.muted, fontStyle: "italic", marginTop: 14 },
 
   // Footer
-  footer: { position: "absolute", bottom: 26, left: 44, right: 44, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8, alignItems: "center" },
+  footer: {
+    position: "absolute",
+    bottom: 26,
+    left: 44,
+    right: 44,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    paddingTop: 8,
+    alignItems: "center",
+  },
   footerCompany: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green },
   footerLine: { fontSize: 7.5, color: C.muted, marginTop: 2, textAlign: "center" },
 });
@@ -144,7 +206,7 @@ function Footer() {
       <Text style={s.footerCompany}>{CONTACT.company}</Text>
       <Text style={s.footerLine}>{CONTACT.reg}</Text>
       <Text style={s.footerLine}>
-        {CONTACT.phone}  ·  {CONTACT.email}
+        {CONTACT.phone} · {CONTACT.email}
       </Text>
       <Text style={s.footerLine}>{CONTACT.address}</Text>
     </View>
@@ -162,7 +224,13 @@ function MetaCell({ label, value }: { label: string; value: string }) {
 
 // Booking summary — services shown as a price-free table per kind, overall price
 // summary visible.
-export function BookingSummaryPdf({ data, logo }: { data: BookingSummaryPdfData; logo: string | null }) {
+export function BookingSummaryPdf({
+  data,
+  logo,
+}: {
+  data: BookingSummaryPdfData;
+  logo: string | null;
+}) {
   const grouped = groupServiceTables(data.services);
 
   return (
@@ -187,13 +255,24 @@ export function BookingSummaryPdf({ data, logo }: { data: BookingSummaryPdfData;
               <View style={s.tbl}>
                 <View style={[s.tr, s.trHead]} wrap={false}>
                   {g.headers.map((h, i) => (
-                    <Text key={i} style={[s.th, i === 0 ? s.colW2 : s.colW1]}>{h}</Text>
+                    <Text key={i} style={[s.th, i === 0 ? s.colW2 : s.colW1]}>
+                      {h}
+                    </Text>
                   ))}
                 </View>
                 {g.rows.map((r, ri) => (
                   <View key={ri} style={s.tr} wrap={false}>
                     {r.map((c, ci) => (
-                      <Text key={ci} style={[s.td, ci === 0 ? s.colW2 : s.colW1, ci === 0 ? s.tdFirst : s.tdRest]}>{c}</Text>
+                      <Text
+                        key={ci}
+                        style={[
+                          s.td,
+                          ci === 0 ? s.colW2 : s.colW1,
+                          ci === 0 ? s.tdFirst : s.tdRest,
+                        ]}
+                      >
+                        {c}
+                      </Text>
                     ))}
                   </View>
                 ))}
@@ -243,8 +322,8 @@ export function BookingSummaryPdf({ data, logo }: { data: BookingSummaryPdfData;
         </View>
 
         <Text style={s.note}>
-          *Service inclusions are confirmed as above. Final accommodation and transport are subject to
-          availability at the time of travel. This is a computer-generated summary.
+          *Service inclusions are confirmed as above. Final accommodation and transport are subject
+          to availability at the time of travel. This is a computer-generated summary.
         </Text>
 
         <Footer />
@@ -254,7 +333,13 @@ export function BookingSummaryPdf({ data, logo }: { data: BookingSummaryPdfData;
 }
 
 // Payment invoice — payment-specific financials only. No service line items.
-export function PaymentInvoicePdf({ data, logo }: { data: PaymentInvoicePdfData; logo: string | null }) {
+export function PaymentInvoicePdf({
+  data,
+  logo,
+}: {
+  data: PaymentInvoicePdfData;
+  logo: string | null;
+}) {
   return (
     <Document title={`Payment Receipt - ${data.invoiceRef}`} author={CONTACT.brand}>
       <Page size="A4" style={s.page}>
@@ -291,8 +376,9 @@ export function PaymentInvoicePdf({ data, logo }: { data: PaymentInvoicePdfData;
         </View>
 
         <Text style={s.note}>
-          *This receipt confirms the payment recorded above against your booking. For the full booking
-          summary please refer to your booking summary document. This is a computer-generated receipt.
+          *This receipt confirms the payment recorded above against your booking. For the full
+          booking summary please refer to your booking summary document. This is a
+          computer-generated receipt.
         </Text>
 
         <Footer />

@@ -25,7 +25,11 @@ export default async function EditBlogPage({ params }: Props) {
   const { id } = await params;
   const [blog, categories, tours] = await Promise.all([
     getBlog(id),
-    prisma.blogCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, select: { name: true, slug: true } }),
+    prisma.blogCategory.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: { name: true, slug: true },
+    }),
     prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
   ]);
   if (!blog) notFound();
@@ -34,8 +38,14 @@ export default async function EditBlogPage({ params }: Props) {
     <div className="space-y-5">
       <nav>
         <ol className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <li><Link href="/admin/blogs" className="hover:text-primary transition-colors">Blogs</Link></li>
-          <li aria-hidden><ChevronRight className="w-3 h-3" /></li>
+          <li>
+            <Link href="/admin/blogs" className="hover:text-primary transition-colors">
+              Blogs
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="w-3 h-3" />
+          </li>
           <li className="text-foreground font-medium truncate max-w-[200px]">{blog.title}</li>
         </ol>
       </nav>
@@ -45,7 +55,12 @@ export default async function EditBlogPage({ params }: Props) {
           <p className="text-muted-foreground text-xs mt-0.5">{blog.title}</p>
         </div>
         {blog.published && (
-          <a href={`/blog/${blog.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-semibold hover:underline shrink-0">
+          <a
+            href={`/blog/${blog.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-primary font-semibold hover:underline shrink-0"
+          >
             View Live ↗
           </a>
         )}

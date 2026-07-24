@@ -1,9 +1,9 @@
 // src/components/campaign/CampaignFAQ.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import type { CampaignFaq } from '@/types/campaign';
-import { FaqPreviewList } from '@/components/faqs/FaqPreviewList';
+import { motion } from "framer-motion";
+import type { CampaignFaq } from "@/types/campaign";
+import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 
 interface CampaignFAQProps {
   title: string | null;

@@ -1,8 +1,9 @@
 // src/components/sections/TourDetailsFitCheck.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { ThumbsDown, ThumbsUp } from 'lucide-react';
+import { motion } from "framer-motion";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { fadeUp, fadeLeft, viewportOnce } from "@/lib/motion";
 
 interface TourDetailsFitCheckProps {
   perfectFor: string[];
@@ -16,9 +17,10 @@ export function TourDetailsFitCheck({ perfectFor, notIdealFor }: TourDetailsFitC
     <motion.section
       id="fit"
       className="mt-6 grid gap-5 md:grid-cols-2"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
       transition={{ duration: 0.5 }}
     >
       {perfectFor.length > 0 && (
@@ -29,9 +31,10 @@ export function TourDetailsFitCheck({ perfectFor, notIdealFor }: TourDetailsFitC
               <motion.li
                 key={i}
                 className="flex items-start gap-2.5"
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+                variants={fadeLeft}
+                initial="hidden"
+                whileInView="visible"
+                viewport={viewportOnce}
                 transition={{ delay: i * 0.05 }}
               >
                 <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-emerald-500 text-white">
@@ -52,9 +55,10 @@ export function TourDetailsFitCheck({ perfectFor, notIdealFor }: TourDetailsFitC
               <motion.li
                 key={i}
                 className="flex items-start gap-2.5"
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+                variants={fadeLeft}
+                initial="hidden"
+                whileInView="visible"
+                viewport={viewportOnce}
                 transition={{ delay: i * 0.05 }}
               >
                 <span className="mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full bg-red-500 text-white">

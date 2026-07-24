@@ -28,7 +28,14 @@ export async function uploadVideoDirect(
     const { error } = await signRes.json().catch(() => ({ error: "" }));
     return { ok: false, error: error || "Couldn't prepare video upload." };
   }
-  const { cloudName, apiKey, timestamp, signature, folder: cloudFolder, publicId } = await signRes.json();
+  const {
+    cloudName,
+    apiKey,
+    timestamp,
+    signature,
+    folder: cloudFolder,
+    publicId,
+  } = await signRes.json();
 
   const cloudFd = new FormData();
   cloudFd.append("file", file);

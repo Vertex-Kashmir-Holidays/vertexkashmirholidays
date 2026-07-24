@@ -43,7 +43,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { assignedToId, startDate, endDate, email, notes, followUpAt, negotiatedAmount, tokenAmount, ...rest } = parsed.data;
+  const {
+    assignedToId,
+    startDate,
+    endDate,
+    email,
+    notes,
+    followUpAt,
+    negotiatedAmount,
+    tokenAmount,
+    ...rest
+  } = parsed.data;
   const performedByName = (guard.user.name ?? guard.user.email) as string;
   const performedById = guard.user.id as string;
 
@@ -105,7 +115,14 @@ export async function POST(req: NextRequest) {
   if (assignedToId) {
     await notifyLeadAssigned(
       assignedToId,
-      { id: lead.id, name: lead.name, phone: lead.phone, email: lead.email, category: lead.category, startDate: lead.startDate },
+      {
+        id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email,
+        category: lead.category,
+        startDate: lead.startDate,
+      },
       performedByName,
     );
   }

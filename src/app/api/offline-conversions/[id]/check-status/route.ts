@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { extractRequestId, checkRequestStatus } from "@/lib/admin/offlineConversions";
+import { extractRequestId } from "@/lib/admin/offlineConversions";
+import { checkRequestStatus } from "@/lib/admin/offlineConversionsServer";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,11 @@ export async function POST(_req: Request, { params }: Params) {
 
   const requestId = extractRequestId(row.platformResponse);
   if (!requestId) {
-    return NextResponse.json({ ok: false, status: "ERROR", message: "No request ID available for this row yet." });
+    return NextResponse.json({
+      ok: false,
+      status: "ERROR",
+      message: "No request ID available for this row yet.",
+    });
   }
 
   const result = await checkRequestStatus(row.platform, requestId);

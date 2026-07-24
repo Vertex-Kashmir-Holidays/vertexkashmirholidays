@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { StatCard } from "@/components/ui/molecules/stat-card";
 import { PlatformBadge } from "@/components/admin/offlineConversions/PlatformBadge";
 import {
   STATUS_LABELS,
@@ -109,48 +110,32 @@ const selectCls =
 const chipCls = (active: boolean) =>
   cn(
     "text-[12px] font-semibold px-2.5 py-1.5 rounded-lg border transition-colors whitespace-nowrap",
-    active ? "bg-primary/10 border-primary/30 text-primary" : "border-border text-muted-foreground hover:bg-muted",
+    active
+      ? "bg-primary/10 border-primary/30 text-primary"
+      : "border-border text-muted-foreground hover:bg-muted",
   );
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: string;
-}) {
-  return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm p-4 flex items-center gap-3">
-      <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", accent)}>
-        <Icon className="w-4.5 h-4.5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xl font-extrabold text-foreground leading-none truncate">{value}</p>
-        <p className="text-[12px] text-muted-foreground mt-0.5">{label}</p>
-      </div>
-    </div>
-  );
-}
 
 function PeriodCard({ label, stat }: { label: string; stat: PeriodStat }) {
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-4">
-      <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide mb-2.5">{label}</p>
+      <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide mb-2.5">
+        {label}
+      </p>
       <div className="grid grid-cols-4 gap-2 text-center">
         <div>
           <p className="text-base font-extrabold text-foreground">{stat.uploads}</p>
           <p className="text-[12px] text-muted-foreground">Uploads</p>
         </div>
         <div>
-          <p className="text-base font-extrabold text-green-600 dark:text-green-400">{stat.successRate}%</p>
+          <p className="text-base font-extrabold text-green-600 dark:text-green-400">
+            {stat.successRate}%
+          </p>
           <p className="text-[12px] text-muted-foreground">Success</p>
         </div>
         <div>
-          <p className="text-base font-extrabold text-red-600 dark:text-red-400">{stat.failedRate}%</p>
+          <p className="text-base font-extrabold text-red-600 dark:text-red-400">
+            {stat.failedRate}%
+          </p>
           <p className="text-[12px] text-muted-foreground">Failed</p>
         </div>
         <div>
@@ -163,7 +148,13 @@ function PeriodCard({ label, stat }: { label: string; stat: PeriodStat }) {
 }
 
 function fmtDate(d: Date | string) {
-  return new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function downloadCsv(csv: string) {
@@ -176,7 +167,13 @@ function downloadCsv(csv: string) {
   URL.revokeObjectURL(url);
 }
 
-export function OfflineConversionsClient({ initialRows, stats, periodStats, canRetry, destinationIds }: Props) {
+export function OfflineConversionsClient({
+  initialRows,
+  stats,
+  periodStats,
+  canRetry,
+  destinationIds,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -292,11 +289,22 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
     weekStart,
   ]);
 
-  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } = usePagination(filtered);
+  const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } =
+    usePagination(filtered);
 
-  const failedIds = useMemo(() => filtered.filter((r) => r.status === "FAILED").map((r) => r.id), [filtered]);
+  const failedIds = useMemo(
+    () => filtered.filter((r) => r.status === "FAILED").map((r) => r.id),
+    [filtered],
+  );
   const anyAdvActive =
-    advRetryable || advHasRequestId || advHasGclid || advHasError || advHasResponse || advMultiAttempt || advToday || advThisWeek;
+    advRetryable ||
+    advHasRequestId ||
+    advHasGclid ||
+    advHasError ||
+    advHasResponse ||
+    advMultiAttempt ||
+    advToday ||
+    advThisWeek;
 
   function toggleSelected(id: string) {
     setSelected((prev) => {
@@ -398,9 +406,12 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-foreground text-xl">Offline Conversions</h2>
+          <h2 className="font-display font-extrabold text-foreground text-xl">
+            Offline Conversions
+          </h2>
           <p className="text-muted-foreground text-xs mt-0.5">
-            {stats.total} total · monitor, inspect, and retry offline conversion uploads across every platform
+            {stats.total} total · monitor, inspect, and retry offline conversion uploads across
+            every platform
           </p>
         </div>
         {/* Operations toolbar */}
@@ -441,7 +452,12 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
             <RefreshCw className={cn("w-3.5 h-3.5", isPending && "animate-spin")} /> Refresh
           </button>
           <label className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground cursor-pointer select-none pl-1">
-            <input type="checkbox" className="cbx" checked={autoRefresh} onChange={toggleAutoRefresh} />
+            <input
+              type="checkbox"
+              className="cbx"
+              checked={autoRefresh}
+              onChange={toggleAutoRefresh}
+            />
             Auto-refresh (30s)
           </label>
         </div>
@@ -449,14 +465,62 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Total" value={stats.total} icon={Layers} accent="bg-slate-500/10 text-slate-600 dark:text-slate-400" />
-        <StatCard label="Pending" value={stats.pending} icon={Clock} accent="bg-amber-500/10 text-amber-600 dark:text-amber-400" />
-        <StatCard label="Processing" value={stats.processing} icon={RotateCw} accent="bg-blue-500/10 text-blue-600 dark:text-blue-400" />
-        <StatCard label="Sent" value={stats.sent} icon={CheckCircle2} accent="bg-green-500/10 text-green-600 dark:text-green-400" />
-        <StatCard label="Failed" value={stats.failed} icon={XCircle} accent="bg-red-500/10 text-red-600 dark:text-red-400" />
-        <StatCard label="Success Rate" value={`${stats.successRate}%`} icon={Percent} accent="bg-green-500/10 text-green-600 dark:text-green-400" />
-        <StatCard label="Failed Rate" value={`${stats.failedRate}%`} icon={Percent} accent="bg-red-500/10 text-red-600 dark:text-red-400" />
-        <StatCard label="Avg. Attempts" value={stats.avgAttempts} icon={Repeat} accent="bg-purple-500/10 text-purple-600 dark:text-purple-400" />
+        <StatCard
+          size="sm"
+          label="Total"
+          value={stats.total}
+          icon={Layers}
+          accent="bg-slate-500/10 text-slate-600 dark:text-slate-400"
+        />
+        <StatCard
+          size="sm"
+          label="Pending"
+          value={stats.pending}
+          icon={Clock}
+          accent="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+        />
+        <StatCard
+          size="sm"
+          label="Processing"
+          value={stats.processing}
+          icon={RotateCw}
+          accent="bg-blue-500/10 text-blue-600 dark:text-blue-400"
+        />
+        <StatCard
+          size="sm"
+          label="Sent"
+          value={stats.sent}
+          icon={CheckCircle2}
+          accent="bg-green-500/10 text-green-600 dark:text-green-400"
+        />
+        <StatCard
+          size="sm"
+          label="Failed"
+          value={stats.failed}
+          icon={XCircle}
+          accent="bg-red-500/10 text-red-600 dark:text-red-400"
+        />
+        <StatCard
+          size="sm"
+          label="Success Rate"
+          value={`${stats.successRate}%`}
+          icon={Percent}
+          accent="bg-green-500/10 text-green-600 dark:text-green-400"
+        />
+        <StatCard
+          size="sm"
+          label="Failed Rate"
+          value={`${stats.failedRate}%`}
+          icon={Percent}
+          accent="bg-red-500/10 text-red-600 dark:text-red-400"
+        />
+        <StatCard
+          size="sm"
+          label="Avg. Attempts"
+          value={stats.avgAttempts}
+          icon={Repeat}
+          accent="bg-purple-500/10 text-purple-600 dark:text-purple-400"
+        />
       </div>
 
       {/* Success-rate widget by period */}
@@ -481,7 +545,11 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
           </div>
 
           <div className="relative">
-            <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value as "ALL" | Platform)} className={selectCls}>
+            <select
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value as "ALL" | Platform)}
+              className={selectCls}
+            >
               <option value="ALL">All Platforms</option>
               <option value="GOOGLE">Google Ads</option>
               <option value="META">Meta</option>
@@ -491,10 +559,16 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
           </div>
 
           <div className="relative">
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "ALL" | Status)} className={selectCls}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "ALL" | Status)}
+              className={selectCls}
+            >
               <option value="ALL">All Status</option>
               {(Object.keys(STATUS_LABELS) as Status[]).map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                <option key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </option>
               ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
@@ -516,7 +590,9 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
             />
           </div>
 
-          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+          <p className="text-xs text-muted-foreground self-center shrink-0">
+            {filtered.length} results
+          </p>
         </div>
 
         {/* Advanced filters — collapsed by default, toggled open on click */}
@@ -529,19 +605,69 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
             <Filter className="w-3 h-3" />
             Advanced
             {anyAdvActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showAdvanced && "rotate-180")} />
+            <ChevronDown
+              className={cn("w-3.5 h-3.5 transition-transform", showAdvanced && "rotate-180")}
+            />
           </button>
 
           {showAdvanced && (
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
-              <button type="button" onClick={() => setAdvRetryable((v) => !v)} className={chipCls(advRetryable)}>Retryable only</button>
-              <button type="button" onClick={() => setAdvHasRequestId((v) => !v)} className={chipCls(advHasRequestId)}>Has Request ID</button>
-              <button type="button" onClick={() => setAdvHasGclid((v) => !v)} className={chipCls(advHasGclid)}>Has GCLID</button>
-              <button type="button" onClick={() => setAdvHasError((v) => !v)} className={chipCls(advHasError)}>Has Error</button>
-              <button type="button" onClick={() => setAdvHasResponse((v) => !v)} className={chipCls(advHasResponse)}>Has Response</button>
-              <button type="button" onClick={() => setAdvMultiAttempt((v) => !v)} className={chipCls(advMultiAttempt)}>Attempts &gt; 1</button>
-              <button type="button" onClick={() => setAdvToday((v) => !v)} className={chipCls(advToday)}>Created Today</button>
-              <button type="button" onClick={() => setAdvThisWeek((v) => !v)} className={chipCls(advThisWeek)}>Created This Week</button>
+              <button
+                type="button"
+                onClick={() => setAdvRetryable((v) => !v)}
+                className={chipCls(advRetryable)}
+              >
+                Retryable only
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvHasRequestId((v) => !v)}
+                className={chipCls(advHasRequestId)}
+              >
+                Has Request ID
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvHasGclid((v) => !v)}
+                className={chipCls(advHasGclid)}
+              >
+                Has GCLID
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvHasError((v) => !v)}
+                className={chipCls(advHasError)}
+              >
+                Has Error
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvHasResponse((v) => !v)}
+                className={chipCls(advHasResponse)}
+              >
+                Has Response
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvMultiAttempt((v) => !v)}
+                className={chipCls(advMultiAttempt)}
+              >
+                Attempts &gt; 1
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvToday((v) => !v)}
+                className={chipCls(advToday)}
+              >
+                Created Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdvThisWeek((v) => !v)}
+                className={chipCls(advThisWeek)}
+              >
+                Created This Week
+              </button>
             </div>
           )}
         </div>
@@ -570,14 +696,31 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
                     <input
                       type="checkbox"
                       className="cbx"
-                      checked={pageItems.some((r) => r.status === "FAILED") && pageItems.filter((r) => r.status === "FAILED").every((r) => selected.has(r.id))}
+                      checked={
+                        pageItems.some((r) => r.status === "FAILED") &&
+                        pageItems
+                          .filter((r) => r.status === "FAILED")
+                          .every((r) => selected.has(r.id))
+                      }
                       onChange={toggleSelectAllOnPage}
                       aria-label="Select all failed rows on this page"
                     />
                   </th>
                 )}
-                {["Lead", "Booking", "Platform", "Destination ID", "Status", "Attempts", "Last Attempt", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                {[
+                  "Lead",
+                  "Booking",
+                  "Platform",
+                  "Destination ID",
+                  "Status",
+                  "Attempts",
+                  "Last Attempt",
+                  "Actions",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
                     {h}
                   </th>
                 ))}
@@ -589,9 +732,14 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
                   <td colSpan={9} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <Inbox className="w-8 h-8 text-muted-foreground/40" />
-                      <p className="text-sm font-bold text-foreground">No Offline Conversions Found</p>
+                      <p className="text-sm font-bold text-foreground">
+                        No Offline Conversions Found
+                      </p>
                       <p className="text-xs text-muted-foreground max-w-sm">
-                        {search || platformFilter !== "ALL" || statusFilter !== "ALL" || anyAdvActive
+                        {search ||
+                        platformFilter !== "ALL" ||
+                        statusFilter !== "ALL" ||
+                        anyAdvActive
                           ? "No rows match your current filters — try clearing a filter or widening the date range."
                           : "Offline conversions are queued automatically when a lead converts or a direct booking is paid. Nothing has been queued yet."}
                       </p>
@@ -622,7 +770,10 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
                       {/* Lead */}
                       <td className="px-4 py-3">
                         {row.lead ? (
-                          <Link href={`/admin/leads/${row.lead.id}`} className="text-xs font-semibold text-primary hover:underline">
+                          <Link
+                            href={`/admin/leads/${row.lead.id}`}
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
                             {customerName}
                           </Link>
                         ) : (
@@ -633,7 +784,10 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
                       {/* Booking */}
                       <td className="px-4 py-3">
                         {row.booking ? (
-                          <Link href={`/admin/bookings/${row.booking.id}`} className="text-xs font-semibold text-primary hover:underline">
+                          <Link
+                            href={`/admin/bookings/${row.booking.id}`}
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
                             {row.booking.guestName}
                           </Link>
                         ) : (
@@ -648,26 +802,41 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
 
                       {/* Destination ID */}
                       <td className="px-4 py-3">
-                        <span className="font-mono text-[12px] text-muted-foreground">{destinationId ?? "—"}</span>
+                        <span className="font-mono text-[12px] text-muted-foreground">
+                          {destinationId ?? "—"}
+                        </span>
                       </td>
 
                       {/* Status */}
                       <td className="px-4 py-3">
-                        <span className={cn("text-[12px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap", STATUS_STYLES[row.status])}>
+                        <span
+                          className={cn(
+                            "text-[12px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap",
+                            STATUS_STYLES[row.status],
+                          )}
+                        >
                           {STATUS_LABELS[row.status]}
                         </span>
                         {row.status === "FAILED" && row.lastError && (
-                          <p className="text-[12px] text-red-500/80 mt-0.5 max-w-[160px] truncate" title={row.lastError}>
+                          <p
+                            className="text-[12px] text-red-500/80 mt-0.5 max-w-[160px] truncate"
+                            title={row.lastError}
+                          >
                             {failure.title}
                           </p>
                         )}
                       </td>
 
                       {/* Attempts */}
-                      <td className="px-4 py-3 text-xs text-muted-foreground text-center">{row.attempts}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground text-center">
+                        {row.attempts}
+                      </td>
 
                       {/* Last Attempt */}
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap" title={row.attempts > 0 ? fmtDate(row.updatedAt) : undefined}>
+                      <td
+                        className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap"
+                        title={row.attempts > 0 ? fmtDate(row.updatedAt) : undefined}
+                      >
                         {row.attempts > 0 ? timeAgo(row.updatedAt) : "—"}
                       </td>
 
@@ -689,7 +858,9 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
                               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                               title="Retry"
                             >
-                              <RotateCw className={cn("w-3.5 h-3.5", busyId === row.id && "animate-spin")} />
+                              <RotateCw
+                                className={cn("w-3.5 h-3.5", busyId === row.id && "animate-spin")}
+                              />
                             </button>
                           )}
                         </div>
@@ -702,7 +873,15 @@ export function OfflineConversionsClient({ initialRows, stats, periodStats, canR
           </table>
         </div>
 
-        <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} total={total} onPage={setPage} onPageSize={changePageSize} noun="conversions" />
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="conversions"
+        />
       </div>
     </div>
   );

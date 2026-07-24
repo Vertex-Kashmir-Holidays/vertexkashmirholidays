@@ -1,13 +1,13 @@
 // src/components/blog/BlogPostRelated.tsx
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
-import { useState, useEffect } from 'react';
-import type { BlogArticleData } from '@/types/blog';
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
+import { useState, useEffect } from "react";
+import type { BlogArticleData } from "@/types/blog";
 
 interface BlogPostRelatedProps {
   posts: BlogArticleData[];
@@ -17,16 +17,16 @@ interface BlogPostRelatedProps {
 // Saturated category badges read well on both themes; the brand category
 // uses the theme primary.
 const badgeColor: Record<string, string> = {
-  Kashmir: 'bg-primary',
-  'Travel Tips': 'bg-sky-600',
-  Honeymoon: 'bg-rose-500',
-  Adventure: 'bg-emerald-700',
-  Food: 'bg-amber-600',
-  Culture: 'bg-indigo-500',
-  News: 'bg-teal-600',
+  Kashmir: "bg-primary",
+  "Travel Tips": "bg-sky-600",
+  Honeymoon: "bg-rose-500",
+  Adventure: "bg-emerald-700",
+  Food: "bg-amber-600",
+  Culture: "bg-indigo-500",
+  News: "bg-teal-600",
 };
 
-export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelatedProps) {
+export function BlogPostRelated({ posts, title = "Keep Reading" }: BlogPostRelatedProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
 
@@ -42,21 +42,19 @@ export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelat
       }
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   if (posts.length === 0) return null;
 
   const nextSlide = () => {
-    setCurrentIndex((prev) =>
-      prev + itemsPerView >= posts.length ? 0 : prev + itemsPerView
-    );
+    setCurrentIndex((prev) => (prev + itemsPerView >= posts.length ? 0 : prev + itemsPerView));
   };
 
   const prevSlide = () => {
     setCurrentIndex((prev) =>
-      prev - itemsPerView < 0 ? Math.max(0, posts.length - itemsPerView) : prev - itemsPerView
+      prev - itemsPerView < 0 ? Math.max(0, posts.length - itemsPerView) : prev - itemsPerView,
     );
   };
 
@@ -125,7 +123,9 @@ export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelat
                       className="object-cover transition duration-500 group-hover:scale-105"
                     />
                     {post.category && (
-                      <span className={`absolute bottom-2 left-2 rounded ${badgeColor[post.category] ?? 'bg-primary'} px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white`}>
+                      <span
+                        className={`absolute bottom-2 left-2 rounded ${badgeColor[post.category] ?? "bg-primary"} px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white`}
+                      >
                         {post.category.toUpperCase()}
                       </span>
                     )}
@@ -137,7 +137,7 @@ export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelat
                     <p className="mt-2 text-[12px] text-muted-foreground">
                       {[post.dateLabel, post.readTime ? `${post.readTime} min read` : null]
                         .filter(Boolean)
-                        .join('  ·  ')}
+                        .join("  ·  ")}
                     </p>
                   </div>
                 </Link>
@@ -155,8 +155,8 @@ export function BlogPostRelated({ posts, title = 'Keep Reading' }: BlogPostRelat
                 onClick={() => setCurrentIndex(i * itemsPerView)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   i === Math.floor(currentIndex / itemsPerView)
-                    ? 'w-4 bg-primary'
-                    : 'w-1.5 bg-border'
+                    ? "w-4 bg-primary"
+                    : "w-1.5 bg-border"
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />

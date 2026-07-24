@@ -3,13 +3,18 @@
 // callers should prefer this over the legacy freeform SiteSettings.siteAddress
 // field, which can drift out of sync (see: it used to say "Boulevard Road,
 // Dal Gate, Srinagar", nowhere near the real registered address).
-export function formatBusinessAddress(settings: {
-  addressLine1?: string | null;
-  addressCity?: string | null;
-  addressState?: string | null;
-  addressPincode?: string | null;
-  addressCountry?: string | null;
-} | null | undefined): string | null {
+export function formatBusinessAddress(
+  settings:
+    | {
+        addressLine1?: string | null;
+        addressCity?: string | null;
+        addressState?: string | null;
+        addressPincode?: string | null;
+        addressCountry?: string | null;
+      }
+    | null
+    | undefined,
+): string | null {
   if (!settings) return null;
   const parts = [
     settings.addressLine1,

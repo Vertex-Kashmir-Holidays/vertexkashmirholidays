@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { recordOnlinePayment } from "@/lib/bookings/online-payment";
 import { finalizeOnlinePayment } from "@/lib/bookings/notify";
 import { logPaymentAudit } from "@/lib/bookings/audit";
+import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   // Read raw body BEFORE any JSON parsing so HMAC is computed on the exact bytes.
@@ -11,15 +12,14 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-razorpay-signature") ?? "";
 
   const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET ?? "")
+    .createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET ?? "")
     .update(rawBody)
     .digest("hex");
 
   const expectedBuf = Buffer.from(expected, "hex");
   const receivedBuf = Buffer.from(signature, "hex");
   const isValid =
-    expectedBuf.length === receivedBuf.length &&
-    crypto.timingSafeEqual(expectedBuf, receivedBuf);
+    expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
 
   if (!isValid) {
     return new Response("Invalid signature", { status: 400 });

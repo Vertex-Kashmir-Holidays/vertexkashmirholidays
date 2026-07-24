@@ -1,8 +1,8 @@
 // src/components/sections/DestinationDetailSidebar.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Thermometer, Cloud, Sun } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Thermometer, Cloud, Sun } from "lucide-react";
 
 interface DestinationDetailSidebarProps {
   name: string;
@@ -20,7 +20,11 @@ interface DestinationDetailSidebarProps {
   };
 }
 
-export function DestinationDetailSidebar({ name, quickInfo, weather }: DestinationDetailSidebarProps) {
+export function DestinationDetailSidebar({
+  name,
+  quickInfo,
+  weather,
+}: DestinationDetailSidebarProps) {
   return (
     <aside className="space-y-6 lg:sticky lg:top-6">
       {/* Weather */}
@@ -47,7 +51,11 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
           </div>
           <div className="relative h-16 w-20">
             <Sun className="absolute right-1 top-0 h-10 w-10 text-amber-400" strokeWidth={2} />
-            <Cloud className="absolute bottom-0 left-0 h-11 w-14 text-sky-300" fill="currentColor" strokeWidth={1.5} />
+            <Cloud
+              className="absolute bottom-0 left-0 h-11 w-14 text-sky-300"
+              fill="currentColor"
+              strokeWidth={1.5}
+            />
           </div>
         </div>
         <div className="mt-4 grid grid-cols-3 divide-x divide-border border-t border-border pt-4 text-center">
@@ -84,7 +92,15 @@ export function DestinationDetailSidebar({ name, quickInfo, weather }: Destinati
               transition={{ delay: i * 0.05 }}
             >
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d={info.icon} />
                 </svg>
               </span>

@@ -41,7 +41,7 @@ export default async function AdminBookingsPage() {
         createdAt: true,
         tour: { select: { title: true, slug: true, coverImage: true } },
         user: { select: { name: true, email: true } },
-        payments: { select: { amount: true } },
+        payments: { select: { amount: true, type: true } },
       },
     }),
     prisma.booking.count({ where: { deletedAt: null } }),
@@ -58,8 +58,20 @@ export default async function AdminBookingsPage() {
       payments,
       services: [],
     });
-    return { ...b, paymentStatus: finance.paymentStatus, paidAmount: finance.paidAmount, balance: finance.balance };
+    return {
+      ...b,
+      paymentStatus: finance.paymentStatus,
+      paidAmount: finance.paidAmount,
+      balance: finance.balance,
+    };
   });
 
-  return <BookingsClient initialBookings={bookings} totalCount={totalCount} canDelete={canDelete} isAdmin={isAdmin} />;
+  return (
+    <BookingsClient
+      initialBookings={bookings}
+      totalCount={totalCount}
+      canDelete={canDelete}
+      isAdmin={isAdmin}
+    />
+  );
 }

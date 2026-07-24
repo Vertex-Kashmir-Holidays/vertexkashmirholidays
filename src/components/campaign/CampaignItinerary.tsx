@@ -1,10 +1,10 @@
 // src/components/campaign/CampaignItinerary.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { imgSrc } from '@/lib/placeholder';
-import type { CampaignItineraryItem } from '@/types/campaign';
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { imgSrc } from "@/lib/placeholder";
+import type { CampaignItineraryItem } from "@/types/campaign";
 
 interface CampaignItineraryProps {
   title: string | null;
@@ -49,11 +49,13 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
               <span className="absolute left-0 top-1 z-10 grid h-11 w-11 place-items-center rounded-full bg-accent-grad text-[16px] font-extrabold text-white ring-inner shadow-glow lg:left-1/2 lg:-translate-x-1/2">
                 {i + 1}
               </span>
-              <div className={`${i % 2 ? 'lg:order-2 lg:pl-14' : 'lg:pr-14 lg:text-right'}`}>
+              <div className={`${i % 2 ? "lg:order-2 lg:pl-14" : "lg:pr-14 lg:text-right"}`}>
                 <h3 className="text-[18px] font-bold text-foreground">{item.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{item.description}</p>
+                <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
-              <div className={`${i % 2 ? 'lg:order-1 lg:pr-14' : 'lg:pl-14'}`}>
+              <div className={`${i % 2 ? "lg:order-1 lg:pr-14" : "lg:pl-14"}`}>
                 <div className="group relative h-[150px] overflow-hidden rounded-2xl border border-border shadow-card lg:h-[170px]">
                   <Image
                     src={imgSrc(item.image)}

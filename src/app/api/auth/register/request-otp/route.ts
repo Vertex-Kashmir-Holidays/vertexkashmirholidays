@@ -76,10 +76,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isAllowedEmailDomain(email)) {
-      return NextResponse.json(
-        { error: PUBLIC_DOMAINS_GENERIC_MESSAGE },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: PUBLIC_DOMAINS_GENERIC_MESSAGE }, { status: 400 });
     }
 
     // Already a real account? Don't start a verification flow.
@@ -176,10 +173,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { success: true, cooldown: RESEND_COOLDOWN_SECONDS },
-      { status: 200 },
-    );
+    return NextResponse.json({ success: true, cooldown: RESEND_COOLDOWN_SECONDS }, { status: 200 });
   } catch (err) {
     console.error("[request-otp] error:", err);
     return NextResponse.json(

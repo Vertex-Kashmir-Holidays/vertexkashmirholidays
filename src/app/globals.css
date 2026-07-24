@@ -1,5 +1,3 @@
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,21 +11,21 @@
   color-scheme: light;
 
   /* Light-golden brand palette. Navy ink on warm cream, green CTA, gold accents. */
-  --background: 44 66% 92%;       /* #F8F1DD */
-  --foreground: 214 68% 14%;      /* #0B1F3A navy */
-  --card: 45 86% 97%;             /* #FEFBF2 */
+  --background: 44 66% 92%; /* #F8F1DD */
+  --foreground: 214 68% 14%; /* #0B1F3A navy */
+  --card: 45 86% 97%; /* #FEFBF2 */
   --card-foreground: 214 68% 14%;
-  --muted: 43 55% 87%;            /* #F0E6CC */
+  --muted: 43 55% 87%; /* #F0E6CC */
   --muted-foreground: 45 20% 33%; /* darkened for WCAG AA contrast ≥4.5:1 */
-  --border: 42 48% 82%;           /* #E7DABB */
+  --border: 42 48% 82%; /* #E7DABB */
   --input: 42 48% 82%;
-  --ring: 43 49% 53%;             /* #C2A14E gold */
-  --primary: 214 68% 14%;         /* navy */
+  --ring: 43 49% 53%; /* #C2A14E gold */
+  --primary: 214 68% 14%; /* navy */
   --primary-foreground: 44 66% 92%;
-  --accent: 151 87% 34%;          /* #0BA45B green CTA */
+  --accent: 151 87% 34%; /* #0BA45B green CTA */
   --accent-foreground: 0 0% 100%;
-  --link: 214 88% 34%;           /* #0A4DA2 */
-  --gold: 43 49% 53%;            /* #C2A14E */
+  --link: 214 88% 34%; /* #0A4DA2 */
+  --gold: 43 49% 53%; /* #C2A14E */
 
   /* Glass surface tint (adapts per theme). Light mode uses a warm cream
      frost (#FEFBF2) so panels glow over the golden background. */
@@ -38,26 +36,30 @@
   --glass-deep-1: 45 86% 97% / 0.92;
   --glass-deep-2: 43 55% 90% / 0.82;
   --glass-border: 0 0% 100% / 0.6;
+
+  /* Shared motion easing — see docs/DESIGN_SYSTEM.md → Motion. Same curve as
+     EASE_BRAND (src/lib/motion.ts) and the ease-brand Tailwind utility class. */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
   color-scheme: dark;
 
-  --background: 214 68% 14%;      /* #0B1F3A navy */
-  --foreground: 44 52% 90%;       /* #F3ECD9 */
-  --card: 213 64% 18%;            /* #102A4A */
+  --background: 214 68% 14%; /* #0B1F3A navy */
+  --foreground: 44 52% 90%; /* #F3ECD9 */
+  --card: 213 64% 18%; /* #102A4A */
   --card-foreground: 44 52% 90%;
   --muted: 213 50% 20%;
   --muted-foreground: 212 24% 70%; /* #9FB0C4 */
-  --border: 214 55% 24%;          /* #1C3A60 */
+  --border: 214 55% 24%; /* #1C3A60 */
   --input: 214 55% 24%;
-  --ring: 43 56% 66%;             /* #D9BE7A gold */
-  --primary: 43 56% 66%;          /* #D9BE7A gold */
+  --ring: 43 56% 66%; /* #D9BE7A gold */
+  --primary: 43 56% 66%; /* #D9BE7A gold */
   --primary-foreground: 214 68% 14%;
-  --accent: 150 78% 39%;          /* #16B364 green CTA */
+  --accent: 150 78% 39%; /* #16B364 green CTA */
   --accent-foreground: 140 69% 8%;
-  --link: 216 65% 54%;           /* #3D7AD6 */
-  --gold: 42 52% 65%;            /* #D4B978 */
+  --link: 216 65% 54%; /* #3D7AD6 */
+  --gold: 42 52% 65%; /* #D4B978 */
 
   --glass-1: 213 64% 18% / 0.5;
   --glass-2: 213 64% 18% / 0.3;
@@ -92,76 +94,124 @@ body {
 
 @layer utilities {
   /* Brand gradients — retinted for the golden theme (gold + green/blue). */
-  .grad-orange { background-image:linear-gradient(135deg,hsl(43 60% 62%),hsl(40 49% 48%)); }       /* gold */
-  .grad-cyan   { background-image:linear-gradient(135deg,hsl(214 80% 46%),hsl(151 70% 38%)); }     /* blue→green */
-  .grad-text-warm { background-image:linear-gradient(110deg,hsl(43 60% 62%),hsl(40 55% 48%)); -webkit-background-clip:text; background-clip:text; color:transparent; } /* gold */
-  .grad-text-cool { background-image:linear-gradient(110deg,hsl(151 70% 40%),hsl(43 55% 55%)); -webkit-background-clip:text; background-clip:text; color:transparent; } /* green→gold */
-  .h-display { font-family:'Playfair Display',serif; letter-spacing:-0.022em; line-height:1.04; }
-  .glass { background:linear-gradient(155deg,hsl(var(--glass-1)),hsl(var(--glass-2))); backdrop-filter:blur(18px) saturate(1.3); -webkit-backdrop-filter:blur(18px) saturate(1.3); border:1px solid hsl(var(--glass-border)); }
-  .glass-strong { background:linear-gradient(155deg,hsl(var(--glass-strong-1)),hsl(var(--glass-strong-2))); backdrop-filter:blur(26px) saturate(1.4); -webkit-backdrop-filter:blur(26px) saturate(1.4); border:1px solid hsl(var(--glass-border)); }
-  .glass-deep { background:linear-gradient(165deg,hsl(var(--glass-deep-1)),hsl(var(--glass-deep-2))); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); border:1px solid hsl(var(--glass-border)); }
+  .grad-orange {
+    background-image: linear-gradient(135deg, hsl(43 60% 62%), hsl(40 49% 48%));
+  } /* gold */
+  .grad-cyan {
+    background-image: linear-gradient(135deg, hsl(214 80% 46%), hsl(151 70% 38%));
+  } /* blue→green */
+  .grad-text-warm {
+    background-image: linear-gradient(110deg, hsl(43 60% 62%), hsl(40 55% 48%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  } /* gold */
+  .grad-text-cool {
+    background-image: linear-gradient(110deg, hsl(151 70% 40%), hsl(43 55% 55%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  } /* green→gold */
+  .h-display {
+    font-family: "Playfair Display", serif;
+    letter-spacing: -0.022em;
+    line-height: 1.04;
+  }
+  .glass {
+    background: linear-gradient(155deg, hsl(var(--glass-1)), hsl(var(--glass-2)));
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    border: 1px solid hsl(var(--glass-border));
+  }
+  .glass-strong {
+    background: linear-gradient(155deg, hsl(var(--glass-strong-1)), hsl(var(--glass-strong-2)));
+    backdrop-filter: blur(26px) saturate(1.4);
+    -webkit-backdrop-filter: blur(26px) saturate(1.4);
+    border: 1px solid hsl(var(--glass-border));
+  }
+  .glass-deep {
+    background: linear-gradient(165deg, hsl(var(--glass-deep-1)), hsl(var(--glass-deep-2)));
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid hsl(var(--glass-border));
+  }
 
   /* .glass-cream — flat warm-frost glass for navbar-on-scroll, quote cards, CTA panels. */
   .glass-cream {
-    background: rgba(254,251,242,0.55);
+    background: rgba(254, 251, 242, 0.55);
     backdrop-filter: blur(18px) saturate(135%);
     -webkit-backdrop-filter: blur(18px) saturate(135%);
-    border: 1px solid rgba(255,255,255,0.6);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow:
-      0 10px 34px rgba(11,31,58,0.10),
-      inset 0 1px 0 rgba(255,255,255,0.75),
-      inset 0 0 0 1px rgba(194,161,78,0.16);
+      0 10px 34px rgba(11, 31, 58, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      inset 0 0 0 1px rgba(194, 161, 78, 0.16);
   }
   .dark .glass-cream {
-    background: rgba(16,42,74,0.55);
-    border: 1px solid rgba(217,190,122,0.18);
+    background: rgba(16, 42, 74, 0.55);
+    border: 1px solid rgba(217, 190, 122, 0.18);
     box-shadow:
-      0 12px 44px rgba(0,0,0,0.40),
-      inset 0 1px 0 rgba(255,255,255,0.06),
-      inset 0 0 0 1px rgba(217,190,122,0.14);
+      0 12px 44px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 0 0 1px rgba(217, 190, 122, 0.14);
   }
 
   /* .nav-pill-solid — opaque floating-pill state for the navbar once scrolled
      past the hero (and on hero-less pages). Unlike .glass-cream (~0.55 alpha),
      this is opaque enough (~0.96/0.92) that page content never bleeds through. */
   .nav-pill-solid {
-    background: rgba(254,251,242,0.96);   /* --surface fallback #FEFBF2 */
+    background: rgba(254, 251, 242, 0.96); /* --surface fallback #FEFBF2 */
     backdrop-filter: blur(18px) saturate(135%);
     -webkit-backdrop-filter: blur(18px) saturate(135%);
     border: 1px solid hsl(var(--border));
     box-shadow:
-      0 10px 30px rgba(11,31,58,0.12),
-      inset 0 1px 0 rgba(255,255,255,0.7);
+      0 10px 30px rgba(11, 31, 58, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
   .dark .nav-pill-solid {
-    background: rgba(11,31,58,0.92);       /* #0B1F3A */
-    border: 1px solid #1C3A60;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.40);
+    background: rgba(11, 31, 58, 0.92); /* #0B1F3A */
+    border: 1px solid #1c3a60;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   }
 
   /* .glass-photo — dark frost for glass over imagery (hero overlay, tiles). */
   .glass-photo {
-    background: rgba(11,31,58,0.30);
+    background: rgba(11, 31, 58, 0.3);
     backdrop-filter: blur(14px) saturate(120%);
     -webkit-backdrop-filter: blur(14px) saturate(120%);
-    border: 1px solid rgba(255,255,255,0.18);
-    box-shadow: 0 14px 44px rgba(0,0,0,0.30);
-    color: #F3ECD9;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.3);
+    color: #f3ecd9;
   }
   .dark .glass-photo {
-    background: rgba(16,42,74,0.55);
-    border: 1px solid rgba(217,190,122,0.18);
-    box-shadow: 0 12px 44px rgba(0,0,0,0.40);
+    background: rgba(16, 42, 74, 0.55);
+    border: 1px solid rgba(217, 190, 122, 0.18);
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.4);
   }
 
   /* Glow orbs — soft radial bloom behind golden sections. Decorative only.
      Pair with `isolate` + a negative z (e.g. -z-10) on the host section. */
-  .orb { position:absolute; border-radius:9999px; filter:blur(70px); pointer-events:none; }
-  .orb-gold  { background:radial-gradient(closest-side, hsl(43 49% 53% / 0.10), transparent 72%); }
-  .orb-green { background:radial-gradient(closest-side, hsl(151 87% 34% / 0.09), transparent 72%); }
+  .orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(70px);
+    pointer-events: none;
+  }
+  .orb-gold {
+    background: radial-gradient(closest-side, hsl(43 49% 53% / 0.1), transparent 72%);
+  }
+  .orb-green {
+    background: radial-gradient(closest-side, hsl(151 87% 34% / 0.09), transparent 72%);
+  }
 
-  .ring-inner { box-shadow:inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(0,0,0,.25); }
-  .bg-brand-cream { background-color: hsl(45 86% 97% / var(--tw-bg-opacity, 1)) }
+  .ring-inner {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+  }
+  .bg-brand-cream {
+    background-color: hsl(45 86% 97% / var(--tw-bg-opacity, 1));
+  }
 }
 
 /* Auth form inputs — theme-aware (used on the /login page) */
@@ -171,7 +221,9 @@ body {
   border: 1px solid hsl(var(--input));
   background: hsl(var(--card));
   border-radius: 0.75rem;
-  transition: border-color .15s, box-shadow .15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .input-wrap:focus-within {
   border-color: hsl(var(--primary));
@@ -187,7 +239,9 @@ body {
   font-size: 13px;
   color: hsl(var(--foreground));
 }
-.input-wrap input::placeholder { color: hsl(var(--muted-foreground)); }
+.input-wrap input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
 .cbx {
   width: 1rem;
   height: 1rem;
@@ -205,8 +259,12 @@ body {
   margin: 0;
   height: 100%;
 }
-.price-range::-webkit-slider-runnable-track { background: transparent; }
-.price-range::-moz-range-track { background: transparent; }
+.price-range::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.price-range::-moz-range-track {
+  background: transparent;
+}
 .price-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
@@ -230,37 +288,112 @@ body {
 }
 
 /* Portal animation */
-.portal-wrap { perspective:900px; }
+.portal-wrap {
+  perspective: 900px;
+}
 .portal {
-  position:relative; border-radius:50%;
-  background: radial-gradient(closest-side, transparent 58%, rgba(40,220,140,.18) 66%, transparent 80%);
+  position: relative;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    transparent 58%,
+    rgba(40, 220, 140, 0.18) 66%,
+    transparent 80%
+  );
 }
 .portal::before {
-  content:""; position:absolute; inset:-3%; border-radius:50%;
-  background:conic-gradient(from 0deg, transparent 0 8%, hsl(150 90% 60%) 14%, hsl(170 90% 55%) 22%, transparent 30%, transparent 50%, hsl(150 85% 55%) 60%, transparent 70%, transparent 100%);
-  -webkit-mask:radial-gradient(closest-side, transparent 80%, #000 84%, #000 92%, transparent 96%);
-  mask:radial-gradient(closest-side, transparent 80%, #000 84%, #000 92%, transparent 96%);
-  animation:spin 9s linear infinite;
-  filter:drop-shadow(0 0 18px hsl(150 90% 55% / .9)) drop-shadow(0 0 60px hsl(150 80% 50% / .55));
+  content: "";
+  position: absolute;
+  inset: -3%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 8%,
+    hsl(150 90% 60%) 14%,
+    hsl(170 90% 55%) 22%,
+    transparent 30%,
+    transparent 50%,
+    hsl(150 85% 55%) 60%,
+    transparent 70%,
+    transparent 100%
+  );
+  -webkit-mask: radial-gradient(closest-side, transparent 80%, #000 84%, #000 92%, transparent 96%);
+  mask: radial-gradient(closest-side, transparent 80%, #000 84%, #000 92%, transparent 96%);
+  animation: spin 9s linear infinite;
+  filter: drop-shadow(0 0 18px hsl(150 90% 55% / 0.9)) drop-shadow(0 0 60px hsl(150 80% 50% / 0.55));
 }
 .portal::after {
-  content:""; position:absolute; inset:6%; border-radius:50%;
-  background:radial-gradient(closest-side, rgba(120,255,190,.10), rgba(30,160,110,.05) 60%, transparent 75%);
-  backdrop-filter:blur(2px);
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(120, 255, 190, 0.1),
+    rgba(30, 160, 110, 0.05) 60%,
+    transparent 75%
+  );
+  backdrop-filter: blur(2px);
 }
-@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* Particles */
-.flake { position:absolute; border-radius:50%; background:rgba(255,255,255,.85); animation:fall linear infinite; }
-@keyframes fall { from{ transform:translateY(-8vh) translateX(0)} to{ transform:translateY(105vh) translateX(4vw)} }
-.ember { position:absolute; border-radius:50%; background:hsl(43 60% 60%); box-shadow:0 0 8px hsl(43 55% 50%); animation:rise linear infinite; }
-@keyframes rise { from{ transform:translateY(0); opacity:.9 } to{ transform:translateY(-60vh); opacity:0 } }
+.flake {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  animation: fall linear infinite;
+}
+@keyframes fall {
+  from {
+    transform: translateY(-8vh) translateX(0);
+  }
+  to {
+    transform: translateY(105vh) translateX(4vw);
+  }
+}
+.ember {
+  position: absolute;
+  border-radius: 50%;
+  background: hsl(43 60% 60%);
+  box-shadow: 0 0 8px hsl(43 55% 50%);
+  animation: rise linear infinite;
+}
+@keyframes rise {
+  from {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(-60vh);
+    opacity: 0;
+  }
+}
 
 /* Marquee */
-.marquee { overflow:hidden; -webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); }
-.marquee-track { display:flex; gap:3.5rem; width:max-content; animation:marq 28s linear infinite; }
-.marquee:hover .marquee-track { animation-play-state:paused; }
-@keyframes marq { to { transform:translateX(-50%); } }
+.marquee {
+  overflow: hidden;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 3.5rem;
+  width: max-content;
+  animation: marq 28s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marq {
+  to {
+    transform: translateX(-50%);
+  }
+}
 
 /* Carousel */
 /* touch-action: pan-x pan-y tells mobile browsers this row owns both
@@ -270,16 +403,31 @@ body {
    pan-x alone (the previous value) claimed the row for horizontal panning
    only, which left vertical swipes starting on the row with no native
    handler at all — the page wouldn't scroll until the finger left the row. */
-.snap-row { scroll-snap-type:x mandatory; scrollbar-width:none; -ms-overflow-style:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
-.snap-row::-webkit-scrollbar { display:none; }
-.snap-row > * { scroll-snap-align:start; }
+.snap-row {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
+.snap-row > * {
+  scroll-snap-align: start;
+}
 
 /* Standalone scrollbar-hider — used on horizontally-scrolling chip/tab rows
    that don't need snap-row's scroll-snap behavior (see e.g. TourDetailsTabs,
    DestinationsFilterBar, BlogCategoryChips). Was referenced across the
    codebase with no matching rule until now, so the scrollbar never hid. */
-.scrollbar-none { scrollbar-width:none; -ms-overflow-style:none; }
-.scrollbar-none::-webkit-scrollbar { display:none; }
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 
 /* Sweep shine — a light-theme card is pale, so a white highlight (the dark-theme
    treatment) all but disappears on it; light theme instead gets a navy-grey streak
@@ -293,21 +441,61 @@ body {
    `left:-65%` only sets the streak's static starting position; translateX moves
    it from there. Since translateX% is relative to the streak's OWN width (60%
    of the card), 300% = (115% - -65%) / 60% of container travel. */
-.sweep { position:relative; overflow:hidden; }
-.sweep::after {
-  content:"";
-  position:absolute;
-  top:0; bottom:0; left:-65%; width:60%;
-  pointer-events:none;
-  background:linear-gradient(90deg,transparent 0%,rgba(30,41,59,.05) 30%,rgba(30,41,59,.13) 50%,rgba(30,41,59,.05) 70%,transparent 100%);
-  transform:translateX(0%) skewX(-6deg);
-  animation:sweep 6s ease-in-out infinite;
+.sweep {
+  position: relative;
+  overflow: hidden;
 }
-.dark .sweep::after { background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%,transparent 100%); }
+.sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -65%;
+  width: 60%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(30, 41, 59, 0.05) 30%,
+    rgba(30, 41, 59, 0.13) 50%,
+    rgba(30, 41, 59, 0.05) 70%,
+    transparent 100%
+  );
+  transform: translateX(0%) skewX(-6deg);
+  animation: sweep 6s ease-in-out infinite;
+}
+.dark .sweep::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 30%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.06) 70%,
+    transparent 100%
+  );
+}
 /* For cards that are always dark regardless of the site theme (e.g. the
    campaign hero's navy reserve-form card) — forces the light-theme streak too. */
-.sweep-on-dark::after { background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%,transparent 100%); }
-@keyframes sweep { 0%,55% { transform:translateX(0%) skewX(-6deg); } 85%,100% { transform:translateX(300%) skewX(-6deg); } }
+.sweep-on-dark::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 30%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.06) 70%,
+    transparent 100%
+  );
+}
+@keyframes sweep {
+  0%,
+  55% {
+    transform: translateX(0%) skewX(-6deg);
+  }
+  85%,
+  100% {
+    transform: translateX(300%) skewX(-6deg);
+  }
+}
 
 /* Sweep-on-hover — same streak, same 6s speed as the ambient `.sweep` (kept
    identical on purpose so every sweep across the site reads at the same
@@ -316,18 +504,44 @@ body {
    (tour cards) where an always-on infinite sweep on every card at once would
    be wasteful; this costs nothing until a user actually interacts with a
    specific card. */
-.sweep-hover { position:relative; overflow:hidden; }
-.sweep-hover::after {
-  content:"";
-  position:absolute;
-  top:0; bottom:0; left:-65%; width:60%;
-  pointer-events:none;
-  background:linear-gradient(90deg,transparent 0%,rgba(30,41,59,.05) 30%,rgba(30,41,59,.13) 50%,rgba(30,41,59,.05) 70%,transparent 100%);
-  transform:translateX(0%) skewX(-6deg);
-  opacity:0;
+.sweep-hover {
+  position: relative;
+  overflow: hidden;
 }
-.dark .sweep-hover::after { background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%,transparent 100%); }
-.sweep-hover:hover::after, .sweep-hover:focus-within::after { opacity:1; animation:sweep 6s ease-in-out 1; }
+.sweep-hover::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -65%;
+  width: 60%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(30, 41, 59, 0.05) 30%,
+    rgba(30, 41, 59, 0.13) 50%,
+    rgba(30, 41, 59, 0.05) 70%,
+    transparent 100%
+  );
+  transform: translateX(0%) skewX(-6deg);
+  opacity: 0;
+}
+.dark .sweep-hover::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 30%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.06) 70%,
+    transparent 100%
+  );
+}
+.sweep-hover:hover::after,
+.sweep-hover:focus-within::after {
+  opacity: 1;
+  animation: sweep 6s ease-in-out 1;
+}
 
 /* Hero heading/lead-text reveal — CSS-driven so this text paints in the
    initial server-rendered HTML instead of waiting on client JS hydration
@@ -335,45 +549,131 @@ body {
    translateY values and 0.6s duration as the previous motion.h1/p fade-in;
    only the animation engine changed, so the browser plays it immediately
    instead of after React mounts. */
-@keyframes hero-reveal { from { opacity:0; transform:translateY(var(--hr-y, 0)); } to { opacity:1; transform:translateY(0); } }
-.hero-reveal { animation:hero-reveal var(--hr-duration, .6s) cubic-bezier(.22,1,.36,1) both; animation-delay:var(--hr-delay, 0s); }
+@keyframes hero-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--hr-y, 0));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-reveal {
+  animation: hero-reveal var(--hr-duration, 0.6s) var(--ease-brand) both;
+  animation-delay: var(--hr-delay, 0s);
+}
 
 /* Horizontal counterpart — same LCP-safety rationale as .hero-reveal above,
    for the small badges that previously slid in from the left (x:-20 → 0)
    instead of fading up. */
-@keyframes hero-reveal-x { from { opacity:0; transform:translateX(var(--hr-x, -20px)); } to { opacity:1; transform:translateX(0); } }
-.hero-reveal-x { animation:hero-reveal-x var(--hr-duration, .5s) cubic-bezier(.22,1,.36,1) both; animation-delay:var(--hr-delay, 0s); }
+@keyframes hero-reveal-x {
+  from {
+    opacity: 0;
+    transform: translateX(var(--hr-x, -20px));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.hero-reveal-x {
+  animation: hero-reveal-x var(--hr-duration, 0.5s) var(--ease-brand) both;
+  animation-delay: var(--hr-delay, 0s);
+}
 
 /* Campaign accent — driven by per-campaign --camp-accent / --camp-accent2
    (set inline on the campaign wrapper), with sensible cyan/teal fallbacks. */
-.bg-accent-grad { background-image:linear-gradient(120deg, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); }
-.grad-accent-text { background-image:linear-gradient(120deg, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.text-camp-accent { color: var(--camp-accent, hsl(214 88% 34%)); }
-.tl-line { background-image:linear-gradient(to bottom, var(--camp-accent, hsl(214 88% 34%)), var(--camp-accent2, hsl(151 70% 40%))); }
+.bg-accent-grad {
+  background-image: linear-gradient(
+    120deg,
+    var(--camp-accent, hsl(214 88% 34%)),
+    var(--camp-accent2, hsl(151 70% 40%))
+  );
+}
+.grad-accent-text {
+  background-image: linear-gradient(
+    120deg,
+    var(--camp-accent, hsl(214 88% 34%)),
+    var(--camp-accent2, hsl(151 70% 40%))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-camp-accent {
+  color: var(--camp-accent, hsl(214 88% 34%));
+}
+.tl-line {
+  background-image: linear-gradient(
+    to bottom,
+    var(--camp-accent, hsl(214 88% 34%)),
+    var(--camp-accent2, hsl(151 70% 40%))
+  );
+}
 
 /* Campaign marquee tracks (gallery + strip) */
-.mq-track { display:flex; gap:3.5rem; width:max-content; animation:marq 28s linear infinite; }
-.mq-imgs { display:flex; gap:1rem; width:max-content; animation:marq 42s linear infinite; }
-.mq-rev { animation-direction:reverse; }
-.marquee:hover .mq-track, .marquee:hover .mq-imgs { animation-play-state:paused; }
+.mq-track {
+  display: flex;
+  gap: 3.5rem;
+  width: max-content;
+  animation: marq 28s linear infinite;
+}
+.mq-imgs {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  animation: marq 42s linear infinite;
+}
+.mq-rev {
+  animation-direction: reverse;
+}
+.marquee:hover .mq-track,
+.marquee:hover .mq-imgs {
+  animation-play-state: paused;
+}
 
 /* Razorpay affordability widget — force iframe to fill its container */
-#razorpay-affordability-widget iframe { width: 100% !important; max-width: 100% !important; }
+#razorpay-affordability-widget iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+}
 
 /* Tripadvisor "Social Button Bubbles" widget (/reviews hero) — force a small,
    consistent badge size regardless of the size= param baked into the embed
    snippet, and normalize the icon's padding inside it. */
-.socialWidget.cx_brand_refresh1 .socialWidgetCore.lg { width: 24px !important; height: 24px !important; }
-.socialWidget .socialWidgetCore img { padding: 4px !important; }
+.socialWidget.cx_brand_refresh1 .socialWidgetCore.lg {
+  width: 24px !important;
+  height: 24px !important;
+}
+.socialWidget .socialWidgetCore img {
+  padding: 4px !important;
+}
 
 /* Grain overlay */
-.bg-grain::before { content:""; position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.04; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.bg-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
 /* Hero "portal" border — animated entirely in CSS so it never re-renders React.
    Previously this rotation was driven by a setState interval (~5x/sec), which
    pinned the main thread; the @property angle keeps it GPU/compositor-side. */
-@property --vk-portal-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
-@keyframes vk-portal-spin { to { --vk-portal-angle: 360deg; } }
+@property --vk-portal-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes vk-portal-spin {
+  to {
+    --vk-portal-angle: 360deg;
+  }
+}
 .portal-border {
   background-image: conic-gradient(
     from var(--vk-portal-angle),
@@ -387,5 +687,7 @@ body {
   animation: vk-portal-spin 18s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .portal-border { animation: none; }
+  .portal-border {
+    animation: none;
+  }
 }

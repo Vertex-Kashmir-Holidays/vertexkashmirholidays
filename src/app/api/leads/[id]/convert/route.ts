@@ -72,7 +72,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 422 },
+    );
   }
   const { bookingAmount, tokenAmount, paymentMethod } = parsed.data;
 
@@ -144,16 +147,36 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Preserve + lock the lead's itinerary as the final canonical one. The lead↔
     // itinerary link (Itinerary.leadId) is left intact so the converted lead keeps
     // its itinerary; updateMany is a no-op when the lead has none.
-    await tx.itinerary.updateMany({ where: { leadId: id }, data: { locked: true, status: "CONFIRMED" } });
+    await tx.itinerary.updateMany({
+      where: { leadId: id },
+      data: { locked: true, status: "CONFIRMED" },
+    });
 
     await tx.leadActivity.createMany({
       data: [
-        { leadId: id, type: "STATUS_CHANGE", fromStatus: lead.status, toStatus: "CONVERTED", performedById, performedByName },
-        { leadId: id, type: "BOOKING_LINKED", note: `Converted — booking ...${booking.id.slice(-8)}`, performedById, performedByName },
+        {
+          leadId: id,
+          type: "STATUS_CHANGE",
+          fromStatus: lead.status,
+          toStatus: "CONVERTED",
+          performedById,
+          performedByName,
+        },
+        {
+          leadId: id,
+          type: "BOOKING_LINKED",
+          note: `Converted — booking ...${booking.id.slice(-8)}`,
+          performedById,
+          performedByName,
+        },
       ],
     });
 
-    return { bookingId: booking.id, created: customer.created, tempPassword: customer.tempPassword };
+    return {
+      bookingId: booking.id,
+      created: customer.created,
+      tempPassword: customer.tempPassword,
+    };
   });
 
   // Best-effort: email default credentials when a brand-new customer was created

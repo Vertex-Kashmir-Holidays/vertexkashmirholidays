@@ -1,12 +1,12 @@
 // src/components/blog/BlogFeaturedStory.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
-import type { BlogFeaturedData } from '@/types/blog';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
+import type { BlogFeaturedData } from "@/types/blog";
 
 interface BlogFeaturedStoryProps {
   story: BlogFeaturedData;
@@ -15,7 +15,7 @@ interface BlogFeaturedStoryProps {
 export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
   const meta = [story.dateLabel, story.readTime ? `${story.readTime} min read` : null]
     .filter(Boolean)
-    .join('  ·  ');
+    .join("  ·  ");
 
   return (
     <motion.div
@@ -31,12 +31,16 @@ export function BlogFeaturedStory({ story }: BlogFeaturedStoryProps) {
             FEATURED
           </span>
           <h3 className="mt-4 text-[24px] font-bold leading-snug">{story.title}</h3>
-          {story.excerpt && <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">{story.excerpt}</p>}
+          {story.excerpt && (
+            <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
+              {story.excerpt}
+            </p>
+          )}
           <div className="mt-4 flex items-center gap-3">
             {story.authorImage && (
               <Image
                 src={story.authorImage}
-                alt={story.authorName ?? ''}
+                alt={story.authorName ?? ""}
                 width={36}
                 height={36}
                 className="h-9 w-9 rounded-full object-cover"

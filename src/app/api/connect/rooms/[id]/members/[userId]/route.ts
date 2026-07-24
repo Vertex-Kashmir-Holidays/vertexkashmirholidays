@@ -56,7 +56,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   if (!isSelf) {
     const actorName = guard.user.name ?? "A group admin";
-    const room = await prisma.chatRoom.findUnique({ where: { id: roomId }, select: { name: true } });
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: { name: true },
+    });
     await createNotification({
       userId: targetId,
       type: "CHAT_MEMBER_REMOVED",
@@ -80,7 +83,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     where: { roomId_userId: { roomId, userId: myId } },
   });
   if (!myMembership || myMembership.leftAt || myMembership.role !== "ADMIN") {
-    return NextResponse.json({ error: "Only group admins can change member roles" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Only group admins can change member roles" },
+      { status: 403 },
+    );
   }
 
   let body: { role: "MEMBER" | "ADMIN" };

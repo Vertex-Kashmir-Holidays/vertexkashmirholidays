@@ -14,7 +14,11 @@ export function PageEditorHeader({
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 className="font-display text-xl font-extrabold text-foreground">{title}</h2>
-        {readOnly && <p className="text-xs text-amber-600 dark:text-amber-400">You have read-only access to this page.</p>}
+        {readOnly && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            You have read-only access to this page.
+          </p>
+        )}
       </div>
       {publicHref && (
         <Link

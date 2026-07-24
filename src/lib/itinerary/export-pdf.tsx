@@ -1,13 +1,21 @@
 "use client";
 
-import { pdf } from "@react-pdf/renderer";
-import { ItineraryPdf, LOGO_ASSETS } from "@/components/admin/itinerary/ItineraryPdf";
+// @react-pdf/renderer and the ItineraryPdf document tree are imported
+// dynamically inside downloadItineraryPdf (below) rather than at module top, so
+// the heavy PDF renderer only loads when the user actually exports — keeping it
+// out of the itinerary editor's initial JS bundle.
 import { compressMany } from "@/lib/itinerary/compress-image";
 import { getPaymentQr } from "@/lib/itinerary/payment";
 import type { ItineraryData } from "@/types/itinerary";
 
 function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "itinerary";
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "itinerary"
+  );
 }
 
 /**
@@ -36,6 +44,12 @@ export interface ExportResult {
  * the 1 MB budget.
  */
 export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportResult> {
+  // Lazily pull in the PDF renderer and the document template only on export.
+  const [{ pdf }, { ItineraryPdf, LOGO_ASSETS }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("@/components/admin/itinerary/ItineraryPdf"),
+  ]);
+
   const srcs = [
     data.coverImage,
     data.transportImage,
@@ -47,15 +61,25 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   // Brand assets (icon watermark, horizontal lockups, payment-partner strip)
   // embed losslessly via data URLs so PNG transparency survives.
   const [coverImages, smallImages, logos] = await Promise.all([
-    compressMany([data.coverImage].filter(Boolean), { maxWidth: 900, maxHeight: 1300, quality: 0.6 }),
-    compressMany(srcs.filter((s) => s !== data.coverImage), { maxWidth: 640, maxHeight: 480, quality: 0.7 }),
+    compressMany([data.coverImage].filter(Boolean), {
+      maxWidth: 900,
+      maxHeight: 1300,
+      quality: 0.6,
+    }),
+    compressMany(
+      srcs.filter((s) => s !== data.coverImage),
+      { maxWidth: 640, maxHeight: 480, quality: 0.7 },
+    ),
     Promise.all(
       LOGO_ASSETS.map((src) =>
         fetchAsDataUrl(src).catch((err) => {
           // Silent-drop fallback stays (one missing brand asset shouldn't
           // abort the whole export), but log so this doesn't go unnoticed
           // the way the payment-partner strip did before.
-          console.warn(`[itinerary-pdf] Failed to embed brand asset "${src}" — it will be omitted from the PDF.`, err);
+          console.warn(
+            `[itinerary-pdf] Failed to embed brand asset "${src}" — it will be omitted from the PDF.`,
+            err,
+          );
           return "";
         }),
       ),

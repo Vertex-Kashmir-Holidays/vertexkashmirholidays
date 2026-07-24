@@ -1,9 +1,9 @@
 // src/components/blog/BlogCategoryChips.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { useState } from 'react';
-import type { BlogChipData } from '@/types/blog';
+import { motion } from "framer-motion";
+import { useState } from "react";
+import type { BlogChipData } from "@/types/blog";
 
 interface BlogCategoryChipsProps {
   chips: BlogChipData[];
@@ -11,11 +11,15 @@ interface BlogCategoryChipsProps {
   initialActive?: string;
 }
 
-export function BlogCategoryChips({ chips, onCategoryChange, initialActive = 'All' }: BlogCategoryChipsProps) {
+export function BlogCategoryChips({
+  chips,
+  onCategoryChange,
+  initialActive = "All",
+}: BlogCategoryChipsProps) {
   const [activeChip, setActiveChip] = useState(initialActive);
 
   // "All" is always first; the rest come from the DB-driven categories.
-  const allChips: BlogChipData[] = [{ name: 'All', slug: 'all', icon: '' }, ...chips];
+  const allChips: BlogChipData[] = [{ name: "All", slug: "all", icon: "" }, ...chips];
 
   const handleChipClick = (name: string) => {
     setActiveChip(name);
@@ -31,14 +35,22 @@ export function BlogCategoryChips({ chips, onCategoryChange, initialActive = 'Al
             onClick={() => handleChipClick(chip.name)}
             className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[14px] font-semibold shadow-soft transition ${
               activeChip === chip.name
-                ? 'bg-primary text-primary-foreground'
-                : 'border border-border bg-card text-foreground/80 hover:border-primary hover:text-primary'
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             {chip.icon && (
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d={chip.icon} />
               </svg>
             )}

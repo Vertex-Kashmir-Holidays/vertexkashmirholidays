@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { ActivityCard, type ActivityCardData } from '@/components/activities/ActivityCard';
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ActivityCard, type ActivityCardData } from "@/components/activities/ActivityCard";
 
 interface ActivitiesCarouselProps {
   title: string;
@@ -17,11 +17,11 @@ interface ActivitiesCarouselProps {
 export function ActivitiesCarousel({ title, items, seeAllHref }: ActivitiesCarouselProps) {
   if (items.length === 0) return null;
 
-  const scroll = (direction: 'prev' | 'next') => {
-    const row = document.getElementById('activities-row');
+  const scroll = (direction: "prev" | "next") => {
+    const row = document.getElementById("activities-row");
     if (!row) return;
     const width = (row.firstElementChild as HTMLElement)?.offsetWidth || 280;
-    row.scrollBy({ left: (direction === 'next' ? 1 : -1) * (width + 20) * 2, behavior: 'smooth' });
+    row.scrollBy({ left: (direction === "next" ? 1 : -1) * (width + 20) * 2, behavior: "smooth" });
   };
 
   return (
@@ -40,14 +40,14 @@ export function ActivitiesCarousel({ title, items, seeAllHref }: ActivitiesCarou
           {items.length > 1 && (
             <div className="flex gap-2">
               <button
-                onClick={() => scroll('prev')}
+                onClick={() => scroll("prev")}
                 aria-label="Previous"
                 className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
               >
                 <ChevronLeft className="h-4 w-4" strokeWidth={2.2} />
               </button>
               <button
-                onClick={() => scroll('next')}
+                onClick={() => scroll("next")}
                 aria-label="Next"
                 className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground shadow-soft transition hover:border-primary hover:text-primary"
               >

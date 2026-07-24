@@ -43,7 +43,6 @@ If insufficient information is provided, request clarification before planning.
 
 ────────────────────────────────────
 
-
 ## Responsibilities
 
 The Planner should:
@@ -247,7 +246,6 @@ The Planner produces:
 The output should be detailed enough for the Implementer Agent to execute without re-planning the task.
 
 ────────────────────────────────────
-
 
 ## Success Criteria
 

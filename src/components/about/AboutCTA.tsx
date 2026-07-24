@@ -1,13 +1,14 @@
 // src/components/about/AboutCTA.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Phone, Mail } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { renderMint } from '@/lib/accents';
-import type { AboutCtaData } from '@/types/about';
+import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import Image from "next/image";
+import Link from "next/link";
+import { Phone, Mail } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { renderMint } from "@/lib/accents";
+import type { AboutCtaData } from "@/types/about";
 
 interface AboutCTAProps {
   data: AboutCtaData;
@@ -25,7 +26,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.5, ease: EASE_BRAND }}
       >
         {data.image && (
           <Image
@@ -48,7 +49,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
         <div className="mt-8 flex flex-wrap justify-center gap-3.5">
           {data.whatsappLabel && (
             <Link
-              href={data.whatsappHref ?? '#'}
+              href={data.whatsappHref ?? "#"}
               className="inline-flex items-center gap-2.5 rounded-lg bg-brand-bright px-6 py-3.5 text-[14px] font-bold text-white shadow-card transition hover:brightness-110"
             >
               <WhatsAppIcon className="h-[18px] w-[18px]" />
@@ -57,7 +58,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
           )}
           {data.callLabel && (
             <Link
-              href={data.callHref ?? '#'}
+              href={data.callHref ?? "#"}
               className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[14px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
             >
               <Phone className="h-4 w-4" strokeWidth={2} />
@@ -66,7 +67,7 @@ export function AboutCTA({ data }: AboutCTAProps) {
           )}
           {data.emailLabel && (
             <Link
-              href={data.emailHref ?? '#'}
+              href={data.emailHref ?? "#"}
               className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[14px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
             >
               <Mail className="h-4 w-4" strokeWidth={2} />

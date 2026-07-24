@@ -1,8 +1,9 @@
 // src/components/campaign/CampaignFinalCTA.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import Link from "next/link";
 
 interface CampaignFinalCTAProps {
   title: string | null;
@@ -25,7 +26,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
           initial={{ scale: 1.1 }}
           whileInView={{ scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 1.5, ease: EASE_BRAND }}
         />
       )}
       <div className="absolute inset-0 bg-[hsl(202_50%_6%/0.82)]"></div>
@@ -67,7 +68,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
           </Link>
           {phone && (
             <a
-              href={`tel:${phone.replace(/\s/g, '')}`}
+              href={`tel:${phone.replace(/\s/g, "")}`}
               className="rounded-full border border-white/20 bg-white/10 px-9 py-4 text-[16px] font-semibold text-white backdrop-blur-xl transition hover:bg-white/20"
             >
               Call {phone}

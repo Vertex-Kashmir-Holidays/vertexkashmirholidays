@@ -34,7 +34,8 @@ export async function POST(_req: NextRequest, { params }: Params) {
   if (!to) {
     return NextResponse.json(
       {
-        error: "Add a customer email before locking services — the invoice is emailed to the customer.",
+        error:
+          "Add a customer email before locking services — the invoice is emailed to the customer.",
         code: "EMAIL_REQUIRED",
       },
       { status: 422 },
@@ -61,7 +62,10 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   // Locking finalises the booking: lifecycle status moves Pending → Confirmed.
   // (Payment status is a separate, derived concept and is not touched here.)
-  await prisma.booking.update({ where: { id }, data: { servicesLocked: true, status: "CONFIRMED" } });
+  await prisma.booking.update({
+    where: { id },
+    data: { servicesLocked: true, status: "CONFIRMED" },
+  });
 
   // Branded summary email + PDF (rich service detail, no per-line pricing). Email
   // presence is guaranteed by the precondition above; delivery is reported back.

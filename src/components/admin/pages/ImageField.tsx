@@ -5,7 +5,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { Upload, Loader2, Images } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
-import { ImageDimensionBadge } from "@/components/ui/ImageDimensionBadge";
+import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
 
 const inputCls =
   "w-full rounded-xl border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -47,7 +47,12 @@ export function ImageField({
     <div className="space-y-2">
       {/* Controls wrap on narrow screens so nothing overflows at ≤360px. */}
       <div className="flex flex-wrap items-center gap-2">
-        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Image URL" className={`${inputCls} min-w-0 flex-1 basis-[180px]`} />
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Image URL"
+          className={`${inputCls} min-w-0 flex-1 basis-[180px]`}
+        />
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
@@ -57,7 +62,11 @@ export function ImageField({
           Gallery
         </button>
         <label className="flex min-h-[40px] shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted">
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
           Upload
           <input
             type="file"
@@ -66,7 +75,9 @@ export function ImageField({
             onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
           />
           {/* Helper text hidden on the smallest screens to save width. */}
-          <span className="hidden text-[12px] text-muted-foreground sm:inline">PNG · SVG · WebP · max 500 KB</span>
+          <span className="hidden text-[12px] text-muted-foreground sm:inline">
+            PNG · SVG · WebP · max 500 KB
+          </span>
         </label>
       </div>
       {value && (
@@ -85,11 +96,20 @@ export function ImageField({
             }}
           />
           {dims && (
-            <ImageDimensionBadge width={dims.width} height={dims.height} className="absolute top-1 right-1" />
+            <ImageDimensionBadge
+              width={dims.width}
+              height={dims.height}
+              className="absolute top-1 right-1"
+            />
           )}
         </div>
       )}
-      <GalleryPicker open={pickerOpen} type="IMAGE" onSelect={onChange} onClose={() => setPickerOpen(false)} />
+      <GalleryPicker
+        open={pickerOpen}
+        type="IMAGE"
+        onSelect={onChange}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

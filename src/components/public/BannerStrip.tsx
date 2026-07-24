@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Plane, X } from "lucide-react";
+import { EASE_BRAND as EASE } from "@/lib/motion";
 
 export interface StripBannerData {
   id: string;
@@ -16,7 +17,6 @@ export interface StripBannerData {
 // Brand gold used for the offer highlight + CTA pill against the dark-emerald bar.
 const GOLD = "#E3C67D";
 const STRIP_GRADIENT = "linear-gradient(90deg, #0F3D2E 0%, #145A45 100%)";
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 // Matches promo-style tokens ("20% Off", "₹5,000", "$99 off", "Flat", "Free")
 // so only those are gold-highlighted — the rest of the sentence stays white.

@@ -9,7 +9,11 @@ import { customerBookingWhere } from "@/lib/account/bookingScope";
 export const metadata: Metadata = { title: "My Account — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
 
-const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+const inr = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
 
 export default async function AccountOverviewPage() {
   const session = await auth();
@@ -40,7 +44,10 @@ export default async function AccountOverviewPage() {
     prisma.booking.count({ where: scope }),
   ]);
   const upcoming = bookings.filter((b) => b.travelDate >= now).length;
-  const totalSpent = payments.reduce((sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount), 0);
+  const totalSpent = payments.reduce(
+    (sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount),
+    0,
+  );
 
   const stats = [
     { label: "Total Bookings", value: String(totalBookings), Icon: CalendarDays },
@@ -54,7 +61,9 @@ export default async function AccountOverviewPage() {
         <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
           Welcome back, {session.user.name ?? "Traveller"} 👋
         </h1>
-        <p className="text-sm text-muted-foreground">Here&apos;s a quick look at your trips with us.</p>
+        <p className="text-sm text-muted-foreground">
+          Here&apos;s a quick look at your trips with us.
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -72,7 +81,10 @@ export default async function AccountOverviewPage() {
       <div className="rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="font-display font-bold text-foreground">Recent Bookings</h2>
-          <Link href="/account/bookings" className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+          <Link
+            href="/account/bookings"
+            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+          >
             View all <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
@@ -88,14 +100,22 @@ export default async function AccountOverviewPage() {
             {bookings.map((b) => (
               <li key={b.id} className="flex items-center justify-between gap-3 px-5 py-4">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{b.tour?.title ?? "Custom booking"}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {b.tour?.title ?? "Custom booking"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {b.travelDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    {b.travelDate.toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
                     {" · "}
                     {b.travellers} traveller{b.travellers > 1 ? "s" : ""}
                   </p>
                 </div>
-                <span className="shrink-0 text-sm font-bold text-foreground">{inr.format(b.amount)}</span>
+                <span className="shrink-0 text-sm font-bold text-foreground">
+                  {inr.format(b.amount)}
+                </span>
               </li>
             ))}
           </ul>

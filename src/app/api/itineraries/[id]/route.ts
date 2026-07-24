@@ -105,7 +105,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Validation failed" }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 422 },
+    );
   }
 
   const editedByName = (guard.user.name ?? guard.user.email) as string;

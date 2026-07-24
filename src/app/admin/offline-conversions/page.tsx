@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import type { Role } from "@/lib/rbac";
-import { getPlatformDestinationId } from "@/lib/admin/offlineConversions";
+import { getPlatformDestinationId } from "@/lib/admin/offlineConversionsServer";
 import { OfflineConversionsClient } from "@/components/admin/offlineConversions/OfflineConversionsClient";
 
 export const metadata: Metadata = { title: "Offline Conversions — Admin" };
@@ -21,8 +21,28 @@ const ROW_SELECT = {
   sentAt: true,
   createdAt: true,
   updatedAt: true,
-  lead: { select: { id: true, name: true, email: true, phone: true, gclid: true, negotiatedAmount: true, source: true } },
-  booking: { select: { id: true, guestName: true, guestEmail: true, guestPhone: true, gclid: true, amount: true, currency: true } },
+  lead: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      gclid: true,
+      negotiatedAmount: true,
+      source: true,
+    },
+  },
+  booking: {
+    select: {
+      id: true,
+      guestName: true,
+      guestEmail: true,
+      guestPhone: true,
+      gclid: true,
+      amount: true,
+      currency: true,
+    },
+  },
 } as const;
 
 // Fixed set of aggregate queries scoped to a date range — no per-row loop, so
@@ -54,21 +74,22 @@ export default async function OfflineConversionsPage() {
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [rows, total, pending, sent, failed, attemptsAgg, today, thisWeek, thisMonth] = await Promise.all([
-    prisma.offlineConversion.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 500,
-      select: ROW_SELECT,
-    }),
-    prisma.offlineConversion.count(),
-    prisma.offlineConversion.count({ where: { status: "PENDING" } }),
-    prisma.offlineConversion.count({ where: { status: "SENT" } }),
-    prisma.offlineConversion.count({ where: { status: "FAILED" } }),
-    prisma.offlineConversion.aggregate({ _avg: { attempts: true } }),
-    periodStats(startOfToday),
-    periodStats(startOfWeek),
-    periodStats(startOfMonth),
-  ]);
+  const [rows, total, pending, sent, failed, attemptsAgg, today, thisWeek, thisMonth] =
+    await Promise.all([
+      prisma.offlineConversion.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 500,
+        select: ROW_SELECT,
+      }),
+      prisma.offlineConversion.count(),
+      prisma.offlineConversion.count({ where: { status: "PENDING" } }),
+      prisma.offlineConversion.count({ where: { status: "SENT" } }),
+      prisma.offlineConversion.count({ where: { status: "FAILED" } }),
+      prisma.offlineConversion.aggregate({ _avg: { attempts: true } }),
+      periodStats(startOfToday),
+      periodStats(startOfWeek),
+      periodStats(startOfMonth),
+    ]);
 
   const stats = {
     total,

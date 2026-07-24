@@ -52,25 +52,50 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       amount: true,
       discountType: true,
       discountValue: true,
-      payments: { select: { amount: true } },
+      payments: { select: { amount: true, type: true } },
       services: { select: { amount: true } },
     },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  const { status, discountType, discountValue, inclusions, guestEmail, guestName, guestPhone, travelDate, travellers, amount } = parsed.data;
+  const {
+    status,
+    discountType,
+    discountValue,
+    inclusions,
+    guestEmail,
+    guestName,
+    guestPhone,
+    travelDate,
+    travellers,
+    amount,
+  } = parsed.data;
 
   // Discount, inclusions, travel date, travellers and amount all feed the locked
   // services sheet / emailed invoice — blocked once locked. Contact info
   // (name/phone/email) stays editable at all times.
   const touchesServices =
-    discountType !== undefined || discountValue !== undefined || inclusions !== undefined ||
-    travelDate !== undefined || travellers !== undefined || amount !== undefined;
+    discountType !== undefined ||
+    discountValue !== undefined ||
+    inclusions !== undefined ||
+    travelDate !== undefined ||
+    travellers !== undefined ||
+    amount !== undefined;
   if (touchesServices && existing.servicesLocked) {
-    return NextResponse.json({ error: "Services are locked — travel, traveller and amount details can no longer be changed." }, { status: 423 });
+    return NextResponse.json(
+      {
+        error:
+          "Services are locked — travel, traveller and amount details can no longer be changed.",
+      },
+      { status: 423 },
+    );
   }
 
   // Parse + validate a new travel date when supplied.
@@ -90,7 +115,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const floor = Math.max(paid, servicesTotal);
     if (amount < floor) {
       return NextResponse.json(
-        { error: `Amount can't be less than ₹${floor.toLocaleString("en-IN")} (already paid / services total).` },
+        {
+          error: `Amount can't be less than ₹${floor.toLocaleString("en-IN")} (already paid / services total).`,
+        },
         { status: 422 },
       );
     }
@@ -103,7 +130,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (status === "CANCELLED") {
     const role = (guard.user as { role?: string }).role;
     if (role !== "ADMIN" && role !== "SUPERADMIN") {
-      return NextResponse.json({ error: "Only an administrator can cancel a booking." }, { status: 403 });
+      return NextResponse.json(
+        { error: "Only an administrator can cancel a booking." },
+        { status: 403 },
+      );
     }
     const finance = computeBookingFinance({
       amount: existing.amount,
@@ -150,7 +180,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
 
-  const existing = await prisma.booking.findUnique({ where: { id }, select: { id: true, deletedAt: true } });
+  const existing = await prisma.booking.findUnique({
+    where: { id },
+    select: { id: true, deletedAt: true },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const permanent = new URL(req.url).searchParams.get("permanent") === "1";

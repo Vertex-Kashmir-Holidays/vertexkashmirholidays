@@ -52,8 +52,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   // Only a SUPERADMIN may grant SUPERADMIN access, modify another superadmin,
   // or reset a superadmin's MFA.
-  const touchesSuperadmin =
-    data.role === "SUPERADMIN" || existing.role === "SUPERADMIN";
+  const touchesSuperadmin = data.role === "SUPERADMIN" || existing.role === "SUPERADMIN";
   if (touchesSuperadmin && session.user?.role !== "SUPERADMIN") {
     return NextResponse.json(
       { error: "Only a Super Admin can manage Super Admin access" },
@@ -66,20 +65,56 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       await prisma.mfaRecoveryCode.deleteMany({ where: { userId: id } });
     }
 
-    const updated = await prisma.user.update({
-      where: { id },
-      data: {
-        ...(data.name !== undefined ? { name: data.name } : {}),
-        ...(data.email !== undefined ? { email: data.email } : {}),
-        ...(data.phone !== undefined ? { phone: data.phone } : {}),
-        ...(data.role !== undefined ? { role: data.role as Role } : {}),
-        ...(data.bookingConversionPct !== undefined ? { bookingConversionPct: data.bookingConversionPct } : {}),
-        ...(data.password
-          ? { passwordHash: await bcrypt.hash(data.password, 12), mustChangePassword: true }
-          : {}),
-        ...(data.resetMfa ? { mfaSecret: null, mfaEnabledAt: null } : {}),
-      },
-      select: { id: true, name: true, email: true, phone: true, role: true, bookingConversionPct: true },
+    // Precompute the password hash outside the transaction — it's a pure
+    // CPU-bound hash with no DB dependency, no reason to hold it open.
+    const passwordUpdate = data.password
+      ? { passwordHash: await bcrypt.hash(data.password, 12), mustChangePassword: true }
+      : {};
+
+    const roleChanged = data.role !== undefined && data.role !== existing.role;
+    const performedByName = session.user?.name ?? session.user?.email ?? "Unknown";
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id },
+        data: {
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.email !== undefined ? { email: data.email } : {}),
+          ...(data.phone !== undefined ? { phone: data.phone } : {}),
+          ...(data.role !== undefined ? { role: data.role as Role } : {}),
+          ...(data.bookingConversionPct !== undefined
+            ? { bookingConversionPct: data.bookingConversionPct }
+            : {}),
+          ...passwordUpdate,
+          ...(data.resetMfa ? { mfaSecret: null, mfaEnabledAt: null } : {}),
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          bookingConversionPct: true,
+        },
+      });
+
+      // Audit trail: only a real role change is logged here — name/email/
+      // password/MFA-reset edits aren't in this ticket's scope.
+      if (roleChanged) {
+        await tx.auditLog.create({
+          data: {
+            action: "ROLE_CHANGE",
+            targetUserId: id,
+            targetUserName: existing.name,
+            targetUserEmail: existing.email,
+            performedById: session.user?.id,
+            performedByName,
+            metadata: { fromRole: existing.role, toRole: data.role },
+          },
+        });
+      }
+
+      return updatedUser;
     });
     return NextResponse.json(updated);
   } catch (err) {
@@ -116,12 +151,30 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
 
   const permanent = new URL(req.url).searchParams.get("permanent") === "1";
+  const performedByName = session.user?.name ?? session.user?.email ?? "Unknown";
+  const auditData = {
+    targetUserId: id,
+    targetUserName: existing.name,
+    targetUserEmail: existing.email,
+    performedById: session.user?.id,
+    performedByName,
+    metadata: { targetRole: existing.role },
+  };
 
   if (permanent) {
-    await prisma.user.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      // Log before deleting: AuditLog.targetUserId is a plain string, not a
+      // relation, but writing the row first removes any doubt about ordering
+      // once the User row is gone for good.
+      await tx.auditLog.create({ data: { action: "USER_PERMANENT_DELETE", ...auditData } });
+      await tx.user.delete({ where: { id } });
+    });
     return NextResponse.json({ ok: true, mode: "permanent" });
   }
 
-  await prisma.user.update({ where: { id }, data: { deletedAt: new Date() } });
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id }, data: { deletedAt: new Date() } });
+    await tx.auditLog.create({ data: { action: "USER_SOFT_DELETE", ...auditData } });
+  });
   return NextResponse.json({ ok: true, mode: "soft" });
 }

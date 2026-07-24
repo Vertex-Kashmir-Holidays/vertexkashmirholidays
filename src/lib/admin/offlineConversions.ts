@@ -1,5 +1,4 @@
 import type { OfflineConversionPlatform, OfflineConversionStatus } from "@prisma/client";
-import { checkGoogleRequestStatus, type RequestStatusResult } from "@/lib/admin/googleRequestStatus";
 
 // Shared, platform-agnostic display/diagnostic helpers for the admin Offline
 // Conversions module (src/app/admin/offline-conversions,
@@ -7,6 +6,11 @@ import { checkGoogleRequestStatus, type RequestStatusResult } from "@/lib/admin/
 // only — never imports an adapter, never touches the queue/service, never
 // writes to the OfflineConversion table. New platforms only need one line
 // added to each map/switch below — no UI changes required.
+//
+// Client-safe by design — this file is imported directly by
+// OfflineConversionsClient.tsx / OfflineConversionDetail.tsx. Anything that
+// reads a secret env var or makes a real network call belongs in
+// ./offlineConversionsServer.ts instead, never here.
 
 export const PLATFORM_LABELS: Record<OfflineConversionPlatform, string> = {
   GOOGLE: "Google Ads",
@@ -41,25 +45,6 @@ export const STATUS_STYLES: Record<string, string> = {
   CANCELLED: "bg-muted text-muted-foreground",
 };
 
-/**
- * The identifier each platform's conversion was sent against — Google's
- * conversion action ID today, a Meta Pixel ID tomorrow, etc. Each platform's
- * adapter owns its own env var; this only reads it for display, exactly the
- * way the adapters already do — no new config, no adapter changes.
- */
-export function getPlatformDestinationId(platform: OfflineConversionPlatform): string | null {
-  switch (platform) {
-    case "GOOGLE":
-      return process.env.GOOGLE_ADS_CONVERSION_ACTION_ID || null;
-    case "META":
-      return process.env.META_CAPI_PIXEL_ID || null;
-    case "MICROSOFT":
-      return process.env.MICROSOFT_ADS_CONVERSION_ID || null;
-    default:
-      return null;
-  }
-}
-
 /** "Lead Conversion" vs "Booking Payment" — derived from which FK is set, not a stored field. */
 export function deriveEventName(row: { leadId: string | null; bookingId: string | null }): string {
   if (row.leadId) return "Lead Conversion";
@@ -84,33 +69,101 @@ export interface FailureClassification {
 type ClassifyRule = { code: string; title: string; match: (e: string) => boolean };
 
 const GOOGLE_RULES: ClassifyRule[] = [
-  { code: "API_DISABLED", title: "API Disabled", match: (e) => /has not been used|is disabled/i.test(e) },
-  { code: "PERMISSION_DENIED", title: "Permission Denied", match: (e) => /permission|PERMISSION_DENIED|not allowlisted|not have access/i.test(e) },
-  { code: "INVALID_CONVERSION_ACTION", title: "Invalid Conversion Action", match: (e) => /conversion action|productDestinationId|destination/i.test(e) },
+  {
+    code: "API_DISABLED",
+    title: "API Disabled",
+    match: (e) => /has not been used|is disabled/i.test(e),
+  },
+  {
+    code: "PERMISSION_DENIED",
+    title: "Permission Denied",
+    match: (e) => /permission|PERMISSION_DENIED|not allowlisted|not have access/i.test(e),
+  },
+  {
+    code: "INVALID_CONVERSION_ACTION",
+    title: "Invalid Conversion Action",
+    match: (e) => /conversion action|productDestinationId|destination/i.test(e),
+  },
   { code: "INVALID_GCLID", title: "Invalid GCLID", match: (e) => /gclid|click id/i.test(e) },
-  { code: "INVALID_TOKEN", title: "Invalid Token", match: (e) => /token|unauthorized|invalid_grant/i.test(e) },
-  { code: "RATE_LIMIT", title: "Rate Limited", match: (e) => /rate.?limit|quota|too many requests|RESOURCE_EXHAUSTED/i.test(e) },
-  { code: "INVALID_PAYLOAD", title: "Invalid Payload", match: (e) => /invalid_argument|invalid.*(field|argument|request)/i.test(e) },
-  { code: "TERMS_NOT_ACCEPTED", title: "Terms Not Accepted", match: (e) => /terms|not.?signed|data processing/i.test(e) },
-  { code: "NETWORK", title: "Network Error", match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e) },
-  { code: "NOT_CONFIGURED", title: "Not Configured", match: (e) => /not (fully )?configured/i.test(e) },
+  {
+    code: "INVALID_TOKEN",
+    title: "Invalid Token",
+    match: (e) => /token|unauthorized|invalid_grant/i.test(e),
+  },
+  {
+    code: "RATE_LIMIT",
+    title: "Rate Limited",
+    match: (e) => /rate.?limit|quota|too many requests|RESOURCE_EXHAUSTED/i.test(e),
+  },
+  {
+    code: "INVALID_PAYLOAD",
+    title: "Invalid Payload",
+    match: (e) => /invalid_argument|invalid.*(field|argument|request)/i.test(e),
+  },
+  {
+    code: "TERMS_NOT_ACCEPTED",
+    title: "Terms Not Accepted",
+    match: (e) => /terms|not.?signed|data processing/i.test(e),
+  },
+  {
+    code: "NETWORK",
+    title: "Network Error",
+    match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e),
+  },
+  {
+    code: "NOT_CONFIGURED",
+    title: "Not Configured",
+    match: (e) => /not (fully )?configured/i.test(e),
+  },
 ];
 
 const META_RULES: ClassifyRule[] = [
-  { code: "INVALID_ACCESS_TOKEN", title: "Invalid Access Token", match: (e) => /access token|unauthorized|token/i.test(e) },
+  {
+    code: "INVALID_ACCESS_TOKEN",
+    title: "Invalid Access Token",
+    match: (e) => /access token|unauthorized|token/i.test(e),
+  },
   { code: "PIXEL_NOT_FOUND", title: "Pixel Not Found", match: (e) => /pixel/i.test(e) },
-  { code: "INVALID_EVENT", title: "Invalid Event", match: (e) => /invalid.*(event|argument|request)/i.test(e) },
-  { code: "RATE_LIMIT", title: "Rate Limited", match: (e) => /rate.?limit|quota|too many requests/i.test(e) },
-  { code: "NETWORK", title: "Network Error", match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e) },
-  { code: "NOT_CONFIGURED", title: "Not Configured", match: (e) => /not (fully )?configured/i.test(e) },
+  {
+    code: "INVALID_EVENT",
+    title: "Invalid Event",
+    match: (e) => /invalid.*(event|argument|request)/i.test(e),
+  },
+  {
+    code: "RATE_LIMIT",
+    title: "Rate Limited",
+    match: (e) => /rate.?limit|quota|too many requests/i.test(e),
+  },
+  {
+    code: "NETWORK",
+    title: "Network Error",
+    match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e),
+  },
+  {
+    code: "NOT_CONFIGURED",
+    title: "Not Configured",
+    match: (e) => /not (fully )?configured/i.test(e),
+  },
 ];
 
 // Microsoft's adapter is still a TODO stub (see src/lib/offlineConversion/adapters/microsoft.ts)
 // — reuses the generic set until it has real error text of its own to classify against.
 const GENERIC_RULES: ClassifyRule[] = [
-  { code: "NOT_CONFIGURED", title: "Not Configured", match: (e) => /not (fully )?configured|not yet wired/i.test(e) },
-  { code: "RATE_LIMIT", title: "Rate Limited", match: (e) => /rate.?limit|quota|too many requests/i.test(e) },
-  { code: "NETWORK", title: "Network Error", match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e) },
+  {
+    code: "NOT_CONFIGURED",
+    title: "Not Configured",
+    match: (e) => /not (fully )?configured|not yet wired/i.test(e),
+  },
+  {
+    code: "RATE_LIMIT",
+    title: "Rate Limited",
+    match: (e) => /rate.?limit|quota|too many requests/i.test(e),
+  },
+  {
+    code: "NETWORK",
+    title: "Network Error",
+    match: (e) => /network|ECONNRESET|ETIMEDOUT|fetch failed/i.test(e),
+  },
 ];
 
 const RULES_BY_PLATFORM: Record<OfflineConversionPlatform, ClassifyRule[]> = {
@@ -120,10 +173,15 @@ const RULES_BY_PLATFORM: Record<OfflineConversionPlatform, ClassifyRule[]> = {
 };
 
 /** Platform-aware short classification of a lastError string. UI-only — never touches the stored value. */
-export function classifyFailure(platform: OfflineConversionPlatform, error: string | null): FailureClassification {
+export function classifyFailure(
+  platform: OfflineConversionPlatform,
+  error: string | null,
+): FailureClassification {
   if (!error) return { code: "NONE", title: "—" };
   const rule = RULES_BY_PLATFORM[platform]?.find((r) => r.match(error));
-  return rule ? { code: rule.code, title: rule.title } : { code: "UNKNOWN", title: "Unknown Error" };
+  return rule
+    ? { code: rule.code, title: rule.title }
+    : { code: "UNKNOWN", title: "Unknown Error" };
 }
 
 // ── Request ID extraction ────────────────────────────────────────────────────
@@ -150,26 +208,6 @@ export function extractHttpStatus(error: string | null): string | null {
   if (!error) return null;
   const match = error.match(/\b([1-5]\d{2})\b/);
   return match ? match[1] : null;
-}
-
-// ── Live status check (server-only — reads env, makes a real network call) ──
-
-/**
- * Dispatches to the platform's own read-only status-check API, if one
- * exists. Purely diagnostic — never mutates the queue row. Only Google is
- * wired today (Meta/Microsoft have no equivalent request-status endpoint
- * integrated yet); adding one later is a new case here, not a UI change.
- */
-export async function checkRequestStatus(
-  platform: OfflineConversionPlatform,
-  requestId: string,
-): Promise<RequestStatusResult> {
-  if (platform === "GOOGLE") return checkGoogleRequestStatus(requestId);
-  return {
-    ok: false,
-    status: "ERROR",
-    message: `Live status checks aren't available for ${PLATFORM_LABELS[platform]} yet.`,
-  };
 }
 
 // ── Relative time ─────────────────────────────────────────────────────────────
@@ -206,7 +244,17 @@ function csvEscape(value: string): string {
 
 /** Builds a CSV string for the given rows — no server round-trip, reuses whatever's already loaded in the browser. */
 export function buildCsv(rows: CsvRow[]): string {
-  const header = ["Lead", "Booking", "Platform", "Status", "Attempts", "Created", "Last Attempt", "Request ID", "Failure"];
+  const header = [
+    "Lead",
+    "Booking",
+    "Platform",
+    "Status",
+    "Attempts",
+    "Created",
+    "Last Attempt",
+    "Request ID",
+    "Failure",
+  ];
   const lines = rows.map((r) =>
     [
       r.leadName ?? "",

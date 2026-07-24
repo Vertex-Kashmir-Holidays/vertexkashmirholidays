@@ -30,10 +30,15 @@ export default async function AdminCampaignListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display text-xl font-extrabold text-foreground">Campaigns</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Landing-page campaigns shown at /campaign/[slug].</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Landing-page campaigns shown at /campaign/[slug].
+          </p>
         </div>
         {canCreate && (
-          <Link href="/admin/campaigns/new" className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110">
+          <Link
+            href="/admin/campaigns/new"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110"
+          >
             <Plus className="h-4 w-4" /> New Campaign
           </Link>
         )}

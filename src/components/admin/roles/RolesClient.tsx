@@ -78,7 +78,9 @@ export function RolesClient({ roles, initialMatrix, canEdit }: Props) {
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="font-display text-lg font-bold text-foreground">Roles &amp; Permissions</h2>
+          <h2 className="font-display text-lg font-bold text-foreground">
+            Roles &amp; Permissions
+          </h2>
           <p className="text-sm text-muted-foreground">
             Control which modules each role can view and what actions they can perform.
             <span className="ml-1 inline-flex items-center gap-1 text-muted-foreground">

@@ -1,8 +1,8 @@
 // src/components/destinations/DestinationTopAttractions.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
+import { motion } from "framer-motion";
+import { MapPin } from "lucide-react";
 
 interface Attraction {
   name: string;
@@ -41,7 +41,9 @@ export function DestinationTopAttractions({ name, attractions }: DestinationTopA
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2} />
               <div>
                 <p className="text-[14px] font-bold">{a.name}</p>
-                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{a.description}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+                  {a.description}
+                </p>
               </div>
             </div>
           </motion.div>

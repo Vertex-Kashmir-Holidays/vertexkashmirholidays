@@ -1,8 +1,8 @@
 // src/components/sections/TourDetailsHighlights.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 interface TourDetailsHighlightsProps {
   highlights: string[];
@@ -31,7 +31,11 @@ export function TourDetailsHighlights({ highlights }: TourDetailsHighlightsProps
             viewport={{ once: true }}
             transition={{ delay: i * 0.05 }}
           >
-            <Star className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2} fill="currentColor" />
+            <Star
+              className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+              strokeWidth={2}
+              fill="currentColor"
+            />
             {item}
           </motion.li>
         ))}

@@ -9,7 +9,11 @@ import { customerBookingWhere } from "@/lib/account/bookingScope";
 export const metadata: Metadata = { title: "Payments — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
 
-const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+const inr = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
 
 const TYPE_LABELS: Record<string, string> = {
   TOKEN: "Token / Advance",
@@ -41,10 +45,7 @@ export default async function AccountPaymentsPage() {
   });
 
   // Net total received = all non-refund payments minus refunds.
-  const total = payments.reduce(
-    (sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount),
-    0,
-  );
+  const total = payments.reduce((sum, p) => sum + (p.type === "REFUND" ? -p.amount : p.amount), 0);
 
   return (
     <div className="space-y-5">
@@ -64,17 +65,37 @@ export default async function AccountPaymentsPage() {
           {/* Mobile: stacked cards */}
           <div className="space-y-3 md:hidden">
             {payments.map((p) => (
-              <Link key={p.id} href={`/account/bookings/${p.booking.id}`} className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40">
+              <Link
+                key={p.id}
+                href={`/account/bookings/${p.booking.id}`}
+                className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40"
+              >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0 truncate font-semibold text-foreground">{p.booking.tour?.title ?? "Custom booking"}</p>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold", TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground")}>
+                  <p className="min-w-0 truncate font-semibold text-foreground">
+                    {p.booking.tour?.title ?? "Custom booking"}
+                  </p>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold",
+                      TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground",
+                    )}
+                  >
                     {TYPE_LABELS[p.type] ?? p.type}
                   </span>
                 </div>
                 <div className="mt-2 flex items-end justify-between gap-3">
                   <div className="min-w-0 text-xs text-muted-foreground">
-                    <p>{p.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
-                    <p className="truncate">Ref: {p.booking.id.slice(-8).toUpperCase()}{p.method ? ` · ${p.method}` : ""}</p>
+                    <p>
+                      {p.createdAt.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                    <p className="truncate">
+                      Ref: {p.booking.id.slice(-8).toUpperCase()}
+                      {p.method ? ` · ${p.method}` : ""}
+                    </p>
                   </div>
                   <p className="shrink-0 font-bold text-foreground">{inr.format(p.amount)}</p>
                 </div>
@@ -98,21 +119,37 @@ export default async function AccountPaymentsPage() {
                 {payments.map((p) => (
                   <tr key={p.id} className="transition hover:bg-muted/40">
                     <td className="px-4 py-3">
-                      <Link href={`/account/bookings/${p.booking.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
+                      <Link
+                        href={`/account/bookings/${p.booking.id}`}
+                        className="font-medium text-foreground hover:text-primary hover:underline"
+                      >
                         {p.booking.tour?.title ?? "Custom booking"}
                       </Link>
-                      <span className="ml-1 text-[12px] text-muted-foreground">#{p.booking.id.slice(-8).toUpperCase()}</span>
+                      <span className="ml-1 text-[12px] text-muted-foreground">
+                        #{p.booking.id.slice(-8).toUpperCase()}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-bold", TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[12px] font-bold",
+                          TYPE_STYLES[p.type] ?? "bg-muted text-muted-foreground",
+                        )}
+                      >
                         {TYPE_LABELS[p.type] ?? p.type}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.method ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {p.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      {p.createdAt.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-foreground">{inr.format(p.amount)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-foreground">
+                      {inr.format(p.amount)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

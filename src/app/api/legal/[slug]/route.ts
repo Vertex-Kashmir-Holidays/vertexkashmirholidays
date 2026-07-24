@@ -44,7 +44,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const heroImage =
     parsed.data.heroImage !== undefined ? parsed.data.heroImage.trim() || null : undefined;
   const heroImageMobile =
-    parsed.data.heroImageMobile !== undefined ? parsed.data.heroImageMobile.trim() || null : undefined;
+    parsed.data.heroImageMobile !== undefined
+      ? parsed.data.heroImageMobile.trim() || null
+      : undefined;
 
   const saved = await prisma.legalPage.upsert({
     where: { slug },

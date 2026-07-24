@@ -127,8 +127,16 @@ export async function POST(req: NextRequest) {
       const result = await sendMail({
         to: email,
         subject: "Your Vertex Kashmir Holidays password reset code",
-        html: passwordResetOtpHtml({ name: user.name ?? "there", code, ttlMinutes: RESET_OTP_TTL_MINUTES }),
-        text: passwordResetOtpText({ name: user.name ?? "there", code, ttlMinutes: RESET_OTP_TTL_MINUTES }),
+        html: passwordResetOtpHtml({
+          name: user.name ?? "there",
+          code,
+          ttlMinutes: RESET_OTP_TTL_MINUTES,
+        }),
+        text: passwordResetOtpText({
+          name: user.name ?? "there",
+          code,
+          ttlMinutes: RESET_OTP_TTL_MINUTES,
+        }),
       });
 
       if (!result.delivered) {

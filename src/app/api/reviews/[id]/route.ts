@@ -29,14 +29,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
 
   // Approving/rejecting (publishing) a review is an admin-only action. Other
   // staff with reviews "edit" permission may still correct content, but cannot
   // change a review's published state.
-  const approvalChange = parsed.data.approved !== undefined && parsed.data.approved !== existing.approved;
+  const approvalChange =
+    parsed.data.approved !== undefined && parsed.data.approved !== existing.approved;
   if (approvalChange && !isAdminRole((guard.user as { role?: string }).role)) {
     return NextResponse.json(
       { error: "Only an admin can approve or reject reviews." },
@@ -48,7 +53,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     where: { id },
     data: {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
-      ...(parsed.data.avatar !== undefined ? { avatar: parsed.data.avatar.trim() === "" ? null : parsed.data.avatar.trim() } : {}),
+      ...(parsed.data.avatar !== undefined
+        ? { avatar: parsed.data.avatar.trim() === "" ? null : parsed.data.avatar.trim() }
+        : {}),
       ...(parsed.data.rating !== undefined ? { rating: parsed.data.rating } : {}),
       ...(parsed.data.body !== undefined ? { body: parsed.data.body } : {}),
       ...(parsed.data.approved !== undefined ? { approved: parsed.data.approved } : {}),
@@ -57,7 +64,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   // Any change to approval state or to an approved review's rating shifts the
   // tour's aggregate, so recompute when the approved set or its values changed.
-  const approvalChanged = parsed.data.approved !== undefined && parsed.data.approved !== existing.approved;
+  const approvalChanged =
+    parsed.data.approved !== undefined && parsed.data.approved !== existing.approved;
   const approvedRatingChanged =
     parsed.data.rating !== undefined && updated.approved && parsed.data.rating !== existing.rating;
   if (approvalChanged || approvedRatingChanged) {

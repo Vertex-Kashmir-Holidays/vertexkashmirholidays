@@ -1,6 +1,7 @@
 import { GTMScript } from "@/components/providers/GTMScript";
+import { NEXT_PUBLIC_GTM_ID } from "@/lib/env.public";
 
-const rawGtmId = process.env.NEXT_PUBLIC_GTM_ID ?? "";
+const rawGtmId = NEXT_PUBLIC_GTM_ID ?? "";
 const GTM_ID = /^GTM-[A-Z0-9]+$/.test(rawGtmId) ? rawGtmId : null;
 
 interface SiteAnalyticsProps {
@@ -8,21 +9,19 @@ interface SiteAnalyticsProps {
   nonce?: string;
 }
 
-/** GTM noscript fallback + init script. Never render this on /admin. */
+/**
+ * GTM init script — gated on cookie consent (see GTMScript). Never render
+ * this on /admin.
+ *
+ * No <noscript> GTM pixel here on purpose: that fallback would fire
+ * unconditionally for JS-disabled visitors with no way to gate it on
+ * consent, defeating the point of gating GTM at all. Cookie consent
+ * inherently requires JS (the banner/preferences UI, the localStorage read),
+ * so a visitor who can't run that also can't have GTM's noscript pixel
+ * running on unconsented cookies.
+ */
 export function SiteAnalytics({ nonce }: SiteAnalyticsProps) {
   if (!GTM_ID) return null;
 
-  return (
-    <>
-      <noscript>
-        <iframe
-          src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-          height="0"
-          width="0"
-          style={{ display: "none", visibility: "hidden" }}
-        />
-      </noscript>
-      <GTMScript gtmId={GTM_ID} nonce={nonce} />
-    </>
-  );
+  return <GTMScript gtmId={GTM_ID} nonce={nonce} />;
 }

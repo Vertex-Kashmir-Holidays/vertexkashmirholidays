@@ -1,5 +1,5 @@
 // src/components/activities/ActivityWhyExperience.tsx
-import sanitizeHtml from 'sanitize-html';
+import sanitizeHtml from "sanitize-html";
 
 interface ActivityWhyExperienceProps {
   name: string;
@@ -10,11 +10,11 @@ interface ActivityWhyExperienceProps {
 
 // Same sanitize allowlist/idiom as the Destination detail HTML cards.
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ['p', 'a', 'strong', 'b', 'em', 'i', 'br', 'ul', 'ol', 'li'],
-  allowedAttributes: { a: ['href', 'name', 'target', 'rel'] },
-  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+  allowedTags: ["p", "a", "strong", "b", "em", "i", "br", "ul", "ol", "li"],
+  allowedAttributes: { a: ["href", "name", "target", "rel"] },
+  allowedSchemes: ["http", "https", "mailto", "tel"],
   transformTags: {
-    a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' }, false),
+    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, false),
   },
 };
 
@@ -36,7 +36,10 @@ export function ActivityWhyExperience({ name, html, bare }: ActivityWhyExperienc
   if (bare) return <div id="why-experience">{body}</div>;
 
   return (
-    <section id="why-experience" className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">
+    <section
+      id="why-experience"
+      className="rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft"
+    >
       {body}
     </section>
   );

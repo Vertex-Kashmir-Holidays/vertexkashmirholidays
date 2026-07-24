@@ -1,13 +1,13 @@
 // src/components/sections/TourDetailsRelatedTours.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { TourCard } from '@/components/ui/TourCard';
-import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { TourCard } from "@/components/ui/organisms/TourCard";
+import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 
 interface RelatedTourCard {
-  tour: React.ComponentProps<typeof TourCard>['tour'];
+  tour: React.ComponentProps<typeof TourCard>["tour"];
   ctaSentence: string;
 }
 
@@ -34,7 +34,9 @@ export function TourDetailsRelatedTours({
   const hasClosing = Boolean(whyVertexBlurb || ctaHeadline || ctaBody);
   if (!hasRelated && !hasClosing) return null;
 
-  const whatsappHref = wa(`Hi ${siteName}! I'm interested in the "${tourName}" Kashmir package. Could you share details and availability?`);
+  const whatsappHref = wa(
+    `Hi ${siteName}! I'm interested in the "${tourName}" Kashmir package. Could you share details and availability?`,
+  );
 
   return (
     <>
@@ -73,13 +75,15 @@ export function TourDetailsRelatedTours({
           transition={{ duration: 0.5 }}
         >
           {whyVertexBlurb && (
-            <p className="mx-auto max-w-2xl text-[14px] leading-relaxed text-foreground/70">{whyVertexBlurb}</p>
+            <p className="mx-auto max-w-2xl text-[14px] leading-relaxed text-foreground/70">
+              {whyVertexBlurb}
+            </p>
           )}
-          {ctaHeadline && (
-            <h2 className="mt-4 text-[18px] font-bold">{ctaHeadline}</h2>
-          )}
+          {ctaHeadline && <h2 className="mt-4 text-[18px] font-bold">{ctaHeadline}</h2>}
           {ctaBody && (
-            <p className="mx-auto mt-2 max-w-2xl text-[14px] leading-relaxed text-foreground/70">{ctaBody}</p>
+            <p className="mx-auto mt-2 max-w-2xl text-[14px] leading-relaxed text-foreground/70">
+              {ctaBody}
+            </p>
           )}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link

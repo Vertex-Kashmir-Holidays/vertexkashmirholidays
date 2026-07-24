@@ -1,7 +1,16 @@
 "use client";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { FileText, ImageIcon, Pencil, Trash2, ImageOff, Clock, Check, CheckCheck } from "lucide-react";
+import {
+  FileText,
+  ImageIcon,
+  Pencil,
+  Trash2,
+  ImageOff,
+  Clock,
+  Check,
+  CheckCheck,
+} from "lucide-react";
 import type { ConnectMessage } from "./hooks/useMessages";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "👎"] as const;
@@ -65,7 +74,15 @@ type Segment =
   | { type: "mention"; token: string; isSelf: boolean }
   | { type: "url"; href: string };
 
-function RichText({ body, selfSlug, isOwn }: { body: string; selfSlug?: string | null; isOwn: boolean }) {
+function RichText({
+  body,
+  selfSlug,
+  isOwn,
+}: {
+  body: string;
+  selfSlug?: string | null;
+  isOwn: boolean;
+}) {
   const segments: Segment[] = [];
 
   // Collect all token matches with their positions
@@ -74,14 +91,22 @@ function RichText({ body, selfSlug, isOwn }: { body: string; selfSlug?: string |
   URL_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = URL_RE.exec(body)) !== null) {
-    tokens.push({ index: m.index, end: m.index + m[0].length, segment: { type: "url", href: m[0] } });
+    tokens.push({
+      index: m.index,
+      end: m.index + m[0].length,
+      segment: { type: "url", href: m[0] },
+    });
   }
 
   MENTION_RE.lastIndex = 0;
   while ((m = MENTION_RE.exec(body)) !== null) {
     const token = m[1];
     const isSelf = !!selfSlug && token.toLowerCase() === selfSlug;
-    tokens.push({ index: m.index, end: m.index + m[0].length, segment: { type: "mention", token, isSelf } });
+    tokens.push({
+      index: m.index,
+      end: m.index + m[0].length,
+      segment: { type: "mention", token, isSelf },
+    });
   }
 
   // Sort by position, remove overlaps (first-wins)
@@ -158,7 +183,15 @@ function RichText({ body, selfSlug, isOwn }: { body: string; selfSlug?: string |
   );
 }
 
-function Attachment({ url, type, name }: { url: string; type: string | null; name: string | null }) {
+function Attachment({
+  url,
+  type,
+  name,
+}: {
+  url: string;
+  type: string | null;
+  name: string | null;
+}) {
   const [imgError, setImgError] = useState(false);
   const label = name ?? "Attachment";
   const isImage = type === "image" || !!url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
@@ -203,32 +236,70 @@ function Attachment({ url, type, name }: { url: string; type: string | null; nam
 }
 
 // isOwn=true → renders inside a primary-coloured bubble; use foreground-relative colours.
-function MessageStatus({ message, readUpTo, isOwn = false }: { message: ConnectMessage; readUpTo: number; isOwn?: boolean }) {
+function MessageStatus({
+  message,
+  readUpTo,
+  isOwn = false,
+}: {
+  message: ConnectMessage;
+  readUpTo: number;
+  isOwn?: boolean;
+}) {
   if (message._status === "sending") {
-    return <Clock className={cn("w-3 h-3 shrink-0", isOwn ? "text-primary-foreground/50" : "text-muted-foreground/60")} />;
+    return (
+      <Clock
+        className={cn(
+          "w-3 h-3 shrink-0",
+          isOwn ? "text-primary-foreground/50" : "text-muted-foreground/60",
+        )}
+      />
+    );
   }
   const msgTime = new Date(message.createdAt).getTime();
   if (readUpTo > 0 && readUpTo >= msgTime) {
-    return <CheckCheck className={cn("w-3.5 h-3.5 shrink-0", isOwn ? "text-sky-200" : "text-sky-500")} />;
+    return (
+      <CheckCheck className={cn("w-3.5 h-3.5 shrink-0", isOwn ? "text-sky-200" : "text-sky-500")} />
+    );
   }
-  return <Check className={cn("w-3 h-3 shrink-0", isOwn ? "text-primary-foreground/60" : "text-muted-foreground/60")} />;
+  return (
+    <Check
+      className={cn(
+        "w-3 h-3 shrink-0",
+        isOwn ? "text-primary-foreground/60" : "text-muted-foreground/60",
+      )}
+    />
+  );
 }
 
-export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentUserId = "", isFirstInGroup = true, onReact, onEdit, onDelete }: Props) {
-  const { sender, body, attachmentUrl, attachmentType, attachmentName, createdAt, editedAt } = message;
+export function MessageBubble({
+  message,
+  isOwn,
+  selfSlug,
+  readUpTo = 0,
+  currentUserId = "",
+  isFirstInGroup = true,
+  onReact,
+  onEdit,
+  onDelete,
+}: Props) {
+  const { sender, body, attachmentUrl, attachmentType, attachmentName, createdAt, editedAt } =
+    message;
 
   if (message.isSystem) {
     const isMissed = body?.toLowerCase().includes("missed");
     return (
       <div className="flex items-center gap-2 py-1 px-2">
         <div className="flex-1 h-px bg-border/50" />
-        <span className={cn(
-          "text-[12px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
-          isMissed
-            ? "text-red-500 dark:text-red-400 bg-red-500/10"
-            : "text-muted-foreground bg-muted/60",
-        )}>
-          {isMissed ? "📞 " : ""}{body}
+        <span
+          className={cn(
+            "text-[12px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap",
+            isMissed
+              ? "text-red-500 dark:text-red-400 bg-red-500/10"
+              : "text-muted-foreground bg-muted/60",
+          )}
+        >
+          {isMissed ? "📞 " : ""}
+          {body}
         </span>
         <div className="flex-1 h-px bg-border/50" />
       </div>
@@ -242,11 +313,12 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
   if (message.deletedAt) {
     return (
       <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-        {!isOwn && (
-          isFirstInGroup
-            ? <Avatar name={sender.name} image={sender.image} />
-            : <div className="w-7 shrink-0" />
-        )}
+        {!isOwn &&
+          (isFirstInGroup ? (
+            <Avatar name={sender.name} image={sender.image} />
+          ) : (
+            <div className="w-7 shrink-0" />
+          ))}
         <div className={cn("flex flex-col max-w-[85%] sm:max-w-[72%]", isOwn && "items-end")}>
           {!isOwn && isFirstInGroup && (
             <span className="text-[12px] text-muted-foreground mb-0.5 ml-1">
@@ -263,18 +335,24 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
 
   // Parse reactions once — used for both pills and the quick-react bar highlights
   const reactionMap: Record<string, string[]> = (() => {
-    try { return message.reactions ? (JSON.parse(message.reactions) as Record<string, string[]>) : {}; }
-    catch { return {}; }
+    try {
+      return message.reactions ? (JSON.parse(message.reactions) as Record<string, string[]>) : {};
+    } catch {
+      return {};
+    }
   })();
   const reactionEntries = Object.entries(reactionMap).filter(([, users]) => users.length > 0);
 
   return (
     <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-      {!isOwn && (
-        isFirstInGroup
-          ? <Avatar name={sender.name} image={sender.image} />
-          : <div className="w-7 shrink-0" /> /* spacer keeps bubble indent consistent */
-      )}
+      {
+        !isOwn &&
+          (isFirstInGroup ? (
+            <Avatar name={sender.name} image={sender.image} />
+          ) : (
+            <div className="w-7 shrink-0" />
+          )) /* spacer keeps bubble indent consistent */
+      }
 
       {/*
         'group' is on the COLUMN, not the outer row.
@@ -297,8 +375,12 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                 {editedAt && (
                   <span className="text-[12px] italic text-muted-foreground/60">edited·</span>
                 )}
-                <span className="text-[12px] text-muted-foreground/70">{formatTime(createdAt)}</span>
-                {isOwn && !message.deletedAt && <MessageStatus message={message} readUpTo={readUpTo} />}
+                <span className="text-[12px] text-muted-foreground/70">
+                  {formatTime(createdAt)}
+                </span>
+                {isOwn && !message.deletedAt && (
+                  <MessageStatus message={message} readUpTo={readUpTo} />
+                )}
               </span>
             </div>
           ) : (
@@ -320,11 +402,21 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                    full width instead of reserving a column for the timestamp. */
                 <div className="flex justify-end items-baseline gap-0.5 mt-0.5 leading-none select-none">
                   {editedAt && (
-                    <span className={cn("text-[12px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>
+                    <span
+                      className={cn(
+                        "text-[12px] italic",
+                        isOwn ? "text-primary-foreground/50" : "text-foreground/40",
+                      )}
+                    >
                       edited·
                     </span>
                   )}
-                  <span className={cn("text-[12px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                  <span
+                    className={cn(
+                      "text-[12px]",
+                      isOwn ? "text-primary-foreground/60" : "text-foreground/50",
+                    )}
+                  >
                     {formatTime(createdAt)}
                   </span>
                   {isOwn && !message.deletedAt && (
@@ -338,9 +430,21 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                   {/* Time below attachment (covers both attachment-only and body+attachment) */}
                   <div className="flex justify-end items-baseline gap-0.5 mt-1 leading-none select-none">
                     {editedAt && (
-                      <span className={cn("text-[12px] italic", isOwn ? "text-primary-foreground/50" : "text-foreground/40")}>edited·</span>
+                      <span
+                        className={cn(
+                          "text-[12px] italic",
+                          isOwn ? "text-primary-foreground/50" : "text-foreground/40",
+                        )}
+                      >
+                        edited·
+                      </span>
                     )}
-                    <span className={cn("text-[12px]", isOwn ? "text-primary-foreground/60" : "text-foreground/50")}>
+                    <span
+                      className={cn(
+                        "text-[12px]",
+                        isOwn ? "text-primary-foreground/60" : "text-foreground/50",
+                      )}
+                    >
                       {formatTime(createdAt)}
                     </span>
                     {isOwn && !message.deletedAt && (
@@ -374,7 +478,8 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
                   )}
                   title={users.includes(currentUserId) ? "Remove reaction" : "React"}
                 >
-                  {emoji}{users.length > 1 && <span className="font-semibold ml-0.5">{users.length}</span>}
+                  {emoji}
+                  {users.length > 1 && <span className="font-semibold ml-0.5">{users.length}</span>}
                 </button>
               ))}
             </div>
@@ -432,7 +537,6 @@ export function MessageBubble({ message, isOwn, selfSlug, readUpTo = 0, currentU
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

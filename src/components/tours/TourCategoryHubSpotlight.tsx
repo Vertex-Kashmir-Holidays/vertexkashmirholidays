@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
-import { TourCard } from '@/components/ui/TourCard';
-import { formatINR } from '@/lib/accents';
-import { imgSrc } from '@/lib/placeholder';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import { TourCard } from "@/components/ui/organisms/TourCard";
+import { formatINR } from "@/lib/accents";
+import { imgSrc } from "@/lib/placeholder";
 
-const BADGE_COLORS = ['orange', 'blue', 'green'] as const;
+const BADGE_COLORS = ["orange", "blue", "green"] as const;
 
 interface SpotlightTour {
   id: string;
@@ -40,9 +40,7 @@ interface SpotlightResponse {
 }
 
 function CardSkeleton() {
-  return (
-    <div className="h-64 animate-pulse rounded-2xl border border-border bg-muted" />
-  );
+  return <div className="h-64 animate-pulse rounded-2xl border border-border bg-muted" />;
 }
 
 function BlogSpotlightCard({ blog }: { blog: SpotlightBlog }) {
@@ -68,11 +66,16 @@ function BlogSpotlightCard({ blog }: { blog: SpotlightBlog }) {
           {blog.title}
         </h3>
         {blog.excerpt && (
-          <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">{blog.excerpt}</p>
+          <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+            {blog.excerpt}
+          </p>
         )}
         <span className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-bold text-primary">
           Read Article
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.4} />
+          <ArrowRight
+            className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+            strokeWidth={2.4}
+          />
         </span>
       </div>
     </Link>
@@ -87,7 +90,7 @@ export function TourCategoryHubSpotlight() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/spotlight', { cache: 'no-store' })
+    fetch("/api/spotlight", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (!cancelled) setData(json);
@@ -112,16 +115,16 @@ export function TourCategoryHubSpotlight() {
           {data.tour && (
             <TourCard
               tour={{
-                badge: data.tour.badge ?? 'FEATURED',
-                bc: (BADGE_COLORS as readonly string[]).includes(data.tour.badgeColor ?? '')
+                badge: data.tour.badge ?? "FEATURED",
+                bc: (BADGE_COLORS as readonly string[]).includes(data.tour.badgeColor ?? "")
                   ? (data.tour.badgeColor as (typeof BADGE_COLORS)[number])
-                  : 'green',
+                  : "green",
                 image: data.tour.coverImage ?? undefined,
                 detailHref: `/tours/${data.tour.slug}`,
                 bookHref: `/booking?tour=${data.tour.slug}`,
                 t: data.tour.title,
                 d: `${Math.max(data.tour.duration - 1, 0)}N / ${data.tour.duration}D`,
-                places: data.tour.destinations.map((d) => d.destination.name).join(', '),
+                places: data.tour.destinations.map((d) => d.destination.name).join(", "),
                 r: data.tour.rating.toFixed(1),
                 n: String(data.tour.reviewCount),
                 old: data.tour.priceWas ? formatINR(data.tour.priceWas) : undefined,

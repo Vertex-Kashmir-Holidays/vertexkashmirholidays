@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { AttributionCapture } from "@/components/providers/AttributionCapture";
-import { SITE_NAME } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } from "@/lib/env.public";
 import "./globals.css";
-
 
 const displayFont = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -11,20 +11,14 @@ const displayFont = Bricolage_Grotesque({
   display: "swap",
 });
 
-
 const sansFont = Hanken_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://vertexkashmirholidays.com";
-
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   applicationName: "Vertex Kashmir Holidays",
   title: {
     template: "%s | Vertex Kashmir Holidays",
@@ -43,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: "Vertex Kashmir Holidays",
     title: "Vertex Kashmir Holidays — Premium Kashmir Tourism & Booking",
     description:
@@ -60,15 +54,13 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Vertex Kashmir Holidays",
-    description:
-      "Premium Kashmir tourism — honeymoon, family, adventure, luxury packages.",
+    description: "Premium Kashmir tourism — honeymoon, family, adventure, luxury packages.",
     images: ["/brand/social/vertex-og-1200x630.png"],
   },
-  ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
-    ? { other: { "facebook-domain-verification": process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }
+  ...(NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
+    ? { other: { "facebook-domain-verification": NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } }
     : {}),
 };
-
 
 export const viewport: Viewport = {
   themeColor: [
@@ -76,7 +68,6 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#0B1F3A" },
   ],
 };
-
 
 // No headers()/cookies() call anywhere in this file — that's deliberate. Every
 // route in the app renders this layout, so any dynamic API call here would
@@ -87,11 +78,7 @@ export const viewport: Viewport = {
 // src/app/admin/layout.tsx, src/app/account/layout.tsx and
 // src/app/login/layout.tsx (all already dynamic via auth(), so reading the
 // nonce there costs nothing extra).
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -102,7 +89,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
         <link rel="dns-prefetch" href="https://cdn.razorpay.com" />
-        <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} Blog`} href="/rss.xml" />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title={`${SITE_NAME} Blog`}
+          href="/rss.xml"
+        />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <AttributionCapture />

@@ -10,7 +10,11 @@ import { customerBookingWhere } from "@/lib/account/bookingScope";
 export const metadata: Metadata = { title: "My Bookings — Vertex Kashmir Holidays" };
 export const dynamic = "force-dynamic";
 
-const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+const inr = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
 
 const STATUS_STYLES: Record<string, string> = {
   CONFIRMED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
@@ -37,7 +41,7 @@ export default async function AccountBookingsPage() {
     orderBy: { createdAt: "desc" },
     include: {
       tour: { select: { title: true, slug: true, coverImage: true } },
-      payments: { select: { amount: true } },
+      payments: { select: { amount: true, type: true } },
     },
   });
   const bookings = rows.map((b) => ({
@@ -75,22 +79,43 @@ export default async function AccountBookingsPage() {
                   <span className="truncate text-sm font-bold text-foreground">
                     {b.tour?.title ?? "Custom booking"}
                   </span>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold", STATUS_STYLES[b.status])}>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold",
+                      STATUS_STYLES[b.status],
+                    )}
+                  >
                     {b.status}
                   </span>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold", PAYMENT_STATUS_STYLES[b.paymentStatus])}>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold",
+                      PAYMENT_STATUS_STYLES[b.paymentStatus],
+                    )}
+                  >
                     {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Travel date:{" "}
-                  {b.travelDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  {b.travelDate.toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
                   {" · "}
                   {b.travellers} traveller{b.travellers > 1 ? "s" : ""}
                   {" · "}
-                  Booked {b.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  Booked{" "}
+                  {b.createdAt.toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
                 </p>
-                <p className="mt-0.5 text-[12px] text-muted-foreground">Ref: {b.id.slice(-8).toUpperCase()}</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">
+                  Ref: {b.id.slice(-8).toUpperCase()}
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-base font-bold text-foreground">{inr.format(b.amount)}</p>

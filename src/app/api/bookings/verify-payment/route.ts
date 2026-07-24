@@ -8,6 +8,7 @@ import { logPaymentAudit } from "@/lib/bookings/audit";
 import { recordOnlinePayment } from "@/lib/bookings/online-payment";
 import { finalizeOnlinePayment } from "@/lib/bookings/notify";
 import Razorpay from "razorpay";
+import { env } from "@/lib/env";
 
 const verifySchema = z.object({
   razorpay_order_id: z.string(),
@@ -17,14 +18,16 @@ const verifySchema = z.object({
 
 // Best-effort fetch of the gateway payment for richer metadata (method, bank…).
 // Never throws — the signature has already proven authenticity.
-async function fetchGatewayMeta(paymentId: string): Promise<{ method: string | null; metadata: string | null }> {
+async function fetchGatewayMeta(
+  paymentId: string,
+): Promise<{ method: string | null; metadata: string | null }> {
   try {
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_SECRET) {
+    if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_SECRET) {
       return { method: null, metadata: null };
     }
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_SECRET,
+      key_id: env.RAZORPAY_KEY_ID,
+      key_secret: env.RAZORPAY_SECRET,
     });
     const p = (await razorpay.payments.fetch(paymentId)) as unknown as Record<string, unknown>;
     const method = typeof p.method === "string" ? p.method : null;
@@ -94,15 +97,14 @@ export async function POST(req: NextRequest) {
 
   // HMAC-SHA256 of "order_id|payment_id", compared in constant time (replay-safe).
   const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_SECRET ?? "")
+    .createHmac("sha256", env.RAZORPAY_SECRET ?? "")
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest("hex");
 
   const expectedBuf = Buffer.from(expected, "hex");
   const receivedBuf = Buffer.from(razorpay_signature, "hex");
   const isValid =
-    expectedBuf.length === receivedBuf.length &&
-    crypto.timingSafeEqual(expectedBuf, receivedBuf);
+    expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
 
   if (!isValid) {
     await prisma.booking.update({ where: { id: booking.id }, data: { status: "FAILED" } });

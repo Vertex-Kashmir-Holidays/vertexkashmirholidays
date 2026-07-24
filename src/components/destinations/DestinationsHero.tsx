@@ -1,15 +1,15 @@
 // src/components/destinations/DestinationsHero.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Sparkles, Compass, BadgeIndianRupee, type LucideIcon } from 'lucide-react';
-import { SecondaryHero } from '@/components/layout/SecondaryHero';
-import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
+import { motion } from "framer-motion";
+import { Sparkles, Compass, BadgeIndianRupee, type LucideIcon } from "lucide-react";
+import { SecondaryHero } from "@/components/layout/SecondaryHero";
+import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 
 const badges: { t: string; s: string; Icon: LucideIcon }[] = [
-  { t: 'Handpicked', s: 'by local experts', Icon: Sparkles },
-  { t: 'Real Experiences', s: 'not tourist traps', Icon: Compass },
-  { t: 'Best Price', s: 'guaranteed', Icon: BadgeIndianRupee },
+  { t: "Handpicked", s: "by local experts", Icon: Sparkles },
+  { t: "Real Experiences", s: "not tourist traps", Icon: Compass },
+  { t: "Best Price", s: "guaranteed", Icon: BadgeIndianRupee },
 ];
 
 interface DestinationsHeroProps {
@@ -20,28 +20,31 @@ interface DestinationsHeroProps {
 export function DestinationsHero({ heroImage, heroImageMobile }: DestinationsHeroProps) {
   return (
     <SecondaryHero
-      image={heroImage ?? '/hero/srinagar-lg.webp'}
-      imageMobile={heroImageMobile ?? '/hero/srinagar.webp'}
+      image={heroImage ?? "/hero/srinagar-lg.webp"}
+      imageMobile={heroImageMobile ?? "/hero/srinagar.webp"}
       alt="Dal Lake, Kashmir"
       aside={<HeroLeadCard source="destinations" />}
     >
       <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
-        <a href="/" className="transition hover:text-white">Home</a>
+        <a href="/" className="transition hover:text-white">
+          Home
+        </a>
         <span>›</span>
         <span className="font-semibold text-white">Destinations</span>
       </nav>
 
       <h1
         className="hero-reveal mt-7 max-w-xl text-4xl font-bold leading-[1.15] text-white lg:text-[42px]"
-        style={{ '--hr-y': '20px' } as React.CSSProperties}
+        style={{ "--hr-y": "20px" } as React.CSSProperties}
       >
         Explore the breathtaking destinations of Kashmir
       </h1>
       <p
         className="hero-reveal mt-5 max-w-md text-[16px] leading-relaxed text-white/85"
-        style={{ '--hr-delay': '0.1s' } as React.CSSProperties}
+        style={{ "--hr-delay": "0.1s" } as React.CSSProperties}
       >
-        From snow-capped peaks to serene valleys and crystal clear lakes – discover paradise on earth.
+        From snow-capped peaks to serene valleys and crystal clear lakes – discover paradise on
+        earth.
       </p>
 
       <motion.div

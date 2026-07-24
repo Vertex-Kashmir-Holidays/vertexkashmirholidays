@@ -32,7 +32,9 @@ export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
   const router = useRouter();
   const allFields = groups.flatMap((g) => g.fields);
   const [form, setForm] = useState<Record<string, string>>(() =>
-    Object.fromEntries(allFields.map((f) => [f.key, initial?.[f.key] != null ? String(initial[f.key]) : ""])),
+    Object.fromEntries(
+      allFields.map((f) => [f.key, initial?.[f.key] != null ? String(initial[f.key]) : ""]),
+    ),
   );
   const [busy, setBusy] = useState(false);
 
@@ -72,9 +74,15 @@ export function ContentForm({ contentKey, groups, initial, canEdit }: Props) {
           <div className="grid gap-4 p-5 sm:grid-cols-2">
             {group.fields.map((f) => (
               <div key={f.key} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">{f.label}</label>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                  {f.label}
+                </label>
                 {f.type === "image" ? (
-                  <ImageField value={form[f.key] ?? ""} onChange={(v) => set(f.key, v)} folder={contentKey} />
+                  <ImageField
+                    value={form[f.key] ?? ""}
+                    onChange={(v) => set(f.key, v)}
+                    folder={contentKey}
+                  />
                 ) : f.type === "textarea" ? (
                   <textarea
                     rows={3}

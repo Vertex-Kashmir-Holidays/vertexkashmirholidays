@@ -5,7 +5,6 @@ import { useNotificationSound } from "@/components/admin/connect/hooks/useNotifi
 import { GlobalCallNotification } from "@/components/admin/connect/GlobalCallNotification";
 import { CallProvider } from "@/components/admin/connect/CallProvider";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -35,10 +34,12 @@ import {
   Flag,
   Target,
   HelpCircle,
+  History,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ChatInbox } from "@/components/admin/ChatInbox";
 import { NotificationsProvider } from "@/components/admin/NotificationsProvider";
@@ -47,6 +48,7 @@ import { PresenceStatusPicker } from "@/components/admin/PresenceStatusPicker";
 import { PresenceHeartbeat } from "@/components/admin/connect/PresenceHeartbeat";
 import { cn } from "@/lib/utils";
 import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/atoms/avatar";
 
 const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -72,6 +74,8 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   seo: Globe,
   settings: Settings,
   roles: ShieldCheck,
+  auditLog: History,
+  careers: Briefcase,
 };
 
 const PAGE_TITLES: Record<string, string> = Object.fromEntries(
@@ -87,8 +91,8 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
   { label: "CRM", keys: ["leads", "itinerary", "bookings"] },
   { label: "Marketing", keys: ["offlineConversions"] },
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
-  { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews"] },
-  { label: "Admin", keys: ["users", "settings", "roles"] },
+  { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews", "careers"] },
+  { label: "Admin", keys: ["users", "settings", "roles", "auditLog"] },
 ];
 
 interface AdminShellProps {
@@ -112,28 +116,6 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// Small circular avatar showing the user's picture, or their initial as a
-// fallback. Used in both the sidebar and the topbar.
-function Avatar({ src, name, className }: { src: string | null; name: string; className?: string }) {
-  if (src) {
-    return (
-      <Image
-        src={src}
-        alt=""
-        width={32}
-        height={32}
-        unoptimized
-        className={cn("rounded-full object-cover shrink-0", className)}
-      />
-    );
-  }
-  return (
-    <div className={cn("rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0", className)}>
-      {name.charAt(0).toUpperCase()}
-    </div>
-  );
-}
-
 function SidebarContent({
   pathname,
   navGroups,
@@ -155,7 +137,10 @@ function SidebarContent({
       <div className="flex items-center justify-between px-5 py-5 border-b border-border">
         <Logo variant="auto" />
         {onClose && (
-          <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
+          <button
+            onClick={onClose}
+            className="lg:hidden text-muted-foreground hover:text-foreground"
+          >
             <X className="w-5 h-5" />
           </button>
         )}
@@ -171,7 +156,8 @@ function SidebarContent({
               </p>
             )}
             {group.items.map(({ href, label, Icon }) => {
-              const isActive = pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
+              const isActive =
+                pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
@@ -184,7 +170,12 @@ function SidebarContent({
                       : "text-muted-foreground hover:text-foreground hover:bg-muted",
                   )}
                 >
-                  <Icon className={cn("w-4.5 h-4.5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                  <Icon
+                    className={cn(
+                      "w-4.5 h-4.5 shrink-0",
+                      isActive ? "text-primary-foreground" : "text-muted-foreground",
+                    )}
+                  />
                   {label}
                 </Link>
               );
@@ -220,7 +211,12 @@ function SidebarContent({
           className="flex flex-1 min-w-0 items-center gap-3 rounded-lg -mx-1 px-1 py-1 transition-colors hover:bg-muted"
           title="My profile"
         >
-          <Avatar src={userImage} name={userName} className="w-8 h-8" />
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={userImage ?? undefined} alt="" />
+            <AvatarFallback className="bg-primary text-xs font-bold text-primary-foreground">
+              {userName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-foreground text-xs font-semibold truncate">{userName}</p>
             <p className="text-muted-foreground text-[12px] truncate">{userEmail}</p>
@@ -238,11 +234,19 @@ function SidebarContent({
   );
 }
 
-export function AdminShell({ children, userId, userName, userEmail, userImage, permissions }: AdminShellProps) {
+export function AdminShell({
+  children,
+  userId,
+  userName,
+  userEmail,
+  userImage,
+  permissions,
+}: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { unlock } = useNotificationSound();
-  const pageTitle = pathname === "/admin/profile" ? "My Profile" : PAGE_TITLES[pathname] ?? "Admin";
+  const pageTitle =
+    pathname === "/admin/profile" ? "My Profile" : (PAGE_TITLES[pathname] ?? "Admin");
 
   // Only show modules the current role may view, grouped into sidebar sections.
   // A group is dropped entirely if none of its modules are visible to this role.
@@ -258,79 +262,85 @@ export function AdminShell({ children, userId, userName, userEmail, userImage, p
 
   return (
     <NotificationsProvider>
-    <CallProvider currentUserId={userId} currentUserName={userName}>
-    <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-56 shrink-0">
-        <SidebarContent pathname={pathname} navGroups={navGroups} userName={userName} userEmail={userEmail} userImage={userImage} />
-      </aside>
-
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <aside className="relative z-10 w-56 flex flex-col">
+      <CallProvider currentUserId={userId} currentUserName={userName}>
+        <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
+          {/* Desktop sidebar */}
+          <aside className="hidden lg:flex flex-col w-56 shrink-0">
             <SidebarContent
               pathname={pathname}
               navGroups={navGroups}
               userName={userName}
               userEmail={userEmail}
               userImage={userImage}
-              onClose={() => setSidebarOpen(false)}
             />
           </aside>
+
+          {/* Mobile sidebar overlay */}
+          {sidebarOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden flex">
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <aside className="relative z-10 w-56 flex flex-col">
+                <SidebarContent
+                  pathname={pathname}
+                  navGroups={navGroups}
+                  userName={userName}
+                  userEmail={userEmail}
+                  userImage={userImage}
+                  onClose={() => setSidebarOpen(false)}
+                />
+              </aside>
+            </div>
+          )}
+
+          {/* Main content */}
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Topbar */}
+            <header className="h-14 bg-card border-b border-border flex items-center justify-between px-5 shrink-0 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden text-muted-foreground hover:text-foreground"
+                  aria-label="Open sidebar"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <h1 className="font-display font-bold text-foreground text-base">{pageTitle}</h1>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:inline"
+                >
+                  View Site
+                </Link>
+                <ThemeToggle />
+                <ChatInbox />
+                <NotificationBell />
+                <PresenceStatusPicker userImage={userImage} userName={userName} />
+                <PresenceHeartbeat />
+              </div>
+            </header>
+
+            {/* Page content — extra bottom padding on mobile so content clears the fixed bottom tab bar */}
+            <main className="flex-1 overflow-y-auto px-1 sm:px-5 pt-1 sm:pt-5 pb-20 lg:p-6">
+              {children}
+            </main>
+          </div>
+
+          {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
+          <MobileBottomTabs pathname={pathname} permissions={permissions} />
+
+          {/* Global incoming call notification — rings from any page in the admin */}
+          <Suspense>
+            <GlobalCallNotification currentUserId={userId} />
+          </Suspense>
         </div>
-      )}
-
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Topbar */}
-        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-5 shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-muted-foreground hover:text-foreground"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="font-display font-bold text-foreground text-base">{pageTitle}</h1>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/"
-              target="_blank"
-              className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:inline"
-            >
-              View Site
-            </Link>
-            <ThemeToggle />
-            <ChatInbox />
-            <NotificationBell />
-            <PresenceStatusPicker userImage={userImage} userName={userName} />
-            <PresenceHeartbeat />
-          </div>
-        </header>
-
-        {/* Page content — extra bottom padding on mobile so content clears the fixed bottom tab bar */}
-        <main className="flex-1 overflow-y-auto px-1 sm:px-5 pt-1 sm:pt-5 pb-20 lg:p-6">
-          {children}
-        </main>
-      </div>
-
-      {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
-      <MobileBottomTabs pathname={pathname} permissions={permissions} />
-
-      {/* Global incoming call notification — rings from any page in the admin */}
-      <Suspense>
-        <GlobalCallNotification currentUserId={userId} />
-      </Suspense>
-    </div>
-    </CallProvider>
+      </CallProvider>
     </NotificationsProvider>
   );
 }

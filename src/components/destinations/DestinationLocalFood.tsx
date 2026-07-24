@@ -1,8 +1,8 @@
 // src/components/destinations/DestinationLocalFood.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Utensils } from 'lucide-react';
+import { motion } from "framer-motion";
+import { Utensils } from "lucide-react";
 
 interface FoodItem {
   name: string;
@@ -40,7 +40,9 @@ export function DestinationLocalFood({ items }: DestinationLocalFoodProps) {
               <Utensils className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" strokeWidth={2} />
               <div>
                 <p className="text-[14px] font-bold">{item.name}</p>
-                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{item.description}</p>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             </div>
           </motion.div>

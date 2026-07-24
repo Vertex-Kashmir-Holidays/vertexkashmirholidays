@@ -1,13 +1,14 @@
 // src/components/sections/DestinationDetailHero.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import { imgSrc } from '@/lib/placeholder';
-import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
-import { Thermometer } from 'lucide-react';
-import Link from 'next/link';
-import type { LiveWeather } from '@/lib/weather';
+import { motion } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import Image from "next/image";
+import { imgSrc } from "@/lib/placeholder";
+import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
+import { Thermometer } from "lucide-react";
+import Link from "next/link";
+import type { LiveWeather } from "@/lib/weather";
 
 interface DestinationDetailHeroProps {
   name: string;
@@ -38,15 +39,35 @@ export function DestinationDetailHero({
         className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.5, ease: EASE_BRAND }}
       >
         {imageMobile ? (
           <>
-            <Image src={imgSrc(imageMobile)} alt={name} fill priority sizes="100vw" className="object-cover sm:hidden" />
-            <Image src={imgSrc(image)} alt={name} fill sizes="100vw" className="hidden object-cover sm:block" />
+            <Image
+              src={imgSrc(imageMobile)}
+              alt={name}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover sm:hidden"
+            />
+            <Image
+              src={imgSrc(image)}
+              alt={name}
+              fill
+              sizes="100vw"
+              className="hidden object-cover sm:block"
+            />
           </>
         ) : (
-          <Image src={imgSrc(image)} alt={name} fill priority sizes="100vw" className="object-cover" />
+          <Image
+            src={imgSrc(image)}
+            alt={name}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
         )}
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/85 via-brand-dark/35 to-brand-dark/10"></div>
@@ -54,9 +75,13 @@ export function DestinationDetailHero({
 
       <div className="relative z-10 mx-auto max-w-[1300px] px-6 pb-24 pt-28">
         <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
-          <Link href="/" className="transition hover:text-white">Home</Link>
+          <Link href="/" className="transition hover:text-white">
+            Home
+          </Link>
           <span>›</span>
-          <Link href="/destinations" className="transition hover:text-white">Destinations</Link>
+          <Link href="/destinations" className="transition hover:text-white">
+            Destinations
+          </Link>
           <span>›</span>
           <span className="font-semibold text-white">{name}</span>
         </nav>
@@ -65,26 +90,26 @@ export function DestinationDetailHero({
           <div className="max-w-xl">
             <span
               className="hero-reveal-x rounded-md bg-badge-green px-3 py-1.5 text-[12px] font-extrabold tracking-wide text-white shadow"
-              style={{ '--hr-duration': '0.5s' } as React.CSSProperties}
+              style={{ "--hr-duration": "0.5s" } as React.CSSProperties}
             >
               {region}
             </span>
             <h1
               className="hero-reveal mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-[64px] lg:leading-none"
-              style={{ '--hr-y': '20px', '--hr-delay': '0.1s' } as React.CSSProperties}
+              style={{ "--hr-y": "20px", "--hr-delay": "0.1s" } as React.CSSProperties}
             >
               {name}
             </h1>
             <p
               className="hero-reveal mt-2 text-xl font-bold text-white sm:text-2xl lg:text-[30px]"
-              style={{ '--hr-delay': '0.2s' } as React.CSSProperties}
+              style={{ "--hr-delay": "0.2s" } as React.CSSProperties}
             >
               {tagline}
             </p>
 
             <div
               className="hero-reveal mt-8 flex flex-wrap gap-3"
-              style={{ '--hr-y': '20px', '--hr-delay': '0.4s' } as React.CSSProperties}
+              style={{ "--hr-y": "20px", "--hr-delay": "0.4s" } as React.CSSProperties}
             >
               {/* Live weather chip — shown first when coordinates are available */}
               {weather && (
@@ -97,8 +122,19 @@ export function DestinationDetailHero({
                 </div>
               )}
               {stats.map((stat, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-card">
-                  <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-card"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 shrink-0 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d={stat.icon} />
                   </svg>
                   <div className="leading-tight">

@@ -1,0 +1,21 @@
+# Build output & caches
+.next/
+out/
+build/
+coverage/
+node_modules/
+
+# Generated files & lockfiles
+*.tsbuildinfo
+yarn.lock
+next-env.d.ts
+
+# Prisma local db & generated migrations (SQL is authored by Prisma)
+prisma/dev.db*
+prisma/migrations/
+
+# Static assets
+public/
+
+# Lighthouse CI reports
+.lighthouseci*

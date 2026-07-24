@@ -127,13 +127,27 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Start date</span>
-          <input type="date" value={trip.start} onChange={(e) => set("start", e.target.value, true)} className={inputCls} />
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+            Start date
+          </span>
+          <input
+            type="date"
+            value={trip.start}
+            onChange={(e) => set("start", e.target.value, true)}
+            className={inputCls}
+          />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">End date</span>
-          <input type="date" value={trip.end} onChange={(e) => set("end", e.target.value, true)} className={inputCls} />
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+            End date
+          </span>
+          <input
+            type="date"
+            value={trip.end}
+            onChange={(e) => set("end", e.target.value, true)}
+            className={inputCls}
+          />
         </label>
 
         <label className="block">
@@ -149,7 +163,9 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Children</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+            Children
+          </span>
           <input
             type="number"
             min={0}
@@ -161,14 +177,18 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
         </label>
 
         <label className="relative block">
-          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Category</span>
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+            Category
+          </span>
           <select
             value={trip.category}
             onChange={(e) => set("category", e.target.value, true)}
             className={`${inputCls} appearance-none pr-7`}
           >
             {CATEGORIES.map(([v, label]) => (
-              <option key={v} value={v}>{label}</option>
+              <option key={v} value={v}>
+                {label}
+              </option>
             ))}
           </select>
           <ChevronDown className="pointer-events-none absolute right-2 top-[30px] h-3.5 w-3.5 text-muted-foreground" />

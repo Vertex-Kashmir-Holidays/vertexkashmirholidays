@@ -1,7 +1,7 @@
 // src/components/campaign/CampaignMarquee.tsx
-'use client';
+"use client";
 
-import { parseMarqueeItem } from '@/lib/marqueeIcons';
+import { parseMarqueeItem } from "@/lib/marqueeIcons";
 
 interface CampaignMarqueeProps {
   items: string[];

@@ -1,4 +1,4 @@
-// src/app/(public)/campaign/page.tsx
+// src/app/(public)/adventures/page.tsx
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
@@ -48,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Kashmir Campaigns & Seasonal Experiences',
     description:
       'Explore curated Kashmir campaigns from Vertex Kashmir Holidays — limited-time seasonal experiences, group departures and themed itineraries with exclusive offers and easy EMI options.',
-    canonical: `${SITE_URL}/campaign`,
+    canonical: `${SITE_URL}/adventures`,
   });
 }
 
@@ -90,13 +90,13 @@ export default async function CampaignsPage() {
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: 'Home', url: SITE_URL },
-    { name: 'Campaigns', url: `${SITE_URL}/campaign` },
+    { name: 'Campaigns', url: `${SITE_URL}/adventures` },
   ]);
 
   const campaignsJsonLd = buildItemList(
     campaigns.map((c) => ({
       name: c.name,
-      url: `${SITE_URL}/campaign/${c.slug}`,
+      url: `${SITE_URL}/adventures/${c.slug}`,
     })),
     'Kashmir Campaigns',
   );

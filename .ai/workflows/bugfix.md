@@ -16,7 +16,6 @@ Last Updated: 2026-07-17
 
 Bug fixing prioritizes restoring correct behaviour while minimizing risk — the fix should be the smallest change that resolves the root cause, not an opportunity to improve unrelated code.
 
-
 **Production Incident**
 If the issue affects the live production environment and requires immediate recovery, follow `hotfix.md` instead of this workflow.
 This workflow is intended for standard defect resolution where investigation, verification, and documentation can be completed before deployment.

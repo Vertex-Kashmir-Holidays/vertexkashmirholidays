@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  CheckCircle2,
-  Mail,
-  FileText,
-  ArrowRight,
-} from "lucide-react";
+import { CheckCircle2, Mail, FileText, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { BookingCompletedEvent } from "@/components/booking/BookingCompletedEvent";
 import { ShareTripButton } from "@/components/booking/ShareTripButton";
 import { SITE_URL } from "@/lib/seo";
@@ -61,7 +56,10 @@ export default async function BookingSuccessPage({
 
   const ref = booking ? formatRef(booking.id) : "VKH-CONFIRMED";
   const nights = booking?.tour ? booking.tour.duration - 1 : 0;
-  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(/\D/g, "");
+  const whatsappNumber = (settings?.whatsapp ?? settings?.sitePhone ?? "919419000000").replace(
+    /\D/g,
+    "",
+  );
   const waText = encodeURIComponent(
     `Hi! I just booked "${booking?.tour?.title ?? "a trip"}" with Vertex Kashmir Holidays. Booking ref: ${ref}`,
   );
@@ -85,8 +83,18 @@ export default async function BookingSuccessPage({
   ];
 
   const ACTIONS = [
-    { Icon: Mail, label: "Confirmation Email", sub: "Sent to your inbox", href: null as string | null },
-    { Icon: FileText, label: "Trip Documents", sub: "Ready in 24 hrs", href: null as string | null },
+    {
+      Icon: Mail,
+      label: "Confirmation Email",
+      sub: "Sent to your inbox",
+      href: null as string | null,
+    },
+    {
+      Icon: FileText,
+      label: "Trip Documents",
+      sub: "Ready in 24 hrs",
+      href: null as string | null,
+    },
     {
       Icon: ({ className }: { className?: string }) => (
         <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -239,7 +247,10 @@ export default async function BookingSuccessPage({
 
         {/* ── CTA ──────────────────────────────────────────────────────── */}
         <div className="text-center space-y-3">
-          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+          <Button
+            asChild
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+          >
             <Link href="/tours">
               Explore More Packages
               <ArrowRight className="ml-2 w-4 h-4" />

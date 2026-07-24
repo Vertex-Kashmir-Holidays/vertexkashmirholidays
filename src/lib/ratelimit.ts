@@ -9,6 +9,7 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { env } from "@/lib/env";
 
 export type Duration = `${number} ${"s" | "m" | "h" | "d"}`;
 
@@ -17,9 +18,7 @@ export interface RateLimitResult {
   remaining: number;
 }
 
-const hasRedis = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-);
+const hasRedis = Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN);
 
 const redis = hasRedis ? Redis.fromEnv() : null;
 

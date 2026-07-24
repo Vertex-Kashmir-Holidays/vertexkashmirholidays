@@ -1,21 +1,23 @@
 // src/components/layout/Navbar.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { Logo } from '@/components/brand/Logo';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { useSiteSettings, useWhatsAppLink } from '@/components/providers/SiteSettingsProvider';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, Menu, X, Home, ShoppingBag, MapPin, type LucideIcon } from 'lucide-react';
-import { WhatsAppIcon } from '@/components/icons/brand';
-import { trackWhatsappClick } from '@/lib/analytics';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
+import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Menu, X, Home, ShoppingBag, MapPin, type LucideIcon } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/brand";
+import { trackWhatsappClick } from "@/lib/analytics";
 
 export function Navbar() {
   const { siteName } = useSiteSettings();
   const wa = useWhatsAppLink();
-  const planTripHref = wa(`Hi ${siteName}! I'd like to plan my Kashmir trip. Please help me build a custom itinerary.`);
+  const planTripHref = wa(
+    `Hi ${siteName}! I'd like to plan my Kashmir trip. Please help me build a custom itinerary.`,
+  );
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Whether a sticky BannerStrip currently occupies the top of the viewport. The
@@ -25,18 +27,18 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Sync with the BannerStrip: seed from the DOM on mount (the strip may already
   // be rendered), then follow its show/dismiss events.
   useEffect(() => {
-    setStripVisible(!!document.getElementById('vk-strip'));
+    setStripVisible(!!document.getElementById("vk-strip"));
     const onStrip = (e: Event) =>
       setStripVisible(Boolean((e as CustomEvent<{ visible: boolean }>).detail?.visible));
-    window.addEventListener('vk-strip', onStrip);
-    return () => window.removeEventListener('vk-strip', onStrip);
+    window.addEventListener("vk-strip", onStrip);
+    return () => window.removeEventListener("vk-strip", onStrip);
   }, []);
 
   // Close mobile menu when route changes
@@ -45,29 +47,39 @@ export function Navbar() {
   }, [pathname]);
 
   const navLinks = [
-    { href: '/tours', label: 'Tours' },
-    { href: '/destinations', label: 'Destinations' },
-    { href: '/adventures', label: 'Adventures' },
-    { href: '/activities', label: 'Things To Do' },
-    { href: '/blog', label: 'Travel Stories' },
-    { href: '/reviews', label: 'Reviews' },
+    { href: "/tours", label: "Tours" },
+    { href: "/destinations", label: "Destinations" },
+    { href: "/adventures", label: "Adventures" },
+    { href: "/activities", label: "Things To Do" },
+    { href: "/blog", label: "Travel Stories" },
+    { href: "/reviews", label: "Reviews" },
   ];
 
   const bottomNavLinks: { href: string; label: string; Icon: LucideIcon }[] = [
-    { href: '/', label: 'Home', Icon: Home },
-    { href: '/tours', label: 'Tours', Icon: ShoppingBag },
-    { href: '/destinations', label: 'Destinations', Icon: MapPin },
+    { href: "/", label: "Home", Icon: Home },
+    { href: "/tours", label: "Tours", Icon: ShoppingBag },
+    { href: "/destinations", label: "Destinations", Icon: MapPin },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/') return pathname === '/';
+    if (path === "/") return pathname === "/";
     return pathname.startsWith(path);
   };
 
   // Pages that open with a full-bleed dark hero behind the navbar. Only on these
   // does the un-scrolled navbar go transparent with a white lockup; everywhere
   // else (booking, legal, etc.) it keeps the cream glass + ink/theme-aware logo.
-  const heroRoutes = ['/', '/tours', '/adventures', '/destinations', '/activities', '/about', '/blog', '/contact', '/reviews'];
+  const heroRoutes = [
+    "/",
+    "/tours",
+    "/adventures",
+    "/destinations",
+    "/activities",
+    "/about",
+    "/blog",
+    "/contact",
+    "/reviews",
+  ];
   const hasHero =
     heroRoutes.includes(pathname) ||
     /^\/(tours|destinations|blog|activities)\/[^/]+$/.test(pathname);
@@ -82,22 +94,22 @@ export function Navbar() {
     <>
       <header
         className={`fixed inset-x-0 z-50 px-3 transition-all duration-500 sm:px-4 lg:px-0 ${
-          stripVisible ? 'top-8' : 'top-0'
+          stripVisible ? "top-8" : "top-0"
         }`}
       >
         <nav
-          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-5 lg:px-6 ${
-            overHero ? 'bg-transparent' : 'nav-pill-solid'
+          className={`mx-auto mt-4 flex max-w-[1300px] items-center justify-between rounded-2xl px-4 py-3 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-[250ms] ease-brand motion-reduce:transition-none sm:px-5 lg:px-6 ${
+            overHero ? "bg-transparent" : "nav-pill-solid"
           }`}
         >
           {/* Logo — white lockup over the hero photo (transparent state), then
               theme-aware (navy on cream / white in dark) once the cream nav lands. */}
-          <Logo variant={overHero ? 'light' : 'auto'} className="h-8" />
+          <Logo variant={overHero ? "light" : "auto"} className="h-8" />
 
           {/* Desktop Navigation — light-on-dark over the hero, ink once landed. */}
           <ul
             className={`hidden items-center gap-7 text-[16px] font-medium lg:flex ${
-              overHero ? 'text-white/80' : 'text-foreground/75'
+              overHero ? "text-white/80" : "text-foreground/75"
             }`}
           >
             {navLinks.map((link) => (
@@ -107,18 +119,18 @@ export function Navbar() {
                   className={`relative transition ${
                     overHero
                       ? isActive(link.href)
-                        ? 'text-white'
-                        : 'text-white/80 hover:text-white'
+                        ? "text-white"
+                        : "text-white/80 hover:text-white"
                       : isActive(link.href)
-                        ? 'text-foreground'
-                        : 'text-foreground/75 hover:text-foreground'
+                        ? "text-foreground"
+                        : "text-foreground/75 hover:text-foreground"
                   }`}
                 >
                   {link.label}
                   {isActive(link.href) && (
                     <span
                       className={`absolute -bottom-1.5 left-0 h-[2px] w-full rounded-full ${
-                        overHero ? 'bg-white' : 'bg-primary'
+                        overHero ? "bg-white" : "bg-primary"
                       }`}
                     />
                   )}
@@ -129,19 +141,19 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 lg:flex">
-            <ThemeToggle 
+            <ThemeToggle
               className={`grid h-9 w-9 place-items-center rounded-full border transition ${
                 overHero
-                  ? 'border-white/30 text-white hover:bg-white hover:text-foreground'
-                  : 'border-foreground/20 text-foreground hover:bg-foreground hover:text-background'
+                  ? "border-white/30 text-white hover:bg-white hover:text-foreground"
+                  : "border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
               }`}
             />
             <Link
               href="/login"
               className={`grid h-9 w-9 place-items-center rounded-full border transition ${
                 overHero
-                  ? 'border-white/30 text-white hover:bg-white hover:text-foreground'
-                  : 'border-foreground/20 text-foreground hover:bg-foreground hover:text-background'
+                  ? "border-white/30 text-white hover:bg-white hover:text-foreground"
+                  : "border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
               }`}
             >
               <User className="h-4 w-4" strokeWidth={2} />
@@ -149,7 +161,7 @@ export function Navbar() {
             <Link
               href={planTripHref}
               target="_blank"
-              onClick={() => trackWhatsappClick('header')}
+              onClick={() => trackWhatsappClick("header")}
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
             >
@@ -167,37 +179,39 @@ export function Navbar() {
 
       {/* Mobile Bottom Tab Bar — hidden on tour detail pages where the sticky
           Book / Inquiry CTA bar takes over the bottom of the screen. */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg lg:hidden ${isTourDetail ? 'hidden' : ''}`}>
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg lg:hidden ${isTourDetail ? "hidden" : ""}`}
+      >
         <div className="flex items-center justify-around py-2">
           {bottomNavLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
-                isActive(link.href) ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
+                isActive(link.href) ? "text-primary" : "text-foreground/60 hover:text-foreground"
               }`}
             >
               <link.Icon className="h-5 w-5" strokeWidth={1.8} />
               <span className="text-[10px] font-medium">{link.label}</span>
             </Link>
           ))}
-          
+
           {/* User Icon - Added before burger menu */}
           <Link
             href="/login"
             className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
-              pathname === '/login' ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
+              pathname === "/login" ? "text-primary" : "text-foreground/60 hover:text-foreground"
             }`}
           >
             <User className="h-5 w-5" strokeWidth={1.8} />
             <span className="text-[10px] font-medium">Profile</span>
           </Link>
-          
+
           {/* Burger Menu - Opens overlay */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 transition ${
-              mobileMenuOpen ? 'text-primary' : 'text-foreground/60 hover:text-foreground'
+              mobileMenuOpen ? "text-primary" : "text-foreground/60 hover:text-foreground"
             }`}
             aria-label="Toggle menu"
           >
@@ -215,47 +229,47 @@ export function Navbar() {
       <motion.div
         initial={{ scale: 0, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 260, 
+        transition={{
+          type: "spring",
+          stiffness: 260,
           damping: 20,
-          delay: 0.5
+          delay: 0.5,
         }}
         className="fixed bottom-20 right-4 z-50 lg:hidden"
       >
         <motion.div
-          animate={{ 
+          animate={{
             y: [0, -8, 0],
           }}
-          transition={{ 
+          transition={{
             duration: 2,
             repeat: Infinity,
             repeatType: "reverse",
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         >
           <Link
             href={planTripHref}
             target="_blank"
-            onClick={() => trackWhatsappClick('header_mobile')}
+            onClick={() => trackWhatsappClick("header_mobile")}
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full bg-primary px-5 py-3 shadow-xl ring-inner transition hover:brightness-110"
             style={{
-              boxShadow: '0 4px 20px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1) inset'
+              boxShadow: "0 4px 20px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1) inset",
             }}
           >
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ 
+              transition={{
                 duration: 8,
                 repeat: Infinity,
-                ease: "linear"
+                ease: "linear",
               }}
             >
               <WhatsAppIcon className="h-5 w-5" />
             </motion.div>
             <span className="text-sm font-bold text-primary-foreground">Plan My Trip</span>
-            
+
             {/* Pulse ring animation */}
             <motion.span
               className="absolute inset-0 rounded-full"
@@ -269,8 +283,8 @@ export function Navbar() {
                 ease: "easeInOut",
               }}
               style={{
-                border: '2px solid hsl(var(--primary))',
-                borderRadius: '9999px',
+                border: "2px solid hsl(var(--primary))",
+                borderRadius: "9999px",
               }}
             />
           </Link>
@@ -304,7 +318,7 @@ export function Navbar() {
                   <Link
                     href={link.href}
                     className={`text-[18px] font-medium transition hover:text-primary ${
-                      isActive(link.href) ? 'text-primary' : 'text-foreground/80'
+                      isActive(link.href) ? "text-primary" : "text-foreground/80"
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >

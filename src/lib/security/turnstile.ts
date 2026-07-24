@@ -5,19 +5,20 @@
 // production, set the secret to enforce. The client widget is likewise only
 // rendered when NEXT_PUBLIC_TURNSTILE_SITE_KEY is present.
 
-const VERIFY_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+import { env } from "@/lib/env";
+
+const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 /** True when the secret is configured and verification will be enforced. */
 export function turnstileEnforced(): boolean {
-  return Boolean(process.env.TURNSTILE_SECRET_KEY);
+  return Boolean(env.TURNSTILE_SECRET_KEY);
 }
 
 export async function verifyTurnstile(
   token: string | undefined | null,
   ip?: string,
 ): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret = env.TURNSTILE_SECRET_KEY;
   // Not configured → don't block (dev/preview). A one-time warn aids diagnosis.
   if (!secret) {
     if (!warned) {

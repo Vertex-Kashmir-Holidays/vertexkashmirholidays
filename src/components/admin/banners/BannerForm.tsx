@@ -57,7 +57,13 @@ const inputClass =
 const labelClass = "block text-xs font-semibold text-foreground";
 const hintClass = "text-[12px] text-muted-foreground";
 
-export function BannerForm({ initial, canEdit }: { initial: BannerFormData | null; canEdit: boolean }) {
+export function BannerForm({
+  initial,
+  canEdit,
+}: {
+  initial: BannerFormData | null;
+  canEdit: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -112,7 +118,11 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
           body: JSON.stringify(payload),
         });
         if (!res.ok) {
-          toast.error(res.status === 403 ? "You don't have permission to do that." : "Save failed. Please try again.");
+          toast.error(
+            res.status === 403
+              ? "You don't have permission to do that."
+              : "Save failed. Please try again.",
+          );
           return;
         }
         toast.success(initial ? "Banner updated." : "Banner created.");
@@ -188,7 +198,9 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
             aria-required="true"
             placeholder="Monsoon Sale — 20% Off all Kashmir tours"
           />
-          <p className={hintClass}>Numbers like “20% Off” are automatically highlighted in gold on the strip.</p>
+          <p className={hintClass}>
+            Numbers like “20% Off” are automatically highlighted in gold on the strip.
+          </p>
         </div>
 
         {/* Body */}
@@ -202,7 +214,11 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
             value={body}
             onChange={(e) => setBody(e.target.value)}
             disabled={!canEdit}
-            placeholder={type === "STRIP" ? "Short supporting line (hidden on mobile)" : "A sentence or two describing the offer"}
+            placeholder={
+              type === "STRIP"
+                ? "Short supporting line (hidden on mobile)"
+                : "A sentence or two describing the offer"
+            }
           />
         </div>
 
@@ -212,13 +228,27 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
             <label htmlFor="bf-cta-label" className={labelClass}>
               CTA Label
             </label>
-            <input id="bf-cta-label" className={inputClass} value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} disabled={!canEdit} placeholder="Book now" />
+            <input
+              id="bf-cta-label"
+              className={inputClass}
+              value={ctaLabel}
+              onChange={(e) => setCtaLabel(e.target.value)}
+              disabled={!canEdit}
+              placeholder="Book now"
+            />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="bf-cta-url" className={labelClass}>
               CTA URL
             </label>
-            <input id="bf-cta-url" className={inputClass} value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} disabled={!canEdit} placeholder="/tours" />
+            <input
+              id="bf-cta-url"
+              className={inputClass}
+              value={ctaUrl}
+              onChange={(e) => setCtaUrl(e.target.value)}
+              disabled={!canEdit}
+              placeholder="/tours"
+            />
           </div>
         </div>
 
@@ -244,7 +274,9 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
               ) : (
                 <input className={inputClass} value={imageMobileUrl} readOnly disabled />
               )}
-              <p className={hintClass}>Optional. Portrait-friendly crop for phones; falls back to desktop.</p>
+              <p className={hintClass}>
+                Optional. Portrait-friendly crop for phones; falls back to desktop.
+              </p>
             </div>
           </div>
         )}
@@ -283,7 +315,14 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
             <label htmlFor="bf-sort" className={labelClass}>
               Sort order
             </label>
-            <input id="bf-sort" type="number" className={inputClass} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} disabled={!canEdit} />
+            <input
+              id="bf-sort"
+              type="number"
+              className={inputClass}
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              disabled={!canEdit}
+            />
             <p className={hintClass}>Lower shows first. The lowest active strip wins.</p>
           </div>
           <div className="flex items-start pt-6">
@@ -306,13 +345,27 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
             <label htmlFor="bf-start" className={labelClass}>
               Start date
             </label>
-            <input id="bf-start" type="date" className={inputClass} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} disabled={!canEdit} />
+            <input
+              id="bf-start"
+              type="date"
+              className={inputClass}
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              disabled={!canEdit}
+            />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="bf-end" className={labelClass}>
               End date
             </label>
-            <input id="bf-end" type="date" className={inputClass} value={endsAt} onChange={(e) => setEndsAt(e.target.value)} disabled={!canEdit} />
+            <input
+              id="bf-end"
+              type="date"
+              className={inputClass}
+              value={endsAt}
+              onChange={(e) => setEndsAt(e.target.value)}
+              disabled={!canEdit}
+            />
           </div>
         </div>
 
@@ -348,9 +401,15 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
       >
         <div className="space-y-3 rounded-2xl border border-border bg-card p-3 shadow-sm sm:p-4">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Live preview</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Live preview
+            </p>
             {/* Desktop / mobile preview toggle. */}
-            <div role="tablist" aria-label="Preview device" className="flex items-center gap-0.5 rounded-lg border border-border bg-background p-0.5">
+            <div
+              role="tablist"
+              aria-label="Preview device"
+              className="flex items-center gap-0.5 rounded-lg border border-border bg-background p-0.5"
+            >
               {(["desktop", "mobile"] as const).map((d) => {
                 const Icon = d === "desktop" ? Monitor : Smartphone;
                 const active = device === d;
@@ -364,7 +423,9 @@ export function BannerForm({ initial, canEdit }: { initial: BannerFormData | nul
                     onClick={() => setDevice(d)}
                     className={cn(
                       "grid h-8 w-10 place-items-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground",
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />

@@ -45,7 +45,7 @@ export interface CampaignBatch {
   date: string;
   seats: number;
   price: string;
-  status: 'filling' | 'open' | 'sold';
+  status: "filling" | "open" | "sold";
 }
 
 export interface CampaignTestimonial {
@@ -67,7 +67,7 @@ export interface CampaignData {
   slug: string;
   accent: string;
   accent2: string;
-  particles: 'snow' | 'embers';
+  particles: "snow" | "embers";
   name: string;
   badge: string | null;
   titleHtml: string | null;

@@ -1,7 +1,7 @@
 // src/components/campaign/CampaignStickyMobileCTA.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 
 interface CampaignStickyMobileCTAProps {
   price: string;

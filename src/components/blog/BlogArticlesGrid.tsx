@@ -1,12 +1,13 @@
 // src/components/blog/BlogArticlesGrid.tsx
-'use client';
+"use client";
 
-import { motion, type Variants } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ChevronDown, Bookmark } from 'lucide-react';
-import { imgSrc } from '@/lib/placeholder';
-import type { BlogArticleData } from '@/types/blog';
+import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronDown, Bookmark } from "lucide-react";
+import { imgSrc } from "@/lib/placeholder";
+import type { BlogArticleData } from "@/types/blog";
 
 interface BlogArticlesGridProps {
   articles: BlogArticleData[];
@@ -15,13 +16,13 @@ interface BlogArticlesGridProps {
 // Saturated category badges read well on both themes, so they stay fixed —
 // except the brand category which uses the theme primary.
 const badgeColor: Record<string, string> = {
-  Kashmir: 'bg-primary',
-  'Travel Tips': 'bg-sky-600',
-  Honeymoon: 'bg-rose-500',
-  Adventure: 'bg-emerald-700',
-  Food: 'bg-amber-600',
-  Culture: 'bg-indigo-500',
-  News: 'bg-teal-600',
+  Kashmir: "bg-primary",
+  "Travel Tips": "bg-sky-600",
+  Honeymoon: "bg-rose-500",
+  Adventure: "bg-emerald-700",
+  Food: "bg-amber-600",
+  Culture: "bg-indigo-500",
+  News: "bg-teal-600",
 };
 
 export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
@@ -40,7 +41,7 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.5, ease: EASE_BRAND },
     },
   };
 
@@ -63,7 +64,7 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
           // stagger on every page/filter change. Without this, framer-motion's
           // once-fired whileInView never re-orchestrates the swapped-in items,
           // leaving them stuck at opacity 0 (blank) after the first change.
-          key={articles.map((a) => a.id).join(',')}
+          key={articles.map((a) => a.id).join(",")}
           className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
@@ -85,7 +86,9 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
                     className="object-cover transition duration-500 group-hover:scale-105"
                   />
                   {article.category && (
-                    <span className={`absolute bottom-2.5 left-2.5 rounded ${badgeColor[article.category] ?? 'bg-primary'} px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white`}>
+                    <span
+                      className={`absolute bottom-2.5 left-2.5 rounded ${badgeColor[article.category] ?? "bg-primary"} px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white`}
+                    >
                       {article.category.toUpperCase()}
                     </span>
                   )}
@@ -98,7 +101,7 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
                     <span>
                       {[article.dateLabel, article.readTime ? `${article.readTime} min read` : null]
                         .filter(Boolean)
-                        .join('  ·  ')}
+                        .join("  ·  ")}
                     </span>
                     <button
                       aria-label="Bookmark"

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/atoms/button";
 import { RefreshCw, Home } from "lucide-react";
 
 interface ErrorProps {
@@ -18,10 +18,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
 
   return (
     <div className="relative min-h-screen bg-background flex flex-col items-center justify-center px-4 text-foreground">
-      <div
-        aria-hidden
-        className="absolute inset-0 overflow-hidden pointer-events-none"
-      >
+      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gold/5 blur-3xl" />
       </div>
 
@@ -33,13 +30,11 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         </p>
 
         <h1 className="h-display text-5xl font-bold mb-4">
-          Unexpected{" "}
-          <span className="grad-text-warm">detour.</span>
+          Unexpected <span className="grad-text-warm">detour.</span>
         </h1>
 
         <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
-          An error occurred while loading this page. Our team has been
-          notified. Please try again.
+          An error occurred while loading this page. Our team has been notified. Please try again.
         </p>
 
         {process.env.NODE_ENV === "development" && error.message && (

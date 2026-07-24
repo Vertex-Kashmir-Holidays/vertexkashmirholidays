@@ -6,6 +6,7 @@ import { requiresMfa } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { decryptMfaSecret } from "@/lib/security/mfaCrypto";
 import { verifyTotp } from "@/lib/security/mfaTotp";
+import { TOTP_CODE_REGEX } from "@/lib/security/mfaValidation";
 import { rateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,10 @@ export async function POST(req: NextRequest) {
 
   const limit = await rateLimit(`mfa-verify:${guard.user.id}`, 10, "10 m");
   if (!limit.success) {
-    return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many attempts. Please try again later." },
+      { status: 429 },
+    );
   }
 
   const body = await req.json().catch(() => null);
@@ -49,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   const input = parsed.data.code.trim();
 
-  if (/^\d{6}$/.test(input)) {
+  if (TOTP_CODE_REGEX.test(input)) {
     const secretBase32 = decryptMfaSecret(user.mfaSecret);
     if (verifyTotp(secretBase32, input, user.email)) {
       return NextResponse.json({ success: true });

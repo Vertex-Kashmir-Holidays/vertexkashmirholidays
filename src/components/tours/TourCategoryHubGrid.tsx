@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion, type Variants } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-import { Tilt3D } from '@/components/ui/3DTilt';
-import { imgSrc } from '@/lib/placeholder';
+import Link from "next/link";
+import Image from "next/image";
+import { motion, type Variants } from "framer-motion";
+import { EASE_BRAND } from "@/lib/motion";
+import { ArrowRight } from "lucide-react";
+import { Tilt3D } from "@/components/ui/effects/3DTilt";
+import { imgSrc } from "@/lib/placeholder";
 
 export interface TourCategoryCardData {
   slug: string;
@@ -27,7 +28,7 @@ const containerVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_BRAND } },
 };
 
 // Dynamic grid for the /tours/category hub — renders whatever categories
@@ -42,12 +43,16 @@ export function TourCategoryHubGrid({ categories }: TourCategoryHubGridProps) {
       variants={containerVariants}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: true, margin: "-80px" }}
     >
       {categories.map((c) => (
         <motion.div key={c.slug} variants={itemVariants}>
           <Tilt3D intensity={6}>
-            <Link href={`/tours/category/${c.slug}`} aria-label={`Explore ${c.pageTitle}`} className="block h-full">
+            <Link
+              href={`/tours/category/${c.slug}`}
+              aria-label={`Explore ${c.pageTitle}`}
+              className="block h-full"
+            >
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card">
                 <div className="relative h-44 overflow-hidden">
                   <Image
@@ -58,7 +63,7 @@ export function TourCategoryHubGrid({ categories }: TourCategoryHubGridProps) {
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">
-                    {c.tourCount} {c.tourCount === 1 ? 'Tour' : 'Tours'}
+                    {c.tourCount} {c.tourCount === 1 ? "Tour" : "Tours"}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col p-5">
@@ -71,7 +76,10 @@ export function TourCategoryHubGrid({ categories }: TourCategoryHubGridProps) {
                   </p>
                   <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-primary">
                     Explore Category
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.4} />
+                    <ArrowRight
+                      className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                      strokeWidth={2.4}
+                    />
                   </span>
                 </div>
               </article>
