@@ -12,9 +12,14 @@ If you are assisting with development in this repository:
 2. context/project-overview.md
 3. context/business-rules.md
 4. context/tech-stack.md
-5. instructions/coding-standards.md
-6. instructions/architecture.md
-7. instructions/git-workflow.md
+5. context/architecture-overview.md
+6. instructions/coding-standards.md
+7. instructions/architecture.md
+8. instructions/git-workflow.md
+
+For the *why* behind the system's major decisions, read
+`context/architecture-overview.md` — it is the single starting document, and it
+links to the full decision log in `adr/` (process: `adr/README.md`).
 
 ---
 
