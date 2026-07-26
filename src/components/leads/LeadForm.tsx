@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
@@ -385,7 +385,7 @@ export function LeadForm({
             {avatars.length > 0 && (
               <div className="flex -space-x-2">
                 {avatars.slice(0, 4).map((a, i) => (
-                  <Image
+                  <SafeImage
                     key={i}
                     width={28}
                     height={28}

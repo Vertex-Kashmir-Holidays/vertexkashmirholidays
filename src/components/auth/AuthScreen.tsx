@@ -17,6 +17,9 @@ export function AuthScreen({ nonce }: AuthScreenProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-background font-sans text-foreground antialiased">
       <div className="mx-auto w-full max-w-[1300px] px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
+        {/* Always in the DOM regardless of viewport — the visible headline in
+            AuthImagePanel is decorative and hidden below `lg:`. */}
+        <h1 className="sr-only">Sign In or Create an Account — Vertex Kashmir Holidays</h1>
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-card shadow-card sm:rounded-3xl lg:grid-cols-[1fr_1.05fr]">
           <AuthImagePanel view={view} />
           <AuthFormPanel view={view} onViewChange={setView} nonce={nonce} />

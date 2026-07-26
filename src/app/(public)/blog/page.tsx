@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { BlogPageClient } from "@/components/blog/BlogPageClient";
+import { BlogHero } from "@/components/blog/BlogHero";
 import { TrustSection } from "@/components/common/TrustSection";
 
 export const revalidate = 600;
@@ -55,28 +56,36 @@ export default async function BlogPage() {
     { name: "Blog", url: `${SITE_URL}/blog` },
   ]);
 
+  const blogContent = {
+    heroKicker: content?.heroKicker ?? null,
+    heroTitle: content?.heroTitle ?? null,
+    heroSubtitle: content?.heroSubtitle ?? null,
+    heroImage: content?.heroImage ?? null,
+    heroImageMobile: content?.heroImageMobile ?? null,
+    heroSearchPlaceholder: content?.heroSearchPlaceholder ?? null,
+    aboutTitle: content?.aboutTitle ?? null,
+    aboutText: content?.aboutText ?? null,
+    aboutCtaLabel: content?.aboutCtaLabel ?? null,
+    aboutCtaHref: content?.aboutCtaHref ?? null,
+    newsletterTitle: content?.newsletterTitle ?? null,
+    newsletterText: content?.newsletterText ?? null,
+  };
+
   return (
     <>
       <JsonLd data={breadcrumbJsonLd} />
       {/* BlogPageClient reads ?category= itself via useSearchParams() — that
         hook requires a Suspense boundary on a statically-rendered page (see
-        BlogPageClient.tsx for why this moved off the server). */}
-      <Suspense>
+        BlogPageClient.tsx for why this moved off the server). Without a
+        fallback, the statically-generated HTML shell contains none of
+        BlogPageClient's content until client hydration — including its <h1>,
+        which is otherwise invisible to non-JS crawlers. The fallback renders
+        the same server-known hero content (search is a no-op here; the real
+        interactive version takes over the instant JS hydrates) so the H1 is
+        always present in the served HTML. */}
+      <Suspense fallback={<BlogHero content={blogContent} />}>
         <BlogPageClient
-          content={{
-            heroKicker: content?.heroKicker ?? null,
-            heroTitle: content?.heroTitle ?? null,
-            heroSubtitle: content?.heroSubtitle ?? null,
-            heroImage: content?.heroImage ?? null,
-            heroImageMobile: content?.heroImageMobile ?? null,
-            heroSearchPlaceholder: content?.heroSearchPlaceholder ?? null,
-            aboutTitle: content?.aboutTitle ?? null,
-            aboutText: content?.aboutText ?? null,
-            aboutCtaLabel: content?.aboutCtaLabel ?? null,
-            aboutCtaHref: content?.aboutCtaHref ?? null,
-            newsletterTitle: content?.newsletterTitle ?? null,
-            newsletterText: content?.newsletterText ?? null,
-          }}
+          content={blogContent}
           featured={
             featuredPost
               ? {

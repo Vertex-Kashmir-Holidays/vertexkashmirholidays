@@ -431,6 +431,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
               <TourDetailsAccommodation
                 accommodation={accommodation}
                 image={tour.accommodationImage ?? tour.coverImage ?? undefined}
+                tourTitle={tour.title}
               />
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { renderAccents } from "@/lib/accents";
 import type { SectionHeading, TestimonialData } from "@/types/home";
@@ -86,9 +86,9 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
             </a>
             <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
-                <Image
+                <SafeImage
                   src={t.avatar}
-                  alt=""
+                  alt={t.name}
                   width={40}
                   height={40}
                   className="h-10 w-10 rounded-full border border-border object-cover"

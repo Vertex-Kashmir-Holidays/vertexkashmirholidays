@@ -5,6 +5,20 @@ export const SITE_URL = NEXT_PUBLIC_SITE_URL ?? "https://vertexkashmirholidays.c
 export const SITE_NAME = "Vertex Kashmir Holidays";
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/brand/social/vertex-og-1200x630.png`;
 
+// Total <title> budget, including the " | Vertex Kashmir Holidays" suffix the
+// root layout's title.template appends to every page.
+const TITLE_SUFFIX = ` | ${SITE_NAME}`;
+const MAX_TITLE_LENGTH = 60;
+const MAX_DESCRIPTION_LENGTH = 160;
+
+// Cuts at the last word boundary within the budget rather than mid-word.
+function truncateForSeo(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+  const cut = str.slice(0, maxLength - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+}
+
 interface BuildMetadataOptions {
   title: string;
   description: string;
@@ -39,9 +53,14 @@ export function buildMetadata({
   const socialTitle = ogTitle ?? title;
   const socialDescription = ogDescription ?? description;
 
+  // <title>/<meta description> are length-capped for SEO; OG/Twitter previews
+  // keep the full, untruncated copy since they have their own conventions.
+  const finalTitle = truncateForSeo(title, MAX_TITLE_LENGTH - TITLE_SUFFIX.length);
+  const finalDescription = truncateForSeo(description, MAX_DESCRIPTION_LENGTH);
+
   return {
-    title,
-    description,
+    title: finalTitle,
+    description: finalDescription,
     ...(canonical ? { alternates: { canonical } } : {}),
     ...(noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {

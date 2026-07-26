@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { customerBookingWhere } from "@/lib/account/bookingScope";
 
-export const metadata: Metadata = { title: "Payments — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "Payments" };
 export const dynamic = "force-dynamic";
 
 const inr = new Intl.NumberFormat("en-IN", {

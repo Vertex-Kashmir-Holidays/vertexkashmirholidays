@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { ForceChangePasswordForm } from "@/components/account/ForceChangePasswordForm";
 
-export const metadata: Metadata = { title: "Set your password — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "Set your password" };
 export const dynamic = "force-dynamic";
 
 export default async function ChangePasswordPage() {

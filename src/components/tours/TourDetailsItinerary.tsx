@@ -117,7 +117,7 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                       <div className="relative h-48 w-full overflow-hidden rounded-lg md:h-auto md:min-h-[160px]">
                         <Image
                           src={imgSrc(day.image)}
-                          alt=""
+                          alt={day.title}
                           fill
                           sizes="(max-width: 768px) 100vw, 40vw"
                           className="object-cover"

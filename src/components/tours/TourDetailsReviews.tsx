@@ -57,7 +57,7 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
             <div className="flex items-start gap-3.5">
               <Image
                 src={imgSrc(review.avatar)}
-                alt=""
+                alt={review.name}
                 width={48}
                 height={48}
                 className="h-12 w-12 shrink-0 rounded-full object-cover"

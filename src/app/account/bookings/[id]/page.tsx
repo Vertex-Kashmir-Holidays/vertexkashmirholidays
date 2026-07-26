@@ -23,7 +23,7 @@ import {
   type ServiceKind,
 } from "@/lib/bookings/serviceDisplay";
 
-export const metadata: Metadata = { title: "Booking Details — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "Booking Details" };
 export const dynamic = "force-dynamic";
 
 const inr = new Intl.NumberFormat("en-IN", {

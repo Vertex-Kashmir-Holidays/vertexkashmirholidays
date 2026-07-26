@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return buildMetadata({
     title: job.metaTitle ?? `${job.title} — Careers`,
-    description: job.metaDesc ?? job.shortDescription,
+    description: job.metaDesc ?? `${job.shortDescription} — Join our team at Vertex Kashmir Holidays.`,
     canonical: `${SITE_URL}/careers/${slug}`,
     ogImage: job.ogImage ?? null,
   });

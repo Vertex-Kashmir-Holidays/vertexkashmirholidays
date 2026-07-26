@@ -10,7 +10,7 @@ import { ShareTripButton } from "@/components/booking/ShareTripButton";
 import { SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Booking Confirmed! — Vertex Kashmir Holidays",
+  title: "Booking Confirmed!",
   robots: { index: false },
 };
 

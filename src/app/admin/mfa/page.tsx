@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { MfaEnrollForm } from "@/components/admin/mfa/MfaEnrollForm";
 import { MfaChallengeForm } from "@/components/admin/mfa/MfaChallengeForm";
 
-export const metadata: Metadata = { title: "Two-factor authentication — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "Two-factor authentication" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminMfaPage() {

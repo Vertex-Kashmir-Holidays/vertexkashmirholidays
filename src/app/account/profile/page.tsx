@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/account/ProfileForm";
 
-export const metadata: Metadata = { title: "Profile — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "Profile" };
 export const dynamic = "force-dynamic";
 
 export default async function AccountProfilePage() {

@@ -66,8 +66,11 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
               {view === "login" ? "Welcome back!" : "Join our family"}
             </motion.p>
           </AnimatePresence>
+          {/* Decorative marketing copy, not the page's semantic heading — this
+              panel is hidden below `lg:`, so the real <h1> lives in
+              AuthScreen where it's always in the DOM. */}
           <AnimatePresence mode="wait">
-            <motion.h1
+            <motion.p
               key={view}
               className="mt-3 font-display text-[38px] font-bold leading-[1.18] text-white"
               initial={{ opacity: 0, y: 20 }}
@@ -78,7 +81,7 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
               {view === "login"
                 ? "Let's continue your Kashmir journey"
                 : "Let's start your Kashmir adventure"}
-            </motion.h1>
+            </motion.p>
           </AnimatePresence>
           <p className="mt-5 text-[16px] leading-relaxed text-white/85">
             Handcrafted trips. Honest pricing.
