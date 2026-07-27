@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import { Star } from "lucide-react";
 import type { CampaignTestimonial } from "@/types/campaign";
 
@@ -53,9 +53,9 @@ export function CampaignTestimonials({ testimonials }: CampaignTestimonialsProps
             </p>
             <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
               {testimonial.image && (
-                <Image
+                <SafeImage
                   src={testimonial.image}
-                  alt=""
+                  alt={testimonial.name}
                   width={40}
                   height={40}
                   className="h-10 w-10 rounded-full border border-border object-cover"

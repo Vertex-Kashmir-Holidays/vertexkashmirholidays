@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { REVIEWABLE_BOOKING_STATUSES } from "@/lib/reviews";
 import { AccountReviews } from "@/components/account/AccountReviews";
 
-export const metadata: Metadata = { title: "My Reviews — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "My Reviews" };
 export const dynamic = "force-dynamic";
 
 export default async function AccountReviewsPage() {

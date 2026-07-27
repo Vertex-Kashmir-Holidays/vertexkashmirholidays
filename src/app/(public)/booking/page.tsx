@@ -9,7 +9,7 @@ import { BookingForm } from "@/components/booking/BookingForm";
 import { parseJson } from "@/lib/tours/content";
 
 export const metadata: Metadata = {
-  title: "Complete Your Booking — Vertex Kashmir Holidays",
+  title: "Complete Your Booking",
   robots: { index: false },
 };
 

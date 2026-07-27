@@ -18,7 +18,7 @@ const EMPLOYMENT_LABELS: Record<string, string> = {
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
-    title: "Careers at Vertex Kashmir Holidays",
+    title: "Careers",
     description:
       "Explore current job openings at Vertex Kashmir Holidays and join our team building unforgettable Kashmir travel experiences.",
     canonical: `${SITE_URL}/careers`,

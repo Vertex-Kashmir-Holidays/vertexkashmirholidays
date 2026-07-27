@@ -9,9 +9,14 @@ import type { AccommodationEntry } from "@/types/tours";
 interface TourDetailsAccommodationProps {
   accommodation: AccommodationEntry[];
   image?: string;
+  tourTitle: string;
 }
 
-export function TourDetailsAccommodation({ accommodation, image }: TourDetailsAccommodationProps) {
+export function TourDetailsAccommodation({
+  accommodation,
+  image,
+  tourTitle,
+}: TourDetailsAccommodationProps) {
   if (accommodation.length === 0) return null;
 
   return (
@@ -38,7 +43,7 @@ export function TourDetailsAccommodation({ accommodation, image }: TourDetailsAc
         <div className="relative h-56 w-full overflow-hidden rounded-xl md:h-full md:min-h-[220px]">
           <Image
             src={imgSrc(image)}
-            alt="Accommodation"
+            alt={`${tourTitle} — accommodation`}
             fill
             sizes="(max-width: 768px) 100vw, 320px"
             className="object-cover"

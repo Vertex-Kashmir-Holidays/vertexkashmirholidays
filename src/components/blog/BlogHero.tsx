@@ -8,7 +8,9 @@ import type { BlogPageContent } from "@/types/blog";
 
 interface BlogHeroProps {
   content: BlogPageContent;
-  onSearch: (query: string) => void;
+  // Optional so this can be rendered from a Server Component (e.g. as a
+  // Suspense fallback) without passing a closure across the RSC boundary.
+  onSearch?: (query: string) => void;
 }
 
 export function BlogHero({ content, onSearch }: BlogHeroProps) {
@@ -45,7 +47,7 @@ export function BlogHero({ content, onSearch }: BlogHeroProps) {
           id="blogSearch"
           className="w-full bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
           placeholder={content.heroSearchPlaceholder ?? "Search articles..."}
-          onChange={(e) => onSearch(e.target.value)}
+          onChange={(e) => onSearch?.(e.target.value)}
         />
         <Search className="h-4 w-4 shrink-0 text-foreground/70" strokeWidth={2} />
       </label>

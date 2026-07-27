@@ -40,7 +40,7 @@ const getContactContent = cache(async () =>
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, content] = await Promise.all([getSiteSettings(), getContactContent()]);
   return buildMetadata({
-    title: settings?.metaTitle ?? "Contact Us — Plan Your Kashmir Trip | Vertex Kashmir Holidays",
+    title: settings?.metaTitle ?? "Contact Us — Plan Your Kashmir Trip",
     description:
       "Get in touch with our Srinagar-based Kashmir experts for personalised tour packages. WhatsApp, email or call us for customised honeymoon, family and adventure itineraries.",
     canonical: `${SITE_URL}/contact`,

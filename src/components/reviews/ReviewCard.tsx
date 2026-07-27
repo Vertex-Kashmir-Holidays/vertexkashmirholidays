@@ -20,7 +20,7 @@ export function ReviewCard({ review }: { review: ReviewListItem }) {
       <div className="flex items-center gap-3">
         <Image
           src={imgSrc(review.avatar)}
-          alt=""
+          alt={review.name}
           width={44}
           height={44}
           className="h-11 w-11 shrink-0 rounded-full object-cover"
