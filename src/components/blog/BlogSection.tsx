@@ -76,7 +76,11 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
           <Link
             key={b.id}
             href={`/blog/${b.slug}`}
-            className="rv tilt glass group relative block w-[300px] shrink-0 overflow-hidden rounded-3xl shadow-card sm:w-[360px]"
+            // Same 320px clipping the testimonials row had: a flat 300px card
+            // is wider than the row's visible 288px (320px viewport − px-4), so
+            // its right edge sat outside the scroll container and mandatory
+            // start-snapping made it unreachable. Only binds below ~364px.
+            className="rv tilt glass group relative block w-[300px] max-w-[calc(100vw-4rem)] shrink-0 overflow-hidden rounded-3xl shadow-card sm:w-[360px]"
             data-tilt
             style={{ "--rd": `${i * 0.09}s` } as React.CSSProperties}
           >
