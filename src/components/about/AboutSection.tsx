@@ -100,7 +100,7 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
             >
               <Image
                 src={imgSrc(content.image2)}
-                alt=""
+                alt={content.cardTitle ?? "About us"}
                 fill
                 sizes="(max-width: 1024px) 50vw, 340px"
                 className="object-cover"

@@ -59,7 +59,7 @@ export function CampaignItinerary({ title, itinerary }: CampaignItineraryProps) 
                 <div className="group relative h-[150px] overflow-hidden rounded-2xl border border-border shadow-card lg:h-[170px]">
                   <Image
                     src={imgSrc(item.image)}
-                    alt=""
+                    alt={item.title}
                     fill
                     sizes="(max-width: 1024px) 100vw, 460px"
                     className="object-cover transition duration-700 group-hover:scale-110"

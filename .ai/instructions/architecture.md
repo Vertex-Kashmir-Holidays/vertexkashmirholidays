@@ -186,8 +186,10 @@ Refactoring should move the codebase incrementally toward this architecture as f
 
 ## 14. Related Documents
 
+- `../context/architecture-overview.md` — the *why* behind the major decisions, and the ADR log
 - `../context/project-overview.md`
 - `../context/business-rules.md`
 - `../context/tech-stack.md`
+- `../adr/README.md` — Architecture Decision Records and the process for adding one
 - `coding-standards.md`
 - `git-workflow.md`

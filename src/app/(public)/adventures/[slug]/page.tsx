@@ -61,7 +61,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   return buildMetadata({
     title: c.metaTitle ?? c.name,
-    description: c.metaDesc ?? c.sub ?? `${c.name} — a curated Kashmir experience by Vertex Kashmir Holidays.`,
+    description:
+      c.metaDesc ??
+      `${c.sub ? `${c.sub} ` : ""}${c.name} — a curated Kashmir experience by Vertex Kashmir Holidays.`,
     canonical: `${SITE_URL}/adventures/${slug}`,
     ogImage: c.ogImage ?? c.heroImage ?? null,
   });

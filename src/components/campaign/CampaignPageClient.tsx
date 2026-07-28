@@ -66,6 +66,7 @@ export function CampaignPageClient({ campaign, footerSettings }: CampaignPageCli
       )}
       <CampaignNav ctaText={campaign.navCta ?? "Reserve a Seat"} phone={phone} />
       <CampaignHero
+        name={campaign.name}
         badge={campaign.badge}
         titleHTML={campaign.titleHtml}
         sub={campaign.sub}

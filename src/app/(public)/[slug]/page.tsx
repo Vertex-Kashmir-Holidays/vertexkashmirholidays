@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const record = await getLegalPage(slug);
   return buildMetadata({
-    title: `${record?.title ?? def.title} | Vertex Kashmir Holidays`,
+    title: record?.title ?? def.title,
     description: def.description,
     canonical: `${SITE_URL}/${slug}`,
   });

@@ -117,7 +117,7 @@ export function BlogPostRelated({ posts, title = "Keep Reading" }: BlogPostRelat
                   <div className="relative h-[150px] overflow-hidden">
                     <Image
                       src={imgSrc(post.coverImage)}
-                      alt=""
+                      alt={post.title}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition duration-500 group-hover:scale-105"

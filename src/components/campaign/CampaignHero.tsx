@@ -4,6 +4,7 @@
 import { motion } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
+import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 
 interface CampaignHeroProps {
+  name: string;
   badge: string | null;
   titleHTML: string | null;
   sub: string | null;
@@ -34,6 +36,7 @@ interface CampaignHeroProps {
 const darkGlass = "border border-white/15 bg-white/10 backdrop-blur-xl";
 
 export function CampaignHero({
+  name,
   badge,
   titleHTML,
   sub,
@@ -153,17 +156,17 @@ export function CampaignHero({
           >
             {heroImageMobile ? (
               <>
-                <Image
+                <SafeImage
                   src={heroImageMobile}
-                  alt="Campaign hero"
+                  alt={name}
                   fill
                   priority
                   sizes="100vw"
                   className="object-cover sm:hidden"
                 />
-                <Image
+                <SafeImage
                   src={heroImage}
-                  alt="Campaign hero"
+                  alt={name}
                   fill
                   priority
                   sizes="100vw"
@@ -171,9 +174,9 @@ export function CampaignHero({
                 />
               </>
             ) : (
-              <Image
+              <SafeImage
                 src={heroImage}
-                alt="Campaign hero"
+                alt={name}
                 fill
                 priority
                 sizes="100vw"

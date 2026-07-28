@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { customerBookingWhere } from "@/lib/account/bookingScope";
 
-export const metadata: Metadata = { title: "My Bookings — Vertex Kashmir Holidays" };
+export const metadata: Metadata = { title: "My Bookings" };
 export const dynamic = "force-dynamic";
 
 const inr = new Intl.NumberFormat("en-IN", {

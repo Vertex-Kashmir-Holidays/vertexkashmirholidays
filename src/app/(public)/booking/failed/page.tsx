@@ -6,7 +6,7 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { Button } from "@/components/ui/atoms/button";
 
 export const metadata: Metadata = {
-  title: "Payment Failed — Vertex Kashmir Holidays",
+  title: "Payment Failed",
   robots: { index: false },
 };
 

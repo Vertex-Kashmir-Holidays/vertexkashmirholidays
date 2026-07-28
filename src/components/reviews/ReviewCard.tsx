@@ -9,11 +9,18 @@ import type { ReviewListItem } from "@/lib/reviews";
 // carousel, not a grid.
 export function ReviewCard({ review }: { review: ReviewListItem }) {
   return (
-    <article className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-soft">
+    // `min-w-0` is load-bearing on mobile: a grid item defaults to
+    // `min-width: auto`, so the card refuses to shrink below its min-content
+    // width — and the `truncate` (white-space: nowrap) name/tour-title lines
+    // below make that min-content width the full untruncated text. In the
+    // single-column mobile grid that pushed the card past the viewport edge;
+    // desktop was unaffected because Tailwind's `sm:grid-cols-2`/`lg:grid-cols-3`
+    // tracks are `minmax(0, 1fr)`, which already clamps the item.
+    <article className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-5 shadow-soft">
       <div className="flex items-center gap-3">
         <Image
           src={imgSrc(review.avatar)}
-          alt=""
+          alt={review.name}
           width={44}
           height={44}
           className="h-11 w-11 shrink-0 rounded-full object-cover"

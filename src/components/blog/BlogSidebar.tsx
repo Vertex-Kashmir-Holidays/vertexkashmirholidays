@@ -108,7 +108,7 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
                 <Link href={`/blog/${item.slug}`} className="group flex items-start gap-3">
                   <Image
                     src={imgSrc(item.image)}
-                    alt=""
+                    alt={item.title}
                     width={68}
                     height={52}
                     className="h-[52px] w-[68px] shrink-0 rounded-lg object-cover"

@@ -77,7 +77,7 @@ export function BlogPostSections({ id, title, numberPrefix, sections }: BlogPost
                   <div className="relative h-[88px] w-full shrink-0 overflow-hidden rounded-lg md:w-[150px]">
                     <Image
                       src={imgSrc(section.image)}
-                      alt=""
+                      alt={section.title}
                       fill
                       sizes="(max-width: 768px) 100vw, 150px"
                       className="object-cover"

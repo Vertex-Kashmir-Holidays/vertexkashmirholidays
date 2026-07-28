@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { renderAccents } from "@/lib/accents";
 import type { SectionHeading, TestimonialData } from "@/types/home";
@@ -71,7 +71,15 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
         {testimonials.map((t, i) => (
           <article
             key={t.id}
-            className="rv glass relative w-[300px] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card"
+            // A flat 300px card was wider than the visible row on the
+            // narrowest phones (320px viewport − the section's px-4 = 288px),
+            // so its right edge sat permanently outside the scroll container —
+            // and mandatory start-snapping meant it could never be scrolled
+            // into view. Capping at 100vw − 4rem (the section's 2rem of side
+            // padding plus a 2rem allowance) keeps the card whole and still
+            // leaves the next-card peek that signals the row is scrollable.
+            // Only binds below ~364px — 375px and up keep the 300px card.
+            className="rv glass relative w-[300px] max-w-[calc(100vw-4rem)] sm:w-[340px] shrink-0 rounded-3xl p-6 shadow-card"
             style={{ "--rd": `${i * 0.07}s` } as React.CSSProperties}
           >
             <p className="font-display text-5xl leading-none text-primary/50">"</p>
@@ -86,9 +94,9 @@ export function TestimonialsSection({ heading, testimonials }: TestimonialsSecti
             </a>
             <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
               {t.avatar && (
-                <Image
+                <SafeImage
                   src={t.avatar}
-                  alt=""
+                  alt={t.name}
                   width={40}
                   height={40}
                   className="h-10 w-10 rounded-full border border-border object-cover"

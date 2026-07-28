@@ -49,7 +49,7 @@ export function CampaignHighlights({ title, highlights }: CampaignHighlightsProp
                 <div className="relative h-36 overflow-hidden">
                   <Image
                     src={imgSrc(highlight.image)}
-                    alt=""
+                    alt={highlight.title}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
                     className="object-cover"

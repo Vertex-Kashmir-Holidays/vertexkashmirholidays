@@ -76,6 +76,8 @@ The repository—not the chat history—is the source of truth.
 
 ├── agents/
 
+├── adr/
+
 ├── instructions/
 
 ├── skills/
@@ -104,6 +106,19 @@ Examples:
 Agents describe responsibilities.
 
 They do not contain project knowledge.
+
+---
+
+## adr/
+
+Architecture Decision Records — one dated record per significant, hard-to-reverse
+architectural decision, capturing the context and the *why*.
+
+`adr/README.md` defines the lightweight process; `context/architecture-overview.md`
+is the curated map that links to each record.
+
+ADRs are append-only history. A decision is changed by superseding it with a new
+ADR, never by editing an accepted one.
 
 ---
 
