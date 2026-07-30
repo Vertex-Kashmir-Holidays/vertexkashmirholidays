@@ -64,6 +64,23 @@ const nextConfig: NextConfig = {
     // stronger for Google/Meta search intent than the internal "campaign" term).
     // Permanent redirect preserves SEO equity for already-indexed URLs.
     return [
+      // Host-scoped variants of the two rules below, placed first so a
+      // .vercel.app request hitting an old /campaign URL gets a single 308
+      // straight to the final production /adventures URL, instead of one 308
+      // renaming the path (still on .vercel.app) followed by a second 308
+      // canonicalizing the host — two hops to reach the same destination.
+      {
+        source: "/campaign",
+        has: [{ type: "host", value: "vertexkashmirholidays.vercel.app" }],
+        destination: "https://vertexkashmirholidays.com/adventures",
+        permanent: true,
+      },
+      {
+        source: "/campaign/:slug*",
+        has: [{ type: "host", value: "vertexkashmirholidays.vercel.app" }],
+        destination: "https://vertexkashmirholidays.com/adventures/:slug*",
+        permanent: true,
+      },
       { source: "/campaign", destination: "/adventures", permanent: true },
       { source: "/campaign/:slug*", destination: "/adventures/:slug*", permanent: true },
       // Canonical domain enforcement: Vercel's default *.vercel.app URL always
