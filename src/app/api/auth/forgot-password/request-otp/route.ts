@@ -12,7 +12,7 @@ import {
   generateOtp,
   hashOtp,
 } from "@/lib/auth/otp";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +32,7 @@ export async function POST(req: NextRequest) {
     // Coarse per-IP throttle: at most 10 code requests / 10 min from one IP.
     const ipLimit = await rateLimit(`reset-otp-req:${clientIp(req)}`, 10, "10 m");
     if (!ipLimit.success) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429 },
-      );
+      return tooManyRequests(ipLimit);
     }
 
     const body = await req.json().catch(() => null);

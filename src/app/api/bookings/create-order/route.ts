@@ -3,7 +3,7 @@ import { z } from "zod";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { computeChargeable, round2, type PaymentOption } from "@/lib/bookings/finance";
 import { logPaymentAudit } from "@/lib/bookings/audit";
 import { attributionSchema } from "@/lib/attribution";
@@ -44,10 +44,7 @@ export async function POST(req: NextRequest) {
   // Rate-limit order creation per IP (defence against abuse / accidental spam).
   const limit = await rateLimit(`booking:order:${ip}`, 10, "10 m");
   if (!limit.success) {
-    return NextResponse.json(
-      { error: "Too many attempts. Please try again in a little while." },
-      { status: 429 },
-    );
+    return tooManyRequests(limit, "Too many attempts. Please try again in a little while.");
   }
 
   const body = await req.json().catch(() => null);

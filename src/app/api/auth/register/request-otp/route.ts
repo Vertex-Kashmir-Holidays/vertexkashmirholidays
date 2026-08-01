@@ -12,7 +12,7 @@ import {
   generateOtp,
   hashOtp,
 } from "@/lib/auth/otp";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import {
   EMAIL_FORMAT_MESSAGE,
   PASSWORD_MESSAGE,
@@ -46,10 +46,7 @@ export async function POST(req: NextRequest) {
     // per-process in-memory counter.
     const ipLimit = await rateLimit(`otp-req:${clientIp(req)}`, 10, "10 m");
     if (!ipLimit.success) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429 },
-      );
+      return tooManyRequests(ipLimit);
     }
 
     const body = await req.json().catch(() => null);

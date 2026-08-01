@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { MAX_VERIFY_ATTEMPTS, cleanupExpiredOtps, verifyOtpHash } from "@/lib/auth/otp";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +22,7 @@ export async function POST(req: NextRequest) {
     // Per-IP throttle on verification to slow brute-forcing across emails.
     const ipLimit = await rateLimit(`otp-verify:${clientIp(req)}`, 30, "10 m");
     if (!ipLimit.success) {
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
-        { status: 429 },
-      );
+      return tooManyRequests(ipLimit, "Too many attempts. Please try again later.");
     }
 
     const body = await req.json().catch(() => null);

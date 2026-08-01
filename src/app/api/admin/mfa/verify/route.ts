@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { decryptMfaSecret } from "@/lib/security/mfaCrypto";
 import { verifyTotp } from "@/lib/security/mfaTotp";
 import { TOTP_CODE_REGEX } from "@/lib/security/mfaValidation";
-import { rateLimit } from "@/lib/ratelimit";
+import { rateLimit, tooManyRequests } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +31,7 @@ export async function POST(req: NextRequest) {
 
   const limit = await rateLimit(`mfa-verify:${guard.user.id}`, 10, "10 m");
   if (!limit.success) {
-    return NextResponse.json(
-      { error: "Too many attempts. Please try again later." },
-      { status: 429 },
-    );
+    return tooManyRequests(limit, "Too many attempts. Please try again later.");
   }
 
   const body = await req.json().catch(() => null);

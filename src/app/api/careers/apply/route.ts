@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { nameField, phoneField } from "@/lib/leads/schema";
 import { CAREERS_TOKEN_TTL_MS } from "@/lib/auth/otp";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { checkBotSignals, HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
 import { saveUpload, saveJson } from "@/lib/storage";
 import { sendMail, careersApplicationHtml, careersApplicationText } from "@/lib/mail";
@@ -62,10 +62,7 @@ export async function POST(req: NextRequest) {
     const ip = clientIp(req);
     const ipLimit = await rateLimit(`careers-apply:${ip}`, 10, "10 m");
     if (!ipLimit.success) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429 },
-      );
+      return tooManyRequests(ipLimit);
     }
 
     let formData: FormData;
