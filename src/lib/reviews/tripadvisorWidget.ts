@@ -80,20 +80,53 @@ function resolveAllowedScriptSrc(src: string): string | null {
   return url.toString();
 }
 
+// The single implementation behind both public entry points below: the render
+// path wants the widget (or nothing), the Settings save path wants the reason
+// it was rejected, and neither should re-derive the other's rules.
+type TripadvisorWidgetResult =
+  { widget: ParsedTripadvisorWidget; error: null } | { widget: null; error: string };
+
+function readWidget(raw: string): TripadvisorWidgetResult {
+  const match = raw.match(SCRIPT_TAG);
+  if (!match) {
+    return {
+      widget: null,
+      error: 'No Tripadvisor widget <script src="..."> tag found in the embed code.',
+    };
+  }
+
+  const scriptSrc = resolveAllowedScriptSrc(decodeHtmlEntities(match[1]));
+  if (!scriptSrc) {
+    return {
+      widget: null,
+      error: `The widget script must be loaded over https from a Tripadvisor host (${[...ALLOWED_SCRIPT_HOSTS].join(", ")}).`,
+    };
+  }
+
+  const markup = raw.slice(0, match.index) + raw.slice(match.index! + match[0].length);
+  const html = sanitizeHtml(markup, WIDGET_OPTIONS).trim();
+  if (!html) {
+    return { widget: null, error: "The embed code has no widget markup left once sanitized." };
+  }
+
+  return { widget: { html, scriptSrc }, error: null };
+}
+
 /** Extracts the widget's script src and sanitizes the remaining static markup. Returns null if no script tag is found, its src is not an allowlisted TripAdvisor host, or nothing renderable remains. */
 export function parseTripadvisorWidget(
   raw: string | null | undefined,
 ): ParsedTripadvisorWidget | null {
   if (!raw) return null;
-  const match = raw.match(SCRIPT_TAG);
-  if (!match) return null;
+  return readWidget(raw).widget;
+}
 
-  const scriptSrc = resolveAllowedScriptSrc(decodeHtmlEntities(match[1]));
-  if (!scriptSrc) return null;
-
-  const markup = raw.slice(0, match.index) + raw.slice(match.index! + match[0].length);
-  const html = sanitizeHtml(markup, WIDGET_OPTIONS).trim();
-  if (!html) return null;
-
-  return { html, scriptSrc };
+/**
+ * Validates an embed at save time so a rejected widget fails loudly in Settings
+ * instead of silently rendering nothing. Returns a message describing why the
+ * embed is unusable, or null if it is fine. An empty value is valid — that's
+ * how the widget is switched off.
+ */
+export function validateTripadvisorWidgetEmbed(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  return readWidget(raw).error;
 }
