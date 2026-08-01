@@ -23,6 +23,22 @@ const WIDGET_OPTIONS: sanitizeHtml.IOptions = {
   allowedSchemes: ["http", "https"],
 };
 
+// The markup is sanitized, but the extracted script src is executed as a real
+// <script> (see TripadvisorWidget.tsx) — so it is the one part of this
+// staff-entered value that must be validated against a host allowlist rather
+// than merely sanitized. Without this, a compromised Settings account could
+// point the embed at an arbitrary script host.
+//
+// This list is deliberately the same set of TripAdvisor hosts allowed by
+// script-src in src/proxy.ts — a src outside it would be blocked by CSP at
+// runtime anyway, so keep the two in sync when either changes.
+const ALLOWED_SCRIPT_HOSTS = new Set([
+  "www.jscache.com",
+  "www.tripadvisor.com",
+  "www.tripadvisor.in",
+  "static.tacdn.com",
+]);
+
 export interface ParsedTripadvisorWidget {
   html: string;
   scriptSrc: string;
@@ -43,18 +59,74 @@ function decodeHtmlEntities(s: string): string {
     .replace(/&#0?39;|&apos;/g, "'");
 }
 
-/** Extracts the widget's script src and sanitizes the remaining static markup. Returns null if no script tag is found (nothing to render). */
+// Resolves the raw src to an absolute https URL on an allowlisted host, or
+// null if it isn't one. Protocol-relative ("//www.jscache.com/wejs?...") is
+// accepted because TripAdvisor's own snippets have shipped that form; the
+// returned value is always absolute so the injected script.src is unambiguous.
+function resolveAllowedScriptSrc(src: string): string | null {
+  const trimmed = src.trim();
+  // Only absolute or protocol-relative srcs are meaningful here. Resolving a
+  // path-relative one against an allowlisted base would silently "pass" the
+  // host check for a URL the embed never actually named.
+  const absolute = trimmed.startsWith("//") ? `https:${trimmed}` : trimmed;
+  let url: URL;
+  try {
+    url = new URL(absolute);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (!ALLOWED_SCRIPT_HOSTS.has(url.hostname.toLowerCase())) return null;
+  return url.toString();
+}
+
+// The single implementation behind both public entry points below: the render
+// path wants the widget (or nothing), the Settings save path wants the reason
+// it was rejected, and neither should re-derive the other's rules.
+type TripadvisorWidgetResult =
+  { widget: ParsedTripadvisorWidget; error: null } | { widget: null; error: string };
+
+function readWidget(raw: string): TripadvisorWidgetResult {
+  const match = raw.match(SCRIPT_TAG);
+  if (!match) {
+    return {
+      widget: null,
+      error: 'No Tripadvisor widget <script src="..."> tag found in the embed code.',
+    };
+  }
+
+  const scriptSrc = resolveAllowedScriptSrc(decodeHtmlEntities(match[1]));
+  if (!scriptSrc) {
+    return {
+      widget: null,
+      error: `The widget script must be loaded over https from a Tripadvisor host (${[...ALLOWED_SCRIPT_HOSTS].join(", ")}).`,
+    };
+  }
+
+  const markup = raw.slice(0, match.index) + raw.slice(match.index! + match[0].length);
+  const html = sanitizeHtml(markup, WIDGET_OPTIONS).trim();
+  if (!html) {
+    return { widget: null, error: "The embed code has no widget markup left once sanitized." };
+  }
+
+  return { widget: { html, scriptSrc }, error: null };
+}
+
+/** Extracts the widget's script src and sanitizes the remaining static markup. Returns null if no script tag is found, its src is not an allowlisted TripAdvisor host, or nothing renderable remains. */
 export function parseTripadvisorWidget(
   raw: string | null | undefined,
 ): ParsedTripadvisorWidget | null {
   if (!raw) return null;
-  const match = raw.match(SCRIPT_TAG);
-  if (!match) return null;
+  return readWidget(raw).widget;
+}
 
-  const scriptSrc = decodeHtmlEntities(match[1]);
-  const markup = raw.slice(0, match.index) + raw.slice(match.index! + match[0].length);
-  const html = sanitizeHtml(markup, WIDGET_OPTIONS).trim();
-  if (!html) return null;
-
-  return { html, scriptSrc };
+/**
+ * Validates an embed at save time so a rejected widget fails loudly in Settings
+ * instead of silently rendering nothing. Returns a message describing why the
+ * embed is unusable, or null if it is fine. An empty value is valid — that's
+ * how the widget is switched off.
+ */
+export function validateTripadvisorWidgetEmbed(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null;
+  return readWidget(raw).error;
 }

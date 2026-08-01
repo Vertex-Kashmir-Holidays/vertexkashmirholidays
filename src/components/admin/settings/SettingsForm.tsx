@@ -118,6 +118,20 @@ function Field({
   );
 }
 
+// A 422 from /api/settings carries Zod's flattened field errors (e.g. a
+// Tripadvisor widget embed pointing at a non-Tripadvisor script host). Surface
+// the first one so the admin is told what to fix, not just that saving failed.
+async function validationMessage(res: Response): Promise<string> {
+  const body = (await res.json().catch(() => null)) as {
+    error?: { fieldErrors?: Record<string, string[] | undefined> };
+  } | null;
+  return (
+    Object.values(body?.error?.fieldErrors ?? {})
+      .flat()
+      .find(Boolean) ?? ""
+  );
+}
+
 export function SettingsForm({ settings }: Props) {
   const [isPending, startTransition] = useTransition();
   const [bannerEnabled, setBannerEnabled] = useState(settings.showAnnouncementBanner);
@@ -178,10 +192,10 @@ export function SettingsForm({ settings }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(await validationMessage(res));
         toast.success("Settings saved!");
-      } catch {
-        toast.error("Failed to save settings.");
+      } catch (err) {
+        toast.error(err instanceof Error && err.message ? err.message : "Failed to save settings.");
       }
     });
   }
