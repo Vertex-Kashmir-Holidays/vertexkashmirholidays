@@ -17,7 +17,7 @@ interface CampaignFinalCTAProps {
 // Over-image CTA band — stays dark with white text in both themes.
 export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: CampaignFinalCTAProps) {
   return (
-    <section className="relative z-[2] mt-24 overflow-hidden">
+    <section className="relative z-[2] mt-24 overflow-hidden bg-[hsl(202_50%_6%)]">
       {image && (
         <motion.img
           src={image}
@@ -29,7 +29,7 @@ export function CampaignFinalCTA({ title, sub, cta, note, image, phone }: Campai
           transition={{ duration: 1.5, ease: EASE_BRAND }}
         />
       )}
-      <div className="absolute inset-0 bg-[hsl(202_50%_6%/0.82)]"></div>
+      {image && <div className="absolute inset-0 bg-[hsl(202_50%_6%/0.82)]"></div>}
       <div className="relative mx-auto max-w-[760px] px-6 py-24 text-center">
         {title && (
           <motion.h2

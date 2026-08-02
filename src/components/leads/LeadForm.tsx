@@ -137,6 +137,7 @@ export function LeadForm({
         blocked?: boolean;
         whatsapp?: string;
         fieldErrors?: Record<string, string[] | undefined>;
+        id?: string;
       };
 
       if (!res.ok) {
@@ -167,6 +168,7 @@ export function LeadForm({
       trackLeadSubmit(
         isTour ? "tour_inquiry" : source === "contact" ? "contact" : "itinerary",
         isTour ? context?.tourName : undefined,
+        json.id,
       );
       if (isTour) trackTourInquiry(context?.tourName, context?.tourId);
       reset();
