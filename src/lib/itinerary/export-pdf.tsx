@@ -55,6 +55,7 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
     data.transportImage,
     getPaymentQr(data),
     ...data.days.map((d) => d.image),
+    ...data.hotelImages,
   ].filter(Boolean);
 
   // The cover wants a larger, fuller-bleed image; day thumbnails stay tiny.
