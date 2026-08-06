@@ -1,4 +1,4 @@
-import { ItineraryData } from "@/types/itinerary";
+import { DEFAULT_HOTEL_IMAGES, ItineraryData } from "@/types/itinerary";
 
 // Stable ids for the seed document. New rows added in the editor get runtime ids
 // via genId(); these fixed ids keep the default deterministic.
@@ -113,6 +113,7 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       roomType: "Double Sharing",
     },
   ],
+  hotelImages: DEFAULT_HOTEL_IMAGES,
 
   trust: [
     { id: "t-1", title: "Handpicked Hotels", subtitle: "Comfortable & Well Located", icon: "home" },
