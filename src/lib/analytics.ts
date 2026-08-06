@@ -28,12 +28,23 @@ function push(payload: AnalyticsEvent): void {
   }
 }
 
-/** Fire after a lead form submits successfully — never on validation errors. */
-export function trackLeadSubmit(leadType: LeadType = "itinerary", tourName?: string): void {
+/**
+ * Fire after a lead form submits successfully — never on validation errors.
+ * `leadId` (the just-created Lead's own database id, returned by POST
+ * /api/leads) rides along as `lead_id` so GTM's Facebook Pixel Lead tag can
+ * map it to Meta's "Event ID" field for CAPI dedup — see the field comment on
+ * `AnalyticsEvent`'s `lead_submit` variant.
+ */
+export function trackLeadSubmit(
+  leadType: LeadType = "itinerary",
+  tourName?: string,
+  leadId?: string,
+): void {
   push({
     event: "lead_submit",
     lead_type: leadType,
     ...(tourName ? { package_name: tourName } : {}),
+    ...(leadId ? { lead_id: leadId } : {}),
   });
 }
 

@@ -4,6 +4,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
+import { Utensils, BedDouble } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
 
 interface ItineraryDay {
@@ -96,13 +97,13 @@ export function TourDetailsItinerary({ itinerary }: TourDetailsItineraryProps) {
                       {(day.meals || day.stay) && (
                         <div className="flex flex-wrap gap-2">
                           {day.meals && (
-                            <span className="rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground/70">
-                              🍽️ {day.meals}
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground/70">
+                              <Utensils className="h-3.5 w-3.5" strokeWidth={2} /> {day.meals}
                             </span>
                           )}
                           {day.stay && (
-                            <span className="rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground/70">
-                              🏨 {day.stay}
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-[12px] font-semibold text-foreground/70">
+                              <BedDouble className="h-3.5 w-3.5" strokeWidth={2} /> {day.stay}
                             </span>
                           )}
                         </div>

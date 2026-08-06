@@ -65,8 +65,27 @@ export async function enqueueForLead(leadId: string): Promise<void> {
 export async function enqueueForBooking(bookingId: string): Promise<void> {
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (!booking) return;
-  const platforms = platformsFor(pickAttribution(booking));
+  let platforms = platformsFor(pickAttribution(booking));
   if (platforms.length === 0) return;
+
+  // A booking converted from a Lead already has its conversion recorded
+  // against that Lead (enqueueForLead, fired once at conversion). If this
+  // same booking later also takes an online payment — e.g. the remaining
+  // balance via Razorpay after a manually-recorded token — finalizeOnlinePayment()
+  // calls this function again. The leadId/bookingId unique constraints on
+  // OfflineConversion are independent (Postgres NULLs never collide), so
+  // without this check that second call would create a SEPARATE row and
+  // upload the same real-world sale twice. Skip any platform the
+  // originating Lead has already queued or sent.
+  const originatingLead = await prisma.lead.findFirst({
+    where: { bookingId },
+    select: { offlineConversions: { select: { platform: true } } },
+  });
+  if (originatingLead) {
+    const alreadyCovered = new Set(originatingLead.offlineConversions.map((c) => c.platform));
+    platforms = platforms.filter((platform) => !alreadyCovered.has(platform));
+    if (platforms.length === 0) return;
+  }
 
   await prisma.offlineConversion.createMany({
     data: platforms.map((platform) => ({ bookingId, platform })),

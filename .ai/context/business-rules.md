@@ -12,9 +12,9 @@ Future developers and AI assistants must read this document before implementing 
 
 # Business Rules
 
-Version: 1.0.0
+Version: 1.1.0
 
-Last Updated: 2026-07-16
+Last Updated: 2026-08-02
 
 ## Purpose
 
@@ -107,9 +107,15 @@ Dashboard, Packages (Tours), Destinations, Activities, Bookings, Leads, Itinerar
 
 ## 9. Marketing Rules — Implemented
 
-- **GA4 and Meta Pixel (client-side)** are configured as tags _inside_ the Google Tag Manager container — not hardcoded in the application. GTM itself is the only script this codebase injects directly.
+- **GA4 and Meta Pixel (client-side)** are both configured as tags _inside_ the Google Tag Manager container — not hardcoded in the application. GTM itself is the only script this codebase injects directly. **Do not add a second, standalone Meta Pixel in app code** — a real attempt at this produced duplicate `PageView`/`Lead` events firing against the same `window.fbq`, because GTM's own Facebook Pixel tag already calls it independently. If the browser-side Pixel needs additional events, extend the `lead_submit` dataLayer push (see `lead_id` field on `AnalyticsEvent`) and wire it in GTM, rather than calling `fbq()` from the app.
 - **UTM and click-ID attribution** (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `msclkid`, `landingPage`, `referrer`) is captured **once, at Lead or direct-Booking creation**, and never re-derived. A lead-converted booking copies its lead's attribution verbatim at conversion time rather than capturing it a second time.
-- **Google Ads Offline Conversions** and **Meta Conversions API** are implemented server-side, queued via the `OfflineConversion` model and uploaded per-lead/per-booking, independent of whether the client-side pixel fired (ad-blocker/ITP resilient).
+- **Three acquisition paths, ONE offline-conversion upload each:**
+  1. **Website Lead** — Visitor → Lead Form → CRM → Sales follow-up → Booking created (staff "convert" action) → token/full payment recorded → offline conversion.
+  2. **Direct Website Booking** — Visitor → Booking (checkout) → online payment succeeds → offline conversion.
+  3. **Manual CRM Lead** (staff-entered, ~10–20% of volume) — same downstream path as (1) from "Booking created" onward.
+- **Intermediate CRM statuses are internal workflow only.** `NEW` / `CONNECTED` / `NOT_CONNECTED` / `QUALIFIED` / `NEGOTIATION` / `ON_HOLD` exist for the sales team, not for ad platforms. Google Ads and Meta are deliberately **not** given a separate conversion action per CRM stage — they optimize toward one real signal: a booking with money collected against it. Do not add per-status offline-conversion uploads without a business decision to change this model.
+- **Google Ads Offline Conversions** and **Meta Conversions API** are implemented server-side, queued via the `OfflineConversion` model and uploaded per-lead/per-booking, independent of whether the client-side pixel fired (ad-blocker/ITP resilient). `enqueueForLead()` fires once, at lead conversion; `enqueueForBooking()` fires on every successful online payment (webhook/verify-payment/reconcile).
+- **Duplicate-conversion prevention:** a Lead-converted booking already has its conversion recorded against that Lead at conversion time. If the same booking *later* also takes an online payment (e.g. the remaining balance via Razorpay after a manually-recorded token), `enqueueForBooking()` checks the booking's originating Lead (`Lead.bookingId`) and skips any platform that Lead has already queued or sent — it does not upload the same real-world sale a second time under the Booking's own id. (The `OfflineConversion` model's `leadId`/`bookingId` unique constraints are independent of each other, so this check is necessary — the DB alone won't catch the cross-path duplicate.)
 - **Not production-ready:** a Microsoft/Bing Ads offline-conversion adapter exists in code but its actual upload call is an intentional stub — do not treat Microsoft/Bing conversion tracking as live.
 - **Newsletter subscription** (`NewsletterSubscriber` model) exists in the schema but has **zero usage anywhere in the application code** — no API route, no admin page, no public signup form references it. Treat it as dormant/unimplemented, not a live feature.
 

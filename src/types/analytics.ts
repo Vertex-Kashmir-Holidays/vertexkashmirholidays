@@ -15,7 +15,17 @@ export type WhatsAppSource =
   | "lead_form";
 
 export type AnalyticsEvent =
-  | { event: "lead_submit"; lead_type: LeadType; package_name?: string }
+  | {
+      event: "lead_submit";
+      lead_type: LeadType;
+      package_name?: string;
+      // The just-created Lead's own database id. GTM's Facebook Pixel Lead
+      // tag (if/when configured to fire on this event) should map its
+      // "Event ID" field to this dataLayer variable — that's what lets Meta
+      // dedupe this browser event against the server-side Conversions API
+      // call for the same Lead (see src/lib/offlineConversion/adapters/meta.ts).
+      lead_id?: string;
+    }
   | { event: "whatsapp_click"; source: WhatsAppSource }
   | { event: "phone_click" }
   | { event: "email_click" }
