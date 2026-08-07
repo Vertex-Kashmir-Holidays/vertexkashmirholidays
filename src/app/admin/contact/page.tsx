@@ -33,19 +33,11 @@ const GROUPS: ContentGroup[] = [
     ],
   },
   {
-    title: "Primary office & map",
+    title: "Office map & directions",
     fields: [
       { key: "officeKicker", label: "Office kicker", type: "text" },
       { key: "officeTitle", label: "Office title", type: "text" },
       { key: "officeSubtitle", label: "Office subtitle", type: "textarea" },
-      { key: "officeName", label: "Office name", type: "text" },
-      { key: "officeAddress", label: "Office address", type: "textarea" },
-      {
-        key: "officeHours",
-        label:
-          "Office hours (fallback only — live hours come from Google Business Profile when available)",
-        type: "text",
-      },
       { key: "officeMapLabel", label: "Map label", type: "text" },
       { key: "officeMapSubLabel", label: "Map sub-label", type: "text" },
       { key: "directionsUrl", label: "Directions URL", type: "text" },
@@ -95,11 +87,10 @@ export default async function AdminContactPage() {
   const perms = { canCreate, canEdit, canDelete };
   const order = [{ sortOrder: "asc" as const }, { createdAt: "asc" as const }];
 
-  const [content, heroFeatures, promiseItems, offices] = await Promise.all([
+  const [content, heroFeatures, promiseItems] = await Promise.all([
     prisma.contactContent.findUnique({ where: { id: "singleton" } }),
     prisma.contactHeroFeature.findMany({ orderBy: order }),
     prisma.contactPromiseItem.findMany({ orderBy: order }),
-    prisma.contactOffice.findMany({ orderBy: order }),
   ]);
 
   return (
@@ -119,13 +110,6 @@ export default async function AdminContactPage() {
           resource="contactPromiseItems"
           fields={FIELD_DEFS.contactPromiseItems}
           items={promiseItems}
-          {...perms}
-        />
-        <ListEditor
-          title="Offices"
-          resource="contactOffices"
-          fields={FIELD_DEFS.contactOffices}
-          items={offices}
           {...perms}
         />
       </div>

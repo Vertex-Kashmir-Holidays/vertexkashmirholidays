@@ -287,18 +287,30 @@ export function SettingsForm({ settings }: Props) {
               register={register}
               placeholder="e.g. Department of Tourism, Government of Jammu & Kashmir"
             />
+          </div>
+
+          {/* Address — Registered Office (permanent legal address, below) plus
+              Corporate Office(s) (operational, addable/removable — managed in
+              the "Corporate Office(s)" list further down this page). */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
+            <h3 className="font-bold text-foreground text-sm">Address — Registered Office</h3>
+            <p className="text-[12px] text-muted-foreground -mt-2">
+              The company&apos;s permanent legal address — used as a fallback anywhere no Corporate
+              Office is set, and always shown as its own section on the footer and contact page.
+              Operational Corporate Office(s) are managed in the list below.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field
                 label="Address Line 1"
                 name="addressLine1"
                 register={register}
-                placeholder="Katipora, Tangmarg"
+                placeholder="Katipora, Handwara"
               />
               <Field
                 label="City / District"
                 name="addressCity"
                 register={register}
-                placeholder="Baramulla"
+                placeholder="Kupwara"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

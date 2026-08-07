@@ -200,7 +200,7 @@ function Header({ logo, title, ref: docRef }: { logo: string | null; title: stri
   );
 }
 
-function Footer() {
+function Footer({ address }: { address: string }) {
   return (
     <View style={s.footer} fixed>
       <Text style={s.footerCompany}>{CONTACT.company}</Text>
@@ -208,7 +208,7 @@ function Footer() {
       <Text style={s.footerLine}>
         {CONTACT.phone} · {CONTACT.email}
       </Text>
-      <Text style={s.footerLine}>{CONTACT.address}</Text>
+      <Text style={s.footerLine}>{address}</Text>
     </View>
   );
 }
@@ -227,9 +227,12 @@ function MetaCell({ label, value }: { label: string; value: string }) {
 export function BookingSummaryPdf({
   data,
   logo,
+  address,
 }: {
   data: BookingSummaryPdfData;
   logo: string | null;
+  /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
+  address: string;
 }) {
   const grouped = groupServiceTables(data.services);
 
@@ -326,7 +329,7 @@ export function BookingSummaryPdf({
           to availability at the time of travel. This is a computer-generated summary.
         </Text>
 
-        <Footer />
+        <Footer address={address} />
       </Page>
     </Document>
   );
@@ -336,9 +339,12 @@ export function BookingSummaryPdf({
 export function PaymentInvoicePdf({
   data,
   logo,
+  address,
 }: {
   data: PaymentInvoicePdfData;
   logo: string | null;
+  /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
+  address: string;
 }) {
   return (
     <Document title={`Payment Receipt - ${data.invoiceRef}`} author={CONTACT.brand}>
@@ -381,7 +387,7 @@ export function PaymentInvoicePdf({
           computer-generated receipt.
         </Text>
 
-        <Footer />
+        <Footer address={address} />
       </Page>
     </Document>
   );

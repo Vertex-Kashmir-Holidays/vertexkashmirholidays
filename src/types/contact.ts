@@ -57,9 +57,12 @@ export interface ContactOfficeContent {
   email: string | null;
   legalName: string | null;
   tourismRegNumber: string | null;
+  gstNumber: string | null;
   brandName: string | null;
   /** Google Place ID for the real map embed — falls back to the decorative illustration when absent. */
   placeId: string | null;
+  /** Legal/permanent address — shown as a separate, non-interactive block (no map/directions). */
+  registeredOffice: { name: string; address: string } | null;
 }
 
 export interface ContactTestimonialData {

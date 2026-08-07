@@ -24,3 +24,18 @@ export function formatBusinessAddress(
   ].filter((p): p is string => Boolean(p && p.trim()));
   return parts.length > 0 ? parts.join(", ") : null;
 }
+
+// ── Registered Office — legal, permanent ─────────────────────────────────────
+// The static fallback used whenever SiteSettings' structured address fields
+// are empty. Corporate Office is intentionally NOT a constant here — it's
+// fully DB-driven via the ContactOffice table (see src/lib/companyOffice.ts),
+// since it must be addable/removable/hideable by an admin, never hardcoded.
+
+export const REGISTERED_OFFICE = {
+  line1: "Katipora, Tangmarg",
+  city: "Baramulla",
+  state: "Jammu & Kashmir",
+  pincode: "193402",
+  country: "India",
+};
+export const REGISTERED_OFFICE_FORMATTED = "Katipora, Tangmarg, Baramulla, Jammu & Kashmir";

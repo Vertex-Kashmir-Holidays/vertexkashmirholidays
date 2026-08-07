@@ -7,7 +7,7 @@ import type { TourCategory } from "@prisma/client";
 import { Logo } from "@/components/brand/Logo";
 import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon } from "@/components/icons/brand";
 import { trackWhatsappClick, trackPhoneClick, trackEmailClick } from "@/lib/analytics";
-import { formatBusinessAddress } from "@/lib/businessAddress";
+import { formatBusinessAddress, REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import { Container } from "@/components/ui/layout/Container";
 import { openCookiePreferences } from "@/lib/cookieConsent";
@@ -43,19 +43,20 @@ export interface FooterSettings {
 
 export function Footer({
   settings,
+  corporateOffice = null,
   tourCategories = [],
 }: {
   settings?: FooterSettings | null;
+  /** First active ContactOffice row (admin-managed) — hidden entirely when none is set. */
+  corporateOffice?: { name: string; address: string } | null;
   tourCategories?: TourCategory[];
 }) {
   const priorityCategoryLinks = PRIORITY_CATEGORIES.filter((c) => tourCategories.includes(c));
   const siteName = settings?.siteName ?? "Vertex Kashmir Holidays";
   const phone = settings?.sitePhone ?? "+91 99999 00000";
   const email = settings?.siteEmail ?? "hello@vertexkashmir.com";
-  const address =
-    formatBusinessAddress(settings) ??
-    settings?.siteAddress ??
-    "Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India";
+  const registeredAddress =
+    formatBusinessAddress(settings) ?? settings?.siteAddress ?? REGISTERED_OFFICE_FORMATTED;
 
   // Build a WhatsApp click-to-chat link from the settings number (whatsapp →
   // phone fallback), with a context-appropriate prefilled message.
@@ -331,26 +332,41 @@ export function Footer({
                 </Link>
               </li>
             </ul>
-            <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
-              <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> {address}
-              <br />
-              <Phone className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />{" "}
-              <a
-                href={`tel:${phone.replace(/\s+/g, "")}`}
-                onClick={trackPhoneClick}
-                className="transition hover:text-primary"
-              >
-                {phone}
-              </a>
-              {" · "}
-              <a
-                href={`mailto:${email}`}
-                onClick={trackEmailClick}
-                className="transition hover:text-primary"
-              >
-                {email}
-              </a>
-            </p>
+            <div className="mt-5 space-y-3 text-[14px] leading-relaxed text-muted-foreground">
+              <p>
+                <span className="block text-[11px] font-bold tracking-wide text-foreground/80">
+                  Registered Office
+                </span>
+                <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px" /> {registeredAddress}
+              </p>
+              {corporateOffice && (
+                <p>
+                  <span className="block text-[11px] font-bold tracking-wide text-foreground/80">
+                    {corporateOffice.name}
+                  </span>
+                  <MapPin className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />{" "}
+                  {corporateOffice.address}
+                </p>
+              )}
+              <p>
+                <Phone className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />{" "}
+                <a
+                  href={`tel:${phone.replace(/\s+/g, "")}`}
+                  onClick={trackPhoneClick}
+                  className="transition hover:text-primary"
+                >
+                  {phone}
+                </a>
+                {" · "}
+                <a
+                  href={`mailto:${email}`}
+                  onClick={trackEmailClick}
+                  className="transition hover:text-primary"
+                >
+                  {email}
+                </a>
+              </p>
+            </div>
           </div>
         </div>
         <div className="border-t border-border pt-5 pb-20 lg:pb-5">

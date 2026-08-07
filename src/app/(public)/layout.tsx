@@ -10,18 +10,26 @@ import { CookieConsentManager } from "@/components/providers/CookieConsentManage
 import { AnnouncementModal } from "@/components/common/AnnouncementModal";
 import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
 import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
+import { getActiveCorporateOffices } from "@/lib/companyOffice";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
 import type { FooterSettings } from "@/components/layout/Footer";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [s, strip, promos, categoryRows, homeContent] = await Promise.all([
+  const [s, strip, promos, categoryRows, homeContent, corporateOffices] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
     getActivePromoBanners(),
     prisma.tour.groupBy({ by: ["category"], where: { published: true }, _count: true }),
     prisma.homeContent.findUnique({ where: { id: "singleton" }, select: { formAvatars: true } }),
+    getActiveCorporateOffices(),
   ]);
   const tourCategories = categoryRows.filter((c) => c._count > 0).map((c) => c.category);
+  // First active row (lowest sortOrder) is "the" Corporate Office shown in
+  // the footer — admin-managed via /admin/settings, hidden entirely when
+  // none is set (see companyOffice.ts).
+  const corporateOffice = corporateOffices[0]
+    ? { name: corporateOffices[0].name, address: corporateOffices[0].address }
+    : null;
 
   // Reused sitewide as social-proof avatars next to every lead form (see
   // SiteSettingsProvider) — same real customer photos already live on the
@@ -91,16 +99,24 @@ export default async function PublicLayout({ children }: { children: React.React
     s?.googleBusinessProfile,
   ].filter((u): u is string => Boolean(u && u.startsWith("http")));
 
+  // The TravelAgency/LocalBusiness address is the Corporate Office (the real
+  // staffed location an admin has set) when one exists — matching whatever
+  // the Google Business Profile listing actually points to — else the
+  // Registered Office's full structured address as a fallback.
   const organizationJsonLd = buildTravelAgency({
     telephone: s?.sitePhone,
     email: s?.siteEmail,
     legalName: s?.legalName,
     taxId: s?.gstNumber,
-    streetAddress: s?.addressLine1,
-    addressLocality: s?.addressCity,
-    addressRegion: s?.addressState,
-    postalCode: s?.addressPincode,
-    addressCountry: s?.addressCountry === "India" ? "IN" : s?.addressCountry,
+    ...(corporateOffice
+      ? { streetAddress: corporateOffice.address, addressCountry: "IN" }
+      : {
+          streetAddress: s?.addressLine1,
+          addressLocality: s?.addressCity,
+          addressRegion: s?.addressState,
+          postalCode: s?.addressPincode,
+          addressCountry: s?.addressCountry === "India" ? "IN" : s?.addressCountry,
+        }),
     sameAs,
   });
 
@@ -122,6 +138,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <JsonLd data={organizationJsonLd} />
           <PublicChrome
             settings={settings}
+            corporateOffice={corporateOffice}
             promoBanners={promoBanners}
             tourCategories={tourCategories}
             strip={

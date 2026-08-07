@@ -2,6 +2,8 @@
 // both server PDF-generation code and client preview components alike.
 // src/lib/pdf/assets.ts re-exports these for existing server-side callers.
 
+import { REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
+
 // Brand palette — kept in sync with the itinerary PDF so every document Vertex
 // sends looks like it came from the same company.
 export const PDF_COLORS = {
@@ -18,12 +20,15 @@ export const PDF_COLORS = {
 };
 
 // Single source of truth for company contact details on outbound documents.
+// `address` is a static fallback only — real generation call sites resolve
+// the live Corporate Office (or Registered Office) via companyOffice.ts and
+// pass it explicitly; this value is used only if that's ever omitted.
 export const PDF_CONTACT = {
   company: "Vertex Kashmir Tour & Travels",
   brand: "Vertex Kashmir Holidays",
   reg: "J&K Tourism Registration number - JKEA00001840",
   phone: "+91-7889577789 / +91-9682648388",
-  address: "Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India",
+  address: REGISTERED_OFFICE_FORMATTED,
   email: "support@vertexkashmirholidays.com",
 };
 

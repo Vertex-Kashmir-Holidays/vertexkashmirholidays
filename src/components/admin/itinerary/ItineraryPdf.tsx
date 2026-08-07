@@ -485,11 +485,14 @@ interface Props {
   data: ItineraryData;
   /** original src -> compressed JPEG data URL */
   images: Record<string, string>;
+  /** Resolved Corporate Office (or Registered Office fallback) — falls back to the static PDF_CONTACT default if omitted. */
+  address?: string;
 }
 
-export function ItineraryPdf({ data, images }: Props) {
+export function ItineraryPdf({ data, images, address }: Props) {
   const img = (src: string) => images[src];
   const qrDataUrl = img(getPaymentQr(data));
+  const officeAddress = address ?? PDF_CONTACT.address;
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -778,7 +781,7 @@ export function ItineraryPdf({ data, images }: Props) {
                 </View>
                 <View style={s.tyInfoRow}>
                   <PdfIcon icon="map-pin" size={11} color={TY_MINT} />
-                  <Text style={s.tyInfo}>{CONTACT.address}</Text>
+                  <Text style={s.tyInfo}>{officeAddress}</Text>
                 </View>
                 <View style={s.tyInfoRow}>
                   <PdfIcon icon="calendar" size={11} color={TY_MINT} />
