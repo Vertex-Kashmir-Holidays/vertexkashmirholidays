@@ -57,9 +57,9 @@ export function ToursGridSection({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          All Tours{" "}
+          Kashmir Tour Packages{" "}
           <span className="font-sans text-[14px] font-semibold text-primary">
-            ({totalCount} {totalCount === 1 ? "Package" : "Packages"})
+            — Handpicked &amp; Ready to Book
           </span>
         </motion.h2>
 

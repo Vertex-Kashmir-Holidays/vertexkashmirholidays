@@ -129,7 +129,7 @@ export function Navbar() {
 
           {/* Desktop Navigation — light-on-dark over the hero, ink once landed. */}
           <ul
-            className={`hidden items-center gap-7 text-[16px] font-medium lg:flex ${
+            className={`hidden items-center gap-7 text-[16px] font-semibold lg:flex ${
               overHero ? "text-white/80" : "text-foreground/75"
             }`}
           >

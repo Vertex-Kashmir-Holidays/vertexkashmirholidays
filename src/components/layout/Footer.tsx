@@ -5,7 +5,13 @@ import Image from "next/image";
 import { MapPin, Phone } from "lucide-react";
 import type { TourCategory } from "@prisma/client";
 import { Logo } from "@/components/brand/Logo";
-import { InstagramIcon, FacebookIcon, YoutubeIcon, WhatsAppIcon } from "@/components/icons/brand";
+import {
+  InstagramIcon,
+  FacebookIcon,
+  YoutubeIcon,
+  WhatsAppIcon,
+  TwitterIcon,
+} from "@/components/icons/brand";
 import { trackWhatsappClick, trackPhoneClick, trackEmailClick } from "@/lib/analytics";
 import { formatBusinessAddress, REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
@@ -149,6 +155,17 @@ export function Footer({
                   className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10"
                 >
                   <YoutubeIcon className="h-[18px] w-[18px]" />
+                </a>
+              )}
+              {settings?.twitter && (
+                <a
+                  href={settings.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="X (Twitter)"
+                  className="glass grid h-9 w-9 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/10"
+                >
+                  <TwitterIcon className="h-[18px] w-[18px]" />
                 </a>
               )}
               <a
