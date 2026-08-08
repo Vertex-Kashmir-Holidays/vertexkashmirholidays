@@ -268,6 +268,10 @@ export default async function TourDetailsPage({ params }: PageProps) {
   }));
 
   // ── Tabs (only for sections that have content) ─────────────────────────────
+  // Shortened to the core sections — Meals & Transport, Travel Info, Trip Fit,
+  // FAQs and Related Tours are still rendered on the page, just no longer
+  // have their own quick-nav tab (this bar is a scroll-spy anchor nav, not a
+  // content switcher — see TourDetailsTabs.tsx).
   const tabs = [
     { id: "overview", label: "Overview" },
     ...(itinerary.length ? [{ id: "itinerary", label: "Itinerary" }] : []),
@@ -275,23 +279,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
     ...(inclusions.length || exclusions.length ? [{ id: "inclusions", label: "Inclusions" }] : []),
     ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
     ...(accommodation.length ? [{ id: "accommodation", label: "Accommodation" }] : []),
-    ...(tour.meals || tour.transportDetail
-      ? [{ id: "meals-transport", label: "Meals & Transport" }]
-      : []),
-    ...(tour.bestTimeDetail ||
-    thingsToCarry.length ||
-    localTravelTips.length ||
-    importantNotes.length
-      ? [{ id: "travel-info", label: "Travel Info" }]
-      : []),
-    ...(perfectFor.length || notIdealFor.length ? [{ id: "fit", label: "Trip Fit" }] : []),
-    ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
     ...(budgetBreakdown.length || personalExpenses.length
       ? [{ id: "budget", label: "Budget" }]
       : []),
     ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
     ...(reviews.length ? [{ id: "reviews", label: "Reviews" }] : []),
-    ...(relatedTours.length ? [{ id: "related", label: "Related" }] : []),
   ];
 
   // ── Structured data (JSON-LD) ──────────────────────────────────────────────
