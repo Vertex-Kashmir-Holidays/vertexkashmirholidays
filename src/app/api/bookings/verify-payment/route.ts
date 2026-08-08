@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { logPaymentAudit } from "@/lib/bookings/audit";
 import { recordOnlinePayment } from "@/lib/bookings/online-payment";
 import { finalizeOnlinePayment } from "@/lib/bookings/notify";
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   // Throttle verification attempts (slows brute-forcing of signatures).
   const limit = await rateLimit(`booking:verify:${ip}`, 20, "10 m");
   if (!limit.success) {
-    return NextResponse.json({ error: "Too many attempts." }, { status: 429 });
+    return tooManyRequests(limit, "Too many attempts.");
   }
 
   const body = await req.json().catch(() => null);

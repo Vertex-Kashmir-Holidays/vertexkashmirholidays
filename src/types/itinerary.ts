@@ -43,6 +43,20 @@ export const trustSchema = z.object({
   icon: z.string(), // key into ITINERARY_ICONS
 });
 
+/**
+ * Fallback hotel/room photos for the 3 image slots below the accommodation
+ * table — declared here (above the schema) so the schema's own `.default()`
+ * can use it: an itinerary saved before this field existed gets real,
+ * exportable image paths the moment it's next loaded, not just a visual-only
+ * fallback that silently exports as empty until someone manually replaces a
+ * slot. Also used as DEFAULT_ITINERARY_DATA's starting images.
+ */
+export const DEFAULT_HOTEL_IMAGES = [
+  "/itinerary/srinagar.webp",
+  "/itinerary/gulmarg.webp",
+  "/itinerary/pahalgam.webp",
+];
+
 export const itineraryDataSchema = z.object({
   // Cover
   coverTitle: z.string(),
@@ -64,6 +78,11 @@ export const itineraryDataSchema = z.object({
 
   // Accommodation + trust strip
   hotels: z.array(hotelSchema),
+  // Hotel/room photos shown below the accommodation table. Defaulted (not
+  // required) so itineraries saved before this field existed still parse
+  // instead of falling back to DEFAULT_ITINERARY_DATA wholesale — see the
+  // safeParse fallback in src/app/admin/itinerary/[id]/page.tsx.
+  hotelImages: z.array(z.string()).default(DEFAULT_HOTEL_IMAGES),
   trust: z.array(trustSchema),
 
   // Transport

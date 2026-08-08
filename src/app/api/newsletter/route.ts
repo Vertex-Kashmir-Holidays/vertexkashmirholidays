@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { checkBotSignals } from "@/lib/security/formGuard";
 import { isSameOrigin } from "@/lib/security/origin";
 
@@ -25,10 +25,7 @@ export async function POST(req: NextRequest) {
   const ip = clientIp(req);
   const limit = await rateLimit(`newsletter:ip:${ip}`, 5, "1 h");
   if (!limit.success) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 },
-    );
+    return tooManyRequests(limit);
   }
 
   const parsed = newsletterSchema.safeParse(body);

@@ -6,7 +6,7 @@ import { sendMail, leadNotificationHtml, leadNotificationText } from "@/lib/mail
 import { requirePermission } from "@/lib/permissions";
 import { leadInputSchema } from "@/lib/leads/schema";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { checkBotSignals } from "@/lib/security/formGuard";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isSameOrigin } from "@/lib/security/origin";
@@ -152,9 +152,11 @@ export async function POST(req: NextRequest) {
   const ipHour = await rateLimit(`lead:ip:hour:${ip}`, 30, "1 h");
   if (!ipBurst.success || !ipHour.success) {
     console.warn(`[leads] rate-limited ip=${ip}`);
-    return NextResponse.json(
-      { error: "Too many requests. Please try again in a little while." },
-      { status: 429 },
+    // Report the hourly window when that is the one exhausted — it is the
+    // longer wait, so a client honouring Retry-After won't come back early.
+    return tooManyRequests(
+      ipHour.success ? ipBurst : ipHour,
+      "Too many requests. Please try again in a little while.",
     );
   }
 
@@ -201,15 +203,12 @@ export async function POST(req: NextRequest) {
   const phoneLimit = await rateLimit(`lead:phone:${phone}`, 3, "24 h");
   const emailLimit = email
     ? await rateLimit(`lead:email:${email}`, 3, "24 h")
-    : { success: true, remaining: 3 };
+    : { success: true, remaining: 3, reset: Date.now() };
   if (!phoneLimit.success || !emailLimit.success) {
     console.warn(
       `[leads] identity rate-limited phone=${maskPhone(phone)} email=${maskEmail(email)} ip=${ip}`,
     );
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 },
-    );
+    return tooManyRequests(phoneLimit.success ? emailLimit : phoneLimit);
   }
 
   // ── Anti-junk / duplicate prevention ───────────────────────────────────────

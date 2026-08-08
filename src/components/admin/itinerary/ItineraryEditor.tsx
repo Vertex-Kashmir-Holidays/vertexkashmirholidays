@@ -19,10 +19,15 @@ import {
   type ItineraryData,
   type ItineraryStatus,
   type ItineraryDay,
+  DEFAULT_HOTEL_IMAGES,
   genId,
 } from "@/types/itinerary";
 
 type ListKey = "inc" | "exc" | "pay" | "cancel";
+
+// Fixed at 3 for now — the request was "try 3, maybe a 4th if there's room."
+// Bump to 4 once that's been reviewed against the actual page layout.
+const HOTEL_IMAGE_SLOTS = 3;
 
 /** Structured lead data for the two-way trip-detail sync (lead-linked itineraries). */
 export interface LeadSyncData {
@@ -44,6 +49,8 @@ interface ItineraryEditorProps {
   leadSync?: LeadSyncData;
   /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
+  /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
+  companyAddress?: string;
 }
 
 export function ItineraryEditor({
@@ -54,6 +61,7 @@ export function ItineraryEditor({
   canSave = true,
   leadSync,
   lockCost = false,
+  companyAddress,
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -163,6 +171,17 @@ export function ItineraryEditor({
   const removeHotel = (hid: string) =>
     setData((p) => ({ ...p, hotels: p.hotels.filter((h) => h.id !== hid) }));
 
+  // hotelImages may be shorter than HOTEL_IMAGE_SLOTS (older itineraries
+  // default to []) — pad up to the slot being edited so a replace on an
+  // unfilled slot doesn't silently drop into the wrong index.
+  const updateHotelImage = (index: number, src: string) =>
+    setData((p) => {
+      const next = [...p.hotelImages];
+      while (next.length <= index) next.push(DEFAULT_HOTEL_IMAGES[next.length] ?? "");
+      next[index] = src;
+      return { ...p, hotelImages: next };
+    });
+
   /* ---------- trust ---------- */
   const updateTrust = (tid: string, field: "title" | "subtitle", value: string) =>
     setData((p) => ({
@@ -210,7 +229,7 @@ export function ItineraryEditor({
   async function handleExport() {
     setExporting(true);
     try {
-      const { bytes } = await downloadItineraryPdf(data);
+      const { bytes } = await downloadItineraryPdf(data, companyAddress);
       const kb = Math.round(bytes / 1024);
       if (bytes > 1024 * 1024) {
         toast.warning(
@@ -490,6 +509,26 @@ export function ItineraryEditor({
               *All accommodations are subject to availability at the time of confirmation.
             </p>
 
+            <div className="mt-6 grid grid-cols-3 gap-4">
+              {Array.from({ length: HOTEL_IMAGE_SLOTS }).map((_, i) => (
+                <div key={i} className="relative">
+                  <ImagePicker
+                    value={data.hotelImages[i] ?? DEFAULT_HOTEL_IMAGES[i] ?? ""}
+                    onChange={(src) => updateHotelImage(i, src)}
+                    className="absolute right-2 top-2 z-10"
+                    label="Replace"
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={data.hotelImages[i] || DEFAULT_HOTEL_IMAGES[i] || "/itinerary/hero.webp"}
+                    alt="Hotel / room"
+                    className="h-[120px] w-full rounded-xl object-cover shadow-soft"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+
             <div className="mt-7 grid grid-cols-2 gap-y-6 rounded-2xl bg-[hsl(40_33%_96%)] px-3 py-6 dark:bg-muted/20 sm:grid-cols-4 sm:px-7">
               {data.trust.map((t, i) => (
                 <div
@@ -627,7 +666,7 @@ export function ItineraryEditor({
                   <img
                     src="/gateway/payment-partner-dark.webp"
                     alt="Payment partners"
-                    className="h-14 w-auto max-w-full object-contain"
+                    className="h-24 w-auto max-w-full object-contain"
                   />
                 </div>
                 <div className="relative flex flex-col items-center">
@@ -687,7 +726,7 @@ export function ItineraryEditor({
                       icon="map-pin"
                       className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary"
                     />
-                    <span className="font-semibold">{PDF_CONTACT.address}</span>
+                    <span className="font-semibold">{companyAddress ?? PDF_CONTACT.address}</span>
                   </p>
                   <p className="flex items-center gap-3">
                     <ItineraryIcon

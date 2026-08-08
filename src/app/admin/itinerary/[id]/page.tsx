@@ -10,6 +10,7 @@ import { itineraryDataSchema, type ItineraryData } from "@/types/itinerary";
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { resolveItineraryAccess } from "@/lib/itinerary/access";
 import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
+import { resolvePrimaryOffice } from "@/lib/companyOffice";
 
 export const metadata: Metadata = { title: "Edit Itinerary — Admin" };
 export const dynamic = "force-dynamic";
@@ -81,6 +82,9 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
 
   const canSave = (await can(role, "itinerary", "edit")) && access.canEdit;
 
+  const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
+  const { address: companyAddress } = await resolvePrimaryOffice(settings);
+
   const leadSync = record.lead
     ? {
         leadId: record.lead.id,
@@ -141,6 +145,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         canSave={canSave}
         leadSync={leadSync}
         lockCost={!!record.bookingId && !!record.booking?.razorpayOrderId}
+        companyAddress={companyAddress}
       />
     </div>
   );

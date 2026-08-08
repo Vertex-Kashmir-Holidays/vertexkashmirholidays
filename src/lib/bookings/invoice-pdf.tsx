@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { loadLogoDataUrl } from "@/lib/pdf/assets";
 import { BookingSummaryPdf, PaymentInvoicePdf, type PdfService } from "@/lib/pdf/InvoiceDocuments";
+import { resolvePrimaryOffice } from "@/lib/companyOffice";
 
 export const bookingRef = (id: string) => id.slice(-8).toUpperCase();
 
@@ -64,10 +65,15 @@ export async function renderBookingSummaryPdf(
     timing: s.timing,
   }));
   const ref = bookingRef(booking.id);
-  const logo = await loadLogoDataUrl();
+  const [logo, settings] = await Promise.all([
+    loadLogoDataUrl(),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+  ]);
+  const { address } = await resolvePrimaryOffice(settings);
   const buffer = await renderToBuffer(
     <BookingSummaryPdf
       logo={logo}
+      address={address}
       data={{
         bookingRef: ref,
         guestName: booking.guestName || booking.user?.name || "Guest",
@@ -110,10 +116,15 @@ export async function renderPaymentReceiptPdf(
 
   const ref = bookingRef(booking.id);
   const invoiceRef = payment.id.slice(-8).toUpperCase();
-  const logo = await loadLogoDataUrl();
+  const [logo, settings] = await Promise.all([
+    loadLogoDataUrl(),
+    prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+  ]);
+  const { address } = await resolvePrimaryOffice(settings);
   const buffer = await renderToBuffer(
     <PaymentInvoicePdf
       logo={logo}
+      address={address}
       data={{
         invoiceRef,
         bookingRef: ref,

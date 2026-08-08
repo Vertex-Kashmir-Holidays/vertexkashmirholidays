@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { MAX_VERIFY_ATTEMPTS, cleanupExpiredOtps, verifyOtpHash } from "@/lib/auth/otp";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +25,7 @@ export async function POST(req: NextRequest) {
   try {
     const ipLimit = await rateLimit(`otp-verify:careers:${clientIp(req)}`, 30, "10 m");
     if (!ipLimit.success) {
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
-        { status: 429 },
-      );
+      return tooManyRequests(ipLimit, "Too many attempts. Please try again later.");
     }
 
     const body = await req.json().catch(() => null);

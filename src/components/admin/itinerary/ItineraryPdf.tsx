@@ -4,10 +4,11 @@
 // Text is vector (selectable); images are pre-compressed JPEG data URLs passed
 // in via `images` (keyed by the original src) so the document stays under 1 MB.
 
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, Svg, Path, StyleSheet } from "@react-pdf/renderer";
 import type { ItineraryData } from "@/types/itinerary";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { getPaymentQr } from "@/lib/itinerary/payment";
+import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "./icons";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -187,7 +188,7 @@ const s = StyleSheet.create({
     borderTopColor: "rgba(255,255,255,0.25)",
     paddingTop: 16,
   },
-  coverGridCol: { flex: 1, paddingRight: 10, alignItems: "center" },
+  coverGridCol: { flex: 1, paddingRight: 10, alignItems: "center", gap: 3 },
   coverGridValue: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
@@ -293,6 +294,8 @@ const s = StyleSheet.create({
   colNights: { width: "13%" },
   colRoom: { width: "17%" },
   note: { fontSize: 8, color: C.muted, fontStyle: "italic", marginTop: 6 },
+  hotelImagesRow: { flexDirection: "row", gap: 10, marginTop: 12 },
+  hotelImg: { flex: 1, height: 90, borderRadius: 8, objectFit: "cover" },
 
   // Trust strip
   trust: {
@@ -384,11 +387,11 @@ const s = StyleSheet.create({
   tyCompany: { fontSize: 14.5, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 14 },
   tyReg: { fontSize: 8.5, color: "rgba(255,255,255,0.55)", marginTop: 3 },
   tyContactWrap: { marginTop: 18 },
+  tyInfoRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 9 },
   tyInfo: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: "rgba(255,255,255,0.9)",
-    marginTop: 9,
     lineHeight: 1.4,
   },
   // Same navy as tyLeftCol — no explicit border was ever drawn between the
@@ -433,6 +436,39 @@ function Footer() {
   );
 }
 
+// react-pdf equivalent of ItineraryIcon (./icons.tsx) — same path registry, so
+// the PDF's icons never drift from the live editor's. react-pdf has no <img>
+// equivalent for inline vector icons, hence the separate Svg/Path render here
+// rather than reusing the DOM <svg>-based ItineraryIcon component directly.
+function PdfIcon({
+  icon,
+  size = 12,
+  color = C.green,
+  strokeWidth = 1.8,
+}: {
+  icon: string;
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}) {
+  const d = ITINERARY_ICON_PATHS[icon as ItineraryIconKey] ?? "M12 8v0 M12 12v0 M12 16v0";
+  return (
+    <Svg viewBox="0 0 24 24" width={size} height={size}>
+      {d.split(" M").map((seg, i) => (
+        <Path
+          key={i}
+          d={i === 0 ? seg : `M${seg}`}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </Svg>
+  );
+}
+
 function SectionHead({ title }: { title: string }) {
   // wrap={false} keeps the heading and its underline together; minPresenceAhead
   // pulls the whole heading to the next page if too little room remains below,
@@ -449,11 +485,14 @@ interface Props {
   data: ItineraryData;
   /** original src -> compressed JPEG data URL */
   images: Record<string, string>;
+  /** Resolved Corporate Office (or Registered Office fallback) — falls back to the static PDF_CONTACT default if omitted. */
+  address?: string;
 }
 
-export function ItineraryPdf({ data, images }: Props) {
+export function ItineraryPdf({ data, images, address }: Props) {
   const img = (src: string) => images[src];
   const qrDataUrl = img(getPaymentQr(data));
+  const officeAddress = address ?? PDF_CONTACT.address;
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -497,14 +536,17 @@ export function ItineraryPdf({ data, images }: Props) {
 
           <View style={s.coverGrid}>
             <View style={s.coverGridCol}>
+              <PdfIcon icon="calendar" size={14} color={C.white} />
               <Text style={s.coverGridValue}>{data.travelDates}</Text>
               <Text style={s.coverGridLabel}>TRAVEL DATES</Text>
             </View>
             <View style={s.coverGridCol}>
+              <PdfIcon icon="support" size={14} color={C.white} />
               <Text style={s.coverGridValue}>{data.travelers}</Text>
               <Text style={s.coverGridLabel}>TRAVELLERS</Text>
             </View>
             <View style={s.coverGridCol}>
+              <PdfIcon icon="star" size={14} color={C.white} />
               <Text style={s.coverGridValue}>{data.packageType}</Text>
               <Text style={s.coverGridLabel}>PACKAGE TYPE</Text>
             </View>
@@ -538,14 +580,16 @@ export function ItineraryPdf({ data, images }: Props) {
           <Text style={s.headerTag}>YOUR JOURNEY, CRAFTED</Text>
         </View>
 
-        <View style={s.centerHead}>
-          <Text style={s.destLabel}>Destinations</Text>
+        <View style={[s.centerHead, { alignItems: "center" }]}>
+          <PdfIcon icon="map-pin" size={16} />
+          <Text style={[s.destLabel, { marginTop: 4 }]}>Destinations</Text>
           <Text style={s.destValue}>{data.destinations}</Text>
         </View>
 
         <View style={s.infoBar}>
           {data.info.map((it) => (
             <View key={it.id} style={s.infoCell}>
+              <PdfIcon icon={it.icon} size={13} />
               <Text style={s.infoValue}>{it.value}</Text>
               <Text style={s.infoLabel}>{it.label}</Text>
             </View>
@@ -564,9 +608,12 @@ export function ItineraryPdf({ data, images }: Props) {
               <Text style={s.dayText}>{day.body}</Text>
               <View style={s.metaWrap}>
                 {day.meta.map((m) => (
-                  <View key={m.id} style={s.metaItem}>
-                    <Text style={s.metaLabel}>{m.label}</Text>
-                    <Text style={s.metaValue}>{m.value}</Text>
+                  <View key={m.id} style={[s.metaItem, { flexDirection: "row", gap: 4 }]}>
+                    <PdfIcon icon={m.label.trim().toLowerCase()} size={10} />
+                    <View>
+                      <Text style={s.metaLabel}>{m.label}</Text>
+                      <Text style={s.metaValue}>{m.value}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -600,11 +647,19 @@ export function ItineraryPdf({ data, images }: Props) {
         <Text style={s.note}>
           *All accommodations are subject to availability at the time of confirmation.
         </Text>
+        {data.hotelImages.some((src) => img(src)) ? (
+          <View style={s.hotelImagesRow} wrap={false}>
+            {data.hotelImages.map((src, i) =>
+              img(src) ? <Image key={i} src={img(src)} style={s.hotelImg} /> : null,
+            )}
+          </View>
+        ) : null}
 
         <View style={s.trust} wrap={false}>
           {data.trust.map((t) => (
             <View key={t.id} style={s.trustCell}>
-              <Text style={s.trustTitle}>{t.title}</Text>
+              <PdfIcon icon={t.icon} size={14} />
+              <Text style={[s.trustTitle, { marginTop: 4 }]}>{t.title}</Text>
               <Text style={s.trustSub}>{t.subtitle}</Text>
             </View>
           ))}
@@ -615,9 +670,12 @@ export function ItineraryPdf({ data, images }: Props) {
           <SectionHead title="Transportation Info" />
         </View>
         <View style={s.transportRow} wrap={false}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.transportType}>{data.transportType}</Text>
-            <Text style={s.transportDesc}>{data.transportDesc}</Text>
+          <View style={{ flex: 1, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+            <PdfIcon icon="car" size={20} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.transportType}>{data.transportType}</Text>
+              <Text style={s.transportDesc}>{data.transportDesc}</Text>
+            </View>
           </View>
           {img(data.transportImage) ? (
             <Image src={img(data.transportImage)} style={s.transportImg} />
@@ -717,9 +775,18 @@ export function ItineraryPdf({ data, images }: Props) {
               <Text style={s.tyCompany}>{CONTACT.company}</Text>
               <Text style={s.tyReg}>{CONTACT.reg}</Text>
               <View style={s.tyContactWrap}>
-                <Text style={s.tyInfo}>{CONTACT.phone}</Text>
-                <Text style={s.tyInfo}>{CONTACT.address}</Text>
-                <Text style={s.tyInfo}>{CONTACT.email}</Text>
+                <View style={s.tyInfoRow}>
+                  <PdfIcon icon="support" size={11} color={TY_MINT} />
+                  <Text style={s.tyInfo}>{CONTACT.phone}</Text>
+                </View>
+                <View style={s.tyInfoRow}>
+                  <PdfIcon icon="map-pin" size={11} color={TY_MINT} />
+                  <Text style={s.tyInfo}>{officeAddress}</Text>
+                </View>
+                <View style={s.tyInfoRow}>
+                  <PdfIcon icon="calendar" size={11} color={TY_MINT} />
+                  <Text style={s.tyInfo}>{CONTACT.email}</Text>
+                </View>
               </View>
             </View>
             <View style={s.tyRightCol}>

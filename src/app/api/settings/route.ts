@@ -2,9 +2,23 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { validateTripadvisorWidgetEmbed } from "@/lib/reviews/tripadvisorWidget";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+// The stored embed code is executed as a real <script> on the public site, so
+// its source host is validated here as well as at render time — rejecting a
+// bad paste at save time tells the admin why, rather than leaving them with a
+// widget that silently renders nothing.
+const tripadvisorWidgetEmbed = z
+  .string()
+  .optional()
+  .nullable()
+  .superRefine((value, ctx) => {
+    const error = validateTripadvisorWidgetEmbed(value);
+    if (error) ctx.addIssue({ code: "custom", message: error });
+  });
 
 const patchSchema = z.object({
   siteName: z.string().min(1).optional(),
@@ -21,8 +35,8 @@ const patchSchema = z.object({
   tripadvisor: z.string().optional().nullable(),
   googleBusinessProfile: z.string().optional().nullable(),
   googlePlaceId: z.string().optional().nullable(),
-  tripadvisorHeroWidgetEmbed: z.string().optional().nullable(),
-  tripadvisorRatingWidgetEmbed: z.string().optional().nullable(),
+  tripadvisorHeroWidgetEmbed: tripadvisorWidgetEmbed,
+  tripadvisorRatingWidgetEmbed: tripadvisorWidgetEmbed,
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),

@@ -19,7 +19,8 @@ import { ContactWhatsAppFloat } from "@/components/contact/ContactWhatsAppFloat"
 import { getDisplayReviews } from "@/lib/reviews";
 import { getGooglePlaceHoursAndLocation } from "@/lib/reviews/googlePlaces";
 import { getFaqsForPlacement } from "@/lib/faqs";
-import { formatBusinessAddress } from "@/lib/businessAddress";
+import { formatBusinessAddress, REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
+import { getActiveCorporateOffices } from "@/lib/companyOffice";
 import {
   JsonLd,
   buildBreadcrumbList,
@@ -65,7 +66,7 @@ export default async function ContactPage() {
       }),
       // Centralized FAQ module — same Faq pool /about and /faq draw from.
       getFaqsForPlacement("CONTACT"),
-      prisma.contactOffice.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+      getActiveCorporateOffices(),
       getSiteSettings(),
       // Approved customer reviews (admin-managed) replace CMS testimonials here.
       getDisplayReviews(8),
@@ -76,23 +77,31 @@ export default async function ContactPage() {
   // if the API/key is unavailable. This is the same object Task 7's
   // openingHoursSpecification schema reads from, so the visible text and the
   // schema can never disagree.
+  // First active ContactOffice row (admin-managed via /admin/settings) is
+  // "the" Corporate Office everywhere on this page; any further rows are
+  // "Other Offices". No Corporate Office set → Registered Office fills the
+  // primary/map slot as a fallback (the dedicated Registered Office column
+  // further down always shows regardless).
+  const [primaryOffice, ...otherOffices] = offices;
+  const registeredAddress =
+    formatBusinessAddress(settings) ?? settings?.siteAddress ?? REGISTERED_OFFICE_FORMATTED;
+  const primaryName = primaryOffice?.name ?? "Registered Office";
+  const primaryAddress = primaryOffice?.address ?? registeredAddress;
+
   const { hours: googleHours, location: googleLocation } = await getGooglePlaceHoursAndLocation(
     settings?.googlePlaceId,
   );
   const officeHours = googleHours
     ? googleHours.weekdayText.join("\n")
-    : (content?.officeHours ?? null);
+    : (primaryOffice?.hours ?? null);
 
   const phone = settings?.sitePhone ?? null;
   const email = settings?.siteEmail ?? null;
-  const address = formatBusinessAddress(settings) ?? settings?.siteAddress ?? null;
   const whatsapp = settings?.whatsapp ?? phone ?? null;
   const directionsUrl =
     content?.directionsUrl ??
     settings?.googleBusinessProfile ??
-    (address
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-      : "#");
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(primaryAddress)}`;
 
   // Reach cards built from real SiteSettings contact channels.
   const reachCards: ContactReachCardData[] = [
@@ -120,10 +129,10 @@ export default async function ContactPage() {
       cta: "Send Email",
       href: `mailto:${email}`,
     },
-    address && {
+    {
       type: "visit" as const,
       title: "Visit Us",
-      value: address,
+      value: primaryAddress,
       subtitle: "Mon – Sat, 10 AM – 6 PM",
       cta: "Get Directions",
       href: directionsUrl,
@@ -219,8 +228,8 @@ export default async function ContactPage() {
             kicker: content?.officeKicker ?? null,
             title: content?.officeTitle ?? null,
             subtitle: content?.officeSubtitle ?? null,
-            name: content?.officeName ?? null,
-            address: content?.officeAddress ?? address,
+            name: primaryName,
+            address: primaryAddress,
             hours: officeHours,
             mapLabel: content?.officeMapLabel ?? null,
             mapSubLabel: content?.officeMapSubLabel ?? null,
@@ -229,10 +238,15 @@ export default async function ContactPage() {
             email,
             legalName: settings?.legalName ?? null,
             tourismRegNumber: settings?.tourismRegNumber ?? null,
+            gstNumber: settings?.gstNumber ?? null,
             brandName: settings?.siteName ?? null,
             placeId: settings?.googlePlaceId ?? null,
+            registeredOffice: {
+              name: "Registered Office",
+              address: registeredAddress,
+            },
           }}
-          offices={offices.map((o) => ({
+          offices={otherOffices.map((o) => ({
             id: o.id,
             name: o.name,
             address: o.address,

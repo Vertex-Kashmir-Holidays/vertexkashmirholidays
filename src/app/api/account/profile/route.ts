@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { rateLimit, tooManyRequests } from "@/lib/ratelimit";
 
 const updateSchema = z
   .object({
@@ -45,6 +46,14 @@ export async function PATCH(req: Request) {
   if (image !== undefined) data.image = image.trim() === "" ? null : image.trim();
 
   if (newPassword) {
+    // Password change is the one branch that verifies a secret, so it is both a
+    // brute-force target (for a hijacked session) and an unbounded bcrypt cost.
+    // Throttled per user — name/image updates are unaffected.
+    const limit = await rateLimit(`account-password:${session.user.id}`, 10, "15 m");
+    if (!limit.success) {
+      return tooManyRequests(limit, "Too many attempts. Please try again later.");
+    }
+
     const user = await prisma.user.findUnique({ where: { id: session.user.id } });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 

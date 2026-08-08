@@ -106,7 +106,7 @@ export function CampaignCard({ campaign, index = 0 }: CampaignCardProps) {
                 href={href}
                 className="flex items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-[14px] font-semibold text-primary-foreground transition-all duration-300 hover:brightness-110 hover:shadow-md"
               >
-                Explore Campaign
+                Explore Adventure
                 <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
               </Link>
             </motion.div>

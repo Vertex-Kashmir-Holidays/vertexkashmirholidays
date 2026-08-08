@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isStaff } from "@/lib/rbac";
 import { RESET_TOKEN_TTL_MS } from "@/lib/auth/otp";
 import { PASSWORD_MESSAGE, isValidPassword } from "@/lib/auth/validation";
-import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +28,7 @@ export async function POST(req: NextRequest) {
   try {
     const ipLimit = await rateLimit(`reset-password:${clientIp(req)}`, 20, "10 m");
     if (!ipLimit.success) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429 },
-      );
+      return tooManyRequests(ipLimit);
     }
 
     const body = await req.json().catch(() => null);

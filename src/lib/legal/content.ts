@@ -20,10 +20,17 @@ export interface LegalPageDef {
   content: string;
 }
 
+import { REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
+
 const COMPANY = "Vertex Kashmir Holidays";
 const LEGAL_ENTITY = "Vertex Kashmir Tour & Travels";
 const TOURISM_REG_NUMBER = "JKEA00001840";
-const BUSINESS_ADDRESS = "Katipora, Tangmarg, Baramulla, Jammu & Kashmir 193402, India";
+// Static default only (used before any admin customization / when no
+// LegalPage DB row exists) — the safe generic address when nothing else is
+// known. The live Corporate Office (if any) is not reflected here; see the
+// companyOffice.ts helper for the dynamic, DB-driven resolution used
+// everywhere else (footer, contact page, SEO, PDFs).
+const BUSINESS_ADDRESS = REGISTERED_OFFICE_FORMATTED;
 
 export const LEGAL_PAGES: LegalPageDef[] = [
   {

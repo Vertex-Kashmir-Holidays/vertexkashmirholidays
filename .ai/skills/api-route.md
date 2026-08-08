@@ -92,7 +92,7 @@ Large
 - Validate every request with Zod before touching anything else — never trust client input, especially a client-sent amount. Price, GST, and chargeable amount are always computed server-side (`src/lib/bookings/finance.ts`, `src/lib/payments/gst.ts`).
 - `params` is a `Promise` in Next.js 16 — always `await` it before destructuring.
 - Wrap a multi-step write in `prisma.$transaction`. This is followed for lead conversion, lead unlock, and itinerary updates — the payment-verification path (`verify-payment`/`webhook`/`reconcile`) is the one confirmed exception, tracked as a backlog item, not a pattern to copy.
-- Rate-limit endpoints that are abuse-prone or public-facing (login, OTP request/verify, booking creation, lead submission) via `src/lib/ratelimit.ts`; verify Cloudflare Turnstile on public forms via `src/lib/security/turnstile.ts` where the endpoint already does.
+- Rate-limit endpoints that are abuse-prone or public-facing (login, OTP request/verify, booking creation, lead submission) via `src/lib/ratelimit.ts`, and return the rejection with `tooManyRequests(result)` from that same module rather than a hand-built `NextResponse` — it is what attaches `Retry-After`. Check the limit before body parsing/validation so a flood is rejected on the cheapest possible path. Verify Cloudflare Turnstile on public forms via `src/lib/security/turnstile.ts` where the endpoint already does.
 - Catch a Prisma unique-constraint violation by checking the error message for `"P2002"` and return `409` with a human-readable message — the established pattern for slug/email conflicts.
 - Keep Route Handlers focused on request orchestration. Business logic belongs in shared domain utilities under `src/lib/**`, not inside the Route Handler itself.
 
@@ -123,6 +123,7 @@ Observed repository convention, not fully unified yet:
 - Invalid JSON body → `400`.
 - Validation failure → most routes return `422` (e.g. the leads route), but this isn't fully standardized across every route yet — a known, tracked gap ("Standardize API Response & Status Codes" in the engineering backlog), not something to treat as already-settled. Match whatever the sibling routes in the same domain already do.
 - Auth/permission failure → the `NextResponse` returned directly by `requirePermission`/`requireStaff`/`auth()` (401/403) — return it as-is, don't wrap it further.
+- Rate-limit rejection → `429` via `tooManyRequests()` (see Engineering Rules) — this one *is* standardized, unlike the validation-status case above.
 - Not found → `404` with a short message.
 - Unexpected error → a generic message with a non-2xx status; never the raw error object. Log server-side; see `../instructions/coding-standards.md` → Logging for the current state of that (console-based today, structured logging is a tracked future item).
 

@@ -43,7 +43,10 @@ export interface ExportResult {
  * browser download. Returns the byte size so callers can warn if it approaches
  * the 1 MB budget.
  */
-export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportResult> {
+export async function downloadItineraryPdf(
+  data: ItineraryData,
+  address?: string,
+): Promise<ExportResult> {
   // Lazily pull in the PDF renderer and the document template only on export.
   const [{ pdf }, { ItineraryPdf, LOGO_ASSETS }] = await Promise.all([
     import("@react-pdf/renderer"),
@@ -55,6 +58,7 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
     data.transportImage,
     getPaymentQr(data),
     ...data.days.map((d) => d.image),
+    ...data.hotelImages,
   ].filter(Boolean);
 
   // The cover wants a larger, fuller-bleed image; day thumbnails stay tiny.
@@ -91,7 +95,7 @@ export async function downloadItineraryPdf(data: ItineraryData): Promise<ExportR
   });
   const images = { ...smallImages, ...coverImages, ...logoMap };
 
-  const blob = await pdf(<ItineraryPdf data={data} images={images} />).toBlob();
+  const blob = await pdf(<ItineraryPdf data={data} images={images} address={address} />).toBlob();
 
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

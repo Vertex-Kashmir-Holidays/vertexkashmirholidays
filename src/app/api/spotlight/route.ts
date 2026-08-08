@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,16 @@ export const dynamic = "force-dynamic";
 // making the page itself dynamic. Random pick is done via count + a random
 // skip rather than fetching every row, so the query cost stays a single
 // indexed count plus a single-row select regardless of table size.
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // The randomness requires `no-store`, so every hit reaches the database (4
+  // queries) with no CDN in front of it — the one public read endpoint where a
+  // flood costs real database time. A widget renders once per page view, so 60
+  // per minute is far above any real browsing pattern.
+  const limit = await rateLimit(`spotlight:ip:${clientIp(req)}`, 60, "1 m");
+  if (!limit.success) {
+    return tooManyRequests(limit);
+  }
+
   const [tourCount, blogCount] = await Promise.all([
     prisma.tour.count({ where: { published: true } }),
     prisma.blog.count({ where: { published: true } }),

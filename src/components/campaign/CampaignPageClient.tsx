@@ -27,9 +27,14 @@ import type { CampaignData } from "@/types/campaign";
 interface CampaignPageClientProps {
   campaign: CampaignData;
   footerSettings?: FooterSettings | null;
+  corporateOffice?: { name: string; address: string } | null;
 }
 
-export function CampaignPageClient({ campaign, footerSettings }: CampaignPageClientProps) {
+export function CampaignPageClient({
+  campaign,
+  footerSettings,
+  corporateOffice,
+}: CampaignPageClientProps) {
   const [filmOpen, setFilmOpen] = useState(false);
 
   // Phone shown in the nav / hero / final CTA: this campaign's own number if
@@ -127,7 +132,7 @@ export function CampaignPageClient({ campaign, footerSettings }: CampaignPageCli
       )}
       <CampaignWhatsAppFloat href={whatsappHref} />
 
-      <Footer settings={footerSettings} />
+      <Footer settings={footerSettings} corporateOffice={corporateOffice ?? null} />
 
       {campaign.filmSrc && campaign.filmPoster && (
         <CampaignFilmModal
