@@ -5,6 +5,7 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getSiteSettings, buildFooterSettings } from '@/lib/siteSettings';
+import { getActiveCorporateOffices } from '@/lib/companyOffice';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import { CampaignPageClient } from '@/components/campaign/CampaignPageClient';
 import { JsonLd, buildBreadcrumbList, buildCampaignProduct, buildCampaignEvents, buildFAQPage } from '@/components/seo/JsonLd';
@@ -71,14 +72,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CampaignPage({ params }: PageProps) {
   const { slug } = await params;
-  const [c, s, reviews] = await Promise.all([
+  const [c, s, reviews, corporateOffices] = await Promise.all([
     getCampaign(slug),
     getSiteSettings(),
     getDisplayReviews(6),
+    getActiveCorporateOffices(),
   ]);
   if (!c || !c.published) notFound();
 
   const footerSettings = buildFooterSettings(s);
+  const corporateOffice = corporateOffices[0]
+    ? { name: corporateOffices[0].name, address: corporateOffices[0].address }
+    : null;
 
   // Campaign "traveller stories" now pull from the global Review module rather
   // than a per-campaign JSON field — reviews are admin/customer managed.
@@ -162,7 +167,7 @@ export default async function CampaignPage({ params }: PageProps) {
       <JsonLd data={productLd} />
       {eventLds.map((ev, i) => <JsonLd key={i} data={ev} />)}
       {data.faqs.length > 0 && <JsonLd data={buildFAQPage(data.faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))} />}
-      <CampaignPageClient campaign={data} footerSettings={footerSettings} />
+      <CampaignPageClient campaign={data} footerSettings={footerSettings} corporateOffice={corporateOffice} />
     </>
   );
 }

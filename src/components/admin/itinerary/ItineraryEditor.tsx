@@ -49,6 +49,8 @@ interface ItineraryEditorProps {
   leadSync?: LeadSyncData;
   /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
+  /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
+  companyAddress?: string;
 }
 
 export function ItineraryEditor({
@@ -59,6 +61,7 @@ export function ItineraryEditor({
   canSave = true,
   leadSync,
   lockCost = false,
+  companyAddress,
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -226,7 +229,7 @@ export function ItineraryEditor({
   async function handleExport() {
     setExporting(true);
     try {
-      const { bytes } = await downloadItineraryPdf(data);
+      const { bytes } = await downloadItineraryPdf(data, companyAddress);
       const kb = Math.round(bytes / 1024);
       if (bytes > 1024 * 1024) {
         toast.warning(
@@ -723,7 +726,7 @@ export function ItineraryEditor({
                       icon="map-pin"
                       className="h-5 w-5 text-[hsl(156_40%_21%)] dark:text-primary"
                     />
-                    <span className="font-semibold">{PDF_CONTACT.address}</span>
+                    <span className="font-semibold">{companyAddress ?? PDF_CONTACT.address}</span>
                   </p>
                   <p className="flex items-center gap-3">
                     <ItineraryIcon

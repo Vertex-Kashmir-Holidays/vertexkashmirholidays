@@ -22,6 +22,7 @@ import {
   parseInclusions,
   type ServiceKind,
 } from "@/lib/bookings/serviceDisplay";
+import { ItineraryDownloadButton } from "@/components/account/ItineraryDownloadButton";
 
 export const metadata: Metadata = { title: "Booking Details" };
 export const dynamic = "force-dynamic";
@@ -72,9 +73,20 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       tour: { select: { title: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       payments: { orderBy: { createdAt: "asc" } },
+      itinerary: { select: { title: true, status: true, updatedAt: true } },
+      leads: {
+        take: 1,
+        select: { itinerary: { select: { title: true, status: true, updatedAt: true } } },
+      },
     },
   });
   if (!booking) notFound();
+
+  // Lead-converted bookings have no itinerary of their own — they use the
+  // originating lead's (see business-rules.md → Itinerary Rules). Only a
+  // SENT/CONFIRMED itinerary is shown; a DRAFT is still a staff work-in-progress.
+  const itinerary = booking.itinerary ?? booking.leads[0]?.itinerary ?? null;
+  const itineraryVisible = !!itinerary && itinerary.status !== "DRAFT";
 
   const finance = computeBookingFinance({
     amount: booking.amount,
@@ -141,6 +153,26 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Trip itinerary */}
+      {itineraryVisible && itinerary && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display font-bold text-foreground">Your Itinerary</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {itinerary.title} · Updated{" "}
+                {itinerary.updatedAt.toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+            <ItineraryDownloadButton bookingId={booking.id} />
+          </div>
+        </div>
+      )}
 
       {/* Service details — no per-service prices */}
       <div className="rounded-2xl border border-border bg-card p-5">

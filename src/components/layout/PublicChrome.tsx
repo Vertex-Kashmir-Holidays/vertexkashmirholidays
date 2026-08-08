@@ -13,6 +13,7 @@ import { OfflineBanner } from "@/components/layout/OfflineBanner";
 interface PublicChromeProps {
   children: React.ReactNode;
   settings: FooterSettings | null;
+  corporateOffice: { name: string; address: string } | null;
   strip: StripBannerData | null;
   promoBanners: SlotBanner[];
   tourCategories: TourCategory[];
@@ -21,6 +22,7 @@ interface PublicChromeProps {
 export function PublicChrome({
   children,
   settings,
+  corporateOffice,
   strip,
   promoBanners,
   tourCategories,
@@ -54,7 +56,7 @@ export function PublicChrome({
       {/* PROMO banners for the current page (path-filtered). Placed just above
           the footer so it's consistent site-wide and never fights a page hero. */}
       <PromoBannerSlot banners={promoBanners} />
-      <Footer settings={settings} tourCategories={tourCategories} />
+      <Footer settings={settings} corporateOffice={corporateOffice} tourCategories={tourCategories} />
     </>
   );
 }

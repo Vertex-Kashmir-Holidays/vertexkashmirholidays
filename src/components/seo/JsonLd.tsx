@@ -2,6 +2,7 @@
 
 import { safeLdJson } from "@/lib/sanitize";
 import { SITE_URL } from "@/lib/seo";
+import { REGISTERED_OFFICE } from "@/lib/businessAddress";
 
 interface JsonLdProps {
   data: Record<string, unknown>;
@@ -51,10 +52,10 @@ export function buildTravelAgency(opts?: {
     },
     address: {
       "@type": "PostalAddress",
-      streetAddress: opts?.streetAddress ?? "Katipora, Tangmarg",
-      addressLocality: opts?.addressLocality ?? "Baramulla",
-      addressRegion: opts?.addressRegion ?? "Jammu & Kashmir",
-      postalCode: opts?.postalCode ?? "193402",
+      streetAddress: opts?.streetAddress ?? REGISTERED_OFFICE.line1,
+      addressLocality: opts?.addressLocality ?? REGISTERED_OFFICE.city,
+      addressRegion: opts?.addressRegion ?? REGISTERED_OFFICE.state,
+      postalCode: opts?.postalCode ?? REGISTERED_OFFICE.pincode,
       addressCountry: opts?.addressCountry ?? "IN",
     },
     sameAs: opts?.sameAs ?? [],
