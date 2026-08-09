@@ -145,6 +145,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         canSave={canSave}
         leadSync={leadSync}
         lockCost={!!record.bookingId && !!record.booking?.razorpayOrderId}
+        isBookingLinked={!!record.bookingId}
         companyAddress={companyAddress}
       />
     </div>
