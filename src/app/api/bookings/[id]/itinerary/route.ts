@@ -80,7 +80,12 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const created = await prisma.itinerary.create({
     data: {
       title,
-      status: "DRAFT",
+      // Direct (website) bookings are already paid/confirmed by the time staff
+      // generate the itinerary — unlike a lead's proposal-stage itinerary,
+      // there's no pending approval step, so it should be visible in the
+      // customer's account immediately (DRAFT is hidden there — see
+      // itineraryVisible in account/bookings/[id]/page.tsx).
+      status: "CONFIRMED",
       data,
       ownerId: guard.user.id,
       bookingId: booking.id,

@@ -238,6 +238,22 @@ export function ItineraryEditor({
       } else {
         toast.success(`PDF downloaded (${kb} KB).`);
       }
+      // Downloading the PDF means it's being shared with the customer — bump a
+      // still-draft itinerary out of DRAFT so it becomes visible in their
+      // account (DRAFT is hidden there — see itineraryVisible in
+      // account/bookings/[id]/page.tsx). Never downgrades an already
+      // SENT/CONFIRMED itinerary.
+      if (id && status === "DRAFT") {
+        const res = await fetch(`/api/itineraries/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "SENT" }),
+        });
+        if (res.ok) {
+          setStatus("SENT");
+          router.refresh();
+        }
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PDF export failed");
     } finally {
