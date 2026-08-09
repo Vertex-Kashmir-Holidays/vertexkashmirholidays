@@ -102,6 +102,7 @@ export default async function TourCategoryPage({ params }: PageProps) {
     n: String(t.reviewCount),
     old: t.priceWas ? formatINR(t.priceWas) : undefined,
     p: formatINR(t.priceFrom),
+    minPersons: t.minPersons,
   }));
 
   const breadcrumbJsonLd = buildBreadcrumbList([
@@ -134,6 +135,7 @@ export default async function TourCategoryPage({ params }: PageProps) {
                 reviewCount: featured.reviewCount,
                 priceFrom: featured.priceFrom,
                 priceWas: featured.priceWas,
+                minPersons: featured.minPersons,
               }}
             />
             <TourCategoryRecommended tours={recommendedCards} />

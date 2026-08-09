@@ -743,8 +743,19 @@ export function PackageForm({
   const category = watch("category");
   const duration = watch("duration");
   const priceFrom = watch("priceFrom");
+  const priceWas = watch("priceWas");
   const published = watch("published");
   const bestseller = watch("bestseller");
+
+  // Discount % is derived from Original Price vs. Price From — never entered
+  // directly, so it can't drift out of sync with the two amounts it's based on.
+  useEffect(() => {
+    if (!priceWas || !priceFrom || priceWas <= priceFrom) {
+      setValue("discountPct", null);
+      return;
+    }
+    setValue("discountPct", Math.round(((priceWas - priceFrom) / priceWas) * 100));
+  }, [priceFrom, priceWas, setValue]);
 
   const catInfo = CATEGORIES.find((c) => c.value === category);
 
@@ -920,12 +931,15 @@ export function PackageForm({
             <div>
               <FieldLabel>Discount (%)</FieldLabel>
               <TextInput
-                {...register("discountPct", { valueAsNumber: true })}
+                value={watch("discountPct") ?? ""}
                 type="number"
-                min={0}
-                max={100}
-                placeholder="15"
+                readOnly
+                disabled
+                placeholder="Auto-calculated"
               />
+              <p className="text-[12px] text-muted-foreground mt-1">
+                Auto-calculated from Original Price vs. Price From
+              </p>
             </div>
           </div>
 

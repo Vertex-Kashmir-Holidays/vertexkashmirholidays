@@ -171,9 +171,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const access = resolveItineraryAccess(existing, { id: guard.user.id, role: guard.user.role });
   if (!access.canView) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (access.locked) {
+  // Linked itineraries (to a lead or a direct booking) are the record that
+  // customer/lead relies on — never deletable, regardless of lock state.
+  if (existing.leadId || existing.bookingId) {
     return NextResponse.json(
-      { error: "A locked itinerary for a converted lead cannot be deleted." },
+      { error: "This itinerary is linked to a lead/booking and can't be deleted." },
       { status: 422 },
     );
   }

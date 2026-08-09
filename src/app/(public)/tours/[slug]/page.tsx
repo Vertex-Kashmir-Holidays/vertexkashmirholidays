@@ -224,6 +224,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
           n: String(t.reviewCount),
           old: t.priceWas ? formatINR(t.priceWas) : undefined,
           p: formatINR(t.priceFrom),
+          minPersons: t.minPersons,
         },
       };
     })
@@ -496,6 +497,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
               price={tour.priceFrom}
               oldPrice={tour.priceWas ?? undefined}
               discountPct={tour.discountPct ?? undefined}
+              minPersons={tour.minPersons}
               rating={tour.rating}
               reviews={tour.reviewCount}
               tourId={tour.id}
@@ -521,6 +523,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
         price={tour.priceFrom}
         oldPrice={tour.priceWas ?? undefined}
         discountPct={tour.discountPct ?? undefined}
+        minPersons={tour.minPersons}
       />
 
       <TrustSection type="tour" name={tour.title} />

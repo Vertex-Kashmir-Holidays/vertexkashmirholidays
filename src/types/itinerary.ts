@@ -119,6 +119,8 @@ export interface ItinerarySummary {
   ownerName?: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
+  /** Linked to a lead or a direct booking — can't be deleted. */
+  linked: boolean;
 }
 
 /** Full record returned by GET /api/itineraries/[id]. */

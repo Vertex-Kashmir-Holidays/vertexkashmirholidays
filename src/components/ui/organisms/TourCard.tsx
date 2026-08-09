@@ -26,6 +26,7 @@ interface TourCardProps {
     n: string;
     old?: string;
     p: string;
+    minPersons?: number;
     inclusions?: {
       transfers?: boolean;
       hotel?: string;
@@ -202,6 +203,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                 className={`text-[10px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
               >
                 per person
+                {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
               </p>
             </div>
 

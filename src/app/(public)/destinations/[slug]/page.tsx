@@ -104,6 +104,7 @@ const getDestination = cache(async (slug: string) => {
               reviewCount: true,
               priceFrom: true,
               priceWas: true,
+              minPersons: true,
               destinations: { select: { destination: { select: { name: true } } } },
             },
           },
@@ -297,6 +298,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     n: String(t.reviewCount),
     old: t.priceWas ? formatINR(t.priceWas) : undefined,
     p: formatINR(t.priceFrom),
+    minPersons: t.minPersons,
   }));
 
   // Things to Do — driven by the Activities module (published, linked to this

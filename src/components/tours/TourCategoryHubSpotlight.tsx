@@ -22,6 +22,7 @@ interface SpotlightTour {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  minPersons?: number | null;
   destinations: { destination: { name: string } }[];
 }
 
@@ -129,6 +130,7 @@ export function TourCategoryHubSpotlight() {
                 n: String(data.tour.reviewCount),
                 old: data.tour.priceWas ? formatINR(data.tour.priceWas) : undefined,
                 p: formatINR(data.tour.priceFrom),
+                minPersons: data.tour.minPersons ?? undefined,
               }}
             />
           )}
