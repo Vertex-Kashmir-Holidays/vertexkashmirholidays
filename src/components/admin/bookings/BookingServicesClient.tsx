@@ -702,15 +702,6 @@ export function BookingServicesClient({
         </div>
       )}
 
-      {/* Driver & vehicle — only once services are locked */}
-      {locked && (
-        <DriverSection
-          bookingId={booking.id}
-          travelDate={booking.travelDate}
-          initialDriver={booking.driver}
-        />
-      )}
-
       {dialog && (
         <LockDialog
           mode={dialog}
@@ -1029,8 +1020,10 @@ function EditDetailsModal({
 // ── Driver & vehicle section ──────────────────────────────────────────────────
 // Appears after services are locked. Staff can add the assigned driver/vehicle
 // and optionally email the customer; details remain editable until one day
-// before travel, after which the card is read-only.
-function DriverSection({
+// before travel, after which the card is read-only. Rendered from the parent
+// page (right column, below Payment & Account) rather than here — exported
+// for that.
+export function DriverSection({
   bookingId,
   travelDate,
   initialDriver,
@@ -1136,7 +1129,7 @@ function DriverSection({
       </div>
 
       {driver ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3">
           <DriverFact icon={UserRound} label="Driver" value={driver.driverName} />
           <DriverFact icon={Phone} label="Driver Phone" value={driver.driverPhone} />
           <DriverFact icon={Car} label="Vehicle" value={driver.vehicleName} />
