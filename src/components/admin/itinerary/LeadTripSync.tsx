@@ -120,9 +120,13 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
           <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Name</span>
           <input
             value={trip.name}
-            onChange={(e) => set("name", e.target.value, false)}
-            onBlur={() => apply(trip, true)}
-            className={inputCls}
+            readOnly
+            onClick={() =>
+              toast.warning(
+                "This itinerary is already linked to a lead — the customer name can't be changed here.",
+              )
+            }
+            className={`${inputCls} cursor-not-allowed`}
           />
         </label>
 

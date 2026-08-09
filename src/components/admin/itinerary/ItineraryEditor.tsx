@@ -49,6 +49,8 @@ interface ItineraryEditorProps {
   leadSync?: LeadSyncData;
   /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
+  /** This itinerary is linked to a direct booking — customer name stays in sync with it. */
+  isBookingLinked?: boolean;
   /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
   companyAddress?: string;
 }
@@ -60,6 +62,7 @@ export function ItineraryEditor({
   initialStatus,
   canSave = true,
   leadSync,
+  isBookingLinked = false,
   lockCost = false,
   companyAddress,
 }: ItineraryEditorProps) {
@@ -301,6 +304,7 @@ export function ItineraryEditor({
             onUpdate={(field, value) => updateCover(field, value)}
             onImageChange={(src) => updateCover("coverImage", src)}
             readOnlyDerived={!!leadSync}
+            nameLocked={leadSync ? "lead" : isBookingLinked ? "booking" : null}
             lockCost={lockCost}
           />
 
