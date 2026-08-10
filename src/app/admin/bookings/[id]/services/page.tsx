@@ -62,6 +62,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
     amount: booking.amount,
     status: booking.status,
     servicesLocked: booking.servicesLocked,
+    createdAt: booking.createdAt.toISOString(),
     discountType: booking.discountType,
     discountValue: booking.discountValue,
     inclusions: parseInclusions(booking.inclusions),

@@ -61,6 +61,7 @@ interface BookingData {
   amount: number;
   status: string;
   servicesLocked: boolean;
+  createdAt: string;
   discountType: string | null;
   discountValue: number;
   inclusions: string[];
@@ -155,6 +156,15 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 // "12 Jul 2026 – 18 Jul 2026" when an end date exists and differs, else the single date.
 function formatTravel(start: string, end: string | null): string {
@@ -451,6 +461,7 @@ export function BookingServicesClient({
               sub={booking.lead.assignedTo.name ? booking.lead.assignedTo.email : undefined}
             />
           )}
+          <Detail label="Order Date" value={fmtDateTime(booking.createdAt)} />
           <Detail
             label="Travel Dates"
             value={formatTravel(booking.travelDate, booking.travelEndDate)}
