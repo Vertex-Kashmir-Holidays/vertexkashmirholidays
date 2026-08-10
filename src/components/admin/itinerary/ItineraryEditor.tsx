@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
 import { ItineraryCover } from "./ItineraryCover";
-import { LeadTripSync } from "./LeadTripSync";
+import { LeadTripSync, LinkItineraryPanel } from "./LeadTripSync";
 import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
@@ -293,10 +293,15 @@ export function ItineraryEditor({
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[820px] space-y-8">
-          {/* Lead trip-detail sync (lead-linked, editable itineraries only) */}
-          {leadSync && canSave && (
-            <LeadTripSync leadId={leadSync.leadId} initial={leadSync} onFacts={handleLeadFacts} />
-          )}
+          {/* Lead trip-detail sync (lead-linked itineraries) — or, for a
+              standalone itinerary that hasn't been linked to anything yet,
+              a panel to attach it to an existing lead/booking. */}
+          {canSave &&
+            (leadSync ? (
+              <LeadTripSync leadId={leadSync.leadId} initial={leadSync} onFacts={handleLeadFacts} />
+            ) : (
+              !isBookingLinked && id && <LinkItineraryPanel itineraryId={id} />
+            ))}
 
           {/* Cover */}
           <ItineraryCover

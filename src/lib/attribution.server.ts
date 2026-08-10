@@ -25,8 +25,21 @@ export function deriveChannel(attribution: AttributionData | undefined): LeadSou
 
   const source = a.utmSource?.toLowerCase();
   const medium = a.utmMedium?.toLowerCase();
-  if (source === "google" && (medium === "cpc" || medium === "ppc")) return LeadSource.GOOGLE_ADS;
-  if ((source === "facebook" || source === "instagram" || source === "meta") && medium === "cpc") {
+  // paid_search/paid_social are Google's and Meta's own documented default
+  // utm_medium values (and also GA4's default channel-grouping convention);
+  // cpc/ppc are kept too for the older/generic convention some campaigns
+  // still use. A click id (checked above) is always the stronger signal —
+  // this is only the fallback for UTM-only traffic.
+  if (
+    source === "google" &&
+    (medium === "paid_search" || medium === "cpc" || medium === "ppc")
+  ) {
+    return LeadSource.GOOGLE_ADS;
+  }
+  if (
+    (source === "facebook" || source === "instagram" || source === "meta") &&
+    (medium === "paid_social" || medium === "cpc" || medium === "ppc")
+  ) {
     return LeadSource.META_ADS;
   }
   if (medium === "referral") return LeadSource.REFERRAL;

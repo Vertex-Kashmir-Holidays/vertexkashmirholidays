@@ -98,17 +98,10 @@ function parseAttributionCookie(raw: string | null): AttributionData {
   }
 }
 
-/** Call once on app load. No-ops on internal (/admin) routes. */
-export function captureAttributionClient(): void {
-  if (typeof window === "undefined") return;
-  if (isInternalRoute(window.location.pathname)) return;
-
-  const existingRaw = readCookie(COOKIE_NAME);
-  const existing = parseAttributionCookie(existingRaw);
-
-  const params = new URLSearchParams(window.location.search);
+/** Extracts click-ids/UTMs from a `location.search` string. Pure parsing, no storage. */
+function parseAttributionFromUrl(search: string): AttributionData {
+  const params = new URLSearchParams(search);
   const incoming: AttributionData = {};
-
   for (const key of CLICK_ID_PARAMS) {
     const value = params.get(key);
     if (value) incoming[key as AttributionField] = value;
@@ -117,29 +110,172 @@ export function captureAttributionClient(): void {
     const value = params.get(param);
     if (value) incoming[field] = value;
   }
+  return incoming;
+}
 
-  if (!existingRaw) {
-    // First-touch only: landingPage/referrer are never captured again after this.
-    incoming.landingPage = window.location.href;
-    if (document.referrer) incoming.referrer = document.referrer;
-  }
-
-  // Merge: keep every first-touch value already recorded; only fill in fields
-  // that are still empty (lets a click id from a later ad click "upgrade"
-  // the cookie without resetting landingPage/UTMs from the original visit).
+/**
+ * First-touch merge: only fills fields that are currently empty in `base` —
+ * an already-captured value is never overwritten by `incoming`. Same rule
+ * used for the pre-consent buffer, the real cookie, and merging one into the
+ * other, so "whichever value was captured first always wins" holds uniformly.
+ */
+function fillEmpty(
+  base: AttributionData,
+  incoming: AttributionData,
+): { merged: AttributionData; changed: boolean } {
   let changed = false;
-  const merged: AttributionData = { ...existing };
+  const merged: AttributionData = { ...base };
   for (const field of ATTRIBUTION_FIELDS) {
     if (!merged[field] && incoming[field]) {
       merged[field] = incoming[field];
       changed = true;
     }
   }
+  return { merged, changed };
+}
 
-  if (!changed) return;
+// ── Pre-consent attribution buffer ──────────────────────────────────────────
+// Bridges the gap between "visitor lands from an ad" and "visitor grants
+// analytics consent" when those two moments fall on different pageviews. The
+// 90-day vkh_attribution cookie below is NEVER written before consent — this
+// buffer is a separate, short-lived, first-party-only holding spot for the
+// SAME raw values, written unconditionally (no consent check) so a UTM/
+// click-id landing isn't lost the instant the visitor navigates away before
+// deciding. It is never transmitted to any server or third party (GA4, Meta,
+// Google Ads, or otherwise) — it only ever moves from here into the real
+// cookie, and only once consent exists (see captureAttributionClient below).
+// Uses localStorage rather than sessionStorage so it survives a closed-then-
+// reopened tab within the TTL window; the short TTL is what keeps pre-consent
+// exposure bounded.
+//
+// IMPORTANT — documented risk/policy tradeoff, not a compliance guarantee:
+// writing ANY non-essential data to a visitor's device before consent is,
+// under a strict reading of ePrivacy/GDPR (and this project's own consent
+// banner wording, which already categorises UTM/attribution capture under
+// "Analytics & Attribution"), arguably still consent-requiring regardless of
+// storage mechanism. This buffer never transmits anything anywhere and
+// expires quickly, which meaningfully reduces risk/impact — but that does
+// not make it unambiguously compliant. This tradeoff was reviewed and
+// accepted deliberately (2026-08). Revisit if the privacy policy or consent
+// model changes.
 
-  const maxAge = COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
-  document.cookie = `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(merged))}; path=/; max-age=${maxAge}; SameSite=Lax`;
+const BUFFER_KEY = "vkh_attribution_buffer";
+// 60 minutes — long enough to cover a realistic "browse a bit before
+// deciding" window (including a closed/reopened tab), short enough to keep
+// pre-consent exposure bounded. Tune here only; nothing else depends on this
+// value.
+const BUFFER_TTL_MS = 60 * 60 * 1000;
+
+interface AttributionBuffer {
+  data: AttributionData;
+  expiresAt: number;
+}
+
+function readBuffer(): AttributionBuffer | null {
+  try {
+    const raw = localStorage.getItem(BUFFER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AttributionBuffer;
+    if (!parsed?.expiresAt || Date.now() > parsed.expiresAt) {
+      localStorage.removeItem(BUFFER_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeBuffer(data: AttributionData, expiresAt: number): void {
+  try {
+    localStorage.setItem(BUFFER_KEY, JSON.stringify({ data, expiresAt }));
+  } catch {
+    // Storage unavailable/full/blocked (e.g. strict private browsing) — the
+    // buffer is a best-effort bridge, never required for the site to work.
+  }
+}
+
+function clearBuffer(): void {
+  try {
+    localStorage.removeItem(BUFFER_KEY);
+  } catch {
+    // no-op — nothing to clean up if storage isn't available anyway.
+  }
+}
+
+/**
+ * Call on EVERY page load, unconditionally — no consent check. No-ops on
+ * internal (/admin) routes, and never touches storage at all if the current
+ * URL has no attribution params and no buffer already exists. First-touch:
+ * never overwrites a field the buffer already has; click-id fields can still
+ * be filled in later if they're currently empty (mirrors the real cookie's
+ * own upgrade rule). The buffer's TTL clock starts at its first write and is
+ * never extended by later page views, keeping exposure bounded regardless of
+ * how long the visitor keeps browsing.
+ */
+export function bufferAttributionRaw(): void {
+  if (typeof window === "undefined") return;
+  if (isInternalRoute(window.location.pathname)) return;
+
+  const existing = readBuffer();
+  const incoming = parseAttributionFromUrl(window.location.search);
+
+  if (!existing && Object.keys(incoming).length === 0) return;
+
+  if (!existing) {
+    // First-ever buffer write this window — capture landingPage/referrer
+    // too, same first-touch rule the real cookie uses.
+    incoming.landingPage = window.location.href;
+    if (document.referrer) incoming.referrer = document.referrer;
+  }
+
+  const { merged, changed } = fillEmpty(existing?.data ?? {}, incoming);
+  if (existing && !changed) return; // nothing new to add — leave TTL untouched
+
+  const expiresAt = existing?.expiresAt ?? Date.now() + BUFFER_TTL_MS;
+  writeBuffer(merged, expiresAt);
+}
+
+/**
+ * Call once analytics consent is granted (on load if already granted, or
+ * immediately on the consent-change event otherwise — see
+ * AttributionCapture.tsx). No-ops on internal (/admin) routes.
+ *
+ * Reads the pre-consent buffer (the true original landing page's values,
+ * even if consent is granted on a later page) plus whatever's on the current
+ * URL right now, first-touch-merges both into the real 90-day cookie, then
+ * clears the buffer — its job is done once a real capture attempt has run,
+ * whether or not it found anything new to add.
+ */
+export function captureAttributionClient(): void {
+  if (typeof window === "undefined") return;
+  if (isInternalRoute(window.location.pathname)) return;
+
+  const existingRaw = readCookie(COOKIE_NAME);
+  const existing = parseAttributionCookie(existingRaw);
+
+  const buffered = readBuffer();
+  const urlIncoming = parseAttributionFromUrl(window.location.search);
+  const { merged: incoming } = fillEmpty(buffered?.data ?? {}, urlIncoming);
+
+  if (!existingRaw) {
+    // First-ever real capture. Prefer the buffer's landingPage/referrer (the
+    // true original landing page) when available; fall back to the current
+    // page, same as before the buffer existed.
+    incoming.landingPage = buffered?.data.landingPage ?? window.location.href;
+    incoming.referrer = buffered?.data.referrer ?? (document.referrer || undefined);
+  }
+
+  const { merged, changed } = fillEmpty(existing, incoming);
+
+  if (changed) {
+    const maxAge = COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
+    document.cookie = `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(merged))}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }
+
+  // The buffer's only purpose was bridging up to this point — clear it now
+  // that a real, consent-backed capture attempt has run.
+  clearBuffer();
 }
 
 /** Reads the first-touch attribution captured for this browser, if any. */

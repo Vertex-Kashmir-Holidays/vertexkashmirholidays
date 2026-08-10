@@ -18,6 +18,7 @@ export interface DestinationTour {
   n: string;
   old?: string;
   p: string;
+  minPersons?: number;
   inclusions?: {
     transfers?: boolean;
     hotel?: string;

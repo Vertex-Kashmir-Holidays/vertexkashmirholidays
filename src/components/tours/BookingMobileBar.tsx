@@ -16,6 +16,8 @@ interface BookingMobileBarProps {
   price: number;
   oldPrice?: number;
   discountPct?: number;
+  /** Minimum travellers required to book this tour — see Tour.minPersons. */
+  minPersons?: number;
 }
 
 // Online advance is 10% of the booking total (kept in sync with the server +
@@ -35,6 +37,7 @@ export function BookingMobileBar({
   price,
   oldPrice,
   discountPct,
+  minPersons = 1,
 }: BookingMobileBarProps) {
   const router = useRouter();
   const showInquiry = formMode !== "BOOKING_ONLY";
@@ -42,7 +45,7 @@ export function BookingMobileBar({
 
   const [open, setOpen] = useState<null | "inquiry" | "book">(null);
   const [bookDate, setBookDate] = useState("");
-  const [bookPax, setBookPax] = useState("2");
+  const [bookPax, setBookPax] = useState(String(Math.max(minPersons, 2)));
   const minBookDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
@@ -184,7 +187,7 @@ export function BookingMobileBar({
                     </div>
                     <div>
                       <label htmlFor="mbPax" className="text-[14px] font-semibold">
-                        Travellers
+                        Travellers{minPersons > 1 ? ` (min. ${minPersons})` : ""}
                       </label>
                       <select
                         id="mbPax"
@@ -192,7 +195,10 @@ export function BookingMobileBar({
                         onChange={(e) => setBookPax(e.target.value)}
                         className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                       >
-                        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                        {Array.from(
+                          { length: Math.max(10, minPersons) - minPersons + 1 },
+                          (_, i) => i + minPersons,
+                        ).map((n) => (
                           <option key={n} value={n}>
                             {n}
                           </option>

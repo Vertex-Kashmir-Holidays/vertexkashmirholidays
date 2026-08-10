@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
             reviewCount: true,
             priceFrom: true,
             priceWas: true,
+            minPersons: true,
             destinations: { select: { destination: { select: { name: true } } } },
           },
         })
