@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
@@ -21,6 +22,12 @@ interface ItineraryCoverProps {
   onImageChange: (src: string) => void;
   /** Lead-linked itineraries derive these fields from the lead — show as read-only. */
   readOnlyDerived?: boolean;
+  /**
+   * Lead- or booking-linked itineraries keep the customer name in sync with
+   * that record — locked here, with a warning toast on attempted edit, so it
+   * can never drift from the lead/booking it belongs to.
+   */
+  nameLocked?: "lead" | "booking" | null;
   /** Website booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
 }
@@ -30,8 +37,14 @@ export function ItineraryCover({
   onUpdate,
   onImageChange,
   readOnlyDerived = false,
+  nameLocked = null,
   lockCost = false,
 }: ItineraryCoverProps) {
+  function warnNameLocked() {
+    toast.warning(
+      `This itinerary is already linked to a ${nameLocked} — the customer name can't be changed here.`,
+    );
+  }
   return (
     <article className="page cover relative min-h-[640px] overflow-hidden rounded-xl bg-gradient-to-br from-[#0f261b] via-[#1a3a2a] to-[#0f261b] sm:min-h-[880px] md:min-h-[1160px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -93,7 +106,14 @@ export function ItineraryCover({
           <p className="text-center text-[12px] font-semibold tracking-[0.32em] text-white/70">
             PREPARED FOR
           </p>
-          {readOnlyDerived ? (
+          {nameLocked ? (
+            <EditableField
+              value={data.preparedFor}
+              readOnly
+              onClick={warnNameLocked}
+              className="font-serif mt-1.5 cursor-not-allowed text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl"
+            />
+          ) : readOnlyDerived ? (
             <p className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl">
               {data.preparedFor}
             </p>

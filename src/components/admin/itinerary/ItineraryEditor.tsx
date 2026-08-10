@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
 import { ItineraryCover } from "./ItineraryCover";
-import { LeadTripSync } from "./LeadTripSync";
+import { LeadTripSync, LinkItineraryPanel } from "./LeadTripSync";
 import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
@@ -49,6 +49,8 @@ interface ItineraryEditorProps {
   leadSync?: LeadSyncData;
   /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
+  /** This itinerary is linked to a direct booking — customer name stays in sync with it. */
+  isBookingLinked?: boolean;
   /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
   companyAddress?: string;
 }
@@ -60,6 +62,7 @@ export function ItineraryEditor({
   initialStatus,
   canSave = true,
   leadSync,
+  isBookingLinked = false,
   lockCost = false,
   companyAddress,
 }: ItineraryEditorProps) {
@@ -238,6 +241,22 @@ export function ItineraryEditor({
       } else {
         toast.success(`PDF downloaded (${kb} KB).`);
       }
+      // Downloading the PDF means it's being shared with the customer — bump a
+      // still-draft itinerary out of DRAFT so it becomes visible in their
+      // account (DRAFT is hidden there — see itineraryVisible in
+      // account/bookings/[id]/page.tsx). Never downgrades an already
+      // SENT/CONFIRMED itinerary.
+      if (id && status === "DRAFT") {
+        const res = await fetch(`/api/itineraries/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "SENT" }),
+        });
+        if (res.ok) {
+          setStatus("SENT");
+          router.refresh();
+        }
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PDF export failed");
     } finally {
@@ -274,10 +293,15 @@ export function ItineraryEditor({
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[820px] space-y-8">
-          {/* Lead trip-detail sync (lead-linked, editable itineraries only) */}
-          {leadSync && canSave && (
-            <LeadTripSync leadId={leadSync.leadId} initial={leadSync} onFacts={handleLeadFacts} />
-          )}
+          {/* Lead trip-detail sync (lead-linked itineraries) — or, for a
+              standalone itinerary that hasn't been linked to anything yet,
+              a panel to attach it to an existing lead/booking. */}
+          {canSave &&
+            (leadSync ? (
+              <LeadTripSync leadId={leadSync.leadId} initial={leadSync} onFacts={handleLeadFacts} />
+            ) : (
+              !isBookingLinked && id && <LinkItineraryPanel itineraryId={id} />
+            ))}
 
           {/* Cover */}
           <ItineraryCover
@@ -285,6 +309,7 @@ export function ItineraryEditor({
             onUpdate={(field, value) => updateCover(field, value)}
             onImageChange={(src) => updateCover("coverImage", src)}
             readOnlyDerived={!!leadSync}
+            nameLocked={leadSync ? "lead" : isBookingLinked ? "booking" : null}
             lockCost={lockCost}
           />
 

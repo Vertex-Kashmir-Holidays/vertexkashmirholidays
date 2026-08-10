@@ -26,6 +26,8 @@ interface TourDetailsSidebarProps {
   price: number;
   oldPrice?: number;
   discountPct?: number;
+  /** Minimum travellers required to book this tour — see Tour.minPersons. */
+  minPersons?: number;
   rating: number;
   reviews: number;
   tourId: string;
@@ -50,6 +52,7 @@ export function TourDetailsSidebar({
   price,
   oldPrice,
   discountPct,
+  minPersons = 1,
   rating,
   reviews,
   tourId,
@@ -67,7 +70,7 @@ export function TourDetailsSidebar({
   const showBook = formMode !== "INQUIRY_ONLY";
   const [activeTab, setActiveTab] = useState<"inquiry" | "book">(showInquiry ? "inquiry" : "book");
   const [bookDate, setBookDate] = useState("");
-  const [bookPax, setBookPax] = useState("2");
+  const [bookPax, setBookPax] = useState(String(Math.max(minPersons, 2)));
   // Bookings need ≥7 days' lead time (server-enforced on /booking).
   const minBookDate = (() => {
     const d = new Date();
@@ -119,7 +122,9 @@ export function TourDetailsSidebar({
           <span className="text-[30px] font-extrabold leading-none">
             ₹{price.toLocaleString("en-IN")}
           </span>
-          <span className="text-[14px] font-medium text-muted-foreground">per person</span>
+          <span className="text-[14px] font-medium text-muted-foreground">
+            per person{minPersons > 1 ? ` (min ${minPersons} pax)` : ""}
+          </span>
         </p>
         {oldPrice && (
           <p className="mt-1.5 text-[16px] font-semibold text-muted-foreground line-through">
@@ -243,7 +248,7 @@ export function TourDetailsSidebar({
                 </div>
                 <div>
                   <label htmlFor="bkPax" className="text-[14px] font-semibold">
-                    Travellers
+                    Travellers{minPersons > 1 ? ` (min. ${minPersons})` : ""}
                   </label>
                   <select
                     id="bkPax"
@@ -251,7 +256,10 @@ export function TourDetailsSidebar({
                     onChange={(e) => setBookPax(e.target.value)}
                     className="mt-1.5 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                    {Array.from(
+                      { length: Math.max(10, minPersons) - minPersons + 1 },
+                      (_, i) => i + minPersons,
+                    ).map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>

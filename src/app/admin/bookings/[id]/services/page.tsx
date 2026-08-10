@@ -6,7 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
-import { BookingServicesClient } from "@/components/admin/bookings/BookingServicesClient";
+import {
+  BookingServicesClient,
+  DriverSection,
+} from "@/components/admin/bookings/BookingServicesClient";
 import { BookingItineraryCard } from "@/components/admin/bookings/BookingItineraryCard";
 import { BookingAdminPanel } from "@/components/admin/bookings/BookingAdminPanel";
 
@@ -59,6 +62,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
     amount: booking.amount,
     status: booking.status,
     servicesLocked: booking.servicesLocked,
+    createdAt: booking.createdAt.toISOString(),
     discountType: booking.discountType,
     discountValue: booking.discountValue,
     inclusions: parseInclusions(booking.inclusions),
@@ -183,6 +187,14 @@ export default async function BookingServicesPage({ params }: PageProps) {
                 : null
             }
           />
+          {/* Driver & vehicle — only once services are locked. */}
+          {booking.servicesLocked && (
+            <DriverSection
+              bookingId={booking.id}
+              travelDate={data.travelDate}
+              initialDriver={data.driver}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -170,7 +170,17 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
                       <Copy className="h-4 w-4" />
                     </button>
                   )}
+                  {canDelete && item.linked && (
+                    <span
+                      className="rounded-lg p-2 text-muted-foreground/40"
+                      aria-label="Linked to a lead/booking — can't be deleted"
+                      title="Linked to a lead/booking — can't be deleted"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </span>
+                  )}
                   {canDelete &&
+                    !item.linked &&
                     (confirmDelete === item.id ? (
                       <span className="flex items-center gap-1">
                         <button

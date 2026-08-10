@@ -81,6 +81,7 @@ export default async function HomePage() {
         reviewCount: true,
         priceFrom: true,
         priceWas: true,
+        minPersons: true,
         destinations: { select: { destination: { select: { name: true } } } },
       },
     }),
@@ -215,6 +216,7 @@ export default async function HomePage() {
           reviewCount: t.reviewCount,
           priceFrom: t.priceFrom,
           priceWas: t.priceWas,
+          minPersons: t.minPersons,
         }))}
       />
       <WhyChooseSection

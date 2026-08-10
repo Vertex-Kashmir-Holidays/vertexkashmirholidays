@@ -20,6 +20,7 @@ export interface TourCategoryFeaturedData {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  minPersons?: number;
 }
 
 export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData }) {
@@ -60,7 +61,10 @@ export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData 
                 ₹{tour.priceWas.toLocaleString("en-IN")}
               </span>
             )}
-            <span className="text-[12px] text-muted-foreground">per person</span>
+            <span className="text-[12px] text-muted-foreground">
+              per person
+              {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
+            </span>
           </div>
           <Link
             href={`/tours/${tour.slug}`}

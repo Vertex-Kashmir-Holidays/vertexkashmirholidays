@@ -130,6 +130,7 @@ export function ToursGridSection({
                 n: String(tour.reviewCount),
                 old: tour.priceWas ? formatINR(tour.priceWas) : undefined,
                 p: formatINR(tour.priceFrom),
+                minPersons: tour.minPersons,
               }}
               index={i}
               variant="tours"

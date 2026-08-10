@@ -436,7 +436,7 @@ export function LeadDetail({
                 <Lock className="w-3 h-3" /> Locked
               </span>
             )}
-            <span className="text-xs text-muted-foreground">Added {fmtDate(lead.createdAt)}</span>
+            <span className="text-xs text-muted-foreground">Added {fmtDateTime(lead.createdAt)}</span>
           </div>
         </div>
 

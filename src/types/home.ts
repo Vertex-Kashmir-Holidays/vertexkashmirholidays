@@ -70,6 +70,7 @@ export interface HomeTourData {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  minPersons?: number;
 }
 
 export interface WhyChooseItemData {

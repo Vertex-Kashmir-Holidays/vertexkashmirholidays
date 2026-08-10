@@ -61,6 +61,7 @@ interface BookingData {
   amount: number;
   status: string;
   servicesLocked: boolean;
+  createdAt: string;
   discountType: string | null;
   discountValue: number;
   inclusions: string[];
@@ -155,6 +156,15 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 // "12 Jul 2026 – 18 Jul 2026" when an end date exists and differs, else the single date.
 function formatTravel(start: string, end: string | null): string {
@@ -451,6 +461,7 @@ export function BookingServicesClient({
               sub={booking.lead.assignedTo.name ? booking.lead.assignedTo.email : undefined}
             />
           )}
+          <Detail label="Order Date" value={fmtDateTime(booking.createdAt)} />
           <Detail
             label="Travel Dates"
             value={formatTravel(booking.travelDate, booking.travelEndDate)}
@@ -700,15 +711,6 @@ export function BookingServicesClient({
           <CheckCircle2 className="w-4 h-4 text-green-600" /> Services are locked. A summary was
           emailed to the customer.
         </div>
-      )}
-
-      {/* Driver & vehicle — only once services are locked */}
-      {locked && (
-        <DriverSection
-          bookingId={booking.id}
-          travelDate={booking.travelDate}
-          initialDriver={booking.driver}
-        />
       )}
 
       {dialog && (
@@ -1029,8 +1031,10 @@ function EditDetailsModal({
 // ── Driver & vehicle section ──────────────────────────────────────────────────
 // Appears after services are locked. Staff can add the assigned driver/vehicle
 // and optionally email the customer; details remain editable until one day
-// before travel, after which the card is read-only.
-function DriverSection({
+// before travel, after which the card is read-only. Rendered from the parent
+// page (right column, below Payment & Account) rather than here — exported
+// for that.
+export function DriverSection({
   bookingId,
   travelDate,
   initialDriver,
@@ -1136,7 +1140,7 @@ function DriverSection({
       </div>
 
       {driver ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3">
           <DriverFact icon={UserRound} label="Driver" value={driver.driverName} />
           <DriverFact icon={Phone} label="Driver Phone" value={driver.driverPhone} />
           <DriverFact icon={Car} label="Vehicle" value={driver.vehicleName} />

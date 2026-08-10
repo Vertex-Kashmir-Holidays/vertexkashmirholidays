@@ -86,24 +86,31 @@ export function BookingAdminPanel({
         {row("Balance Due", inr(balance))}
         {row("Razorpay Order", razorpayOrderId ?? "—")}
         {row("Transaction Ref", razorpayPayId ?? "—")}
-        {row(
-          "Customer Account",
-          customer ? (
-            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-              <UserCheck className="w-3.5 h-3.5" />
-              {customer.email}
-              {customer.mustChangePassword && (
-                <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
-                  awaiting reset
+        <div className="py-1.5 text-sm">
+          <dt className="text-muted-foreground">Customer Account</dt>
+          <dd className="mt-1 font-medium text-foreground">
+            {customer ? (
+              <div className="space-y-1">
+                <span className="flex items-start gap-1.5 break-words text-emerald-600 dark:text-emerald-400">
+                  <UserCheck className="mt-0.5 w-3.5 h-3.5 shrink-0" />
+                  {customer.email}
                 </span>
-              )}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-              <UserX className="w-3.5 h-3.5" /> Guest (not linked)
-            </span>
-          ),
-        )}
+                {customer.mustChangePassword && (
+                  <>
+                    {/* <div className="text-muted-foreground">|</div> */}
+                    <span className="inline-block rounded bg-amber-500/15 px-1.5 py-0.5 text-[12px] font-semibold text-amber-600 dark:text-amber-400">
+                      awaiting reset
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <UserX className="w-3.5 h-3.5" /> Guest (not linked)
+              </span>
+            )}
+          </dd>
+        </div>
       </dl>
 
       <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">

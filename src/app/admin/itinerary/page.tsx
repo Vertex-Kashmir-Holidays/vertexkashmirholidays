@@ -26,6 +26,8 @@ export default async function AdminItineraryPage() {
       title: true,
       status: true,
       ownerId: true,
+      leadId: true,
+      bookingId: true,
       createdAt: true,
       updatedAt: true,
       owner: { select: { name: true } },
@@ -40,6 +42,7 @@ export default async function AdminItineraryPage() {
     ownerName: i.owner?.name ?? null,
     createdAt: i.createdAt,
     updatedAt: i.updatedAt,
+    linked: !!i.leadId || !!i.bookingId,
   }));
 
   const [canCreate, canDelete] = await Promise.all([
