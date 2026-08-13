@@ -289,3 +289,140 @@ export function readAttributionClient(): AttributionData | undefined {
     return undefined;
   }
 }
+
+// ── WhatsApp attribution-reference bridge ───────────────────────────────────
+// Bridges the same captured attribution across the WhatsApp gap: mints (via
+// POST /api/attribution/token — src/app/api/attribution/token/route.ts) and
+// caches a short display tag (e.g. "G-CgVI13IE") so src/lib/whatsapp.ts can
+// append it to a prefilled message synchronously, with no network round trip
+// on click. This is not a second attribution system — it reads the exact same
+// vkh_attribution cookie above and only ever mints one token per distinct
+// attribution snapshot (see the fingerprint check in ensureWhatsAppAttributionToken).
+
+const WA_TOKEN_COOKIE_NAME = "vkh_wa_token";
+// Client-side cache lifetime only. Mirrors (but is capped at)
+// WHATSAPP_ATTRIBUTION_TOKEN_TTL_DAYS in src/lib/whatsappAttribution.server.ts
+// — keep the two numbers in sync if either changes.
+const WA_TOKEN_COOKIE_MAX_AGE_DAYS = 30;
+
+interface WhatsAppTokenCache {
+  token: string;
+  prefix: string;
+  /** Fingerprint of the attribution snapshot this token was minted from — see fingerprint(). */
+  forData: string;
+}
+
+function readWaTokenCache(): WhatsAppTokenCache | null {
+  const raw = readCookie(WA_TOKEN_COOKIE_NAME);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as WhatsAppTokenCache;
+  } catch {
+    return null;
+  }
+}
+
+// A cookie write is invisible to React — nothing re-renders a component that
+// already read the tag on an earlier render just because document.cookie
+// changed later. ensureWhatsAppAttributionToken() runs in a useEffect
+// (AttributionCapture.tsx), which fires after the first paint, and its fetch
+// adds more delay — so every WhatsApp CTA's href is reliably computed and
+// rendered once, BEFORE the token exists, and then never recomputed. This
+// tiny subscriber list + useWhatsAppAttributionTag() below (a
+// useSyncExternalStore wrapper — the standard React 18+ way to subscribe a
+// component to state that lives outside React) is what turns the cookie into
+// something components actually react to, matching how every other piece of
+// this feature already reads it fresh (see appendWhatsAppAttributionTag in
+// src/lib/whatsapp.ts) — this only fixes WHEN a component re-renders to call
+// that read again, not what it reads.
+const waTokenListeners = new Set<() => void>();
+
+function notifyWaTokenListeners(): void {
+  for (const listener of waTokenListeners) listener();
+}
+
+// Exported (rather than kept private) so useWhatsAppAttributionTag() —
+// src/lib/useWhatsAppAttributionTag.ts, a separate "use client" file — can
+// wrap it in useSyncExternalStore. That hook can't live in THIS file: this
+// module is imported by plain server code too (e.g.
+// src/app/api/bookings/create-order/route.ts, for attributionSchema), and
+// Next.js's build fails if any React hook is reachable from a Route
+// Handler's module graph — confirmed by `yarn build` after an earlier
+// attempt put the hook directly here.
+export function subscribeWhatsAppAttributionTag(listener: () => void): () => void {
+  waTokenListeners.add(listener);
+  return () => waTokenListeners.delete(listener);
+}
+
+function writeWaTokenCache(cache: WhatsAppTokenCache): void {
+  const maxAge = WA_TOKEN_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
+  document.cookie = `${WA_TOKEN_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(cache))}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  notifyWaTokenListeners();
+}
+
+// Deterministic serialization over the fixed ATTRIBUTION_FIELDS order, so two
+// equal attribution snapshots always fingerprint identically regardless of
+// key insertion order — this is what lets us detect "attribution unchanged
+// since the cached token was minted" without re-fetching.
+function fingerprint(attribution: AttributionData): string {
+  return JSON.stringify(ATTRIBUTION_FIELDS.map((field) => attribution[field] ?? ""));
+}
+
+/**
+ * Call from AttributionCapture.tsx — never on every page view or every
+ * WhatsApp click. No-ops on internal routes, when there's no meaningful
+ * attribution captured yet, or when a cached token already matches the
+ * current attribution snapshot exactly (so normal navigation / repeated
+ * calls never mint a second token for the same data). Fire-and-forget: a
+ * failed request just means no WhatsApp reference tag this session — the CTA
+ * falls back to its existing plain message, never a broken link.
+ *
+ * Deliberately does NOT wait for analytics consent (business decision,
+ * 2026-08-14) — unlike captureAttributionClient()/the real vkh_attribution
+ * cookie above, which remain fully consent-gated and unchanged. Reasoning: a
+ * visitor arriving via a Google/Meta ad click has already gone through that
+ * platform's own consent flow, and this reference is never sent to a third
+ * party — only embedded in the visitor's own outbound WhatsApp message and
+ * later read back by staff via the internal CRM lookup. So this reads
+ * whichever attribution is available *right now* — the real cookie if
+ * consent already happened to be granted, otherwise the pre-consent buffer
+ * (see bufferAttributionRaw() above, which already runs unconditionally) —
+ * rather than requiring the cookie specifically.
+ */
+export function ensureWhatsAppAttributionToken(): void {
+  if (typeof window === "undefined") return;
+  if (isInternalRoute(window.location.pathname)) return;
+
+  const attribution = readAttributionClient() ?? readBuffer()?.data;
+  if (!attribution || !ATTRIBUTION_FIELDS.some((field) => attribution[field])) return;
+
+  const fp = fingerprint(attribution);
+  const cached = readWaTokenCache();
+  if (cached?.forData === fp) return; // already have a token for this exact snapshot
+
+  fetch("/api/attribution/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(attribution),
+  })
+    .then((res) => (res.ok ? (res.json() as Promise<{ token: string | null; prefix?: string }>) : null))
+    .then((json) => {
+      if (json?.token && json.prefix) {
+        writeWaTokenCache({ token: json.token, prefix: json.prefix, forData: fp });
+      }
+    })
+    .catch(() => {
+      // best-effort — see doc comment above.
+    });
+}
+
+/**
+ * Reads the cached WhatsApp attribution display tag for this browser, e.g.
+ * "G-CgVI13IE", or undefined if none has been minted (no attribution, consent
+ * not yet granted, or the request hasn't completed/failed).
+ */
+export function readWhatsAppAttributionTag(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const cached = readWaTokenCache();
+  return cached ? `${cached.prefix}-${cached.token}` : undefined;
+}
