@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { notifyLeadAssigned } from "@/lib/notifications";
 import { LeadSource, LeadCategory, LeadActivityType } from "@prisma/client";
+import {
+  normalizeWhatsAppTokenParam,
+  resolveWhatsAppAttributionToken,
+} from "@/lib/whatsappAttribution.server";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +26,13 @@ const createSchema = z.object({
   followUpAt: z.string().nullable().optional(),
   negotiatedAmount: z.coerce.number().positive().nullable().optional(),
   tokenAmount: z.coerce.number().positive().nullable().optional(),
+  // Optional WhatsApp reference pasted from a customer's message (e.g.
+  // "G-CgVI13IE") — see src/lib/whatsappAttribution.server.ts. Deliberately
+  // just the raw string, not the individual attribution fields: the server
+  // re-resolves it itself below rather than trusting anything the browser
+  // could have echoed back, per the "server stays authoritative" rule this
+  // whole feature is built around.
+  whatsappReference: z.string().trim().max(24).optional().or(z.literal("")),
 });
 
 // Staff-only: create a fully-populated lead in one step.
@@ -52,15 +63,29 @@ export async function POST(req: NextRequest) {
     followUpAt,
     negotiatedAmount,
     tokenAmount,
+    whatsappReference,
+    source: manualSource,
     ...rest
   } = parsed.data;
   const performedByName = (guard.user.name ?? guard.user.email) as string;
   const performedById = guard.user.id as string;
 
+  // Re-resolve the reference server-side — never trust a browser-supplied
+  // source/attribution. If it was provided but no longer resolves (e.g. it
+  // expired in the gap between the form's "Resolve" click and this submit),
+  // fall through to the manually-selected source exactly as if no reference
+  // had been given at all — a stale reference degrades gracefully rather
+  // than blocking lead creation.
+  const normalizedToken = whatsappReference ? normalizeWhatsAppTokenParam(whatsappReference) : null;
+  const resolved = normalizedToken ? await resolveWhatsAppAttributionToken(normalizedToken) : null;
+
   const lead = await prisma.$transaction(async (tx) => {
     const created = await tx.lead.create({
       data: {
         ...rest,
+        source: resolved?.channel ?? manualSource,
+        sourcePage: resolved ? "whatsapp" : undefined,
+        ...resolved?.attribution,
         email: email || undefined,
         notes: notes || undefined,
         startDate: startDate ? new Date(startDate) : undefined,
@@ -71,6 +96,18 @@ export async function POST(req: NextRequest) {
         ...(assignedToId ? { assignedTo: { connect: { id: assignedToId } } } : {}),
       },
     });
+
+    // Mark the reference consumed only now that the Lead it was resolved for
+    // has actually been created — not at "Resolve" click time (the
+    // salesperson may resolve, then correct details, or abandon the form).
+    // Same transaction as the create, so a lead never ends up persisted
+    // without its token being marked used, or vice versa.
+    if (resolved && normalizedToken) {
+      await tx.whatsAppAttributionToken.update({
+        where: { token: normalizedToken },
+        data: { consumedAt: new Date() },
+      });
+    }
 
     if (assignedToId) {
       await tx.leadActivity.create({
