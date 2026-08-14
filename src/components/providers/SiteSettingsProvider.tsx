@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext } from "react";
-import { buildWhatsAppHref } from "@/lib/whatsapp";
+import { buildWhatsAppHref, appendWhatsAppAttributionTag } from "@/lib/whatsapp";
+import { useWhatsAppAttributionTag } from "@/lib/useWhatsAppAttributionTag";
 
 export interface SiteSettingsValue {
   siteName: string;
@@ -40,10 +41,23 @@ export function useSiteSettings(): SiteSettingsValue {
 
 /**
  * Returns a builder that turns a message into a WhatsApp link using the
- * site's configured number (whatsapp → phone fallback).
+ * site's configured number (whatsapp → phone fallback). When a WhatsApp
+ * attribution reference has been minted for this browser (see
+ * src/lib/attribution.ts), it's appended to the message automatically —
+ * callers don't need to know about it.
+ *
+ * The token is usually still being minted (an async fetch) when a component
+ * first calls this — useWhatsAppAttributionTag() correctly returns undefined
+ * during SSR/hydration (matching what the server rendered) and re-renders
+ * the caller with the real tag once it's ready, so the builder below then
+ * produces an updated href.
  */
 export function useWhatsAppLink(): (message?: string) => string {
   const { whatsapp, sitePhone } = useContext(Ctx);
   const number = whatsapp || sitePhone || "";
-  return useCallback((message?: string) => buildWhatsAppHref(number, message), [number]);
+  const tag = useWhatsAppAttributionTag();
+  return useCallback(
+    (message?: string) => appendWhatsAppAttributionTag(buildWhatsAppHref(number, message), tag),
+    [number, tag],
+  );
 }

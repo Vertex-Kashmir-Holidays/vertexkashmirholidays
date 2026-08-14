@@ -13,6 +13,8 @@ import {
   TwitterIcon,
 } from "@/components/icons/brand";
 import { trackWhatsappClick, trackPhoneClick, trackEmailClick } from "@/lib/analytics";
+import { appendWhatsAppAttributionTag } from "@/lib/whatsapp";
+import { useWhatsAppAttributionTag } from "@/lib/useWhatsAppAttributionTag";
 import { formatBusinessAddress, REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import { Container } from "@/components/ui/layout/Container";
@@ -65,10 +67,21 @@ export function Footer({
     formatBusinessAddress(settings) ?? settings?.siteAddress ?? REGISTERED_OFFICE_FORMATTED;
 
   // Build a WhatsApp click-to-chat link from the settings number (whatsapp →
-  // phone fallback), with a context-appropriate prefilled message.
+  // phone fallback), with a context-appropriate prefilled message. Note: this
+  // duplicates buildWhatsAppHref's URL construction rather than importing it —
+  // pre-existing, left as-is (out of scope here); appendWhatsAppAttributionTag
+  // is still reused rather than re-implemented, so the tag itself isn't a
+  // second copy of that logic.
+  // useWhatsAppAttributionTag() correctly returns undefined during
+  // SSR/hydration (matching the server-rendered href) and the real tag once
+  // ready, on a client-only re-render after.
+  const waTag = useWhatsAppAttributionTag();
   const waDigits = (settings?.whatsapp || settings?.sitePhone || "").replace(/[^0-9]/g, "");
   const wa = (message: string) =>
-    waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(message)}` : "/contact";
+    appendWhatsAppAttributionTag(
+      waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(message)}` : "/contact",
+      waTag,
+    );
 
   const planTripHref = wa(
     `Hi ${siteName}! I'd like to plan my Kashmir trip. Please share a handcrafted itinerary.`,

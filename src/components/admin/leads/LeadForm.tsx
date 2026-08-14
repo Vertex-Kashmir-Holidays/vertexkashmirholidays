@@ -1,13 +1,29 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, ChevronDown, Lock } from "lucide-react";
+import { Loader2, ChevronDown, Lock, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Presentational label only — mirrors the LeadSource enum's values for
+// display, not a re-derivation of the channel itself. The actual channel
+// always comes from the server's deriveChannel() (see the "Resolve" handler
+// below and src/lib/whatsappAttribution.server.ts) — this just turns that
+// enum string into something a salesperson reads naturally.
+const CHANNEL_LABELS: Record<string, string> = {
+  GOOGLE_ADS: "Google Ads",
+  META_ADS: "Meta Ads",
+  THIRD_PARTY: "Third Party",
+  REFERRAL: "Referral",
+  WEBSITE: "Website",
+  MANUAL: "Manual",
+};
+
+type ResolveState = "idle" | "loading" | "resolved" | "error";
 
 // All fields kept as strings so react-hook-form/zod inference is stable.
 // Numeric and enum coercion happens in onSubmit before sending to the API.
@@ -94,6 +110,57 @@ export function LeadForm({
     defaultValues: defaultValues ?? { source: "MANUAL", adults: "1" },
   });
 
+  // WhatsApp attribution reference — deliberately kept as separate local
+  // state rather than a registered react-hook-form field: it has async
+  // "Resolve" behaviour and its own display (badge instead of the Source
+  // dropdown) that don't fit the plain-field pattern the rest of this form
+  // uses. The server independently re-resolves this same reference at submit
+  // time (src/app/api/admin/leads/route.ts) rather than trusting anything
+  // computed here — this state only drives what the salesperson sees.
+  const [waRef, setWaRef] = useState("");
+  const [waState, setWaState] = useState<ResolveState>("idle");
+  const [waError, setWaError] = useState<string | null>(null);
+  const [waChannel, setWaChannel] = useState<string | null>(null);
+  const [waCampaign, setWaCampaign] = useState<string | null>(null);
+
+  function clearResolvedReference() {
+    setWaRef("");
+    setWaState("idle");
+    setWaError(null);
+    setWaChannel(null);
+    setWaCampaign(null);
+  }
+
+  async function handleResolveReference() {
+    const ref = waRef.trim();
+    if (!ref) return;
+    setWaState("loading");
+    setWaError(null);
+    try {
+      const res = await fetch(`/api/admin/leads/attribution/${encodeURIComponent(ref)}`);
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        attribution?: Record<string, string>;
+        channel?: string;
+      };
+      if (!res.ok) {
+        setWaState("error");
+        setWaError(
+          res.status === 404
+            ? "Reference not found or expired. Please continue creating the lead manually."
+            : (json.error ?? "Could not resolve this reference."),
+        );
+        return;
+      }
+      setWaState("resolved");
+      setWaChannel(json.channel ?? null);
+      setWaCampaign(json.attribution?.utmCampaign ?? null);
+    } catch {
+      setWaState("error");
+      setWaError("Network error. Please try again or continue manually.");
+    }
+  }
+
   const startDate = watch("startDate");
   const startReg = register("startDate");
 
@@ -130,6 +197,9 @@ export function LeadForm({
           notes: isEdit ? (data.notes ?? "") : data.notes || undefined,
           negotiatedAmount: negotiated > 0 ? negotiated : empty,
           tokenAmount: token > 0 ? token : empty,
+          // Only sent once successfully resolved — an unresolved/abandoned
+          // reference never reaches the API, same as never having pasted one.
+          ...(waState === "resolved" && waRef.trim() ? { whatsappReference: waRef.trim() } : {}),
         };
 
         const res = await fetch(isEdit ? `/api/leads/${leadId}` : "/api/admin/leads", {
@@ -332,21 +402,90 @@ export function LeadForm({
             {/* Source & Notes */}
             <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-4">
               <h3 className="font-bold text-foreground text-sm">Source &amp; Notes</h3>
+
+              {/* WhatsApp attribution reference — new-lead creation only; not
+                  every manually-created lead comes through the tracked
+                  WhatsApp flow, so this is optional and edit mode skips it. */}
+              {!isEdit && (
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    WhatsApp Reference
+                  </label>
+                  {waState === "resolved" ? (
+                    <div className="flex items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                        <Check className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          Resolved — {waChannel ? (CHANNEL_LABELS[waChannel] ?? waChannel) : "—"}
+                          {waCampaign ? ` · ${waCampaign}` : ""}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearResolvedReference}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3 h-3" /> Clear
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <input
+                          value={waRef}
+                          onChange={(e) => {
+                            setWaRef(e.target.value);
+                            if (waState === "error") {
+                              setWaState("idle");
+                              setWaError(null);
+                            }
+                          }}
+                          className={cn(inputCls, "flex-1")}
+                          placeholder="G-CgVI13IE"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleResolveReference}
+                          disabled={!waRef.trim() || waState === "loading"}
+                          className="shrink-0 flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-foreground transition hover:bg-muted disabled:opacity-50"
+                        >
+                          {waState === "loading" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                          Resolve
+                        </button>
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Paste the reference from the customer&apos;s WhatsApp message.
+                      </p>
+                      {waState === "error" && waError && (
+                        <p className="mt-1 text-[12px] text-red-500 dark:text-red-400">{waError}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">
                   Source
                 </label>
-                <div className={selectWrapCls}>
-                  <select {...register("source")} className={selectCls}>
-                    <option value="MANUAL">Manual</option>
-                    <option value="WEBSITE">Website</option>
-                    <option value="REFERRAL">Referral</option>
-                    <option value="GOOGLE_ADS">Google Ads</option>
-                    <option value="META_ADS">Meta Ads</option>
-                    <option value="THIRD_PARTY">Third Party</option>
-                  </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                </div>
+                {waState === "resolved" ? (
+                  <div className={cn(inputCls, "bg-muted text-muted-foreground")}>
+                    {waChannel ? (CHANNEL_LABELS[waChannel] ?? waChannel) : "—"} (from resolved
+                    reference)
+                  </div>
+                ) : (
+                  <div className={selectWrapCls}>
+                    <select {...register("source")} className={selectCls}>
+                      <option value="MANUAL">Manual</option>
+                      <option value="WEBSITE">Website</option>
+                      <option value="REFERRAL">Referral</option>
+                      <option value="GOOGLE_ADS">Google Ads</option>
+                      <option value="META_ADS">Meta Ads</option>
+                      <option value="THIRD_PARTY">Third Party</option>
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">

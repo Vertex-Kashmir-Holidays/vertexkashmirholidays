@@ -621,6 +621,36 @@ model Lead {
   @@index([bookingId])
 }
 
+// Bridges attribution across the WhatsApp gap: a visitor's captured attribution
+// (see src/lib/attribution.ts — ATTRIBUTION_FIELDS is the single source of
+// truth this model mirrors) is minted into a short-lived token embedded in the
+// WhatsApp prefilled message, then resolved back into a Lead's attribution
+// fields when a salesperson manually creates the CRM Lead from that chat.
+// Deliberately standalone — no relation to Lead, since the Lead doesn't exist
+// yet when the token is minted.
+model WhatsAppAttributionToken {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  gclid       String?
+  gbraid      String?
+  wbraid      String?
+  fbclid      String?
+  msclkid     String?
+  landingPage String?
+  referrer    String?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  consumedAt  DateTime?
+
+  // token already has a unique index via @unique above.
+  @@index([expiresAt])
+}
+
 enum OfflineConversionPlatform {
   GOOGLE
   META
