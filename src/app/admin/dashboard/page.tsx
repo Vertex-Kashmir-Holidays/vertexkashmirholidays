@@ -22,7 +22,10 @@ import {
   Settings,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, type Prisma } from "@prisma/client";
+import { auth } from "@/lib/auth";
+import { requireModuleView } from "@/lib/admin/moduleGuard";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
 import { RevenueChart } from "@/components/admin/RevenueChartLazy";
 
 export const metadata: Metadata = { title: "Dashboard — Admin" };
@@ -120,9 +123,24 @@ const QUICK_ACTIONS = [
 ];
 
 export default async function AdminDashboard() {
+  const guard = await requireModuleView("dashboard");
+  if (!guard.ok) return guard.page;
+  const { role, userId } = guard;
+  const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
+
+  const session = await auth();
+  const firstName = session?.user?.name?.split(" ")[0] || "there";
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  // Admin/Superadmin see org-wide figures; every other role (in practice
+  // SALES) only ever sees bookings converted from a lead assigned to them
+  // and leads assigned to them — same ownership rule as the Bookings and
+  // Leads pages, applied here too so the dashboard isn't an org-wide leak.
+  const bookingScope: Prisma.BookingWhereInput = { deletedAt: null, ...bookingWhereForUser(role, userId) };
+  const leadScope: Prisma.LeadWhereInput = isAdmin ? {} : { assignedToId: userId };
 
   const [
     revenueAgg,
@@ -141,32 +159,34 @@ export default async function AdminDashboard() {
     allPaidBookings,
   ] = await Promise.all([
     prisma.booking.aggregate({
-      where: { status: BookingStatus.PAID, deletedAt: null },
+      where: { ...bookingScope, status: BookingStatus.PAID },
       _sum: { amount: true },
     }),
     prisma.booking.aggregate({
-      where: { status: BookingStatus.PAID, deletedAt: null, createdAt: { gte: startOfMonth } },
+      where: { ...bookingScope, status: BookingStatus.PAID, createdAt: { gte: startOfMonth } },
       _sum: { amount: true },
     }),
     prisma.booking.aggregate({
       where: {
+        ...bookingScope,
         status: BookingStatus.PAID,
-        deletedAt: null,
         createdAt: { gte: startOfLastMonth, lt: startOfMonth },
       },
       _sum: { amount: true },
     }),
-    prisma.booking.count({ where: { deletedAt: null } }),
-    prisma.booking.count({ where: { deletedAt: null, createdAt: { gte: startOfMonth } } }),
+    prisma.booking.count({ where: bookingScope }),
+    prisma.booking.count({ where: { ...bookingScope, createdAt: { gte: startOfMonth } } }),
     prisma.booking.count({
-      where: { deletedAt: null, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
+      where: { ...bookingScope, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
     }),
-    prisma.lead.count(),
-    prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } } }),
-    prisma.booking.count({ where: { status: BookingStatus.PAID, deletedAt: null } }),
+    prisma.lead.count({ where: leadScope }),
+    prisma.lead.count({ where: { ...leadScope, createdAt: { gte: startOfMonth } } }),
+    prisma.lead.count({
+      where: { ...leadScope, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
+    }),
+    prisma.booking.count({ where: { ...bookingScope, status: BookingStatus.PAID } }),
     prisma.booking.findMany({
-      where: { deletedAt: null },
+      where: bookingScope,
       take: 8,
       orderBy: { createdAt: "desc" },
       select: {
@@ -178,6 +198,7 @@ export default async function AdminDashboard() {
       },
     }),
     prisma.lead.findMany({
+      where: leadScope,
       take: 8,
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true, phone: true, source: true, startDate: true, status: true },
@@ -195,7 +216,7 @@ export default async function AdminDashboard() {
       },
     }),
     prisma.booking.findMany({
-      where: { status: BookingStatus.PAID, deletedAt: null },
+      where: { ...bookingScope, status: BookingStatus.PAID },
       select: { amount: true, createdAt: true, tourId: true },
     }),
   ]);
@@ -319,7 +340,7 @@ export default async function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">
-            Welcome back, <span className="text-primary">Admin</span> 👋
+            Welcome back, <span className="text-primary">{firstName}</span> 👋
           </h2>
           <p className="text-muted-foreground text-xs mt-0.5">
             {now.toLocaleDateString("en-IN", {
