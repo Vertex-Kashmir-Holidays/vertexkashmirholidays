@@ -25,3 +25,24 @@ export async function requireModuleView(module: ModuleKey): Promise<ModuleGuardR
   }
   return { ok: true, role, userId };
 }
+
+// Sub-resource routes with no MODULES entry of their own — gated by their
+// parent feature's permission instead.
+const MODULE_PATH_ALIASES: Record<string, ModuleKey> = {
+  "/admin/blog-categories": "blogs",
+  "/admin/faq-categories": "faqs",
+};
+
+/**
+ * Maps the current request path to the module that owns it, so the admin
+ * root layout can run the view-permission check exactly once instead of
+ * every module folder repeating (and risking a copy-pasted, stale) module
+ * key in its own layout.tsx.
+ */
+export function resolveModuleForPath(pathname: string): ModuleKey | null {
+  for (const [prefix, key] of Object.entries(MODULE_PATH_ALIASES)) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return key;
+  }
+  const mod = MODULES.find((m) => pathname === m.href || pathname.startsWith(`${m.href}/`));
+  return mod?.key ?? null;
+}
