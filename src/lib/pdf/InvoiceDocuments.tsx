@@ -178,7 +178,19 @@ const s = StyleSheet.create({
   footerLine: { fontSize: 7.5, color: C.muted, marginTop: 2, textAlign: "center" },
 });
 
-function Header({ logo, title, ref: docRef }: { logo: string | null; title: string; ref: string }) {
+// Exported so other document families (e.g. the salary slip) can reuse the
+// same header/footer/meta-cell shell instead of redefining it.
+export { s as sharedPdfStyles };
+
+export function Header({
+  logo,
+  title,
+  ref: docRef,
+}: {
+  logo: string | null;
+  title: string;
+  ref: string;
+}) {
   return (
     <View style={s.header}>
       <View style={s.brandRow}>
@@ -200,7 +212,7 @@ function Header({ logo, title, ref: docRef }: { logo: string | null; title: stri
   );
 }
 
-function Footer({ address }: { address: string }) {
+export function Footer({ address }: { address: string }) {
   return (
     <View style={s.footer} fixed>
       <Text style={s.footerCompany}>{CONTACT.company}</Text>
@@ -213,7 +225,7 @@ function Footer({ address }: { address: string }) {
   );
 }
 
-function MetaCell({ label, value }: { label: string; value: string }) {
+export function MetaCell({ label, value }: { label: string; value: string }) {
   return (
     <View style={s.metaCell}>
       <Text style={s.metaLabel}>{label}</Text>

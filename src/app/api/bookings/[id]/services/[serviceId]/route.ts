@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { serviceUpdateSchema } from "@/lib/bookings/service-schema";
 import { round2 } from "@/lib/bookings/finance";
+import { syncBookingCommission } from "@/lib/bookings/commissionSync";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +14,12 @@ type Params = { params: Promise<{ id: string; serviceId: string }> };
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id, serviceId } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       amount: true,
@@ -78,16 +83,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(d.sortOrder !== undefined ? { sortOrder: d.sortOrder } : {}),
     },
   });
+  await syncBookingCommission(prisma, id);
   return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id, serviceId } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: { id: true, servicesLocked: true, services: { select: { id: true } } },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -102,5 +110,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   }
 
   await prisma.bookingService.delete({ where: { id: serviceId } });
+  await syncBookingCommission(prisma, id);
   return NextResponse.json({ ok: true });
 }

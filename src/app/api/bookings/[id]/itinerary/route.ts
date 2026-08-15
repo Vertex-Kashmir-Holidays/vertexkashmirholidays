@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { buildLeadItineraryData } from "@/lib/itinerary/lead-defaults";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -16,10 +18,12 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("itinerary", "create");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id: bookingId } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id: bookingId, deletedAt: null },
+    where: { id: bookingId, deletedAt: null, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       guestName: true,

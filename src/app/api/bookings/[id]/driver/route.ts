@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { canEditDriver } from "@/lib/bookings/driver";
 import { sendDriverDetailsEmail } from "@/lib/bookings/notify";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -26,10 +28,12 @@ const schema = z.object({
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
     select: { id: true, servicesLocked: true, travelDate: true, driverAddedAt: true },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });

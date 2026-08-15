@@ -5,6 +5,9 @@ import { requirePermission } from "@/lib/permissions";
 import { sendPaymentInvoiceEmail } from "@/lib/bookings/notify";
 import { resolveGst } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
+import { syncBookingCommission } from "@/lib/bookings/commissionSync";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 import type { PaymentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -25,10 +28,12 @@ const schema = z.object({
 export async function POST(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       amount: true,
@@ -96,6 +101,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       recordedById: guard.user.id as string,
     },
   });
+
+  await syncBookingCommission(prisma, id);
 
   // Branded payment receipt email + PDF (best-effort, never blocks the record).
   const { delivered: emailed } = await sendPaymentInvoiceEmail(id, created.id);

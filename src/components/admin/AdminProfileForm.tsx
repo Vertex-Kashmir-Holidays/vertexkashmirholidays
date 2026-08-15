@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Upload, Loader2, Images, Trash2, UserCircle, Save } from "lucide-react";
 import { GalleryPicker } from "@/components/admin/pages/GalleryPicker";
+import { PasswordInput } from "@/components/ui/atoms/PasswordInput";
 import { profileFormSchema, type ProfileFormValues } from "@/lib/account/profileSchema";
 import type { Role } from "@/lib/rbac";
 
@@ -219,9 +220,8 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
             <label className="text-xs font-semibold text-foreground" htmlFor="ap-current">
               Current password
             </label>
-            <input
+            <PasswordInput
               id="ap-current"
-              type="password"
               className={inputCls}
               autoComplete="current-password"
               {...register("currentPassword")}
@@ -234,9 +234,8 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
             <label className="text-xs font-semibold text-foreground" htmlFor="ap-new">
               New password
             </label>
-            <input
+            <PasswordInput
               id="ap-new"
-              type="password"
               className={inputCls}
               autoComplete="new-password"
               {...register("newPassword")}
@@ -249,9 +248,8 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
             <label className="text-xs font-semibold text-foreground" htmlFor="ap-confirm">
               Confirm new password
             </label>
-            <input
+            <PasswordInput
               id="ap-confirm"
-              type="password"
               className={inputCls}
               autoComplete="new-password"
               {...register("confirmPassword")}

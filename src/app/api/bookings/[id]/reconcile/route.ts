@@ -5,6 +5,9 @@ import { requirePermission } from "@/lib/permissions";
 import { recordOnlinePayment } from "@/lib/bookings/online-payment";
 import { finalizeOnlinePayment } from "@/lib/bookings/notify";
 import { logPaymentAudit } from "@/lib/bookings/audit";
+import { syncBookingCommission } from "@/lib/bookings/commissionSync";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -21,10 +24,12 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
     select: { id: true, amount: true, paymentOption: true, razorpayOrderId: true },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -84,6 +89,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   });
 
   if (newPaymentId) {
+    await syncBookingCommission(prisma, booking.id);
     await finalizeOnlinePayment(booking.id, chargeable, captured.id, newPaymentId);
     return NextResponse.json({ reconciled: true, recorded: true });
   }

@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Lock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { can } from "@/lib/permissions";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { requireModuleView } from "@/lib/admin/moduleGuard";
 import {
   BookingServicesClient,
   DriverSection,
@@ -29,9 +32,17 @@ function parseInclusions(raw: string): string[] {
 
 export default async function BookingServicesPage({ params }: PageProps) {
   const { id } = await params;
+  const guard = await requireModuleView("bookings");
+  if (!guard.ok) return guard.page;
+  const { role, userId } = guard;
+
+  const [canEdit, canCreateItinerary] = await Promise.all([
+    can(role, "bookings", "edit"),
+    can(role, "itinerary", "create"),
+  ]);
 
   const booking = await prisma.booking.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
     include: {
       tour: { select: { title: true } },
       user: { select: { name: true, email: true, mustChangePassword: true } },
@@ -157,7 +168,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
         {/* Left — 75%: service editor, details, payments, lock CTA */}
         <div className="xl:col-span-3">
-          <BookingServicesClient booking={data} gstRates={gstRates} />
+          <BookingServicesClient booking={data} gstRates={gstRates} canEdit={canEdit} />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}
         <div className="xl:col-span-1 space-y-5">
@@ -167,6 +178,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
             isLeadConverted={!!lead}
             leadItineraryId={lead?.itinerary?.id ?? null}
             itinerary={booking.itinerary ?? null}
+            canCreate={canCreateItinerary}
           />
           <BookingAdminPanel
             bookingId={booking.id}
@@ -186,6 +198,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
                   }
                 : null
             }
+            canEdit={canEdit}
           />
           {/* Driver & vehicle — only once services are locked. */}
           {booking.servicesLocked && (
@@ -193,6 +206,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
               bookingId={booking.id}
               travelDate={data.travelDate}
               initialDriver={data.driver}
+              canEdit={canEdit}
             />
           )}
         </div>

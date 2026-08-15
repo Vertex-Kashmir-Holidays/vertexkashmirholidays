@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { syncBookingCommission } from "@/lib/bookings/commissionSync";
 import { z } from "zod";
 import { Role } from "@prisma/client";
 
@@ -15,6 +16,13 @@ const patchSchema = z.object({
   // Optional sales incentive rate (percent of booking profit). Stored on the user
   // for future monthly commission/payout reports. null clears it.
   bookingConversionPct: z.coerce.number().min(0).max(100).nullable().optional(),
+  designation: z.string().trim().max(80).nullable().optional(),
+  employeeCode: z.string().trim().max(40).nullable().optional(),
+  monthlySalary: z.coerce.number().min(0).nullable().optional(),
+  joiningDate: z.string().trim().nullable().optional(),
+  personalEmail: z.string().trim().email("Enter a valid email").nullable().optional().or(z.literal("")),
+  personalPhone: z.string().trim().max(40).nullable().optional(),
+  address: z.string().trim().max(300).nullable().optional(),
   // Admin-set password reset (e.g. the employee forgot theirs). When provided,
   // it is re-hashed and the user is forced to change it on next login.
   password: z.string().min(8, "Password must be at least 8 characters").max(100).optional(),
@@ -85,6 +93,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           ...(data.bookingConversionPct !== undefined
             ? { bookingConversionPct: data.bookingConversionPct }
             : {}),
+          ...(data.designation !== undefined ? { designation: data.designation } : {}),
+          ...(data.employeeCode !== undefined ? { employeeCode: data.employeeCode } : {}),
+          ...(data.monthlySalary !== undefined ? { monthlySalary: data.monthlySalary } : {}),
+          ...(data.joiningDate !== undefined
+            ? { joiningDate: data.joiningDate ? new Date(data.joiningDate) : null }
+            : {}),
+          ...(data.personalEmail !== undefined
+            ? { personalEmail: data.personalEmail ? data.personalEmail : null }
+            : {}),
+          ...(data.personalPhone !== undefined ? { personalPhone: data.personalPhone } : {}),
+          ...(data.address !== undefined ? { address: data.address } : {}),
           ...passwordUpdate,
           ...(data.resetMfa ? { mfaSecret: null, mfaEnabledAt: null } : {}),
         },
@@ -95,6 +114,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           phone: true,
           role: true,
           bookingConversionPct: true,
+          designation: true,
+          employeeCode: true,
+          monthlySalary: true,
+          joiningDate: true,
+          personalEmail: true,
+          personalPhone: true,
+          address: true,
         },
       });
 
@@ -116,11 +142,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       return updatedUser;
     });
+
+    // Best-effort: a newly-set (or increased-from-null) commission rate should
+    // pick up this employee's already-converted bookings immediately, not wait
+    // for their next payment/service edit. Only bookings still missing a
+    // commission row are eligible — never touches ones already tracked.
+    if (data.bookingConversionPct != null && data.bookingConversionPct > 0) {
+      try {
+        const eligible = await prisma.booking.findMany({
+          where: { deletedAt: null, leads: { some: { assignedToId: id } }, commission: null },
+          select: { id: true },
+        });
+        for (const b of eligible) {
+          await syncBookingCommission(prisma, b.id);
+        }
+      } catch (err) {
+        console.error("[users/PATCH] commission backfill failed for", id, err);
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     if (msg.includes("P2002")) {
-      return NextResponse.json({ error: "That email is already in use" }, { status: 409 });
+      return NextResponse.json(
+        { error: "That email or employee ID is already in use" },
+        { status: 409 },
+      );
     }
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
   }

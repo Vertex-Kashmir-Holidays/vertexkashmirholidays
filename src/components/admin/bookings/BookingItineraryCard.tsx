@@ -12,6 +12,8 @@ interface BookingItineraryCardProps {
   isLeadConverted: boolean;
   leadItineraryId: string | null;
   itinerary: { id: string; status: string } | null;
+  /** Server checks `itinerary:create` (not `bookings:edit`) for this action. */
+  canCreate: boolean;
 }
 
 // Booking-detail itinerary panel.
@@ -25,6 +27,7 @@ export function BookingItineraryCard({
   isLeadConverted,
   leadItineraryId,
   itinerary,
+  canCreate,
 }: BookingItineraryCardProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -86,7 +89,7 @@ export function BookingItineraryCard({
         <p className="mt-2 text-xs text-muted-foreground">
           Services are locked — an itinerary can no longer be created for this booking.
         </p>
-      ) : (
+      ) : canCreate ? (
         <div className="mt-2">
           <p className="text-xs text-muted-foreground leading-relaxed">
             Generate a travel itinerary for this booking. You can edit, version and publish it until
@@ -102,6 +105,8 @@ export function BookingItineraryCard({
             Generate Itinerary
           </button>
         </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">No itinerary has been created yet.</p>
       )}
     </div>
   );

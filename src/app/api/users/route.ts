@@ -52,6 +52,13 @@ const createSchema = z.object({
   role: z.enum(["SUPERADMIN", "ADMIN", "SALES", "EDITOR"]),
   password: z.string().min(8, "Password must be at least 8 characters").max(100),
   bookingConversionPct: z.coerce.number().min(0).max(100).nullable().optional(),
+  designation: z.string().trim().max(80).nullable().optional(),
+  employeeCode: z.string().trim().max(40).nullable().optional(),
+  monthlySalary: z.coerce.number().min(0).nullable().optional(),
+  joiningDate: z.string().trim().nullable().optional(),
+  personalEmail: z.string().trim().email("Enter a valid email").nullable().optional().or(z.literal("")),
+  personalPhone: z.string().trim().max(40).nullable().optional(),
+  address: z.string().trim().max(300).nullable().optional(),
 });
 
 /** Create a new staff member (employee) with a password set by the admin. */
@@ -91,6 +98,13 @@ export async function POST(req: NextRequest) {
         // Force the new employee to set their own password on first login.
         mustChangePassword: true,
         bookingConversionPct: data.bookingConversionPct ?? null,
+        designation: data.designation ?? null,
+        employeeCode: data.employeeCode ?? null,
+        monthlySalary: data.monthlySalary ?? null,
+        joiningDate: data.joiningDate ? new Date(data.joiningDate) : null,
+        personalEmail: data.personalEmail ? data.personalEmail : null,
+        personalPhone: data.personalPhone ?? null,
+        address: data.address ?? null,
       },
       select: { id: true, name: true, email: true, phone: true, role: true },
     });
@@ -98,7 +112,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     if (msg.includes("P2002")) {
-      return NextResponse.json({ error: "That email is already in use" }, { status: 409 });
+      return NextResponse.json(
+        { error: "That email or employee ID is already in use" },
+        { status: 409 },
+      );
     }
     return NextResponse.json({ error: "Failed to create employee" }, { status: 500 });
   }
