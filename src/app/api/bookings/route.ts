@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { computeBookingFinance } from "@/lib/bookings/finance";
-import { BookingStatus } from "@prisma/client";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { BookingStatus, Prisma } from "@prisma/client";
+import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +13,8 @@ const VALID_STATUSES = ["PENDING", "CONFIRMED", "PAID", "FAILED", "CANCELLED", "
 export async function GET(req: NextRequest) {
   const guard = await requirePermission("bookings", "view");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
 
   const { searchParams } = new URL(req.url);
   const rawStatus = searchParams.get("status") ?? "";
@@ -23,8 +27,9 @@ export async function GET(req: NextRequest) {
     ? (rawStatus as BookingStatus)
     : undefined;
 
-  const where = {
+  const where: Prisma.BookingWhereInput = {
     deletedAt: null,
+    ...bookingWhereForUser(role, userId),
     ...(status ? { status } : {}),
     ...(search
       ? {
@@ -61,6 +66,7 @@ export async function GET(req: NextRequest) {
         tour: { select: { title: true, slug: true, coverImage: true } },
         user: { select: { name: true, email: true } },
         payments: { select: { amount: true } },
+        leads: { take: 1, select: { assignedTo: { select: { name: true, email: true } } } },
       },
     }),
     prisma.booking.count({ where }),
@@ -70,7 +76,7 @@ export async function GET(req: NextRequest) {
   // same helper and shape admin/bookings/page.tsx used before this route took
   // over as BookingsClient's data source. Strip the raw payments array before
   // sending to the client.
-  const bookings = rows.map(({ payments, ...b }) => {
+  const bookings = rows.map(({ payments, leads, ...b }) => {
     const finance = computeBookingFinance({
       amount: b.amount,
       discountType: b.discountType,
@@ -83,6 +89,7 @@ export async function GET(req: NextRequest) {
       paymentStatus: finance.paymentStatus,
       paidAmount: finance.paidAmount,
       balance: finance.balance,
+      convertedBy: leads[0]?.assignedTo?.name ?? leads[0]?.assignedTo?.email ?? null,
     };
   });
 

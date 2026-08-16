@@ -36,6 +36,9 @@ import {
   HelpCircle,
   History,
   Briefcase,
+  UserCog,
+  Wallet,
+  CalendarOff,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -59,6 +62,9 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   leads: Inbox,
   itinerary: Map,
   users: Users,
+  employees: UserCog,
+  salary: Wallet,
+  leave: CalendarOff,
   connect: MessageSquare,
   galleries: Images,
   blogs: FileText,
@@ -88,11 +94,12 @@ const PAGE_TITLES: Record<string, string> = Object.fromEntries(
 const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
   { label: null, keys: ["dashboard", "connect"] },
   { label: "Catalog", keys: ["destinations", "packages", "activities", "campaigns"] },
-  { label: "CRM", keys: ["leads", "itinerary", "bookings"] },
+  { label: "CRM", keys: ["leads", "itinerary", "bookings", "users"] },
   { label: "Marketing", keys: ["offlineConversions"] },
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
   { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews", "careers"] },
-  { label: "Admin", keys: ["users", "settings", "roles", "auditLog"] },
+  { label: "HR", keys: ["employees", "salary", "leave"] },
+  { label: "Admin", keys: ["settings", "roles", "auditLog"] },
 ];
 
 interface AdminShellProps {

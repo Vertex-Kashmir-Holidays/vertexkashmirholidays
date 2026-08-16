@@ -4,6 +4,8 @@ import { requirePermission } from "@/lib/permissions";
 import { z } from "zod";
 import { BookingStatus } from "@prisma/client";
 import { computeBookingFinance } from "@/lib/bookings/finance";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -28,9 +30,11 @@ const patchSchema = z.object({
 export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "view");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     include: {
       tour: { select: { title: true, slug: true, coverImage: true, priceFrom: true } },
       user: { select: { name: true, email: true } },
@@ -43,9 +47,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
-  const existing = await prisma.booking.findUnique({
-    where: { id },
+  const existing = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       servicesLocked: true,
@@ -123,18 +129,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
-  // ── Cancellation business rules (server-authoritative) ──
-  // A booking may be cancelled only by an admin, and only while it is PARTIALLY
-  // PAID. Customers can never reach this route (staff-guarded above); SALES/EDITOR
-  // staff are additionally blocked here so only ADMIN/SUPERADMIN can cancel.
-  if (status === "CANCELLED") {
-    const role = (guard.user as { role?: string }).role;
+  // ── Cancellation / refund business rules (server-authoritative) ──
+  // Both are admin-only actions, matching the UI's isAdmin-gated CANCEL/REFUND
+  // buttons — enforced here too so a SALES/EDITOR user with `bookings:edit`
+  // can't reach either transition by calling the API directly.
+  if (status === "CANCELLED" || status === "REFUNDED") {
     if (role !== "ADMIN" && role !== "SUPERADMIN") {
       return NextResponse.json(
-        { error: "Only an administrator can cancel a booking." },
+        { error: "Only an administrator can cancel or refund a booking." },
         { status: 403 },
       );
     }
+  }
+  if (status === "CANCELLED") {
     const finance = computeBookingFinance({
       amount: existing.amount,
       discountType: existing.discountType,
@@ -165,6 +172,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(amount !== undefined ? { amount } : {}),
     },
   });
+
+  // A cancelled/refunded booking can no longer earn/keep a commission. Rows
+  // already PAID are left untouched — reversing money already paid to an
+  // employee is a manual finance decision, not something to auto-flip here.
+  if (status === "CANCELLED" || status === "REFUNDED") {
+    await prisma.bookingCommission.updateMany({
+      where: { bookingId: id, status: { in: ["EXPECTED", "EARNED"] } },
+      data: { status: "REVERSED" },
+    });
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -178,10 +196,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 export async function DELETE(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "delete");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
 
-  const existing = await prisma.booking.findUnique({
-    where: { id },
+  const existing = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: { id: true, deletedAt: true },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });

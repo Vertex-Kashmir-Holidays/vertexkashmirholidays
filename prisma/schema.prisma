@@ -23,6 +23,18 @@ model User {
   // amount. Optional; only meaningful for SALES staff. Kept on the user so future
   // monthly salary/commission reports can compute payouts per salesperson.
   bookingConversionPct Float?
+  // Employee profile fields (staff only; optional so nothing breaks for existing
+  // rows). Source of truth for CURRENT employee info — payroll snapshots these
+  // per month on SalaryRecord rather than reading them live.
+  designation          String?
+  employeeCode         String?              @unique
+  monthlySalary        Float?
+  joiningDate          DateTime?
+  // `email`/`phone` above are treated as the employee's official/work contact
+  // (email doubles as their login). These are their personal contact details.
+  personalEmail        String?
+  personalPhone        String?
+  address              String?
   // TOTP MFA — mandatory for SUPERADMIN/ADMIN (see src/lib/rbac.ts requiresMfa).
   // mfaSecret is AES-256-GCM ciphertext (src/lib/security/mfaCrypto.ts), never
   // the plaintext base32 secret — verification needs it back, so it's encrypted
@@ -35,6 +47,12 @@ model User {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   bookings             Booking[]
+  commissions          BookingCommission[]
+  salaryRecords        SalaryRecord[]       @relation("SalaryEmployee")
+  salariesPaid         SalaryRecord[]       @relation("SalaryPaidBy")
+  salariesCorrected    SalaryRecord[]       @relation("SalaryCorrectedBy")
+  leaveRequests        LeaveRequest[]       @relation("LeaveEmployee")
+  leaveReviews         LeaveRequest[]       @relation("LeaveReviewedBy")
   reviews              Review[]
   itineraries          Itinerary[]          @relation("ItineraryOwner")
   itinerariesEdited    Itinerary[]          @relation("ItineraryEditor")
@@ -479,6 +497,7 @@ model Booking {
   services           BookingService[]
   itinerary          Itinerary?
   offlineConversions OfflineConversion[]
+  commission         BookingCommission?
 
   @@index([status])
   @@index([tourId])
@@ -535,6 +554,104 @@ model BookingService {
   createdAt DateTime    @default(now())
 
   @@index([bookingId])
+}
+
+// One row per lead-converted booking, tracking the salesperson's commission
+// through its lifecycle. Direct/website bookings (no linked Lead) never get a
+// row — there's no salesperson to credit. rateSnapshotPct is frozen from the
+// employee's User.bookingConversionPct at creation time (lead-conversion) so a
+// later change to the employee's rate never rewrites historical commissions.
+// profitAmount/commissionAmount stay live-recomputed while EXPECTED (service
+// costs usually aren't known yet at conversion time) and freeze once EARNED.
+model BookingCommission {
+  id               String            @id @default(cuid())
+  bookingId        String            @unique
+  booking          Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         User              @relation(fields: [employeeId], references: [id])
+  rateSnapshotPct  Float
+  profitAmount     Float             @default(0)
+  commissionAmount Float             @default(0)
+  status           CommissionStatus  @default(EXPECTED)
+  earnedAt         DateTime?
+  paidAt           DateTime?
+  paidReference    String?
+  // Set when a payroll run "claims" this row for a specific month's salary —
+  // prevents the same earned commission being counted in two different months'
+  // payroll, and tells the PAID transition exactly which rows to flip to PAID.
+  salaryRecordId   String?
+  salaryRecord     SalaryRecord?     @relation(fields: [salaryRecordId], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([salaryRecordId])
+}
+
+// One payroll record per employee per calendar month (salaryMonth = "2026-08",
+// never a timestamp — avoids month-boundary/timezone bugs). Values are
+// snapshotted at prepare time — an employee's monthlySalary/commission changing
+// later never rewrites an already-prepared record. commission comes from the
+// BookingCommission rows it has claimed (see BookingCommission.salaryRecordId);
+// commissionAdjustment is a separate, clearly-labelled manual correction field —
+// Finance never edits BookingCommission rows directly.
+model SalaryRecord {
+  id                   String        @id @default(cuid())
+  employeeId           String
+  employee             User          @relation("SalaryEmployee", fields: [employeeId], references: [id])
+  salaryMonth          String // "YYYY-MM"
+  monthlySalary        Float // snapshot of User.monthlySalary at prepare time
+  commission           Float         @default(0) // sum of claimed BookingCommission.commissionAmount
+  commissionAdjustment Float         @default(0) // manual correction, never overwrites BookingCommission
+  paidDays             Float         @default(0)
+  absentDays           Float         @default(0)
+  paidLeaveDays        Float         @default(0)
+  unpaidLeaveDays      Float         @default(0)
+  deductions           Float         @default(0)
+  netSalary            Float // monthlySalary + commission + commissionAdjustment - deductions, stored at save time
+  status               SalaryStatus  @default(DRAFT)
+  employeeReviewedAt   DateTime? // "Looks Good" acknowledgement — not a payment approval
+  paidAt               DateTime?
+  paidById             String?
+  paidBy               User?         @relation("SalaryPaidBy", fields: [paidById], references: [id])
+  paymentReference     String?
+  // Set only when a PAID record is corrected — full before/after detail lives in
+  // AuditLog (SALARY_CORRECTED); these are just cheap fields for an at-a-glance
+  // "this was corrected" badge in the UI.
+  correctedAt          DateTime?
+  correctedById        String?
+  correctedBy          User?         @relation("SalaryCorrectedBy", fields: [correctedById], references: [id])
+  correctionReason     String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  claimedCommissions   BookingCommission[]
+
+  @@unique([employeeId, salaryMonth])
+  @@index([salaryMonth])
+  @@index([status])
+}
+
+// Simple employee leave tracking. No stored balance — entitlement (1.5 paid
+// days/month, no carry-forward) is computed on read from APPROVED requests.
+model LeaveRequest {
+  id           String      @id @default(cuid())
+  employeeId   String
+  employee     User        @relation("LeaveEmployee", fields: [employeeId], references: [id])
+  type         LeaveType
+  startDate    DateTime
+  endDate      DateTime
+  days         Float // supports half-day (0.5) granularity
+  reason       String?
+  status       LeaveStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?       @relation("LeaveReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
 }
 
 // Append-only payment audit trail. Records every payment-gateway event (order
@@ -1497,6 +1614,32 @@ enum ServiceKind {
   OTHER
 }
 
+enum CommissionStatus {
+  EXPECTED
+  EARNED
+  PAID
+  REVERSED
+}
+
+enum SalaryStatus {
+  DRAFT
+  REVIEW
+  PAID
+}
+
+enum LeaveType {
+  EARNED
+  SICK
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 enum LeadStatus {
   NEW
   CONNECTED
@@ -1550,6 +1693,14 @@ enum AuditAction {
   USER_SOFT_DELETE
   USER_PERMANENT_DELETE
   USER_RESTORE
+  SALARY_PREPARED
+  SALARY_REVIEW
+  SALARY_ACKNOWLEDGED
+  SALARY_PAID
+  SALARY_CORRECTED
+  LEAVE_APPLIED
+  LEAVE_APPROVED
+  LEAVE_REJECTED
 }
 
 enum ItineraryStatus {

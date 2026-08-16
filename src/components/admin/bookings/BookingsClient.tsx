@@ -13,9 +13,15 @@ import {
   Loader2,
   AlertTriangle,
   X,
+  IndianRupee,
+  TrendingUp,
+  Wallet,
+  Ban,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { StatCard } from "@/components/ui/molecules/stat-card";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
 type PaymentStatus = "PENDING" | "PARTIAL" | "FULL";
@@ -37,6 +43,17 @@ interface Booking {
   createdAt: Date | string;
   tour: { title: string; slug: string; coverImage: string | null } | null;
   user: { name: string | null; email: string } | null;
+  convertedBy: string | null;
+}
+
+interface BookingCardStats {
+  isAdmin: boolean;
+  bookingsCount: { all: number; month: number };
+  bookingsTotal: { all: number; month: number };
+  cancelledBookings: { all: number; month: number };
+  bookingsProfit?: { all: number; month: number };
+  myCommission?: { all: number; month: number };
+  paidCommission?: { all: number; month: number };
 }
 
 interface Props {
@@ -44,6 +61,7 @@ interface Props {
   totalCount: number;
   canDelete: boolean;
   isAdmin: boolean;
+  cardStats: BookingCardStats | null;
 }
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
@@ -82,7 +100,13 @@ function fmtINR(n: number) {
   return "₹" + n.toLocaleString("en-IN");
 }
 
-export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin }: Props) {
+export function BookingsClient({
+  initialBookings,
+  totalCount,
+  canDelete,
+  isAdmin,
+  cardStats,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -211,6 +235,59 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
         </div>
       </div>
 
+      {cardStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard
+            label={cardStats.isAdmin ? "Bookings" : "My Bookings"}
+            value={cardStats.bookingsCount.all}
+            sub={`${cardStats.bookingsCount.month} this month`}
+            icon={User}
+            accent="bg-blue-500/10 text-blue-600 dark:text-blue-400"
+          />
+          <StatCard
+            label="Bookings Total"
+            value={fmtINR(cardStats.bookingsTotal.all)}
+            sub={`${fmtINR(cardStats.bookingsTotal.month)} this month`}
+            icon={IndianRupee}
+            accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          />
+          {cardStats.isAdmin && cardStats.bookingsProfit && (
+            <StatCard
+              label="Booking Profit"
+              value={fmtINR(cardStats.bookingsProfit.all)}
+              sub={`${fmtINR(cardStats.bookingsProfit.month)} this month`}
+              icon={TrendingUp}
+              accent="bg-purple-500/10 text-purple-600 dark:text-purple-400"
+            />
+          )}
+          <StatCard
+            label="Cancelled Bookings"
+            value={cardStats.cancelledBookings.all}
+            sub={`${cardStats.cancelledBookings.month} this month`}
+            icon={Ban}
+            accent="bg-red-500/10 text-red-600 dark:text-red-400"
+          />
+          {!cardStats.isAdmin && (
+            <>
+              <StatCard
+                label="My Commission"
+                value={fmtINR(cardStats.myCommission?.all ?? 0)}
+                sub={`${fmtINR(cardStats.myCommission?.month ?? 0)} this month · earned, awaiting payout`}
+                icon={Wallet}
+                accent="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              />
+              <StatCard
+                label="Earned Commission"
+                value={fmtINR(cardStats.paidCommission?.all ?? 0)}
+                sub={`${fmtINR(cardStats.paidCommission?.month ?? 0)} this month · paid out to you`}
+                icon={Banknote}
+                accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              />
+            </>
+          )}
+        </div>
+      )}
+
       <div className="bg-card rounded-2xl border border-border shadow-sm">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 p-4">
@@ -248,7 +325,16 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Ref", "Guest", "Travel Date", "Amount", "Status", "Payment", "Actions"].map(
+                {[
+                  "Ref",
+                  "Guest",
+                  "Travel Date",
+                  "Amount",
+                  "Converted By",
+                  "Status",
+                  "Payment",
+                  "Actions",
+                ].map(
                   (h) => (
                     <th
                       key={h}
@@ -263,7 +349,7 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
             <tbody className="divide-y divide-border">
               {bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No bookings found.
                   </td>
                 </tr>
@@ -312,6 +398,9 @@ export function BookingsClient({ initialBookings, totalCount, canDelete, isAdmin
                       </td>
                       <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
                         {fmtINR(b.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        {b.convertedBy ?? "Website"}
                       </td>
                       <td className="px-4 py-3">
                         <span

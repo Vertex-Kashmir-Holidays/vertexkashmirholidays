@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { PasswordInput } from "@/components/ui/atoms/PasswordInput";
 
 const schema = z
   .object({
@@ -69,9 +70,8 @@ export function ForceChangePasswordForm() {
             <label className="text-xs font-semibold text-foreground" htmlFor="cp-new">
               New password
             </label>
-            <input
+            <PasswordInput
               id="cp-new"
-              type="password"
               className={inputClass}
               autoComplete="new-password"
               autoFocus
@@ -87,9 +87,8 @@ export function ForceChangePasswordForm() {
             <label className="text-xs font-semibold text-foreground" htmlFor="cp-confirm">
               Confirm new password
             </label>
-            <input
+            <PasswordInput
               id="cp-confirm"
-              type="password"
               className={inputClass}
               autoComplete="new-password"
               {...register("confirmPassword")}

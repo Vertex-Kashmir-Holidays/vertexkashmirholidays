@@ -24,6 +24,7 @@ interface BookingAdminPanelProps {
   balance: number;
   paymentStatus: string;
   customer: { email: string; name: string | null; mustChangePassword: boolean } | null;
+  canEdit: boolean;
 }
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
@@ -43,6 +44,7 @@ export function BookingAdminPanel({
   balance,
   paymentStatus,
   customer,
+  canEdit,
 }: BookingAdminPanelProps) {
   const router = useRouter();
   const [busy, setBusy] = useState<null | "verify" | "creds" | "emails">(null);
@@ -113,55 +115,61 @@ export function BookingAdminPanel({
         </div>
       </dl>
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-        <button
-          type="button"
-          onClick={() => run("verify", `/api/bookings/${bookingId}/reconcile`, "Payment verified.")}
-          disabled={busy !== null || !razorpayOrderId}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {busy === "verify" ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <ShieldCheck className="w-3.5 h-3.5" />
-          )}
-          Verify Payment
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            run("creds", `/api/bookings/${bookingId}/resend-credentials`, "Credentials resent.")
-          }
-          disabled={busy !== null || !customer}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {busy === "creds" ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <KeyRound className="w-3.5 h-3.5" />
-          )}
-          Resend Credentials
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            run("emails", `/api/bookings/${bookingId}/resend-emails`, "Emails resent.")
-          }
-          disabled={busy !== null}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {busy === "emails" ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Mail className="w-3.5 h-3.5" />
-          )}
-          Resend Emails
-        </button>
-      </div>
-      <p className="mt-2 flex items-center gap-1 text-[12px] text-muted-foreground">
-        <RefreshCw className="w-3 h-3" /> Verify Payment re-checks Razorpay and records a captured
-        payment if one was missed.
-      </p>
+      {canEdit && (
+        <>
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() =>
+                run("verify", `/api/bookings/${bookingId}/reconcile`, "Payment verified.")
+              }
+              disabled={busy !== null || !razorpayOrderId}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "verify" ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5" />
+              )}
+              Verify Payment
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                run("creds", `/api/bookings/${bookingId}/resend-credentials`, "Credentials resent.")
+              }
+              disabled={busy !== null || !customer}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "creds" ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <KeyRound className="w-3.5 h-3.5" />
+              )}
+              Resend Credentials
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                run("emails", `/api/bookings/${bookingId}/resend-emails`, "Emails resent.")
+              }
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-[14px] font-semibold text-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy === "emails" ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Mail className="w-3.5 h-3.5" />
+              )}
+              Resend Emails
+            </button>
+          </div>
+          <p className="mt-2 flex items-center gap-1 text-[12px] text-muted-foreground">
+            <RefreshCw className="w-3 h-3" /> Verify Payment re-checks Razorpay and records a
+            captured payment if one was missed.
+          </p>
+        </>
+      )}
     </div>
   );
 }

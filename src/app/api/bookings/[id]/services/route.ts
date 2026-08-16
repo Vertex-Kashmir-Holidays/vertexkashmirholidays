@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { serviceBodySchema } from "@/lib/bookings/service-schema";
 import { round2 } from "@/lib/bookings/finance";
+import { syncBookingCommission } from "@/lib/bookings/commissionSync";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 import type { ServiceKind } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +15,12 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       amount: true,
@@ -73,5 +78,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       sortOrder: d.sortOrder ?? 0,
     },
   });
+  await syncBookingCommission(prisma, id);
   return NextResponse.json(created, { status: 201 });
 }

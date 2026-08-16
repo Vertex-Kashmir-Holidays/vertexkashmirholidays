@@ -144,6 +144,10 @@ function withNonceCsp(req: NextRequest): NextResponse {
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
+  // Forwarded so the admin root layout can resolve which module the current
+  // route belongs to and run its permission check in one place, instead of
+  // every module route re-declaring its own module key in a layout.tsx.
+  requestHeaders.set("x-pathname", req.nextUrl.pathname);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

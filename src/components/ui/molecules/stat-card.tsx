@@ -6,9 +6,11 @@ interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
   accent: string;
   size?: "default" | "sm";
+  /** Optional small caption under the label, e.g. "₹12,000 this month". */
+  sub?: string;
 }
 
-export function StatCard({ label, value, icon: Icon, accent, size = "default" }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, accent, size = "default", sub }: StatCardProps) {
   if (size === "sm") {
     return (
       <div className="bg-card rounded-2xl border border-border shadow-sm p-4 flex items-center gap-3">
@@ -18,6 +20,7 @@ export function StatCard({ label, value, icon: Icon, accent, size = "default" }:
         <div className="min-w-0">
           <p className="text-xl font-extrabold text-foreground leading-none truncate">{value}</p>
           <p className="text-[12px] text-muted-foreground mt-0.5">{label}</p>
+          {sub && <p className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">{sub}</p>}
         </div>
       </div>
     );
@@ -28,9 +31,10 @@ export function StatCard({ label, value, icon: Icon, accent, size = "default" }:
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", accent)}>
         <Icon className="w-5 h-5" />
       </div>
-      <div>
+      <div className="min-w-0">
         <p className="text-2xl font-extrabold text-foreground leading-none">{value}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+        {sub && <p className="text-[11px] text-muted-foreground/70 mt-0.5">{sub}</p>}
       </div>
     </div>
   );
