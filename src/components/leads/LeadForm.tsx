@@ -21,7 +21,7 @@ import {
   type LeadSourcePage,
 } from "@/lib/leads/schema";
 import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/analytics";
-import { readAttributionClient } from "@/lib/attribution";
+import { readAttributionForSubmit } from "@/lib/attribution";
 import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
@@ -124,7 +124,7 @@ export function LeadForm({
           agree: data.agree,
           source,
           context,
-          attribution: readAttributionClient(),
+          attribution: readAttributionForSubmit(),
           // Anti-bot signals (honeypot must be empty; render time for time-trap).
           [HONEYPOT_FIELD]: honeypotRef.current?.value ?? "",
           [TIMETRAP_FIELD]: renderedAt.current,
