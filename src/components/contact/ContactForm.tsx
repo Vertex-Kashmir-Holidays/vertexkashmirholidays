@@ -20,6 +20,7 @@ import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import type { ContactFormContent } from "@/types/contact";
 import { trackLeadSubmit } from "@/lib/analytics";
+import { readAttributionForSubmit } from "@/lib/attribution";
 
 // Reuses the shared lead primitives (name sanitize + E.164 phone) so the
 // contact form validates identically to the rest of the site. Email is required
@@ -80,6 +81,7 @@ export function ContactForm({ content }: ContactFormProps) {
           message: data.message || undefined,
           agree: data.agree,
           source: "contact",
+          attribution: readAttributionForSubmit(),
           [HONEYPOT_FIELD]: honeypotRef.current?.value ?? "",
           [TIMETRAP_FIELD]: renderedAt.current,
           turnstileToken: captchaToken ?? undefined,

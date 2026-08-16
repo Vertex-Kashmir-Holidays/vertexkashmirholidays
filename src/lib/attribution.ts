@@ -141,23 +141,34 @@ function fillEmpty(
 // buffer is a separate, short-lived, first-party-only holding spot for the
 // SAME raw values, written unconditionally (no consent check) so a UTM/
 // click-id landing isn't lost the instant the visitor navigates away before
-// deciding. It is never transmitted to any server or third party (GA4, Meta,
-// Google Ads, or otherwise) — it only ever moves from here into the real
-// cookie, and only once consent exists (see captureAttributionClient below).
-// Uses localStorage rather than sessionStorage so it survives a closed-then-
-// reopened tab within the TTL window; the short TTL is what keeps pre-consent
-// exposure bounded.
+// deciding. It is never transmitted to Google, Meta, GTM, GA4, or any other
+// third party — it only ever moves from here into the real cookie once
+// consent exists (see captureAttributionClient below), OR — click-id fields
+// only (gclid/gbraid/wbraid/fbclid/msclkid) — directly into a Lead/Booking
+// submission payload sent to our own first-party server, via
+// readAttributionForSubmit() below, regardless of consent. That path exists
+// because losing the ad-click identifier that correctly attributes a CRM
+// record is a different concern from analytics/marketing tracking consent:
+// the value is only ever used to attribute a record the visitor is
+// themselves choosing to submit right now, to our own server — never to
+// fire GA4, GTM, or the Meta Pixel, and never to enable or imply any
+// analytics/marketing consent. UTMs/landingPage/referrer are NOT included
+// via that path — they remain exclusively behind analytics consent, same as
+// before. Uses localStorage rather than sessionStorage so it survives a
+// closed-then-reopened tab within the TTL window; the short TTL is what
+// keeps pre-consent exposure bounded.
 //
 // IMPORTANT — documented risk/policy tradeoff, not a compliance guarantee:
 // writing ANY non-essential data to a visitor's device before consent is,
 // under a strict reading of ePrivacy/GDPR (and this project's own consent
 // banner wording, which already categorises UTM/attribution capture under
 // "Analytics & Attribution"), arguably still consent-requiring regardless of
-// storage mechanism. This buffer never transmits anything anywhere and
-// expires quickly, which meaningfully reduces risk/impact — but that does
-// not make it unambiguously compliant. This tradeoff was reviewed and
-// accepted deliberately (2026-08). Revisit if the privacy policy or consent
-// model changes.
+// storage mechanism. This buffer never transmits anything to a third party
+// and expires quickly, which meaningfully reduces risk/impact — but that
+// does not make it unambiguously compliant. This tradeoff was reviewed and
+// accepted deliberately (2026-08; re-reviewed 2026-08-16 when
+// readAttributionForSubmit() was added). Revisit if the privacy policy or
+// consent model changes.
 
 const BUFFER_KEY = "vkh_attribution_buffer";
 // 60 minutes — long enough to cover a realistic "browse a bit before
@@ -288,6 +299,30 @@ export function readAttributionClient(): AttributionData | undefined {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Attribution to send with a Lead/Booking submission. Same as
+ * readAttributionClient() (the persistent, consent-gated cookie) — the
+ * source for UTMs/landingPage/referrer, unchanged — but click-id fields
+ * (gclid/gbraid/wbraid/fbclid/msclkid) also fall back to the pre-consent
+ * buffer when the cookie doesn't have them yet, so a visitor who submits the
+ * form before ever interacting with the consent banner still has their
+ * ad-click identifier attributed correctly on the record they're choosing to
+ * submit right now. This does not read, check, or change consent state in
+ * any way, and the buffer's non-click-id fields are not included here — see
+ * the "Pre-consent attribution buffer" comment above for the full boundary.
+ */
+export function readAttributionForSubmit(): AttributionData | undefined {
+  if (typeof window === "undefined") return undefined;
+  const merged: AttributionData = { ...(readAttributionClient() ?? {}) };
+  const buffered = readBuffer()?.data;
+  if (buffered) {
+    for (const field of CLICK_ID_PARAMS) {
+      if (!merged[field] && buffered[field]) merged[field] = buffered[field];
+    }
+  }
+  return Object.keys(merged).length > 0 ? merged : undefined;
 }
 
 // ── WhatsApp attribution-reference bridge ───────────────────────────────────
