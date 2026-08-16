@@ -190,9 +190,12 @@ let draftSeq = 0;
 export function BookingServicesClient({
   booking,
   gstRates,
+  canEdit,
 }: {
   booking: BookingData;
   gstRates: number[];
+  /** `bookings:edit` permission — distinct from the time-based edit window below. */
+  canEdit: boolean;
 }) {
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
@@ -226,7 +229,7 @@ export function BookingServicesClient({
   const [savingEmail, startSaveEmail] = useTransition();
   // Edit booking details (guest contact + trip/amount) — esp. for direct bookings.
   const [editOpen, setEditOpen] = useState(false);
-  const canEdit = canEditDetails(booking.travelDate);
+  const withinEditWindow = canEditDetails(booking.travelDate);
 
   // Amount actually in effect for a row: the live (blurred) value if present, else
   // the persisted amount. Drafts default to 0 until edited.
@@ -421,15 +424,14 @@ export function BookingServicesClient({
       <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="font-bold text-foreground text-sm">Booking Details</h3>
-          {canEdit && (
+          {canEdit && withinEditWindow ? (
             <button
               onClick={() => setEditOpen(true)}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"
             >
               <Pencil className="w-3.5 h-3.5" /> Edit Details
             </button>
-          )}
-          {!canEdit && (
+          ) : (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
               <Lock className="w-3.5 h-3.5" /> Editing closed
             </span>
@@ -530,6 +532,7 @@ export function BookingServicesClient({
                   record={svc}
                   fields={section.fields}
                   locked={locked}
+                  canEdit={canEdit}
                   capError={capError}
                   onAmountBlur={setLiveAmount}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
@@ -543,6 +546,7 @@ export function BookingServicesClient({
                   isDraft
                   fields={section.fields}
                   locked={locked}
+                  canEdit={canEdit}
                   capError={capError}
                   onAmountBlur={setLiveAmount}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
@@ -551,7 +555,7 @@ export function BookingServicesClient({
               ))}
             </div>
 
-            {!locked && (
+            {!locked && canEdit && (
               <button
                 onClick={() => addDraft(section.kind)}
                 className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary border border-dashed border-primary/40 px-3 py-1.5 rounded-lg hover:bg-primary/10"
@@ -576,7 +580,7 @@ export function BookingServicesClient({
               className="inline-flex items-center gap-1 text-xs font-medium bg-muted text-foreground px-2.5 py-1 rounded-full"
             >
               {inc}
-              {!locked && (
+              {!locked && canEdit && (
                 <button
                   onClick={() => removeInclusion(i)}
                   className="text-muted-foreground hover:text-red-500"
@@ -587,7 +591,7 @@ export function BookingServicesClient({
             </span>
           ))}
         </div>
-        {!locked && (
+        {!locked && canEdit && (
           <div className="flex gap-2">
             <input
               value={inclusionInput}
@@ -621,7 +625,7 @@ export function BookingServicesClient({
               <select
                 value={discountType}
                 onChange={(e) => setDiscountType(e.target.value)}
-                disabled={locked}
+                disabled={locked || !canEdit}
                 className={`${inputCls} mt-1`}
               >
                 <option value="">None</option>
@@ -636,12 +640,12 @@ export function BookingServicesClient({
                 min={0}
                 value={discountValue}
                 onChange={(e) => setDiscountValue(e.target.value)}
-                disabled={locked || !discountType}
+                disabled={locked || !canEdit || !discountType}
                 className={`${inputCls} mt-1`}
               />
             </label>
           </div>
-          {!locked && (
+          {!locked && canEdit && (
             <button
               onClick={saveDiscount}
               disabled={savingMeta}
@@ -678,6 +682,7 @@ export function BookingServicesClient({
         payments={payments}
         gstRates={gstRates}
         balance={finance.balance}
+        canEdit={canEdit}
         onAdded={(p) => setPayments((prev) => [...prev, p])}
         onUpdated={(p) => setPayments((prev) => prev.map((x) => (x.id === p.id ? p : x)))}
         onRemoved={(pid) => setPayments((prev) => prev.filter((x) => x.id !== pid))}
@@ -685,27 +690,33 @@ export function BookingServicesClient({
 
       {/* Lock CTA */}
       {!locked ? (
-        <div className="flex flex-col items-end gap-2">
-          {!canLock && (
-            <p className="text-xs text-muted-foreground">
-              Add at least one
-              {!hasHotel && !hasTransport
-                ? " hotel and one cab"
-                : !hasHotel
-                  ? " hotel"
-                  : " cab"}{" "}
-              before locking.
-            </p>
-          )}
-          <button
-            onClick={openLock}
-            disabled={locking || !canLock}
-            className="inline-flex items-center gap-2 text-sm font-bold bg-amber-600 text-white px-5 py-2.5 rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {locking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-            Lock Services &amp; Email Summary
-          </button>
-        </div>
+        canEdit && (
+          <div className="flex flex-col items-end gap-2">
+            {!canLock && (
+              <p className="text-xs text-muted-foreground">
+                Add at least one
+                {!hasHotel && !hasTransport
+                  ? " hotel and one cab"
+                  : !hasHotel
+                    ? " hotel"
+                    : " cab"}{" "}
+                before locking.
+              </p>
+            )}
+            <button
+              onClick={openLock}
+              disabled={locking || !canLock}
+              className="inline-flex items-center gap-2 text-sm font-bold bg-amber-600 text-white px-5 py-2.5 rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {locking ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
+              Lock Services &amp; Email Summary
+            </button>
+          </div>
+        )
       ) : (
         <div className="flex items-center gap-2 justify-end text-xs text-muted-foreground">
           <CheckCircle2 className="w-4 h-4 text-green-600" /> Services are locked. A summary was
@@ -730,7 +741,7 @@ export function BookingServicesClient({
         <EditDetailsModal
           booking={booking}
           locked={locked}
-          canEdit={canEdit}
+          canEdit={withinEditWindow}
           isWebsiteBooking={booking.isWebsiteBooking}
           paidAmount={finance.paidAmount}
           servicesTotal={finance.servicesTotal}
@@ -1038,16 +1049,18 @@ export function DriverSection({
   bookingId,
   travelDate,
   initialDriver,
+  canEdit,
 }: {
   bookingId: string;
   travelDate: string;
   initialDriver: DriverDetails | null;
+  canEdit: boolean;
 }) {
   const router = useRouter();
   const [driver, setDriver] = useState<DriverDetails | null>(initialDriver);
   const [open, setOpen] = useState(false);
   const [saving, startSave] = useTransition();
-  const editable = canEditDriver(travelDate);
+  const editable = canEditDriver(travelDate) && canEdit;
 
   const empty: DriverDetails = {
     driverName: "",
@@ -1487,6 +1500,7 @@ function ServiceRow({
   isDraft = false,
   fields,
   locked,
+  canEdit,
   capError,
   onAmountBlur,
   onRemoved,
@@ -1497,6 +1511,7 @@ function ServiceRow({
   isDraft?: boolean;
   fields: FieldDef[];
   locked: boolean;
+  canEdit: boolean;
   capError: (amount: number, excludeId: string | null) => string | null;
   onAmountBlur: (id: string, amount: number) => void;
   onRemoved: () => void;
@@ -1541,7 +1556,7 @@ function ServiceRow({
   // a draft is POSTed on its first save and PATCHed thereafter. A name is the one
   // hard requirement (the row can't be persisted without it).
   function autoSave() {
-    if (locked || pending) return;
+    if (locked || pending || !canEdit) return;
     if (!form.name.trim()) return; // nothing meaningful to persist yet
     const snapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
     if (snapshot === savedSnapshot) return; // unchanged since last save
@@ -1638,12 +1653,12 @@ function ServiceRow({
                 onAmountBlur(record.id, form.amount ? parseFloat(form.amount) || 0 : 0);
               autoSave();
             }}
-            disabled={locked}
+            disabled={locked || !canEdit}
             className={`${inputCls} mt-0.5`}
           />
         </label>
       ))}
-      {!locked && (
+      {!locked && canEdit && (
         <div className="flex items-center gap-1">
           <span
             className="inline-flex items-center justify-center w-8 h-8 shrink-0"
@@ -1686,6 +1701,7 @@ function PaymentsCard({
   payments,
   gstRates,
   balance,
+  canEdit,
   onAdded,
   onUpdated,
   onRemoved,
@@ -1694,6 +1710,7 @@ function PaymentsCard({
   payments: Payment[];
   gstRates: number[];
   balance: number;
+  canEdit: boolean;
   onAdded: (p: Payment) => void;
   onUpdated: (p: Payment) => void;
   onRemoved: (id: string) => void;
@@ -1792,6 +1809,7 @@ function PaymentsCard({
                   bookingId={bookingId}
                   payment={p}
                   gstRates={gstRates}
+                  canEdit={canEdit}
                   onUpdated={onUpdated}
                   onRemoved={onRemoved}
                 />
@@ -1823,7 +1841,7 @@ function PaymentsCard({
             <CheckCircle2 className="w-4 h-4" /> Fully paid — no further payment required.
           </div>
         </div>
-      ) : (
+      ) : canEdit ? (
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
           <label className="w-24">
             <span className="text-[12px] font-semibold text-muted-foreground">Amount</span>
@@ -1903,7 +1921,7 @@ function PaymentsCard({
             Add Payment
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -1912,12 +1930,14 @@ function PaymentRow({
   bookingId,
   payment,
   gstRates,
+  canEdit,
   onUpdated,
   onRemoved,
 }: {
   bookingId: string;
   payment: Payment;
   gstRates: number[];
+  canEdit: boolean;
   onUpdated: (p: Payment) => void;
   onRemoved: (id: string) => void;
 }) {
@@ -2104,6 +2124,7 @@ function PaymentRow({
       <td className="py-2 pr-3 text-muted-foreground whitespace-nowrap">{date}</td>
       <td className="py-2 pr-3 text-right font-bold text-foreground">{inr(payment.amount)}</td>
       <td className="py-2">
+        {canEdit && (
         <div className="flex items-center justify-end gap-1">
           {confirmDel ? (
             <>
@@ -2147,6 +2168,7 @@ function PaymentRow({
             </>
           )}
         </div>
+        )}
       </td>
     </tr>
   );

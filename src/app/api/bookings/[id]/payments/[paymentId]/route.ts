@@ -5,6 +5,9 @@ import { requirePermission } from "@/lib/permissions";
 import { sendPaymentInvoiceEmail } from "@/lib/bookings/notify";
 import { resolveGst } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
+import { syncBookingCommission } from "@/lib/bookings/commissionSync";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 import type { PaymentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +23,9 @@ const schema = z.object({
   gstPercent: z.coerce.number().min(0).max(100).nullable().optional(),
 });
 
-async function loadBooking(id: string) {
-  return prisma.booking.findUnique({
-    where: { id },
+async function loadBooking(id: string, role: Role, userId: string) {
+  return prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       amount: true,
@@ -37,9 +40,11 @@ async function loadBooking(id: string) {
 export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id, paymentId } = await params;
 
-  const booking = await loadBooking(id);
+  const booking = await loadBooking(id, role, userId);
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   const current = booking.payments.find((p) => p.id === paymentId);
   if (!current) return NextResponse.json({ error: "Payment not found" }, { status: 404 });
@@ -102,6 +107,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     },
   });
 
+  await syncBookingCommission(prisma, id);
+
   // Re-send the corrected receipt (best-effort) so the customer's records match.
   const { delivered: emailed } = await sendPaymentInvoiceEmail(id, paymentId);
 
@@ -112,10 +119,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id, paymentId } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id, ...bookingWhereForUser(role, userId) },
     select: { id: true, payments: { where: { id: paymentId }, select: { id: true } } },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -123,5 +132,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Payment not found" }, { status: 404 });
 
   await prisma.bookingPayment.delete({ where: { id: paymentId } });
+  await syncBookingCommission(prisma, id);
   return NextResponse.json({ ok: true });
 }

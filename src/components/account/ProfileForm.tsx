@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Upload, Loader2, UserCircle, Trash2 } from "lucide-react";
 import { profileFormSchema, type ProfileFormValues } from "@/lib/account/profileSchema";
+import { PasswordInput } from "@/components/ui/atoms/PasswordInput";
 
 interface Props {
   initialName: string;
@@ -199,9 +200,8 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             <label className="text-xs font-semibold text-foreground" htmlFor="pf-current">
               Current password
             </label>
-            <input
+            <PasswordInput
               id="pf-current"
-              type="password"
               className={inputClass}
               autoComplete="current-password"
               {...register("currentPassword")}
@@ -214,9 +214,8 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             <label className="text-xs font-semibold text-foreground" htmlFor="pf-new">
               New password
             </label>
-            <input
+            <PasswordInput
               id="pf-new"
-              type="password"
               className={inputClass}
               autoComplete="new-password"
               {...register("newPassword")}
@@ -229,9 +228,8 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
             <label className="text-xs font-semibold text-foreground" htmlFor="pf-confirm">
               Confirm new password
             </label>
-            <input
+            <PasswordInput
               id="pf-confirm"
-              type="password"
               className={inputClass}
               autoComplete="new-password"
               {...register("confirmPassword")}

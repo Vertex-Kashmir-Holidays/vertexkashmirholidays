@@ -31,6 +31,14 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   USER_SOFT_DELETE: "User Deleted",
   USER_PERMANENT_DELETE: "User Permanently Deleted",
   USER_RESTORE: "User Restored",
+  SALARY_PREPARED: "Salary Prepared",
+  SALARY_REVIEW: "Salary Moved to Review",
+  SALARY_ACKNOWLEDGED: "Salary Acknowledged",
+  SALARY_PAID: "Salary Paid",
+  SALARY_CORRECTED: "Paid Salary Corrected",
+  LEAVE_APPLIED: "Leave Applied",
+  LEAVE_APPROVED: "Leave Approved",
+  LEAVE_REJECTED: "Leave Rejected",
 };
 
 const ACTION_STYLES: Record<AuditAction, string> = {
@@ -39,6 +47,14 @@ const ACTION_STYLES: Record<AuditAction, string> = {
   USER_SOFT_DELETE: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   USER_PERMANENT_DELETE: "bg-red-500/10 text-red-600 dark:text-red-400",
   USER_RESTORE: "bg-green-500/10 text-green-600 dark:text-green-400",
+  SALARY_PREPARED: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  SALARY_REVIEW: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  SALARY_ACKNOWLEDGED: "bg-green-500/10 text-green-600 dark:text-green-400",
+  SALARY_PAID: "bg-green-500/10 text-green-600 dark:text-green-400",
+  SALARY_CORRECTED: "bg-red-500/10 text-red-600 dark:text-red-400",
+  LEAVE_APPLIED: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  LEAVE_APPROVED: "bg-green-500/10 text-green-600 dark:text-green-400",
+  LEAVE_REJECTED: "bg-red-500/10 text-red-600 dark:text-red-400",
 };
 
 const selectCls =

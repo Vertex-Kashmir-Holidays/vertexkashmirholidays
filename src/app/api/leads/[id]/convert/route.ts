@@ -5,6 +5,8 @@ import { requirePermission } from "@/lib/permissions";
 import { resolveLeadCustomer } from "@/lib/bookings/customer";
 import { sendCustomerCredentialsEmail } from "@/lib/bookings/notify";
 import { resolveGst } from "@/lib/payments/gst";
+import { computeBookingFinance } from "@/lib/bookings/finance";
+import { computeGstDeduction, computeBookingProfit, computeCommission } from "@/lib/bookings/commission";
 import { pickAttribution } from "@/lib/attribution";
 import { enqueueForLead } from "@/lib/offlineConversion/service";
 
@@ -132,6 +134,38 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
       select: { id: true },
     });
+
+    // Credit the converting salesperson with a commission record — only when
+    // they have an incentive rate configured (unset = not commission-eligible
+    // staff). The rate is snapshotted here and never re-read from the employee's
+    // profile later, so a future rate change never rewrites past commissions.
+    const employee = await tx.user.findUnique({
+      where: { id: performedById },
+      select: { bookingConversionPct: true },
+    });
+    const ratePct = employee?.bookingConversionPct;
+    if (ratePct != null && ratePct > 0) {
+      const finance = computeBookingFinance({
+        amount: bookingAmount,
+        discountType: null,
+        discountValue: 0,
+        payments: [{ amount: tokenAmount, type: "TOKEN" }],
+        services: [],
+      });
+      const gstDeduction = computeGstDeduction([
+        { amount: tokenAmount, type: "TOKEN", gstAmount: tokenGst.gstAmount },
+      ]);
+      const profitAmount = computeBookingProfit(finance, gstDeduction);
+      await tx.bookingCommission.create({
+        data: {
+          bookingId: booking.id,
+          employeeId: performedById,
+          rateSnapshotPct: ratePct,
+          profitAmount,
+          commissionAmount: computeCommission(profitAmount, ratePct),
+        },
+      });
+    }
 
     await tx.lead.update({
       where: { id },

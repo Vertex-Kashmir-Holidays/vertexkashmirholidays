@@ -7,6 +7,8 @@ import {
   sendBookingSummaryEmail,
 } from "@/lib/bookings/notify";
 import { logPaymentAudit } from "@/lib/bookings/audit";
+import { bookingWhereForUser } from "@/lib/bookings/scope";
+import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +22,12 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
+  const role = guard.user.role as Role;
+  const userId = guard.user.id as string;
   const { id } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
     select: {
       id: true,
       guestEmail: true,
