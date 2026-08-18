@@ -525,6 +525,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
                   <button
                     type="button"
                     onClick={() => removeWhyVisit(i)}
+                    aria-label={`Remove reason to visit ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -574,6 +575,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
                     <button
                       type="button"
                       onClick={() => removeAttraction(i)}
+                      aria-label={`Remove attraction ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -665,6 +667,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
                     <button
                       type="button"
                       onClick={() => removeFood(i)}
+                      aria-label={`Remove food highlight ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -712,6 +715,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
                     <button
                       type="button"
                       onClick={() => removeShop(i)}
+                      aria-label={`Remove shopping highlight ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -748,6 +752,7 @@ export function DestinationForm({ defaults, activityOptions = [], blogOptions = 
                   <button
                     type="button"
                     onClick={() => removeTip(i)}
+                    aria-label={`Remove travel tip ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />

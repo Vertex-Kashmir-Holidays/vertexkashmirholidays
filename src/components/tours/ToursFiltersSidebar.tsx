@@ -240,6 +240,7 @@ export function ToursFiltersSidebar(props: ToursFiltersSidebarProps) {
               <h3 className="text-[18px] font-bold">Filters</h3>
               <button
                 onClick={onClose}
+                aria-label="Close filters"
                 className="grid h-9 w-9 place-items-center rounded-full hover:bg-muted"
               >
                 <X className="h-5 w-5" strokeWidth={2} />

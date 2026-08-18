@@ -269,6 +269,7 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                               <TooltipTrigger asChild>
                                 <Link
                                   href={`/admin/faqs/${faq.id}/edit`}
+                                  aria-label={`Edit FAQ: ${faq.question}`}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
@@ -282,6 +283,7 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                               <TooltipTrigger asChild>
                                 <button
                                   onClick={() => setConfirmDelete(faq.id)}
+                                  aria-label={`Delete FAQ: ${faq.question}`}
                                   className={cn(
                                     "w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors",
                                   )}

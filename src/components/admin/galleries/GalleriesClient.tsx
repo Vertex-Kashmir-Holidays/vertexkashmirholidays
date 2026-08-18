@@ -372,12 +372,14 @@ export function GalleriesClient({
                           <button
                             onClick={() => handleDelete(item.id)}
                             disabled={isPending}
+                            aria-label="Confirm delete image"
                             className="w-7 h-7 rounded-lg bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setConfirmDelete(null)}
+                            aria-label="Cancel delete image"
                             className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-muted-foreground hover:bg-card"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -491,6 +493,7 @@ export function GalleriesClient({
                 <h3 className="font-bold text-foreground text-sm">Edit Image</h3>
                 <button
                   onClick={() => setEditItem(null)}
+                  aria-label="Close edit image panel"
                   className="text-muted-foreground hover:text-muted-foreground"
                 >
                   <X className="w-4 h-4" />

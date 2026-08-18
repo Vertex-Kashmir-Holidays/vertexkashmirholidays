@@ -656,7 +656,11 @@ function ModalShell({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display font-bold text-foreground">{title}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            onClick={onClose}
+            aria-label={`Close ${title} dialog`}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>

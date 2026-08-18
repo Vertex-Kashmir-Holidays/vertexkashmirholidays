@@ -426,6 +426,7 @@ export function JobApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: str
             <button
               type="button"
               onClick={() => setResumeFile(null)}
+              aria-label="Remove selected resume"
               className="shrink-0 text-muted-foreground hover:text-rose-500"
             >
               <X className="h-4 w-4" />

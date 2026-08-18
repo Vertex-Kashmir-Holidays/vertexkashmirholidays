@@ -451,6 +451,24 @@ Focus management
 
 Accessibility is part of implementation—not an enhancement.
 
+An interactive element whose only content is an icon must carry an `aria-label`
+describing the action ("Delete lead Priya Sharma"), not the glyph ("trash"). This
+is enforced by `vertex/icon-only-control-needs-label`, a local ESLint rule in
+`eslint-rules/` wired up in `eslint.config.mjs`, and it is a build-blocking error.
+
+The rule exists because jsx-a11y's `control-has-associated-label` cannot catch
+this case: every icon in this codebase is a custom component (`lucide-react`,
+`@/components/icons/*`), and that rule assumes an unknown component may supply
+its own label. Wrapping a control in a Radix `Tooltip` does not satisfy the
+rule and should not — a tooltip sets `aria-describedby`, so the control still
+has no accessible *name*.
+
+Known gap, not covered by that rule: form controls (`<input>`, `<textarea>`,
+`<select>`) labelled only by a `placeholder`. Running jsx-a11y's
+`control-has-associated-label` across the repo reports ~200 such elements. That
+is separate technical debt and should be tracked as its own Plane issue rather
+than folded into an icon-button fix.
+
 ---
 
 # Security

@@ -441,6 +441,7 @@ function EditModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close edit customer dialog"
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />

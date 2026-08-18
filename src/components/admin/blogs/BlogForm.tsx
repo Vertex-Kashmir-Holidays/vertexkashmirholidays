@@ -616,6 +616,7 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
                   <button
                     type="button"
                     onClick={() => removeRelated(i)}
+                    aria-label={`Remove related post ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors justify-self-start sm:mt-2"
                   >
                     <Trash2 className="w-4 h-4" />

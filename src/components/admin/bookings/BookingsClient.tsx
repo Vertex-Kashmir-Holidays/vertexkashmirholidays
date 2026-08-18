@@ -500,6 +500,7 @@ export function BookingsClient({
               <button
                 onClick={closeModal}
                 disabled={isPending}
+                aria-label="Close booking detail"
                 className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               >
                 <X className="w-4 h-4" />

@@ -221,6 +221,7 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
                           <TooltipTrigger asChild>
                             <button
                               onClick={() => setViewingJob(job)}
+                              aria-label={`View applications for ${job.title}`}
                               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -233,6 +234,7 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
                             <TooltipTrigger asChild>
                               <Link
                                 href={`/admin/careers/${job.id}/edit`}
+                                aria-label={`Edit ${job.title}`}
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -246,6 +248,7 @@ export function CareersClient({ initialJobs, canCreate, canEdit, canDelete }: Pr
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => setConfirmDelete(job.id)}
+                                aria-label={`Delete ${job.title}`}
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
