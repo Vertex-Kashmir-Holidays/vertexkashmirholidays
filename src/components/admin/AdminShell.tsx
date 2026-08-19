@@ -146,6 +146,7 @@ function SidebarContent({
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="Close navigation menu"
             className="lg:hidden text-muted-foreground hover:text-foreground"
           >
             <X className="w-5 h-5" />

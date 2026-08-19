@@ -575,6 +575,7 @@ function EditModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close edit employee dialog"
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
@@ -804,6 +805,7 @@ function AddEmployeeModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close add employee dialog"
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />

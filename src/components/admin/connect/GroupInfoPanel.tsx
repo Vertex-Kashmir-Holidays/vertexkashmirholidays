@@ -234,6 +234,7 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
           <h2 className="font-semibold text-sm">Group Info</h2>
           <button
             onClick={onClose}
+            aria-label="Close group info"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
@@ -301,6 +302,7 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                 <button
                   onClick={saveName}
                   disabled={savingName}
+                  aria-label="Save group name"
                   className="p-1.5 rounded-lg hover:bg-muted transition-colors text-primary"
                 >
                   {savingName ? (
@@ -311,6 +313,7 @@ export function GroupInfoPanel({ room, currentUserId, staffUsers, onClose, onRef
                 </button>
                 <button
                   onClick={() => setEditingName(false)}
+                  aria-label="Cancel renaming group"
                   className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
                 >
                   <X className="w-3.5 h-3.5" />

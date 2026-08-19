@@ -388,6 +388,7 @@ export function ChatView({
           {onBack && (
             <button
               onClick={onBack}
+              aria-label="Back to conversations"
               className="text-muted-foreground hover:text-foreground transition-colors lg:hidden"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -512,6 +513,7 @@ export function ChatView({
                   setSearchQuery("");
                   setSearchResults(null);
                 }}
+                aria-label="Clear message search"
                 className="text-muted-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />

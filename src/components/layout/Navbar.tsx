@@ -171,6 +171,7 @@ export function Navbar() {
             />
             <Link
               href="/login"
+              aria-label="Log in to your account"
               className={`grid h-9 w-9 place-items-center rounded-full border transition ${
                 overHero
                   ? "border-white/30 text-white hover:bg-white hover:text-foreground"

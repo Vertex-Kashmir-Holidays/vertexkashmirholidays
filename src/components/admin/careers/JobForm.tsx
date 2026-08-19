@@ -126,6 +126,7 @@ function ListFieldSection({
             <button
               type="button"
               onClick={() => onRemove(i)}
+              aria-label={`Remove item ${i + 1} from ${title}`}
               className="text-muted-foreground/60 hover:text-red-400 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
