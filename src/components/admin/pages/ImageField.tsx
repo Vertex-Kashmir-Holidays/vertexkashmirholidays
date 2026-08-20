@@ -85,7 +85,7 @@ export function ImageField({
           <Image
             key={value}
             src={value}
-            alt=""
+            alt="Selected image preview"
             width={160}
             height={96}
             className="h-16 w-auto max-w-full rounded-lg border border-border object-cover"

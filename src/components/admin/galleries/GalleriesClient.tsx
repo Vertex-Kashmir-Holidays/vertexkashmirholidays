@@ -509,7 +509,11 @@ export function GalleriesClient({
                   />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={editItem.url} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={editItem.url}
+                    alt={editItem.alt || "Selected media preview"}
+                    className="w-full h-full object-cover"
+                  />
                 )}
               </div>
               <button

@@ -1158,7 +1158,11 @@ export function PackageForm({
                       <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-muted shrink-0 mt-0.5">
                         {url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={url}
+                            alt={`Gallery image ${i + 1} preview`}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <ImageIcon className="w-4 h-4 text-muted-foreground/60 absolute inset-0 m-auto" />
                         )}
@@ -1983,7 +1987,11 @@ export function PackageForm({
           <div className="relative h-36 bg-muted">
             {coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={coverImage} alt="" className="w-full h-full object-cover" />
+              <img
+                src={coverImage}
+                alt="Cover image preview"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60">
                 <ImageIcon className="w-8 h-8 mb-1" />

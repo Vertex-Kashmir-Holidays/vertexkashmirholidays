@@ -548,7 +548,11 @@ export function ReviewsClient({
                       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
                         {preview ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={preview} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={preview}
+                            alt="Reviewer picture preview"
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <span className="absolute inset-0 m-auto grid place-items-center text-sm font-bold text-muted-foreground">
                             {draft.name.charAt(0).toUpperCase() || "?"}

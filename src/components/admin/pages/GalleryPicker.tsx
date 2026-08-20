@@ -27,7 +27,12 @@ interface Props {
   /** Restrict the picker to a single media type. Omit to show everything. */
   type?: "IMAGE" | "VIDEO";
   title?: string;
-  onSelect: (url: string) => void;
+  /**
+   * `alt` is the asset's stored alt text, for callers that embed the image in
+   * content (e.g. blog body HTML) and need to carry it through. Callers that
+   * only store a URL can ignore it.
+   */
+  onSelect: (url: string, alt: string | null) => void;
   onClose: () => void;
 }
 
@@ -161,7 +166,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                   key={item.id}
                   type="button"
                   onClick={() => {
-                    onSelect(item.url);
+                    onSelect(item.url, item.alt);
                     onClose();
                   }}
                   className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-muted transition hover:ring-2 hover:ring-primary"

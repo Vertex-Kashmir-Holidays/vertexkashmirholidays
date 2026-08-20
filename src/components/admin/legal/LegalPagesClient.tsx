@@ -232,7 +232,7 @@ function BannerSlot({
       <div className="group relative aspect-[16/9] overflow-hidden rounded-xl border border-border bg-muted">
         {shown ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={shown} alt="" className="h-full w-full object-cover" />
+          <img src={shown} alt={`${heading} preview`} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
             <ImageIcon className="h-6 w-6" />

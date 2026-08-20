@@ -59,6 +59,12 @@ function slugify(s: string) {
     .replace(/^-|-$/g, "");
 }
 
+// Alt text goes into a double-quoted HTML attribute in the body markup, so a
+// quote or ampersand in it would otherwise break the tag.
+function escapeHtmlAttr(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
 export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -147,10 +153,19 @@ export function BlogForm({ defaults, categoryOptions = [], tourOptions = [] }: P
     }
   }
 
-  function handlePickerSelect(url: string) {
+  function handlePickerSelect(url: string, alt: string | null) {
     if (picker === "body") {
       const current = watch("body") ?? "";
-      setValue("body", `${current}${current ? "\n" : ""}<img src="${url}" alt="" />`);
+      // Body images are article content, so they need real alt text. Carry the
+      // media library's alt through instead of emitting a permanent alt=""; if
+      // the asset has none, say so rather than shipping an unlabelled image.
+      if (!alt) {
+        toast.warning("This image has no alt text — add one in the tag before publishing.");
+      }
+      setValue(
+        "body",
+        `${current}${current ? "\n" : ""}<img src="${url}" alt="${escapeHtmlAttr(alt ?? "")}" />`,
+      );
     } else if (picker) {
       setValue(picker, url);
     }
