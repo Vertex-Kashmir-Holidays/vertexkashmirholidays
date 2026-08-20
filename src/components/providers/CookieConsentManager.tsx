@@ -63,8 +63,8 @@ export function CookieConsentManager() {
   return (
     <>
       {showBanner && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-4 py-4 shadow-2xl backdrop-blur sm:px-6">
-          <div className="mx-auto flex max-w-[1300px] flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4 lg:inset-x-0 lg:inset-y-auto lg:bottom-0 lg:block lg:p-0">
+          <div className="pointer-events-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 p-5 shadow-2xl backdrop-blur lg:mx-auto lg:flex lg:max-w-[1300px] lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:rounded-none lg:border-x-0 lg:border-b-0 lg:px-6 lg:py-4">
             <p className="text-[13px] text-muted-foreground">
               We use cookies to keep the site working and, with your permission, to understand how
               visitors find us. See our{" "}
@@ -73,7 +73,7 @@ export function CookieConsentManager() {
               </Link>
               .
             </p>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="mt-3 flex shrink-0 items-center justify-center gap-2 lg:mt-0">
               <Button variant="outline" size="sm" onClick={openManage}>
                 Manage
               </Button>
