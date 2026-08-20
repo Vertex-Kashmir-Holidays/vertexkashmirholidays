@@ -74,6 +74,7 @@ export async function renderBookingSummaryPdf(
     <BookingSummaryPdf
       logo={logo}
       address={address}
+      gstNumber={settings?.gstNumber}
       data={{
         bookingRef: ref,
         guestName: booking.guestName || booking.user?.name || "Guest",
@@ -125,6 +126,7 @@ export async function renderPaymentReceiptPdf(
     <PaymentInvoicePdf
       logo={logo}
       address={address}
+      gstNumber={settings?.gstNumber}
       data={{
         invoiceRef,
         bookingRef: ref,

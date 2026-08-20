@@ -805,14 +805,26 @@ function escapeHtml(value: string): string {
 // Brand navy used across all emails.
 const BRAND = "#0f3460";
 
+// Canonical public origin. Used as the last-resort fallback below and as the
+// base for images embedded in emails.
+const PRODUCTION_ORIGIN = "https://vertexkashmirholidays.com";
+
 // Exported for src/lib/notifications.ts, which needs the same fallback
 // chain (deliberately including NEXTAUTH_URL — see src/lib/auth.config.ts's
 // trustHost comment) for its own notification links.
 export function siteUrl(): string {
-  return (NEXT_PUBLIC_SITE_URL ?? env.NEXTAUTH_URL ?? "https://vertexkashmirholidays.com").replace(
-    /\/$/,
-    "",
-  );
+  return (NEXT_PUBLIC_SITE_URL ?? env.NEXTAUTH_URL ?? PRODUCTION_ORIGIN).replace(/\/$/, "");
+}
+
+// Base origin for images referenced from email HTML. Deliberately NOT siteUrl():
+// that chain falls back to NEXTAUTH_URL, which points at the http:// beta host,
+// and mail clients block or fail to proxy images served over plain HTTP — which
+// rendered the header logo as a broken-image icon in every template. Anything
+// that is not an https:// origin (unset, http://, localhost) falls back to the
+// canonical production domain, where the brand assets are always reachable.
+function emailAssetBase(): string {
+  const base = SITE_URL.replace(/\/$/, "");
+  return base.startsWith("https://") ? base : PRODUCTION_ORIGIN;
 }
 
 // Human-friendly booking reference (matches lib/bookings/invoice-pdf bookingRef).
@@ -881,7 +893,7 @@ export function bookingPortalSectionText(bookingId: string): string {
  * brand navy. Falls back gracefully to the wordmark if the image is blocked.
  */
 function brandHeader(): string {
-  const logo = `${siteUrl()}/brand/png/icon/vertex-icon-512.png`;
+  const logo = `${emailAssetBase()}/brand/png/icon/vertex-icon-512.png`;
   return `          <tr>
            <td style="padding:20px 28px;background:${BRAND};border-radius:14px 14px 0 0">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
