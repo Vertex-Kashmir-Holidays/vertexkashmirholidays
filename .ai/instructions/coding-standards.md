@@ -178,6 +178,17 @@ Without `force-dynamic` on a page that queries Prisma or reads session state, Ne
 
 Layouts fetch shared data once for their whole subtree (e.g. the `SiteSettings` singleton in `src/app/(public)/layout.tsx`, passed down via a Context provider) — do not add per-page data fetching to a layout file.
 
+Route-level loading states
+
+Any route that waits on a Prisma query or a session read gets a `loading.tsx`, so navigating to it shows a skeleton rather than a blank screen. Compose it from the shared molecules — `ListSkeleton`, `FormSkeleton`, `HeroSkeleton`, `CardGridSkeleton` in `src/components/ui/molecules/`, all built on the `Skeleton` atom — rather than hand-rolling another variant. Mirror the real page's container widths, grid, and card structure so the swap causes no layout shift, and put `aria-busy="true"` plus an `aria-label` ("Loading bookings") on the route's outermost element only, not on nested pieces.
+
+The nesting rule is the part that is easy to get wrong: **a segment's `loading.tsx` also wraps that segment's children, and on a hard load the outer fallback is the one that renders.** Two consequences:
+
+- Adding a list skeleton to a segment that has `new/` or `[id]/` children means those children need their own `loading.tsx`, or a client-side navigation into the form shows a table skeleton.
+- If a child is normally reached by hard load rather than in-app navigation, the parent boundary will cover it permanently. Scope the parent to its own page with a URL-transparent route group instead — this is why the checkout page lives at `src/app/(public)/booking/(checkout)/page.tsx`: at `booking/loading.tsx` its form skeleton would have covered `/booking/success` and `/booking/failed`, which are only ever reached by a Razorpay redirect.
+
+Known gap: on a hard load of a public detail page (`/tours/[slug]`, `/destinations/[slug]`, `/blog/[slug]`) the parent listing's skeleton renders rather than the detail one, for the reason above. Both open with the same `HeroSkeleton` band, so this was accepted rather than restructuring those segments into route groups.
+
 ---
 
 # Next.js Mutation Standard
