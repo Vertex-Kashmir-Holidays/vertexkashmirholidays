@@ -114,7 +114,7 @@ export function ProfileForm({ initialName, email, initialImage }: Props) {
                 {image ? (
                   <Image
                     src={image}
-                    alt=""
+                    alt="Current profile picture"
                     fill
                     sizes="64px"
                     className="object-cover"

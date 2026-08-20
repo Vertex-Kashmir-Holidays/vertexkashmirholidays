@@ -469,6 +469,30 @@ Known gap, not covered by that rule: form controls (`<input>`, `<textarea>`,
 is separate technical debt and should be tracked as its own Plane issue rather
 than folded into an icon-button fix.
 
+Every image needs an `alt`. A content image gets text that conveys what it
+conveys; a purely decorative one (a background photo behind text, an avatar
+sitting next to the same person's visible name, a thumbnail inside a control
+that already has its own `aria-label`) gets `alt=""` — that empty string *is*
+the explicit "decorative" marking, and omitting the attribute entirely is not
+the same thing. This is enforced by `jsx-a11y/alt-text`, raised to `error` in
+`eslint.config.mjs`. `next/core-web-vitals` already points that rule at
+`next/image` via `img: ["Image"]`, but only at `warn`, which does not fail the
+build — the options are re-declared unchanged and only the severity is raised.
+
+The two `@react-pdf/renderer` documents (`src/components/admin/itinerary/ItineraryPdf.tsx`,
+`src/lib/pdf/InvoiceDocuments.tsx`) carry a file-level `eslint-disable jsx-a11y/alt-text`.
+That is correct and should stay: their `<Image>` is react-pdf's, not
+`next/image`, and it has no `alt` prop to set. Don't "fix" those by adding one.
+
+That rule checks only that `alt` is *present* — it cannot judge whether the text
+is meaningful, so `alt={tour.title}` and `alt="image"` look identical to it.
+Meaningfulness stays a review concern.
+
+When an image is duplicated purely for visual effect (e.g. the marquee in
+`CampaignGallery.tsx` renders each photo twice so the loop is seamless), name
+the first copy and mark the duplicate `aria-hidden` with `alt=""` — otherwise
+every photo is announced twice.
+
 ---
 
 # Security

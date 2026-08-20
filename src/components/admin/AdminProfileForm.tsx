@@ -119,7 +119,7 @@ export function AdminProfileForm({ initialName, email, initialImage, role }: Pro
                 {image ? (
                   <Image
                     src={image}
-                    alt=""
+                    alt="Current profile picture"
                     fill
                     sizes="64px"
                     unoptimized

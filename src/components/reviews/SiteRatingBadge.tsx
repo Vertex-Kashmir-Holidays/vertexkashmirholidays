@@ -9,9 +9,11 @@ export function SiteRatingBadge({ average, total }: { average: number; total: nu
   if (total === 0) return null;
   return (
     <div className="glass flex h-[52px] shrink-0 items-center gap-2.5 rounded-xl px-5 py-3 text-white">
+      {/* Named, not decorative: this badge sits next to GoogleRatingBadge and
+          the only thing distinguishing the two by ear is whose rating it is. */}
       <Image
         src="/brand/svg/vertex-icon-mono-white.svg"
-        alt=""
+        alt="Vertex Kashmir Holidays"
         width={28}
         height={28}
         className="h-7 w-7 shrink-0"

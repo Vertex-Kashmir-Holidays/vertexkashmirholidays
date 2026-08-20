@@ -31,6 +31,12 @@ const eslintConfig = [
       // `control-has-associated-label` deliberately skips — this rule covers
       // the icon-only button/link case that would otherwise go unchecked.
       "vertex/icon-only-control-needs-label": "error",
+      // `next/core-web-vitals` already maps this rule onto `next/image`
+      // (`img: ["Image"]`) but only at "warn", which does not fail the build —
+      // so alt coverage silently regressed. Same options, raised to error.
+      // The rule checks that `alt` is *present*; `alt=""` remains the correct,
+      // explicit marking for a decorative image.
+      "jsx-a11y/alt-text": ["error", { elements: ["img"], img: ["Image"] }],
       // The codebase uses `style={{ '--x': … } as any}` for CSS custom
       // properties and copy with raw quotes throughout; keep these visible
       // as warnings without failing the production build.
