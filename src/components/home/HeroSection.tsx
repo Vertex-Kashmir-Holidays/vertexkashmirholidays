@@ -121,22 +121,45 @@ export function HeroSection({
               exit={{ opacity: 0 }}
               transition={{ duration: 1.5, ease: EASE_BRAND }}
             >
-              <Image
-                src={currentSlide.image}
-                alt={currentSlide.alt ?? "Kashmir landscape"}
-                fill
-                className="object-cover"
-                priority={currentImageIndex === 0}
-                sizes="100vw"
-                quality={85}
-              />
+              {currentSlide.imageMobile ? (
+                <>
+                  <Image
+                    src={currentSlide.imageMobile}
+                    alt={currentSlide.alt ?? "Kashmir landscape"}
+                    fill
+                    className="object-cover sm:hidden"
+                    priority={currentImageIndex === 0}
+                    sizes="100vw"
+                    quality={85}
+                  />
+                  <Image
+                    src={currentSlide.image}
+                    alt={currentSlide.alt ?? "Kashmir landscape"}
+                    fill
+                    className="hidden object-cover sm:block"
+                    priority={currentImageIndex === 0}
+                    sizes="100vw"
+                    quality={85}
+                  />
+                </>
+              ) : (
+                <Image
+                  src={currentSlide.image}
+                  alt={currentSlide.alt ?? "Kashmir landscape"}
+                  fill
+                  className="object-cover"
+                  priority={currentImageIndex === 0}
+                  sizes="100vw"
+                  quality={85}
+                />
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Overlay for text readability — vertical scrim on mobile (headline + form
           stack), horizontal from lg up (two columns). */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/70 lg:bg-gradient-to-r lg:from-black/60 lg:via-black/30 lg:to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/55 to-black/80 lg:bg-gradient-to-r lg:from-black/60 lg:via-black/30 lg:to-transparent"></div>
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-background to-transparent"></div>
 
         {/* Particles */}
