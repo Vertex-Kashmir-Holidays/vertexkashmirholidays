@@ -1,23 +1,68 @@
 // src/components/home/HeroSection.tsx
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Mountain,
+  ShieldCheck,
+  Car,
+  Sparkles,
+  CreditCard,
+  Percent,
+  QrCode,
+  Landmark,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import { renderAccents } from "@/lib/accents";
-import type { HeroContentData, HeroSlideData, SiteStatData } from "@/types/home";
+import { ADVANCE_PERCENT } from "@/lib/bookings/finance";
+import type {
+  HeroContentData,
+  HeroFeatureData,
+  HeroSlideData,
+  PaymentMethodData,
+  SiteStatData,
+} from "@/types/home";
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+// String-key → icon lookups, same convention as WHY_ICONS in
+// WhyChooseSection.tsx — keeps HeroFeatureData/PaymentMethodData serializable
+// once they come from the DB instead of the static arrays in heroContent.ts.
+const FEATURE_ICONS: Record<string, LucideIcon> = {
+  mountain: Mountain,
+  shield: ShieldCheck,
+  car: Car,
+  sparkles: Sparkles,
+};
+
+const PAYMENT_ICONS: Record<string, LucideIcon> = {
+  card: CreditCard,
+  emi: Percent,
+  upi: QrCode,
+  netbanking: Landmark,
+  wallet: Wallet,
+};
+
 interface HeroSectionProps {
   content: HeroContentData;
   slides: HeroSlideData[];
   stats: SiteStatData[];
+  features: HeroFeatureData[];
+  paymentMethods: PaymentMethodData[];
 }
 
-export function HeroSection({ content, slides, stats }: HeroSectionProps) {
+export function HeroSection({
+  content,
+  slides,
+  stats,
+  features,
+  paymentMethods,
+}: HeroSectionProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
   const embersRef = useRef<HTMLDivElement>(null);
@@ -147,14 +192,78 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
               {content.subtitle}
             </p>
           )}
+          {features.length > 0 && (
+            <div
+              className="hero-reveal mt-8 grid max-w-md grid-cols-2 gap-x-4 gap-y-5 sm:max-w-none sm:grid-cols-4"
+              style={{ "--hr-y": "30px", "--hr-delay": "0.42s" } as React.CSSProperties}
+            >
+              {features.map((f) => {
+                const Icon = FEATURE_ICONS[f.icon];
+                return (
+                  <div key={f.id} className="flex items-start gap-2.5">
+                    <span className="glass-strong grid h-9 w-9 shrink-0 place-items-center rounded-xl text-foreground">
+                      {Icon && <Icon className="h-4 w-4" strokeWidth={2} />}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-bold leading-tight text-white">{f.title}</p>
+                      <p className="mt-0.5 text-[11.5px] leading-tight text-white/60">
+                        {f.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <div
-            className="hero-reveal mt-8 flex flex-wrap items-center gap-3"
+            className="hero-reveal mt-6 max-w-md rounded-2xl glass p-4 sm:max-w-none"
+            style={{ "--hr-y": "30px", "--hr-delay": "0.46s" } as React.CSSProperties}
+          >
+            <div className="flex items-center gap-2 text-[14px]">
+              <span className="font-bold text-foreground">
+                Book with Just <span className="text-primary">{ADVANCE_PERCENT}%</span>
+              </span>
+            </div>
+            <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+              Pay only {ADVANCE_PERCENT}% to confirm your booking. Pay the remaining amount during
+              your tour.
+            </p>
+            {paymentMethods.length > 0 && (
+              <>
+                <div className="mt-3.5 border-t border-border pt-3.5">
+                  <p className="text-center text-[14px] font-bold text-foreground">
+                    Multiple Payment Options
+                  </p>
+                  <div className="mt-[10px] grid grid-cols-5 items-start gap-x-1 sm:gap-x-4">
+                    {paymentMethods.map((m) => {
+                      const Icon = PAYMENT_ICONS[m.icon];
+                      return (
+                        <div key={m.id} className="flex flex-col items-center gap-1">
+                          {Icon && (
+                            <Icon className="h-6 w-6 text-foreground" strokeWidth={1.75} />
+                          )}
+                          <span className="text-center text-[12px] leading-tight text-muted-foreground sm:text-[10px]">
+                            {m.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p className="mt-3 text-center text-[12px] font-semibold text-muted-foreground">
+                  Secure&nbsp;•&nbsp;Flexible&nbsp;•&nbsp;Hassle-free
+                </p>
+              </>
+            )}
+          </div>
+          <div
+            className="hero-reveal mt-6 flex flex-wrap items-center gap-3"
             style={{ "--hr-y": "30px", "--hr-delay": "0.5s" } as React.CSSProperties}
           >
             {content.ctaPrimaryLabel && (
               <Link
                 href={content.ctaPrimaryHref ?? "#"}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110 sm:inline-flex sm:w-auto"
               >
                 {content.ctaPrimaryLabel}
                 <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
@@ -163,7 +272,7 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
             {content.ctaSecondaryLabel && (
               <Link
                 href={content.ctaSecondaryHref ?? "#"}
-                className="glass inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold primary-foreground transition hover:scale-[1.03] hover:bg-white/15"
+                className="glass hidden items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold primary-foreground transition hover:scale-[1.03] hover:bg-white/15 sm:inline-flex"
               >
                 ▶&nbsp; {content.ctaSecondaryLabel}
               </Link>
@@ -171,18 +280,20 @@ export function HeroSection({ content, slides, stats }: HeroSectionProps) {
           </div>
           {stats.length > 0 && (
             <div
-              className="hero-reveal mt-10 grid max-w-md grid-cols-2 divide-x divide-y divide-white/10 rounded-2xl glass py-4 text-center sm:grid-cols-4 sm:divide-y-0"
+              className="hero-reveal mt-[26px] grid max-w-md grid-cols-2 gap-y-2 divide-x divide-white/10 rounded-2xl glass py-3 text-center sm:mt-10 sm:gap-y-0 sm:py-5 sm:grid-cols-4 sm:divide-y-0 md:max-w-none"
               style={{ "--hr-y": "30px", "--hr-delay": "0.6s" } as React.CSSProperties}
             >
               {stats.map((stat, i) => (
-                <div key={i}>
-                  <p className="text-base sm:text-lg font-extrabold primary-foreground">
+                <div key={i} className="px-2 sm:px-3">
+                  <p className="text-sm font-extrabold primary-foreground sm:text-lg">
                     {/^\d+$/.test(stat.value)
                       ? Number(stat.value).toLocaleString("en-IN")
                       : stat.value}
                     {stat.suffix}
                   </p>
-                  <p className="mt-1 text-[12px] primary-foreground/55">{stat.label}</p>
+                  <p className="mt-0.5 text-[10px] primary-foreground/55 sm:mt-1 sm:text-[12px]">
+                    {stat.label}
+                  </p>
                 </div>
               ))}
             </div>

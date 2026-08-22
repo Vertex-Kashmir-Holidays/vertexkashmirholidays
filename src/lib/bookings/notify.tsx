@@ -4,6 +4,7 @@
 // break the underlying business action (locking services, recording a payment).
 
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
@@ -52,6 +53,12 @@ async function whatsappNumber(): Promise<string | null> {
   const settings = await getSiteSettings();
   return settings?.whatsapp ?? settings?.sitePhone ?? null;
 }
+
+// Silent internal copy of invoice/confirmation-carrying customer emails (booking
+// summary, payment receipt, booking confirmation, driver details) — lets staff
+// confirm delivery without the customer ever seeing the internal address.
+// Deliberately not applied to credentials/OTP emails.
+const internalBcc = env.MAIL_TO_ADMIN;
 
 /**
  * Booking summary email + branded PDF attachment. Sent when services are locked.
@@ -120,6 +127,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
 
     const res = await sendMail({
       to,
+      bcc: internalBcc,
       subject: "Your Booking Summary — Vertex Kashmir Holidays",
       html: bookingInvoiceHtml(payload),
       text: bookingInvoiceText(payload),
@@ -248,6 +256,7 @@ export async function sendBookingConfirmationEmail(
 
     const res = await sendMail({
       to,
+      bcc: internalBcc,
       subject: `Booking Confirmed — ${tourTitle} | Vertex Kashmir Holidays`,
       html: bookingConfirmationHtml(payload),
       text: bookingConfirmationText(payload),
@@ -321,6 +330,7 @@ export async function sendPaymentInvoiceEmail(
 
     const res = await sendMail({
       to,
+      bcc: internalBcc,
       subject: `Payment Receipt — ${ref} | Vertex Kashmir Holidays`,
       html: paymentInvoiceHtml(payload),
       text: paymentInvoiceText(payload),
@@ -383,6 +393,7 @@ export async function sendDriverDetailsEmail(
 
     const res = await sendMail({
       to,
+      bcc: internalBcc,
       subject: `Driver & Vehicle Details — ${bookingRef(booking.id)} | Vertex Kashmir Holidays`,
       html: driverDetailsHtml(payload),
       text: driverDetailsText(payload),

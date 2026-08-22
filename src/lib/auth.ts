@@ -30,6 +30,7 @@ async function resolveGoogleCustomer(email: string, name?: string | null) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     if (existing.deletedAt || isStaff(existing.role)) return null;
+    await prisma.user.update({ where: { id: existing.id }, data: { lastLoginAt: new Date() } });
     return {
       id: existing.id,
       role: existing.role,
@@ -46,6 +47,7 @@ async function resolveGoogleCustomer(email: string, name?: string | null) {
       email,
       passwordHash: await bcrypt.hash(randomUUID(), 12),
       role: "CUSTOMER",
+      lastLoginAt: new Date(),
     },
   });
   return { id: created.id, role: created.role, mustChangePassword: created.mustChangePassword };
@@ -176,6 +178,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!validPassword) {
           return null;
         }
+
+        await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
         return {
           id: user.id,

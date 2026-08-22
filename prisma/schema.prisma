@@ -19,6 +19,11 @@ model User {
   // lead conversion). Forces a password change on first login before any other
   // account access is allowed. Cleared once the customer sets their own password.
   mustChangePassword   Boolean              @default(false)
+  // Set on every successful sign-in (password, Google OAuth, Google One Tap —
+  // see auth.ts). Null means this account has never logged in, which is what
+  // both the "remind them to log in" targeting and the future never-logged-in
+  // cleanup policy key off of.
+  lastLoginAt          DateTime?
   // Sales incentive rate (percent) applied to a booking's PROFIT, not the booking
   // amount. Optional; only meaningful for SALES staff. Kept on the user so future
   // monthly salary/commission reports can compute payouts per salesperson.

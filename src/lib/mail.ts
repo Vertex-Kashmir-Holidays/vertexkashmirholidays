@@ -40,6 +40,8 @@ export interface MailOptions {
   text?: string;
   /** Optional Reply-To (the From is always the no-reply sender). */
   replyTo?: string;
+  /** Optional silent internal copy — never visible to the customer recipient. */
+  bcc?: string;
   /** Extra headers, merged over the transactional defaults. */
   headers?: Record<string, string>;
   /** Optional file attachments (e.g. PDF invoices). Passed straight to Nodemailer. */

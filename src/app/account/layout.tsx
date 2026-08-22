@@ -29,8 +29,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
     <SessionProvider session={session}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="dark"
         disableTransitionOnChange
         nonce={nonce}
       >
