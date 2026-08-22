@@ -60,7 +60,12 @@ export function BookingItineraryCard({
             and is <strong className="text-foreground">read-only</strong>.
           </p>
           {leadItineraryId ? (
-            <Link href={`/admin/itinerary/${leadItineraryId}`} className={linkClass}>
+            <Link
+              href={`/admin/itinerary/${leadItineraryId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClass}
+            >
               <FileText className="w-4 h-4" /> View Itinerary <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
@@ -79,7 +84,11 @@ export function BookingItineraryCard({
               </span>
             )}
           </p>
-          <Link href={`/admin/itinerary/${itinerary.id}`} className={linkClass}>
+          <Link
+            href={`/admin/itinerary/${itinerary.id}`}
+            {...(servicesLocked ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            className={linkClass}
+          >
             <FileText className="w-4 h-4" />
             {servicesLocked ? "View Itinerary" : "Manage Itinerary"}
             <ArrowRight className="w-4 h-4" />
