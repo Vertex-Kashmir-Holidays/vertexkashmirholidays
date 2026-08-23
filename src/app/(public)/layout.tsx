@@ -121,7 +121,7 @@ export default async function PublicLayout({ children }: { children: React.React
   });
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
       <TooltipProvider delayDuration={200}>
         <SiteAnalytics />
         <CookieConsentManager />

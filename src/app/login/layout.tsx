@@ -16,8 +16,7 @@ export default async function LoginLayout({ children }: { children: React.ReactN
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="dark"
       disableTransitionOnChange
       nonce={nonce}
     >

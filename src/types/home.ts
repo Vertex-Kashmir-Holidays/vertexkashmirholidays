@@ -80,6 +80,26 @@ export interface WhyChooseItemData {
   description: string;
 }
 
+// Compact hero feature strip (Handpicked Stays / Safe & Trusted / etc.) — icon
+// is a lookup key (see HERO_FEATURE_ICONS in HeroSection.tsx), the same
+// string-key convention WhyChooseItemData/WHY_ICONS already uses, so this
+// shape survives unchanged whenever it moves from the static defaults in
+// src/lib/home/heroContent.ts to a real DB-backed row.
+export interface HeroFeatureData {
+  id: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+}
+
+// Payment method badge in the hero's "Book with X% advance" card. Same
+// string-key icon convention as HeroFeatureData.
+export interface PaymentMethodData {
+  id: string;
+  icon: string;
+  label: string;
+}
+
 export interface DestinationCardData {
   id: string;
   slug: string;

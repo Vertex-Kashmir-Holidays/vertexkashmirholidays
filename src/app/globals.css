@@ -16,7 +16,7 @@
   --card: 45 86% 97%; /* #FEFBF2 */
   --card-foreground: 214 68% 14%;
   --muted: 43 55% 87%; /* #F0E6CC */
-  --muted-foreground: 45 20% 33%; /* darkened for WCAG AA contrast ≥4.5:1 */
+  --muted-foreground: 45 24% 13%; /* #292519 — 10% darker still (was 14% L) */
   --border: 42 48% 82%; /* #E7DABB */
   --input: 42 48% 82%;
   --ring: 43 49% 53%; /* #C2A14E gold */
@@ -50,7 +50,7 @@
   --card: 213 64% 18%; /* #102A4A */
   --card-foreground: 44 52% 90%;
   --muted: 213 50% 20%;
-  --muted-foreground: 212 24% 70%; /* #9FB0C4 */
+  --muted-foreground: 44 28% 62%; /* #B9AB83 — warm khaki matching --foreground's cream hue (was a cool blue-gray, an outlier against the rest of the dark palette and washed out on the glass panels) */
   --border: 214 55% 24%; /* #1C3A60 */
   --input: 214 55% 24%;
   --ring: 43 56% 66%; /* #D9BE7A gold */
