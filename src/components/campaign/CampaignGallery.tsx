@@ -12,23 +12,31 @@ interface CampaignGalleryProps {
 export function CampaignGallery({ title, images }: CampaignGalleryProps) {
   const half = Math.ceil(images.length / 2);
 
-  const renderRow = (items: string[], reverse = false) => (
+  // `offset` makes the photo numbers in the alt text continuous across both
+  // rows. The row's images are rendered twice to make the marquee loop
+  // seamlessly; the second copy is the same content, so it's hidden from
+  // assistive tech rather than announced again.
+  const renderRow = (items: string[], reverse = false, offset = 0) => (
     <div className={`marquee ${reverse ? "mt-4" : "mt-10"}`}>
       <div className={`mq-imgs ${reverse ? "mq-rev" : ""}`}>
-        {[...items, ...items].map((src, i) => (
-          <span
-            key={i}
-            className="group relative block h-[170px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-border"
-          >
-            <Image
-              src={src}
-              alt=""
-              fill
-              sizes="250px"
-              className="object-cover transition duration-700 group-hover:scale-110"
-            />
-          </span>
-        ))}
+        {[...items, ...items].map((src, i) => {
+          const isDuplicate = i >= items.length;
+          return (
+            <span
+              key={i}
+              aria-hidden={isDuplicate || undefined}
+              className="group relative block h-[170px] w-[250px] shrink-0 overflow-hidden rounded-2xl border border-border"
+            >
+              <Image
+                src={src}
+                alt={isDuplicate ? "" : `Campaign photo ${offset + i + 1}`}
+                fill
+                sizes="250px"
+                className="object-cover transition duration-700 group-hover:scale-110"
+              />
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -46,7 +54,7 @@ export function CampaignGallery({ title, images }: CampaignGalleryProps) {
         />
       )}
       {renderRow(images.slice(0, half))}
-      {renderRow(images.slice(half), true)}
+      {renderRow(images.slice(half), true, half)}
     </section>
   );
 }

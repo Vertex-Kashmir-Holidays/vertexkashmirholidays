@@ -124,6 +124,7 @@ export function SectionArrayEditor({
                     type="button"
                     onClick={() => move(i, -1)}
                     disabled={i === 0}
+                    aria-label={`Move item ${i + 1} up`}
                     className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
                   >
                     <ChevronUp className="h-3.5 w-3.5" />
@@ -132,6 +133,7 @@ export function SectionArrayEditor({
                     type="button"
                     onClick={() => move(i, 1)}
                     disabled={i === rows.length - 1}
+                    aria-label={`Move item ${i + 1} down`}
                     className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
                   >
                     <ChevronDown className="h-3.5 w-3.5" />
@@ -139,6 +141,7 @@ export function SectionArrayEditor({
                   <button
                     type="button"
                     onClick={() => remove(i)}
+                    aria-label={`Remove item ${i + 1}`}
                     className="rounded p-1 text-red-500 hover:bg-red-500/10"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

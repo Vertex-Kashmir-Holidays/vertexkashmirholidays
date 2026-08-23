@@ -365,6 +365,7 @@ export function ItineraryEditor({
                 <div key={day.id} className="dayitem group relative flex gap-5">
                   <button
                     onClick={() => removeDay(day.id)}
+                    aria-label={`Remove day ${dayIdx + 1}`}
                     className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -516,6 +517,7 @@ export function ItineraryEditor({
                       <td className="px-2 no-print">
                         <button
                           onClick={() => removeHotel(h.id)}
+                          aria-label={`Remove hotel row ${idx + 1}`}
                           className="text-rose-500 hover:text-rose-600"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -833,6 +835,7 @@ function ListColumn({
             />
             <button
               onClick={() => onRemove(idx)}
+              aria-label={`Remove item ${idx + 1} from ${title}`}
               className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -877,6 +880,7 @@ function PolicyCard({
             />
             <button
               onClick={() => onRemove(idx)}
+              aria-label={`Remove item ${idx + 1} from ${title}`}
               className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
             >
               <Trash2 className="h-3 w-3" />

@@ -782,6 +782,8 @@ export function LeadDetail({
                   ) : (
                     <Link
                       href={`/admin/itinerary/${itinerary.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-semibold border border-border text-foreground hover:bg-muted px-4 py-2 rounded-xl transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" /> View Itinerary

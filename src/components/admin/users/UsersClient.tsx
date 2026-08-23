@@ -17,6 +17,7 @@ interface CustomerRow {
   phone: string | null;
   deletedAt: Date | string | null;
   createdAt: Date | string;
+  lastLoginAt: Date | string | null;
   _count: { bookings: number; reviews: number };
 }
 
@@ -142,7 +143,7 @@ export function UsersClient({ initialCustomers }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["User", "Phone", "Bookings", "Reviews", "Joined", "Actions"].map((h) => (
+                {["User", "Phone", "Bookings", "Reviews", "Joined", "Last Login", "Actions"].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
@@ -155,7 +156,7 @@ export function UsersClient({ initialCustomers }: Props) {
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No customers found.
                   </td>
                 </tr>
@@ -210,6 +211,19 @@ export function UsersClient({ initialCustomers }: Props) {
                           month: "short",
                           year: "2-digit",
                         })}
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        {u.lastLoginAt ? (
+                          <span className="text-muted-foreground">
+                            {new Date(u.lastLoginAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "2-digit",
+                            })}
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 font-semibold">Never logged in</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
@@ -441,6 +455,7 @@ function EditModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close edit customer dialog"
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />

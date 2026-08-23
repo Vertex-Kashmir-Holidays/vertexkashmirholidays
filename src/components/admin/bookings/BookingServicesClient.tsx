@@ -583,6 +583,7 @@ export function BookingServicesClient({
               {!locked && canEdit && (
                 <button
                   onClick={() => removeInclusion(i)}
+                  aria-label={`Remove inclusion ${i + 1}`}
                   className="text-muted-foreground hover:text-red-500"
                 >
                   <X className="w-3 h-3" />

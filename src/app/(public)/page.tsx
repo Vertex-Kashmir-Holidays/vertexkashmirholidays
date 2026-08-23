@@ -20,6 +20,7 @@ import { TrustSection } from "@/components/common/TrustSection";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getFaqsForPlacement } from "@/lib/faqs";
 import { getKashmirWeather } from "@/lib/weather";
+import { HERO_FEATURES, PAYMENT_METHODS } from "@/lib/home/heroContent";
 import type { SectionHeading } from "@/types/home";
 
 // ISR: serve cached HTML and refresh in the background (admin edits appear
@@ -188,6 +189,8 @@ export default async function HomePage() {
         stats={stats
           .filter((s) => s.section === "hero")
           .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
+        features={HERO_FEATURES}
+        paymentMethods={PAYMENT_METHODS}
       />
       <UpdatesStrip items={[...weatherTicker, ...tickerItems.map((t) => t.text)]} />
       <VideoReviewsSection

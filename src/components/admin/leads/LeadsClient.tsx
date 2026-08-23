@@ -395,6 +395,7 @@ export function LeadsClient({
                           <TooltipTrigger asChild>
                             <Link
                               href={`/admin/leads/${lead.id}`}
+                              aria-label={`View lead detail for ${lead.name}`}
                               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -407,6 +408,7 @@ export function LeadsClient({
                             <TooltipTrigger asChild>
                               <Link
                                 href={`/admin/leads/${lead.id}/edit`}
+                                aria-label={`Edit lead ${lead.name}`}
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -420,6 +422,7 @@ export function LeadsClient({
                             <TooltipTrigger asChild>
                               <button
                                 onClick={() => setConfirmDelete(lead.id)}
+                                aria-label={`Delete lead ${lead.name}`}
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

@@ -212,11 +212,22 @@ export function Header({
   );
 }
 
-export function Footer({ address }: { address: string }) {
+export function Footer({
+  address,
+  gstNumber,
+}: {
+  address: string;
+  /** SiteSettings.gstNumber — the same GSTIN shown in the site footer. Omitted
+   *  on internal documents (e.g. the salary slip) and when it isn't configured. */
+  gstNumber?: string | null;
+}) {
   return (
     <View style={s.footer} fixed>
       <Text style={s.footerCompany}>{CONTACT.company}</Text>
-      <Text style={s.footerLine}>{CONTACT.reg}</Text>
+      <Text style={s.footerLine}>
+        {CONTACT.reg}
+        {gstNumber ? ` · GSTIN: ${gstNumber}` : ""}
+      </Text>
       <Text style={s.footerLine}>
         {CONTACT.phone} · {CONTACT.email}
       </Text>
@@ -240,11 +251,15 @@ export function BookingSummaryPdf({
   data,
   logo,
   address,
+  gstNumber,
 }: {
   data: BookingSummaryPdfData;
   logo: string | null;
   /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
   address: string;
+  /** SiteSettings.gstNumber, rendered in the footer next to the tourism
+   *  registration number. Null/absent when it isn't configured. */
+  gstNumber?: string | null;
 }) {
   const grouped = groupServiceTables(data.services);
 
@@ -341,7 +356,7 @@ export function BookingSummaryPdf({
           to availability at the time of travel. This is a computer-generated summary.
         </Text>
 
-        <Footer address={address} />
+        <Footer address={address} gstNumber={gstNumber} />
       </Page>
     </Document>
   );
@@ -352,11 +367,15 @@ export function PaymentInvoicePdf({
   data,
   logo,
   address,
+  gstNumber,
 }: {
   data: PaymentInvoicePdfData;
   logo: string | null;
   /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
   address: string;
+  /** SiteSettings.gstNumber, rendered in the footer next to the tourism
+   *  registration number. Null/absent when it isn't configured. */
+  gstNumber?: string | null;
 }) {
   return (
     <Document title={`Payment Receipt - ${data.invoiceRef}`} author={CONTACT.brand}>
@@ -399,7 +418,7 @@ export function PaymentInvoicePdf({
           computer-generated receipt.
         </Text>
 
-        <Footer address={address} />
+        <Footer address={address} gstNumber={gstNumber} />
       </Page>
     </Document>
   );

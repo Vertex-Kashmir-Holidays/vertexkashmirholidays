@@ -288,7 +288,11 @@ export function ListEditor({
               <h4 className="font-display text-base font-bold text-foreground">
                 {editing === "new" ? `Add to ${title}` : `Edit ${title}`}
               </h4>
-              <button onClick={close} className="text-muted-foreground hover:text-muted-foreground">
+              <button
+                onClick={close}
+                aria-label={`Close ${title} editor`}
+                className="text-muted-foreground hover:text-muted-foreground"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>

@@ -341,7 +341,12 @@ function ApplyModal({ onClose, onApplied }: { onClose: () => void; onApplied: ()
       >
         <div className="flex items-center justify-between">
           <h3 className="font-display font-bold text-foreground">Apply for leave</h3>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close apply for leave dialog"
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>

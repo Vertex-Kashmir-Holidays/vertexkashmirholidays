@@ -436,6 +436,7 @@ function ImageUploadField({
           <button
             type="button"
             onClick={() => onChange("")}
+            aria-label="Remove selected image"
             className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
           >
             <X className="w-3 h-3" />
@@ -1008,6 +1009,7 @@ export function PackageForm({
                       <button
                         type="button"
                         onClick={() => removeDay(i)}
+                        aria-label={`Remove day ${i + 1}`}
                         className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1074,6 +1076,7 @@ export function PackageForm({
                   <button
                     type="button"
                     onClick={() => removeInclusion(i)}
+                    aria-label={`Remove inclusion ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1110,6 +1113,7 @@ export function PackageForm({
                   <button
                     type="button"
                     onClick={() => removeExclusion(i)}
+                    aria-label={`Remove exclusion ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1154,7 +1158,11 @@ export function PackageForm({
                       <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-muted shrink-0 mt-0.5">
                         {url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={url}
+                            alt={`Gallery image ${i + 1} preview`}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <ImageIcon className="w-4 h-4 text-muted-foreground/60 absolute inset-0 m-auto" />
                         )}
@@ -1174,6 +1182,7 @@ export function PackageForm({
                       <button
                         type="button"
                         onClick={() => removeGalleryItem(i)}
+                        aria-label={`Remove gallery item ${i + 1}`}
                         className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-0.5"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1260,6 +1269,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removeBatch(i)}
+                      aria-label={`Remove batch ${i + 1}`}
                       className="p-1.5 rounded text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1386,6 +1396,7 @@ export function PackageForm({
                   <button
                     type="button"
                     onClick={() => removeHighlight(i)}
+                    aria-label={`Remove highlight ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1425,6 +1436,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removePerfectFor(i)}
+                      aria-label={`Remove perfect-for item ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1460,6 +1472,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removeNotIdealFor(i)}
+                      aria-label={`Remove not-ideal-for item ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1523,6 +1536,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removeAccommodation(i)}
+                      aria-label={`Remove accommodation ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1604,6 +1618,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removeBudgetRow(i)}
+                      aria-label={`Remove budget row ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1658,6 +1673,7 @@ export function PackageForm({
                       <button
                         type="button"
                         onClick={() => removeExpenseRow(i)}
+                        aria-label={`Remove personal expense row ${i + 1}`}
                         className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1723,6 +1739,7 @@ export function PackageForm({
                       <button
                         type="button"
                         onClick={() => removePackingItem(i)}
+                        aria-label={`Remove packing item ${i + 1}`}
                         className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1762,6 +1779,7 @@ export function PackageForm({
                   <button
                     type="button"
                     onClick={() => removeTip(i)}
+                    aria-label={`Remove local travel tip ${i + 1}`}
                     className="text-muted-foreground/60 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1809,6 +1827,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removeNote(i)}
+                      aria-label={`Remove important note ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0 mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1866,6 +1885,7 @@ export function PackageForm({
                     <button
                       type="button"
                       onClick={() => removeRelated(i)}
+                      aria-label={`Remove related tour ${i + 1}`}
                       className="text-muted-foreground/60 hover:text-red-400 transition-colors mt-2.5"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1967,7 +1987,11 @@ export function PackageForm({
           <div className="relative h-36 bg-muted">
             {coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={coverImage} alt="" className="w-full h-full object-cover" />
+              <img
+                src={coverImage}
+                alt="Cover image preview"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60">
                 <ImageIcon className="w-8 h-8 mb-1" />

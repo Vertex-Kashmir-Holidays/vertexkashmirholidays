@@ -218,7 +218,11 @@ export function MessageInput({
           <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs">
             <Pencil className="w-3 h-3 text-primary shrink-0" />
             <span className="flex-1 text-primary">Editing message</span>
-            <button onClick={onCancelEdit} className="text-muted-foreground hover:text-foreground">
+            <button
+              onClick={onCancelEdit}
+              aria-label="Cancel editing message"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -230,6 +234,7 @@ export function MessageInput({
             <span className="truncate flex-1 text-xs">{attachment.name}</span>
             <button
               onClick={() => setAttachment(null)}
+              aria-label={`Remove attachment ${attachment.name}`}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-3.5 h-3.5" />

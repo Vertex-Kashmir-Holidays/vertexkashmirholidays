@@ -178,6 +178,17 @@ Without `force-dynamic` on a page that queries Prisma or reads session state, Ne
 
 Layouts fetch shared data once for their whole subtree (e.g. the `SiteSettings` singleton in `src/app/(public)/layout.tsx`, passed down via a Context provider) — do not add per-page data fetching to a layout file.
 
+Route-level loading states
+
+Any route that waits on a Prisma query or a session read gets a `loading.tsx`, so navigating to it shows a skeleton rather than a blank screen. Compose it from the shared molecules — `ListSkeleton`, `FormSkeleton`, `HeroSkeleton`, `CardGridSkeleton` in `src/components/ui/molecules/`, all built on the `Skeleton` atom — rather than hand-rolling another variant. Mirror the real page's container widths, grid, and card structure so the swap causes no layout shift, and put `aria-busy="true"` plus an `aria-label` ("Loading bookings") on the route's outermost element only, not on nested pieces.
+
+The nesting rule is the part that is easy to get wrong: **a segment's `loading.tsx` also wraps that segment's children, and on a hard load the outer fallback is the one that renders.** Two consequences:
+
+- Adding a list skeleton to a segment that has `new/` or `[id]/` children means those children need their own `loading.tsx`, or a client-side navigation into the form shows a table skeleton.
+- If a child is normally reached by hard load rather than in-app navigation, the parent boundary will cover it permanently. Scope the parent to its own page with a URL-transparent route group instead — this is why the checkout page lives at `src/app/(public)/booking/(checkout)/page.tsx`: at `booking/loading.tsx` its form skeleton would have covered `/booking/success` and `/booking/failed`, which are only ever reached by a Razorpay redirect.
+
+Known gap: on a hard load of a public detail page (`/tours/[slug]`, `/destinations/[slug]`, `/blog/[slug]`) the parent listing's skeleton renders rather than the detail one, for the reason above. Both open with the same `HeroSkeleton` band, so this was accepted rather than restructuring those segments into route groups.
+
 ---
 
 # Next.js Mutation Standard
@@ -450,6 +461,48 @@ Colour contrast
 Focus management
 
 Accessibility is part of implementation—not an enhancement.
+
+An interactive element whose only content is an icon must carry an `aria-label`
+describing the action ("Delete lead Priya Sharma"), not the glyph ("trash"). This
+is enforced by `vertex/icon-only-control-needs-label`, a local ESLint rule in
+`eslint-rules/` wired up in `eslint.config.mjs`, and it is a build-blocking error.
+
+The rule exists because jsx-a11y's `control-has-associated-label` cannot catch
+this case: every icon in this codebase is a custom component (`lucide-react`,
+`@/components/icons/*`), and that rule assumes an unknown component may supply
+its own label. Wrapping a control in a Radix `Tooltip` does not satisfy the
+rule and should not — a tooltip sets `aria-describedby`, so the control still
+has no accessible *name*.
+
+Known gap, not covered by that rule: form controls (`<input>`, `<textarea>`,
+`<select>`) labelled only by a `placeholder`. Running jsx-a11y's
+`control-has-associated-label` across the repo reports ~200 such elements. That
+is separate technical debt and should be tracked as its own Plane issue rather
+than folded into an icon-button fix.
+
+Every image needs an `alt`. A content image gets text that conveys what it
+conveys; a purely decorative one (a background photo behind text, an avatar
+sitting next to the same person's visible name, a thumbnail inside a control
+that already has its own `aria-label`) gets `alt=""` — that empty string *is*
+the explicit "decorative" marking, and omitting the attribute entirely is not
+the same thing. This is enforced by `jsx-a11y/alt-text`, raised to `error` in
+`eslint.config.mjs`. `next/core-web-vitals` already points that rule at
+`next/image` via `img: ["Image"]`, but only at `warn`, which does not fail the
+build — the options are re-declared unchanged and only the severity is raised.
+
+The two `@react-pdf/renderer` documents (`src/components/admin/itinerary/ItineraryPdf.tsx`,
+`src/lib/pdf/InvoiceDocuments.tsx`) carry a file-level `eslint-disable jsx-a11y/alt-text`.
+That is correct and should stay: their `<Image>` is react-pdf's, not
+`next/image`, and it has no `alt` prop to set. Don't "fix" those by adding one.
+
+That rule checks only that `alt` is *present* — it cannot judge whether the text
+is meaningful, so `alt={tour.title}` and `alt="image"` look identical to it.
+Meaningfulness stays a review concern.
+
+When an image is duplicated purely for visual effect (e.g. the marquee in
+`CampaignGallery.tsx` renders each photo twice so the loop is seamless), name
+the first copy and mark the duplicate `aria-hidden` with `alt=""` — otherwise
+every photo is announced twice.
 
 ---
 

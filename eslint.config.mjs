@@ -5,6 +5,8 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
 
+import iconOnlyControlNeedsLabel from "./eslint-rules/icon-only-control-needs-label.mjs";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -21,7 +23,20 @@ const eslintConfig = [
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    plugins: {
+      vertex: { rules: { "icon-only-control-needs-label": iconOnlyControlNeedsLabel } },
+    },
     rules: {
+      // Icons here are custom components, which jsx-a11y's
+      // `control-has-associated-label` deliberately skips — this rule covers
+      // the icon-only button/link case that would otherwise go unchecked.
+      "vertex/icon-only-control-needs-label": "error",
+      // `next/core-web-vitals` already maps this rule onto `next/image`
+      // (`img: ["Image"]`) but only at "warn", which does not fail the build —
+      // so alt coverage silently regressed. Same options, raised to error.
+      // The rule checks that `alt` is *present*; `alt=""` remains the correct,
+      // explicit marking for a decorative image.
+      "jsx-a11y/alt-text": ["error", { elements: ["img"], img: ["Image"] }],
       // The codebase uses `style={{ '--x': … } as any}` for CSS custom
       // properties and copy with raw quotes throughout; keep these visible
       // as warnings without failing the production build.

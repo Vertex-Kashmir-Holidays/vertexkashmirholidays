@@ -291,6 +291,7 @@ export function OfflineConversionDetail({ row, canRetry, destinationId }: Props)
         <div className="flex items-center gap-3">
           <Link
             href="/admin/offline-conversions"
+        aria-label="Back to offline conversions"
             className="w-9 h-9 rounded-xl border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />

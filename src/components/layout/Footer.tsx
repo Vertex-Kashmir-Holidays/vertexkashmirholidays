@@ -276,6 +276,14 @@ export function Footer({
                       Customer Reviews
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      href="/b2b-travel-partner-program"
+                      className="transition hover:text-primary"
+                    >
+                      B2B Travel Partner Program — Kashmir DMC
+                    </Link>
+                  </li>
                 </ul>
               </div>
               <div>

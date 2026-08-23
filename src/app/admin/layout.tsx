@@ -54,8 +54,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <SessionProvider session={session}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="dark"
         disableTransitionOnChange
         nonce={nonce}
       >

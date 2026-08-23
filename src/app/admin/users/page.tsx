@@ -18,6 +18,7 @@ export default async function AdminUsersPage() {
       role: true,
       deletedAt: true,
       createdAt: true,
+      lastLoginAt: true,
       _count: { select: { bookings: true, reviews: true } },
     },
   });
