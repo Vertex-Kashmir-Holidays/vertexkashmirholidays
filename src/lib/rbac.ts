@@ -35,6 +35,7 @@ export const MODULES = [
   { key: "bookings", label: "Bookings", href: "/admin/bookings" },
   { key: "leads", label: "Leads", href: "/admin/leads" },
   { key: "itinerary", label: "Itineraries", href: "/admin/itinerary" },
+  { key: "hotelSuppliers", label: "Hotel Rates", href: "/admin/hotel-suppliers" },
   { key: "users", label: "Customers", href: "/admin/users" },
   { key: "employees", label: "Employees", href: "/admin/employees" },
   { key: "salary", label: "Salary", href: "/admin/salary" },
