@@ -1,10 +1,10 @@
 "use client";
 
 // Batch rate editor — appears inline under a hotel's row when Admin clicks
-// "Add Rate" / "Edit Rate". Lets MAP/CP/Extra Bed/Valid Till be set together
-// in one Save, rather than double-clicking each cell separately. Always
-// edits the hotel's single current rate (never appends a second one) — the
-// business always maintains exactly one season's rate per hotel.
+// "Add Rate" / "Edit Rate". Lets EP/CP/MAP/AP/Extra Bed/Valid Till be set
+// together in one Save, rather than double-clicking each cell separately.
+// Always edits the hotel's single current rate (never appends a second one)
+// — the business always maintains exactly one season's rate per hotel.
 import { useState } from "react";
 import { Check, X, Loader2 } from "lucide-react";
 import type { HotelRate } from "@/lib/hotelSuppliers/schema";
@@ -21,8 +21,10 @@ const inputCls =
   "w-full min-w-0 rounded-md border border-primary/40 bg-card px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/25";
 
 export function EditRateRow({ initialRate, onSave, onCancel, colSpanBefore }: EditRateRowProps) {
-  const [map, setMap] = useState(initialRate?.mealPlans.MAP != null ? String(initialRate.mealPlans.MAP) : "");
+  const [ep, setEp] = useState(initialRate?.mealPlans.EP != null ? String(initialRate.mealPlans.EP) : "");
   const [cp, setCp] = useState(initialRate?.mealPlans.CP != null ? String(initialRate.mealPlans.CP) : "");
+  const [map, setMap] = useState(initialRate?.mealPlans.MAP != null ? String(initialRate.mealPlans.MAP) : "");
+  const [ap, setAp] = useState(initialRate?.mealPlans.AP != null ? String(initialRate.mealPlans.AP) : "");
   const [extraBed, setExtraBed] = useState(initialRate?.extraBed != null ? String(initialRate.extraBed) : "");
   const [validTo, setValidTo] = useState(initialRate?.validTo ?? "");
   const [saving, setSaving] = useState(false);
@@ -36,10 +38,12 @@ export function EditRateRow({ initialRate, onSave, onCancel, colSpanBefore }: Ed
   }
 
   async function handleSave() {
-    const mapNet = parseMoney(map);
+    const epNet = parseMoney(ep);
     const cpNet = parseMoney(cp);
+    const mapNet = parseMoney(map);
+    const apNet = parseMoney(ap);
     const extraBedNet = parseMoney(extraBed);
-    if (mapNet === "invalid" || cpNet === "invalid" || extraBedNet === "invalid") {
+    if ([epNet, cpNet, mapNet, apNet, extraBedNet].includes("invalid")) {
       setError("Rates must be valid non-negative numbers.");
       return;
     }
@@ -47,8 +51,13 @@ export function EditRateRow({ initialRate, onSave, onCancel, colSpanBefore }: Ed
     setSaving(true);
     const ok = await onSave({
       validTo: validTo || null,
-      mealPlans: { MAP: mapNet, CP: cpNet, AP: initialRate?.mealPlans.AP ?? null },
-      extraBed: extraBedNet,
+      mealPlans: {
+        EP: epNet as number | null,
+        CP: cpNet as number | null,
+        MAP: mapNet as number | null,
+        AP: apNet as number | null,
+      },
+      extraBed: extraBedNet as number | null,
     });
     setSaving(false);
     if (!ok) setError("Save failed — please try again.");
@@ -64,9 +73,9 @@ export function EditRateRow({ initialRate, onSave, onCancel, colSpanBefore }: Ed
           type="number"
           min={0}
           className={`${inputCls} text-right`}
-          placeholder="MAP"
-          value={map}
-          onChange={(e) => setMap(e.target.value)}
+          placeholder="EP"
+          value={ep}
+          onChange={(e) => setEp(e.target.value)}
           autoFocus
         />
       </td>
@@ -78,6 +87,26 @@ export function EditRateRow({ initialRate, onSave, onCancel, colSpanBefore }: Ed
           placeholder="CP"
           value={cp}
           onChange={(e) => setCp(e.target.value)}
+        />
+      </td>
+      <td className={cellCls}>
+        <input
+          type="number"
+          min={0}
+          className={`${inputCls} text-right`}
+          placeholder="MAP"
+          value={map}
+          onChange={(e) => setMap(e.target.value)}
+        />
+      </td>
+      <td className={cellCls}>
+        <input
+          type="number"
+          min={0}
+          className={`${inputCls} text-right`}
+          placeholder="AP"
+          value={ap}
+          onChange={(e) => setAp(e.target.value)}
         />
       </td>
       <td className={cellCls}>

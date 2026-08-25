@@ -4,7 +4,7 @@ import { Fragment, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
@@ -20,7 +20,9 @@ import {
   HOTEL_CATEGORIES,
   HOTEL_CATEGORY_LABELS,
   CATEGORY_SORT_ORDER,
+  MEAL_PLAN_LEGEND,
   computeCategoryFromMap,
+  rateNeedsRefresh,
   type HotelCategoryValue,
   type HotelData,
   type HotelRate,
@@ -28,6 +30,7 @@ import {
 import { InlineCell } from "./InlineCell";
 import { EditRateRow } from "./EditRateRow";
 import { NameCell } from "./NameCell";
+import { RequestRatesDialog } from "./RequestRatesDialog";
 
 export interface HotelSupplierRecord {
   id: string;
@@ -48,8 +51,12 @@ interface Props {
 }
 
 const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({ value: c, label: HOTEL_CATEGORY_LABELS[c] }));
-const EMPTY_RATE: HotelRate = { validTo: null, mealPlans: { CP: null, MAP: null, AP: null }, extraBed: null };
-// Columns before the Actions cell: Sr, Name, Phone, Email, Category, Rating.
+const EMPTY_RATE: HotelRate = {
+  validTo: null,
+  mealPlans: { EP: null, CP: null, MAP: null, AP: null },
+  extraBed: null,
+};
+// Columns before the rate columns: Sr, Name, Phone, Email, Category, Rating.
 const HOTEL_COLS_BEFORE_RATES = 6;
 
 function fmtMoney(n: number | null): string {
@@ -71,6 +78,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | HotelCategoryValue>("ALL");
   const [editingRateFor, setEditingRateFor] = useState<string | null>(null);
   const [confirmDeleteHotel, setConfirmDeleteHotel] = useState<string | null>(null);
+  const [requestRatesFor, setRequestRatesFor] = useState<HotelSupplierRecord | null>(null);
 
   function patchHotel(id: string, payload: Record<string, unknown>): Promise<boolean> {
     return new Promise((resolve) => {
@@ -141,7 +149,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Hotel Rates</h2>
           <p className="text-muted-foreground text-xs mt-0.5">
-            Curated hotel options and exact supplier MAP/CP net rates for itinerary and quotation prep.
+            Curated hotel options and exact supplier EP/CP/MAP/AP net rates for itinerary and quotation prep.
           </p>
         </div>
         {canCreate && (
@@ -153,6 +161,21 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             Add Hotel
           </Link>
         )}
+      </div>
+
+      {/* Meal plan legend */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm px-4 py-3">
+        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
+          Meal Plan Codes
+        </p>
+        <div className="flex flex-wrap gap-x-6 gap-y-1">
+          {MEAL_PLAN_LEGEND.map((l) => (
+            <p key={l.code} className="text-xs text-muted-foreground">
+              <strong className="text-foreground font-bold">{l.code}</strong>{" "}
+              <span className="text-muted-foreground/70">→</span> {l.meaning}
+            </p>
+          ))}
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -213,25 +236,37 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
-                {["Sr.", "Name", "Phone", "Email", "Category", "Rating", "MAP", "CP", "Extra Bed", "Valid Till", "Actions"].map(
-                  (h, i) => (
-                    <th
-                      key={h}
-                      className={cn(
-                        "text-left px-3 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap",
-                        i === 1 && "sticky left-0 bg-muted z-10",
-                      )}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                {[
+                  "Sr.",
+                  "Name",
+                  "Phone",
+                  "Email",
+                  "Category",
+                  "Rating",
+                  "EP",
+                  "CP",
+                  "MAP",
+                  "AP",
+                  "Extra Bed",
+                  "Valid Till",
+                  "Actions",
+                ].map((h, i) => (
+                  <th
+                    key={h}
+                    className={cn(
+                      "text-left px-3 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap",
+                      i === 1 && "sticky left-0 bg-muted z-10",
+                    )}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={13} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No hotels match the current filters for {activeTab}.
                   </td>
                 </tr>
@@ -248,6 +283,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                       setConfirmDeleteHotel={setConfirmDeleteHotel}
                       onDeleteHotel={deleteHotel}
                       onEditRateClick={() => setEditingRateFor(hotel.id)}
+                      onRequestRatesClick={() => setRequestRatesFor(hotel)}
                     />
                     {editingRateFor === hotel.id && (
                       <EditRateRow
@@ -272,6 +308,18 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </table>
         </div>
       </div>
+
+      {requestRatesFor && (
+        <RequestRatesDialog
+          hotelId={requestRatesFor.id}
+          hotelName={requestRatesFor.hotelName}
+          defaultEmail={requestRatesFor.data.property.email ?? ""}
+          open={!!requestRatesFor}
+          onOpenChange={(open) => {
+            if (!open) setRequestRatesFor(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -286,6 +334,7 @@ interface HotelRowProps {
   setConfirmDeleteHotel: (id: string | null) => void;
   onDeleteHotel: (id: string) => void;
   onEditRateClick: () => void;
+  onRequestRatesClick: () => void;
 }
 
 function HotelRow({
@@ -298,8 +347,10 @@ function HotelRow({
   setConfirmDeleteHotel,
   onDeleteHotel,
   onEditRateClick,
+  onRequestRatesClick,
 }: HotelRowProps) {
   const rate = hotel.data.rate ?? EMPTY_RATE;
+  const needsRateRequest = rateNeedsRefresh(hotel.data.rate);
 
   function saveProperty(field: keyof HotelData["property"], value: string) {
     return patchHotel(hotel.id, {
@@ -312,6 +363,29 @@ function HotelRow({
     const payload: Record<string, unknown> = { data: { ...hotel.data, rate: nextRate } };
     if (recomputeCategory) payload.category = computeCategoryFromMap(nextRate.mealPlans.MAP);
     return patchHotel(hotel.id, payload);
+  }
+
+  function moneyCell(value: number | null, onSave: (v: string) => Promise<boolean>) {
+    return (
+      <InlineCell
+        canEdit={canEdit}
+        type="number"
+        align="right"
+        value={value != null ? String(value) : ""}
+        displayValue={fmtMoney(value)}
+        onSave={onSave}
+        className="min-w-[90px]"
+      />
+    );
+  }
+
+  function saveMoney(field: "EP" | "CP" | "MAP" | "AP", v: string) {
+    const parsed = parseMoneyInput(v);
+    if (parsed === "invalid") {
+      toast.error("Enter a valid non-negative number.");
+      return Promise.resolve(false);
+    }
+    return saveRateField((r) => ({ ...r, mealPlans: { ...r.mealPlans, [field]: parsed } }), field === "MAP");
   }
 
   return (
@@ -358,42 +432,10 @@ function HotelRow({
           className="min-w-[130px]"
         />
       </td>
-      <td>
-        <InlineCell
-          canEdit={canEdit}
-          type="number"
-          align="right"
-          value={rate.mealPlans.MAP != null ? String(rate.mealPlans.MAP) : ""}
-          displayValue={fmtMoney(rate.mealPlans.MAP)}
-          onSave={(v) => {
-            const parsed = parseMoneyInput(v);
-            if (parsed === "invalid") {
-              toast.error("Enter a valid non-negative number.");
-              return Promise.resolve(false);
-            }
-            return saveRateField((r) => ({ ...r, mealPlans: { ...r.mealPlans, MAP: parsed } }), true);
-          }}
-          className="min-w-[90px]"
-        />
-      </td>
-      <td>
-        <InlineCell
-          canEdit={canEdit}
-          type="number"
-          align="right"
-          value={rate.mealPlans.CP != null ? String(rate.mealPlans.CP) : ""}
-          displayValue={fmtMoney(rate.mealPlans.CP)}
-          onSave={(v) => {
-            const parsed = parseMoneyInput(v);
-            if (parsed === "invalid") {
-              toast.error("Enter a valid non-negative number.");
-              return Promise.resolve(false);
-            }
-            return saveRateField((r) => ({ ...r, mealPlans: { ...r.mealPlans, CP: parsed } }));
-          }}
-          className="min-w-[90px]"
-        />
-      </td>
+      <td>{moneyCell(rate.mealPlans.EP, (v) => saveMoney("EP", v))}</td>
+      <td>{moneyCell(rate.mealPlans.CP, (v) => saveMoney("CP", v))}</td>
+      <td>{moneyCell(rate.mealPlans.MAP, (v) => saveMoney("MAP", v))}</td>
+      <td>{moneyCell(rate.mealPlans.AP, (v) => saveMoney("AP", v))}</td>
       <td>
         <InlineCell
           canEdit={canEdit}
@@ -434,6 +476,21 @@ function HotelRow({
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors"
               >
                 {hotel.data.rate ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              </button>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={onRequestRatesClick}
+                disabled={!needsRateRequest}
+                title={
+                  needsRateRequest
+                    ? "Send a B2B rate request email"
+                    : "MAP rate is current — no request needed"
+                }
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none disabled:text-muted-foreground"
+              >
+                <Mail className="w-3.5 h-3.5" />
               </button>
             )}
             {canDelete &&
