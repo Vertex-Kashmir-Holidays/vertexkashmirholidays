@@ -39,12 +39,14 @@ import {
   UserCog,
   Wallet,
   CalendarOff,
+  BedDouble,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ChatInbox } from "@/components/admin/ChatInbox";
+import { PackageCalculator } from "@/components/admin/calculator/PackageCalculator";
 import { NotificationsProvider } from "@/components/admin/NotificationsProvider";
 import { MobileBottomTabs } from "@/components/admin/MobileBottomTabs";
 import { PresenceStatusPicker } from "@/components/admin/PresenceStatusPicker";
@@ -61,6 +63,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   bookings: CalendarDays,
   leads: Inbox,
   itinerary: Map,
+  hotelSuppliers: BedDouble,
   users: Users,
   employees: UserCog,
   salary: Wallet,
@@ -94,7 +97,7 @@ const PAGE_TITLES: Record<string, string> = Object.fromEntries(
 const NAV_GROUPS: { label: string | null; keys: ModuleKey[] }[] = [
   { label: null, keys: ["dashboard", "connect"] },
   { label: "Catalog", keys: ["destinations", "packages", "activities", "campaigns"] },
-  { label: "CRM", keys: ["leads", "itinerary", "bookings", "users"] },
+  { label: "CRM", keys: ["leads", "itinerary", "hotelSuppliers", "bookings", "users"] },
   { label: "Marketing", keys: ["offlineConversions"] },
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
   { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews", "careers"] },
@@ -327,6 +330,7 @@ export function AdminShell({
                   View Site
                 </Link>
                 <ThemeToggle />
+                <PackageCalculator />
                 <ChatInbox />
                 <NotificationBell />
                 <PresenceStatusPicker userImage={userImage} userName={userName} />

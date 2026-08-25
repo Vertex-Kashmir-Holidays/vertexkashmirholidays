@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { FaqPlacement } from "@prisma/client";
 
@@ -51,3 +52,36 @@ export async function getFaqsForPlacement(
   });
   return faqs;
 }
+
+export interface FaqIndexItem extends FaqPreviewItem {
+  category: { name: string; slug: string };
+}
+
+// Categorized index behind the public GET /api/faqs. The endpoint is public,
+// unpersonalized and read-mostly, so the query goes through unstable_cache and
+// one DB read is shared across requests instead of every visitor paying for
+// their own — the same treatment getSiteSettings/getRolePermissions already
+// get. The category filter is an argument, which unstable_cache folds into the
+// cache key, so each tab caches separately. revalidateTag("faqs") in the FAQ
+// write routes busts it the moment an admin publishes or edits an FAQ; the TTL
+// is only a safety net. Like the placement preview above, never returns
+// `answer` — only /faq/[slug] renders the full text.
+export const getPublicFaqIndex = unstable_cache(
+  async (categorySlug?: string): Promise<FaqIndexItem[]> =>
+    prisma.faq.findMany({
+      where: {
+        status: "PUBLISHED",
+        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+      },
+      select: {
+        id: true,
+        question: true,
+        shortAnswer: true,
+        slug: true,
+        category: { select: { name: true, slug: true } },
+      },
+      orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
+    }),
+  ["public-faq-index"],
+  { revalidate: 300, tags: ["faqs"] },
+);

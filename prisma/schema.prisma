@@ -227,6 +227,35 @@ model RolePermission {
   @@unique([role, module])
 }
 
+// Internal hotel supplier/rate reference for Sales quoting — deliberately NOT
+// wired into Booking/Lead/Itinerary. Not a bookable-inventory master; a
+// curated reference list Admin maintains. `data` holds the property contact
+// info and the variable-shape rate list (room type × season × validity ×
+// CP/MAP/AP + extra bed) as real Json, matching the Itinerary.data precedent
+// — not the String-encoded-JSON convention used for Tour/Campaign fields.
+// destination/category/isActive stay relational columns because they're the
+// fields Sales actually filters/searches by; everything else nests in `data`.
+model HotelSupplier {
+  id          String        @id @default(cuid())
+  hotelName   String
+  destination String
+  category    HotelCategory
+  isActive    Boolean       @default(true)
+  data        Json
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([destination])
+  @@index([category])
+  @@index([isActive])
+}
+
+enum HotelCategory {
+  BUDGET
+  DELUXE
+  PREMIUM
+}
+
 model Destination {
   id               String                @id @default(cuid())
   name             String
@@ -569,15 +598,15 @@ model BookingService {
 // profitAmount/commissionAmount stay live-recomputed while EXPECTED (service
 // costs usually aren't known yet at conversion time) and freeze once EARNED.
 model BookingCommission {
-  id               String            @id @default(cuid())
-  bookingId        String            @unique
-  booking          Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id               String           @id @default(cuid())
+  bookingId        String           @unique
+  booking          Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   employeeId       String
-  employee         User              @relation(fields: [employeeId], references: [id])
+  employee         User             @relation(fields: [employeeId], references: [id])
   rateSnapshotPct  Float
-  profitAmount     Float             @default(0)
-  commissionAmount Float             @default(0)
-  status           CommissionStatus  @default(EXPECTED)
+  profitAmount     Float            @default(0)
+  commissionAmount Float            @default(0)
+  status           CommissionStatus @default(EXPECTED)
   earnedAt         DateTime?
   paidAt           DateTime?
   paidReference    String?
@@ -585,9 +614,9 @@ model BookingCommission {
   // prevents the same earned commission being counted in two different months'
   // payroll, and tells the PAID transition exactly which rows to flip to PAID.
   salaryRecordId   String?
-  salaryRecord     SalaryRecord?     @relation(fields: [salaryRecordId], references: [id])
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  salaryRecord     SalaryRecord?    @relation(fields: [salaryRecordId], references: [id])
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([employeeId])
   @@index([status])
@@ -602,34 +631,34 @@ model BookingCommission {
 // commissionAdjustment is a separate, clearly-labelled manual correction field —
 // Finance never edits BookingCommission rows directly.
 model SalaryRecord {
-  id                   String        @id @default(cuid())
+  id                   String              @id @default(cuid())
   employeeId           String
-  employee             User          @relation("SalaryEmployee", fields: [employeeId], references: [id])
+  employee             User                @relation("SalaryEmployee", fields: [employeeId], references: [id])
   salaryMonth          String // "YYYY-MM"
   monthlySalary        Float // snapshot of User.monthlySalary at prepare time
-  commission           Float         @default(0) // sum of claimed BookingCommission.commissionAmount
-  commissionAdjustment Float         @default(0) // manual correction, never overwrites BookingCommission
-  paidDays             Float         @default(0)
-  absentDays           Float         @default(0)
-  paidLeaveDays        Float         @default(0)
-  unpaidLeaveDays      Float         @default(0)
-  deductions           Float         @default(0)
+  commission           Float               @default(0) // sum of claimed BookingCommission.commissionAmount
+  commissionAdjustment Float               @default(0) // manual correction, never overwrites BookingCommission
+  paidDays             Float               @default(0)
+  absentDays           Float               @default(0)
+  paidLeaveDays        Float               @default(0)
+  unpaidLeaveDays      Float               @default(0)
+  deductions           Float               @default(0)
   netSalary            Float // monthlySalary + commission + commissionAdjustment - deductions, stored at save time
-  status               SalaryStatus  @default(DRAFT)
+  status               SalaryStatus        @default(DRAFT)
   employeeReviewedAt   DateTime? // "Looks Good" acknowledgement — not a payment approval
   paidAt               DateTime?
   paidById             String?
-  paidBy               User?         @relation("SalaryPaidBy", fields: [paidById], references: [id])
+  paidBy               User?               @relation("SalaryPaidBy", fields: [paidById], references: [id])
   paymentReference     String?
   // Set only when a PAID record is corrected — full before/after detail lives in
   // AuditLog (SALARY_CORRECTED); these are just cheap fields for an at-a-glance
   // "this was corrected" badge in the UI.
   correctedAt          DateTime?
   correctedById        String?
-  correctedBy          User?         @relation("SalaryCorrectedBy", fields: [correctedById], references: [id])
+  correctedBy          User?               @relation("SalaryCorrectedBy", fields: [correctedById], references: [id])
   correctionReason     String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
   claimedCommissions   BookingCommission[]
 
   @@unique([employeeId, salaryMonth])
@@ -834,8 +863,8 @@ model LeadActivity {
 }
 
 model AuditLog {
-  id     String      @id @default(cuid())
-  action AuditAction
+  id              String      @id @default(cuid())
+  action          AuditAction
   // Deliberately plain strings, not a relation to User — a hard FK would
   // either cascade-delete this row when the target is permanently deleted
   // (destroying the exact record this model exists to preserve) or block
@@ -850,8 +879,8 @@ model AuditLog {
   // permission edit: {module,from,to}) — real Json, matching the precedent
   // set by Itinerary.data, not the String-encoded-JSON convention used for
   // the specific enumerated Tour/Campaign fields.
-  metadata  Json?
-  createdAt DateTime @default(now())
+  metadata        Json?
+  createdAt       DateTime    @default(now())
 
   @@index([action])
   @@index([targetUserId])
@@ -1245,18 +1274,18 @@ model Certification {
 }
 
 model TeamMember {
-  id        String   @id @default(cuid())
-  name      String
-  role      String
-  bio       String
-  image     String
+  id         String   @id @default(cuid())
+  name       String
+  role       String
+  bio        String
+  image      String
   // CSS object-position (e.g. "50% 20%") overriding the default face-focused
   // crop for this member's photo. Null/empty uses the default in AboutTeam.tsx.
   imageFocus String?
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([isActive, sortOrder])
 }
@@ -1435,11 +1464,11 @@ model Faq {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  tours          Tour[]
-  destinations   Destination[]
-  blogs          Blog[]
-  campaigns      Campaign[]
-  activities     Activity[]
+  tours        Tour[]
+  destinations Destination[]
+  blogs        Blog[]
+  campaigns    Campaign[]
+  activities   Activity[]
 
   @@index([status, categoryId, sortOrder])
 }
