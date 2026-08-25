@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
-import { generateFaqSlug } from "@/lib/faqs";
+import { generateFaqSlug, getPublicFaqIndex } from "@/lib/faqs";
 import { parseJsonBody, parseWithSchema, mapPrismaError } from "@/lib/api/route-helpers";
 import { z } from "zod";
 import { FaqStatus, FaqPlacement } from "@prisma/client";
-
-export const dynamic = "force-dynamic";
 
 const idArray = z.array(z.string()).default([]);
 
@@ -55,6 +54,7 @@ export async function POST(request: Request) {
         activities: { connect: activityIds.map((id) => ({ id })) },
       },
     });
+    revalidateTag("faqs", "max");
     return NextResponse.json(faq, { status: 201 });
   } catch (err) {
     return mapPrismaError(err, "A FAQ with this slug already exists", "Create failed");
@@ -64,25 +64,24 @@ export async function POST(request: Request) {
 // Public GET — a filtered slice of the categorized index, used by /faq's
 // client-side category tabs (SSR handles the initial render; this backs
 // client-side re-filtering without a full page navigation). Never exposes
-// unpublished FAQs.
+// unpublished FAQs. The query itself is cached (getPublicFaqIndex): this file
+// used to carry `export const dynamic = "force-dynamic"` for the admin POST
+// above, and because route config is per-file the public read inherited it and
+// hit the database on every request.
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const categorySlug = searchParams.get("category") ?? undefined;
 
-  const faqs = await prisma.faq.findMany({
-    where: {
-      status: "PUBLISHED",
-      ...(categorySlug ? { category: { slug: categorySlug } } : {}),
-    },
-    select: {
-      id: true,
-      question: true,
-      shortAnswer: true,
-      slug: true,
-      category: { select: { name: true, slug: true } },
-    },
-    orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-  });
+  const faqs = await getPublicFaqIndex(categorySlug);
 
-  return NextResponse.json({ items: faqs });
+  // Cached at the edge as well as in the Data Cache: the payload is public and
+  // identical for every visitor, so under normal traffic the CDN answers most
+  // requests without invoking the function at all. The 5-minute window matches
+  // the Data Cache TTL and is well inside the staleness /faq itself already
+  // accepts (`export const revalidate = 1800`); revalidateTag can't reach a CDN
+  // copy, so an admin edit shows up here within that window rather than at once.
+  return NextResponse.json(
+    { items: faqs },
+    { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
+  );
 }

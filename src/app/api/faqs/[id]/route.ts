@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
@@ -94,6 +95,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(activityIds ? { activities: { set: activityIds.map((aid) => ({ id: aid })) } } : {}),
       },
     });
+    revalidateTag("faqs", "max");
     return NextResponse.json(updated);
   } catch (err) {
     return mapPrismaError(err, "A FAQ with this slug already exists", "Update failed");
@@ -107,5 +109,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const existing = await requireExisting(() => prisma.faq.findUnique({ where: { id } }));
   if (!existing.ok) return existing.response;
   await prisma.faq.delete({ where: { id } });
+  revalidateTag("faqs", "max");
   return NextResponse.json({ success: true });
 }
