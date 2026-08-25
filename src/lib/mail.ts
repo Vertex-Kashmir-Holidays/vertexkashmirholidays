@@ -38,6 +38,8 @@ export interface MailOptions {
   subject: string;
   html: string;
   text?: string;
+  /** Optional From override — defaults to MAIL_FROM (the no-reply sender) when omitted. */
+  from?: string;
   /** Optional Reply-To (the From is always the no-reply sender). */
   replyTo?: string;
   /** Optional silent internal copy — never visible to the customer recipient. */
@@ -68,7 +70,8 @@ function toEmails(list: unknown): string[] {
 }
 
 export async function sendMail(options: MailOptions): Promise<SendMailResult> {
-  const from = env.MAIL_FROM ?? "Vertex Kashmir Holidays <noreply@vertexkashmirholidays.com>";
+  const from =
+    options.from ?? env.MAIL_FROM ?? "Vertex Kashmir Holidays <noreply@vertexkashmirholidays.com>";
 
   const transporter = createTransporter();
 
@@ -92,7 +95,7 @@ export async function sendMail(options: MailOptions): Promise<SendMailResult> {
   //   • Auto-Submitted (RFC 3834) marks this as a system-generated message.
   //   • X-Auto-Response-Suppress tells Outlook/Exchange not to send OOO replies.
   // Per-call headers (options.headers) win over these defaults.
-  const { headers: extraHeaders, replyTo, ...rest } = options;
+  const { headers: extraHeaders, replyTo, from: _from, ...rest } = options;
   const info = await transporter.sendMail({
     from,
     replyTo: replyTo ?? env.MAIL_REPLY_TO,
@@ -889,13 +892,18 @@ export function bookingPortalSectionText(bookingId: string): string {
   ].join("\n");
 }
 
+/** Absolute URL to the brand icon — resolves in an inbox regardless of host. */
+export function brandLogoUrl(): string {
+  return `${emailAssetBase()}/brand/png/icon/vertex-icon-512.png`;
+}
+
 /**
  * Branded header band rendered at the top of every transactional email: the
  * company logo (absolute URL so it resolves in the inbox) and wordmark on the
  * brand navy. Falls back gracefully to the wordmark if the image is blocked.
  */
 function brandHeader(): string {
-  const logo = `${emailAssetBase()}/brand/png/icon/vertex-icon-512.png`;
+  const logo = brandLogoUrl();
   return `          <tr>
            <td style="padding:20px 28px;background:${BRAND};border-radius:14px 14px 0 0">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
@@ -1311,4 +1319,128 @@ ${detailRow("Temporary Password", data.tempPassword)}
     contentHtml: content,
     maxWidth: 480,
   });
+}
+
+// ── Hotel supplier rate request (B2B outbound) ───────────────────────────────
+// Sent from the Hotel Rates admin page to a supplier property whose MAP rate
+// is missing or has expired. Deliberately NOT built on the shared emailShell()
+// card/banner/"automated message" treatment every other builder above uses —
+// this is a person-to-person partnership outreach, not a transactional
+// system email, so it's plain letter-style HTML that reads like it was
+// actually typed, not templated. Company identity (legal name, GSTIN,
+// tourism registration, registered address) still comes from SiteSettings
+// rather than being hardcoded, and it's sent From the sales@ mailbox via
+// MailOptions.from.
+
+export interface HotelRateRequestCompany {
+  tradeName: string; // SiteSettings.siteName
+  legalName: string | null; // SiteSettings.legalName
+  phone: string | null; // SiteSettings.sitePhone
+  contactEmails: string; // e.g. "bookings@…, sales@…" — shown in the signature
+  website: string;
+  gstNumber: string | null;
+  tourismRegNumber: string | null;
+  address: string | null; // SiteSettings.siteAddress
+  logoUrl?: string | null;
+}
+
+export interface HotelRateRequestData {
+  hotelName: string;
+  contactPerson?: string | null;
+  senderName: string;
+  company: HotelRateRequestCompany;
+}
+
+export const HOTEL_RATE_REQUEST_SUBJECT = "Request for B2B Hotel Rates & Partnership";
+
+function hotelRateRequestGreeting(data: HotelRateRequestData): string {
+  return data.contactPerson ? `Dear ${data.contactPerson},` : "Dear Manager,";
+}
+
+const HOTEL_RATE_REQUEST_ASKS = [
+  "CP / MAP / AP rates",
+  "Extra bed / child rates",
+  "Seasonal rates and validity",
+  "Complimentary inclusions, if any",
+];
+
+export function hotelRateRequestText(data: HotelRateRequestData): string {
+  const { company } = data;
+  const orgLine = company.legalName
+    ? `We are from ${company.tradeName} operated by ${company.legalName}.`
+    : `We are from ${company.tradeName}.`;
+  return [
+    hotelRateRequestGreeting(data),
+    "",
+    "I hope you are doing well.",
+    "",
+    `${orgLine} We are interested in establishing a B2B partnership with ${data.hotelName} and would appreciate the opportunity to include your property among our accommodation options.`,
+    "",
+    "Kindly share your latest B2B rate sheet, including:",
+    ...HOTEL_RATE_REQUEST_ASKS.map((a) => `  • ${a}`),
+    "",
+    "We would also appreciate it if you could share high-resolution images of the rooms and property for our reference and presentation to clients.",
+    "",
+    "We look forward to establishing a long-term business association with your property.",
+    "",
+    "With Regards,",
+    data.senderName,
+    company.tradeName,
+    company.phone ? `Phone: ${company.phone}` : "",
+    company.gstNumber ? `GSTIN: ${company.gstNumber}` : "",
+    company.tourismRegNumber ? `Tourism Reg. No: ${company.tourismRegNumber}` : "",
+    "",
+    company.legalName ?? company.tradeName,
+    company.address ?? "",
+    `Email: ${company.contactEmails}`,
+    `Website: ${company.website}`,
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+}
+
+export function hotelRateRequestHtml(data: HotelRateRequestData): string {
+  const { company } = data;
+  const orgLine = company.legalName
+    ? `We are from <strong>${escapeHtml(company.tradeName)}</strong> operated by <strong>${escapeHtml(company.legalName)}</strong>.`
+    : `We are from <strong>${escapeHtml(company.tradeName)}</strong>.`;
+
+  const asksList = HOTEL_RATE_REQUEST_ASKS.map(
+    (a) => `<li style="margin:0 0 5px">${escapeHtml(a)}</li>`,
+  ).join("");
+
+  const logo = company.logoUrl
+    ? `<img src="${escapeHtml(company.logoUrl)}" width="20" height="20" alt="" style="display:inline-block;vertical-align:middle;border:0;border-radius:4px;margin-right:6px" />`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>${escapeHtml(HOTEL_RATE_REQUEST_SUBJECT)}</title>
+</head>
+<body style="margin:0;padding:0;background:#ffffff">
+ <div style="max-width:560px;padding:20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#1a1a1a">
+   <p style="margin:0 0 14px">${escapeHtml(hotelRateRequestGreeting(data))}</p>
+   <p style="margin:0 0 14px">I hope you are doing well.</p>
+   <p style="margin:0 0 14px">${orgLine} We are interested in establishing a B2B partnership with <strong>${escapeHtml(data.hotelName)}</strong> and would appreciate the opportunity to include your property among our accommodation options.</p>
+   <p style="margin:0 0 8px">Kindly share your latest B2B rate sheet, including:</p>
+   <ul style="margin:0 0 14px;padding-left:20px">${asksList}</ul>
+   <p style="margin:0 0 14px">We would also appreciate it if you could share high-resolution images of the rooms and property for our reference and presentation to clients.</p>
+   <p style="margin:0 0 20px">We look forward to establishing a long-term business association with your property.</p>
+   <p style="margin:0 0 2px">With Regards,</p>
+   <p style="margin:0 0 2px">${logo}<strong>${escapeHtml(data.senderName)}</strong></p>
+   <p style="margin:0 0 2px">${escapeHtml(company.tradeName)}</p>
+   ${company.phone ? `<p style="margin:0 0 2px">📞 ${escapeHtml(company.phone)}</p>` : ""}
+   ${company.gstNumber ? `<p style="margin:0 0 2px">GSTIN: ${escapeHtml(company.gstNumber)}</p>` : ""}
+   ${company.tourismRegNumber ? `<p style="margin:0 0 14px">Tourism Reg. No: ${escapeHtml(company.tourismRegNumber)}</p>` : ""}
+   <p style="margin:0;color:#8a8f98;font-size:11px;line-height:1.6">
+     ${escapeHtml(company.legalName ?? company.tradeName)}${company.address ? `<br />${escapeHtml(company.address)}` : ""}<br />
+     Email: ${escapeHtml(company.contactEmails)}<br />
+     Website: ${escapeHtml(company.website)}
+   </p>
+ </div>
+</body>
+</html>`;
 }

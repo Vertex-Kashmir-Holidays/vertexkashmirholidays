@@ -66,12 +66,14 @@ const nullableText = z.preprocess(
   z.string().nullable(),
 );
 
-// The one current rate for a hotel. MAP and CP are shown in the quick-
-// reference list (MAP also drives the auto-computed category); AP is still
-// captured as an exact supplier reference rate but isn't a list column.
+// The one current rate for a hotel — all four meal-plan rates (MAP still
+// drives the auto-computed category). Missing keys (e.g. rows saved before
+// EP was added) parse to null via the nonNegativeMoney preprocess, so this
+// stays backward-compatible with rates already saved.
 export const rateSchema = z.object({
   validTo: dateString,
   mealPlans: z.object({
+    EP: nonNegativeMoney,
     CP: nonNegativeMoney,
     MAP: nonNegativeMoney,
     AP: nonNegativeMoney,
@@ -79,6 +81,14 @@ export const rateSchema = z.object({
   extraBed: nonNegativeMoney,
 });
 export type HotelRate = z.infer<typeof rateSchema>;
+
+// Meal-plan abbreviation legend, shown at the top of the Hotel Rates page.
+export const MEAL_PLAN_LEGEND: { code: "EP" | "CP" | "MAP" | "AP"; meaning: string }[] = [
+  { code: "EP", meaning: "Room only" },
+  { code: "CP", meaning: "Room + breakfast" },
+  { code: "MAP", meaning: "Room + breakfast + one of lunch/dinner" },
+  { code: "AP", meaning: "Room + breakfast + lunch + dinner" },
+];
 
 export const propertySchema = z.object({
   location: nullableText,
@@ -114,3 +124,14 @@ export const patchHotelSupplierSchema = z.object({
   data: hotelDataSchema.optional(),
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;
+
+// True when a hotel is due for a rate-request email: no MAP rate on file, or
+// its validity has lapsed. Shared by the client (enables/disables the Send
+// button) and the API route (re-checked server-side so a disabled button
+// can't be bypassed from devtools).
+export function rateNeedsRefresh(rate: HotelRate | null, today?: string): boolean {
+  if (!rate || rate.mealPlans.MAP == null) return true;
+  const todayStr = today ?? new Date().toISOString().slice(0, 10);
+  if (rate.validTo && rate.validTo < todayStr) return true;
+  return false;
+}

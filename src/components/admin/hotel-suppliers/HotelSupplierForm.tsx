@@ -29,6 +29,7 @@ const schema = z.object({
   mapUrl: z.string().optional(),
   rating: z.string().optional(),
   validTo: z.string().optional(),
+  ep: money,
   cp: money,
   map: money,
   ap: money,
@@ -72,6 +73,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       mapUrl: "",
       rating: "",
       validTo: "",
+      ep: "",
       cp: "",
       map: "",
       ap: "",
@@ -100,6 +102,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
         rate: {
           validTo: data.validTo || null,
           mealPlans: {
+            EP: data.ep ? Number(data.ep) : null,
             CP: data.cp ? Number(data.cp) : null,
             MAP: data.map ? Number(data.map) : null,
             AP: data.ap ? Number(data.ap) : null,
@@ -196,16 +199,19 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
             <Badge>{HOTEL_CATEGORY_LABELS[previewCategory]}</Badge>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
-            <label className={labelCls}>MAP Net</label>
-            <input {...register("map")} className={inputCls} placeholder="0" />
-            <p className="text-[11px] text-muted-foreground mt-1">Sets category: &lt;2,500 Budget · &lt;7,000 Deluxe · else Premium</p>
+            <label className={labelCls}>EP Net</label>
+            <input {...register("ep")} className={inputCls} placeholder="0" />
           </div>
           <div>
             <label className={labelCls}>CP Net</label>
             <input {...register("cp")} className={inputCls} placeholder="0" />
             {errors.cp && <p className="text-xs text-red-500 mt-1">{errors.cp.message}</p>}
+          </div>
+          <div>
+            <label className={labelCls}>MAP Net</label>
+            <input {...register("map")} className={inputCls} placeholder="0" />
           </div>
           <div>
             <label className={labelCls}>AP Net</label>
@@ -220,6 +226,9 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
             <input type="date" {...register("validTo")} className={inputCls} />
           </div>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          MAP sets category: &lt;2,500 Budget · &lt;7,000 Deluxe · else Premium
+        </p>
       </div>
 
       <div className="flex items-center gap-3">
