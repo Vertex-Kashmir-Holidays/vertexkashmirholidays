@@ -25,29 +25,15 @@ export function Navbar() {
   const [stripVisible, setStripVisible] = useState(false);
   const pathname = usePathname();
 
-  // Switches to the opaque pill once the page has scrolled past the actual
-  // hero section (first <section> in <main>), not a fixed pixel guess. A
-  // fixed threshold (previously 80px) flips the nav opaque while most of a
-  // tall hero — and anything overlaid on it, like an embedded lead-form card
-  // — is still scrolling underneath, so the fixed pill visibly cuts through
-  // that content for hundreds of pixels of scroll. Falls back to 80 if no
-  // hero section is found (matches the un-scrolled default on non-hero pages).
+  // Switches to the opaque pill just 40px into the scroll, on every
+  // viewport, so it doesn't linger transparent over hero content underneath.
   useEffect(() => {
-    let threshold = 80;
-
-    const measure = () => {
-      const hero = document.querySelector("main section");
-      const navHeight = 96; // approx rendered nav height incl. top margin
-      threshold = hero ? Math.max(80, hero.getBoundingClientRect().height - navHeight) : 80;
-    };
+    const threshold = 40;
     const handleScroll = () => setScrolled(window.scrollY > threshold);
 
-    measure();
     handleScroll();
-    window.addEventListener("resize", measure);
     window.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", handleScroll);
     };
   }, [pathname]);
