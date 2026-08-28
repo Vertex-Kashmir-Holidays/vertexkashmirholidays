@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,10 +8,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { parsePhoneNumber, type CountryCode } from "libphonenumber-js";
 import {
   User,
   Mail,
-  Phone,
   CalendarDays,
   Users,
   MapPin,
@@ -25,10 +25,18 @@ import {
   CreditCard,
   Star,
   Flame,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/atoms/button";
+import { PhoneInput } from "@/components/auth/PhoneInput";
 import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
 import { readAttributionClient } from "@/lib/attribution";
+import {
+  isAllowedCustomerEmailDomain,
+  PUBLIC_DOMAINS_GENERIC_MESSAGE,
+  toE164,
+} from "@/lib/auth/validation";
+import { phoneField } from "@/lib/leads/schema";
 
 // ── Razorpay window type ────────────────────────────────────────────────────
 
@@ -43,14 +51,19 @@ declare global {
 
 const guestSchema = z.object({
   name: z.string().trim().min(2, "Full name is required"),
-  email: z.string().trim().email("Valid email required"),
-  phone: z.string().trim().min(8, "Valid phone number required"),
+  email: z
+    .string()
+    .trim()
+    .email("Valid email required")
+    .refine(isAllowedCustomerEmailDomain, PUBLIC_DOMAINS_GENERIC_MESSAGE),
+  phone: phoneField,
   address: z.string().trim().max(300).optional(),
   requirements: z.string().trim().max(1000).optional(),
 });
 type GuestData = z.infer<typeof guestSchema>;
 
 type Step = "idle" | "creating" | "paying" | "redirecting";
+type OtpStep = "idle" | "sent" | "verified";
 
 const CAT: Record<string, string> = {
   HONEYMOON: "Honeymoon",
@@ -63,6 +76,17 @@ const PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYyNjVjIi8+PC9zdmc+";
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+/** Splits a saved E.164 number (e.g. from a signed-in customer's profile)
+ * back into a country + national number to pre-fill the PhoneInput. */
+function parseDefaultPhone(e164: string): { country: CountryCode; national: string } | null {
+  try {
+    const parsed = parsePhoneNumber(e164);
+    return parsed ? { country: parsed.country ?? "IN", national: parsed.nationalNumber } : null;
+  } catch {
+    return null;
+  }
+}
 
 const MIN_LEAD_DAYS = 4;
 const MAX_BOOKING_MONTHS = 6;
@@ -122,6 +146,24 @@ export function BookingForm({
   );
   const [paymentOption, setPaymentOption] = useState<PaymentOption>("ADVANCE");
 
+  // Phone — country-aware input matching LeadForm/ContactForm/JobApplyForm,
+  // defaulting to India. Pre-fills from the signed-in customer's saved E.164
+  // number (defaultPhone) when present.
+  const defaultPhoneParsed = defaultPhone ? parseDefaultPhone(defaultPhone) : null;
+  const [country, setCountry] = useState<CountryCode>(defaultPhoneParsed?.country ?? "IN");
+  const [national, setNational] = useState(defaultPhoneParsed?.national ?? "");
+
+  // Email-checkout verification — same OTP mechanism as account registration
+  // and the careers apply form, required here so a booking can't be created
+  // against a fake/placeholder or un-owned email address.
+  const [otpStep, setOtpStep] = useState<OtpStep>("idle");
+  const [otpCode, setOtpCode] = useState("");
+  const [requestingOtp, setRequestingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const verifiedEmailRef = useRef<string | null>(null);
+
   const nights = duration - 1;
   const count = parseInt(travellers, 10) || minPersons;
 
@@ -150,13 +192,102 @@ export function BookingForm({
     register,
     handleSubmit,
     getValues,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<GuestData>({
     resolver: zodResolver(guestSchema),
     defaultValues: { name: defaultName, email: defaultEmail, phone: defaultPhone },
   });
 
+  const emailVal = watch("email");
+
+  // Changing the email after verifying invalidates the previous verification —
+  // can't verify one address, then book under a different one.
+  useEffect(() => {
+    if (otpStep === "verified" && emailVal !== verifiedEmailRef.current) {
+      setOtpStep("idle");
+      setOtpCode("");
+      setVerificationToken(null);
+    }
+  }, [emailVal, otpStep]);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  function syncPhone(nextNational: string, nextCountry: CountryCode) {
+    setNational(nextNational);
+    setCountry(nextCountry);
+    const e164 = toE164(nextNational, nextCountry);
+    setValue("phone", e164 ?? nextNational, { shouldValidate: true });
+  }
+
+  async function requestOtp() {
+    const email = emailVal?.trim().toLowerCase();
+    if (!email || errors.email) {
+      toast.error("Please enter a valid email first.");
+      return;
+    }
+    if (!isAllowedCustomerEmailDomain(email)) {
+      toast.error(PUBLIC_DOMAINS_GENERIC_MESSAGE);
+      return;
+    }
+    setRequestingOtp(true);
+    try {
+      const res = await fetch("/api/bookings/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Could not send the verification code.");
+        return;
+      }
+      setOtpStep("sent");
+      setResendIn(data.cooldown ?? 60);
+      toast.success("Verification code sent — check your email.");
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setRequestingOtp(false);
+    }
+  }
+
+  async function verifyOtp() {
+    const email = emailVal?.trim().toLowerCase();
+    if (!email || otpCode.length !== 6) return;
+    setVerifyingOtp(true);
+    try {
+      const res = await fetch("/api/bookings/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: otpCode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Incorrect code. Please try again.");
+        return;
+      }
+      setVerificationToken(data.verificationToken);
+      verifiedEmailRef.current = email;
+      setOtpStep("verified");
+      toast.success("Email verified!");
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  }
+
   async function handlePay(data: GuestData) {
+    if (otpStep !== "verified" || !verificationToken) {
+      toast.error("Please verify your email before booking.");
+      return;
+    }
     if (!date) {
       toast.error("Please select a travel date.");
       return;
@@ -192,6 +323,7 @@ export function BookingForm({
           guestName: data.name,
           guestEmail: data.email,
           guestPhone: data.phone,
+          verificationToken,
           address: data.address || undefined,
           requirements: data.requirements || undefined,
           travelDate: date,
@@ -330,7 +462,7 @@ export function BookingForm({
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Duration</dt>
                   <dd className="font-medium text-foreground">
-                    {duration}D · {nights}N
+                    {nights}N / {duration}D
                   </dd>
                 </div>
                 <div className="flex justify-between">
@@ -439,21 +571,77 @@ export function BookingForm({
                     id="bf-email"
                     type="email"
                     {...register("email")}
-                    placeholder="you@example.com"
-                    className={inputClass}
+                    placeholder="you@gmail.com"
+                    disabled={otpStep === "verified"}
+                    className={`${inputClass} ${otpStep === "verified" ? "pr-24" : "pr-28"}`}
                   />
+                  {otpStep !== "verified" && (
+                    <button
+                      type="button"
+                      onClick={requestOtp}
+                      disabled={requestingOtp || !!errors.email || !emailVal}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {requestingOtp ? "Sending…" : otpStep === "sent" ? "Resend" : "Verify"}
+                    </button>
+                  )}
+                  {otpStep === "verified" && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Verified
+                    </span>
+                  )}
                 </Field>
                 <Field label="Phone / WhatsApp" htmlFor="bf-phone" error={errors.phone?.message}>
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <input
+                  <PhoneInput
                     id="bf-phone"
-                    type="tel"
-                    {...register("phone")}
-                    placeholder="+91 98000 00000"
-                    className={inputClass}
+                    country={country}
+                    onCountryChange={(c) => syncPhone(national, c)}
+                    value={national}
+                    onChange={(v) => syncPhone(v, country)}
+                    invalid={!!errors.phone}
                   />
+                  <input type="hidden" {...register("phone")} />
                 </Field>
               </div>
+
+              {/* Email OTP entry */}
+              {otpStep === "sent" && (
+                <div className="rounded-xl border border-border bg-muted/50 p-3">
+                  <label
+                    htmlFor="bf-otp"
+                    className="mb-1 block text-xs font-semibold text-foreground/90"
+                  >
+                    Enter the 6-digit code sent to your email
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="bf-otp"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className={`${inputClass} pl-3 text-center tracking-[0.3em]`}
+                      placeholder="------"
+                    />
+                    <button
+                      type="button"
+                      onClick={verifyOtp}
+                      disabled={verifyingOtp || otpCode.length !== 6}
+                      className="shrink-0 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {verifyingOtp ? "Verifying…" : "Verify"}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={requestOtp}
+                    disabled={resendIn > 0 || requestingOtp}
+                    className="mt-2 text-[12px] font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                  >
+                    {resendIn > 0 ? `Resend code in ${resendIn}s` : "Resend code"}
+                  </button>
+                </div>
+              )}
 
               {/* Address */}
               <Field label="Billing Address (optional)" htmlFor="bf-address">
@@ -553,7 +741,7 @@ export function BookingForm({
 
                 <Button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || otpStep !== "verified"}
                   size="lg"
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-100 transition-all"
                 >

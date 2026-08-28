@@ -96,6 +96,10 @@ export const propertySchema = z.object({
   phone: nullableText,
   email: nullableText,
   mapUrl: nullableText,
+  // One service/amenity per line (e.g. "Central heating\nCentral A/C\nBuffet
+  // System"), rendered as a bullet list. Lives in the existing `data` Json
+  // blob — no migration needed for a new field here.
+  services: nullableText,
 });
 export type HotelProperty = z.infer<typeof propertySchema>;
 
@@ -125,13 +129,24 @@ export const patchHotelSupplierSchema = z.object({
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;
 
-// True when a hotel is due for a rate-request email: no MAP rate on file, or
-// its validity has lapsed. Shared by the client (enables/disables the Send
+// Splits the stored multiline `services` text into the bullet list shown in
+// the table — one entry per non-blank line.
+export function parseServices(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// True when a hotel is due for a rate-request email: no MAP rate on file, no
+// valid-till date on file (can't confirm it's still current), or its
+// validity has lapsed. Shared by the client (enables/disables the Send
 // button) and the API route (re-checked server-side so a disabled button
 // can't be bypassed from devtools).
 export function rateNeedsRefresh(rate: HotelRate | null, today?: string): boolean {
   if (!rate || rate.mealPlans.MAP == null) return true;
+  if (!rate.validTo) return true;
   const todayStr = today ?? new Date().toISOString().slice(0, 10);
-  if (rate.validTo && rate.validTo < todayStr) return true;
-  return false;
+  return rate.validTo < todayStr;
 }

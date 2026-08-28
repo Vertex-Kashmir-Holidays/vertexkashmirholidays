@@ -67,7 +67,10 @@ export async function recordOnlinePayment(opts: {
 
     await tx.booking.update({
       where: { id: opts.booking.id },
-      data: { status: opts.bookingStatus, razorpayPayId: opts.paymentId },
+      // deletedAt: null revives a booking that the stale-PENDING cleanup
+      // soft-cancelled just before this payment came in (rare race) — a no-op
+      // for the normal case where deletedAt was already null.
+      data: { status: opts.bookingStatus, razorpayPayId: opts.paymentId, deletedAt: null },
     });
 
     return createdId;

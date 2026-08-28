@@ -144,6 +144,14 @@ export async function POST(req: NextRequest) {
   // customer account + send credentials/confirmation/receipt emails.
   if (newPaymentId) {
     await finalizeOnlinePayment(booking.id, chargeable, razorpay_payment_id, newPaymentId);
+    // Consume the booking-checkout email verification — payment succeeded, so
+    // the verified-email token has served its purpose. Best-effort: a racing
+    // webhook may already have deleted it.
+    if (booking.guestEmail) {
+      await prisma.emailOtp
+        .deleteMany({ where: { email: booking.guestEmail.toLowerCase(), purpose: "BOOKING" } })
+        .catch(() => {});
+    }
   }
 
   return NextResponse.json({ success: true, status });
