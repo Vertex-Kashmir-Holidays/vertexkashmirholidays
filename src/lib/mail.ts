@@ -1169,6 +1169,68 @@ export function careersOtpHtml(data: { code: string; ttlMinutes: number }) {
   });
 }
 
+// ── Booking checkout email verification ─────────────────────────────────────
+// Sent when a guest clicks "Verify Email" on the public booking form
+// (src/components/booking/BookingForm.tsx). Same shape as the Careers OTP
+// email above, booking-specific copy only.
+
+export function bookingOtpText(data: { code: string; ttlMinutes: number }) {
+  return [
+    "Verify your email to complete your booking",
+    "",
+    "Use this code to verify your email for your booking with",
+    "Vertex Kashmir Holidays:",
+    "",
+    `    ${data.code}`,
+    "",
+    `This code expires in ${data.ttlMinutes} minutes and can be used only once.`,
+    "If you didn't request this, you can ignore this email.",
+    "",
+    "— Vertex Kashmir Holidays",
+    "https://vertexkashmirholidays.com",
+  ].join("\n");
+}
+
+export function bookingOtpHtml(data: { code: string; ttlMinutes: number }) {
+  const code = escapeHtml(data.code);
+  const preheader = `Your booking verification code is ${code} (expires in ${data.ttlMinutes} minutes).`;
+
+  const content = `          <tr>
+           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Verify your email</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
+               Use the verification code below to confirm your email address and
+               complete your booking with Vertex Kashmir Holidays.
+             </p>
+           </td>
+         </tr>
+         <tr>
+           <td align="center" style="padding:8px 32px 8px">
+             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+               <tr>
+                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+               </tr>
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
+               This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
+               used only once. If you didn't request this, you can safely ignore this
+               email.
+             </p>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: "Verify your email",
+    preheader,
+    contentHtml: content,
+    maxWidth: 480,
+  });
+}
+
 // ── Careers application notification (HR-facing) ─────────────────────────────
 // Sent when a candidate completes the Apply form (email already OTP-verified).
 // By design there is no candidate record in the database — this email plus

@@ -158,8 +158,9 @@ model ItineraryHistory {
 }
 
 // Pending email-verification record for account registration, the
-// forgot-password flow, AND Careers job-application email verification
-// (distinguished by `purpose`). A row is created when a visitor requests an OTP.
+// forgot-password flow, Careers job-application email verification, AND public
+// booking checkout (distinguished by `purpose`). A row is created when a
+// visitor requests an OTP.
 //
 // REGISTER: the account is NOT created in `User` until the OTP is verified
 // (passwordHash/name/phone hold the pending account's data).
@@ -181,6 +182,12 @@ model ItineraryHistory {
 // on this row — the Careers module's entire premise is that no candidate PII
 // is ever stored in the database; this table holds only the email being
 // verified, never the application data attached to it.
+//
+// BOOKING: same "verified, proof token issued" shape as RESET/CAREERS. The
+// booking create-order endpoint must present the token as proof the same
+// browser session completed the OTP step. Not consumed at create-order time
+// (an abandoned/retried checkout may call it more than once with the same
+// token) — deleted once a payment actually succeeds (verify-payment/webhook).
 //
 // Expired rows (any purpose) are cleaned up on each request/verify call (see
 // src/lib/auth/otp.ts -> cleanupExpiredOtps).
@@ -207,6 +214,7 @@ enum OtpPurpose {
   REGISTER
   RESET
   CAREERS
+  BOOKING
 }
 
 model NewsletterSubscriber {

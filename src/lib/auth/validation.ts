@@ -37,12 +37,13 @@ export function isAllowedEmailDomain(email: string): boolean {
 }
 
 /**
- * True for public-provider domains only — excludes the company domain. Google
- * sign-in is a customer convenience login, never a staff auth path, so it must
- * never accept @{@link COMPANY_EMAIL_DOMAIN} even though that domain is allowed
- * for ordinary (password) registration.
+ * True for public-provider domains only — excludes the company domain. For
+ * customer-only flows (Google sign-in, guest booking checkout) that must
+ * never accept @{@link COMPANY_EMAIL_DOMAIN}, even though that domain is
+ * allowed for ordinary (password) registration, since staff accounts must
+ * never be reachable through a customer-facing path.
  */
-export function isAllowedGoogleDomain(email: string): boolean {
+export function isAllowedCustomerEmailDomain(email: string): boolean {
   const domain = email.split("@")[1]?.toLowerCase().trim();
   return !!domain && domain !== COMPANY_EMAIL_DOMAIN && isAllowedEmailDomain(email);
 }

@@ -8,7 +8,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import { isStaff } from "@/lib/rbac";
-import { isAllowedGoogleDomain } from "@/lib/auth/validation";
+import { isAllowedCustomerEmailDomain } from "@/lib/auth/validation";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { env } from "@/lib/env";
@@ -25,7 +25,7 @@ const loginSchema = z.object({
 // customer-only / staff-blocked / public-domain rule applies no matter which
 // Google surface the user came through.
 async function resolveGoogleCustomer(email: string, name?: string | null) {
-  if (!isAllowedGoogleDomain(email)) return null;
+  if (!isAllowedCustomerEmailDomain(email)) return null;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {

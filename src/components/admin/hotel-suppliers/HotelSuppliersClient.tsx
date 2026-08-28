@@ -4,7 +4,7 @@ import { Fragment, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, Mail } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Mail, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
@@ -23,12 +23,14 @@ import {
   MEAL_PLAN_LEGEND,
   computeCategoryFromMap,
   rateNeedsRefresh,
+  parseServices,
   type HotelCategoryValue,
   type HotelData,
   type HotelRate,
 } from "@/lib/hotelSuppliers/schema";
 import { InlineCell } from "./InlineCell";
 import { EditRateRow } from "./EditRateRow";
+import { EditServicesRow } from "./EditServicesRow";
 import { NameCell } from "./NameCell";
 import { RequestRatesDialog } from "./RequestRatesDialog";
 
@@ -77,6 +79,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | HotelCategoryValue>("ALL");
   const [editingRateFor, setEditingRateFor] = useState<string | null>(null);
+  const [editingServicesFor, setEditingServicesFor] = useState<string | null>(null);
   const [confirmDeleteHotel, setConfirmDeleteHotel] = useState<string | null>(null);
   const [requestRatesFor, setRequestRatesFor] = useState<HotelSupplierRecord | null>(null);
 
@@ -249,6 +252,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                   "AP",
                   "Extra Bed",
                   "Valid Till",
+                  "Services",
                   "Actions",
                 ].map((h, i) => (
                   <th
@@ -266,7 +270,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             <tbody className="divide-y divide-border">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={14} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No hotels match the current filters for {activeTab}.
                   </td>
                 </tr>
@@ -284,6 +288,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                       onDeleteHotel={deleteHotel}
                       onEditRateClick={() => setEditingRateFor(hotel.id)}
                       onRequestRatesClick={() => setRequestRatesFor(hotel)}
+                      onEditServicesClick={() => setEditingServicesFor(hotel.id)}
                     />
                     {editingRateFor === hotel.id && (
                       <EditRateRow
@@ -297,6 +302,23 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                             data: { ...hotel.data, rate },
                           });
                           if (ok) setEditingRateFor(null);
+                          return ok;
+                        }}
+                      />
+                    )}
+                    {editingServicesFor === hotel.id && (
+                      <EditServicesRow
+                        colSpanBefore={13}
+                        initialServices={hotel.data.property.services}
+                        onCancel={() => setEditingServicesFor(null)}
+                        onSave={async (services) => {
+                          const ok = await patchHotel(hotel.id, {
+                            data: {
+                              ...hotel.data,
+                              property: { ...hotel.data.property, services: services || null },
+                            },
+                          });
+                          if (ok) setEditingServicesFor(null);
                           return ok;
                         }}
                       />
@@ -335,6 +357,7 @@ interface HotelRowProps {
   onDeleteHotel: (id: string) => void;
   onEditRateClick: () => void;
   onRequestRatesClick: () => void;
+  onEditServicesClick: () => void;
 }
 
 function HotelRow({
@@ -348,9 +371,11 @@ function HotelRow({
   onDeleteHotel,
   onEditRateClick,
   onRequestRatesClick,
+  onEditServicesClick,
 }: HotelRowProps) {
   const rate = hotel.data.rate ?? EMPTY_RATE;
   const needsRateRequest = rateNeedsRefresh(hotel.data.rate);
+  const hasEmail = !!hotel.data.property.email;
 
   function saveProperty(field: keyof HotelData["property"], value: string) {
     return patchHotel(hotel.id, {
@@ -463,6 +488,24 @@ function HotelRow({
           className="min-w-[110px]"
         />
       </td>
+      <td className="px-3 py-2.5 min-w-[180px] max-w-[260px]">
+        {(() => {
+          const services = parseServices(hotel.data.property.services);
+          if (services.length === 0) {
+            return <span className="text-muted-foreground/50 text-sm">—</span>;
+          }
+          return (
+            <ul className="space-y-0.5 text-xs text-foreground/80">
+              {services.map((s, i) => (
+                <li key={i} className="flex items-start gap-1.5">
+                  <span className="text-primary shrink-0">•</span>
+                  {s}
+                </li>
+              ))}
+            </ul>
+          );
+        })()}
+      </td>
       <td className="px-3 py-2.5">
         {!canEdit && !canDelete ? (
           <span className="text-[11px] text-muted-foreground italic">View only</span>
@@ -481,12 +524,24 @@ function HotelRow({
             {canEdit && (
               <button
                 type="button"
+                onClick={onEditServicesClick}
+                title="Edit services"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors"
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {canEdit && (
+              <button
+                type="button"
                 onClick={onRequestRatesClick}
-                disabled={!needsRateRequest}
+                disabled={!needsRateRequest || !hasEmail}
                 title={
-                  needsRateRequest
-                    ? "Send a B2B rate request email"
-                    : "MAP rate is current — no request needed"
+                  !hasEmail
+                    ? "No email on file for this hotel"
+                    : needsRateRequest
+                      ? "Send a B2B rate request email"
+                      : "MAP rate is current — no request needed"
                 }
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none disabled:text-muted-foreground"
               >

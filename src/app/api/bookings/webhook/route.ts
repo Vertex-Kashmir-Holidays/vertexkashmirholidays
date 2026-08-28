@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const booking = await prisma.booking.findUnique({
     where: { razorpayOrderId: orderId },
-    select: { id: true, amount: true, paymentOption: true, status: true },
+    select: { id: true, amount: true, paymentOption: true, status: true, guestEmail: true },
   });
 
   if (!booking) return new Response("OK", { status: 200 });
@@ -70,6 +70,13 @@ export async function POST(req: NextRequest) {
     // the customer account + send credentials/confirmation/receipt emails.
     if (newPaymentId) {
       await finalizeOnlinePayment(booking.id, chargeable, paymentId, newPaymentId);
+      // Consume the booking-checkout email verification — best-effort, a racing
+      // verify-payment call may already have deleted it.
+      if (booking.guestEmail) {
+        await prisma.emailOtp
+          .deleteMany({ where: { email: booking.guestEmail.toLowerCase(), purpose: "BOOKING" } })
+          .catch(() => {});
+      }
     }
   } else if (event.event === "payment.failed") {
     await prisma.booking.update({

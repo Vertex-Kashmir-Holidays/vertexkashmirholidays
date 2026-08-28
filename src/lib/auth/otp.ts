@@ -43,6 +43,13 @@ export const RESET_TOKEN_TTL_MS = RESET_OTP_TTL_MS;
 // would expire before most people finish filling it out.
 export const CAREERS_TOKEN_TTL_MS = 30 * 60 * 1000;
 
+// Same "verified, proof token issued" shape, for the public booking checkout
+// (src/components/booking/BookingForm.tsx). 30 minutes covers OTP verify →
+// reviewing the trip/price → Razorpay checkout, and lines up with the
+// abandoned-PENDING-booking cleanup window (STALE_BOOKING_MINUTES in
+// src/lib/bookings/cleanup.ts) so a token and its order go stale together.
+export const BOOKING_TOKEN_TTL_MS = 30 * 60 * 1000;
+
 // ── OTP generation & hashing ─────────────────────────────────────────────────
 
 /** Cryptographically-secure, zero-padded 6-digit code (000000–999999). */
