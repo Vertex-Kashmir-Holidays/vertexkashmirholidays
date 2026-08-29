@@ -86,11 +86,6 @@ export function RequestRatesDialog({
             placeholder="hotel@example.com"
             className={inputCls}
           />
-          {!defaultEmail && (
-            <p className="text-[11px] text-amber-600 dark:text-amber-400">
-              No email on file for this hotel — enter one to send.
-            </p>
-          )}
         </div>
         <DialogFooter>
           <button

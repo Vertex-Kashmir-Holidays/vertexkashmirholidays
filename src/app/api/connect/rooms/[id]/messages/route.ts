@@ -212,25 +212,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Message must have text or an attachment" }, { status: 400 });
   }
 
-  const message = await prisma.chatMessage.create({
-    data: {
-      roomId,
-      senderId: userId,
-      body: bodyText ?? null,
-      attachmentUrl: attachmentUrl ?? null,
-      attachmentPublicId: attachmentPublicId ?? null,
-      attachmentType: attachmentType ?? null,
-      attachmentName: attachmentName ?? null,
-    },
-    select: msgSelect,
-  });
-
-  // Mark sender's lastReadAt so they don't see their own message as unread
-  await prisma.chatMember.update({
-    where: { roomId_userId: { roomId, userId } },
-    data: { lastReadAt: message.createdAt },
-  });
-
   // Fetch other active members (with names for mention resolution)
   const others = await prisma.chatMember.findMany({
     where: { roomId, userId: { not: userId }, leftAt: null },
@@ -249,11 +230,36 @@ export async function POST(req: NextRequest, { params }: Params) {
   const mentionedSet = new Set(mentionedIds);
 
   const link = `/admin/connect?room=${roomId}`;
-  // Best-effort, matching createNotification()'s own contract elsewhere — a
-  // notification failure must never fail the message send itself (the message
-  // is already persisted above by this point).
-  try {
-    await prisma.notification.createMany({
+
+  // Atomic: the message row, the sender's own read marker, and the recipients'
+  // notifications commit together (VERTE-35), so a mid-request crash can never
+  // leave a stored message nobody was notified about — or notifications
+  // pointing at a message that was never written. Unlike the previous
+  // best-effort notification write, a failure in any of the three steps now
+  // rolls the whole send back and surfaces as an error, which the client
+  // retries; swallowing it inside the transaction is not an option, since an
+  // aborted statement poisons the rest of the transaction anyway.
+  const message = await prisma.$transaction(async (tx) => {
+    const created = await tx.chatMessage.create({
+      data: {
+        roomId,
+        senderId: userId,
+        body: bodyText ?? null,
+        attachmentUrl: attachmentUrl ?? null,
+        attachmentPublicId: attachmentPublicId ?? null,
+        attachmentType: attachmentType ?? null,
+        attachmentName: attachmentName ?? null,
+      },
+      select: msgSelect,
+    });
+
+    // Mark sender's lastReadAt so they don't see their own message as unread
+    await tx.chatMember.update({
+      where: { roomId_userId: { roomId, userId } },
+      data: { lastReadAt: created.createdAt },
+    });
+
+    await tx.notification.createMany({
       data: [
         // Standard new-message notification for every other member
         ...others.map((m) => ({
@@ -273,9 +279,9 @@ export async function POST(req: NextRequest, { params }: Params) {
         })),
       ],
     });
-  } catch (err) {
-    console.error("[connect] message notification createMany failed", err);
-  }
+
+    return created;
+  });
 
   return NextResponse.json(message, { status: 201 });
 }

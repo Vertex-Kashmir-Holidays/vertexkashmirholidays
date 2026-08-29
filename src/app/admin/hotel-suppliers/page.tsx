@@ -12,7 +12,14 @@ export const metadata: Metadata = { title: "Hotel Rates — Admin" };
 export const dynamic = "force-dynamic";
 
 const EMPTY_DATA: HotelData = {
-  property: { location: null, contactPerson: null, phone: null, email: null, mapUrl: null },
+  property: {
+    location: null,
+    contactPerson: null,
+    phone: null,
+    email: null,
+    mapUrl: null,
+    services: null,
+  },
   rate: null,
   rating: null,
 };

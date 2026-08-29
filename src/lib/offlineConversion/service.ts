@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { OfflineConversion, OfflineConversionPlatform } from "@prisma/client";
+import type { Booking, Lead, OfflineConversion, OfflineConversionPlatform } from "@prisma/client";
 import { pickAttribution, type AttributionData } from "@/lib/attribution";
 import type { ConversionEvent, PlatformAdapter } from "./types";
 import { googleAdapter } from "./adapters/google";
@@ -16,6 +16,13 @@ const ADAPTERS: Record<OfflineConversionPlatform, PlatformAdapter> = {
 };
 
 const MAX_ATTEMPTS = 5;
+
+/**
+ * The record a queue row's event is built from. enqueueForLead/enqueueForBooking
+ * have already loaded it before the per-platform loop, so they hand it down to
+ * buildEvent() rather than making it re-read the same row once per platform.
+ */
+type ConversionSource = { lead: Lead } | { booking: Booking };
 
 function platformsFor(attribution: AttributionData): OfflineConversionPlatform[] {
   const platforms: OfflineConversionPlatform[] = [];
@@ -52,7 +59,7 @@ export async function enqueueForLead(leadId: string): Promise<void> {
     where: { leadId, platform: { in: platforms }, status: "PENDING" },
   });
   for (const row of rows) {
-    await processRow(row);
+    await processRow(row, { lead });
   }
 }
 
@@ -96,7 +103,7 @@ export async function enqueueForBooking(bookingId: string): Promise<void> {
     where: { bookingId, platform: { in: platforms }, status: "PENDING" },
   });
   for (const row of rows) {
-    await processRow(row);
+    await processRow(row, { booking });
   }
 }
 
@@ -106,14 +113,23 @@ export async function enqueueForBooking(bookingId: string): Promise<void> {
  * conversions, the Booking for direct website bookings. This is the one place
  * that implements "Lead-based bookings use Lead attribution; direct bookings
  * use Booking attribution."
+ *
+ * `source` is the originating record when the caller already has it loaded;
+ * it is used as-is instead of re-reading the same row from the database.
  */
-async function buildEvent(row: {
-  id: string;
-  leadId: string | null;
-  bookingId: string | null;
-}): Promise<ConversionEvent | null> {
+async function buildEvent(
+  row: {
+    id: string;
+    leadId: string | null;
+    bookingId: string | null;
+  },
+  source?: ConversionSource,
+): Promise<ConversionEvent | null> {
   if (row.leadId) {
-    const lead = await prisma.lead.findUnique({ where: { id: row.leadId } });
+    const lead =
+      source && "lead" in source
+        ? source.lead
+        : await prisma.lead.findUnique({ where: { id: row.leadId } });
     if (!lead) return null;
     return {
       attribution: pickAttribution(lead),
@@ -128,7 +144,10 @@ async function buildEvent(row: {
     };
   }
   if (row.bookingId) {
-    const booking = await prisma.booking.findUnique({ where: { id: row.bookingId } });
+    const booking =
+      source && "booking" in source
+        ? source.booking
+        : await prisma.booking.findUnique({ where: { id: row.bookingId } });
     if (!booking) return null;
     return {
       attribution: pickAttribution(booking),
@@ -150,10 +169,14 @@ async function buildEvent(row: {
  * and persists the outcome. Shared by the immediate enqueue-time attempt
  * (enqueueForLead/enqueueForBooking) and processPending() (the cron sweep —
  * currently unregistered on Hobby, kept intact for when Pro is available).
+ * `source` is forwarded to buildEvent() — see there.
  */
-async function processRow(row: OfflineConversion): Promise<"sent" | "failed"> {
+async function processRow(
+  row: OfflineConversion,
+  source?: ConversionSource,
+): Promise<"sent" | "failed"> {
   const adapter = ADAPTERS[row.platform];
-  const event = await buildEvent(row);
+  const event = await buildEvent(row, source);
 
   if (!event || !adapter.isConfigured()) {
     await prisma.offlineConversion.update({

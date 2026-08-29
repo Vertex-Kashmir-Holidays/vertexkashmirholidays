@@ -28,6 +28,7 @@ const schema = z.object({
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   mapUrl: z.string().optional(),
   rating: z.string().optional(),
+  services: z.string().optional(),
   validTo: z.string().optional(),
   ep: money,
   cp: money,
@@ -72,6 +73,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       email: "",
       mapUrl: "",
       rating: "",
+      services: "",
       validTo: "",
       ep: "",
       cp: "",
@@ -97,6 +99,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
           phone: data.phone || null,
           email: data.email || null,
           mapUrl: data.mapUrl || null,
+          services: data.services || null,
         },
         rating: data.rating || null,
         rate: {
@@ -181,6 +184,16 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
           <div className="sm:col-span-2">
             <label className={labelCls}>Rating</label>
             <input {...register("rating")} className={inputCls} placeholder="e.g. 4.7★ / 2,698 reviews" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Services</label>
+            <textarea
+              {...register("services")}
+              rows={4}
+              className={inputCls}
+              placeholder={"One per line, e.g.\nCentral heating\nCentral A/C\nBuffet System"}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">One service per line.</p>
           </div>
         </div>
       </div>
