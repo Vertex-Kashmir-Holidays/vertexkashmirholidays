@@ -109,13 +109,51 @@ const leadServerSchema = leadInputSchema.extend({
   travellers: z.coerce.number().int().positive().max(99).optional(),
 });
 
+const TRANSPORT_MODE_LABEL: Record<string, string> = {
+  FLIGHT: "Flight",
+  TRAIN: "Train",
+  EITHER: "Flight or Train",
+};
+
+// Mirrors TransportAssistancePlacement in TransportAssistanceBanner.tsx —
+// kept as a plain string on the wire (not a shared enum import) since this is
+// a server route and that type lives in a "use client" component.
+const PLACEMENT_LABEL: Record<string, string> = {
+  "tour-detail": "Tour detail page",
+  homepage: "Homepage",
+  "tour-listing": "Tour listing page",
+  "things-to-do": "Things To Do page",
+  adventures: "Adventures page",
+  "travel-stories": "Travel Stories page",
+  "city-page": "Origin-city SEO page",
+};
+
 // Builds the lead's notes from a free-text message plus any page context, so the
 // CRM shows what the visitor was looking at when they enquired.
 function composeNotes(
   message: string | undefined,
-  context: { tourName?: string; destinationName?: string } | undefined,
+  context:
+    | {
+        tourName?: string;
+        destinationName?: string;
+        fromCity?: string;
+        transportMode?: string;
+        returnDate?: string;
+        placement?: string;
+      }
+    | undefined,
 ): string | undefined {
   const parts: string[] = [];
+  // Flight/train quote requests have no live fare API — flag this clearly at
+  // the top of the notes so sales knows to check Akbar/Riya/TripJack.
+  if (context?.fromCity || context?.transportMode) {
+    parts.push("✈️ Flight/Train Quote Request");
+    if (context.fromCity) parts.push(`From: ${context.fromCity}`);
+    if (context.transportMode)
+      parts.push(`Mode: ${TRANSPORT_MODE_LABEL[context.transportMode] ?? context.transportMode}`);
+    if (context.returnDate) parts.push(`Return: ${context.returnDate}`);
+    if (context.placement) parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
+  }
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
   if (message) parts.push(message);
@@ -195,6 +233,8 @@ export async function POST(req: NextRequest) {
   // Context-supplied date/travellers fill in when the top-level fields are absent.
   const effectiveDate = travelDate ?? context?.travelDate;
   const effectiveTravellers = travellers ?? context?.travellers;
+  // Flight/train quote requests only — reuses Lead.endDate for the return date.
+  const effectiveReturnDate = context?.returnDate;
   // Free-text page tag for campaign attribution (the enum captures the channel).
   const sourcePage = source;
 
@@ -257,6 +297,7 @@ export async function POST(req: NextRequest) {
       sourcePage,
       adults: effectiveTravellers ?? 1,
       startDate: effectiveDate ? new Date(effectiveDate) : undefined,
+      endDate: effectiveReturnDate ? new Date(effectiveReturnDate) : undefined,
       notes: composeNotes(message, context),
       ...buildAttributionCreateInput(attribution, req),
     },
