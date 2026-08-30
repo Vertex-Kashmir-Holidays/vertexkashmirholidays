@@ -199,13 +199,13 @@ export function leadNotificationHtml(data: LeadNotificationData): string {
     : "";
 
   const content = `          <tr>
-           <td style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0;color:${BRAND};font-size:20px;font-weight:700">New Lead</h1>
              <p style="margin:6px 0 0;color:#666666;font-size:13px;line-height:1.5">A new enquiry was submitted on vertexkashmirholidays.com.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:4px 28px 28px">
+           <td class="vk-px" style="padding:4px 28px 28px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Name", data.name)}
 ${detailRow("Phone", data.phone)}
@@ -223,6 +223,120 @@ ${data.leadId ? detailRow("Lead ID", data.leadId) : ""}
   return emailShell({
     title: "New Lead — Vertex Kashmir Holidays",
     preheader: `New lead from ${escapeHtml(data.name)} (${escapeHtml(data.phone)})`,
+    contentHtml: content,
+  });
+}
+
+// ── Lead confirmation (customer-facing) ──────────────────────────────────────
+// Sent to the visitor themselves, only when they gave an email — acknowledges
+// the enquiry, recaps exactly what they submitted (so they can spot a typo'd
+// date/city and reply to correct it), and gives them our business details up
+// front rather than making them wait for a callback to get basic contact info.
+
+export interface LeadConfirmationData {
+  name: string;
+  phone: string;
+  email: string;
+  travelDate?: string;
+  travellers?: number;
+  /** Same composed notes shown to staff (tour/destination/flight-train
+   *  context + any free-text message) — one source of truth for "what they
+   *  filled in," so this can never drift from what sales sees. */
+  notes?: string;
+  submittedAt?: string;
+  business: {
+    siteName: string;
+    phone?: string | null;
+    email?: string | null;
+    whatsappNumber?: string | null;
+    address?: string | null;
+    tourismRegNumber?: string | null;
+  };
+}
+
+export function leadConfirmationText(data: LeadConfirmationData): string {
+  const { text: waText } = resolveWhatsApp(data.business.whatsappNumber);
+  const lines = [
+    `Thank You For Your Enquiry — ${data.business.siteName}`,
+    "",
+    `Hi ${data.name}, thanks for reaching out! We've received your enquiry and one of our travel`,
+    "experts will get back to you shortly — usually within a few hours.",
+    "",
+    "Here's what you shared with us:",
+    `  Name: ${data.name}`,
+    `  Phone: ${data.phone}`,
+    `  Email: ${data.email}`,
+  ];
+  if (data.travelDate) lines.push(`  Travel Date: ${data.travelDate}`);
+  if (data.travellers) lines.push(`  Travellers: ${data.travellers}`);
+  if (data.notes) lines.push(`  Details: ${data.notes.replace(/\n/g, " · ")}`);
+  lines.push(
+    "",
+    `If anything above needs correcting, just reply to this email or message us on WhatsApp.`,
+    "",
+    `— ${data.business.siteName}`,
+  );
+  if (data.business.phone) lines.push(`Phone: ${data.business.phone}`);
+  if (data.business.email) lines.push(`Email: ${data.business.email}`);
+  lines.push(`WhatsApp: ${waText}`);
+  if (data.business.address) lines.push(`Address: ${data.business.address}`);
+  if (data.business.tourismRegNumber)
+    lines.push(`J&K Tourism Reg.: ${data.business.tourismRegNumber}`);
+  return lines.join("\n");
+}
+
+export function leadConfirmationHtml(data: LeadConfirmationData): string {
+  const { href: waHref, text: waText } = resolveWhatsApp(data.business.whatsappNumber);
+
+  const notesRow = data.notes
+    ? `          <tr>
+           <td style="padding:10px 12px;border-bottom:1px solid #eeeeee;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#666666;vertical-align:top"><strong>Details</strong></td>
+           <td style="padding:10px 12px;border-bottom:1px solid #eeeeee;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#222222;vertical-align:top">${escapeHtml(data.notes).replace(/\n/g, "<br />")}</td>
+         </tr>`
+    : "";
+
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Thank You For Your Enquiry</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Hi ${escapeHtml(data.name)}, thanks for reaching out! We've received your enquiry and one of our travel experts will get back to you shortly — usually within a few hours.</p>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:14px 28px 4px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:0 0 6px;color:${BRAND};font-size:13px;font-weight:700">Here's what you shared with us</p>
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Name", data.name)}
+${detailRow("Phone", data.phone)}
+${detailRow("Email", data.email)}
+${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
+${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
+${notesRow}
+             </table>
+             <p style="margin:10px 0 0;color:#9aa0a6;font-size:12px;line-height:1.5">Spot something that needs correcting? Just reply to this email or message us on WhatsApp.</p>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:18px 28px 28px">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:#f4f7fb;border:1px solid #e6e8eb;border-radius:12px">
+               <tr>
+                 <td style="padding:18px 20px;font-family:Arial,Helvetica,sans-serif">
+                   <p style="margin:0 0 4px;color:${BRAND};font-size:14px;font-weight:700">${escapeHtml(data.business.siteName)}</p>
+                   <p style="margin:0 0 10px;color:#444444;font-size:12.5px;line-height:1.7">
+                     ${data.business.phone ? `Phone: ${escapeHtml(data.business.phone)}<br />` : ""}
+                     ${data.business.email ? `Email: ${escapeHtml(data.business.email)}<br />` : ""}
+                     ${data.business.address ? `Address: ${escapeHtml(data.business.address)}<br />` : ""}
+                     ${data.business.tourismRegNumber ? `J&amp;K Tourism Reg.: ${escapeHtml(data.business.tourismRegNumber)}` : ""}
+                   </p>
+                   <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
+                 </td>
+               </tr>
+             </table>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: `Thank You For Your Enquiry — ${data.business.siteName}`,
+    preheader: `We've received your enquiry, ${escapeHtml(data.name)} — our team will be in touch shortly.`,
     contentHtml: content,
   });
 }
@@ -279,20 +393,20 @@ export function leadAssignedText(data: LeadAssignmentData): string {
 
 export function leadAssignedHtml(data: LeadAssignmentData): string {
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">A New Lead Has Been Assigned to You</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Hello ${escapeHtml(data.assigneeName)}, ${escapeHtml(data.actorName)} has assigned the following lead to you. Please review the details and follow up promptly.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 4px">
+           <td class="vk-px" style="padding:8px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${leadFactsRows(data)}
              </table>
            </td>
          </tr>
          <tr>
-           <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <a href="${escapeHtml(data.leadUrl)}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">View Lead</a>
            </td>
          </tr>`;
@@ -318,13 +432,13 @@ export function leadUnassignedText(data: LeadAssignmentData): string {
 
 export function leadUnassignedHtml(data: LeadAssignmentData): string {
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">A Lead Has Been Reassigned</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Hello ${escapeHtml(data.assigneeName)}, the following lead has been reassigned by ${escapeHtml(data.actorName)} and is no longer assigned to you. No further action is required from your side.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 28px">
+           <td class="vk-px" style="padding:8px 28px 28px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${leadFactsRows(data)}
              </table>
@@ -334,6 +448,108 @@ ${leadFactsRows(data)}
   return emailShell({
     title: "A lead has been reassigned",
     preheader: `${escapeHtml(data.leadName)} is no longer assigned to you`,
+    contentHtml: content,
+  });
+}
+
+// ── Booking request received (pre-payment) ───────────────────────────────────
+// Sent the moment a guest submits their booking details and a PENDING Booking +
+// Razorpay order are created — BEFORE payment. Deliberately distinct from
+// bookingConfirmationHtml below: this must never say "confirmed," "booked," or
+// imply the trip is secured, since payment can still fail or be abandoned. It
+// exists purely to acknowledge receipt and recap what they submitted, the same
+// way the lead-confirmation email does for enquiries.
+
+interface BookingRequestReceivedData {
+  guestName: string;
+  tourTitle: string;
+  travelDate: string;
+  travellers: number;
+  totalAmount: number;
+  payableNow: number;
+  paymentOptionLabel: string; // e.g. "10% Advance" or "Full Payment"
+  whatsappNumber?: string | null;
+  /** How long the PENDING order stays open before the stale-booking sweep
+   *  auto-cancels it (STALE_BOOKING_MINUTES in src/lib/bookings/cleanup.ts) —
+   *  passed in rather than hardcoded so this copy can never drift from what
+   *  the system actually does. */
+  expiryMinutes: number;
+}
+
+export function bookingRequestReceivedText(data: BookingRequestReceivedData): string {
+  const { text: waText } = resolveWhatsApp(data.whatsappNumber);
+  return [
+    "Booking Request Received — Vertex Kashmir Holidays",
+    "",
+    `Dear ${data.guestName}, we've received your booking request. Here's what you submitted:`,
+    "",
+    `Tour: ${data.tourTitle}`,
+    `Travel Date: ${data.travelDate}`,
+    `Travellers: ${data.travellers}`,
+    `Total Amount: ${inr(data.totalAmount)}`,
+    `Payment Option: ${data.paymentOptionLabel}`,
+    `Payable Now: ${inr(data.payableNow)}`,
+    "",
+    "This is a REQUEST, not a confirmation — your seats are not yet reserved,",
+    "and our team will not reach out until your payment is verified.",
+    "",
+    `If payment isn't completed within ${data.expiryMinutes} minutes, this request is`,
+    "automatically cancelled and no charge is made — you're welcome to start again",
+    "anytime.",
+    "",
+    "Once payment is confirmed, you'll automatically receive your booking",
+    "confirmation and invoice by email, and our team will be in touch.",
+    "",
+    "If you haven't finished paying yet, please return to checkout, or message us",
+    "on WhatsApp if you ran into any trouble.",
+    `WhatsApp us: ${waText}`,
+  ].join("\n");
+}
+
+export function bookingRequestReceivedHtml(data: BookingRequestReceivedData): string {
+  const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
+
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Booking Request Received</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, we've received your booking request. Here's what you submitted:</p>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:8px 28px 4px">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Tour", data.tourTitle)}
+${detailRow("Travel Date", data.travelDate)}
+${detailRow("Travellers", String(data.travellers))}
+${detailRow("Total Amount", inr(data.totalAmount))}
+${detailRow("Payment Option", data.paymentOptionLabel)}
+${detailRow("Payable Now", inr(data.payableNow))}
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:14px 28px 8px">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:#fff8ec;border:1px solid #f3e2bd;border-radius:12px">
+               <tr>
+                 <td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif">
+                   <p style="margin:0 0 8px;color:#7a5c1e;font-size:12.5px;font-weight:700">This is a request, not a confirmation</p>
+                   <p style="margin:0 0 8px;color:#5c4a26;font-size:12.5px;line-height:1.6">Your seats are not yet reserved, and our team will not reach out until your payment is verified.</p>
+                   <p style="margin:0;color:#5c4a26;font-size:12.5px;line-height:1.6">If payment isn't completed within <strong>${data.expiryMinutes} minutes</strong>, this request is automatically cancelled and no charge is made — you're welcome to start again anytime.</p>
+                 </td>
+               </tr>
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:0 0 16px;color:#666666;font-size:12.5px;line-height:1.6">Once payment is confirmed, you'll automatically receive your booking confirmation and invoice by email. If you haven't finished paying yet, please return to checkout, or message us on WhatsApp if you ran into any trouble.</p>
+             <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: `Booking Request Received — ${data.tourTitle}`,
+    preheader: `We've received your booking request for ${escapeHtml(data.tourTitle)} — complete payment within ${data.expiryMinutes} minutes to secure your seats.`,
     contentHtml: content,
   });
 }
@@ -374,13 +590,13 @@ export function bookingConfirmationHtml(data: BookingData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
 
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Booking Confirmed</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, your booking is confirmed. Here are your details:</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 4px">
+           <td class="vk-px" style="padding:8px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Tour", data.tourTitle)}
 ${detailRow("Travel Date", data.travelDate)}
@@ -391,7 +607,7 @@ ${detailRow("Payment ID", data.razorpayPayId)}
            </td>
          </tr>
          <tr>
-           <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0 0 16px;color:#444444;font-size:13px;line-height:1.6">Our team will contact you within 24 hours with your complete itinerary details.</p>
              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
            </td>
@@ -438,13 +654,13 @@ export function staffBookingNotificationText(data: StaffBookingNotificationData)
 export function staffBookingNotificationHtml(data: StaffBookingNotificationData): string {
   const adminUrl = `${SITE_URL}/admin/bookings/${data.bookingId}/services`;
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">New Booking Received</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">A new booking has been confirmed on the website.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 4px">
+           <td class="vk-px" style="padding:8px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Guest", data.guestName)}
 ${detailRow("Phone", data.guestPhone)}
@@ -458,7 +674,7 @@ ${detailRow("Payment Option", data.paymentOption)}
            </td>
          </tr>
          <tr>
-           <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <a href="${escapeHtml(adminUrl)}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">View Booking in Admin</a>
            </td>
          </tr>`;
@@ -573,13 +789,13 @@ export function bookingInvoiceHtml(data: BookingInvoiceData): string {
     .join("");
 
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Booking Summary</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, here is your confirmed booking summary. Ref: <strong>${escapeHtml(data.bookingRef)}</strong></p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 4px">
+           <td class="vk-px" style="padding:8px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
 ${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
@@ -587,14 +803,14 @@ ${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
            </td>
          </tr>
          <tr>
-           <td style="padding:14px 28px 0;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:14px 28px 0;font-family:Arial,Helvetica,sans-serif">
              <h2 style="margin:0 0 10px;color:${BRAND};font-size:14px">Your Package Includes</h2>
              ${serviceBlocks || '<p style="color:#9aa0a6;font-size:12px">Service details will be shared shortly.</p>'}
              ${inclusionItems ? `<h2 style="margin:6px 0 6px;color:${BRAND};font-size:14px">Additional Inclusions</h2><ul style="margin:0;padding-left:18px">${inclusionItems}</ul>` : ""}
            </td>
          </tr>
          <tr>
-           <td style="padding:12px 28px 4px">
+           <td class="vk-px" style="padding:12px 28px 4px">
              <h2 style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;color:${BRAND};font-size:14px">Price Summary</h2>
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Total Booking Amount", inr(data.bookingAmount))}
@@ -607,12 +823,12 @@ ${detailRow("Status", data.status)}
            </td>
          </tr>
          <tr>
-           <td style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0;color:#666666;font-size:12px;line-height:1.6">📎 A professionally formatted PDF summary is attached for your records.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:12px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:12px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
            </td>
          </tr>`;
@@ -674,13 +890,13 @@ export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
 
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Payment Receipt</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.customerName)}, thank you — we have received your payment. Receipt: <strong>${escapeHtml(data.invoiceRef)}</strong></p>
            </td>
          </tr>
          <tr>
-           <td align="center" style="padding:14px 28px 4px">
+           <td align="center" class="vk-px" style="padding:14px 28px 4px">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                <tr>
                  <td align="center" style="padding:16px 30px;border-radius:12px;background:${BRAND}">
@@ -692,7 +908,7 @@ export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
            </td>
          </tr>
          <tr>
-           <td style="padding:12px 28px 4px">
+           <td class="vk-px" style="padding:12px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Booking Ref", data.bookingRef)}
 ${detailRow("Payment Type", data.type)}
@@ -705,12 +921,12 @@ ${detailRow("Status", data.status)}
            </td>
          </tr>
          <tr>
-           <td style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0;color:#666666;font-size:12px;line-height:1.6">📎 A PDF receipt is attached for your records.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:12px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:12px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
            </td>
          </tr>`;
@@ -765,13 +981,13 @@ export function driverDetailsHtml(data: DriverDetailsEmailData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
 
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">${data.updated ? "Updated Driver &amp; Vehicle Details" : "Your Driver &amp; Vehicle Details"}</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.guestName)}, ${data.updated ? "your driver and vehicle details have been updated. Here is the latest information for your trip." : "the driver and vehicle for your upcoming trip have been assigned. Please keep these details handy."}</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 4px">
+           <td class="vk-px" style="padding:8px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${data.tourTitle ? detailRow("Tour", data.tourTitle) : ""}
 ${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
@@ -783,7 +999,7 @@ ${detailRow("Vehicle Number", data.vehicleNumber)}
            </td>
          </tr>
          <tr>
-           <td style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0 0 16px;color:#444444;font-size:13px;line-height:1.6">Your driver will reach out before pickup. If you have any questions, we&apos;re a message away.</p>
              <a href="${waHref}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">WhatsApp us: ${escapeHtml(waText)}</a>
            </td>
@@ -865,7 +1081,7 @@ export function bookingPortalSectionHtml(bookingId: string): string {
     }">${escapeHtml(label)}</a>`;
 
   return `          <tr>
-           <td style="padding:4px 28px 28px">
+           <td class="vk-px" style="padding:4px 28px 28px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:#f4f7fb;border:1px solid #e6e8eb;border-radius:12px">
                <tr>
                  <td style="padding:18px 20px;font-family:Arial,Helvetica,sans-serif">
@@ -905,7 +1121,7 @@ export function brandLogoUrl(): string {
 function brandHeader(): string {
   const logo = brandLogoUrl();
   return `          <tr>
-           <td style="padding:20px 28px;background:${BRAND};border-radius:14px 14px 0 0">
+           <td class="vk-px" style="padding:20px 28px;background:${BRAND};border-radius:14px 14px 0 0">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                <tr>
                  <td style="vertical-align:middle;padding-right:10px">
@@ -943,12 +1159,26 @@ function emailShell(opts: {
  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
  <meta name="color-scheme" content="light dark" />
  <title>${escapeHtml(opts.title)}</title>
+ <style>
+   /* Desktop paddings (28px/32px content gutters, 16px outer) are too wide on
+      a phone screen — they squeeze the label/value tables until text wraps
+      awkwardly. On narrow screens, shrink to a single small gutter close to
+      what the mail app's own message view already gives, rather than
+      stacking our padding on top of it. !important is required: this must
+      beat the inline styles above, and only clients that support <style> at
+      all honor media queries anyway (legacy Outlook just keeps the desktop
+      values, which is an acceptable fallback there). */
+   @media only screen and (max-width: 480px) {
+     .vk-outer { padding-left: 10px !important; padding-right: 10px !important; }
+     .vk-px { padding-left: 16px !important; padding-right: 16px !important; }
+   }
+ </style>
 </head>
 <body style="margin:0;padding:0;background:#f4f5f7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%">
  <div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:#f4f5f7">${opts.preheader}</div>
  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7">
    <tr>
-     <td align="center" style="padding:32px 16px">
+     <td class="vk-outer" align="center" style="padding:32px 16px">
        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:${maxWidth}px;background:#ffffff;border-radius:14px;border:1px solid #e6e8eb">
 ${brandHeader()}
 ${opts.contentHtml}
@@ -1010,7 +1240,7 @@ export function otpVerificationHtml(data: { name: string; code: string; ttlMinut
   const preheader = `Your verification code is ${code} (expires in ${data.ttlMinutes} minutes).`;
 
   const content = `          <tr>
-           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Verify your email</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
                Hi ${name}, use the verification code below to finish creating your
@@ -1019,16 +1249,16 @@ export function otpVerificationHtml(data: { name: string; code: string; ttlMinut
            </td>
          </tr>
          <tr>
-           <td align="center" style="padding:8px 32px 8px">
+           <td align="center" class="vk-px" style="padding:8px 32px 8px">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                <tr>
-                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+                 <td align="center" class="vk-px" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
                </tr>
              </table>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
                This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
                used only once. If you didn't request this, you can safely ignore this
@@ -1072,7 +1302,7 @@ export function passwordResetOtpHtml(data: { name: string; code: string; ttlMinu
   const preheader = `Your password reset code is ${code} (expires in ${data.ttlMinutes} minutes).`;
 
   const content = `          <tr>
-           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Reset your password</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
                Hi ${name}, use the verification code below to reset your
@@ -1081,16 +1311,16 @@ export function passwordResetOtpHtml(data: { name: string; code: string; ttlMinu
            </td>
          </tr>
          <tr>
-           <td align="center" style="padding:8px 32px 8px">
+           <td align="center" class="vk-px" style="padding:8px 32px 8px">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                <tr>
-                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+                 <td align="center" class="vk-px" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
                </tr>
              </table>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
                This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
                used only once. If you didn't request this, you can safely ignore this
@@ -1134,7 +1364,7 @@ export function careersOtpHtml(data: { code: string; ttlMinutes: number }) {
   const preheader = `Your application verification code is ${code} (expires in ${data.ttlMinutes} minutes).`;
 
   const content = `          <tr>
-           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Verify your email</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
                Use the verification code below to confirm your email address and
@@ -1143,16 +1373,16 @@ export function careersOtpHtml(data: { code: string; ttlMinutes: number }) {
            </td>
          </tr>
          <tr>
-           <td align="center" style="padding:8px 32px 8px">
+           <td align="center" class="vk-px" style="padding:8px 32px 8px">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                <tr>
-                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+                 <td align="center" class="vk-px" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
                </tr>
              </table>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
                This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
                used only once. If you didn't request this, you can safely ignore this
@@ -1196,7 +1426,7 @@ export function bookingOtpHtml(data: { code: string; ttlMinutes: number }) {
   const preheader = `Your booking verification code is ${code} (expires in ${data.ttlMinutes} minutes).`;
 
   const content = `          <tr>
-           <td style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:32px 32px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 12px;color:${BRAND};font-size:20px;font-weight:700">Verify your email</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">
                Use the verification code below to confirm your email address and
@@ -1205,16 +1435,16 @@ export function bookingOtpHtml(data: { code: string; ttlMinutes: number }) {
            </td>
          </tr>
          <tr>
-           <td align="center" style="padding:8px 32px 8px">
+           <td align="center" class="vk-px" style="padding:8px 32px 8px">
              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                <tr>
-                 <td align="center" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
+                 <td align="center" class="vk-px" style="padding:16px 28px;border-radius:12px;background:${BRAND};color:#ffffff;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:8px">${code}</td>
                </tr>
              </table>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:16px 0 0;color:#666666;font-size:13px;line-height:1.6">
                This code expires in <strong>${data.ttlMinutes} minutes</strong> and can be
                used only once. If you didn't request this, you can safely ignore this
@@ -1269,13 +1499,13 @@ export function careersApplicationText(data: CareersApplicationData): string {
 
 export function careersApplicationHtml(data: CareersApplicationData): string {
   const content = `          <tr>
-           <td style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 12px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0;color:${BRAND};font-size:20px;font-weight:700">New Job Application</h1>
              <p style="margin:6px 0 0;color:#666666;font-size:13px;line-height:1.5">A candidate applied for <strong>${escapeHtml(data.jobTitle)}</strong> on vertexkashmirholidays.com.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:4px 28px 28px">
+           <td class="vk-px" style="padding:4px 28px 28px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Name", data.fullName)}
 ${detailRow("Email", data.email)}
@@ -1351,13 +1581,13 @@ export function customerCredentialsText(data: CustomerCredentialsData): string {
 export function customerCredentialsHtml(data: CustomerCredentialsData): string {
   const loginUrl = resolveLoginUrl(data.loginUrl);
   const content = `          <tr>
-           <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">Your account is ready</h1>
              <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.name)}, an account has been created for you so you can track your bookings, payments and trip details online.</p>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 4px">
+           <td class="vk-px" style="padding:8px 28px 4px">
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${detailRow("Email", data.email)}
 ${detailRow("Temporary Password", data.tempPassword)}
@@ -1365,12 +1595,12 @@ ${detailRow("Temporary Password", data.tempPassword)}
            </td>
          </tr>
          <tr>
-           <td style="padding:18px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:18px 28px 8px;font-family:Arial,Helvetica,sans-serif">
              <a href="${loginUrl}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">Sign in to your account</a>
            </td>
          </tr>
          <tr>
-           <td style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+           <td class="vk-px" style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">For your security, please <strong>change this password</strong> after your first login.</p>
            </td>
          </tr>`;

@@ -29,6 +29,8 @@ export const LEAD_SOURCES = [
   "reviews",
   "tour-category",
   "faq",
+  "flight-train-quote",
+  "tour-origin-city",
 ] as const;
 
 export type LeadSourcePage = (typeof LEAD_SOURCES)[number];
@@ -77,6 +79,16 @@ export const leadContextSchema = z.object({
   destinationName: z.string().max(200).optional(),
   travelDate: z.string().max(40).optional(),
   travellers: z.coerce.number().int().positive().max(99).optional(),
+  // Flight/train quote requests only (source: "flight-train-quote") — we have
+  // no live fare API, so this is what sales needs to check Akbar/Riya/TripJack
+  // and call the customer back with real options.
+  fromCity: z.string().max(100).optional(),
+  transportMode: z.enum(["FLIGHT", "TRAIN", "EITHER"]).optional(),
+  returnDate: z.string().max(40).optional(),
+  // Which on-page instance of the transport-assistance banner this came from
+  // (homepage, tour detail, listing sidebar, etc.) — lets sales and analytics
+  // tell placements apart even though they all share source "flight-train-quote".
+  placement: z.string().max(40).optional(),
 });
 
 export type LeadContext = z.infer<typeof leadContextSchema>;

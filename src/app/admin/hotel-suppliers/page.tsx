@@ -45,6 +45,8 @@ export default async function AdminHotelSuppliersPage() {
       destination: row.destination,
       category: row.category,
       isActive: row.isActive,
+      recommended: row.recommended,
+      lastRateRequestSentAt: row.lastRateRequestSentAt ? row.lastRateRequestSentAt.toISOString() : null,
       data: parsed.success ? parsed.data : EMPTY_DATA,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

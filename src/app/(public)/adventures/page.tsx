@@ -9,6 +9,7 @@ import {
 } from '@/components/seo/JsonLd';
 import { CampaignsHeroSection } from '@/components/campaign/CampaignsHeroSection';
 import { CampaignsPageClient } from '@/components/campaign/CampaignsPageClient';
+import { TransportAssistanceBanner } from '@/components/tours/TransportAssistanceBanner';
 import type { CampaignListItemData, CampaignTier } from '@/types/campaign';
 
 export const revalidate = 300;
@@ -111,6 +112,9 @@ export default async function CampaignsPage() {
         stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
       />
       <CampaignsPageClient campaigns={campaigns} />
+      <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">
+        <TransportAssistanceBanner placement="adventures" />
+      </div>
     </div>
   );
 }

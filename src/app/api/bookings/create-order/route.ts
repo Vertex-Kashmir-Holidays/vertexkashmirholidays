@@ -1,158 +1,328 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { sendMail, bookingRequestReceivedHtml, bookingRequestReceivedText } from "@/lib/mail";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
+import { computeChargeable, round2, type PaymentOption } from "@/lib/bookings/finance";
 import { logPaymentAudit } from "@/lib/bookings/audit";
-import { recordOnlinePayment } from "@/lib/bookings/online-payment";
-import { finalizeOnlinePayment } from "@/lib/bookings/notify";
-import Razorpay from "razorpay";
+import { cleanupStalePendingBookings, STALE_BOOKING_MINUTES } from "@/lib/bookings/cleanup";
+import { BOOKING_TOKEN_TTL_MS } from "@/lib/auth/otp";
+import { attributionSchema } from "@/lib/attribution";
+import { buildAttributionCreateInput } from "@/lib/attribution.server";
 import { env } from "@/lib/env";
+import { NEXT_PUBLIC_RAZORPAY_KEY_ID } from "@/lib/env.public";
 
-const verifySchema = z.object({
-  razorpay_order_id: z.string(),
-  razorpay_payment_id: z.string(),
-  razorpay_signature: z.string(),
+const PAYMENT_OPTION_LABEL: Record<PaymentOption, string> = {
+  ADVANCE: "10% Advance",
+  FULL: "Full Payment",
+};
+
+// Booking business rules:
+//   • A booking's travel date must be at least MIN_LEAD_DAYS away (lead time).
+//   • A customer's next tour can only start BOOKING_GAP_DAYS after an existing
+//     active booking's start date (trips are kept apart).
+const MIN_LEAD_DAYS = 4;
+const MAX_BOOKING_MONTHS = 6;
+const BOOKING_GAP_DAYS = 15;
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+const orderSchema = z.object({
+  tourId: z.string().min(1),
+  guestName: z.string().min(1),
+  guestEmail: z.string().email(),
+  guestPhone: z.string().min(6),
+  // Proof this browser session completed the /api/bookings/request-otp →
+  // verify-otp email-verification step for guestEmail (see verify-otp/route.ts).
+  verificationToken: z.string().min(1),
+  travelDate: z.string().min(1),
+  travellers: z.coerce.number().int().positive().max(50),
+  // "ADVANCE" pays 10% now; "FULL" pays 100%. Server recomputes the amount.
+  paymentOption: z.enum(["ADVANCE", "FULL"]).default("FULL"),
+  address: z.string().trim().max(300).optional(),
+  requirements: z.string().trim().max(1000).optional(),
+  // Direct-booking journey: no Lead exists, so attribution is captured here
+  // directly (see src/lib/attribution.ts).
+  attribution: attributionSchema.optional(),
 });
-
-// Best-effort fetch of the gateway payment for richer metadata (method, bank…).
-// Never throws — the signature has already proven authenticity.
-async function fetchGatewayMeta(
-  paymentId: string,
-): Promise<{ method: string | null; metadata: string | null }> {
-  try {
-    if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_SECRET) {
-      return { method: null, metadata: null };
-    }
-    const razorpay = new Razorpay({
-      key_id: env.RAZORPAY_KEY_ID,
-      key_secret: env.RAZORPAY_SECRET,
-    });
-    const p = (await razorpay.payments.fetch(paymentId)) as unknown as Record<string, unknown>;
-    const method = typeof p.method === "string" ? p.method : null;
-    const metadata = JSON.stringify({
-      method: p.method ?? null,
-      bank: p.bank ?? null,
-      wallet: p.wallet ?? null,
-      vpa: p.vpa ?? null,
-      card_id: p.card_id ?? null,
-      status: p.status ?? null,
-    });
-    return { method, metadata };
-  } catch {
-    return { method: null, metadata: null };
-  }
-}
 
 export async function POST(req: NextRequest) {
   const ip = clientIp(req);
 
-  // Throttle verification attempts (slows brute-forcing of signatures).
-  const limit = await rateLimit(`booking:verify:${ip}`, 20, "10 m");
+  // Rate-limit order creation per IP (defence against abuse / accidental spam).
+  const limit = await rateLimit(`booking:order:${ip}`, 10, "10 m");
   if (!limit.success) {
-    return tooManyRequests(limit, "Too many attempts.");
+    return tooManyRequests(limit, "Too many attempts. Please try again in a little while.");
   }
 
   const body = await req.json().catch(() => null);
-  const parsed = verifySchema.safeParse(body);
+  const parsed = orderSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Validation failed" },
+      { status: 400 },
+    );
   }
 
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = parsed.data;
+  const {
+    tourId,
+    guestName,
+    guestEmail,
+    guestPhone,
+    verificationToken,
+    travelDate,
+    travellers,
+    paymentOption,
+    address,
+    requirements,
+    attribution,
+  } = parsed.data;
 
-  const booking = await prisma.booking.findUnique({
-    where: { razorpayOrderId: razorpay_order_id },
-    include: { tour: { select: { title: true } } },
+  const emailNorm = guestEmail.trim().toLowerCase();
+
+  // Best-effort sweep of abandoned PENDING bookings — the primary trigger for
+  // this cleanup (see src/app/api/cron/stale-bookings/route.ts), so a customer
+  // retrying a lapsed checkout is never blocked by their own stale row.
+  await cleanupStalePendingBookings();
+
+  // Require the email-verification step to have been completed for this exact
+  // email (see /api/bookings/request-otp + verify-otp) — same "verified, proof
+  // token issued" shape as the forgot-password flow's resetToken.
+  const otpRecord = await prisma.emailOtp.findUnique({ where: { email: emailNorm } });
+  if (!otpRecord || otpRecord.purpose !== "BOOKING" || !otpRecord.verifiedAt || !otpRecord.resetTokenHash) {
+    return NextResponse.json(
+      { error: "Please verify your email again before booking." },
+      { status: 400 },
+    );
+  }
+  if (Date.now() - otpRecord.verifiedAt.getTime() > BOOKING_TOKEN_TTL_MS) {
+    await prisma.emailOtp.delete({ where: { email: emailNorm } });
+    return NextResponse.json(
+      { error: "This verification has expired. Please verify your email again." },
+      { status: 400 },
+    );
+  }
+  const tokenValid = await bcrypt.compare(verificationToken, otpRecord.resetTokenHash);
+  if (!tokenValid) {
+    return NextResponse.json(
+      { error: "Please verify your email again before booking." },
+      { status: 400 },
+    );
+  }
+  // Deliberately NOT deleted here — an abandoned/retried checkout may call
+  // this endpoint more than once with the same token. Consumed only once a
+  // payment actually succeeds (see verify-payment/route.ts).
+
+  const travel = new Date(travelDate);
+  if (Number.isNaN(travel.getTime())) {
+    return NextResponse.json({ error: "Invalid travel date" }, { status: 400 });
+  }
+  // Minimum lead time: a booking's travel date must be at least MIN_LEAD_DAYS away.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const earliestTravel = new Date(todayStart);
+  earliestTravel.setDate(earliestTravel.getDate() + MIN_LEAD_DAYS);
+  if (travel < earliestTravel) {
+    return NextResponse.json(
+      {
+        error: `Bookings must be made at least ${MIN_LEAD_DAYS} days in advance. Please choose a travel date on or after ${fmtDate(earliestTravel)}.`,
+      },
+      { status: 422 },
+    );
+  }
+
+  const latestTravel = new Date(todayStart);
+  latestTravel.setMonth(latestTravel.getMonth() + MAX_BOOKING_MONTHS);
+  if (travel > latestTravel) {
+    return NextResponse.json(
+      { error: `Travel date cannot be more than ${MAX_BOOKING_MONTHS} months from today.` },
+      { status: 422 },
+    );
+  }
+
+  const tour = await prisma.tour.findUnique({
+    where: { id: tourId },
+    select: {
+      id: true,
+      title: true,
+      priceFrom: true,
+      duration: true,
+      minPersons: true,
+      published: true,
+    },
   });
 
-  if (!booking) {
-    await logPaymentAudit({
-      event: "VERIFICATION_FAILED",
-      status: "failed",
-      orderId: razorpay_order_id,
-      paymentId: razorpay_payment_id,
-      ip,
-      detail: "booking not found",
-    });
-    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  if (!tour || !tour.published) {
+    return NextResponse.json({ error: "Tour not found" }, { status: 404 });
   }
 
-  // Ownership: a signed-in user may only verify their own booking. Guest bookings
-  // (no userId) are allowed — the signature itself proves the payer.
-  const session = await auth();
-  if (booking.userId && session?.user?.id && booking.userId !== session.user.id) {
-    await logPaymentAudit({
-      event: "VERIFICATION_FAILED",
-      status: "failed",
-      bookingId: booking.id,
-      orderId: razorpay_order_id,
-      ip,
-      detail: "ownership mismatch",
-    });
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (travellers < tour.minPersons) {
+    return NextResponse.json(
+      {
+        error: `This tour requires a minimum of ${tour.minPersons} traveller${tour.minPersons > 1 ? "s" : ""}.`,
+      },
+      { status: 422 },
+    );
   }
 
-  // HMAC-SHA256 of "order_id|payment_id", compared in constant time (replay-safe).
-  const expected = crypto
-    .createHmac("sha256", env.RAZORPAY_SECRET ?? "")
-    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-    .digest("hex");
-
-  const expectedBuf = Buffer.from(expected, "hex");
-  const receivedBuf = Buffer.from(razorpay_signature, "hex");
-  const isValid =
-    expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
-
-  if (!isValid) {
-    await prisma.booking.update({ where: { id: booking.id }, data: { status: "FAILED" } });
-    await logPaymentAudit({
-      event: "VERIFICATION_FAILED",
-      status: "failed",
-      bookingId: booking.id,
-      orderId: razorpay_order_id,
-      paymentId: razorpay_payment_id,
-      ip,
-      detail: "signature mismatch",
-    });
-    return NextResponse.json({ success: false, status: "FAILED" }, { status: 400 });
-  }
-
-  // Enrich the ledger row with the gateway's method/metadata first (external
-  // call, so it stays outside the transaction below).
-  const { method, metadata } = await fetchGatewayMeta(razorpay_payment_id);
-
-  // Record the payment on the shared ledger AND confirm the booking in a single
-  // transaction (idempotent; recomputes the charged amount server-side). Booking
-  // lifecycle reaches Confirmed once payment is verified; payment state
-  // (Pending/Partial/Full) is derived separately from the ledger.
-  const { newPaymentId, chargeable, status } = await recordOnlinePayment({
-    booking,
-    bookingStatus: "CONFIRMED",
-    paymentId: razorpay_payment_id,
-    orderId: razorpay_order_id,
-    signature: razorpay_signature,
-    method,
-    metadata,
-    ip,
-    auditEvent: "PAYMENT_VERIFIED",
+  // Duplicate-booking guard: block a second *paid/confirmed* booking for the same
+  // email + tour + travel day. Abandoned PENDING orders don't block a retry.
+  const dayStart = new Date(travel);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const duplicate = await prisma.booking.findFirst({
+    where: {
+      tourId,
+      guestEmail: emailNorm,
+      status: { in: ["CONFIRMED", "PAID"] },
+      travelDate: { gte: dayStart, lt: dayEnd },
+      deletedAt: null,
+    },
+    select: { id: true },
   });
+  if (duplicate) {
+    return NextResponse.json(
+      {
+        error:
+          "You already have a confirmed booking for this tour on this date. Please check your account, or contact us for changes.",
+      },
+      { status: 409 },
+    );
+  }
 
-  // First-record only (a retry or racing webhook is a no-op): link/create the
-  // customer account + send credentials/confirmation/receipt emails.
-  if (newPaymentId) {
-    await finalizeOnlinePayment(booking.id, chargeable, razorpay_payment_id, newPaymentId);
-    // Consume the booking-checkout email verification — payment succeeded, so
-    // the verified-email token has served its purpose. Best-effort: a racing
-    // webhook may already have deleted it.
-    if (booking.guestEmail) {
-      await prisma.emailOtp
-        .deleteMany({ where: { email: booking.guestEmail.toLowerCase(), purpose: "BOOKING" } })
-        .catch(() => {});
+  // Spacing rule: the customer's next tour can only start BOOKING_GAP_DAYS after
+  // an existing active booking's start date. Matched by the (verified) email, so
+  // it applies whether they book signed-in or as a guest. An earlier, separate
+  // trip (before the existing one) is allowed.
+  const activeBookings = await prisma.booking.findMany({
+    where: {
+      guestEmail: emailNorm,
+      status: { in: ["CONFIRMED", "PAID"] },
+      deletedAt: null,
+    },
+    select: { travelDate: true, tour: { select: { duration: true } } },
+  });
+  for (const b of activeBookings) {
+    // Gap is measured from end of trip (travelDate + duration) not just start.
+    const tripEnd = new Date(b.travelDate);
+    tripEnd.setDate(tripEnd.getDate() + (b.tour?.duration ?? 1));
+    const earliestNext = new Date(tripEnd);
+    earliestNext.setDate(earliestNext.getDate() + BOOKING_GAP_DAYS);
+    if (travel >= b.travelDate && travel < earliestNext) {
+      return NextResponse.json(
+        {
+          error: `You have an active trip ending ${fmtDate(tripEnd)}. Your next tour can start from ${fmtDate(earliestNext)} onwards (${BOOKING_GAP_DAYS} days after trip ends). Contact us if you need a different arrangement.`,
+        },
+        { status: 409 },
+      );
     }
   }
 
-  return NextResponse.json({ success: true, status });
+  // ── Server-side amounts — NEVER trust the client ──────────────────────────
+  // Booking total = per-person price × travellers. The online charge is the full
+  // total, or a 10% advance, computed by the shared finance helper.
+  const total = round2(tour.priceFrom * travellers);
+  const option: PaymentOption = paymentOption;
+  const chargeable = computeChargeable(total, option);
+  const amountPaise = Math.round(chargeable * 100);
+
+  if (chargeable <= 0) {
+    return NextResponse.json({ error: "Invalid booking amount" }, { status: 400 });
+  }
+
+  if (!env.RAZORPAY_KEY_ID || env.RAZORPAY_KEY_ID.includes("REPLACE_ME")) {
+    return NextResponse.json(
+      { error: "Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_SECRET in .env." },
+      { status: 503 },
+    );
+  }
+
+  const razorpay = new Razorpay({
+    key_id: env.RAZORPAY_KEY_ID,
+    key_secret: env.RAZORPAY_SECRET!,
+  });
+
+  const rzpOrder = await razorpay.orders.create({
+    amount: amountPaise,
+    currency: "INR",
+    receipt: `vkh_${Date.now()}`,
+  });
+
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
+
+  // Booking.amount stores the canonical TOTAL; the payment ledger records what was
+  // actually charged. paymentOption records the customer's choice for display.
+  const booking = await prisma.booking.create({
+    data: {
+      tourId,
+      userId,
+      razorpayOrderId: rzpOrder.id,
+      amount: total,
+      paymentOption: option,
+      travelDate: travel,
+      travellers,
+      guestName,
+      guestEmail: emailNorm,
+      guestPhone,
+      address: address || null,
+      requirements: requirements || null,
+      status: "PENDING",
+      ...buildAttributionCreateInput(attribution, req),
+    },
+    select: { id: true },
+  });
+
+  await logPaymentAudit({
+    event: "ORDER_CREATED",
+    bookingId: booking.id,
+    orderId: rzpOrder.id,
+    amount: chargeable,
+    ip,
+    detail: `option=${option} total=${total} travellers=${travellers}`,
+  });
+
+  // Best-effort acknowledgment — never a "confirmed" email, payment hasn't
+  // happened yet. A failure here must never block Razorpay checkout opening.
+  try {
+    const settings = await getSiteSettings();
+    const waNumber = settings?.whatsapp ?? settings?.sitePhone ?? null;
+    const emailPayload = {
+      guestName,
+      tourTitle: tour.title,
+      travelDate: fmtDate(travel),
+      travellers,
+      totalAmount: total,
+      payableNow: chargeable,
+      paymentOptionLabel: PAYMENT_OPTION_LABEL[option],
+      whatsappNumber: waNumber,
+      expiryMinutes: STALE_BOOKING_MINUTES,
+    };
+    await sendMail({
+      to: emailNorm,
+      subject: `Booking Request Received — ${tour.title} | Vertex Kashmir Holidays`,
+      html: bookingRequestReceivedHtml(emailPayload),
+      text: bookingRequestReceivedText(emailPayload),
+    });
+  } catch (err) {
+    console.error("[bookings/create-order] acknowledgment email failed (order created):", booking.id, err);
+  }
+
+  return NextResponse.json({
+    orderId: rzpOrder.id,
+    amount: amountPaise,
+    currency: "INR",
+    bookingId: booking.id,
+    paymentOption: option,
+    total,
+    chargeable,
+    keyId: NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  });
 }

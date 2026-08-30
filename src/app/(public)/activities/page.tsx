@@ -5,6 +5,7 @@ import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/Jso
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import { ActivitiesPageClient } from "@/components/activities/ActivitiesPageClient";
+import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import Link from "next/link";
 
 export const revalidate = 900;
@@ -86,6 +87,10 @@ export default async function ActivitiesPage() {
           image: a.coverImage,
         }))}
       />
+
+      <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">
+        <TransportAssistanceBanner placement="things-to-do" />
+      </div>
     </div>
   );
 }

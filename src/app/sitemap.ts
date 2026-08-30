@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { SITE_URL } from "@/lib/seo";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
+import { ORIGIN_CITIES } from "@/lib/originCities";
 
 export const dynamic = "force-dynamic";
 
@@ -172,10 +173,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.75,
     }));
 
+  // Origin-city SEO landing pages — static config (no DB-backed origin-city
+  // field exists), so no query needed, unlike the route families above.
+  const originCityRoutes: MetadataRoute.Sitemap = ORIGIN_CITIES.map((c) => ({
+    url: `${SITE_URL}/tours/kashmir-tour-packages-from/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.75,
+  }));
+
   return [
     ...staticRoutes,
     ...tourRoutes,
     ...tourCategoryRoutes,
+    ...originCityRoutes,
     ...campaignRoutes,
     ...destinationRoutes,
     ...activityRoutes,

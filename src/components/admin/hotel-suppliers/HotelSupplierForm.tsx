@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,12 +12,10 @@ import {
   HOTEL_DESTINATIONS,
   HOTEL_CATEGORY_LABELS,
   computeCategoryFromMap,
+  getMinMapRate,
+  type RoomRateRow,
 } from "@/lib/hotelSuppliers/schema";
-
-const money = z
-  .string()
-  .regex(/^\d*\.?\d*$/, "Numbers only")
-  .optional();
+import { RoomRatesEditor, EMPTY_ROOM_RATE_ROW_DRAFT, type RoomRateRowDraft } from "./RoomRatesEditor";
 
 const schema = z.object({
   hotelName: z.string().min(2, "Hotel name is required"),
@@ -29,12 +27,6 @@ const schema = z.object({
   mapUrl: z.string().optional(),
   rating: z.string().optional(),
   services: z.string().optional(),
-  validTo: z.string().optional(),
-  ep: money,
-  cp: money,
-  map: money,
-  ap: money,
-  extraBed: money,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -49,9 +41,20 @@ const labelCls = "block text-xs font-bold text-muted-foreground mb-1.5";
 
 const DESTINATION_SET: readonly string[] = HOTEL_DESTINATIONS;
 
+function parseMoney(v: string): number | null | "invalid" {
+  if (v.trim() === "") return null;
+  const n = Number(v);
+  if (Number.isNaN(n) || n < 0) return "invalid";
+  return n;
+}
+
 export function HotelSupplierForm({ defaultDestination }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [rows, setRows] = useState<RoomRateRowDraft[]>([{ ...EMPTY_ROOM_RATE_ROW_DRAFT }]);
+  const [validTo, setValidTo] = useState("");
+  const [recommended, setRecommended] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
 
   const initialDestination = DESTINATION_SET.includes(defaultDestination ?? "")
     ? (defaultDestination as (typeof HOTEL_DESTINATIONS)[number])
@@ -60,10 +63,9 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(schema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema),
     defaultValues: {
       hotelName: "",
       destination: initialDestination,
@@ -74,24 +76,43 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       mapUrl: "",
       rating: "",
       services: "",
-      validTo: "",
-      ep: "",
-      cp: "",
-      map: "",
-      ap: "",
-      extraBed: "",
     },
   });
 
-  const mapValue = watch("map");
-  const previewCategory = computeCategoryFromMap(mapValue ? Number(mapValue) : null);
+  // Live preview only — the real category is recomputed server-side too.
+  const previewMinMap = (() => {
+    const maps = rows.map((r) => parseMoney(r.map)).filter((m): m is number => typeof m === "number");
+    return maps.length ? Math.min(...maps) : null;
+  })();
+  const previewCategory = computeCategoryFromMap(previewMinMap);
 
   function onSubmit(data: FormData) {
+    const parsedRows: RoomRateRow[] = [];
+    for (const row of rows) {
+      const roomType = row.roomType.trim();
+      if (!roomType && !row.ep && !row.cp && !row.map) continue;
+      if (!roomType) {
+        setRateError("Every rate row needs a room type.");
+        return;
+      }
+      const ep = parseMoney(row.ep);
+      const cp = parseMoney(row.cp);
+      const map = parseMoney(row.map);
+      if (ep === "invalid" || cp === "invalid" || map === "invalid") {
+        setRateError(`Rates for "${roomType}" must be valid non-negative numbers.`);
+        return;
+      }
+      parsedRows.push({ roomType, ep, cp, map });
+    }
+    setRateError(null);
+
+    const rate = parsedRows.length > 0 ? { validTo: validTo || null, rooms: parsedRows } : null;
     const payload = {
       hotelName: data.hotelName,
       destination: data.destination,
-      category: computeCategoryFromMap(data.map ? Number(data.map) : null),
+      category: computeCategoryFromMap(getMinMapRate(rate)),
       isActive: true,
+      recommended,
       data: {
         property: {
           location: data.location || null,
@@ -102,16 +123,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
           services: data.services || null,
         },
         rating: data.rating || null,
-        rate: {
-          validTo: data.validTo || null,
-          mealPlans: {
-            EP: data.ep ? Number(data.ep) : null,
-            CP: data.cp ? Number(data.cp) : null,
-            MAP: data.map ? Number(data.map) : null,
-            AP: data.ap ? Number(data.ap) : null,
-          },
-          extraBed: data.extraBed ? Number(data.extraBed) : null,
-        },
+        rate,
       },
     };
 
@@ -143,7 +155,18 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
-        <h3 className="text-sm font-bold text-foreground">Hotel Details</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold text-foreground">Hotel Details</h3>
+          <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={recommended}
+              onChange={(e) => setRecommended(e.target.checked)}
+              className="cbx"
+            />
+            Recommended
+          </label>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className={labelCls}>Hotel Name *</label>
@@ -201,10 +224,10 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-bold text-foreground">Current Rate</h3>
+            <h3 className="text-sm font-bold text-foreground">Room Rates</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              The exact supplier net rate for this season — no markup. Edit these fields in place whenever the
-              season rate changes.
+              The exact supplier net rate for this season — no markup. Add one row per room type
+              (Deluxe, Super Deluxe, Extra Bed, etc.).
             </p>
           </div>
           <div className="text-right shrink-0">
@@ -212,35 +235,20 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
             <Badge>{HOTEL_CATEGORY_LABELS[previewCategory]}</Badge>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div>
-            <label className={labelCls}>EP Net</label>
-            <input {...register("ep")} className={inputCls} placeholder="0" />
-          </div>
-          <div>
-            <label className={labelCls}>CP Net</label>
-            <input {...register("cp")} className={inputCls} placeholder="0" />
-            {errors.cp && <p className="text-xs text-red-500 mt-1">{errors.cp.message}</p>}
-          </div>
-          <div>
-            <label className={labelCls}>MAP Net</label>
-            <input {...register("map")} className={inputCls} placeholder="0" />
-          </div>
-          <div>
-            <label className={labelCls}>AP Net</label>
-            <input {...register("ap")} className={inputCls} placeholder="0" />
-          </div>
-          <div>
-            <label className={labelCls}>Extra Bed</label>
-            <input {...register("extraBed")} className={inputCls} placeholder="0" />
-          </div>
-          <div>
-            <label className={labelCls}>Valid Till</label>
-            <input type="date" {...register("validTo")} className={inputCls} />
-          </div>
+        <RoomRatesEditor rows={rows} onChange={setRows} />
+        <div>
+          <label className={labelCls}>Valid Till</label>
+          <input
+            type="date"
+            value={validTo}
+            onChange={(e) => setValidTo(e.target.value)}
+            className={`${inputCls} max-w-[200px]`}
+          />
         </div>
+        {rateError && <p className="text-xs text-red-500">{rateError}</p>}
         <p className="text-[11px] text-muted-foreground">
-          MAP sets category: &lt;2,500 Budget · &lt;7,000 Deluxe · else Premium
+          Category is set from the cheapest room&apos;s MAP rate: &lt;2,500 Budget · &lt;7,000 Deluxe · else
+          Premium
         </p>
       </div>
 

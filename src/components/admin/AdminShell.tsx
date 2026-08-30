@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useNotificationSound } from "@/components/admin/connect/hooks/useNotificationSound";
 import { GlobalCallNotification } from "@/components/admin/connect/GlobalCallNotification";
 import { CallProvider } from "@/components/admin/connect/CallProvider";
@@ -28,6 +28,8 @@ import {
   LogOut,
   Menu,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
   Map,
   Ticket,
   MessageSquare,
@@ -254,6 +256,22 @@ export function AdminShell({
   permissions,
 }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Desktop sidebar show/hide — defaults open (matches pre-existing behavior)
+  // and persists across reloads via localStorage. Read after mount only, so
+  // the server-rendered/first-paint markup always matches (avoids a hydration
+  // mismatch from a stored "closed" preference).
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  useEffect(() => {
+    const stored = localStorage.getItem("admin-sidebar-open");
+    if (stored !== null) setDesktopSidebarOpen(stored === "true");
+  }, []);
+  function toggleDesktopSidebar() {
+    setDesktopSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("admin-sidebar-open", String(next));
+      return next;
+    });
+  }
   const pathname = usePathname();
   const { unlock } = useNotificationSound();
   const pageTitle =
@@ -275,15 +293,23 @@ export function AdminShell({
     <NotificationsProvider>
       <CallProvider currentUserId={userId} currentUserName={userName}>
         <div className="flex h-screen overflow-hidden bg-background" onClick={unlock}>
-          {/* Desktop sidebar */}
-          <aside className="hidden lg:flex flex-col w-56 shrink-0">
-            <SidebarContent
-              pathname={pathname}
-              navGroups={navGroups}
-              userName={userName}
-              userEmail={userEmail}
-              userImage={userImage}
-            />
+          {/* Desktop sidebar — collapses to 0 width when toggled off, rather
+             than unmounting, so SidebarContent's own state isn't lost. */}
+          <aside
+            className={cn(
+              "hidden shrink-0 overflow-hidden transition-[width] duration-200 lg:flex lg:flex-col",
+              desktopSidebarOpen ? "w-56" : "w-0",
+            )}
+          >
+            <div className="flex h-full w-56 flex-col">
+              <SidebarContent
+                pathname={pathname}
+                navGroups={navGroups}
+                userName={userName}
+                userEmail={userEmail}
+                userImage={userImage}
+              />
+            </div>
           </aside>
 
           {/* Mobile sidebar overlay */}
@@ -317,6 +343,18 @@ export function AdminShell({
                   aria-label="Open sidebar"
                 >
                   <Menu className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={toggleDesktopSidebar}
+                  className="hidden text-muted-foreground hover:text-foreground lg:inline-flex"
+                  aria-label={desktopSidebarOpen ? "Hide navigation" : "Show navigation"}
+                  title={desktopSidebarOpen ? "Hide navigation" : "Show navigation"}
+                >
+                  {desktopSidebarOpen ? (
+                    <PanelLeftClose className="w-5 h-5" />
+                  ) : (
+                    <PanelLeftOpen className="w-5 h-5" />
+                  )}
                 </button>
                 <h1 className="font-display font-bold text-foreground text-base">{pageTitle}</h1>
               </div>

@@ -5,6 +5,7 @@
 // click. Reuses the shared Dialog organism (Radix), same as every other
 // admin confirm/compose flow in this app.
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Mail } from "lucide-react";
 import {
@@ -34,6 +35,7 @@ export function RequestRatesDialog({
   open,
   onOpenChange,
 }: RequestRatesDialogProps) {
+  const router = useRouter();
   const [to, setTo] = useState(defaultEmail);
   const [sending, setSending] = useState(false);
 
@@ -59,6 +61,7 @@ export function RequestRatesDialog({
         return;
       }
       toast.success(`Rate request sent to ${to}.`);
+      router.refresh();
       onOpenChange(false);
     } catch {
       toast.error("An error occurred.");

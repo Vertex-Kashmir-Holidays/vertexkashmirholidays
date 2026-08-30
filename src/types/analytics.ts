@@ -1,7 +1,7 @@
 // Strict event types for all dataLayer pushes flowing to GTM → GA4.
 // Every event shape is a discriminated union — never use `any` or free-form objects.
 
-export type LeadType = "itinerary" | "contact" | "tour_inquiry";
+export type LeadType = "itinerary" | "contact" | "tour_inquiry" | "flight_train_quote";
 
 export type WhatsAppSource =
   | "header"
@@ -31,6 +31,7 @@ export type AnalyticsEvent =
   | { event: "email_click" }
   | { event: "package_view"; package_name: string }
   | { event: "inquiry_started"; package_name?: string; tour_id?: string }
+  | { event: "flight_train_quote_click"; package_name?: string; placement: string }
   | { event: "booking_started"; package_name?: string }
   | {
       event: "booking_completed";
