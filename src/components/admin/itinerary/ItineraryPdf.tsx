@@ -43,6 +43,12 @@ const C = {
   white: "#ffffff",
 };
 
+// Spacing scale (pt). Every gap/margin/padding added or touched below in the
+// body content pulls from this scale instead of an ad-hoc number, so rhythm
+// stays consistent regardless of how many days/hotels/list items the CRM
+// data contains.
+const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, xxxl: 36 };
+
 // Exact hex equivalents of the admin editor's literal Tailwind arbitrary
 // values (hsl(158 46% 14%), hsl(146 35% 55%)) used only on the closing page,
 // so it matches ItineraryEditor.tsx's preview precisely instead of the
@@ -222,8 +228,8 @@ const s = StyleSheet.create({
 
   // Section headings
   section: { marginBottom: 8 },
-  sectionGap: { marginTop: 26 },
-  secHeadRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  sectionGap: { marginTop: SP.xxxl },
+  secHeadRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: SP.lg },
   secHead: { fontSize: 18, fontFamily: "Helvetica-Bold", color: C.green },
   secLine: { flex: 1, height: 1, backgroundColor: C.border },
 
@@ -243,9 +249,9 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.border,
     borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 14,
-    marginBottom: 22,
+    paddingVertical: SP.md + 2,
+    marginTop: SP.lg,
+    marginBottom: SP.xl,
   },
   infoCell: { flex: 1, alignItems: "center", paddingHorizontal: 8, textAlign: "center" },
   infoValue: {
@@ -257,26 +263,58 @@ const s = StyleSheet.create({
   },
   infoLabel: { fontSize: 7.5, color: C.muted, textAlign: "center", marginTop: 2 },
 
-  // Day
-  day: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  // Day — every day renders inside the same bordered card (consistent
+  // padding/radius) so a short description and a long one produce the same
+  // visual container instead of one day looking structurally different from
+  // the next. wrap={false} on this card (applied in JSX) keeps badge, title,
+  // description, metadata and image together as one atomic pagination unit.
+  day: { flexDirection: "row", gap: SP.md },
+  dayCard: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    padding: SP.md,
+    marginBottom: SP.md,
+    backgroundColor: C.white,
+  },
   dayBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: C.green,
     alignItems: "center",
     justifyContent: "center",
   },
-  dayBadgeKicker: { fontSize: 6, color: C.white, fontFamily: "Helvetica-Bold" },
+  dayBadgeKicker: { fontSize: 6, color: C.white, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
   dayBadgeNum: { fontSize: 13, color: C.white, fontFamily: "Helvetica-Bold" },
   dayBody: { flex: 1 },
   dayTitle: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink },
-  dayText: { fontSize: 9.5, color: "#555", marginTop: 3, lineHeight: 1.45 },
-  metaWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
-  metaItem: { width: "33%", marginBottom: 4, paddingRight: 6 },
-  metaLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green },
-  metaValue: { fontSize: 8, color: C.muted, lineHeight: 1.4 },
-  dayImg: { width: 120, height: 80, borderRadius: 8, objectFit: "cover" },
+  dayText: { fontSize: 9.5, color: "#555", marginTop: SP.xs, lineHeight: 1.5 },
+  metaWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: SP.sm,
+    paddingTop: SP.sm,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  metaItem: { width: "33%", marginBottom: SP.xs, paddingRight: SP.sm },
+  metaLabel: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: C.green,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  metaValue: { fontSize: 8.5, color: C.ink, lineHeight: 1.4, marginTop: 1 },
+  dayImg: {
+    width: 128,
+    height: 90,
+    borderRadius: 8,
+    objectFit: "cover",
+    borderWidth: 1,
+    borderColor: C.border,
+  },
 
   // Table
   table: {
@@ -287,16 +325,25 @@ const s = StyleSheet.create({
     marginTop: 6,
   },
   tHead: { flexDirection: "row", backgroundColor: C.lightGreen },
-  th: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green, padding: 7 },
+  th: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: C.green,
+    padding: SP.sm,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
   tRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border },
-  td: { fontSize: 9, padding: 7, color: C.ink, lineHeight: 1.4 },
-  colDest: { width: "18%" },
-  colHotel: { width: "30%" },
-  colNights: { width: "10%" },
+  td: { fontSize: 9, padding: SP.sm, color: C.ink, lineHeight: 1.45 },
+  // Hotel Details gets the most width since it's the longest-running field
+  // (full property name + notes) and is the one most prone to ugly wrapping.
+  colDest: { width: "16%" },
+  colHotel: { width: "34%" },
+  colNights: { width: "8%" },
   colRoom: { width: "16%" },
-  colRooms: { width: "13%" },
-  colMeal: { width: "13%" },
-  legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
+  colRooms: { width: "12%" },
+  colMeal: { width: "14%" },
+  legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: SP.sm },
   legendItem: { fontSize: 8, color: C.muted },
   note: { fontSize: 8, color: C.muted, fontStyle: "italic", marginTop: 6 },
   hotelImagesRow: { flexDirection: "row", gap: 10, marginTop: 12 },
@@ -307,30 +354,42 @@ const s = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: C.cream,
     borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 16,
+    paddingVertical: SP.md + 2,
+    marginTop: SP.xl,
   },
   trustCell: { flex: 1, alignItems: "center", paddingHorizontal: 6, textAlign: "center" },
   trustTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.ink, textAlign: "center" },
   trustSub: { fontSize: 7.5, color: C.muted, textAlign: "center", marginTop: 1 },
 
   // Transport
-  transportRow: { flexDirection: "row", gap: 14, alignItems: "center", marginBottom: 22 },
+  transportRow: { flexDirection: "row", gap: SP.lg, alignItems: "center", marginBottom: SP.xl },
   transportImg: { width: 200, height: 120, borderRadius: 8, objectFit: "cover" },
   transportType: { fontSize: 12, fontFamily: "Helvetica-Bold", color: C.ink },
   transportDesc: { fontSize: 9.5, color: C.muted, marginTop: 2 },
 
   // Two columns (inc/exc, policies)
-  twoCol: { flexDirection: "row", gap: 24 },
+  twoCol: { flexDirection: "row", gap: SP.xxl },
   col: { flex: 1 },
-  listHead: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.green, marginBottom: 8 },
-  listRow: { flexDirection: "row", gap: 6, marginBottom: 4 },
+  listHead: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.green, marginBottom: SP.sm },
+  listRow: { flexDirection: "row", gap: SP.sm, marginBottom: SP.xs + 2 },
   bulletInc: { width: 8, fontSize: 9, color: C.green, fontFamily: "Helvetica-Bold" },
   bulletExc: { width: 8, fontSize: 9, color: C.rose, fontFamily: "Helvetica-Bold" },
-  listText: { flex: 1, fontSize: 9.5, color: "#444", lineHeight: 1.4 },
+  listText: { flex: 1, fontSize: 9.5, color: "#444", lineHeight: 1.5 },
 
-  policyCard: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
-  policyHead: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 8 },
+  policyCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 12,
+    padding: SP.lg,
+  },
+  policyHead: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: C.ink,
+    marginBottom: SP.sm + 2,
+    letterSpacing: 0.2,
+  },
 
   // Closing page — mirrors the admin editor's on-screen preview exactly
   // (ItineraryEditor.tsx "Thank you" article): a full-width dark green
@@ -341,12 +400,33 @@ const s = StyleSheet.create({
   // C.greenDark/C.mint used on the cover/footer elsewhere in this file,
   // which is why this page previously looked like a different, mismatched
   // green from the admin preview.
+  // Original (approved) content positioning — unchanged from before the
+  // full-bleed background was added. Applied to an inner content wrapper
+  // (not the <Page> itself, see s.tyPageOuter) so every foreground element
+  // keeps the exact padding/centering math it always had, independent of
+  // the background layer below. Deliberately no backgroundColor: this
+  // wrapper sits on top of the full-bleed green/navy rectangles, and an
+  // opaque fill here would paint over and hide them.
   tyPage: {
-    backgroundColor: C.white,
     paddingVertical: 60,
     paddingHorizontal: 40,
     justifyContent: "center",
   },
+  // The actual <Page> style: zero padding so the background layer below can
+  // reach the true physical page edges unambiguously (no dependency on how
+  // absolute positioning resolves against a padded ancestor). All foreground
+  // content still renders through the padded/centred s.tyPage wrapper above,
+  // so nothing about its position changes.
+  tyPageOuter: { backgroundColor: C.white, padding: 0 },
+  // Full-bleed background layer, painted behind the (unmoved) foreground
+  // content. An approximate 50/50 split is safe here: the actual green/navy
+  // section colors come from payBlock/tyLeftCol/tyRightCol's own unchanged
+  // backgrounds, which are opaque and sit on top of this layer at their
+  // original position — this layer only needs to be green above the real
+  // content and navy below it, which a 50/50 split comfortably satisfies
+  // given the content block spans the vertical middle majority of the page.
+  tyBleedGreen: { position: "absolute", top: 0, left: 0, width: "100%", height: "50%", backgroundColor: TY_GREEN },
+  tyBleedNavy: { position: "absolute", bottom: 0, left: 0, width: "100%", height: "50%", backgroundColor: TY_NAVY },
 
   // Payment options
   payBlock: {
@@ -474,12 +554,17 @@ function PdfIcon({
   );
 }
 
-function SectionHead({ title }: { title: string }) {
-  // wrap={false} keeps the heading and its underline together; minPresenceAhead
-  // pulls the whole heading to the next page if too little room remains below,
-  // so a heading never strands at the bottom of a sheet.
+// wrap={false} keeps the heading and its underline together; minPresenceAhead
+// pulls the whole heading to the next page if too little room remains below,
+// so a heading never strands at the bottom of a sheet with its content
+// stranded on the next one. The value should roughly match the height of the
+// smallest realistic atomic block that immediately follows the heading (the
+// caller knows that; there's no single safe default — a value sized for a
+// two-card policy block would push a heading followed only by a short table
+// row further than it needs to go).
+function SectionHead({ title, minPresenceAhead = 100 }: { title: string; minPresenceAhead?: number }) {
   return (
-    <View style={s.secHeadRow} wrap={false} minPresenceAhead={90}>
+    <View style={s.secHeadRow} wrap={false} minPresenceAhead={minPresenceAhead}>
       <Text style={s.secHead}>{title}</Text>
       <View style={s.secLine} />
     </View>
@@ -601,57 +686,71 @@ export function ItineraryPdf({ data, images, address }: Props) {
           ))}
         </View>
 
-        <SectionHead title="Daily Itinerary" />
+        {/* 140: guarantees at least the DAY 01 card's badge + title + a
+            couple of lines of description land with the heading. */}
+        <SectionHead title="Daily Itinerary" minPresenceAhead={140} />
         {data.days.map((day, i) => (
-          <View key={day.id} style={s.day} wrap={false}>
-            <View style={s.dayBadge}>
-              <Text style={s.dayBadgeKicker}>DAY</Text>
-              <Text style={s.dayBadgeNum}>{String(i + 1).padStart(2, "0")}</Text>
-            </View>
-            <View style={s.dayBody}>
-              <Text style={s.dayTitle}>{day.title}</Text>
-              <Text style={s.dayText}>{day.body}</Text>
-              <View style={s.metaWrap}>
-                {day.meta.map((m) => (
-                  <View key={m.id} style={[s.metaItem, { flexDirection: "row", gap: 4 }]}>
-                    <PdfIcon icon={m.label.trim().toLowerCase()} size={10} />
-                    <View>
-                      <Text style={s.metaLabel}>{m.label}</Text>
-                      <Text style={s.metaValue}>{m.value}</Text>
-                    </View>
-                  </View>
-                ))}
+          <View key={day.id} style={s.dayCard} wrap={false}>
+            <View style={s.day}>
+              <View style={s.dayBadge}>
+                <Text style={s.dayBadgeKicker}>DAY</Text>
+                <Text style={s.dayBadgeNum}>{String(i + 1).padStart(2, "0")}</Text>
               </View>
+              <View style={s.dayBody}>
+                <Text style={s.dayTitle}>{day.title}</Text>
+                <Text style={s.dayText}>{day.body}</Text>
+                <View style={s.metaWrap}>
+                  {day.meta.map((m) => (
+                    <View key={m.id} style={[s.metaItem, { flexDirection: "row", gap: 4 }]}>
+                      <PdfIcon icon={m.label.trim().toLowerCase()} size={10} />
+                      <View>
+                        <Text style={s.metaLabel}>{m.label}</Text>
+                        <Text style={s.metaValue}>{m.value}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              {img(day.image) ? <Image src={img(day.image)} style={s.dayImg} /> : null}
             </View>
-            {img(day.image) ? <Image src={img(day.image)} style={s.dayImg} /> : null}
           </View>
         ))}
 
-        {/* ACCOMMODATION */}
-        <View style={s.sectionGap}>
+        {/* ACCOMMODATION — heading and table grouped into one wrap={false}
+            block. minPresenceAhead alone isn't enough here: it only checks
+            room for the heading itself, not for the table that follows, so
+            a heading could still land alone at the bottom of a sheet with
+            the whole table forced onto a near-empty next page. Grouping
+            them means react-pdf decides on the *combined* height, so the
+            pair either both fit or both move together. Safe for realistic
+            hotel counts (well under a page tall even at 10+ days); react-pdf
+            has no header-repeat for plain Views, so this also keeps the
+            table from ever breaking mid-way and stranding rows without
+            their column headers. */}
+        <View style={s.sectionGap} wrap={false}>
           <SectionHead title="Accommodation Info" />
-        </View>
-        <View style={s.table}>
-          <View style={s.tHead} wrap={false}>
-            <Text style={[s.th, s.colDest]}>Destination</Text>
-            <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
-            <Text style={[s.th, s.colNights]}>Nights</Text>
-            <Text style={[s.th, s.colRoom]}>Room Type</Text>
-            <Text style={[s.th, s.colRooms]}>No. of Rooms</Text>
-            <Text style={[s.th, s.colMeal]}>Meal Type</Text>
-          </View>
-          {data.hotels.map((h) => (
-            <View key={h.id} style={s.tRow} wrap={false}>
-              <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>
-                {h.destination}
-              </Text>
-              <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
-              <Text style={[s.td, s.colNights]}>{h.nights}</Text>
-              <Text style={[s.td, s.colRoom]}>{h.roomType}</Text>
-              <Text style={[s.td, s.colRooms]}>{h.rooms}</Text>
-              <Text style={[s.td, s.colMeal]}>{h.mealType}</Text>
+          <View style={s.table}>
+            <View style={s.tHead}>
+              <Text style={[s.th, s.colDest]}>Destination</Text>
+              <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
+              <Text style={[s.th, s.colNights]}>Nights</Text>
+              <Text style={[s.th, s.colRoom]}>Room Type</Text>
+              <Text style={[s.th, s.colRooms]}>No. of Rooms</Text>
+              <Text style={[s.th, s.colMeal]}>Meal Type</Text>
             </View>
-          ))}
+            {data.hotels.map((h) => (
+              <View key={h.id} style={s.tRow} wrap={false}>
+                <Text style={[s.td, s.colDest, { fontFamily: "Helvetica-Bold" }]}>
+                  {h.destination}
+                </Text>
+                <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
+                <Text style={[s.td, s.colNights]}>{h.nights}</Text>
+                <Text style={[s.td, s.colRoom]}>{h.roomType}</Text>
+                <Text style={[s.td, s.colRooms]}>{h.rooms}</Text>
+                <Text style={[s.td, s.colMeal]}>{h.mealType}</Text>
+              </View>
+            ))}
+          </View>
         </View>
         <View style={s.legendRow} wrap={false}>
           {MEAL_PLAN_LEGEND.map((l) => (
@@ -682,21 +781,23 @@ export function ItineraryPdf({ data, images, address }: Props) {
           ))}
         </View>
 
-        {/* TRANSPORT + INCLUSIONS/EXCLUSIONS */}
-        <View style={s.sectionGap}>
+        {/* TRANSPORT + INCLUSIONS/EXCLUSIONS — heading grouped with the
+            transport row for the same reason as Accommodation above: their
+            combined height decides whether they both fit or both move. */}
+        <View style={s.sectionGap} wrap={false}>
           <SectionHead title="Transportation Info" />
-        </View>
-        <View style={s.transportRow} wrap={false}>
-          <View style={{ flex: 1, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
-            <PdfIcon icon="car" size={20} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.transportType}>{data.transportType}</Text>
-              <Text style={s.transportDesc}>{data.transportDesc}</Text>
+          <View style={s.transportRow}>
+            <View style={{ flex: 1, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+              <PdfIcon icon="car" size={20} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.transportType}>{data.transportType}</Text>
+                <Text style={s.transportDesc}>{data.transportDesc}</Text>
+              </View>
             </View>
+            {img(data.transportImage) ? (
+              <Image src={img(data.transportImage)} style={s.transportImg} />
+            ) : null}
           </View>
-          {img(data.transportImage) ? (
-            <Image src={img(data.transportImage)} style={s.transportImg} />
-          ) : null}
         </View>
 
         <View style={s.twoCol}>
@@ -720,28 +821,32 @@ export function ItineraryPdf({ data, images, address }: Props) {
           </View>
         </View>
 
-        {/* TERMS & POLICIES */}
-        <View style={s.sectionGap}>
+        {/* TERMS & POLICIES — heading grouped with both cards. This is the
+            block most prone to the orphan pattern (two independently
+            wrap={false} cards side by side), so grouping is what actually
+            fixes it — a fixed minPresenceAhead number can't reliably predict
+            two variable-length policy lists' combined height. */}
+        <View style={s.sectionGap} wrap={false}>
           <SectionHead title="Terms & Policies" />
-        </View>
-        <View style={s.twoCol}>
-          <View style={s.policyCard} wrap={false}>
-            <Text style={s.policyHead}>Payment Policy</Text>
-            {data.pay.map((item, i) => (
-              <View key={i} style={s.listRow} wrap={false}>
-                <Text style={s.bulletInc}>•</Text>
-                <Text style={s.listText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-          <View style={s.policyCard} wrap={false}>
-            <Text style={s.policyHead}>Cancellation Policy</Text>
-            {data.cancel.map((item, i) => (
-              <View key={i} style={s.listRow} wrap={false}>
-                <Text style={s.bulletExc}>•</Text>
-                <Text style={s.listText}>{item}</Text>
-              </View>
-            ))}
+          <View style={s.twoCol}>
+            <View style={s.policyCard}>
+              <Text style={s.policyHead}>Payment Policy</Text>
+              {data.pay.map((item, i) => (
+                <View key={i} style={s.listRow} wrap={false}>
+                  <Text style={s.bulletInc}>•</Text>
+                  <Text style={s.listText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={s.policyCard}>
+              <Text style={s.policyHead}>Cancellation Policy</Text>
+              {data.cancel.map((item, i) => (
+                <View key={i} style={s.listRow} wrap={false}>
+                  <Text style={s.bulletExc}>•</Text>
+                  <Text style={s.listText}>{item}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -751,9 +856,18 @@ export function ItineraryPdf({ data, images, address }: Props) {
       {/* CLOSING PAGE — mirrors ItineraryEditor.tsx's "Thank you" preview
           article exactly: full-width Payment Options block on top, then a
           two-column row (white left = logo/company/contact, dark green
-          right = Thank You + tagline), both centred vertically on the page
-          with generous top/bottom margin (tyPage.paddingVertical). */}
-      <Page size="A4" style={[s.page, s.tyPage]}>
+          right = Thank You + tagline). The <Page> itself has zero padding
+          (s.tyPageOuter) so the two absolutely-positioned bleed rectangles
+          below reach the true physical edges. All foreground content is
+          unchanged and renders through the inner wrapper further down,
+          which reapplies the exact original padding/centering (s.page +
+          s.tyPage, same as before) — so nothing about its position, size,
+          or alignment moves; only the background now extends edge-to-edge
+          behind it. */}
+      <Page size="A4" style={s.tyPageOuter}>
+        <View style={s.tyBleedGreen} />
+        <View style={s.tyBleedNavy} />
+        <View style={[s.page, s.tyPage, { height: "100%" }]}>
         <View wrap={false}>
           <View style={s.payBlock}>
             <View style={s.payHeadWrap}>
@@ -811,6 +925,7 @@ export function ItineraryPdf({ data, images, address }: Props) {
               <Text style={s.tyMsg}>We look forward to hosting you in the paradise on earth.</Text>
             </View>
           </View>
+        </View>
         </View>
       </Page>
     </Document>
