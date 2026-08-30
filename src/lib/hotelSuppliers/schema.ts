@@ -3,34 +3,41 @@
 // Sales/Admin always maintain a single season's rate and overwrite it when
 // the season changes, rather than keeping a history of past rates. `data`
 // is a Json column (see prisma/schema.prisma -> HotelSupplier for why).
+// `isActive`, `category`, `recommended`, `lastRateRequestSentAt` are plain
+// relational columns (not nested in `data`) since those are exactly the
+// fields Sales filters/sorts by.
 import { z } from "zod";
 
 // Vertex's internal commercial classification — not the hotel's star rating.
-export const HOTEL_CATEGORIES = ["BUDGET", "DELUXE", "PREMIUM"] as const;
+export const HOTEL_CATEGORIES = ["BUDGET", "DELUXE", "PREMIUM", "LUXURY"] as const;
 export type HotelCategoryValue = (typeof HOTEL_CATEGORIES)[number];
 
 export const HOTEL_CATEGORY_LABELS: Record<HotelCategoryValue, string> = {
   BUDGET: "Budget",
   DELUXE: "Deluxe",
   PREMIUM: "Premium",
+  LUXURY: "Luxury",
 };
 
-// Display/sort order for category — Budget -> Deluxe -> Premium, cheapest first.
+// Display/sort order for category — Budget -> Deluxe -> Premium -> Luxury, cheapest first.
 export const CATEGORY_SORT_ORDER: Record<HotelCategoryValue, number> = {
   BUDGET: 0,
   DELUXE: 1,
   PREMIUM: 2,
+  LUXURY: 3,
 };
 
 // Category is derived from the MAP net rate, not chosen manually — this is
-// Vertex's actual commercial classification rule: <2,500 Budget, <7,000
-// Deluxe, >=7,000 Premium. Recomputed every time MAP is saved. A hotel with
-// no MAP figure yet defaults to Budget until a real rate is entered.
+// Vertex's actual commercial classification rule: <=3,000 Budget, <=5,000
+// Deluxe, <=10,000 Premium, >10,000 Luxury. Recomputed every time the rate
+// table is saved, from the CHEAPEST room's MAP (see getMinMapRate). A hotel
+// with no MAP figure yet defaults to Budget until a real rate is entered.
 export function computeCategoryFromMap(mapNet: number | null | undefined): HotelCategoryValue {
   if (mapNet == null) return "BUDGET";
-  if (mapNet < 2500) return "BUDGET";
-  if (mapNet < 7000) return "DELUXE";
-  return "PREMIUM";
+  if (mapNet <= 3000) return "BUDGET";
+  if (mapNet <= 5000) return "DELUXE";
+  if (mapNet <= 10000) return "PREMIUM";
+  return "LUXURY";
 }
 
 // Initial destination set. Extend this array to add a destination later —
@@ -66,28 +73,94 @@ const nullableText = z.preprocess(
   z.string().nullable(),
 );
 
-// The one current rate for a hotel — all four meal-plan rates (MAP still
-// drives the auto-computed category). Missing keys (e.g. rows saved before
-// EP was added) parse to null via the nonNegativeMoney preprocess, so this
-// stays backward-compatible with rates already saved.
-export const rateSchema = z.object({
+// One row of the rate table — "Deluxe", "Super Deluxe", "Extra Bed", etc. are
+// all just room-type rows with their own EP/CP/MAP, per the business's actual
+// rate-sheet format. No AP column (dropped — the business only quotes off
+// EP/CP/MAP now).
+export const roomRateRowSchema = z.object({
+  roomType: z.string().trim().min(1, "Room type is required").max(60),
+  ep: nonNegativeMoney,
+  cp: nonNegativeMoney,
+  map: nonNegativeMoney,
+});
+export type RoomRateRow = z.infer<typeof roomRateRowSchema>;
+
+export const EMPTY_ROOM_RATE_ROW: RoomRateRow = { roomType: "", ep: null, cp: null, map: null };
+
+// The rate table for a hotel: a shared validity date + one or more room-type
+// rows. `rooms` always has at least 1 row so the editor UI never has to
+// handle "no rows" as a distinct empty state.
+const newRateShape = z.object({
+  validTo: dateString,
+  rooms: z.array(roomRateRowSchema).min(1),
+});
+
+// Legacy shape (pre room-table redesign): one flat EP/CP/MAP/AP + extraBed
+// per hotel. Auto-upgraded to the new `rooms` shape at READ time below, via
+// preprocess — so existing hotels never need a database backfill. AP data in
+// old records is intentionally dropped (no AP column in the new table); a
+// nonzero extraBed becomes its own "Extra Bed" row (mapped into the MAP
+// column, since the old field had no meal-plan breakdown of its own).
+const legacyRateShape = z.object({
   validTo: dateString,
   mealPlans: z.object({
     EP: nonNegativeMoney,
     CP: nonNegativeMoney,
     MAP: nonNegativeMoney,
-    AP: nonNegativeMoney,
+    AP: nonNegativeMoney.optional(),
   }),
   extraBed: nonNegativeMoney,
 });
-export type HotelRate = z.infer<typeof rateSchema>;
+
+function isLegacyRateShape(value: unknown): value is z.infer<typeof legacyRateShape> {
+  return !!value && typeof value === "object" && "mealPlans" in value;
+}
+
+// Non-null object type — every existing call site (getMinMapRate,
+// rateNeedsRefresh, EMPTY_RATE, ...) already expresses "no rate" as
+// `HotelRate | null` at the call site, not by making this type itself
+// nullable. `rateSchema` below is what's actually nullable, since it's the
+// one used directly against the (nullable) stored value.
+export type HotelRate = z.infer<typeof newRateShape>;
+
+export const rateSchema = z.preprocess((value) => {
+  if (value == null) return null;
+  if (!isLegacyRateShape(value)) return value; // already the new shape (or invalid — let the schema reject it)
+
+  const legacy = legacyRateShape.parse(value);
+  const rooms: RoomRateRow[] = [];
+  const { EP, CP, MAP } = legacy.mealPlans;
+  if (EP != null || CP != null || MAP != null) {
+    rooms.push({ roomType: "Standard", ep: EP, cp: CP, map: MAP });
+  }
+  if (legacy.extraBed != null) {
+    rooms.push({ roomType: "Extra Bed", ep: null, cp: null, map: legacy.extraBed });
+  }
+  // A legacy rate object with every field blank (some hotels have one on file
+  // from an earlier "Add Rate" click that was never filled in) has nothing to
+  // convert — represent it as no rate at all, same as a hotel that never had
+  // one. A synthetic empty-roomType row would fail roomRateRowSchema's
+  // required-roomType check (real incident: 2 hotels failed to parse here).
+  if (rooms.length === 0) return null;
+  return { validTo: legacy.validTo, rooms };
+}, newRateShape.nullable());
+
+export const EMPTY_RATE: HotelRate = { validTo: null, rooms: [EMPTY_ROOM_RATE_ROW] };
+
+// The cheapest room's MAP rate — drives category classification, the
+// "needs a rate request" check, and the price-sort column. Null when no room
+// row has a MAP figure yet.
+export function getMinMapRate(rate: HotelRate | null | undefined): number | null {
+  if (!rate) return null;
+  const maps = rate.rooms.map((r) => r.map).filter((m): m is number => m != null);
+  return maps.length > 0 ? Math.min(...maps) : null;
+}
 
 // Meal-plan abbreviation legend, shown at the top of the Hotel Rates page.
-export const MEAL_PLAN_LEGEND: { code: "EP" | "CP" | "MAP" | "AP"; meaning: string }[] = [
+export const MEAL_PLAN_LEGEND: { code: "EP" | "CP" | "MAP"; meaning: string }[] = [
   { code: "EP", meaning: "Room only" },
   { code: "CP", meaning: "Room + breakfast" },
   { code: "MAP", meaning: "Room + breakfast + one of lunch/dinner" },
-  { code: "AP", meaning: "Room + breakfast + lunch + dinner" },
 ];
 
 export const propertySchema = z.object({
@@ -105,17 +178,28 @@ export type HotelProperty = z.infer<typeof propertySchema>;
 
 export const hotelDataSchema = z.object({
   property: propertySchema,
-  rate: rateSchema.nullable(),
+  rate: rateSchema, // already nullable — see rateSchema's own preprocess/target
   // Google rating text (e.g. "4.7★ / 2,698 reviews") shown in the Rating column.
   rating: nullableText,
 });
 export type HotelData = z.infer<typeof hotelDataSchema>;
+
+// Extracts the leading number from a free-text rating string (e.g. "4.7★ /
+// 2,698 reviews" -> 4.7) for the rating sort. Null when nothing parses.
+export function parseRatingValue(rating: string | null | undefined): number | null {
+  if (!rating) return null;
+  const match = rating.match(/(\d+(\.\d+)?)/);
+  if (!match) return null;
+  const n = Number(match[1]);
+  return Number.isFinite(n) ? n : null;
+}
 
 export const createHotelSupplierSchema = z.object({
   hotelName: z.string().min(2, "Hotel name is required"),
   destination: z.enum(HOTEL_DESTINATIONS),
   category: z.enum(HOTEL_CATEGORIES),
   isActive: z.boolean().default(true),
+  recommended: z.boolean().default(false),
   data: hotelDataSchema,
 });
 export type CreateHotelSupplierInput = z.infer<typeof createHotelSupplierSchema>;
@@ -125,6 +209,7 @@ export const patchHotelSupplierSchema = z.object({
   destination: z.enum(HOTEL_DESTINATIONS).optional(),
   category: z.enum(HOTEL_CATEGORIES).optional(),
   isActive: z.boolean().optional(),
+  recommended: z.boolean().optional(),
   data: hotelDataSchema.optional(),
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;
@@ -139,14 +224,15 @@ export function parseServices(raw: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
-// True when a hotel is due for a rate-request email: no MAP rate on file, no
-// valid-till date on file (can't confirm it's still current), or its
-// validity has lapsed. Shared by the client (enables/disables the Send
+// True when a hotel is due for a rate-request email: no room has a MAP rate
+// on file, no valid-till date on file (can't confirm it's still current), or
+// its validity has lapsed. Shared by the client (enables/disables the Send
 // button) and the API route (re-checked server-side so a disabled button
 // can't be bypassed from devtools).
 export function rateNeedsRefresh(rate: HotelRate | null, today?: string): boolean {
-  if (!rate || rate.mealPlans.MAP == null) return true;
-  if (!rate.validTo) return true;
+  const minMap = getMinMapRate(rate);
+  if (minMap == null) return true;
+  if (!rate?.validTo) return true;
   const todayStr = today ?? new Date().toISOString().slice(0, 10);
   return rate.validTo < todayStr;
 }

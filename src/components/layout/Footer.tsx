@@ -17,6 +17,7 @@ import { appendWhatsAppAttributionTag } from "@/lib/whatsapp";
 import { useWhatsAppAttributionTag } from "@/lib/useWhatsAppAttributionTag";
 import { formatBusinessAddress, REGISTERED_OFFICE_FORMATTED } from "@/lib/businessAddress";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
+import { ORIGIN_CITIES } from "@/lib/originCities";
 import { Container } from "@/components/ui/layout/Container";
 import { openCookiePreferences } from "@/lib/cookieConsent";
 
@@ -407,6 +408,25 @@ export function Footer({
             </div>
           </div>
         </div>
+        <div className="border-t border-border py-5">
+          <Container>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground/70">
+              Kashmir Tour Packages By City
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
+              {ORIGIN_CITIES.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/tours/kashmir-tour-packages-from/${c.slug}`}
+                  className="transition hover:text-primary"
+                >
+                  From {c.name}
+                </Link>
+              ))}
+            </div>
+          </Container>
+        </div>
+
         <div className="border-t border-border pt-5 pb-20 lg:pb-5">
           <Container>
             <p className="text-[16px] text-muted-foreground">

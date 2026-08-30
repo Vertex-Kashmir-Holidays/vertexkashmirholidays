@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Search, RotateCcw, X, ArrowRight } from "lucide-react";
 import type { TourCategory } from "@prisma/client";
 import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
+import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import type { CategoryOption, DurationOption } from "@/types/tours";
 
@@ -181,6 +182,10 @@ function FilterContent({
         Clear Filters
         <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
       </motion.button>
+
+      {/* Informational, not a functional filter — flight/train assistance is a
+         sitewide service, not a per-tour attribute, so it can't narrow results. */}
+      <TransportAssistanceBanner variant="sidebar" placement="tour-listing" />
     </>
   );
 }

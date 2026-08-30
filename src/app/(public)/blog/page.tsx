@@ -7,6 +7,7 @@ import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { BlogPageClient } from "@/components/blog/BlogPageClient";
 import { BlogHero } from "@/components/blog/BlogHero";
+import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { TrustSection } from "@/components/common/TrustSection";
 
 export const revalidate = 600;
@@ -125,6 +126,9 @@ export default async function BlogPage() {
           }))}
         />
       </Suspense>
+      <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">
+        <TransportAssistanceBanner placement="travel-stories" />
+      </div>
       <TrustSection type="blog" />
     </>
   );

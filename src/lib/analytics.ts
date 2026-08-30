@@ -77,6 +77,15 @@ export function trackTourInquiry(tourName?: string, tourId?: string): void {
   });
 }
 
+/** Fire when the "Get a Flight/Train Quote" CTA is clicked (opens the quote form). */
+export function trackFlightTrainQuoteClick(placement: string, tourName?: string): void {
+  push({
+    event: "flight_train_quote_click",
+    placement,
+    ...(tourName ? { package_name: tourName } : {}),
+  });
+}
+
 /** Fire when a user initiates the booking checkout flow. */
 export function trackBookingStarted(packageName?: string): void {
   push({ event: "booking_started", ...(packageName ? { package_name: packageName } : {}) });

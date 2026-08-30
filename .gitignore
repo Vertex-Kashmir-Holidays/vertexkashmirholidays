@@ -20,6 +20,9 @@
 .DS_Store
 *.pem
 
+# editor (personal settings only — no shared config lives here)
+.vscode
+
 # debug
 npm-debug.log*
 yarn-debug.log*

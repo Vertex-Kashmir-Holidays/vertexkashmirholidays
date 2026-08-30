@@ -16,6 +16,7 @@ import { UpdatesStrip } from "@/components/home/UpdatesStrip";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 import { WhyChooseSection } from "@/components/home/WhyChooseSection";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
+import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { TrustSection } from "@/components/common/TrustSection";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getFaqsForPlacement } from "@/lib/faqs";
@@ -222,6 +223,9 @@ export default async function HomePage() {
           minPersons: t.minPersons,
         }))}
       />
+      <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">
+        <TransportAssistanceBanner placement="homepage" />
+      </div>
       <WhyChooseSection
         heading={heading("why")}
         items={whyItems.map((w) => ({

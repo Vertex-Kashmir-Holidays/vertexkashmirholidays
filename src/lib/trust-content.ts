@@ -11,7 +11,14 @@
 // one level down (per-type instead of sitewide). Callers that render exactly
 // one page of a type (home, blog listing, the category hub) simply omit
 // `name` and get the generic fallback sentence.
-export type TrustSectionType = "home" | "tour" | "category" | "destination" | "activity" | "blog";
+export type TrustSectionType =
+  | "home"
+  | "tour"
+  | "category"
+  | "destination"
+  | "activity"
+  | "blog"
+  | "origin-city";
 
 interface TrustContent {
   heading: string;
@@ -54,5 +61,12 @@ export const TRUST_CONTENT: Record<TrustSectionType, TrustContent> = {
     heading: "Travel Advice From Local Experts",
     text: () =>
       "Read practical travel guides, seasonal tips, itineraries, and destination advice written by the local team at Vertex Kashmir Tour & Travels.",
+  },
+  "origin-city": {
+    heading: "Planning Your Trip From Outside Kashmir",
+    text: (name) =>
+      name
+        ? `Vertex Kashmir Tour & Travels has helped travellers from ${name} plan complete Kashmir holidays — the ground itinerary, hotels and experiences, plus optional help arranging flights or train tickets for the journey itself.`
+        : "Vertex Kashmir Tour & Travels helps travellers from across India plan complete Kashmir holidays — the ground itinerary, hotels and experiences, plus optional help arranging flights or train tickets for the journey itself.",
   },
 };

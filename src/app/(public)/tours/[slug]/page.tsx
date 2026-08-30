@@ -31,6 +31,7 @@ import { TourDetailsBudget } from "@/components/tours/TourDetailsBudget";
 import { TourDetailsTravelInfo } from "@/components/tours/TourDetailsTravelInfo";
 import { TourDetailsRelatedTours } from "@/components/tours/TourDetailsRelatedTours";
 import { TourCustomizationBanner } from "@/components/tours/TourCustomizationBanner";
+import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { ActivitiesShowcase } from "@/components/activities/ActivitiesShowcase";
 import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
 import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
@@ -399,6 +400,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
                 <TourDetailsItinerary itinerary={itinerary} />
               </section>
             )}
+
+            {/* Positive follow-through right after the itinerary is understood —
+               the honest "Airfare — Excluded" messaging still lives in
+               Inclusions/Exclusions below, unchanged. */}
+            <TransportAssistanceBanner placement="tour-detail" tourId={tour.id} tourName={tour.title} />
 
             <div className="scroll-mt-16">
               <TourDetailsHighlights highlights={highlights} />

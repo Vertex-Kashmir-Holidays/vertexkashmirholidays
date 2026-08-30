@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Blocks a commit that deletes or modifies an already-committed Prisma
+# migration file. Migrations under prisma/migrations/ must be append-only —
+# once a migration.sql is committed, Prisma tracks it as "applied" by content
+# hash in every database it's been run against. Editing or deleting it after
+# the fact doesn't undo what it already did to those databases; it just
+# creates drift between "what git says happened" and "what the database says
+# happened" — which is exactly what caused a real incident here (an unrelated
+# commit swept up an accidental local deletion of prisma/migrations/, and
+# nobody noticed until `prisma migrate dev` refused to run weeks later and
+# offered to reset the dev database to fix it).
+#
+# New migrations (new folders) are always allowed — only touching a migration
+# that already has a commit in history is blocked. Add a new migration to
+# fix/extend an old one instead of editing it in place.
+#
+# Installed via: git config core.hooksPath .githooks (see .ai or ask Claude —
+# this only activates if that's been set; a fresh clone needs it run once).
+
+set -euo pipefail
+
+violations=""
+
+# Only check files under prisma/migrations/ (not migration_lock.toml, which
+# is expected to change), for staged Deletions or Modifications specifically.
+while IFS=$'\t' read -r status path; do
+  case "$path" in
+    prisma/migrations/*/migration.sql) ;;
+    *) continue ;;
+  esac
+
+  # A migration.sql that's staged as Deleted (D) or Modified (M) is only a
+  # problem if it already exists in HEAD (i.e. it was committed before) —
+  # editing a brand-new migration you just created in this same commit series
+  # (not yet on a shared branch) is fine.
+  if git cat-file -e "HEAD:$path" 2>/dev/null; then
+    case "$status" in
+      D) violations="${violations}  DELETED:  $path\n" ;;
+      M) violations="${violations}  MODIFIED: $path\n" ;;
+    esac
+  fi
+done < <(git diff --cached --name-status --diff-filter=DM -- prisma/migrations/)
+
+if [ -n "$violations" ]; then
+  echo ""
+  echo "✖ Blocked: this commit deletes or modifies an already-committed Prisma migration:"
+  echo ""
+  echo -e "$violations"
+  echo "Migrations are append-only once committed — a database that already applied"
+  echo "one doesn't un-apply it just because the file changes or disappears from git."
+  echo "That gap is exactly what caused a real drift incident in this repo."
+  echo ""
+  echo "If you need to fix something in an already-applied migration, add a NEW"
+  echo "migration instead. If this deletion is genuinely intentional (e.g. you are"
+  echo "certain no database — dev or prod — has ever applied it), re-stage with"
+  echo "'git commit --no-verify' to bypass this check."
+  echo ""
+  exit 1
+fi
+
+exit 0

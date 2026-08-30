@@ -15,6 +15,7 @@ import {
   type HotelRateRequestData,
 } from "@/lib/mail";
 import { hotelDataSchema, rateNeedsRefresh } from "@/lib/hotelSuppliers/schema";
+import { resolvePrimaryOffice } from "@/lib/companyOffice";
 
 const bodySchema = z.object({
   to: z.string().email("Enter a valid email address"),
@@ -56,6 +57,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.ok) return parsed.response;
 
   const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
+  // Corporate (operational) office, not the legal Registered Office — external
+  // partner-facing mail should never surface the registered address. Falls back
+  // to Registered Office only if no corporate office is configured in admin.
+  const office = await resolvePrimaryOffice(settings);
 
   const emailData: HotelRateRequestData = {
     hotelName: hotel.data.hotelName,
@@ -69,7 +74,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       website: siteUrl(),
       gstNumber: settings?.gstNumber ?? null,
       tourismRegNumber: settings?.tourismRegNumber ?? null,
-      address: settings?.siteAddress ?? null,
+      address: office.address,
       logoUrl: brandLogoUrl(),
     },
   };
@@ -104,6 +109,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!result.delivered) {
     return NextResponse.json({ error: "Failed to send — please try again." }, { status: 502 });
   }
+
+  await prisma.hotelSupplier.update({
+    where: { id },
+    data: { lastRateRequestSentAt: new Date() },
+  });
 
   return NextResponse.json({ success: true, messageId: result.messageId });
 }

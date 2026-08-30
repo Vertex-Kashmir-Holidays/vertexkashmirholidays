@@ -45,8 +45,9 @@ interface LeadFormProps {
 
 // Match the country-aware PhoneInput (.input-wrap): solid card background,
 // the same input border, and an identical primary focus ring — so Name, Email
-// and Phone read as one consistent field set.
-const inputBase =
+// and Phone read as one consistent field set. Exported so other forms that
+// pair with <LeadForm /> (e.g. the flight/train quote form) share the look.
+export const inputBase =
   "w-full rounded-xl border border-input bg-card px-4 py-3 text-[16px] text-foreground placeholder-foreground/45 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25";
 
 export function LeadForm({
@@ -95,6 +96,11 @@ export function LeadForm({
   const waMessage = (() => {
     const first = (watchedName ?? "").trim().split(/\s+/)[0];
     const greeting = first ? `Hi, I'm ${first}! ` : "Hi! ";
+    if (source === "flight-train-quote") {
+      const from = context?.fromCity ? ` from ${context.fromCity}` : "";
+      const forTour = context?.tourName ? ` for the "${context.tourName}" tour` : "";
+      return `${greeting}I'd like a flight/train quote${from}${forTour}. Please share the best options.`;
+    }
     if (context?.tourName)
       return `${greeting}I'd like more details about the "${context.tourName}" Kashmir tour. Please help.`;
     if (context?.destinationName)
@@ -165,9 +171,16 @@ export function LeadForm({
       setSentName(String(data.name).trim().split(/\s+/)[0] || "there");
       setSent(true);
       const isTour = source === "tour-detail";
+      const isFlightTrainQuote = source === "flight-train-quote";
       trackLeadSubmit(
-        isTour ? "tour_inquiry" : source === "contact" ? "contact" : "itinerary",
-        isTour ? context?.tourName : undefined,
+        isTour
+          ? "tour_inquiry"
+          : isFlightTrainQuote
+            ? "flight_train_quote"
+            : source === "contact"
+              ? "contact"
+              : "itinerary",
+        isTour || isFlightTrainQuote ? context?.tourName : undefined,
         json.id,
       );
       if (isTour) trackTourInquiry(context?.tourName, context?.tourId);
@@ -195,8 +208,9 @@ export function LeadForm({
           </div>
           <p className="text-[18px] font-bold text-foreground">Thank you, {sentName}! 🌿</p>
           <p className="mx-auto mt-1.5 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
-            Our local Kashmir expert will connect with you on WhatsApp shortly — usually within 30
-            minutes.
+            {source === "flight-train-quote"
+              ? "Our team is checking live fares for your route and will share the best flight/train options on WhatsApp shortly."
+              : "Our local Kashmir expert will connect with you on WhatsApp shortly — usually within 30 minutes."}
           </p>
           <a
             href={successWaHref}

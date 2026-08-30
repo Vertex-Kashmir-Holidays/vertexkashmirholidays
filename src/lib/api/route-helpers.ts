@@ -47,5 +47,6 @@ export function mapPrismaError(err: unknown, conflictMessage: string, genericMes
   if (msg.includes("P2002")) {
     return NextResponse.json({ error: conflictMessage }, { status: 409 });
   }
+  console.error("mapPrismaError:", err);
   return NextResponse.json({ error: genericMessage }, { status: 500 });
 }
