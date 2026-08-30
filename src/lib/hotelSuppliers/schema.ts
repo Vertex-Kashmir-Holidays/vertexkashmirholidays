@@ -43,6 +43,7 @@ export function computeCategoryFromMap(mapNet: number | null | undefined): Hotel
 // Initial destination set. Extend this array to add a destination later —
 // no migration needed, `destination` is a plain filtered string column.
 export const HOTEL_DESTINATIONS = [
+  "Houseboats",
   "Srinagar",
   "Pahalgam",
   "Gulmarg / Tangmarg",
@@ -154,6 +155,16 @@ export function getMinMapRate(rate: HotelRate | null | undefined): number | null
   if (!rate) return null;
   const maps = rate.rooms.map((r) => r.map).filter((m): m is number => m != null);
   return maps.length > 0 ? Math.min(...maps) : null;
+}
+
+// The MAP rate for whichever room row is named "Deluxe" (case-insensitive
+// substring match, so "Deluxe Room" / "Super Deluxe" etc. all count) — shown
+// as its own table column since Deluxe is the room type Sales quotes most
+// often. Null when the hotel has no such room row or it has no MAP figure.
+export function getDeluxeMapRate(rate: HotelRate | null | undefined): number | null {
+  if (!rate) return null;
+  const room = rate.rooms.find((r) => r.roomType.toLowerCase().includes("deluxe"));
+  return room?.map ?? null;
 }
 
 // Meal-plan abbreviation legend, shown at the top of the Hotel Rates page.

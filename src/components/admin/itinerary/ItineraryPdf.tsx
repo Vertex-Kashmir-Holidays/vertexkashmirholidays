@@ -8,6 +8,7 @@ import { Document, Page, View, Text, Image, Svg, Path, StyleSheet } from "@react
 import type { ItineraryData } from "@/types/itinerary";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { getPaymentQr } from "@/lib/itinerary/payment";
+import { MEAL_PLAN_LEGEND } from "@/lib/hotelSuppliers/schema";
 import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "./icons";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
@@ -289,10 +290,14 @@ const s = StyleSheet.create({
   th: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green, padding: 7 },
   tRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: C.border },
   td: { fontSize: 9, padding: 7, color: C.ink, lineHeight: 1.4 },
-  colDest: { width: "26%" },
-  colHotel: { width: "44%" },
-  colNights: { width: "13%" },
-  colRoom: { width: "17%" },
+  colDest: { width: "18%" },
+  colHotel: { width: "30%" },
+  colNights: { width: "10%" },
+  colRoom: { width: "16%" },
+  colRooms: { width: "13%" },
+  colMeal: { width: "13%" },
+  legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
+  legendItem: { fontSize: 8, color: C.muted },
   note: { fontSize: 8, color: C.muted, fontStyle: "italic", marginTop: 6 },
   hotelImagesRow: { flexDirection: "row", gap: 10, marginTop: 12 },
   hotelImg: { flex: 1, height: 90, borderRadius: 8, objectFit: "cover" },
@@ -632,6 +637,8 @@ export function ItineraryPdf({ data, images, address }: Props) {
             <Text style={[s.th, s.colHotel]}>Hotel Details</Text>
             <Text style={[s.th, s.colNights]}>Nights</Text>
             <Text style={[s.th, s.colRoom]}>Room Type</Text>
+            <Text style={[s.th, s.colRooms]}>No. of Rooms</Text>
+            <Text style={[s.th, s.colMeal]}>Meal Type</Text>
           </View>
           {data.hotels.map((h) => (
             <View key={h.id} style={s.tRow} wrap={false}>
@@ -641,7 +648,17 @@ export function ItineraryPdf({ data, images, address }: Props) {
               <Text style={[s.td, s.colHotel, { color: C.muted }]}>{h.hotelDetails}</Text>
               <Text style={[s.td, s.colNights]}>{h.nights}</Text>
               <Text style={[s.td, s.colRoom]}>{h.roomType}</Text>
+              <Text style={[s.td, s.colRooms]}>{h.rooms}</Text>
+              <Text style={[s.td, s.colMeal]}>{h.mealType}</Text>
             </View>
+          ))}
+        </View>
+        <View style={s.legendRow} wrap={false}>
+          {MEAL_PLAN_LEGEND.map((l) => (
+            <Text key={l.code} style={s.legendItem}>
+              <Text style={{ fontFamily: "Helvetica-Bold", color: C.ink }}>{l.code}</Text> →{" "}
+              {l.meaning}
+            </Text>
           ))}
         </View>
         <Text style={s.note}>

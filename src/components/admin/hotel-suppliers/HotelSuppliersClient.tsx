@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, Mail, Star, ChevronDown, ChevronUp, Check, SlidersHorizontal } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Mail, Star, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
@@ -15,6 +15,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/organisms/select";
+import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
 import {
   HOTEL_DESTINATIONS,
   HOTEL_CATEGORIES,
@@ -22,6 +23,7 @@ import {
   CATEGORY_SORT_ORDER,
   MEAL_PLAN_LEGEND,
   getMinMapRate,
+  getDeluxeMapRate,
   parseRatingValue,
   rateNeedsRefresh,
   type HotelCategoryValue,
@@ -67,10 +69,18 @@ const PAGE_SIZE_OPTIONS: { value: PageSize; label: string }[] = [
 
 const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({ value: c, label: HOTEL_CATEGORY_LABELS[c] }));
 // Columns before Actions: Sr, Name, Phone, Email, Category, Recommended,
-// Rating, Valid Till, Sent — kept as one constant so the expand-row colSpan
-// can't silently drift from the header count. Location and per-room MAP
-// rates live in the expanded row only, not the main table.
-const HOTEL_COL_COUNT = 10;
+// Rating, MAP (Deluxe), Valid Till, Sent — kept as one constant so the
+// expand-row colSpan can't silently drift from the header count. Location
+// and the full per-room rate table live in the expanded row only.
+const HOTEL_COL_COUNT = 11;
+
+// Snaps the price slider's handles to clean values, same convention as the
+// Tours listing filter (see ToursPageClient's PRICE_STEP).
+const HOTEL_PRICE_STEP = 500;
+
+function fmtMoney(n: number | null): string {
+  return n == null ? "—" : `₹${n.toLocaleString("en-IN")}`;
+}
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -85,6 +95,8 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | HotelCategoryValue>("ALL");
   const [recommendedFilter, setRecommendedFilter] = useState<TriState>("ALL");
   const [sentFilter, setSentFilter] = useState<TriState>("ALL");
+  const [emailFilter, setEmailFilter] = useState<TriState>("ALL");
+  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("category");
   const [pageSize, setPageSize] = useState<PageSize>(20);
   const [page, setPage] = useState(1);
@@ -142,18 +154,46 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
     });
   }
 
+  // Price bounds for the slider come from the active destination tab only
+  // (not the other filters) — same convention as Tours' priceBounds, so the
+  // slider's range doesn't shrink out from under the user as they filter.
+  const priceBounds = useMemo(() => {
+    const prices = initialHotels
+      .filter((h) => h.destination === activeTab)
+      .map((h) => getMinMapRate(h.data.rate))
+      .filter((p): p is number => p != null);
+    if (prices.length === 0) return { min: 0, max: 0 };
+    return {
+      min: Math.floor(Math.min(...prices) / HOTEL_PRICE_STEP) * HOTEL_PRICE_STEP,
+      max: Math.ceil(Math.max(...prices) / HOTEL_PRICE_STEP) * HOTEL_PRICE_STEP,
+    };
+  }, [initialHotels, activeTab]);
+
+  // A different destination tab has different price bounds — a stale
+  // manual selection from the previous tab wouldn't make sense here.
+  useEffect(() => {
+    setPriceRange(null);
+  }, [activeTab]);
+
+  const [priceLo, priceHi] = priceRange ?? [priceBounds.min, priceBounds.max];
+  const effectivePriceRange: [number, number] = [priceLo, priceHi];
+
   const rows = useMemo(() => {
     const filtered = initialHotels.filter((h) => {
       if (h.destination !== activeTab) return false;
       if (categoryFilter !== "ALL" && h.category !== categoryFilter) return false;
       if (recommendedFilter !== "ALL" && h.recommended !== (recommendedFilter === "YES")) return false;
       if (sentFilter !== "ALL" && !!h.lastRateRequestSentAt !== (sentFilter === "YES")) return false;
+      if (emailFilter !== "ALL" && !!h.data.property.email !== (emailFilter === "YES")) return false;
       if (search && !h.hotelName.toLowerCase().includes(search.toLowerCase())) return false;
+      const minMap = getMinMapRate(h.data.rate);
+      if (minMap != null && (minMap < priceLo || minMap > priceHi)) return false;
       return true;
     });
 
+    let sorted: HotelSupplierRecord[];
     if (sortMode === "price-asc") {
-      return filtered.sort((a, b) => {
+      sorted = filtered.sort((a, b) => {
         const pa = getMinMapRate(a.data.rate);
         const pb = getMinMapRate(b.data.rate);
         if (pa == null && pb == null) return a.hotelName.localeCompare(b.hotelName);
@@ -161,9 +201,8 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         if (pb == null) return -1;
         return pa - pb;
       });
-    }
-    if (sortMode === "rating-desc") {
-      return filtered.sort((a, b) => {
+    } else if (sortMode === "rating-desc") {
+      sorted = filtered.sort((a, b) => {
         const ra = parseRatingValue(a.data.rating);
         const rb = parseRatingValue(b.data.rating);
         if (ra == null && rb == null) return a.hotelName.localeCompare(b.hotelName);
@@ -171,12 +210,29 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         if (rb == null) return -1;
         return rb - ra;
       });
+    } else {
+      sorted = filtered.sort((a, b) => {
+        const catDiff = CATEGORY_SORT_ORDER[a.category] - CATEGORY_SORT_ORDER[b.category];
+        return catDiff !== 0 ? catDiff : a.hotelName.localeCompare(b.hotelName);
+      });
     }
-    return filtered.sort((a, b) => {
-      const catDiff = CATEGORY_SORT_ORDER[a.category] - CATEGORY_SORT_ORDER[b.category];
-      return catDiff !== 0 ? catDiff : a.hotelName.localeCompare(b.hotelName);
-    });
-  }, [initialHotels, activeTab, categoryFilter, recommendedFilter, sentFilter, sortMode, search]);
+
+    // Recommended hotels always float to the top regardless of sort mode —
+    // Array.prototype.sort is a stable sort, so ties (same recommended
+    // value) keep the ordering already established above.
+    return sorted.sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
+  }, [
+    initialHotels,
+    activeTab,
+    categoryFilter,
+    recommendedFilter,
+    sentFilter,
+    emailFilter,
+    sortMode,
+    search,
+    priceLo,
+    priceHi,
+  ]);
 
   const totalPages = pageSize === "ALL" ? 1 : Math.max(1, Math.ceil(rows.length / pageSize));
 
@@ -295,6 +351,17 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             </SelectContent>
           </Select>
 
+          <Select value={emailFilter} onValueChange={(v) => setEmailFilter(v as TriState)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Email" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Email or not</SelectItem>
+              <SelectItem value="YES">Has email</SelectItem>
+              <SelectItem value="NO">No email</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
             <SelectTrigger className="w-[170px]">
               <SelectValue placeholder="Sort" />
@@ -327,6 +394,23 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </p>
         </div>
 
+        {priceBounds.max > priceBounds.min && (
+          <div className="border-t border-border px-4 py-3.5">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
+              Price Range <span className="font-normal normal-case">(cheapest room&apos;s MAP)</span>
+            </p>
+            <div className="max-w-sm">
+              <PriceRangeSlider
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={HOTEL_PRICE_STEP}
+                value={effectivePriceRange}
+                onChange={setPriceRange}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -339,6 +423,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                   "Category",
                   "Rec.",
                   "Rating",
+                  "MAP (Deluxe)",
                   "Valid Till",
                   "Sent",
                   "Actions",
@@ -546,6 +631,9 @@ function HotelRow({
           onSave={(v) => patchHotel(hotel.id, { data: { ...hotel.data, rating: v || null } })}
           className="min-w-[130px]"
         />
+      </td>
+      <td className="px-3 py-2.5 text-right whitespace-nowrap" title="MAP rate for the Deluxe room type">
+        {fmtMoney(getDeluxeMapRate(hotel.data.rate))}
       </td>
       <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDate(hotel.data.rate?.validTo ?? null)}</td>
       <td className="px-3 py-2.5 whitespace-nowrap">

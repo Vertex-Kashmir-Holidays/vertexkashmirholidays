@@ -97,6 +97,8 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       hotelDetails: "Hotel Grand MS / Hotel Royal Heritage / Similar",
       nights: "3",
       roomType: "Double Sharing",
+      rooms: "1",
+      mealType: "MAP",
     },
     {
       id: "h-2",
@@ -104,6 +106,8 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       hotelDetails: "Hotel Grand Hill View / Hotel Welcome Resort / Similar",
       nights: "1",
       roomType: "Double Sharing",
+      rooms: "1",
+      mealType: "MAP",
     },
     {
       id: "h-3",
@@ -111,6 +115,8 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       hotelDetails: "Hotel Pahalgam / Similar",
       nights: "1",
       roomType: "Double Sharing",
+      rooms: "1",
+      mealType: "MAP",
     },
   ],
   hotelImages: DEFAULT_HOTEL_IMAGES,

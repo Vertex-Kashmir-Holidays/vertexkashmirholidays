@@ -27,6 +27,17 @@ export const hotelSchema = z.object({
   hotelDetails: z.string(),
   nights: z.string(),
   roomType: z.string(),
+  // Defaulted so itineraries saved before these fields existed still parse —
+  // same reasoning as itineraryDataSchema's `hotelImages` default below.
+  // `rooms` is also range-checked since it's a whole count, not free text —
+  // the editor clamps on blur, this is the hard backstop on save.
+  rooms: z
+    .string()
+    .default("1")
+    .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 1, {
+      message: "Rooms must be a whole number of at least 1.",
+    }),
+  mealType: z.string().default("MAP"),
 });
 
 export const infoSchema = z.object({

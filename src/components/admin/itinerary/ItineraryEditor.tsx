@@ -11,6 +11,7 @@ import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
+import { MEAL_PLAN_LEGEND } from "@/lib/hotelSuppliers/schema";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf } from "@/lib/itinerary/export-pdf";
 import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
@@ -148,7 +149,7 @@ export function ItineraryEditor({
   /* ---------- hotels ---------- */
   const updateHotel = (
     hid: string,
-    field: "destination" | "hotelDetails" | "nights" | "roomType",
+    field: "destination" | "hotelDetails" | "nights" | "roomType" | "rooms" | "mealType",
     value: string,
   ) =>
     setData((p) => ({
@@ -167,6 +168,8 @@ export function ItineraryEditor({
           hotelDetails: "Hotel name / Similar",
           nights: "1",
           roomType: "Double Sharing",
+          rooms: "1",
+          mealType: "MAP",
         },
       ],
     }));
@@ -475,6 +478,8 @@ export function ItineraryEditor({
                     <th className="px-5 py-3.5">Hotel Details</th>
                     <th className="w-[70px] px-5 py-3.5">Nights</th>
                     <th className="w-[120px] px-5 py-3.5">Room Type</th>
+                    <th className="w-[90px] px-5 py-3.5">No. of Rooms</th>
+                    <th className="w-[90px] px-5 py-3.5">Meal Type</th>
                     <th className="w-10 px-2 no-print"></th>
                   </tr>
                 </thead>
@@ -514,6 +519,28 @@ export function ItineraryEditor({
                           onValueChange={(v) => updateHotel(h.id, "roomType", v)}
                         />
                       </td>
+                      <td className="px-5 py-3">
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={h.rooms}
+                          onChange={(e) => updateHotel(h.id, "rooms", e.target.value)}
+                          onBlur={(e) => {
+                            const n = parseInt(e.target.value, 10);
+                            if (!e.target.value.trim() || Number.isNaN(n) || n < 1) {
+                              updateHotel(h.id, "rooms", "1");
+                            }
+                          }}
+                          className="w-full rounded-md bg-transparent px-1 outline-none transition-all focus:bg-muted/30 focus:ring-1 focus:ring-primary/30 print:bg-transparent print:p-0 print:focus:ring-0"
+                        />
+                      </td>
+                      <td className="px-5 py-3">
+                        <EditableField
+                          value={h.mealType}
+                          onValueChange={(v) => updateHotel(h.id, "mealType", v)}
+                        />
+                      </td>
                       <td className="px-2 no-print">
                         <button
                           onClick={() => removeHotel(h.id)}
@@ -532,6 +559,14 @@ export function ItineraryEditor({
             <button onClick={addHotel} className={addBtn}>
               <Plus className="h-3 w-3" /> Add Hotel
             </button>
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
+              {MEAL_PLAN_LEGEND.map((l) => (
+                <p key={l.code} className="text-[12px] text-mute dark:text-muted-foreground">
+                  <strong className="font-bold text-ink dark:text-foreground">{l.code}</strong>{" "}
+                  <span className="opacity-60">→</span> {l.meaning}
+                </p>
+              ))}
+            </div>
             <p className="mt-2.5 text-[12px] italic text-mute dark:text-muted-foreground">
               *All accommodations are subject to availability at the time of confirmation.
             </p>
