@@ -244,18 +244,25 @@ model RolePermission {
 // destination/category/isActive stay relational columns because they're the
 // fields Sales actually filters/searches by; everything else nests in `data`.
 model HotelSupplier {
-  id          String        @id @default(cuid())
-  hotelName   String
-  destination String
-  category    HotelCategory
-  isActive    Boolean       @default(true)
-  data        Json
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  hotelName             String
+  destination           String
+  category              HotelCategory
+  isActive              Boolean       @default(true)
+  // Sales-curated "push this property first" flag — separate from `category`
+  // (which is auto-derived from rate) since recommendation is a judgment call.
+  recommended           Boolean       @default(false)
+  // Stamped by POST /api/hotel-suppliers/[id]/request-rates after a successful
+  // send — never set any other way. Null means no request has been sent yet.
+  lastRateRequestSentAt DateTime?
+  data                  Json
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   @@index([destination])
   @@index([category])
   @@index([isActive])
+  @@index([recommended])
 }
 
 enum HotelCategory {

@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { sendMail, leadNotificationHtml, leadNotificationText } from "@/lib/mail";
+import {
+  sendMail,
+  leadNotificationHtml,
+  leadNotificationText,
+  leadConfirmationHtml,
+  leadConfirmationText,
+} from "@/lib/mail";
+import { resolvePrimaryOffice } from "@/lib/companyOffice";
 import { requirePermission } from "@/lib/permissions";
 import { leadInputSchema } from "@/lib/leads/schema";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
@@ -307,6 +314,10 @@ export async function POST(req: NextRequest) {
   const leadsTo =
     env.LEADS_EMAIL ?? env.MAIL_TO_ADMIN ?? env.MAIL_FROM ?? "leads@vertexkashmirholidays.com";
 
+  // Only needed for the customer confirmation email's business-details block
+  // (settings is unstable_cache'd, so this is cheap even when email is unset).
+  const settings = lead.email ? await getSiteSettings() : null;
+
   const submittedAt = lead.createdAt.toLocaleString("en-IN", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -341,6 +352,43 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     // Log only the lead id — never the phone/email — and move on.
     console.error("[leads] notification email failed (lead saved):", lead.id, err);
+  }
+
+  // Customer-facing confirmation — only when they gave an email. Same
+  // best-effort/never-block-the-response treatment as the admin notification.
+  if (lead.email) {
+    try {
+      // Corporate (operational) office, not the legal Registered Office —
+      // customer-facing mail should never surface the registered address.
+      const office = await resolvePrimaryOffice(settings);
+      const confirmationData = {
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email,
+        travelDate: effectiveDate,
+        travellers: effectiveTravellers,
+        notes: lead.notes ?? undefined,
+        submittedAt,
+        business: {
+          siteName: settings?.siteName ?? "Vertex Kashmir Holidays",
+          phone: settings?.sitePhone,
+          email: settings?.siteEmail,
+          whatsappNumber: settings?.whatsapp ?? settings?.sitePhone,
+          address: office.address,
+          tourismRegNumber: settings?.tourismRegNumber,
+        },
+      };
+      await sendMail({
+        to: stripHeader(lead.email),
+        subject: stripHeader(
+          `We've received your enquiry — ${settings?.siteName ?? "Vertex Kashmir Holidays"}`,
+        ),
+        html: leadConfirmationHtml(confirmationData),
+        text: leadConfirmationText(confirmationData),
+      });
+    } catch (err) {
+      console.error("[leads] confirmation email failed (lead saved):", lead.id, err);
+    }
   }
 
   return NextResponse.json({ success: true, id: lead.id }, { status: 201 });

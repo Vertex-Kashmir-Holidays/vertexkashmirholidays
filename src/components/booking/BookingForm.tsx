@@ -551,45 +551,17 @@ export function BookingForm({
             <h2 className="font-display font-bold text-foreground text-xl mb-6">Your Details</h2>
 
             <form onSubmit={handleSubmit(handlePay)} className="space-y-5">
-              {/* Name */}
-              <Field label="Full Name" htmlFor="bf-name" error={errors.name?.message}>
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input
-                  id="bf-name"
-                  type="text"
-                  {...register("name")}
-                  placeholder="e.g. Priya Sharma"
-                  className={inputClass}
-                />
-              </Field>
-
-              {/* Email + Phone */}
+              {/* Name + Phone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Email Address" htmlFor="bf-email" error={errors.email?.message}>
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Field label="Full Name" htmlFor="bf-name" error={errors.name?.message}>
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
-                    id="bf-email"
-                    type="email"
-                    {...register("email")}
-                    placeholder="you@gmail.com"
-                    disabled={otpStep === "verified"}
-                    className={`${inputClass} ${otpStep === "verified" ? "pr-24" : "pr-28"}`}
+                    id="bf-name"
+                    type="text"
+                    {...register("name")}
+                    placeholder="e.g. Priya Sharma"
+                    className={inputClass}
                   />
-                  {otpStep !== "verified" && (
-                    <button
-                      type="button"
-                      onClick={requestOtp}
-                      disabled={requestingOtp || !!errors.email || !emailVal}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {requestingOtp ? "Sending…" : otpStep === "sent" ? "Resend" : "Verify"}
-                    </button>
-                  )}
-                  {otpStep === "verified" && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Verified
-                    </span>
-                  )}
                 </Field>
                 <Field label="Phone / WhatsApp" htmlFor="bf-phone" error={errors.phone?.message}>
                   <PhoneInput
@@ -603,6 +575,35 @@ export function BookingForm({
                   <input type="hidden" {...register("phone")} />
                 </Field>
               </div>
+
+              {/* Email — full row, so the Verify/Verified indicator never
+                 crowds or gets hidden behind a long email address. */}
+              <Field label="Email Address" htmlFor="bf-email" error={errors.email?.message}>
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  id="bf-email"
+                  type="email"
+                  {...register("email")}
+                  placeholder="you@gmail.com"
+                  disabled={otpStep === "verified"}
+                  className={`${inputClass} truncate ${otpStep === "verified" ? "pr-28" : "pr-32"}`}
+                />
+                {otpStep !== "verified" && (
+                  <button
+                    type="button"
+                    onClick={requestOtp}
+                    disabled={requestingOtp || !!errors.email || !emailVal}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {requestingOtp ? "Sending…" : otpStep === "sent" ? "Resend" : "Verify"}
+                  </button>
+                )}
+                {otpStep === "verified" && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Verified
+                  </span>
+                )}
+              </Field>
 
               {/* Email OTP entry */}
               {otpStep === "sent" && (
