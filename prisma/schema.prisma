@@ -269,6 +269,7 @@ enum HotelCategory {
   BUDGET
   DELUXE
   PREMIUM
+  LUXURY
 }
 
 model Destination {

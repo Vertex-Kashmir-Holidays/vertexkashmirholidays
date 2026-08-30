@@ -9,32 +9,35 @@
 import { z } from "zod";
 
 // Vertex's internal commercial classification — not the hotel's star rating.
-export const HOTEL_CATEGORIES = ["BUDGET", "DELUXE", "PREMIUM"] as const;
+export const HOTEL_CATEGORIES = ["BUDGET", "DELUXE", "PREMIUM", "LUXURY"] as const;
 export type HotelCategoryValue = (typeof HOTEL_CATEGORIES)[number];
 
 export const HOTEL_CATEGORY_LABELS: Record<HotelCategoryValue, string> = {
   BUDGET: "Budget",
   DELUXE: "Deluxe",
   PREMIUM: "Premium",
+  LUXURY: "Luxury",
 };
 
-// Display/sort order for category — Budget -> Deluxe -> Premium, cheapest first.
+// Display/sort order for category — Budget -> Deluxe -> Premium -> Luxury, cheapest first.
 export const CATEGORY_SORT_ORDER: Record<HotelCategoryValue, number> = {
   BUDGET: 0,
   DELUXE: 1,
   PREMIUM: 2,
+  LUXURY: 3,
 };
 
 // Category is derived from the MAP net rate, not chosen manually — this is
-// Vertex's actual commercial classification rule: <2,500 Budget, <7,000
-// Deluxe, >=7,000 Premium. Recomputed every time the rate table is saved,
-// from the CHEAPEST room's MAP (see getMinMapRate). A hotel with no MAP
-// figure yet defaults to Budget until a real rate is entered.
+// Vertex's actual commercial classification rule: <=3,000 Budget, <=5,000
+// Deluxe, <=10,000 Premium, >10,000 Luxury. Recomputed every time the rate
+// table is saved, from the CHEAPEST room's MAP (see getMinMapRate). A hotel
+// with no MAP figure yet defaults to Budget until a real rate is entered.
 export function computeCategoryFromMap(mapNet: number | null | undefined): HotelCategoryValue {
   if (mapNet == null) return "BUDGET";
-  if (mapNet < 2500) return "BUDGET";
-  if (mapNet < 7000) return "DELUXE";
-  return "PREMIUM";
+  if (mapNet <= 3000) return "BUDGET";
+  if (mapNet <= 5000) return "DELUXE";
+  if (mapNet <= 10000) return "PREMIUM";
+  return "LUXURY";
 }
 
 // Initial destination set. Extend this array to add a destination later —
