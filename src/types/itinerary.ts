@@ -54,6 +54,18 @@ export const trustSchema = z.object({
   icon: z.string(), // key into ITINERARY_ICONS
 });
 
+// Included Activities — a free add/remove list (unlike `trust`'s fixed 4),
+// same spirit as `hotels`: staff can delete every row down to none, in which
+// case the whole PDF section is omitted (see ItineraryPdf.tsx), and can
+// always add more via the editor's Add button regardless of current count.
+export const activitySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  place: z.string(),
+  time: z.string(),
+  image: z.string(),
+});
+
 /**
  * Fallback hotel/room photos for the 3 image slots below the accommodation
  * table — declared here (above the schema) so the schema's own `.default()`
@@ -95,6 +107,18 @@ export const itineraryDataSchema = z.object({
   // safeParse fallback in src/app/admin/itinerary/[id]/page.tsx.
   hotelImages: z.array(z.string()).default(DEFAULT_HOTEL_IMAGES),
   trust: z.array(trustSchema),
+  // Included Activities — shown right after the Trust strip in the PDF
+  // (before Transportation Info), omitted entirely when empty. Defaulted so
+  // itineraries saved before this field existed still parse as `[]`;
+  // src/app/admin/itinerary/[id]/page.tsx backfills the default Shikara Ride
+  // activity on load if still empty, same as whyChoose below — staff can
+  // delete it per itinerary via the editor.
+  activities: z.array(activitySchema).default([]),
+  // Why Choose Vertex — same shape as `trust` (id/title/subtitle/icon),
+  // editable per itinerary same as everything else. Defaulted so itineraries
+  // saved before this field existed still parse; src/app/admin/itinerary/[id]/page.tsx
+  // seeds real content into it on load if still empty.
+  whyChoose: z.array(trustSchema).default([]),
 
   // Transport
   transportType: z.string(),
@@ -106,10 +130,6 @@ export const itineraryDataSchema = z.object({
   exc: z.array(z.string()),
   pay: z.array(z.string()),
   cancel: z.array(z.string()),
-
-  // Payment QR shown on the closing PDF page. Optional — omitted/empty means
-  // "use the bundled default QR" (see src/lib/itinerary/payment.ts).
-  paymentQrUrl: z.string().optional(),
 });
 
 export type ItineraryMeta = z.infer<typeof metaSchema>;
@@ -117,6 +137,7 @@ export type ItineraryDay = z.infer<typeof daySchema>;
 export type HotelRow = z.infer<typeof hotelSchema>;
 export type InfoItem = z.infer<typeof infoSchema>;
 export type TrustItem = z.infer<typeof trustSchema>;
+export type ActivityItem = z.infer<typeof activitySchema>;
 export type ItineraryData = z.infer<typeof itineraryDataSchema>;
 
 export type ItineraryStatus = "DRAFT" | "SENT" | "CONFIRMED";

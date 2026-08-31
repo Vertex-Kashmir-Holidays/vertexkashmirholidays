@@ -5,8 +5,8 @@
 // the heavy PDF renderer only loads when the user actually exports — keeping it
 // out of the itinerary editor's initial JS bundle.
 import { compressMany } from "@/lib/itinerary/compress-image";
-import { getPaymentQr } from "@/lib/itinerary/payment";
 import type { ItineraryData } from "@/types/itinerary";
+import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 
 function slugify(text: string): string {
   return (
@@ -38,27 +38,52 @@ export interface ExportResult {
   bytes: number;
 }
 
+export interface TokenPaymentLink {
+  /** Razorpay Payment Link short URL — the only thing encoded in the QR. */
+  shortUrl: string;
+  amountRupees: number;
+}
+
 /**
  * Compress every referenced image, render the PDF to a Blob, and trigger a
  * browser download. Returns the byte size so callers can warn if it approaches
  * the 1 MB budget.
+ *
+ * `tokenPaymentLink`: the caller resolves this itself first (POST
+ * /api/itineraries/[id]/token-payment-link for staff, GET
+ * /api/account/bookings/[id]/token-payment-link for a customer) — this
+ * function only turns the resulting URL into a QR. Omitted when no itinerary
+ * id is available yet (e.g. an unsaved draft) or the resolve call failed; the
+ * PDF's QR card is simply hidden in that case (see ItineraryPdf.tsx), never
+ * filled with a static/generic fallback QR.
+ *
+ * `trustContent`: the real review-rating + Why Choose Vertex copy — also
+ * resolved by the caller (see src/lib/itinerary/pdfTrustContent.ts) since
+ * this function has no server/DB access. Omitted sections just don't render.
  */
 export async function downloadItineraryPdf(
   data: ItineraryData,
   address?: string,
+  tokenPaymentLink?: TokenPaymentLink,
+  trustContent?: PdfTrustContent,
 ): Promise<ExportResult> {
   // Lazily pull in the PDF renderer and the document template only on export.
-  const [{ pdf }, { ItineraryPdf, LOGO_ASSETS }] = await Promise.all([
+  const [{ pdf }, { ItineraryPdf, LOGO_ASSETS }, QRCode] = await Promise.all([
     import("@react-pdf/renderer"),
     import("@/components/admin/itinerary/ItineraryPdf"),
+    tokenPaymentLink ? import("qrcode").then((m) => m.default) : Promise.resolve(null),
   ]);
+
+  const tokenQrDataUrl = tokenPaymentLink
+    ? await QRCode!.toDataURL(tokenPaymentLink.shortUrl)
+    : undefined;
 
   const srcs = [
     data.coverImage,
     data.transportImage,
-    getPaymentQr(data),
     ...data.days.map((d) => d.image),
     ...data.hotelImages,
+    ...data.activities.map((a) => a.image),
   ].filter(Boolean);
 
   // The cover wants a larger, fuller-bleed image; day thumbnails stay tiny.
@@ -95,7 +120,16 @@ export async function downloadItineraryPdf(
   });
   const images = { ...smallImages, ...coverImages, ...logoMap };
 
-  const blob = await pdf(<ItineraryPdf data={data} images={images} address={address} />).toBlob();
+  const blob = await pdf(
+    <ItineraryPdf
+      data={data}
+      images={images}
+      address={address}
+      tokenQrDataUrl={tokenQrDataUrl}
+      tokenAmountRupees={tokenPaymentLink?.amountRupees}
+      trustContent={trustContent}
+    />,
+  ).toBlob();
 
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

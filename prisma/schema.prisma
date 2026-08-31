@@ -135,6 +135,25 @@ model Itinerary {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
+  // ── Booking-token Razorpay Payment Link (see src/lib/itinerary/tokenPaymentLink.ts) ──
+  // The single CURRENT active/most-recent fixed-amount (₹2,000, or the tour total
+  // if lower) token Payment Link embedded as a QR in this itinerary's PDF. Kept on
+  // Itinerary (not Booking) because a link can be minted while the itinerary is
+  // still only Lead-linked, before conversion — Booking may not exist yet. Only
+  // ever one row of "current" link state; a superseded (expired/replaced) link is
+  // not retained locally — Razorpay's own dashboard/API is the audit trail.
+  razorpayPaymentLinkId        String?   @unique
+  razorpayPaymentLinkRefId     String?   @unique
+  razorpayPaymentLinkUrl       String?
+  // Paise, matching the gateway's own unit (see BookingPayment/create-order for
+  // the same convention elsewhere in this codebase).
+  razorpayPaymentLinkAmount    Int?
+  // Incremented each time a NEW link is minted (not on reuse) — feeds the
+  // reference_id suffix (…TOKEN-001, …TOKEN-002) so a regenerated-after-expiry
+  // link never collides with a prior one.
+  razorpayPaymentLinkSeq       Int       @default(0)
+  razorpayPaymentLinkCreatedAt DateTime?
+
   @@index([ownerId])
   @@index([status])
   @@index([updatedAt])
@@ -252,6 +271,10 @@ model HotelSupplier {
   // Sales-curated "push this property first" flag — separate from `category`
   // (which is auto-derived from rate) since recommendation is a judgment call.
   recommended           Boolean       @default(false)
+  // Manual tally of bookings sent to this hotel — staff-entered (not derived
+  // from any Booking relation; HotelSupplier is a supplier reference, not
+  // bookable inventory, per the module's own design — see schema.ts).
+  bookingsCount         Int           @default(0)
   // Stamped by POST /api/hotel-suppliers/[id]/request-rates after a successful
   // send — never set any other way. Null means no request has been sent yet.
   lastRateRequestSentAt DateTime?

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, QrCode } from "lucide-react";
 import { Toolbar } from "./Toolbar";
 import { ItineraryCover } from "./ItineraryCover";
 import { LeadTripSync, LinkItineraryPanel } from "./LeadTripSync";
@@ -13,9 +13,9 @@ import { ItineraryIcon } from "./icons";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { MEAL_PLAN_LEGEND } from "@/lib/hotelSuppliers/schema";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
-import { downloadItineraryPdf } from "@/lib/itinerary/export-pdf";
+import { downloadItineraryPdf, type TokenPaymentLink } from "@/lib/itinerary/export-pdf";
+import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
-import { getPaymentQr } from "@/lib/itinerary/payment";
 import {
   type ItineraryData,
   type ItineraryStatus,
@@ -54,6 +54,8 @@ interface ItineraryEditorProps {
   isBookingLinked?: boolean;
   /** Resolved Corporate Office (or Registered Office fallback) — see companyOffice.ts. */
   companyAddress?: string;
+  /** Real review-rating + Why Choose Vertex copy for the PDF — see pdfTrustContent.ts. */
+  trustContent?: PdfTrustContent;
 }
 
 export function ItineraryEditor({
@@ -66,6 +68,7 @@ export function ItineraryEditor({
   isBookingLinked = false,
   lockCost = false,
   companyAddress,
+  trustContent,
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -188,11 +191,46 @@ export function ItineraryEditor({
       return { ...p, hotelImages: next };
     });
 
+  /* ---------- activities ---------- */
+  const updateActivity = (aid: string, field: "name" | "place" | "time" | "image", value: string) =>
+    setData((p) => ({
+      ...p,
+      activities: p.activities.map((a) => (a.id === aid ? { ...a, [field]: value } : a)),
+    }));
+
+  // Always available regardless of current count — an itinerary can go down
+  // to zero activities (section just disappears from the PDF) and still add
+  // more afterward.
+  const addActivity = () =>
+    setData((p) => ({
+      ...p,
+      activities: [
+        ...p.activities,
+        {
+          id: genId("act"),
+          name: "New Activity",
+          place: "Destination",
+          time: "Duration",
+          image: "/itinerary/shikara.webp",
+        },
+      ],
+    }));
+
+  const removeActivity = (aid: string) =>
+    setData((p) => ({ ...p, activities: p.activities.filter((a) => a.id !== aid) }));
+
   /* ---------- trust ---------- */
   const updateTrust = (tid: string, field: "title" | "subtitle", value: string) =>
     setData((p) => ({
       ...p,
       trust: p.trust.map((t) => (t.id === tid ? { ...t, [field]: value } : t)),
+    }));
+
+  /* ---------- why choose vertex ---------- */
+  const updateWhyChoose = (wid: string, field: "title" | "subtitle", value: string) =>
+    setData((p) => ({
+      ...p,
+      whyChoose: p.whyChoose.map((w) => (w.id === wid ? { ...w, [field]: value } : w)),
     }));
 
   /* ---------- lists ---------- */
@@ -235,7 +273,25 @@ export function ItineraryEditor({
   async function handleExport() {
     setExporting(true);
     try {
-      const { bytes } = await downloadItineraryPdf(data, companyAddress);
+      // Resolve (reuse or mint) this itinerary's token Payment Link first —
+      // needs a saved itinerary id. An unsaved draft simply exports without a
+      // QR (see downloadItineraryPdf) rather than blocking export.
+      let tokenPaymentLink: TokenPaymentLink | undefined;
+      if (id) {
+        try {
+          const res = await fetch(`/api/itineraries/${id}/token-payment-link`, { method: "POST" });
+          const json = await res.json().catch(() => ({}));
+          if (res.ok) {
+            tokenPaymentLink = { shortUrl: json.shortUrl, amountRupees: json.amountRupees };
+          } else {
+            toast.warning(json.error ?? "Could not generate the payment QR — exporting without it.");
+          }
+        } catch {
+          toast.warning("Could not generate the payment QR — exporting without it.");
+        }
+      }
+
+      const { bytes } = await downloadItineraryPdf(data, companyAddress, tokenPaymentLink, trustContent);
       const kb = Math.round(bytes / 1024);
       if (bytes > 1024 * 1024) {
         toast.warning(
@@ -295,7 +351,7 @@ export function ItineraryEditor({
       />
 
       <div className="px-3 py-7 sm:px-5">
-        <div className="mx-auto max-w-[820px] space-y-8">
+        <div className="mx-auto max-w-[920px] space-y-8">
           {/* Lead trip-detail sync (lead-linked itineraries) — or, for a
               standalone itinerary that hasn't been linked to anything yet,
               a panel to attach it to an existing lead/booking. */}
@@ -615,6 +671,77 @@ export function ItineraryEditor({
               ))}
             </div>
 
+            {/* Included Activities — free add/remove list (unlike Trust
+               above, which is a fixed 4). Renders right after the Trust
+               strip in the PDF too (before Transportation Info) — omitted
+               there entirely once this list is empty, but "Add Activity"
+               stays available regardless. */}
+            <div className="mt-8">
+              <div className="flex items-center gap-4">
+                <h3 className="font-serif text-xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">
+                  Included Activities
+                </h3>
+                <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
+              </div>
+              <div className="mt-4 space-y-3">
+                {data.activities.map((a, idx) => (
+                  <div
+                    key={a.id}
+                    className="group flex items-center gap-4 rounded-xl border border-[hsl(40_14%_87%)] p-3 dark:border-mute/20"
+                  >
+                    <div className="relative w-2/5 shrink-0">
+                      <ImagePicker
+                        value={a.image}
+                        onChange={(src) => updateActivity(a.id, "image", src)}
+                        className="absolute -top-1.5 -right-1.5 z-10"
+                        label="Replace"
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={a.image || "/itinerary/hero.webp"}
+                        alt={a.name}
+                        className="h-[130px] w-full rounded-lg object-cover shadow-soft"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <EditableField
+                        value={a.name}
+                        onValueChange={(v) => updateActivity(a.id, "name", v)}
+                        className="text-sm font-bold"
+                      />
+                      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-mute dark:text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <ItineraryIcon icon="map-pin" className="h-3.5 w-3.5" />
+                          <EditableField
+                            value={a.place}
+                            onValueChange={(v) => updateActivity(a.id, "place", v)}
+                          />
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <ItineraryIcon icon="clock" className="h-3.5 w-3.5" />
+                          <EditableField
+                            value={a.time}
+                            onValueChange={(v) => updateActivity(a.id, "time", v)}
+                          />
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeActivity(a.id)}
+                      aria-label={`Remove activity ${idx + 1}`}
+                      className="shrink-0 text-rose-500 opacity-0 transition-opacity hover:text-rose-600 group-hover:opacity-100 no-print"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={addActivity} className={`${addBtn} mt-3`}>
+                <Plus className="h-3 w-3" /> Add Activity
+              </button>
+            </div>
+
             <Footer />
           </article>
 
@@ -708,6 +835,47 @@ export function ItineraryEditor({
             <Footer />
           </article>
 
+          {/* Why Choose Vertex — editable like Trust above (title/subtitle
+             per item); icon is fixed per item (assigned when seeded from
+             real WhyChooseItem data), same as Trust's icons aren't
+             user-pickable either. Intro line is fixed approved copy, matching
+             ItineraryPdf.tsx (not per-itinerary editable). */}
+          <article className={pageCard}>
+            <h2 className="font-serif text-3xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">
+              Why Choose Vertex
+            </h2>
+            <p className="mt-3 text-sm italic text-mute dark:text-muted-foreground">
+              From carefully planned itineraries to reliable local support, we handle the details so
+              you can enjoy Kashmir with confidence.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {data.whyChoose.map((w) => (
+                <div
+                  key={w.id}
+                  className="flex gap-3 rounded-xl border border-[hsl(40_14%_87%)] p-4 dark:border-mute/20"
+                >
+                  <ItineraryIcon
+                    icon={w.icon}
+                    className="h-6 w-6 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <EditableField
+                      value={w.title}
+                      onValueChange={(v) => updateWhyChoose(w.id, "title", v)}
+                      className="text-sm font-bold"
+                    />
+                    <EditableField
+                      value={w.subtitle}
+                      onValueChange={(v) => updateWhyChoose(w.id, "subtitle", v)}
+                      className="mt-1 text-[12px] leading-snug text-mute dark:text-muted-foreground"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Footer />
+          </article>
+
           {/* Thank you */}
           <article className="page overflow-hidden rounded-xl border border-[hsl(40_14%_87%)] bg-white shadow-page dark:border-mute/20 dark:bg-card">
             {/* Payment Options — renders above the Thank You block on the PDF's
@@ -731,22 +899,18 @@ export function ItineraryEditor({
                     className="h-24 w-auto max-w-full object-contain"
                   />
                 </div>
-                <div className="relative flex flex-col items-center">
-                  <ImagePicker
-                    value={data.paymentQrUrl ?? ""}
-                    onChange={(src) => updateCover("paymentQrUrl", src)}
-                    className="absolute -top-1 right-0 z-10"
-                    label="Replace QR"
-                  />
-                  <div className="rounded-xl bg-white p-2 shadow-soft">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getPaymentQr(data)}
-                      alt="Payment QR code"
-                      className="h-24 w-24 object-contain"
-                    />
+                <div className="flex flex-col items-center">
+                  {/* No image picker here anymore — the QR is a live,
+                     itinerary-specific Razorpay Payment Link (fixed token
+                     amount, never a staff-uploaded image), generated fresh
+                     each time the PDF is exported. See
+                     src/lib/itinerary/tokenPaymentLink.ts. */}
+                  <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-white p-2 shadow-soft">
+                    <QrCode className="h-14 w-14 text-[hsl(158_46%_14%)]/40" />
                   </div>
-                  <p className="mt-2 text-[11px] text-white/60">Scan to pay</p>
+                  <p className="mt-2 max-w-[160px] text-center text-[11px] text-white/60">
+                    Payment QR is generated when you export the PDF
+                  </p>
                 </div>
               </div>
               {/* Same divider treatment as the PDF's tyDivider (mint, thin,

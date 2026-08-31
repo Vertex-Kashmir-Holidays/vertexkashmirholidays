@@ -12,14 +12,19 @@ import { z } from "zod";
 export const HOTEL_CATEGORIES = ["BUDGET", "DELUXE", "PREMIUM", "LUXURY"] as const;
 export type HotelCategoryValue = (typeof HOTEL_CATEGORIES)[number];
 
+// Display labels use standard star-rating terminology (Budget/3 Star/4
+// Star/5 Star) — the enum keys themselves (BUDGET/DELUXE/PREMIUM/LUXURY)
+// are unchanged internally (no migration/data-backfill needed for a label
+// change; existing stored rows are just recomputed under the new rule the
+// next time each hotel is saved, same as any other rate-driven recompute).
 export const HOTEL_CATEGORY_LABELS: Record<HotelCategoryValue, string> = {
   BUDGET: "Budget",
-  DELUXE: "Deluxe",
-  PREMIUM: "Premium",
-  LUXURY: "Luxury",
+  DELUXE: "3 Star",
+  PREMIUM: "4 Star",
+  LUXURY: "5 Star",
 };
 
-// Display/sort order for category — Budget -> Deluxe -> Premium -> Luxury, cheapest first.
+// Display/sort order for category — Budget -> 3 Star -> 4 Star -> 5 Star, cheapest first.
 export const CATEGORY_SORT_ORDER: Record<HotelCategoryValue, number> = {
   BUDGET: 0,
   DELUXE: 1,
@@ -27,16 +32,17 @@ export const CATEGORY_SORT_ORDER: Record<HotelCategoryValue, number> = {
   LUXURY: 3,
 };
 
-// Category is derived from the MAP net rate, not chosen manually — this is
-// Vertex's actual commercial classification rule: <=3,000 Budget, <=5,000
-// Deluxe, <=10,000 Premium, >10,000 Luxury. Recomputed every time the rate
-// table is saved, from the CHEAPEST room's MAP (see getMinMapRate). A hotel
-// with no MAP figure yet defaults to Budget until a real rate is entered.
-export function computeCategoryFromMap(mapNet: number | null | undefined): HotelCategoryValue {
-  if (mapNet == null) return "BUDGET";
-  if (mapNet <= 3000) return "BUDGET";
-  if (mapNet <= 5000) return "DELUXE";
-  if (mapNet <= 10000) return "PREMIUM";
+// Category is derived from the DELUXE room's MAP net rate (see
+// getDeluxeMapRate), not chosen manually — this is Vertex's actual
+// commercial classification rule: 0-2,000 Budget, 2,001-3,500 3 Star,
+// 3,501-7,000 4 Star, 7,001+ 5 Star. Recomputed every time the rate table is
+// saved. A hotel with no Deluxe row (or no MAP figure on it yet) defaults to
+// Budget until one is entered.
+export function computeCategoryFromMap(deluxeMapNet: number | null | undefined): HotelCategoryValue {
+  if (deluxeMapNet == null) return "BUDGET";
+  if (deluxeMapNet <= 2000) return "BUDGET";
+  if (deluxeMapNet <= 3500) return "DELUXE";
+  if (deluxeMapNet <= 7000) return "PREMIUM";
   return "LUXURY";
 }
 
@@ -148,9 +154,9 @@ export const rateSchema = z.preprocess((value) => {
 
 export const EMPTY_RATE: HotelRate = { validTo: null, rooms: [EMPTY_ROOM_RATE_ROW] };
 
-// The cheapest room's MAP rate — drives category classification, the
-// "needs a rate request" check, and the price-sort column. Null when no room
-// row has a MAP figure yet.
+// The cheapest room's MAP rate — drives the "needs a rate request" check and
+// the price-sort column (category classification uses getDeluxeMapRate
+// instead, below). Null when no room row has a MAP figure yet.
 export function getMinMapRate(rate: HotelRate | null | undefined): number | null {
   if (!rate) return null;
   const maps = rate.rooms.map((r) => r.map).filter((m): m is number => m != null);
@@ -158,8 +164,9 @@ export function getMinMapRate(rate: HotelRate | null | undefined): number | null
 }
 
 // The MAP rate for whichever room row is named "Deluxe" (case-insensitive
-// substring match, so "Deluxe Room" / "Super Deluxe" etc. all count) — shown
-// as its own table column since Deluxe is the room type Sales quotes most
+// substring match, so "Deluxe Room" / "Super Deluxe" etc. all count) — drives
+// category classification (see computeCategoryFromMap) and is also shown as
+// its own table column, since Deluxe is the room type Sales quotes most
 // often. Null when the hotel has no such room row or it has no MAP figure.
 export function getDeluxeMapRate(rate: HotelRate | null | undefined): number | null {
   if (!rate) return null;
@@ -211,6 +218,10 @@ export const createHotelSupplierSchema = z.object({
   category: z.enum(HOTEL_CATEGORIES),
   isActive: z.boolean().default(true),
   recommended: z.boolean().default(false),
+  // Manual tally of bookings sent to this hotel — staff-entered, not derived
+  // from any Booking relation (HotelSupplier is a supplier reference, not
+  // bookable inventory — see the module comment at the top of this file).
+  bookingsCount: z.coerce.number().int().min(0).default(0),
   data: hotelDataSchema,
 });
 export type CreateHotelSupplierInput = z.infer<typeof createHotelSupplierSchema>;
@@ -221,6 +232,7 @@ export const patchHotelSupplierSchema = z.object({
   category: z.enum(HOTEL_CATEGORIES).optional(),
   isActive: z.boolean().optional(),
   recommended: z.boolean().optional(),
+  bookingsCount: z.coerce.number().int().min(0).optional(),
   data: hotelDataSchema.optional(),
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;

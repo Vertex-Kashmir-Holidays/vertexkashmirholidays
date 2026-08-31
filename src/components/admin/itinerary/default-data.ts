@@ -121,6 +121,20 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   ],
   hotelImages: DEFAULT_HOTEL_IMAGES,
 
+  // Included Activities — Shikara Ride is the one activity common to almost
+  // every Kashmir package, kept here as a starting point; fully removable
+  // per itinerary via the editor's delete button (Add stays available even
+  // at zero rows).
+  activities: [
+    {
+      id: "act-1",
+      name: "Shikara Ride",
+      place: "Dal Lake, Srinagar",
+      time: "1 Hour",
+      image: "/itinerary/shikara.webp",
+    },
+  ],
+
   trust: [
     { id: "t-1", title: "Handpicked Hotels", subtitle: "Comfortable & Well Located", icon: "home" },
     {
@@ -131,6 +145,35 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
     },
     { id: "t-3", title: "Best Price Guarantee", subtitle: "Value for Money Always", icon: "medal" },
     { id: "t-4", title: "24/7 Support", subtitle: "We're here for you Always", icon: "support" },
+  ],
+
+  // Why Choose Vertex — same real copy as the live site's WhyChooseItem rows
+  // (see src/lib/itinerary/pdfTrustContent.ts), each given a distinct icon.
+  whyChoose: [
+    {
+      id: "wc-1",
+      title: "Born in Kashmir",
+      subtitle: "Our team is from Srinagar, Pahalgam & Gulmarg — not a Delhi call centre.",
+      icon: "home",
+    },
+    {
+      id: "wc-2",
+      title: "Transparent Pricing",
+      subtitle: "What you see is what you pay. No hidden driver tip or gondola extra.",
+      icon: "medal",
+    },
+    {
+      id: "wc-3",
+      title: "Honest Itineraries",
+      subtitle: "We tell you what's worth skipping. Real days. Real time.",
+      icon: "star",
+    },
+    {
+      id: "wc-4",
+      title: "Hassle-free Travel",
+      subtitle: "24/7 on-ground support. Verified hotels. Sanitised cars.",
+      icon: "support",
+    },
   ],
 
   transportType: "Sedan",

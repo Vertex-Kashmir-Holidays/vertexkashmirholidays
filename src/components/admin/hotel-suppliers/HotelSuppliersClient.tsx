@@ -42,6 +42,7 @@ export interface HotelSupplierRecord {
   category: HotelCategoryValue;
   isActive: boolean;
   recommended: boolean;
+  bookingsCount: number;
   lastRateRequestSentAt: string | null;
   data: HotelData;
   createdAt: string;
@@ -69,10 +70,10 @@ const PAGE_SIZE_OPTIONS: { value: PageSize; label: string }[] = [
 
 const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({ value: c, label: HOTEL_CATEGORY_LABELS[c] }));
 // Columns before Actions: Sr, Name, Phone, Email, Category, Recommended,
-// Rating, MAP (Deluxe), Valid Till, Sent — kept as one constant so the
-// expand-row colSpan can't silently drift from the header count. Location
+// Rating, MAP (Deluxe), Bookings, Valid Till, Sent — kept as one constant so
+// the expand-row colSpan can't silently drift from the header count. Location
 // and the full per-room rate table live in the expanded row only.
-const HOTEL_COL_COUNT = 11;
+const HOTEL_COL_COUNT = 12;
 
 // Snaps the price slider's handles to clean values, same convention as the
 // Tours listing filter (see ToursPageClient's PRICE_STEP).
@@ -424,6 +425,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                   "Rec.",
                   "Rating",
                   "MAP (Deluxe)",
+                  "Bookings",
                   "Valid Till",
                   "Sent",
                   "Actions",
@@ -634,6 +636,16 @@ function HotelRow({
       </td>
       <td className="px-3 py-2.5 text-right whitespace-nowrap" title="MAP rate for the Deluxe room type">
         {fmtMoney(getDeluxeMapRate(hotel.data.rate))}
+      </td>
+      <td onClick={(e) => e.stopPropagation()} title="Manual tally — double-click to edit">
+        <InlineCell
+          canEdit={canEdit}
+          type="number"
+          align="right"
+          value={String(hotel.bookingsCount)}
+          onSave={(v) => patchHotel(hotel.id, { bookingsCount: Number(v) || 0 })}
+          className="min-w-[70px]"
+        />
       </td>
       <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDate(hotel.data.rate?.validTo ?? null)}</td>
       <td className="px-3 py-2.5 whitespace-nowrap">

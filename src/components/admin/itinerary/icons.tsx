@@ -15,21 +15,37 @@ export type ItineraryIconKey =
   | "home"
   | "shield"
   | "medal"
-  | "support";
+  | "support"
+  | "users"
+  | "clock";
 
+// Path data verified against lucide-react's published icon set (utensils, bed,
+// headset, users, star, shield-check) rather than hand-drawn, so the shapes
+// are correct/recognizable — only `calendar`/`car`/`map-pin`/`drop`/`home`/
+// `medal` are unchanged from before (already correct, no reason to touch).
 export const ITINERARY_ICON_PATHS: Record<ItineraryIconKey, string> = {
   calendar: "M3 4h18v18H3zM16 2v4M8 2v4M3 10h18",
   "map-pin": "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z M12 7v0",
   car: "M5 17h14l1-5-2-5H6L4 12Z M7.5 17.5v0 M16.5 17.5v0",
-  star: "m12 3 2.7 5.6 6.3.9-4.5 4.4 1 6.1L12 17l-5.5 3 1-6.1L3 9.5l6.3-.9Z",
-  meals: "M4 3v7a3 3 0 0 0 6 0V3 M7 3v18 M17 3c-1.5 0-3 1.5-3 5s1.5 4 3 4v9",
-  stay: "M3 11h18v8 M3 11V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4 M3 19h18",
-  highlights: "m12 3 2.7 5.6 6.3.9-4.5 4.4 1 6.1L12 17l-5.5 3 1-6.1L3 9.5l6.3-.9Z",
+  star: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
+  meals: "M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2 M7 2v20 M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7",
+  stay: "M2 4v16 M2 8h18a2 2 0 0 1 2 2v10 M2 17h20 M6 8v9",
+  highlights: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
   drop: "M12 2s7 7 7 12a7 7 0 0 1-14 0c0-5 7-12 7-12Z",
   home: "m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z M9 21V12h6v9",
-  shield: "M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z M9 12l2 2 4-4",
+  shield: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z M9 12L11 14L15 10",
   medal: "M12 9a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z M9 14l-1.5 7L12 18.5 16.5 21 15 14",
-  support: "M3 12a9 9 0 1 1 18 0v5a2 2 0 0 1-2 2h-3v-6h5 M3 12v5a2 2 0 0 0 2 2h3v-6H3",
+  support: "M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z M21 16v2a4 4 0 0 1-4 4h-5",
+  // Single filled person silhouette (not a multi-figure "group" glyph) —
+  // reads clearly as solid/filled at the small sizes this is used at (the
+  // cover's TRAVELLERS stat), matching the visual weight of the solid star
+  // beside it. Actual headcount is already in the value text ("2 Adults · 1
+  // Child"), so the icon's job is just "traveller", not literally N bodies.
+  users: "M12 2a4 4 0 1 0 0 8a4 4 0 1 0 0-8Z M12 12c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6Z",
+  // Closed circle (solid-capable) + hour/minute hands as a separate stroke
+  // overlay — same "filled body + white overlay stroke" treatment as
+  // `shield`'s checkmark. Used for an activity's Time field.
+  clock: "M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0 M12 6L12 12L16 14",
 };
 
 export const ITINERARY_ICON_KEYS = Object.keys(ITINERARY_ICON_PATHS) as ItineraryIconKey[];
