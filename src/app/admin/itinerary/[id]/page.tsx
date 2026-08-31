@@ -6,11 +6,12 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { ItineraryEditor } from "@/components/admin/itinerary/ItineraryEditor";
-import { itineraryDataSchema, type ItineraryData } from "@/types/itinerary";
+import { itineraryDataSchema, genId, type ItineraryData } from "@/types/itinerary";
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { resolveItineraryAccess } from "@/lib/itinerary/access";
 import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
 import { resolvePrimaryOffice } from "@/lib/companyOffice";
+import { getPdfTrustContent, toItineraryWhyChoose } from "@/lib/itinerary/pdfTrustContent";
 
 export const metadata: Metadata = { title: "Edit Itinerary — Admin" };
 export const dynamic = "force-dynamic";
@@ -84,6 +85,28 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
 
   const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
   const { address: companyAddress } = await resolvePrimaryOffice(settings);
+  const trustContent = await getPdfTrustContent();
+
+  // Why Choose Vertex is editable itinerary content (like `trust`), but
+  // itineraries saved before that field existed parse it as `[]` (schema
+  // default) — backfill real copy the first time one of those loads, same
+  // spirit as the booking-facts merge above. Not written back until the next
+  // explicit Save, matching how that merge behaves too.
+  if (data.whyChoose.length === 0 && trustContent.whyChoose.length > 0) {
+    data = { ...data, whyChoose: toItineraryWhyChoose(trustContent.whyChoose) };
+  }
+
+  // Same backfill for Included Activities — itineraries saved before that
+  // field existed parse it as `[]` too. Default to the one activity common
+  // to nearly every package (Shikara Ride); staff can delete it per
+  // itinerary same as any other activity row. Not written back until the
+  // next explicit Save.
+  if (data.activities.length === 0) {
+    data = {
+      ...data,
+      activities: DEFAULT_ITINERARY_DATA.activities.map((a) => ({ ...a, id: genId("act") })),
+    };
+  }
 
   const leadSync = record.lead
     ? {
@@ -147,6 +170,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         lockCost={!!record.bookingId && !!record.booking?.razorpayOrderId}
         isBookingLinked={!!record.bookingId}
         companyAddress={companyAddress}
+        trustContent={trustContent}
       />
     </div>
   );

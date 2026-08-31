@@ -20,10 +20,22 @@ export function ItineraryDownloadButton({ bookingId }: Props) {
       if (!res.ok) throw new Error(json.error ?? "Could not load your itinerary.");
 
       const data = itineraryDataSchema.parse(json.data);
+
+      // Resolve (reuse or mint) the same token Payment Link staff would see —
+      // best-effort: a failure here shouldn't block the download, just the QR.
+      let tokenPaymentLink: { shortUrl: string; amountRupees: number } | undefined;
+      try {
+        const linkRes = await fetch(`/api/account/bookings/${bookingId}/token-payment-link`);
+        const linkJson = await linkRes.json().catch(() => ({}));
+        if (linkRes.ok) tokenPaymentLink = { shortUrl: linkJson.shortUrl, amountRupees: linkJson.amountRupees };
+      } catch {
+        // ignore — export proceeds without a QR
+      }
+
       // Loaded on demand — keeps the heavy PDF renderer out of the account bundle
       // until a customer actually downloads.
       const { downloadItineraryPdf } = await import("@/lib/itinerary/export-pdf");
-      await downloadItineraryPdf(data);
+      await downloadItineraryPdf(data, undefined, tokenPaymentLink, json.trustContent);
       toast.success("Itinerary downloaded.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Download failed.");

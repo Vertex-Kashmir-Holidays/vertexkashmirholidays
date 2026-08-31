@@ -27,6 +27,17 @@ export const hotelSchema = z.object({
   hotelDetails: z.string(),
   nights: z.string(),
   roomType: z.string(),
+  // Defaulted so itineraries saved before these fields existed still parse —
+  // same reasoning as itineraryDataSchema's `hotelImages` default below.
+  // `rooms` is also range-checked since it's a whole count, not free text —
+  // the editor clamps on blur, this is the hard backstop on save.
+  rooms: z
+    .string()
+    .default("1")
+    .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 1, {
+      message: "Rooms must be a whole number of at least 1.",
+    }),
+  mealType: z.string().default("MAP"),
 });
 
 export const infoSchema = z.object({
@@ -41,6 +52,18 @@ export const trustSchema = z.object({
   title: z.string(),
   subtitle: z.string(),
   icon: z.string(), // key into ITINERARY_ICONS
+});
+
+// Included Activities — a free add/remove list (unlike `trust`'s fixed 4),
+// same spirit as `hotels`: staff can delete every row down to none, in which
+// case the whole PDF section is omitted (see ItineraryPdf.tsx), and can
+// always add more via the editor's Add button regardless of current count.
+export const activitySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  place: z.string(),
+  time: z.string(),
+  image: z.string(),
 });
 
 /**
@@ -84,6 +107,18 @@ export const itineraryDataSchema = z.object({
   // safeParse fallback in src/app/admin/itinerary/[id]/page.tsx.
   hotelImages: z.array(z.string()).default(DEFAULT_HOTEL_IMAGES),
   trust: z.array(trustSchema),
+  // Included Activities — shown right after the Trust strip in the PDF
+  // (before Transportation Info), omitted entirely when empty. Defaulted so
+  // itineraries saved before this field existed still parse as `[]`;
+  // src/app/admin/itinerary/[id]/page.tsx backfills the default Shikara Ride
+  // activity on load if still empty, same as whyChoose below — staff can
+  // delete it per itinerary via the editor.
+  activities: z.array(activitySchema).default([]),
+  // Why Choose Vertex — same shape as `trust` (id/title/subtitle/icon),
+  // editable per itinerary same as everything else. Defaulted so itineraries
+  // saved before this field existed still parse; src/app/admin/itinerary/[id]/page.tsx
+  // seeds real content into it on load if still empty.
+  whyChoose: z.array(trustSchema).default([]),
 
   // Transport
   transportType: z.string(),
@@ -95,10 +130,6 @@ export const itineraryDataSchema = z.object({
   exc: z.array(z.string()),
   pay: z.array(z.string()),
   cancel: z.array(z.string()),
-
-  // Payment QR shown on the closing PDF page. Optional — omitted/empty means
-  // "use the bundled default QR" (see src/lib/itinerary/payment.ts).
-  paymentQrUrl: z.string().optional(),
 });
 
 export type ItineraryMeta = z.infer<typeof metaSchema>;
@@ -106,6 +137,7 @@ export type ItineraryDay = z.infer<typeof daySchema>;
 export type HotelRow = z.infer<typeof hotelSchema>;
 export type InfoItem = z.infer<typeof infoSchema>;
 export type TrustItem = z.infer<typeof trustSchema>;
+export type ActivityItem = z.infer<typeof activitySchema>;
 export type ItineraryData = z.infer<typeof itineraryDataSchema>;
 
 export type ItineraryStatus = "DRAFT" | "SENT" | "CONFIRMED";

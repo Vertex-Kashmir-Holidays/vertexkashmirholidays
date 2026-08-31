@@ -12,7 +12,8 @@ export type PaymentAuditEvent =
   | "WEBHOOK_FAILED"
   | "RECONCILED"
   | "CREDENTIALS_RESENT"
-  | "EMAILS_RESENT";
+  | "EMAILS_RESENT"
+  | "TOKEN_LINK_CREATED";
 
 export interface PaymentAuditInput {
   event: PaymentAuditEvent;

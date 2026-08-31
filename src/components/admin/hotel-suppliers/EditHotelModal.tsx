@@ -1,7 +1,7 @@
 "use client";
 
-// Everything EXCEPT name/map-link/phone/email/rating (those stay
-// inline-editable in the table) is edited here: destination, location,
+// Everything EXCEPT name/map-link/phone/email/rating/bookingsCount (those
+// stay inline-editable in the table) is edited here: destination, location,
 // contact person, the room-rate table, services, and the recommended/active
 // flags. One Save
 // = one PATCH with the full merged `data` blob, matching how every other
@@ -19,7 +19,7 @@ import {
 import {
   HOTEL_DESTINATIONS,
   computeCategoryFromMap,
-  getMinMapRate,
+  getDeluxeMapRate,
   type HotelData,
   type HotelRate,
   type RoomRateRow,
@@ -113,7 +113,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
     setError(null);
     setSaving(true);
     const rate: HotelRate = { validTo: validTo || null, rooms: parsedRows };
-    const category = computeCategoryFromMap(getMinMapRate(rate));
+    const category = computeCategoryFromMap(getDeluxeMapRate(rate));
     const data: HotelData = {
       ...hotel.data,
       property: {
