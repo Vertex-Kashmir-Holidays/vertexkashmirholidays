@@ -12,7 +12,7 @@ import {
   HOTEL_DESTINATIONS,
   HOTEL_CATEGORY_LABELS,
   computeCategoryFromMap,
-  getMinMapRate,
+  getDeluxeMapRate,
   type RoomRateRow,
 } from "@/lib/hotelSuppliers/schema";
 import { RoomRatesEditor, EMPTY_ROOM_RATE_ROW_DRAFT, type RoomRateRowDraft } from "./RoomRatesEditor";
@@ -27,6 +27,7 @@ const schema = z.object({
   mapUrl: z.string().optional(),
   rating: z.string().optional(),
   services: z.string().optional(),
+  bookingsCount: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -76,15 +77,18 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       mapUrl: "",
       rating: "",
       services: "",
+      bookingsCount: "0",
     },
   });
 
   // Live preview only — the real category is recomputed server-side too.
-  const previewMinMap = (() => {
-    const maps = rows.map((r) => parseMoney(r.map)).filter((m): m is number => typeof m === "number");
-    return maps.length ? Math.min(...maps) : null;
+  const previewDeluxeMap = (() => {
+    const deluxeRow = rows.find((r) => r.roomType.toLowerCase().includes("deluxe"));
+    if (!deluxeRow) return null;
+    const m = parseMoney(deluxeRow.map);
+    return typeof m === "number" ? m : null;
   })();
-  const previewCategory = computeCategoryFromMap(previewMinMap);
+  const previewCategory = computeCategoryFromMap(previewDeluxeMap);
 
   function onSubmit(data: FormData) {
     const parsedRows: RoomRateRow[] = [];
@@ -110,9 +114,10 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
     const payload = {
       hotelName: data.hotelName,
       destination: data.destination,
-      category: computeCategoryFromMap(getMinMapRate(rate)),
+      category: computeCategoryFromMap(getDeluxeMapRate(rate)),
       isActive: true,
       recommended,
+      bookingsCount: Math.max(0, Math.round(Number(data.bookingsCount) || 0)),
       data: {
         property: {
           location: data.location || null,
@@ -204,9 +209,20 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
             <label className={labelCls}>Google Maps URL</label>
             <input {...register("mapUrl")} className={inputCls} />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <label className={labelCls}>Rating</label>
             <input {...register("rating")} className={inputCls} placeholder="e.g. 4.7★ / 2,698 reviews" />
+          </div>
+          <div>
+            <label className={labelCls}>No. of Bookings</label>
+            <input
+              {...register("bookingsCount")}
+              type="number"
+              min={0}
+              step={1}
+              className={inputCls}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">Manual tally, not auto-tracked.</p>
           </div>
           <div className="sm:col-span-2">
             <label className={labelCls}>Services</label>
@@ -247,8 +263,8 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
         </div>
         {rateError && <p className="text-xs text-red-500">{rateError}</p>}
         <p className="text-[11px] text-muted-foreground">
-          Category is set from the cheapest room&apos;s MAP rate: &lt;2,500 Budget · &lt;7,000 Deluxe · else
-          Premium
+          Category is set from the Deluxe room&apos;s MAP rate: 0–2,000 Budget · 2,001–3,500 3 Star ·
+          3,501–7,000 4 Star · 7,001+ 5 Star
         </p>
       </div>
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { customerBookingWhere } from "@/lib/account/bookingScope";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
+import { getPdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const parsed = itineraryDataSchema.safeParse(itinerary.data);
   const data = parsed.success ? parsed.data : DEFAULT_ITINERARY_DATA;
+  const trustContent = await getPdfTrustContent();
 
   return NextResponse.json({
     id: itinerary.id,
@@ -52,5 +54,6 @@ export async function GET(_req: Request, { params }: Params) {
     status: itinerary.status,
     updatedAt: itinerary.updatedAt,
     data,
+    trustContent,
   });
 }
