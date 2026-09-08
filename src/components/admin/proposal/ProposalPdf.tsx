@@ -14,8 +14,10 @@ import { Document, Page, View, Text, Image, Svg, Path, Link, StyleSheet } from "
 import type { Style } from "@react-pdf/types";
 import {
   type ProposalData,
+  type ProposalTier,
   type ProposalTierKey,
   TIER_ORDER,
+  SINGLE_TIER_KEY,
   COMPARISON_DASH,
   COMPARISON_CHECK,
 } from "@/types/proposal";
@@ -319,6 +321,25 @@ const s = StyleSheet.create({
   cmpTotalCellPremium: { backgroundColor: C.lightGreen },
   cmpTotalValue: { fontSize: 12.5, fontFamily: "Helvetica-Bold", color: C.ink },
   cmpFootnote: { fontSize: 8.5, color: C.muted, marginTop: SP.md, lineHeight: 1.6 },
+
+  // ── Single-package plain tables (Day Plan at a Glance, Stay Plan,
+  //    Transportation) — same bordered/rounded table shell as the comparison
+  //    table above, but with per-table column widths instead of fixed tier
+  //    columns. ─────────────────────────────────────────────────────────────
+  simpleTable: { borderWidth: 1, borderColor: C.border, borderRadius: 10, overflow: "hidden" },
+  simpleTableHeadRow: { flexDirection: "row", backgroundColor: C.greenDeep },
+  simpleTableHeadCell: { padding: SP.sm + 3 },
+  simpleTableHeadText: {
+    fontSize: 8,
+    color: C.mint,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  simpleTableRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: C.borderLight },
+  simpleTableCell: { padding: SP.sm + 3 },
+  simpleTableCellText: { fontSize: 9, color: C.body, lineHeight: 1.5 },
+  simpleTableCellStrong: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.ink, lineHeight: 1.4 },
+  simpleTableNote: { fontSize: 8, color: C.muted, marginTop: SP.sm, lineHeight: 1.5, fontStyle: "italic" },
 
   // ── Six Days timeline (page 4) ──────────────────────────────────────────
   dayRow: { flexDirection: "row", gap: SP.md },
@@ -778,6 +799,38 @@ const TIER_PALETTE: Record<
   },
 };
 
+/** One pricing option card — shared by the multi-package doc's "Your Three
+ * Options" (rendered once per tier) and the single-package doc's "Cost &
+ * Inclusions" (rendered once, for SINGLE_TIER_KEY only). */
+function TierOptionCard({ tierKey, tier }: { tierKey: ProposalTierKey; tier: ProposalTier }) {
+  const palette = TIER_PALETTE[tierKey];
+  return (
+    <View style={[s.optionCard, palette.card]} wrap={false}>
+      {tier.badgeLabel ? <Text style={s.optionBadge}>{tier.badgeLabel}</Text> : null}
+      <View style={s.optionHeadRow}>
+        <View style={{ flex: 1, paddingRight: SP.md }}>
+          <Text style={[s.optionEyebrow, palette.eyebrow]}>{tier.label.toUpperCase()}</Text>
+          <Text style={[s.optionTitle, palette.title]}>{tier.title}</Text>
+          <Text style={[s.optionDesc, palette.desc]}>{tier.description}</Text>
+        </View>
+        <View style={{ alignItems: "flex-end" }}>
+          <Text style={[s.optionPriceValue, palette.price]}>{tier.priceLabel}</Text>
+          <Text style={[s.optionPriceNote, palette.priceNote]}>total · GST included</Text>
+        </View>
+      </View>
+      {tier.tags.length > 0 ? (
+        <View style={[s.optionTagRow, palette.tagRow]}>
+          {tier.tags.map((tag, ti) => (
+            <Text key={ti} style={[s.optionTag, palette.tag]}>
+              {tag}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 interface Props {
   data: ProposalData;
   /** original src -> embedded data URL (only the brand icon mark, see LOGO_ASSETS above) */
@@ -863,7 +916,10 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             </View>
 
             <View style={s.coverPriceRow}>
-              {TIER_ORDER.map((key) => {
+              {/* Single-package doc has one price, not three — shown as one
+                  full-width highlighted box instead of the multi-package
+                  doc's three-way split. */}
+              {(data.docType === "multi" ? TIER_ORDER : [SINGLE_TIER_KEY]).map((key) => {
                 const tier = data.tiers[key];
                 const premium = key === "premium";
                 return (
@@ -903,147 +959,253 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
           <Text style={s.headerTag}>YOUR JOURNEY, CRAFTED</Text>
         </View>
 
-        {/* YOUR THREE OPTIONS */}
-        <SectionHead title="Your Three Options" tag={data.duration} />
-        <Text style={s.secIntro}>
-          Every option follows the same route and the same days. What changes is where you sleep,
-          what you eat, what you ride in, and what is already paid for before you land.
-        </Text>
-        {TIER_ORDER.map((key) => {
-          const tier = data.tiers[key];
-          const palette = TIER_PALETTE[key];
-          return (
-            <View key={key} style={[s.optionCard, palette.card]} wrap={false}>
-              {tier.badgeLabel ? <Text style={s.optionBadge}>{tier.badgeLabel}</Text> : null}
-              <View style={s.optionHeadRow}>
-                <View style={{ flex: 1, paddingRight: SP.md }}>
-                  <Text style={[s.optionEyebrow, palette.eyebrow]}>{tier.label.toUpperCase()}</Text>
-                  <Text style={[s.optionTitle, palette.title]}>{tier.title}</Text>
-                  <Text style={[s.optionDesc, palette.desc]}>{tier.description}</Text>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={[s.optionPriceValue, palette.price]}>{tier.priceLabel}</Text>
-                  <Text style={[s.optionPriceNote, palette.priceNote]}>total · GST included</Text>
-                </View>
+        {data.docType === "multi" ? (
+          <>
+            {/* YOUR THREE OPTIONS */}
+            <SectionHead title="Your Three Options" tag={data.duration} />
+            <Text style={s.secIntro}>
+              Every option follows the same route and the same days. What changes is where you sleep,
+              what you eat, what you ride in, and what is already paid for before you land.
+            </Text>
+            {TIER_ORDER.map((key) => (
+              <TierOptionCard key={key} tierKey={key} tier={data.tiers[key]} />
+            ))}
+            {data.tipText ? (
+              <View style={s.tipBox} wrap={false}>
+                <PdfIcon icon="bulb" size={14} color={C.green} />
+                <Text style={s.tipText}>{data.tipText}</Text>
               </View>
-              {tier.tags.length > 0 ? (
-                <View style={[s.optionTagRow, palette.tagRow]}>
-                  {tier.tags.map((tag, ti) => (
-                    <Text key={ti} style={[s.optionTag, palette.tag]}>
-                      {tag}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          );
-        })}
-        {data.tipText ? (
-          <View style={s.tipBox} wrap={false}>
-            <PdfIcon icon="bulb" size={14} color={C.green} />
-            <Text style={s.tipText}>{data.tipText}</Text>
-          </View>
-        ) : null}
-
-        {/* WHAT ACTUALLY DIFFERS — always starts on its own fresh page
-            (`break`), rather than wherever it happens to land after the
-            option cards. */}
-        {data.comparisonRows.length > 0 ? (
-          <View style={s.sectionGap} break>
-            <SectionHead title="What Actually Differs" tag="Side by Side" />
-            <View style={s.cmpTable}>
-              <View style={s.cmpHeadRow} wrap={false}>
-                <View style={s.cmpHeadCellLabel} />
-                {TIER_ORDER.map((key) => (
-                  <View key={key} style={[s.cmpHeadCell, key === "premium" ? s.cmpHeadCellPremium : {}]}>
-                    <Text style={[s.cmpHeadText, key === "premium" ? s.cmpHeadTextPremium : {}]}>
-                      {data.tiers[key].label.toUpperCase()}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-              {data.comparisonRows.map((row) => (
-                <View key={row.id} style={s.cmpRow} wrap={false}>
-                  <View style={s.cmpRowLabelCell}>
-                    <Text style={s.cmpRowLabel}>{row.label}</Text>
-                  </View>
-                  {TIER_ORDER.map((key) => (
-                    <View key={key} style={[s.cmpCell, key === "premium" ? s.cmpCellPremium : {}]}>
-                      {renderCell(row[key], key === "premium")}
-                    </View>
-                  ))}
-                </View>
-              ))}
-              <View style={s.cmpTotalRow} wrap={false}>
-                <Text style={s.cmpTotalLabel}>Total, GST included</Text>
-                {TIER_ORDER.map((key) => (
-                  <View key={key} style={[s.cmpTotalCell, key === "premium" ? s.cmpTotalCellPremium : {}]}>
-                    <Text style={s.cmpTotalValue}>{data.tiers[key].priceLabel}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-            {data.comparisonFootnote ? (
-              <Text style={s.cmpFootnote}>{data.comparisonFootnote}</Text>
             ) : null}
-          </View>
-        ) : null}
 
-        {/* YOUR SIX DAYS */}
-        {data.days.length > 0 ? (
-          <View style={s.sectionGap}>
-            <SectionHead
-              title="Your Six Days"
-              tag="Same in All Three Options"
-              minPresenceAhead={140}
-            />
-            {data.days.map((day, i) => (
-              <View key={day.id} style={s.dayRow} wrap={false}>
-                <View style={s.railCol}>
-                  <View style={s.railDot} />
-                  {i < data.days.length - 1 ? <View style={s.railLine} /> : null}
-                </View>
-                <View style={s.dayCard}>
-                  <View style={s.dayHeadRow}>
-                    <View style={s.dayNumTitle}>
-                      <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
-                      <Text style={s.dayTitle}>{day.title}</Text>
-                    </View>
-                    {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
+            {/* WHAT ACTUALLY DIFFERS — always starts on its own fresh page
+                (`break`), rather than wherever it happens to land after the
+                option cards. */}
+            {data.comparisonRows.length > 0 ? (
+              <View style={s.sectionGap} break>
+                <SectionHead title="What Actually Differs" tag="Side by Side" />
+                <View style={s.cmpTable}>
+                  <View style={s.cmpHeadRow} wrap={false}>
+                    <View style={s.cmpHeadCellLabel} />
+                    {TIER_ORDER.map((key) => (
+                      <View key={key} style={[s.cmpHeadCell, key === "premium" ? s.cmpHeadCellPremium : {}]}>
+                        <Text style={[s.cmpHeadText, key === "premium" ? s.cmpHeadTextPremium : {}]}>
+                          {data.tiers[key].label.toUpperCase()}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
-                  {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
-                  {day.stayLabel || day.highlightsLine ? (
-                    <View style={s.dayMetaRow}>
-                      {day.stayLabel ? (
-                        <View style={s.dayMetaItem}>
-                          <PdfIcon icon="stay" size={11} color={C.green} />
-                          <Text style={s.dayMetaText}>{day.stayLabel}</Text>
+                  {data.comparisonRows.map((row) => (
+                    <View key={row.id} style={s.cmpRow} wrap={false}>
+                      <View style={s.cmpRowLabelCell}>
+                        <Text style={s.cmpRowLabel}>{row.label}</Text>
+                      </View>
+                      {TIER_ORDER.map((key) => (
+                        <View key={key} style={[s.cmpCell, key === "premium" ? s.cmpCellPremium : {}]}>
+                          {renderCell(row[key], key === "premium")}
                         </View>
-                      ) : (
-                        <View style={s.dayMetaItem}>
-                          <PdfIcon icon="plane" size={11} color={C.green} />
+                      ))}
+                    </View>
+                  ))}
+                  <View style={s.cmpTotalRow} wrap={false}>
+                    <Text style={s.cmpTotalLabel}>Total, GST included</Text>
+                    {TIER_ORDER.map((key) => (
+                      <View key={key} style={[s.cmpTotalCell, key === "premium" ? s.cmpTotalCellPremium : {}]}>
+                        <Text style={s.cmpTotalValue}>{data.tiers[key].priceLabel}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                {data.comparisonFootnote ? (
+                  <Text style={s.cmpFootnote}>{data.comparisonFootnote}</Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* YOUR SIX DAYS */}
+            {data.days.length > 0 ? (
+              <View style={s.sectionGap}>
+                <SectionHead
+                  title="Your Six Days"
+                  tag="Same in All Three Options"
+                  minPresenceAhead={140}
+                />
+                {data.days.map((day, i) => (
+                  <View key={day.id} style={s.dayRow} wrap={false}>
+                    <View style={s.railCol}>
+                      <View style={s.railDot} />
+                      {i < data.days.length - 1 ? <View style={s.railLine} /> : null}
+                    </View>
+                    <View style={s.dayCard}>
+                      <View style={s.dayHeadRow}>
+                        <View style={s.dayNumTitle}>
+                          <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
+                          <Text style={s.dayTitle}>{day.title}</Text>
                         </View>
-                      )}
-                      {day.stayLabel && day.highlightsLine ? <View style={s.dayMetaDivider} /> : null}
-                      {day.highlightsLine ? (
-                        <Text style={s.dayMetaText}>{day.highlightsLine}</Text>
+                        {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
+                      </View>
+                      {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
+                      {day.stayLabel || day.highlightsLine ? (
+                        <View style={s.dayMetaRow}>
+                          {day.stayLabel ? (
+                            <View style={s.dayMetaItem}>
+                              <PdfIcon icon="stay" size={11} color={C.green} />
+                              <Text style={s.dayMetaText}>{day.stayLabel}</Text>
+                            </View>
+                          ) : (
+                            <View style={s.dayMetaItem}>
+                              <PdfIcon icon="plane" size={11} color={C.green} />
+                            </View>
+                          )}
+                          {day.stayLabel && day.highlightsLine ? <View style={s.dayMetaDivider} /> : null}
+                          {day.highlightsLine ? (
+                            <Text style={s.dayMetaText}>{day.highlightsLine}</Text>
+                          ) : null}
+                        </View>
                       ) : null}
                     </View>
-                  ) : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : (
+          <>
+            {/* DAY PLAN AT A GLANCE */}
+            {data.days.length > 0 ? (
+              <View>
+                <SectionHead title="Day Plan at a Glance" tag={data.duration} />
+                <View style={s.simpleTable}>
+                  <View style={s.simpleTableHeadRow} wrap={false}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.5 }]}>Day</Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 3 }]}>Plan</Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                      Night Stay
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1.1 }]}>Meals</Text>
+                  </View>
+                  {data.days.map((day, i) => (
+                    <View key={day.id} style={s.simpleTableRow} wrap={false}>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 0.5 }]}>
+                        {String(i + 1).padStart(2, "0")}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 3 }]}>
+                        <Text style={s.simpleTableCellStrong}>{day.title}</Text>
+                        {day.body ? ` – ${day.body}` : ""}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
+                        {day.stayLabel || COMPARISON_DASH}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1.1 }]}>
+                        {day.mealsLabel || COMPARISON_DASH}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-            ))}
-          </View>
-        ) : null}
+            ) : null}
+
+            {/* STAY PLAN */}
+            {data.stayPlan.length > 0 ? (
+              <View style={s.sectionGap}>
+                <SectionHead title="Stay Plan" />
+                <View style={s.simpleTable}>
+                  <View style={s.simpleTableHeadRow} wrap={false}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                      Destination
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.6 }]}>
+                      Nights
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 2.2 }]}>
+                      Hotel Name
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                      Room Type
+                    </Text>
+                  </View>
+                  {data.stayPlan.map((row) => (
+                    <View key={row.id} style={s.simpleTableRow} wrap={false}>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 1 }]}>
+                        {row.destination}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.6 }]}>
+                        {row.nights}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 2.2 }]}>
+                        {row.hotelName}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
+                        {row.roomType}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {data.stayPlanNote ? <Text style={s.simpleTableNote}>{data.stayPlanNote}</Text> : null}
+              </View>
+            ) : null}
+
+            {/* TRANSPORTATION */}
+            {data.transport.length > 0 ? (
+              <View style={s.sectionGap} wrap={false}>
+                <SectionHead title="Transportation" />
+                <View style={s.simpleTable}>
+                  <View style={s.simpleTableHeadRow} wrap={false}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                      Vehicle
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                      Seating
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 2.4 }]}>
+                      Used For
+                    </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.9 }]}>
+                      Duration
+                    </Text>
+                  </View>
+                  {data.transport.map((row) => (
+                    <View key={row.id} style={s.simpleTableRow} wrap={false}>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 1 }]}>
+                        {row.vehicle}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
+                        {row.seating}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 2.4 }]}>
+                        {row.usedFor}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.9 }]}>
+                        {row.duration}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {data.transportNote ? <Text style={s.simpleTableNote}>{data.transportNote}</Text> : null}
+              </View>
+            ) : null}
+
+            {/* COST & INCLUSIONS — the doc's one price box, reusing the same
+                option-card component the multi-package doc renders three of. */}
+            <View style={s.sectionGap} wrap={false}>
+              <SectionHead title="Cost & Inclusions" tag={data.duration} />
+              <TierOptionCard tierKey={SINGLE_TIER_KEY} tier={data.tiers[SINGLE_TIER_KEY]} />
+            </View>
+          </>
+        )}
 
         {/* WHAT'S COVERED */}
         <View style={s.sectionGap} wrap={false}>
-          <SectionHead title="What's Covered" tag="All Three Options" />
+          <SectionHead
+            title="What's Covered"
+            tag={data.docType === "multi" ? "All Three Options" : undefined}
+          />
           <View style={s.twoCol}>
             <View style={[s.coveredCard, { borderColor: C.border }]}>
               <View style={[s.coveredCardHead, { backgroundColor: C.green }]}>
                 <PdfIcon icon="check" size={12} color={C.mintPale} />
-                <Text style={s.coveredCardHeadText}>Included in every option</Text>
+                <Text style={s.coveredCardHeadText}>
+                  {data.docType === "multi" ? "Included in every option" : "What's Included"}
+                </Text>
               </View>
               <View style={s.coveredCardBody}>
                 {incRuns.map((row) => (
@@ -1059,7 +1221,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             <View style={[s.coveredCard, { borderColor: C.border }]}>
               <View style={[s.coveredCardHead, { backgroundColor: C.rust }]}>
                 <PdfIcon icon="minus" size={12} color={C.mintPale} />
-                <Text style={s.coveredCardHeadText}>Paid separately</Text>
+                <Text style={s.coveredCardHeadText}>
+                  {data.docType === "multi" ? "Paid separately" : "What's Not Included"}
+                </Text>
               </View>
               <View style={s.coveredCardBody}>
                 {excRuns.map((row) => (
@@ -1160,8 +1324,10 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
           </View>
         ) : null}
 
-        {/* WHY CHOOSE US */}
-        {data.whyChoose.length > 0 ? (
+        {/* WHY CHOOSE US — not part of the single-package source document;
+            that document's `whyChoose` data still feeds the closing page's
+            badge pills below (shared, unchanged), just not this full section. */}
+        {data.docType === "multi" && data.whyChoose.length > 0 ? (
           <View style={s.sectionGap} wrap={false}>
             <View style={s.trustHeadRow}>
               <Text style={s.secHead}>Why Choose Us</Text>
