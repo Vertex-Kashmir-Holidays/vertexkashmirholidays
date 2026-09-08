@@ -7,17 +7,19 @@ import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
 import { EditableField } from "../itinerary/EditableField";
 import { ItineraryIcon } from "../itinerary/icons";
-import { DEFAULT_PROPOSAL_DATA } from "./default-data";
+import { DEFAULT_PROPOSAL_DATA, DEFAULT_SINGLE_PROPOSAL_DATA } from "./default-data";
 import { downloadProposalPdf } from "@/lib/proposal/export-pdf";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
 import { genId, type ListItem, type CancelTier } from "@/types/itinerary";
 import {
   type ProposalData,
+  type ProposalDocType,
   type ProposalStatus,
   type ProposalTier,
   type ProposalTierKey,
   TIER_ORDER,
+  SINGLE_TIER_KEY,
   COMPARISON_DASH,
   COMPARISON_CHECK,
 } from "@/types/proposal";
@@ -57,6 +59,30 @@ export function ProposalEditor({
   /* ---------- top-level string fields ---------- */
   const updateField = (field: keyof ProposalData, value: string) =>
     setData((p) => ({ ...p, [field]: value }));
+
+  /* ---------- doc type (Multi-package / Single-package) ---------- */
+  // Switching in either direction only sets `docType` — content for both
+  // shapes (cover, days, whyChoose, closing, etc.) lives in the same `data`
+  // object and is never discarded. The one exception: the single-package-only
+  // fields (stayPlan/transport) are lazily seeded from the sample document
+  // the first time a proposal is switched to "single" and hasn't been
+  // populated yet — so re-toggling back and forth never clobbers edits.
+  const handleDocTypeChange = (docType: ProposalDocType) =>
+    setData((p) => {
+      if (p.docType === docType) return p;
+      if (docType === "single" && p.stayPlan.length === 0 && p.transport.length === 0) {
+        return {
+          ...p,
+          docType,
+          days: p.days.some((d) => d.mealsLabel) ? p.days : DEFAULT_SINGLE_PROPOSAL_DATA.days,
+          stayPlan: DEFAULT_SINGLE_PROPOSAL_DATA.stayPlan,
+          stayPlanNote: p.stayPlanNote || DEFAULT_SINGLE_PROPOSAL_DATA.stayPlanNote,
+          transport: DEFAULT_SINGLE_PROPOSAL_DATA.transport,
+          transportNote: p.transportNote || DEFAULT_SINGLE_PROPOSAL_DATA.transportNote,
+        };
+      }
+      return { ...p, docType };
+    });
 
   /* ---------- tiers ---------- */
   const updateTier = (
@@ -108,7 +134,7 @@ export function ProposalEditor({
   /* ---------- days ---------- */
   const updateDay = (
     dayId: string,
-    field: "title" | "dateLabel" | "body" | "stayLabel" | "highlightsLine",
+    field: "title" | "dateLabel" | "body" | "stayLabel" | "highlightsLine" | "mealsLabel",
     value: string,
   ) => setData((p) => ({ ...p, days: p.days.map((d) => (d.id === dayId ? { ...d, [field]: value } : d)) }));
   const addDay = () =>
@@ -116,12 +142,59 @@ export function ProposalEditor({
       ...p,
       days: [
         ...p.days,
-        { id: genId("pday"), title: "New Day", dateLabel: "", body: "Describe the day's plan…", stayLabel: "", highlightsLine: "" },
+        {
+          id: genId("pday"),
+          title: "New Day",
+          dateLabel: "",
+          body: "Describe the day's plan…",
+          stayLabel: "",
+          highlightsLine: "",
+          mealsLabel: "",
+        },
       ],
     }));
   const removeDay = (dayId: string) => setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
 
-  /* ---------- pay tags (plain string[]) ---------- */
+  /* ---------- stay plan (single-package only) ---------- */
+  const addStayPlanRow = () =>
+    setData((p) => ({
+      ...p,
+      stayPlan: [
+        ...p.stayPlan,
+        { id: genId("sp"), destination: "", nights: "", hotelName: "", roomType: "Double Sharing" },
+      ],
+    }));
+  const updateStayPlanRow = (
+    rowId: string,
+    field: "destination" | "nights" | "hotelName" | "roomType",
+    value: string,
+  ) =>
+    setData((p) => ({
+      ...p,
+      stayPlan: p.stayPlan.map((r) => (r.id === rowId ? { ...r, [field]: value } : r)),
+    }));
+  const removeStayPlanRow = (rowId: string) =>
+    setData((p) => ({ ...p, stayPlan: p.stayPlan.filter((r) => r.id !== rowId) }));
+
+  /* ---------- transportation (single-package only) ---------- */
+  const addTransportRow = () =>
+    setData((p) => ({
+      ...p,
+      transport: [...p.transport, { id: genId("tr"), vehicle: "", seating: "", usedFor: "", duration: "" }],
+    }));
+  const updateTransportRow = (
+    rowId: string,
+    field: "vehicle" | "seating" | "usedFor" | "duration",
+    value: string,
+  ) =>
+    setData((p) => ({
+      ...p,
+      transport: p.transport.map((r) => (r.id === rowId ? { ...r, [field]: value } : r)),
+    }));
+  const removeTransportRow = (rowId: string) =>
+    setData((p) => ({ ...p, transport: p.transport.filter((r) => r.id !== rowId) }));
+
+  /* ---------- pay tags / plain string[] lists ---------- */
   const addListItem = (key: ListKey, item: string) =>
     setData((p) => ({ ...p, [key]: [...p[key], item] }));
   const updateListItem = (key: ListKey, idx: number, value: string) =>
@@ -218,7 +291,7 @@ export function ProposalEditor({
 
   function handleReset() {
     if (confirm("Reset all content to the default proposal? Unsaved changes will be lost.")) {
-      setData(DEFAULT_PROPOSAL_DATA);
+      setData(data.docType === "single" ? DEFAULT_SINGLE_PROPOSAL_DATA : DEFAULT_PROPOSAL_DATA);
     }
   }
 
@@ -237,6 +310,8 @@ export function ProposalEditor({
         onTitleChange={setTitle}
         status={status}
         onStatusChange={setStatus}
+        docType={data.docType}
+        onDocTypeChange={handleDocTypeChange}
         onSave={handleSave}
         onExport={handleExport}
         onReset={handleReset}
@@ -316,11 +391,13 @@ export function ProposalEditor({
             </div>
           </article>
 
-          {/* Pricing Tiers */}
+          {/* Pricing Tiers — the single-package doc reuses this exact same
+              tier-card editor, just for one fixed slot (SINGLE_TIER_KEY)
+              instead of looping over all three. */}
           <article className={pageCard}>
-            <h2 className={greenHead}>Your Three Options</h2>
+            <h2 className={greenHead}>{data.docType === "multi" ? "Your Three Options" : "Package & Price"}</h2>
             <div className="mt-6 space-y-5">
-              {TIER_ORDER.map((key) => {
+              {(data.docType === "multi" ? TIER_ORDER : [SINGLE_TIER_KEY]).map((key) => {
                 const tier: ProposalTier = data.tiers[key];
                 return (
                   <div
@@ -391,13 +468,17 @@ export function ProposalEditor({
                 );
               })}
             </div>
-            <div className="mt-6">
-              <label className={fieldLabel}>Mixing Tip (below the option cards)</label>
-              <EditableField value={data.tipText} onValueChange={(v) => updateField("tipText", v)} rows={2} />
-            </div>
+            {data.docType === "multi" ? (
+              <div className="mt-6">
+                <label className={fieldLabel}>Mixing Tip (below the option cards)</label>
+                <EditableField value={data.tipText} onValueChange={(v) => updateField("tipText", v)} rows={2} />
+              </div>
+            ) : null}
           </article>
 
-          {/* Comparison table */}
+          {/* Comparison table — multi-package only; the single-package doc
+              has only one option, nothing to compare. */}
+          {data.docType !== "multi" ? null : (
           <article className={pageCard}>
             <h2 className={greenHead}>What Actually Differs</h2>
             {/* Static column headings — the rows below have no labels of
@@ -468,10 +549,13 @@ export function ProposalEditor({
               />
             </div>
           </article>
+          )}
 
-          {/* Days */}
+          {/* Days — the single-package doc's "Day Plan at a Glance" table
+              reads the same `days` array, plus its Meals column (blank/unused
+              in multi-package). */}
           <article className={pageCard}>
-            <h2 className={greenHead}>Your Six Days</h2>
+            <h2 className={greenHead}>{data.docType === "multi" ? "Your Six Days" : "Day Plan at a Glance"}</h2>
             <div className="mt-6 space-y-3">
               {data.days.map((day, dayIdx) => (
                 <div
@@ -514,12 +598,21 @@ export function ProposalEditor({
                       placeholder="Stay (blank on departure day)"
                       className="text-xs text-mute dark:text-muted-foreground"
                     />
-                    <EditableField
-                      value={day.highlightsLine}
-                      onValueChange={(v) => updateDay(day.id, "highlightsLine", v)}
-                      placeholder="Highlights"
-                      className="text-xs text-mute dark:text-muted-foreground"
-                    />
+                    {data.docType === "multi" ? (
+                      <EditableField
+                        value={day.highlightsLine}
+                        onValueChange={(v) => updateDay(day.id, "highlightsLine", v)}
+                        placeholder="Highlights"
+                        className="text-xs text-mute dark:text-muted-foreground"
+                      />
+                    ) : (
+                      <EditableField
+                        value={day.mealsLabel}
+                        onValueChange={(v) => updateDay(day.id, "mealsLabel", v)}
+                        placeholder="Meals (e.g. Breakfast, Dinner)"
+                        className="text-xs text-mute dark:text-muted-foreground"
+                      />
+                    )}
                   </div>
                 </div>
               ))}
@@ -528,6 +621,134 @@ export function ProposalEditor({
               <Plus className="h-3 w-3" /> Add day
             </button>
           </article>
+
+          {data.docType === "single" ? (
+            <>
+              {/* Stay Plan */}
+              <article className={pageCard}>
+                <h2 className={greenHead}>Stay Plan</h2>
+                <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
+                  <span className={fieldLabel}>Destination</span>
+                  <span className={fieldLabel}>Nights</span>
+                  <span className={fieldLabel}>Hotel Name</span>
+                  <span className={fieldLabel}>Room Type</span>
+                </div>
+                <div className="mt-2 space-y-3">
+                  {data.stayPlan.map((row) => (
+                    <div
+                      key={row.id}
+                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
+                    >
+                      <EditableField
+                        value={row.destination}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "destination", v)}
+                        placeholder="Destination"
+                        className="text-sm font-bold"
+                      />
+                      <EditableField
+                        value={row.nights}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "nights", v)}
+                        placeholder="Nights"
+                        className="text-xs"
+                      />
+                      <EditableField
+                        value={row.hotelName}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
+                        placeholder="Hotel Name / Similar"
+                        className="text-xs sm:col-span-1"
+                      />
+                      <EditableField
+                        value={row.roomType}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
+                        placeholder="Room Type"
+                        className="text-xs"
+                      />
+                      <button
+                        onClick={() => removeStayPlanRow(row.id)}
+                        aria-label={`Remove stay plan row ${row.destination}`}
+                        className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={addStayPlanRow} className={addBtn}>
+                  <Plus className="h-3 w-3" /> Add row
+                </button>
+                <div className="mt-5">
+                  <label className={fieldLabel}>Note</label>
+                  <EditableField
+                    value={data.stayPlanNote}
+                    onValueChange={(v) => updateField("stayPlanNote", v)}
+                    rows={2}
+                  />
+                </div>
+              </article>
+
+              {/* Transportation */}
+              <article className={pageCard}>
+                <h2 className={greenHead}>Transportation</h2>
+                <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
+                  <span className={fieldLabel}>Vehicle</span>
+                  <span className={fieldLabel}>Seating</span>
+                  <span className={fieldLabel}>Used For</span>
+                  <span className={fieldLabel}>Duration</span>
+                </div>
+                <div className="mt-2 space-y-3">
+                  {data.transport.map((row) => (
+                    <div
+                      key={row.id}
+                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
+                    >
+                      <EditableField
+                        value={row.vehicle}
+                        onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
+                        placeholder="Sedan"
+                        className="text-sm font-bold"
+                      />
+                      <EditableField
+                        value={row.seating}
+                        onValueChange={(v) => updateTransportRow(row.id, "seating", v)}
+                        placeholder="04 + driver"
+                        className="text-xs"
+                      />
+                      <EditableField
+                        value={row.usedFor}
+                        onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                        placeholder="Used for"
+                        className="text-xs"
+                      />
+                      <EditableField
+                        value={row.duration}
+                        onValueChange={(v) => updateTransportRow(row.id, "duration", v)}
+                        placeholder="06 Days"
+                        className="text-xs"
+                      />
+                      <button
+                        onClick={() => removeTransportRow(row.id)}
+                        aria-label={`Remove transport row ${row.vehicle}`}
+                        className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={addTransportRow} className={addBtn}>
+                  <Plus className="h-3 w-3" /> Add row
+                </button>
+                <div className="mt-5">
+                  <label className={fieldLabel}>Note</label>
+                  <EditableField
+                    value={data.transportNote}
+                    onValueChange={(v) => updateField("transportNote", v)}
+                    rows={2}
+                  />
+                </div>
+              </article>
+            </>
+          ) : null}
 
           {/* What's Covered */}
           <article className={pageCard}>

@@ -4,15 +4,21 @@ import Link from "next/link";
 import { Button } from "@/components/ui/atoms/button";
 import { RefreshCw, Download, Save, Loader2, ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
-import type { ProposalStatus } from "@/types/proposal";
+import type { ProposalDocType, ProposalStatus } from "@/types/proposal";
 
 const STATUSES: ProposalStatus[] = ["DRAFT", "SENT"];
+const DOC_TYPES: { value: ProposalDocType; label: string }[] = [
+  { value: "single", label: "Single-package" },
+  { value: "multi", label: "Multi-package" },
+];
 
 interface ToolbarProps {
   title: string;
   onTitleChange: (v: string) => void;
   status: ProposalStatus;
   onStatusChange: (v: ProposalStatus) => void;
+  docType: ProposalDocType;
+  onDocTypeChange: (v: ProposalDocType) => void;
   onSave: () => void;
   onExport: () => void;
   onReset: () => void;
@@ -26,6 +32,8 @@ export function Toolbar({
   onTitleChange,
   status,
   onStatusChange,
+  docType,
+  onDocTypeChange,
   onSave,
   onExport,
   onReset,
@@ -53,6 +61,29 @@ export function Toolbar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <div
+            role="radiogroup"
+            aria-label="Proposal type"
+            className="flex items-center rounded-lg border border-border bg-card p-0.5 text-[12px] font-semibold"
+          >
+            {DOC_TYPES.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={docType === opt.value}
+                onClick={() => onDocTypeChange(opt.value)}
+                className={`rounded-md px-2.5 py-1 transition ${
+                  docType === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           <select
             value={status}
             onChange={(e) => onStatusChange(e.target.value as ProposalStatus)}

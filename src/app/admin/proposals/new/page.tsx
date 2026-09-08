@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { ProposalEditor } from "@/components/admin/proposal/ProposalEditor";
-import { DEFAULT_PROPOSAL_DATA } from "@/components/admin/proposal/default-data";
+import { DEFAULT_SINGLE_PROPOSAL_DATA } from "@/components/admin/proposal/default-data";
 import { resolvePrimaryOffice } from "@/lib/companyOffice";
 import { getPdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 
@@ -29,8 +29,10 @@ export default async function NewProposalPage() {
     where: { id: session.user.id as string },
     select: { name: true, phone: true },
   });
+  // Single-package is the default for new proposals — staff can still switch
+  // to Multi-package via the toolbar toggle before saving.
   const initialData = {
-    ...DEFAULT_PROPOSAL_DATA,
+    ...DEFAULT_SINGLE_PROPOSAL_DATA,
     preparedByName: currentUser?.name ?? "",
     preparedByPhone: currentUser?.phone ?? "",
   };

@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { listItemSchema, cancelTierSchema, trustSchema } from "@/types/itinerary";
 
+// Two document shapes share this one schema/editor/PDF: "multi" is the
+// existing 3-tier comparison document (tiers/comparisonRows below), "single"
+// is a one-package quotation (day-plan-at-a-glance table, stay plan,
+// transportation, one price — see stayPlan/transport below). Cover, What's
+// Covered, Payment & Cancellation, Why Choose Us and the closing page are
+// shared verbatim by both — only the body sections that differ are gated on
+// this field, in the editor and in ProposalPdf.tsx.
+export const proposalDocTypeSchema = z.enum(["multi", "single"]);
+export type ProposalDocType = z.infer<typeof proposalDocTypeSchema>;
+
 // One card's worth of content for a single pricing tier (page 1's price box,
 // page 2's option card, and the comparison table's per-tier columns all read
 // from the same tier object).
@@ -32,6 +42,11 @@ export type ProposalTiers = z.infer<typeof proposalTiersSchema>;
 export type ProposalTierKey = keyof ProposalTiers;
 export const TIER_ORDER: ProposalTierKey[] = ["budget", "premium", "luxury"];
 
+// Single-package doc uses exactly one of the three tier slots as its one
+// price box — reusing proposalTierSchema/proposalTiersSchema above rather
+// than adding a parallel "single price" shape.
+export const SINGLE_TIER_KEY: ProposalTierKey = "premium";
+
 // Comparison table cell sentinels — each cell is plain free text (same "what
 // staff types is exactly what prints" convention used for hotel meal-type
 // text), pattern-matched at render time rather than stored as a {kind,value}
@@ -61,10 +76,39 @@ export const proposalDaySchema = z.object({
   stayLabel: z.string().default(""), // bed-icon line, e.g. "Srinagar"
   // Free text, rendered verbatim exactly as typed — no structured chip list.
   highlightsLine: z.string().default(""),
+  // "Breakfast, Dinner" — only the single-package doc's "Day Plan at a
+  // Glance" table has a Meals column; unused (blank) in the multi-package
+  // document, so defaulted rather than required.
+  mealsLabel: z.string().default(""),
 });
 export type ProposalDay = z.infer<typeof proposalDaySchema>;
 
+// Single-package doc's "Stay Plan" table — destination/nights/hotel/room.
+export const stayPlanRowSchema = z.object({
+  id: z.string(),
+  destination: z.string(),
+  nights: z.string(),
+  hotelName: z.string(),
+  roomType: z.string(),
+});
+export type StayPlanRow = z.infer<typeof stayPlanRowSchema>;
+
+// Single-package doc's "Transportation" table — one row per vehicle.
+export const transportRowSchema = z.object({
+  id: z.string(),
+  vehicle: z.string(),
+  seating: z.string(),
+  usedFor: z.string(),
+  duration: z.string(),
+});
+export type TransportRow = z.infer<typeof transportRowSchema>;
+
 export const proposalDataSchema = z.object({
+  // Which document this is — see proposalDocTypeSchema above. Defaulted to
+  // "multi" so every proposal saved before this field existed still loads
+  // as the 3-tier document it always was.
+  docType: proposalDocTypeSchema.default("multi"),
+
   // Cover
   quoteNumber: z.string().default(""),
   coverTitle: z.string(), // "Kashmir,"
@@ -86,8 +130,17 @@ export const proposalDataSchema = z.object({
   comparisonRows: z.array(comparisonRowSchema).default([]),
   comparisonFootnote: z.string().default(""),
 
-  // Page 4 — same six days regardless of tier
+  // Page 4 — same six days regardless of tier ("multi"), or the single
+  // document's "Day Plan at a Glance" table ("single") — same underlying data.
   days: z.array(proposalDaySchema).default([]),
+
+  // Single-package only — "Stay Plan" table + the note below it.
+  stayPlan: z.array(stayPlanRowSchema).default([]),
+  stayPlanNote: z.string().default(""),
+
+  // Single-package only — "Transportation" table + the note below it.
+  transport: z.array(transportRowSchema).default([]),
+  transportNote: z.string().default(""),
 
   // Page 5 — what's covered + payment & cancellation (reused shapes)
   inc: z.array(listItemSchema).default([]),
