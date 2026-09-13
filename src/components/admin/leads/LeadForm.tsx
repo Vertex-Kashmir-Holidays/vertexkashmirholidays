@@ -542,7 +542,7 @@ export function LeadForm({
                     {...register("negotiatedAmount")}
                     type="number"
                     min={0}
-                    step={1000}
+                    step={100}
                     className={inputCls}
                     placeholder="e.g. 45000"
                   />
@@ -555,7 +555,7 @@ export function LeadForm({
                     {...register("tokenAmount")}
                     type="number"
                     min={0}
-                    step={1000}
+                    step={100}
                     className={inputCls}
                     placeholder="e.g. 9000"
                   />

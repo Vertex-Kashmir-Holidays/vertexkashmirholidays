@@ -1,7 +1,9 @@
 import type { Lead, Prisma } from "@prisma/client";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { computeGstDeduction, computeBookingProfit, computeCommission } from "@/lib/bookings/commission";
+import { buildServicesFromItinerary } from "@/lib/bookings/itineraryToServices";
 import { pickAttribution } from "@/lib/attribution";
+import { itineraryDataSchema } from "@/types/itinerary";
 
 /**
  * Thrown when the atomic claim (see below) finds the lead already converted
@@ -159,11 +161,31 @@ export async function convertLeadToBooking(
     },
   });
 
-  // Preserve + lock the lead's itinerary as the final canonical one.
-  await tx.itinerary.updateMany({
+  // Preserve + lock the lead's itinerary as the final canonical one, and seed
+  // the booking's services from it (hotels/transport/included activities) so
+  // staff aren't retyping the itinerary's content by hand — only real costs
+  // (amount: 0 here) still need entering. Same code path for a normal lead
+  // and a B2B request (both convert via this function against the same
+  // Itinerary shape), so this applies to both without further work.
+  const itinerary = await tx.itinerary.findUnique({
     where: { leadId: lead.id },
-    data: { locked: true, status: "CONFIRMED" },
+    select: { id: true, data: true },
   });
+  if (itinerary) {
+    await tx.itinerary.update({
+      where: { id: itinerary.id },
+      data: { locked: true, status: "CONFIRMED" },
+    });
+    const parsedItinerary = itineraryDataSchema.safeParse(itinerary.data);
+    if (parsedItinerary.success) {
+      const services = buildServicesFromItinerary(parsedItinerary.data);
+      if (services.length > 0) {
+        await tx.bookingService.createMany({
+          data: services.map((s, i) => ({ ...s, bookingId: booking.id, sortOrder: i })),
+        });
+      }
+    }
+  }
 
   await tx.leadActivity.createMany({
     data: [

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
+import { computeBookingProfit, computeGstDeduction } from "@/lib/bookings/commission";
 import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
 import { canEditDriver, type DriverDetails } from "@/lib/bookings/driver";
 import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
@@ -191,11 +192,14 @@ export function BookingServicesClient({
   booking,
   gstRates,
   canEdit,
+  canViewProfit,
 }: {
   booking: BookingData;
   gstRates: number[];
   /** `bookings:edit` permission — distinct from the time-based edit window below. */
   canEdit: boolean;
+  /** Admin/Superadmin only — company profit margin is not shown to Sales. */
+  canViewProfit: boolean;
 }) {
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
@@ -252,6 +256,14 @@ export function BookingServicesClient({
         services: effectiveServices,
       }),
     [booking.amount, discountType, discountValue, payments, effectiveServices],
+  );
+
+  // Company profit — effectivePayable minus services cost minus recorded GST.
+  // Mirrors the server-side commission ledger (src/lib/bookings/commission.ts)
+  // so the figure shown here never drifts from what's used for commissions.
+  const profit = useMemo(
+    () => computeBookingProfit(finance, computeGstDeduction(payments)),
+    [finance, payments],
   );
 
   // Record a row's amount on blur so totals react immediately.
@@ -618,7 +630,7 @@ export function BookingServicesClient({
 
       {/* Discount + Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5 flex flex-col">
           <h3 className="font-bold text-foreground text-sm mb-3">Discount</h3>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
@@ -654,6 +666,13 @@ export function BookingServicesClient({
             >
               {savingMeta && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Save Discount
             </button>
+          )}
+          {canViewProfit && (
+            <div className="border-t border-border pt-3 mt-auto">
+              <dl className="text-sm">
+                <Row label="Profit" value={inr(profit)} strong />
+              </dl>
+            </div>
           )}
         </div>
 
@@ -1165,13 +1184,13 @@ export function DriverSection({
         <p className="mt-3 text-xs text-muted-foreground">
           {editable
             ? "No driver assigned yet. Add the driver and vehicle for this trip."
-            : "No driver was assigned, and details can no longer be added (within one day of travel)."}
+            : "No driver was assigned, and details can no longer be added (the travel date has passed)."}
         </p>
       )}
 
       {driver && !editable && (
         <p className="mt-3 text-[12px] text-muted-foreground">
-          Editing is closed — driver details can only be changed up to one day before travel.
+          Editing is closed — driver details can only be changed on or before the travel date.
         </p>
       )}
 

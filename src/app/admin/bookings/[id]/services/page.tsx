@@ -40,6 +40,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
     can(role, "bookings", "edit"),
     can(role, "itinerary", "create"),
   ]);
+  const canViewProfit = role === "SUPERADMIN" || role === "ADMIN";
 
   const booking = await prisma.booking.findFirst({
     where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
@@ -169,7 +170,12 @@ export default async function BookingServicesPage({ params }: PageProps) {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
         {/* Left — 75%: service editor, details, payments, lock CTA */}
         <div className="xl:col-span-3">
-          <BookingServicesClient booking={data} gstRates={gstRates} canEdit={canEdit} />
+          <BookingServicesClient
+            booking={data}
+            gstRates={gstRates}
+            canEdit={canEdit}
+            canViewProfit={canViewProfit}
+          />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}
         <div className="xl:col-span-1 space-y-5">

@@ -8,47 +8,47 @@ datasource db {
 }
 
 model User {
-  id                   String               @id @default(cuid())
-  name                 String?
-  email                String               @unique
-  phone                String?
-  image                String? // profile picture URL (customer-managed in /account/profile)
-  passwordHash         String
-  role                 Role                 @default(CUSTOMER)
+  id                       String               @id @default(cuid())
+  name                     String?
+  email                    String               @unique
+  phone                    String?
+  image                    String? // profile picture URL (customer-managed in /account/profile)
+  passwordHash             String
+  role                     Role                 @default(CUSTOMER)
   // Set true for accounts created with a system-generated temp password (e.g. from
   // lead conversion). Forces a password change on first login before any other
   // account access is allowed. Cleared once the customer sets their own password.
-  mustChangePassword   Boolean              @default(false)
+  mustChangePassword       Boolean              @default(false)
   // Set on every successful sign-in (password, Google OAuth, Google One Tap —
   // see auth.ts). Null means this account has never logged in, which is what
   // both the "remind them to log in" targeting and the future never-logged-in
   // cleanup policy key off of.
-  lastLoginAt          DateTime?
+  lastLoginAt              DateTime?
   // Sales incentive rate (percent) applied to a booking's PROFIT, not the booking
   // amount. Optional; only meaningful for SALES staff. Kept on the user so future
   // monthly salary/commission reports can compute payouts per salesperson.
-  bookingConversionPct Float?
+  bookingConversionPct     Float?
   // Employee profile fields (staff only; optional so nothing breaks for existing
   // rows). Source of truth for CURRENT employee info — payroll snapshots these
   // per month on SalaryRecord rather than reading them live.
-  designation          String?
-  employeeCode         String?              @unique
-  monthlySalary        Float?
-  joiningDate          DateTime?
+  designation              String?
+  employeeCode             String?              @unique
+  monthlySalary            Float?
+  joiningDate              DateTime?
   // `email`/`phone` above are treated as the employee's official/work contact
   // (email doubles as their login). These are their personal contact details.
-  personalEmail        String?
-  personalPhone        String?
-  address              String?
+  personalEmail            String?
+  personalPhone            String?
+  address                  String?
   // TOTP MFA — mandatory for SUPERADMIN/ADMIN (see src/lib/rbac.ts requiresMfa).
   // mfaSecret is AES-256-GCM ciphertext (src/lib/security/mfaCrypto.ts), never
   // the plaintext base32 secret — verification needs it back, so it's encrypted
   // rather than hashed. mfaEnabledAt null = not yet enrolled/confirmed; a
   // freshly-(re)generated pending secret is stored here before confirmation too.
-  mfaSecret            String?
-  mfaEnabledAt         DateTime?
-  recoveryCodes        MfaRecoveryCode[]
-  deletedAt            DateTime? // soft-delete marker; non-null = hidden + login blocked
+  mfaSecret                String?
+  mfaEnabledAt             DateTime?
+  recoveryCodes            MfaRecoveryCode[]
+  deletedAt                DateTime? // soft-delete marker; non-null = hidden + login blocked
   // ── B2B Agent (Phase 1) ──────────────────────────────────────────────────
   // A B2B agent is a CUSTOMER-role User with agencyStatus set. Null = not a
   // B2B agent (every existing/normal User). PENDING = registered but not yet
@@ -57,39 +57,39 @@ model User {
   // B2B capability. SUSPENDED = capability revoked without deleting the
   // account or its historical relationships (mirrors deletedAt's "hide, don't
   // delete" convention, but for capability rather than visibility/login).
-  agencyStatus         B2BAgentStatus?
+  agencyStatus             B2BAgentStatus?
   agencyName               String?
   agencyWebsite            String?
   agencyRegistrationNumber String?
   agencyGstin              String?
   agencyState              String?
   agencyLogoUrl            String?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  bookings             Booking[]
-  commissions          BookingCommission[]
-  salaryRecords        SalaryRecord[]       @relation("SalaryEmployee")
-  salariesPaid         SalaryRecord[]       @relation("SalaryPaidBy")
-  salariesCorrected    SalaryRecord[]       @relation("SalaryCorrectedBy")
-  leaveRequests        LeaveRequest[]       @relation("LeaveEmployee")
-  leaveReviews         LeaveRequest[]       @relation("LeaveReviewedBy")
-  reviews              Review[]
-  itineraries          Itinerary[]          @relation("ItineraryOwner")
-  itinerariesEdited    Itinerary[]          @relation("ItineraryEditor")
-  proposals            ProposalItinerary[]  @relation("ProposalOwner")
-  leadsAssigned        Lead[]               @relation("LeadAssignee")
-  b2bRequests          Lead[]               @relation("B2BAgentLeads")
-  b2bRequestsCreated   Lead[]               @relation("LeadCreatedBy")
-  notifications        Notification[]
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+  bookings                 Booking[]
+  commissions              BookingCommission[]
+  salaryRecords            SalaryRecord[]       @relation("SalaryEmployee")
+  salariesPaid             SalaryRecord[]       @relation("SalaryPaidBy")
+  salariesCorrected        SalaryRecord[]       @relation("SalaryCorrectedBy")
+  leaveRequests            LeaveRequest[]       @relation("LeaveEmployee")
+  leaveReviews             LeaveRequest[]       @relation("LeaveReviewedBy")
+  reviews                  Review[]
+  itineraries              Itinerary[]          @relation("ItineraryOwner")
+  itinerariesEdited        Itinerary[]          @relation("ItineraryEditor")
+  proposals                ProposalItinerary[]  @relation("ProposalOwner")
+  leadsAssigned            Lead[]               @relation("LeadAssignee")
+  b2bRequests              Lead[]               @relation("B2BAgentLeads")
+  b2bRequestsCreated       Lead[]               @relation("LeadCreatedBy")
+  notifications            Notification[]
   // ── Vertex Connect ────────────────────────────────────────────────────────
-  chatRoomsCreated     ChatRoom[]           @relation("ConnectRoomCreator")
-  chatMemberships      ChatMember[]         @relation("ConnectMemberships")
-  chatMessagesSent     ChatMessage[]        @relation("ConnectMessageSender")
-  presence             UserPresence?
-  meetingsCreated      Meeting[]            @relation("ConnectMeetingCreator")
-  meetingParticipants  MeetingParticipant[] @relation("ConnectMeetingParticipants")
-  faqsCreated          Faq[]                @relation("FaqCreatedBy")
-  faqsUpdated          Faq[]                @relation("FaqUpdatedBy")
+  chatRoomsCreated         ChatRoom[]           @relation("ConnectRoomCreator")
+  chatMemberships          ChatMember[]         @relation("ConnectMemberships")
+  chatMessagesSent         ChatMessage[]        @relation("ConnectMessageSender")
+  presence                 UserPresence?
+  meetingsCreated          Meeting[]            @relation("ConnectMeetingCreator")
+  meetingParticipants      MeetingParticipant[] @relation("ConnectMeetingParticipants")
+  faqsCreated              Faq[]                @relation("FaqCreatedBy")
+  faqsUpdated              Faq[]                @relation("FaqUpdatedBy")
 
   // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
@@ -572,7 +572,7 @@ model Booking {
   // Once locked, services can no longer be added/edited/deleted.
   servicesLocked     Boolean             @default(false)
   // Assigned driver/vehicle, added by staff after services are locked. Editable
-  // only until one day before travelDate. driverAddedAt non-null = details exist.
+  // through the end of travelDate (including the tour start day). driverAddedAt non-null = details exist.
   driverName         String?
   driverPhone        String?
   vehicleNumber      String?
@@ -1134,6 +1134,28 @@ model Gallery {
   @@index([category])
   @@index([type])
   @@index([sortOrder, createdAt])
+}
+
+// Static reference documents (company profile, B2B payment policy, itinerary
+// samples, etc.) uploaded by staff for other staff to view/download/share
+// externally. `category` is a plain string, not an enum (same convention as
+// Gallery.category) — the fixed set staff picks from lives in
+// src/lib/docs/categories.ts, so adding a new category is a code change, not
+// a migration.
+model AdminDocument {
+  id             String   @id @default(cuid())
+  title          String
+  category       String
+  url            String
+  publicId       String? // Cloudinary public_id — null for local-disk uploads
+  mimeType       String
+  sizeBytes      Int
+  uploadedById   String?
+  uploadedByName String
+  createdAt      DateTime @default(now())
+
+  @@index([category])
+  @@index([createdAt])
 }
 
 // Long-form legal/policy pages (Terms, Privacy, Refund & Cancellation).
