@@ -43,7 +43,7 @@ function pctChange(current: number, previous: number) {
 function fmtINR(n: number) {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
   if (n >= 100000) return `₹${(n / 100000).toFixed(2)} L`;
-  if (n >= 1000) return `₹${Math.round(n / 100) * 100}`.replace(/(\d+?)(?=(\d{2})+(?!\d))/, "$1,");
+  if (n >= 1000) return `₹${(Math.round(n / 100) * 100).toLocaleString("en-IN")}`;
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
@@ -271,7 +271,7 @@ export default async function AdminDashboard() {
     }),
     // Bounded to the 6-month window — only the rows the chart can show.
     prisma.$queryRaw<{ bucket: number; revenue: number }[]>(Prisma.sql`
-      SELECT CASE ${monthBucketCase} END AS bucket,
+      SELECT (CASE ${monthBucketCase} END)::int AS bucket,
              COALESCE(SUM(${netPaidExpr}), 0)::float8 AS revenue
       FROM "Booking" b
       LEFT JOIN "BookingPayment" p ON p."bookingId" = b.id
