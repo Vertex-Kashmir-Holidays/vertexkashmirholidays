@@ -46,6 +46,7 @@ import {
   ClipboardList,
   CalendarCheck2,
   Layers,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -94,6 +95,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   roles: ShieldCheck,
   auditLog: History,
   careers: Briefcase,
+  docs: FolderOpen,
 };
 
 const PAGE_TITLES: Record<string, string> = {
@@ -135,7 +137,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
   { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews", "careers"] },
   { label: "HR", keys: ["employees", "salary", "leave"] },
-  { label: "Admin", keys: ["settings", "roles", "auditLog"] },
+  { label: "Admin", keys: ["settings", "roles", "auditLog", "docs"] },
 ];
 
 interface AdminShellProps {

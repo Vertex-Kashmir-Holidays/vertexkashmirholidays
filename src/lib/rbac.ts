@@ -64,6 +64,7 @@ export const MODULES = [
   { key: "roles", label: "Roles & Permissions", href: "/admin/roles" },
   { key: "auditLog", label: "Audit Log", href: "/admin/audit-log" },
   { key: "careers", label: "Careers", href: "/admin/careers" },
+  { key: "docs", label: "Docs", href: "/admin/docs" },
 ] as const;
 
 export type ModuleKey = (typeof MODULES)[number]["key"];

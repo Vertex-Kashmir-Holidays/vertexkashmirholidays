@@ -33,7 +33,7 @@ Business rules always take precedence over implementation assumptions. Where the
 - **Duplicate prevention:** a new public-form lead is blocked if a lead with the same phone or email already exists, is still in an "active" status (`NEW`/`CONNECTED`/`NOT_CONNECTED`/`QUALIFIED`/`NEGOTIATION`), and was created within the last **15 days**. A lead in `ON_HOLD`, `REJECTED`, or `CONVERTED` never blocks a fresh enquiry, regardless of age (`src/app/api/leads/route.ts`).
 - **Every status change, assignment change, note, follow-up, and attachment is recorded** as an immutable `LeadActivity` row — lead history is never lost or overwritten.
 - Leads are assigned to a single staff member (`assignedToId`); only that assignee (not any admin) may convert their lead into a booking.
-- Once converted, a lead is `locked` — further edits are blocked until explicitly unlocked by an admin.
+- Once converted, a lead is `locked` — further edits are blocked until explicitly unlocked by an admin (`POST /api/leads/[id]/unlock`, Admin/Superadmin only). An admin may re-lock it afterward (`POST /api/leads/[id]/lock`) — only valid for a `CONVERTED` lead that's currently unlocked.
 
 ## 2. Booking Rules — Implemented
 
@@ -42,7 +42,7 @@ Business rules always take precedence over implementation assumptions. Where the
 - **Services belong to a booking** (`BookingService`: HOTEL / TRANSPORT / ACTIVITY / OTHER line items), each with its own amount.
 - **Booking owns pricing** at the top level (`Booking.amount`) — the negotiated total for a lead conversion, or the tour's package price for a direct booking.
 - **Discount is applied at the booking level**, as either `FLAT` (a fixed rupee amount) or `PERCENT` of the booking amount, clamped so it can never exceed the booking amount or go negative.
-- **Locked bookings:** once `servicesLocked` is set, services can no longer be added, edited, or deleted. Driver/vehicle assignment is separately editable by staff only up until one day before `travelDate`.
+- **Locked bookings:** once `servicesLocked` is set, services can no longer be added, edited, or deleted. Driver/vehicle assignment is separately editable by staff through the end of `travelDate` (including the tour start day).
 - Bookings are soft-deleted (`deletedAt`) — hidden from listings/reports but the row (and its payments/services) is retained; a permanent delete is a separate, explicit action.
 - **Requires Business Decision:** cascade behaviour on user deletion is inconsistent across relations (documented in the engineering backlog as "Define Cascade / Referential Integrity Policy for User Relations") — e.g. a departed staff member's chat messages currently block their account from being deleted. This is a technical gap with a real business consequence and has no settled policy yet.
 
@@ -81,6 +81,7 @@ Business rules always take precedence over implementation assumptions. Where the
 - An `Itinerary` links to **either** a `Lead` **or** a direct `Booking` — never both (enforced by two separate unique optional foreign keys, used mutually exclusively in practice: a converted lead's booking reuses the lead's itinerary rather than getting a second one).
 - **Itinerary is mandatory before a lead can be converted to a booking** — this is enforced server-side (`ITINERARY_REQUIRED` error), not just a UI nudge. Attempting conversion without a linked itinerary is rejected.
 - On conversion, the lead's itinerary is locked (`locked: true`) and its status forced to `CONFIRMED` — it becomes the final, immutable plan the booking is built on.
+- On conversion, the booking's services (Hotel/Transport/Activity rows) are auto-seeded from the itinerary's hotels/transport/included-activities (`buildServicesFromItinerary`, `src/lib/bookings/itineraryToServices.ts`) — every row starts at amount ₹0 since the itinerary carries no internal cost data; staff fills in real costs afterward. Same code path for a normal lead and a B2B request (both convert via `convertLeadToBooking`), so this applies to both.
 - Every save produces an `ItineraryHistory` snapshot — full version history is retained, not just the latest state.
 
 ## 7. Pricing Rules — Implemented

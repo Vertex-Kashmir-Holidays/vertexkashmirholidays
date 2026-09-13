@@ -46,10 +46,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     );
   }
 
-  // Authoritative cutoff: no add/edit within one day of travel.
+  // Authoritative cutoff: no add/edit once the travel date has passed.
   if (!canEditDriver(booking.travelDate)) {
     return NextResponse.json(
-      { error: "Driver details can only be changed up to one day before the travel date." },
+      { error: "Driver details can only be changed on or before the travel date." },
       { status: 422 },
     );
   }

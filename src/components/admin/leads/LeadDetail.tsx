@@ -406,6 +406,23 @@ export function LeadDetail({
     });
   }
 
+  function handleLock() {
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/leads/${lead.id}/lock`, { method: "POST" });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          toast.error(j.error ?? "Lock failed.");
+          return;
+        }
+        toast.success("Lead locked.");
+        router.refresh();
+      } catch {
+        toast.error("An error occurred.");
+      }
+    });
+  }
+
   function handleAssignChange(val: string) {
     setAssignedToId(val);
     patch({ assignedToId: val || null });
@@ -528,6 +545,22 @@ export function LeadDetail({
                     <Unlock className="w-3.5 h-3.5" />
                   )}
                   Unlock
+                </button>
+              )}
+              {/* Re-lock — only meaningful for a converted lead an admin had
+                  previously unlocked for corrections. */}
+              {!locked && status === "CONVERTED" && isAdmin && (
+                <button
+                  onClick={handleLock}
+                  disabled={isPending}
+                  className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground border border-border hover:bg-muted px-3 py-2 rounded-xl transition-colors"
+                >
+                  {isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Lock className="w-3.5 h-3.5" />
+                  )}
+                  Lock
                 </button>
               )}
               {/* Assignee on an active lead edits; the assignee on a locked lead and
@@ -1309,7 +1342,7 @@ function ConvertModal({
             <input
               type="number"
               min={0}
-              step={1000}
+              step={100}
               value={bookingAmount}
               onChange={(e) => setBookingAmount(e.target.value)}
               placeholder="e.g. 45000"
@@ -1324,7 +1357,7 @@ function ConvertModal({
             <input
               type="number"
               min={0}
-              step={1000}
+              step={100}
               value={tokenAmount}
               onChange={(e) => setTokenAmount(e.target.value)}
               placeholder="e.g. 9000"
