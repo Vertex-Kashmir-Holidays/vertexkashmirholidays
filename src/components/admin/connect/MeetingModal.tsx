@@ -61,6 +61,11 @@ export function MeetingModal({
   const [answered, setAnswered] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [poppedOut, setPoppedOut] = useState(false);
+  // Free-position drag for the minimized corner box (null = default bottom-right
+  // corner). Purely client-side pointer tracking — no network/DB calls involved.
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const draggingRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const answeredRef = useRef(false);
@@ -124,6 +129,35 @@ export function MeetingModal({
     return () => {
       pipWindowRef.current?.close();
     };
+  }, []);
+
+  // Lets the minimized corner box be dragged anywhere within the browser
+  // window (it's an in-page element, so it can't escape the browser's own
+  // window/tab onto the desktop — only the Document PiP "Pop out" window
+  // above can float over other native apps like WhatsApp).
+  const handleDragPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!minimized || poppedOut) return;
+      if ((e.target as HTMLElement).closest("button")) return;
+      const rect = rootRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      draggingRef.current = true;
+      dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [minimized, poppedOut],
+  );
+
+  const handleDragPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingRef.current || !rootRef.current) return;
+    const rect = rootRef.current.getBoundingClientRect();
+    const x = Math.min(Math.max(e.clientX - dragOffsetRef.current.x, 0), window.innerWidth - rect.width);
+    const y = Math.min(Math.max(e.clientY - dragOffsetRef.current.y, 0), window.innerHeight - rect.height);
+    setDragPos({ x, y });
+  }, []);
+
+  const handleDragPointerUp = useCallback(() => {
+    draggingRef.current = false;
   }, []);
 
   const handleAnswered = useCallback(() => {
@@ -271,15 +305,27 @@ export function MeetingModal({
         poppedOut
           ? "bottom-4 right-4 w-72 h-12 rounded-xl overflow-hidden shadow-2xl"
           : minimized
-            ? "bottom-4 right-4 w-72 h-44 rounded-xl overflow-hidden shadow-2xl"
+            ? cn("w-72 h-44 rounded-xl overflow-hidden shadow-2xl", !dragPos && "bottom-4 right-4")
             : "inset-0",
       )}
+      style={minimized && !poppedOut && dragPos ? { left: dragPos.x, top: dragPos.y } : undefined}
     >
       {/* Top bar — while popped out this becomes a plain "it's floating
           elsewhere" indicator; the real call controls live inside the PiP
           window itself (Jitsi's own built-in UI), since React's synthetic
-          events don't reach across into that separate window/document. */}
-      <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-black/40 backdrop-blur-sm">
+          events don't reach across into that separate window/document.
+          When minimized (and not popped out) it doubles as the drag handle
+          for repositioning the corner box anywhere in the browser window. */}
+      <div
+        onPointerDown={handleDragPointerDown}
+        onPointerMove={handleDragPointerMove}
+        onPointerUp={handleDragPointerUp}
+        onPointerCancel={handleDragPointerUp}
+        className={cn(
+          "shrink-0 flex items-center justify-end gap-2 px-4 py-2 bg-black/40 backdrop-blur-sm",
+          minimized && !poppedOut && "cursor-move touch-none select-none",
+        )}
+      >
         {poppedOut ? (
           <>
             <span className="mr-auto text-xs text-white/60">Call is in a floating window</span>
