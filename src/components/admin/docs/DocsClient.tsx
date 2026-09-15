@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, Loader2, FileText, Download, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DOC_CATEGORIES, type DocCategory } from "@/lib/docs/categories";
+import { DocLinksSection, type DocLinkItem } from "./DocLinksSection";
 
 // Mirrors the server's authoritative check (src/app/api/admin/docs/route.ts) —
 // this one is UX only, so a rejected file never even reaches the network.
@@ -31,7 +32,9 @@ interface DocItem {
 
 interface Props {
   initialItems: DocItem[];
+  initialLinks: DocLinkItem[];
   canCreate: boolean;
+  canEdit: boolean;
   canDelete: boolean;
 }
 
@@ -56,7 +59,7 @@ const CATEGORY_HINTS: Record<DocCategory, string> = {
   General: "Anything else worth keeping here for staff to find and share.",
 };
 
-export function DocsClient({ initialItems, canCreate, canDelete }: Props) {
+export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploadingCategory, setUploadingCategory] = useState<DocCategory | null>(null);
@@ -123,6 +126,13 @@ export function DocsClient({ initialItems, canCreate, canDelete }: Props) {
           policy, and itinerary samples.
         </p>
       </div>
+
+      <DocLinksSection
+        initialLinks={initialLinks}
+        canCreate={canCreate}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {DOC_CATEGORIES.map((category) => {
