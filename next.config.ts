@@ -56,7 +56,30 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["framer-motion", "lucide-react", "recharts"],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Defense-in-depth on top of robots.ts's `disallow: "/admin/"` / `"/api/"`
+      // and the auth-redirect in src/app/admin/layout.tsx (which already stops
+      // a crawler from ever receiving admin content) — an explicit header so a
+      // misconfigured robots.txt is never the only thing keeping these out of
+      // search results. /api needs its own entry since it isn't under /admin.
+      {
+        source: "/admin/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, nocache" }],
+      },
+      {
+        source: "/api/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, nocache" }],
+      },
+      {
+        source: "/account/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, nocache" }],
+      },
+      {
+        source: "/login/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, nocache" }],
+      },
+    ];
   },
   async redirects() {
     // /campaign was renamed to /adventures (better reflects the seasonal

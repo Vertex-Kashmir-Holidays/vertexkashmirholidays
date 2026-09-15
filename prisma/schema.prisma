@@ -1158,6 +1158,25 @@ model AdminDocument {
   @@index([createdAt])
 }
 
+// External reference links staff want quick access to from the Docs page —
+// e.g. a published rate-card artifact, an exported report, a third-party doc.
+// Deliberately a separate model from AdminDocument: this is a URL + a short
+// description, not an uploaded file (no mimeType/sizeBytes/publicId to carry).
+// Same RBAC module ("docs") and hard-delete convention as AdminDocument —
+// this is reference material staff curates, not a business record.
+model AdminDocLink {
+  id            String   @id @default(cuid())
+  title         String
+  url           String
+  purpose       String
+  createdById   String?
+  createdByName String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
 // Long-form legal/policy pages (Terms, Privacy, Refund & Cancellation).
 // Keyed by slug; content is admin-editable HTML. The app ships professional
 // defaults so a page always renders even before a row exists.

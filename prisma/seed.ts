@@ -84,6 +84,7 @@ async function main() {
       roles: ALL,
       auditLog: VIEW,
       careers: ALL,
+      docs: ALL,
     },
     DEVELOPER: {
       dashboard: VIEW,
@@ -112,6 +113,7 @@ async function main() {
       roles: NONE,
       auditLog: NONE,
       careers: ALL,
+      docs: ALL,
     },
     SALES: {
       dashboard: VIEW,
@@ -140,6 +142,7 @@ async function main() {
       roles: NONE,
       auditLog: NONE,
       careers: VIEW,
+      docs: VIEW,
     },
     EDITOR: {
       dashboard: VIEW,
@@ -168,6 +171,7 @@ async function main() {
       roles: NONE,
       auditLog: NONE,
       careers: ALL,
+      docs: VIEW,
     },
   };
 
