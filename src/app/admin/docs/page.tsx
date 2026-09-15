@@ -12,11 +12,21 @@ export default async function AdminDocsPage() {
   if (!guard.ok) return guard.page;
   const { role } = guard;
 
-  const [items, canCreate, canDelete] = await Promise.all([
+  const [items, links, canCreate, canEdit, canDelete] = await Promise.all([
     prisma.adminDocument.findMany({ orderBy: [{ category: "asc" }, { createdAt: "desc" }] }),
+    prisma.adminDocLink.findMany({ orderBy: { createdAt: "desc" } }),
     can(role, "docs", "create"),
+    can(role, "docs", "edit"),
     can(role, "docs", "delete"),
   ]);
 
-  return <DocsClient initialItems={items} canCreate={canCreate} canDelete={canDelete} />;
+  return (
+    <DocsClient
+      initialItems={items}
+      initialLinks={links}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
+    />
+  );
 }
