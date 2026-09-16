@@ -1,18 +1,21 @@
-import "server-only";
-import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/prisma";
+// Static defaults for the two hero content strips (features + payment
+// methods). Shipped as code today — same "ship a default, DB overrides later"
+// convention as LEGAL_PAGES in src/lib/legal/content.ts — so the eventual move
+// to admin-editable HeroFeature/PaymentMethod tables only changes where the
+// homepage fetches this array from, not HeroSection's props or rendering.
+import type { HeroFeatureData, PaymentMethodData } from "@/types/home";
 
-// The HomeContent singleton was previously queried twice per relevant
-// request — once in (public)/layout.tsx (formAvatars only, for the sitewide
-// lead-form avatar strip) and again, independently, in (public)/page.tsx
-// (full row, for hero/about copy). One shared cached read, used by both.
-// No mutation route currently calls revalidateTag("home-content") (HomeContent
-// edits happen via the generic content-block route, not audited as part of
-// this pass), so this relies on its TTL rather than on-demand invalidation —
-// moderate 30-minute window, not the 24h used for content types with a wired
-// invalidation path.
-export const getHomeContent = unstable_cache(
-  () => prisma.homeContent.findUnique({ where: { id: "singleton" } }),
-  ["home-content-singleton"],
-  { revalidate: 1800, tags: ["home-content"] },
-);
+export const HERO_FEATURES: HeroFeatureData[] = [
+  { id: "stays", icon: "mountain", title: "Handpicked Stays", subtitle: "Hotels & houseboats" },
+  { id: "safety", icon: "shield", title: "Safe & Trusted", subtitle: "Reliable travel support" },
+  { id: "transport", icon: "car", title: "Comfortable Transport", subtitle: "Hassle-free transfers" },
+  { id: "local", icon: "sparkles", title: "Local Experiences", subtitle: "Curated Kashmir experiences" },
+];
+
+export const PAYMENT_METHODS: PaymentMethodData[] = [
+  { id: "card", icon: "card", label: "Debit/Credit Card" },
+  { id: "upi", icon: "upi", label: "UPI" },
+  { id: "emi", icon: "emi", label: "EMI Options" },
+  { id: "wallet", icon: "wallet", label: "Wallets" },
+  { id: "netbanking", icon: "netbanking", label: "Net Banking" },
+];
