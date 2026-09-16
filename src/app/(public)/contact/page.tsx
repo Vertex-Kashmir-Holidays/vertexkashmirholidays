@@ -30,7 +30,9 @@ import {
 } from "@/components/seo/JsonLd";
 import type { ContactReachCardData, ContactSocialLink } from "@/types/contact";
 
-export const revalidate = 1800;
+// 6h safety net — no targeted invalidation wired for ContactContent edits
+// (out of scope for this pass); moderate TTL, same reasoning as /about.
+export const revalidate = 21600;
 
 // Wrapped in React's cache() so generateMetadata() and the page component
 // share one query per request instead of each fetching this row separately.

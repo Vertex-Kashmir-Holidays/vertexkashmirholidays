@@ -18,7 +18,10 @@ import { TripadvisorWidget } from "@/components/reviews/TripadvisorWidget";
 import { RatingSummaryRow } from "@/components/reviews/RatingSummaryRow";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
 
-export const revalidate = 300;
+// 6h safety net — no per-review targeted invalidation is wired (review
+// approval invalidates the specific Tour, not this aggregate sitewide page),
+// so this page relies on its TTL more than most.
+export const revalidate = 21600;
 
 const PER_PAGE = 12;
 const RATINGS = [5, 4, 3, 2, 1] as const;

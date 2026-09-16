@@ -2,6 +2,7 @@
 // thin bar above the navbar (one at a time); PROMO banners are placed inline in
 // page content via getBannersForPage().
 import "server-only";
+import { unstable_cache } from "next/cache";
 import type { Banner, BannerType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -45,14 +46,22 @@ export function parseBannerPages(raw: string | null | undefined): string[] {
 
 /**
  * The single highest-priority active STRIP banner, or null. Lower sortOrder
- * wins; newest breaks ties. Rendered in the public layout above the chrome.
+ * wins; newest breaks ties. Rendered in the public layout above the chrome —
+ * runs on every public page's render, so it's cached like the layout's other
+ * shared reads (getSiteSettings). A short 5-minute TTL, not the longer window
+ * most CMS content now uses, because a banner's active window is time-based
+ * (startsAt/endsAt), not just edit-based — it needs to actually stop showing
+ * near its scheduled end time even without an admin edit.
  */
-export async function getActiveStrip(): Promise<Banner | null> {
-  return prisma.banner.findFirst({
-    where: activeWhere("STRIP"),
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-  });
-}
+export const getActiveStrip = unstable_cache(
+  (): Promise<Banner | null> =>
+    prisma.banner.findFirst({
+      where: activeWhere("STRIP"),
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    }),
+  ["active-strip-banner"],
+  { revalidate: 300, tags: ["banners"] },
+);
 
 /**
  * Active PROMO banners targeting `pageKey` (or "*"). Page RSCs call this and
@@ -76,10 +85,14 @@ export async function getBannersForPage(pageKey: string): Promise<Banner[]> {
  * the public layout, which passes them to a client slot that filters by the
  * current pathname — so a banner targeting "*" (All Pages) shows everywhere and
  * page-specific banners show only on their pages, without wiring each page RSC.
+ * Cached the same way and for the same reason as getActiveStrip above.
  */
-export async function getActivePromoBanners(): Promise<Banner[]> {
-  return prisma.banner.findMany({
-    where: activeWhere("PROMO"),
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-  });
-}
+export const getActivePromoBanners = unstable_cache(
+  (): Promise<Banner[]> =>
+    prisma.banner.findMany({
+      where: activeWhere("PROMO"),
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    }),
+  ["active-promo-banners"],
+  { revalidate: 300, tags: ["banners"] },
+);

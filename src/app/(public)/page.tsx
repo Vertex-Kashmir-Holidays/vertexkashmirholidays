@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { getHomeContent } from "@/lib/homeContent";
 import { JsonLd, buildItemList, buildWebSite, buildFAQPage } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { AboutSection } from "@/components/about/AboutSection";
@@ -27,7 +28,10 @@ import type { SectionHeading } from "@/types/home";
 
 // ISR: serve cached HTML and refresh in the background (admin edits appear
 // within the window). Replaces force-dynamic, which hit the DB every request.
-export const revalidate = 300;
+// 6h safety net — Tour/Destination/Activity/Blog/Review mutations invalidate
+// this page directly (see src/lib/cache.ts), so this TTL only covers a
+// revalidation call that didn't fire, not normal edit-to-publish latency.
+export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -64,7 +68,7 @@ export default async function HomePage() {
     verifiedPropertiesCount,
     publishedToursCount,
   ] = await Promise.all([
-    prisma.homeContent.findUnique({ where: { id: "singleton" } }),
+    getHomeContent(),
     prisma.homeSection.findMany(),
     prisma.heroSlide.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.siteStat.findMany({ orderBy: { sortOrder: "asc" } }),

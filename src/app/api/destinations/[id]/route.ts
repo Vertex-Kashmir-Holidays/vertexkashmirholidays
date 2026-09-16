@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
+import { invalidateDestination } from "@/lib/cache";
 import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
@@ -59,7 +60,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("destinations", "edit");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await requireExisting(() => prisma.destination.findUnique({ where: { id } }));
+  const existing = await requireExisting(() =>
+    prisma.destination.findUnique({
+      where: { id },
+      include: {
+        tours: { select: { tour: { select: { slug: true } } } },
+        activities: { select: { activity: { select: { slug: true } } } },
+      },
+    }),
+  );
   if (!existing.ok) return existing.response;
   const body = await parseJsonBody(req);
   if (!body.ok) return body.response;
@@ -81,6 +90,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           : {}),
       },
     });
+    invalidateDestination({
+      slug: updated.slug,
+      previousSlug: existing.data.slug,
+      isFeatured: existing.data.isFeatured,
+      tourSlugs: existing.data.tours.map((t) => t.tour.slug),
+      activitySlugs: existing.data.activities.map((a) => a.activity.slug),
+    });
     return NextResponse.json(updated);
   } catch (err) {
     return mapPrismaError(err, "Slug already exists", "Update failed");
@@ -91,8 +107,22 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("destinations", "delete");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await requireExisting(() => prisma.destination.findUnique({ where: { id } }));
+  const existing = await requireExisting(() =>
+    prisma.destination.findUnique({
+      where: { id },
+      include: {
+        tours: { select: { tour: { select: { slug: true } } } },
+        activities: { select: { activity: { select: { slug: true } } } },
+      },
+    }),
+  );
   if (!existing.ok) return existing.response;
   await prisma.destination.delete({ where: { id } });
+  invalidateDestination({
+    slug: existing.data.slug,
+    isFeatured: existing.data.isFeatured,
+    tourSlugs: existing.data.tours.map((t) => t.tour.slug),
+    activitySlugs: existing.data.activities.map((a) => a.activity.slug),
+  });
   return NextResponse.json({ success: true });
 }

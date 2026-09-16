@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { invalidateCareer } from "@/lib/cache";
 import { z } from "zod";
 import { EmploymentType } from "@prisma/client";
 
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
         benefits: JSON.stringify(benefits),
       },
     });
+    invalidateCareer({ slug: job.slug });
     return NextResponse.json(job, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";

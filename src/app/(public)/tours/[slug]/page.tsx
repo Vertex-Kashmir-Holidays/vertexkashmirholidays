@@ -50,7 +50,8 @@ import {
   parseRelatedTours,
 } from "@/lib/tours/content";
 
-export const revalidate = 300;
+// 24h safety net — Tour mutations invalidate this exact page directly (src/lib/cache.ts).
+export const revalidate = 86400;
 
 // Without this, Next.js has no known slug list to pre-render and falls back
 // to fully dynamic rendering on every request regardless of `revalidate`

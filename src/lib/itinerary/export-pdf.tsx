@@ -97,11 +97,15 @@ export async function downloadItineraryPdf(
     compressMany([data.coverImage].filter(Boolean), {
       maxWidth: 900,
       maxHeight: 1300,
-      quality: 0.6,
+      // Was 0.6 — lower than the small thumbnails below despite being the
+      // largest, most visible image in the document (full-bleed cover),
+      // which made it look visibly dull/washed out. Raised so the cover
+      // gets the best quality in the document, not the worst.
+      quality: 0.85,
     }),
     compressMany(
       srcs.filter((s) => s !== data.coverImage),
-      { maxWidth: 640, maxHeight: 480, quality: 0.7 },
+      { maxWidth: 640, maxHeight: 480, quality: 0.8 },
     ),
     Promise.all(
       LOGO_ASSETS.map((src) =>

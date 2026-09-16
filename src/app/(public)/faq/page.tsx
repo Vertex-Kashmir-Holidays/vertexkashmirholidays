@@ -6,7 +6,10 @@ import { JsonLd, buildBreadcrumbList, buildFAQPage } from "@/components/seo/Json
 import { FaqHero } from "@/components/faq/FaqHero";
 import { FaqAccordionPage } from "@/components/faqs/FaqAccordionPage";
 
-export const revalidate = 1800;
+// 24h safety net — FAQ mutations already invalidate this page's underlying
+// data via the existing `faqs` tag (src/app/api/faqs/**), so it's safe to
+// extend as long as the other CMS content types.
+export const revalidate = 86400;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({

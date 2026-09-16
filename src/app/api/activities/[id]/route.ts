@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
+import { invalidateActivity } from "@/lib/cache";
 import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
@@ -64,7 +65,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("activities", "edit");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await requireExisting(() => prisma.activity.findUnique({ where: { id } }));
+  const existing = await requireExisting(() =>
+    prisma.activity.findUnique({
+      where: { id },
+      include: {
+        destinations: { select: { destination: { select: { slug: true } } } },
+        tours: { select: { tour: { select: { slug: true } } } },
+      },
+    }),
+  );
   if (!existing.ok) return existing.response;
 
   const body = await parseJsonBody(req);
@@ -93,6 +102,26 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           : {}),
       },
     });
+
+    // Cross-invalidate the tours/destinations this activity was already
+    // linked to, plus any newly-linked ones if the edit changed the links.
+    const destinationSlugs = existing.data.destinations.map((d) => d.destination.slug);
+    const tourSlugs = existing.data.tours.map((t) => t.tour.slug);
+    const [newlyLinkedDestinations, newlyLinkedTours] = await Promise.all([
+      destinationIds
+        ? prisma.destination.findMany({ where: { id: { in: destinationIds } }, select: { slug: true } })
+        : [],
+      tourIds ? prisma.tour.findMany({ where: { id: { in: tourIds } }, select: { slug: true } }) : [],
+    ]);
+    for (const d of newlyLinkedDestinations) destinationSlugs.push(d.slug);
+    for (const t of newlyLinkedTours) tourSlugs.push(t.slug);
+
+    invalidateActivity({
+      slug: updated.slug,
+      previousSlug: existing.data.slug,
+      tourSlugs,
+      destinationSlugs,
+    });
     return NextResponse.json(updated);
   } catch (err) {
     return mapPrismaError(err, "Slug already exists", "Update failed");
@@ -103,8 +132,21 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("activities", "delete");
   if (guard instanceof NextResponse) return guard;
   const { id } = await params;
-  const existing = await requireExisting(() => prisma.activity.findUnique({ where: { id } }));
+  const existing = await requireExisting(() =>
+    prisma.activity.findUnique({
+      where: { id },
+      include: {
+        destinations: { select: { destination: { select: { slug: true } } } },
+        tours: { select: { tour: { select: { slug: true } } } },
+      },
+    }),
+  );
   if (!existing.ok) return existing.response;
   await prisma.activity.delete({ where: { id } });
+  invalidateActivity({
+    slug: existing.data.slug,
+    tourSlugs: existing.data.tours.map((t) => t.tour.slug),
+    destinationSlugs: existing.data.destinations.map((d) => d.destination.slug),
+  });
   return NextResponse.json({ success: true });
 }

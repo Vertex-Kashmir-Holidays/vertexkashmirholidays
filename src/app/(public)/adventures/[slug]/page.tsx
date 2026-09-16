@@ -21,7 +21,8 @@ import type {
   CampaignTier,
 } from '@/types/campaign';
 
-export const revalidate = 300;
+// 24h safety net — Campaign mutations invalidate this exact page directly (src/lib/cache.ts).
+export const revalidate = 86400;
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -32,6 +33,17 @@ function parse<T>(value: string | null | undefined, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+// Pre-render every published campaign at build time, matching every other
+// detail route (tours/destinations/activities/blog/careers) — previously
+// missing here, so these pages were only ever built on-demand at first visit.
+export async function generateStaticParams() {
+  const campaigns = await prisma.campaign.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return campaigns.map((c) => ({ slug: c.slug }));
 }
 
 // Wrapped in React's cache() so generateMetadata() and the page component

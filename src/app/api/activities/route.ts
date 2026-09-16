@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, mapPrismaError } from "@/lib/api/route-helpers";
+import { invalidateActivity } from "@/lib/cache";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,19 @@ export async function POST(request: Request) {
         destinations: { create: destinationIds.map((destinationId) => ({ destinationId })) },
         tours: { create: tourIds.map((tourId) => ({ tourId })) },
       },
+    });
+    const [linkedTours, linkedDestinations] = await Promise.all([
+      tourIds.length
+        ? prisma.tour.findMany({ where: { id: { in: tourIds } }, select: { slug: true } })
+        : [],
+      destinationIds.length
+        ? prisma.destination.findMany({ where: { id: { in: destinationIds } }, select: { slug: true } })
+        : [],
+    ]);
+    invalidateActivity({
+      slug: activity.slug,
+      tourSlugs: linkedTours.map((t) => t.slug),
+      destinationSlugs: linkedDestinations.map((d) => d.slug),
     });
     return NextResponse.json(activity, { status: 201 });
   } catch (err) {

@@ -185,7 +185,7 @@ const s = StyleSheet.create({
     top: 0,
     left: 0,
     width: "100%",
-    height: "55%",
+    height: "100%",
     objectFit: "cover",
   },
   coverOverlay: {
@@ -838,12 +838,11 @@ export function ItineraryPdf({
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
-      {/* COVER — top ~55% is the full-bleed image; the rest of the page is a
-          flat deep-green fill (s.cover), matching the mock's photo-band +
-          solid-color lower half rather than a full-page image. */}
+      {/* COVER — full-bleed image behind the whole page, darkened by a
+          gradient overlay so the white title/text stays readable. */}
       <Page size="A4" style={[s.page, s.cover]}>
         {img(data.coverImage) ? <Image src={img(data.coverImage)} style={s.coverImg} fixed /> : null}
-        <View style={[s.coverOverlay, { height: "55%" }]} fixed />
+        <View style={s.coverOverlay} fixed />
 
         <View style={s.coverContent}>
           <View style={s.coverBrand}>

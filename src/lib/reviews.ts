@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { invalidateTour } from "@/lib/cache";
 
 // A customer may only review a tour they actually travelled on. These are the
 // booking statuses that count as a completed/eligible purchase.
@@ -8,6 +9,12 @@ export const REVIEWABLE_BOOKING_STATUSES = ["CONFIRMED", "PAID"] as const;
  * Recompute and persist a tour's denormalised `rating` (1-decimal average) and
  * `reviewCount` from its currently-approved reviews. Call after any change that
  * affects the approved review set (approve/reject, edit, delete, create).
+ *
+ * Also invalidates every public page the tour's rating is rendered on — this
+ * is the single call site for all five review-mutation routes (admin
+ * create/edit/delete, customer self-service edit/delete), so cache
+ * invalidation for a rating change lives in one place rather than being
+ * repeated at each of them.
  */
 export async function recomputeTourRating(tourId: string): Promise<void> {
   const approved = await prisma.review.findMany({
@@ -16,10 +23,12 @@ export async function recomputeTourRating(tourId: string): Promise<void> {
   });
   const count = approved.length;
   const avg = count > 0 ? approved.reduce((s, r) => s + r.rating, 0) / count : 0;
-  await prisma.tour.update({
+  const updated = await prisma.tour.update({
     where: { id: tourId },
     data: { rating: Math.round(avg * 10) / 10, reviewCount: count },
+    select: { slug: true, category: true },
   });
+  invalidateTour({ slug: updated.slug, category: updated.category });
 }
 
 // Canonical shape for a customer review rendered as social proof. The admin

@@ -13,7 +13,10 @@ import { BlogPostBody } from "@/components/blog/BlogPostBody";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { LEGAL_PAGES, LEGAL_SLUGS, getLegalDefault } from "@/lib/legal/content";
 
-export const revalidate = 3600;
+// 72h safety net — legal pages (Terms/Privacy/Refund) change only for
+// compliance reasons, extremely rarely; the admin "Flush Cache" action covers
+// the rare case a change needs to appear sooner.
+export const revalidate = 259200;
 
 // Small, fixed, known slug set — pre-render all of them at build time instead
 // of generating each on-demand on its first post-deploy hit.

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SITE_URL, SITE_NAME } from "@/lib/seo";
 
-// Regenerated from Postgres at most once an hour (ISR-style) instead of on
-// every request — RSS readers poll infrequently, and the previous
-// force-dynamic setting meant every hit re-queried the blog table.
-export const revalidate = 3600;
+// 6h safety net — kept shorter than the sitemap since RSS subscribers expect
+// new posts to appear reasonably promptly; no targeted invalidation is wired
+// for this specific route (Blog mutations invalidate /blog and /blog/[slug]
+// directly, not this feed).
+export const revalidate = 21600;
 
 function escapeXml(s: string): string {
   return s

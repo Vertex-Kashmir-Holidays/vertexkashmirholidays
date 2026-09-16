@@ -1,5 +1,6 @@
 // src/app/(public)/tours/page.tsx
 import type { Metadata } from "next";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
@@ -8,12 +9,17 @@ import { ToursNewsletter } from "@/components/tours/ToursNewsletter";
 import { ToursPageClient } from "@/components/tours/ToursPageClient";
 import { ToursTrustBar } from "@/components/tours/ToursTrustBar";
 
-export const revalidate = 300;
+// 24h safety net — Tour mutations invalidate this page directly (src/lib/cache.ts).
+export const revalidate = 86400;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getToursHeroSection = cache(() =>
+  prisma.homeSection.findUnique({ where: { key: "toursHero" } }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
-  const section = await prisma.homeSection.findUnique({
-    where: { key: "toursHero" },
-  });
+  const section = await getToursHeroSection();
 
   return buildMetadata({
     title: "Kashmir Tour Packages — Honeymoon, Family & Adventure Trips",
@@ -27,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ToursPage() {
   const [section, stats, tours] = await Promise.all([
-    prisma.homeSection.findUnique({ where: { key: "toursHero" } }),
+    getToursHeroSection(),
     prisma.siteStat.findMany({ where: { section: "hero" }, orderBy: { sortOrder: "asc" } }),
     prisma.tour.findMany({
       where: { published: true },

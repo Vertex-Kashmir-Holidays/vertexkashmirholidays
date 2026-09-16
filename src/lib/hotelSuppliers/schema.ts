@@ -154,12 +154,28 @@ export const rateSchema = z.preprocess((value) => {
 
 export const EMPTY_RATE: HotelRate = { validTo: null, rooms: [EMPTY_ROOM_RATE_ROW] };
 
-// The cheapest room's MAP rate — drives the "needs a rate request" check and
-// the price-sort column (category classification uses getDeluxeMapRate
-// instead, below). Null when no room row has a MAP figure yet.
+// Supplemental rows (extra bed, child-with/without-bed, etc.) price an
+// add-on charge on top of an existing room, not a room of their own — and
+// they're almost always the cheapest row on the sheet. Left in, "cheapest
+// room" collapses to "cheapest add-on" for nearly every hotel, which is why
+// the price filter/sort/refresh-check below used to bear no relationship to
+// the real (Deluxe/Family/Suite/...) rates actually shown in the table.
+// roomType is free text (see roomRateRowSchema above), so this is a
+// substring heuristic, same style as getDeluxeMapRate's "deluxe" match.
+function isAddonRoomType(roomType: string): boolean {
+  return /extra|child|\bcnb\b|\bcwb\b|\bcwob\b/i.test(roomType);
+}
+
+// The cheapest real room's MAP rate — drives the "needs a rate request"
+// check and the price filter/sort (category classification uses
+// getDeluxeMapRate instead, below). Null when no non-addon room row has a
+// MAP figure yet.
 export function getMinMapRate(rate: HotelRate | null | undefined): number | null {
   if (!rate) return null;
-  const maps = rate.rooms.map((r) => r.map).filter((m): m is number => m != null);
+  const maps = rate.rooms
+    .filter((r) => !isAddonRoomType(r.roomType))
+    .map((r) => r.map)
+    .filter((m): m is number => m != null);
   return maps.length > 0 ? Math.min(...maps) : null;
 }
 

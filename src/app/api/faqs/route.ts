@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { generateFaqSlug, getPublicFaqIndex } from "@/lib/faqs";
@@ -55,6 +55,12 @@ export async function POST(request: Request) {
       },
     });
     revalidateTag("faqs", "max");
+    // The dedicated /faq page queries FaqCategory directly (grouped-by-category
+    // shape), not through getPublicFaqIndex — revalidateTag alone doesn't reach
+    // its Full Route Cache entry, so it needs an explicit path bust too. Every
+    // other placement-based consumer (home/about/contact/reviews) goes through
+    // getPublicFaqIndex and is already covered by the tag.
+    revalidatePath("/faq");
     return NextResponse.json(faq, { status: 201 });
   } catch (err) {
     return mapPrismaError(err, "A FAQ with this slug already exists", "Create failed");

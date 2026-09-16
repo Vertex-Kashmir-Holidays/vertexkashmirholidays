@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { invalidateCareer } from "@/lib/cache";
 import { z } from "zod";
 import { EmploymentType } from "@prisma/client";
 
@@ -76,6 +77,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(published === true && !existing.publishedAt ? { publishedAt: new Date() } : {}),
       },
     });
+    invalidateCareer({ slug: updated.slug, previousSlug: existing.slug });
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -92,5 +94,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const existing = await prisma.job.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.job.delete({ where: { id } });
+  invalidateCareer({ slug: existing.slug });
   return NextResponse.json({ success: true });
 }

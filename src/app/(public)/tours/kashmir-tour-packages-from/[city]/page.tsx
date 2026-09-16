@@ -30,7 +30,9 @@ import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanc
 import { TrustSection } from "@/components/common/TrustSection";
 import { Plane, TrainFront } from "lucide-react";
 
-export const revalidate = 300;
+// 24h safety net — every Tour mutation busts all city pages directly, since
+// they all show the same sitewide top-6 (src/lib/cache.ts).
+export const revalidate = 86400;
 
 const BADGE_COLORS = ["orange", "blue", "green"] as const;
 
