@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, requireExisting, mapPrismaError } from "@/lib/api/route-helpers";
@@ -96,6 +96,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
     });
     revalidateTag("faqs", "max");
+    // See the POST handler's comment — /faq bypasses getPublicFaqIndex, so it
+    // needs an explicit path bust alongside the tag.
+    revalidatePath("/faq");
     return NextResponse.json(updated);
   } catch (err) {
     return mapPrismaError(err, "A FAQ with this slug already exists", "Update failed");
@@ -110,5 +113,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!existing.ok) return existing.response;
   await prisma.faq.delete({ where: { id } });
   revalidateTag("faqs", "max");
+  revalidatePath("/faq");
   return NextResponse.json({ success: true });
 }

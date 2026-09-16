@@ -7,7 +7,8 @@ import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { CareersViewedTracker } from "@/components/careers/CareersViewedTracker";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 
-export const revalidate = 300;
+// 24h safety net — Job mutations invalidate this page directly (src/lib/cache.ts).
+export const revalidate = 86400;
 
 const EMPLOYMENT_LABELS: Record<string, string> = {
   FULL_TIME: "Full-time",

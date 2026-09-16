@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, mapPrismaError } from "@/lib/api/route-helpers";
+import { invalidateDestination } from "@/lib/cache";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,9 @@ export async function POST(request: Request) {
     const dest = await prisma.destination.create({
       data: { ...data, activities: { create: activityIds.map((activityId) => ({ activityId })) } },
     });
+    // isFeatured isn't settable through this route (defaults false on
+    // create), so a brand-new destination never needs a homepage bust.
+    invalidateDestination({ slug: dest.slug, isFeatured: dest.isFeatured });
     return NextResponse.json(dest, { status: 201 });
   } catch (err) {
     return mapPrismaError(err, "Slug already exists", "Create failed");

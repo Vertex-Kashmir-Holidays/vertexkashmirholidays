@@ -15,7 +15,9 @@ import { TourDetailsSidebar } from "@/components/tours/TourDetailsSidebar";
 import { TrustSection } from "@/components/common/TrustSection";
 import type { TourCategory } from "@prisma/client";
 
-export const revalidate = 300;
+// 24h safety net — Tour mutations invalidate the matching category page directly
+// (both old and new category, if a tour's category changed — src/lib/cache.ts).
+export const revalidate = 86400;
 
 const BADGE_COLORS = ["orange", "blue", "green"] as const;
 

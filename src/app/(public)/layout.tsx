@@ -1,7 +1,9 @@
 import { Toaster } from "sonner";
+import { unstable_cache } from "next/cache";
 import { TooltipProvider } from "@/components/ui/atoms/tooltip";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { getHomeContent } from "@/lib/homeContent";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -14,16 +16,37 @@ import { getActiveCorporateOffices } from "@/lib/companyOffice";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
 import type { FooterSettings } from "@/components/layout/Footer";
 
+// The published-category set for the nav strip — rendered on every public
+// page, so it's cached rather than re-querying Prisma's groupBy on each
+// page's own ISR regeneration. Invalidated by any Tour mutation that could
+// add/remove a category from the published set (src/lib/cache.ts).
+// Extracted as a named function (rather than inlined in the unstable_cache
+// call below) so TypeScript resolves Prisma's precise groupBy overload before
+// the generic wrapping — inlined, the _count shape widens to `true | {...}`.
+async function fetchPublishedTourCategories() {
+  return prisma.tour.groupBy({
+    by: ["category"],
+    where: { published: true },
+    _count: { _all: true },
+  });
+}
+
+const getPublishedTourCategories = unstable_cache(
+  fetchPublishedTourCategories,
+  ["published-tour-categories"],
+  { revalidate: 3600, tags: ["tour-categories"] },
+);
+
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const [s, strip, promos, categoryRows, homeContent, corporateOffices] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
     getActivePromoBanners(),
-    prisma.tour.groupBy({ by: ["category"], where: { published: true }, _count: true }),
-    prisma.homeContent.findUnique({ where: { id: "singleton" }, select: { formAvatars: true } }),
+    getPublishedTourCategories(),
+    getHomeContent(),
     getActiveCorporateOffices(),
   ]);
-  const tourCategories = categoryRows.filter((c) => c._count > 0).map((c) => c.category);
+  const tourCategories = categoryRows.filter((c) => c._count._all > 0).map((c) => c.category);
   // First active row (lowest sortOrder) is "the" Corporate Office shown in
   // the footer — admin-managed via /admin/settings, hidden entirely when
   // none is set (see companyOffice.ts).

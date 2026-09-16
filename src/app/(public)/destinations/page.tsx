@@ -1,6 +1,7 @@
 // src/app/(public)/destinations/page.tsx
 
 import type { Metadata } from "next";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
@@ -11,10 +12,17 @@ import { DestinationsHero } from "@/components/destinations/DestinationsHero";
 import { DestinationsThingsToDo } from "@/components/destinations/DestinationsThingsToDo";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
 
-export const revalidate = 900;
+// 24h safety net — Destination mutations invalidate this page directly (src/lib/cache.ts).
+export const revalidate = 86400;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getDestinationsHeroSection = cache(() =>
+  prisma.homeSection.findUnique({ where: { key: "destinationsHero" } }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
-  const section = await prisma.homeSection.findUnique({ where: { key: "destinationsHero" } });
+  const section = await getDestinationsHeroSection();
   return buildMetadata({
     title: "Kashmir Destinations — Gulmarg, Pahalgam, Srinagar & More",
     description:
@@ -26,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function DestinationsPage() {
   const [section, destinations] = await Promise.all([
-    prisma.homeSection.findUnique({ where: { key: "destinationsHero" } }),
+    getDestinationsHeroSection(),
     prisma.destination.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: {

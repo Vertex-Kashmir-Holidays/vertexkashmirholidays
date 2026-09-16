@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { invalidateTour } from "@/lib/cache";
 import { z } from "zod";
 import { TourCategory } from "@prisma/client";
 
@@ -94,7 +95,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
-  const existing = await prisma.tour.findUnique({ where: { id } });
+  const existing = await prisma.tour.findUnique({
+    where: { id },
+    include: {
+      destinations: { select: { destination: { select: { slug: true } } } },
+      activities: { select: { activity: { select: { slug: true } } } },
+    },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   let body: unknown;
@@ -126,6 +133,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           : {}),
       },
     });
+
+    // Cross-invalidate every Destination/Activity page this tour was already
+    // linked to (their pages render this tour's live fields via the join).
+    // If the edit also changed the activity links, additionally invalidate
+    // the newly-linked activities so a tour added to one shows up there
+    // immediately rather than waiting on that page's own TTL.
+    const destinationSlugs = existing.destinations.map((d) => d.destination.slug);
+    const activitySlugs = existing.activities.map((a) => a.activity.slug);
+    if (activityIds) {
+      const newlyLinked = await prisma.activity.findMany({
+        where: { id: { in: activityIds } },
+        select: { slug: true },
+      });
+      for (const a of newlyLinked) activitySlugs.push(a.slug);
+    }
+    invalidateTour({
+      slug: updated.slug,
+      previousSlug: existing.slug,
+      category: updated.category,
+      previousCategory: existing.category,
+      destinationSlugs,
+      activitySlugs,
+    });
+
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -140,9 +171,21 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
-  const existing = await prisma.tour.findUnique({ where: { id } });
+  const existing = await prisma.tour.findUnique({
+    where: { id },
+    include: {
+      destinations: { select: { destination: { select: { slug: true } } } },
+      activities: { select: { activity: { select: { slug: true } } } },
+    },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.tour.delete({ where: { id } });
+  invalidateTour({
+    slug: existing.slug,
+    category: existing.category,
+    destinationSlugs: existing.destinations.map((d) => d.destination.slug),
+    activitySlugs: existing.activities.map((a) => a.activity.slug),
+  });
   return NextResponse.json({ success: true });
 }

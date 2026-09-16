@@ -44,7 +44,9 @@ import { DestinationNearby } from "@/components/destinations/DestinationNearby";
 import { TrustSection } from "@/components/common/TrustSection";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
 
-export const revalidate = 900;
+// 24h safety net — Destination mutations invalidate this exact page directly
+// (src/lib/cache.ts), as do Tour/Activity mutations that touch a linked record.
+export const revalidate = 86400;
 
 // Without this, Next.js has no known slug list to pre-render and falls back
 // to fully dynamic rendering on every request regardless of `revalidate`

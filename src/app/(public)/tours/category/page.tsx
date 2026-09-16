@@ -24,7 +24,9 @@ import { TOUR_CATEGORY_HUB_FAQS } from "@/lib/tours/categoryHubFaqs";
 import { TrustSection } from "@/components/common/TrustSection";
 import type { TourCategory } from "@prisma/client";
 
-export const revalidate = 300;
+// 24h safety net — category shape changes rarely; individual counts refresh via
+// Tour mutations invalidating the specific /tours/category/[slug] page.
+export const revalidate = 86400;
 
 const PAGE_TITLE = "Kashmir Tour Categories";
 const PAGE_DESCRIPTION =

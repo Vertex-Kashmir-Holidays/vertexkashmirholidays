@@ -44,7 +44,9 @@ import { B2B_VIDEO_ID, B2B_VIDEO_TITLE } from "@/lib/b2b/videoConfig";
 // so revalidating on the standard ISR window is enough; only the contact
 // channels (WhatsApp/phone/email) are dynamic, and those already come from
 // the cached getSiteSettings().
-export const revalidate = 1800;
+// 6h safety net — static marketing page with no targeted invalidation wired;
+// only depends on SiteSettings, which is already tag-invalidated on save.
+export const revalidate = 21600;
 
 const PAGE_TITLE = "B2B Travel Partner Program | Kashmir DMC";
 const PAGE_DESCRIPTION =

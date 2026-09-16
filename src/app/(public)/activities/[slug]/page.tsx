@@ -36,7 +36,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-export const revalidate = 900;
+// 24h safety net — Activity mutations invalidate this exact page directly
+// (src/lib/cache.ts), as do Tour/Destination mutations that touch a linked record.
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const activities = await prisma.activity.findMany({

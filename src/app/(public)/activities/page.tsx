@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
@@ -8,10 +9,17 @@ import { ActivitiesPageClient } from "@/components/activities/ActivitiesPageClie
 import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import Link from "next/link";
 
-export const revalidate = 900;
+// 24h safety net — Activity mutations invalidate this page directly (src/lib/cache.ts).
+export const revalidate = 86400;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getActivitiesHeroSection = cache(() =>
+  prisma.homeSection.findUnique({ where: { key: "activitiesHero" } }),
+);
 
 export async function generateMetadata(): Promise<Metadata> {
-  const section = await prisma.homeSection.findUnique({ where: { key: "activitiesHero" } });
+  const section = await getActivitiesHeroSection();
   return buildMetadata({
     title: "Things to Do in Kashmir — Activities & Experiences",
     description:
@@ -23,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ActivitiesPage() {
   const [section, activities] = await Promise.all([
-    prisma.homeSection.findUnique({ where: { key: "activitiesHero" } }),
+    getActivitiesHeroSection(),
     prisma.activity.findMany({
       where: { published: true },
       orderBy: { sortOrder: "asc" },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { invalidateTour } from "@/lib/cache";
 import { z } from "zod";
 import { TourCategory } from "@prisma/client";
 
@@ -185,6 +186,7 @@ export async function POST(request: Request) {
         activities: { create: activityIds.map((activityId) => ({ activityId })) },
       },
     });
+    invalidateTour({ slug: tour.slug, category: tour.category });
     return NextResponse.json(tour, { status: 201 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Create failed";
