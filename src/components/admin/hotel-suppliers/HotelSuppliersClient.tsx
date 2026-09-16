@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, Mail, Star, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Mail, Star, ChevronDown, ChevronUp, Check, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
@@ -29,6 +29,7 @@ import {
   type HotelCategoryValue,
   type HotelData,
 } from "@/lib/hotelSuppliers/schema";
+import { buildHotelExportWorkbook } from "@/lib/hotelSuppliers/export";
 import { InlineCell } from "./InlineCell";
 import { NameCell } from "./NameCell";
 import { RequestRatesDialog } from "./RequestRatesDialog";
@@ -69,11 +70,11 @@ const PAGE_SIZE_OPTIONS: { value: PageSize; label: string }[] = [
 ];
 
 const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({ value: c, label: HOTEL_CATEGORY_LABELS[c] }));
-// Columns before Actions: Sr, Name, Phone, Email, Category, Recommended,
-// Rating, MAP (Deluxe), Bookings, Valid Till, Sent — kept as one constant so
-// the expand-row colSpan can't silently drift from the header count. Location
-// and the full per-room rate table live in the expanded row only.
-const HOTEL_COL_COUNT = 12;
+// Columns before Actions: Select, Sr, Name, Phone, Email, Category,
+// Recommended, Rating, MAP (Deluxe), Bookings, Valid Till, Sent — kept as one
+// constant so the expand-row colSpan can't silently drift from the header
+// count. Location and the full per-room rate table live in the expanded row only.
+const HOTEL_COL_COUNT = 13;
 
 // Snaps the price slider's handles to clean values, same convention as the
 // Tours listing filter (see ToursPageClient's PRICE_STEP).
@@ -105,6 +106,53 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [expandedFor, setExpandedFor] = useState<string | null>(null);
   const [confirmDeleteHotel, setConfirmDeleteHotel] = useState<string | null>(null);
   const [requestRatesFor, setRequestRatesFor] = useState<HotelSupplierRecord | null>(null);
+  // Selection persists across tab/filter/page changes so a user can build up
+  // a cross-tab export set, same convention as OfflineConversionsClient's bulk-retry selection.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    const pageIds = pagedRows.map((h) => h.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  async function exportSelected() {
+    const chosen = initialHotels.filter((h) => selected.has(h.id));
+    const wb = buildHotelExportWorkbook(
+      chosen.map((h) => ({
+        hotelName: h.hotelName,
+        destination: h.destination,
+        phone: h.data.property.phone,
+        email: h.data.property.email,
+        mapUrl: h.data.property.mapUrl,
+        rate: h.data.rate,
+      })),
+    );
+    const buffer = await wb.xlsx.writeBuffer();
+    const url = URL.createObjectURL(
+      new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hotel-rates-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${chosen.length} hotel${chosen.length === 1 ? "" : "s"} to Excel.`);
+  }
 
   function patchHotel(id: string, payload: Record<string, unknown>): Promise<boolean> {
     return new Promise((resolve) => {
@@ -188,6 +236,11 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
       if (emailFilter !== "ALL" && !!h.data.property.email !== (emailFilter === "YES")) return false;
       if (search && !h.hotelName.toLowerCase().includes(search.toLowerCase())) return false;
       const minMap = getMinMapRate(h.data.rate);
+      // Once the user has manually narrowed the range, a hotel with no rate
+      // on file can't be said to fall inside it — exclude it. Left alone
+      // (priceRange still null, full bounds), keep showing everything so
+      // hotels awaiting a rate aren't hidden by default.
+      if (priceRange && minMap == null) return false;
       if (minMap != null && (minMap < priceLo || minMap > priceHi)) return false;
       return true;
     });
@@ -255,15 +308,25 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             Curated hotel options and exact supplier EP/CP/MAP net rates for itinerary and quotation prep.
           </p>
         </div>
-        {canCreate && (
-          <Link
-            href={`/admin/hotel-suppliers/new?destination=${encodeURIComponent(activeTab)}`}
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={exportSelected}
+            disabled={selected.size === 0}
+            className="flex items-center gap-1.5 border border-border text-xs font-bold px-3.5 py-2 rounded-xl transition-colors hover:bg-muted disabled:opacity-50"
           >
-            <Plus className="w-4 h-4" />
-            Add Hotel
-          </Link>
-        )}
+            <Download className="w-3.5 h-3.5" /> Export Selected ({selected.size})
+          </button>
+          {canCreate && (
+            <Link
+              href={`/admin/hotel-suppliers/new?destination=${encodeURIComponent(activeTab)}`}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25"
+            >
+              <Plus className="w-4 h-4" />
+              Add Hotel
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Meal plan legend */}
@@ -416,6 +479,15 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
+                <th className="px-3 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    className="cbx"
+                    checked={pagedRows.length > 0 && pagedRows.every((h) => selected.has(h.id))}
+                    onChange={toggleSelectAllOnPage}
+                    aria-label="Select all hotels on this page"
+                  />
+                </th>
                 {[
                   "Sr.",
                   "Name",
@@ -457,6 +529,8 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                       hotel={hotel}
                       canEdit={canEdit}
                       canDelete={canDelete}
+                      selected={selected.has(hotel.id)}
+                      onToggleSelect={() => toggleSelected(hotel.id)}
                       patchHotel={patchHotel}
                       confirmDeleteHotel={confirmDeleteHotel}
                       setConfirmDeleteHotel={setConfirmDeleteHotel}
@@ -541,6 +615,8 @@ interface HotelRowProps {
   hotel: HotelSupplierRecord;
   canEdit: boolean;
   canDelete: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   patchHotel: (id: string, payload: Record<string, unknown>) => Promise<boolean>;
   confirmDeleteHotel: string | null;
   setConfirmDeleteHotel: (id: string | null) => void;
@@ -556,6 +632,8 @@ function HotelRow({
   hotel,
   canEdit,
   canDelete,
+  selected,
+  onToggleSelect,
   patchHotel,
   confirmDeleteHotel,
   setConfirmDeleteHotel,
@@ -582,6 +660,15 @@ function HotelRow({
         hotel.recommended && "bg-emerald-500/[0.06] hover:bg-emerald-500/10",
       )}
     >
+      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          className="cbx"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Select ${hotel.hotelName}`}
+        />
+      </td>
       <td className="px-3 py-2.5 text-xs text-muted-foreground">{sr}</td>
       <td
         className={cn("sticky left-0 bg-card", hotel.recommended && "bg-emerald-50 dark:bg-emerald-950/40")}

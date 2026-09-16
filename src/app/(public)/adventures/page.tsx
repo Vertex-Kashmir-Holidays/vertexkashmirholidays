@@ -12,7 +12,8 @@ import { CampaignsPageClient } from '@/components/campaign/CampaignsPageClient';
 import { TransportAssistanceBanner } from '@/components/tours/TransportAssistanceBanner';
 import type { CampaignListItemData, CampaignTier } from '@/types/campaign';
 
-export const revalidate = 300;
+// 24h safety net — Campaign mutations invalidate this page directly (src/lib/cache.ts).
+export const revalidate = 86400;
 
 function parse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback;

@@ -12,7 +12,9 @@ import { imgSrc } from "@/lib/placeholder";
 import { BlogArticlesGrid } from "@/components/blog/BlogArticlesGrid";
 import type { BlogArticleData } from "@/types/blog";
 
-export const revalidate = 1800;
+// 24h safety net — no targeted invalidation is wired for this page (would need
+// the same author-name slugify logic the route itself uses); TTL-driven only.
+export const revalidate = 86400;
 
 const slugify = (s: string) =>
   s

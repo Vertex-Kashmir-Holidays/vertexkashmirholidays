@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
+import { invalidateBlog } from "@/lib/cache";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
         ...(published ? { publishedAt: new Date() } : {}),
       },
     });
+    invalidateBlog({ slug: blog.slug });
     return NextResponse.json(blog, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";

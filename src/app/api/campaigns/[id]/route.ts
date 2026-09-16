@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { campaignSchema } from "@/lib/admin/campaignSchema";
+import { invalidateCampaign } from "@/lib/cache";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -29,6 +30,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   try {
     const updated = await prisma.campaign.update({ where: { id }, data: parsed.data });
+    invalidateCampaign({ slug: updated.slug, previousSlug: existing.slug });
     return NextResponse.json(updated);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -47,5 +49,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.campaign.delete({ where: { id } });
+  invalidateCampaign({ slug: existing.slug });
   return NextResponse.json({ success: true });
 }

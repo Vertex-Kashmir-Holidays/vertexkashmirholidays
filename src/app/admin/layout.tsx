@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { SessionProvider } from "next-auth/react";
@@ -16,6 +17,16 @@ import { TooltipProvider } from "@/components/ui/atoms/tooltip";
 // Personal-utility routes every authenticated staff member must always be
 // able to reach, regardless of module permissions (they aren't "modules").
 const UNGATED_PATHS = ["/admin/mfa", "/admin/profile"];
+
+// Belt-and-suspenders on top of robots.ts's `disallow: "/admin/"` and the
+// auth-redirect above (which already stops a crawler from ever receiving
+// admin content) — an explicit per-response noindex so a misconfigured
+// robots.txt is never the only thing keeping the CRM out of search results.
+// Individual admin pages only need to set `metadata.title`; this `robots`
+// value carries through the Next.js metadata merge unless a page overrides it.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
+};
 
 // GTM must never load here — this route group is intentionally the only one
 // of the four (public / admin / account / login) that doesn't render

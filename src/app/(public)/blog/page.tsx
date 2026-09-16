@@ -1,7 +1,7 @@
 // src/app/(public)/blog/page.tsx
 
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
@@ -10,10 +10,16 @@ import { BlogHero } from "@/components/blog/BlogHero";
 import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { TrustSection } from "@/components/common/TrustSection";
 
-export const revalidate = 600;
+// 12h safety net — Blog mutations invalidate this page directly (src/lib/cache.ts);
+// kept shorter than most CMS pages since new posts should surface reasonably fast.
+export const revalidate = 43200;
+
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getBlogContent = cache(() => prisma.blogContent.findUnique({ where: { id: "singleton" } }));
 
 export async function generateMetadata(): Promise<Metadata> {
-  const content = await prisma.blogContent.findUnique({ where: { id: "singleton" } });
+  const content = await getBlogContent();
   return buildMetadata({
     title: "Kashmir Travel Blog — Guides, Tips & Itineraries",
     description:
@@ -28,7 +34,7 @@ const dateLabel = (d: Date | null) =>
 
 export default async function BlogPage() {
   const [content, blogs, categories, counts] = await Promise.all([
-    prisma.blogContent.findUnique({ where: { id: "singleton" } }),
+    getBlogContent(),
     prisma.blog.findMany({
       where: { published: true },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],

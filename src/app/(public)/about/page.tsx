@@ -31,7 +31,10 @@ import {
   buildOrganizationPeople,
 } from "@/components/seo/JsonLd";
 
-export const revalidate = 1800;
+// 6h safety net — no targeted invalidation wired for AboutContent edits
+// (out of scope for this pass); moderate TTL since this page is edited rarely
+// but has no on-demand freshness mechanism yet.
+export const revalidate = 21600;
 
 // Wrapped in React's cache() so generateMetadata() and the page component
 // share one query per request instead of each fetching this row separately.

@@ -10,7 +10,8 @@ import { parseStringList } from "@/lib/tours/content";
 import { JobViewedTracker } from "@/components/careers/JobViewedTracker";
 import { JobApplyForm } from "@/components/careers/JobApplyForm";
 
-export const revalidate = 300;
+// 24h safety net — Job mutations invalidate this exact page directly (src/lib/cache.ts).
+export const revalidate = 86400;
 
 const EMPLOYMENT_LABELS: Record<string, string> = {
   FULL_TIME: "Full-time",

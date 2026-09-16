@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { campaignSchema } from "@/lib/admin/campaignSchema";
+import { invalidateCampaign } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const created = await prisma.campaign.create({ data: parsed.data });
+    invalidateCampaign({ slug: created.slug });
     return NextResponse.json(created, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
