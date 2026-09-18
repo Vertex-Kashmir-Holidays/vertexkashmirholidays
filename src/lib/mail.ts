@@ -351,7 +351,7 @@ export interface LeadAssignmentData {
   leadName: string;
   leadPhone: string;
   leadEmail?: string | null;
-  category?: string | null;
+  tourTitle?: string | null;
   travelDate?: string | null;
   /** Staff member who performed the (re)assignment. */
   actorName: string;
@@ -362,7 +362,7 @@ export interface LeadAssignmentData {
 function leadFactsText(data: LeadAssignmentData): string[] {
   const lines = [`Name: ${data.leadName}`, `Phone: ${data.leadPhone}`];
   if (data.leadEmail) lines.push(`Email: ${data.leadEmail}`);
-  if (data.category) lines.push(`Category: ${data.category}`);
+  if (data.tourTitle) lines.push(`Tour: ${data.tourTitle}`);
   if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
   return lines;
 }
@@ -372,7 +372,7 @@ function leadFactsRows(data: LeadAssignmentData): string {
     detailRow("Name", data.leadName),
     detailRow("Phone", data.leadPhone),
     data.leadEmail ? detailRow("Email", data.leadEmail) : "",
-    data.category ? detailRow("Category", data.category) : "",
+    data.tourTitle ? detailRow("Tour", data.tourTitle) : "",
     data.travelDate ? detailRow("Travel Date", data.travelDate) : "",
   ].join("\n");
 }

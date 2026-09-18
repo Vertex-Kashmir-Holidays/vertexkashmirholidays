@@ -44,7 +44,7 @@ export interface LeadForNotify {
   name: string;
   phone: string;
   email?: string | null;
-  category?: string | null;
+  tourTitle?: string | null;
   startDate?: Date | null;
 }
 
@@ -65,7 +65,7 @@ function assignmentEmailData(
     leadName: lead.name,
     leadPhone: lead.phone,
     leadEmail: lead.email ?? null,
-    category: lead.category ?? null,
+    tourTitle: lead.tourTitle ?? null,
     travelDate: fmtDate(lead.startDate),
     actorName,
     leadUrl: `${siteUrl()}/admin/leads/${lead.id}`,
@@ -86,7 +86,7 @@ export async function notifyLeadAssigned(
     userId: assigneeId,
     type: "LEAD_ASSIGNED",
     title: "New lead assigned to you",
-    body: `${lead.name} · ${lead.phone}${lead.category ? ` · ${lead.category}` : ""}`,
+    body: `${lead.name} · ${lead.phone}${lead.tourTitle ? ` · ${lead.tourTitle}` : ""}`,
     link: `/admin/leads/${lead.id}`,
   });
 

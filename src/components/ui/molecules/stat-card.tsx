@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
-  label: string;
+  label: React.ReactNode;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   accent: string;

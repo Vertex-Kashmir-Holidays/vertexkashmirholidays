@@ -43,6 +43,9 @@ const MODULE_PATH_ALIASES: Record<string, ModuleKey> = {
   // The page itself already gates on the "itinerary" permission; this alias
   // makes the outer layout guard agree instead of contradicting it.
   "/admin/b2b-itineraries": "itinerary",
+  // P&L / Business Money overview is a second view over the same Finance data
+  // the "finance" module already covers, not a separate resource.
+  "/admin/finance-overview": "finance",
 };
 
 /**

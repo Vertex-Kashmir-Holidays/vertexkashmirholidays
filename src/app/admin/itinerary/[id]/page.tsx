@@ -34,7 +34,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
           assignedToId: true,
           status: true,
           locked: true,
-          category: true,
+          tour: { select: { title: true } },
           adults: true,
           children: true,
           startDate: true,
@@ -73,7 +73,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
     const bk = record.booking;
     const withFacts = applyLeadFactsToItinerary(data, {
       name: bk.guestName,
-      category: null,
+      tourTitle: null,
       adults: bk.travellers,
       children: null,
       startDate: bk.travelDate,
@@ -116,7 +116,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
     ? {
         leadId: record.lead.id,
         name: record.lead.name,
-        category: record.lead.category,
+        tourTitle: record.lead.tour?.title ?? null,
         adults: record.lead.adults,
         children: record.lead.children,
         startDate: record.lead.startDate

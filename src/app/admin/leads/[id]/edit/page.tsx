@@ -23,7 +23,7 @@ const getLead = cache(async (id: string) =>
       phone: true,
       email: true,
       source: true,
-      category: true,
+      tourId: true,
       adults: true,
       children: true,
       startDate: true,
@@ -49,13 +49,14 @@ export default async function EditLeadPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
 
-  const [lead, staffUsers] = await Promise.all([
+  const [lead, staffUsers, tours] = await Promise.all([
     getLead(id),
     prisma.user.findMany({
       where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    prisma.tour.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
   ]);
 
   if (!lead) notFound();
@@ -94,7 +95,7 @@ export default async function EditLeadPage({ params }: PageProps) {
     phone: lead.phone,
     email: lead.email ?? "",
     source: lead.source,
-    category: lead.category ?? "",
+    tourId: lead.tourId ?? "",
     adults: String(lead.adults),
     children: lead.children != null ? String(lead.children) : "",
     startDate: lead.startDate ? new Date(lead.startDate).toISOString().slice(0, 10) : "",
@@ -150,6 +151,7 @@ export default async function EditLeadPage({ params }: PageProps) {
 
       <LeadForm
         staffUsers={staffUsers}
+        tours={tours}
         leadId={lead.id}
         defaultValues={defaultValues}
         readOnly={readOnly}

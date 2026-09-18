@@ -39,8 +39,6 @@ type LeadStatus =
   | "CONVERTED"
   | "REJECTED";
 type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
-type LeadCategory =
-  "HONEYMOON_TOUR" | "COUPLE" | "FAMILY_TOUR" | "GROUP_TOUR" | "SKI_TOUR" | "OFFBEAT_TOUR";
 
 interface Lead {
   id: string;
@@ -48,7 +46,6 @@ interface Lead {
   phone: string;
   email: string | null;
   source: LeadSource;
-  category: LeadCategory | null;
   adults: number;
   status: LeadStatus;
   startDate: Date | string | null;

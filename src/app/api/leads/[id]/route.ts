@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
-import { LeadStatus, LeadSource, LeadCategory, LeadActivityType } from "@prisma/client";
+import { LeadStatus, LeadSource, LeadActivityType } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
@@ -24,6 +24,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     include: {
       activities: { orderBy: { performedAt: "desc" } },
       assignedTo: { select: { id: true, name: true, email: true } },
+      tour: { select: { id: true, title: true } },
       booking: {
         select: { id: true, status: true, amount: true, travelDate: true, guestName: true },
       },
@@ -50,7 +51,7 @@ const patchSchema = z.object({
   status: z.nativeEnum(LeadStatus).optional(),
   assignedToId: z.string().nullable().optional(),
   notes: z.string().optional(),
-  category: z.nativeEnum(LeadCategory).nullable().optional(),
+  tourId: z.string().min(1).nullable().optional(),
   adults: z.coerce.number().int().positive().optional(),
   children: z.coerce.number().int().min(0).nullable().optional(),
   startDate: z.string().nullable().optional(),
@@ -68,7 +69,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const existing = await prisma.lead.findUnique({
     where: { id },
-    include: { itinerary: { select: { id: true, title: true, locked: true, data: true } } },
+    include: {
+      itinerary: { select: { id: true, title: true, locked: true, data: true } },
+      tour: { select: { title: true } },
+    },
   });
   if (!existing || existing.b2bAgentId !== null) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -114,6 +118,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     notes,
     followUpAt,
     bookingId,
+    tourId,
     negotiatedAmount,
     tokenAmount,
     ...rest
@@ -147,7 +152,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     (rest.phone !== undefined && rest.phone !== existing.phone) ||
     (rest.email !== undefined && (rest.email ?? null) !== (existing.email ?? null)) ||
     (rest.source !== undefined && rest.source !== existing.source) ||
-    (rest.category !== undefined && (rest.category ?? null) !== (existing.category ?? null)) ||
+    (tourId !== undefined && (tourId ?? null) !== (existing.tourId ?? null)) ||
     (rest.adults !== undefined && rest.adults !== existing.adults) ||
     (rest.children !== undefined && (rest.children ?? null) !== (existing.children ?? null));
   if (workChanged && !canManage) {
@@ -178,6 +183,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!booking) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   }
 
+  // Resolve the new tour's title up front (also reused below for the
+  // itinerary-sync facts and stays null for "Custom").
+  let nextTourTitle: string | null | undefined;
+  if (tourId !== undefined) {
+    if (tourId) {
+      const tour = await prisma.tour.findUnique({
+        where: { id: tourId },
+        select: { title: true },
+      });
+      if (!tour) return NextResponse.json({ error: "Tour not found." }, { status: 422 });
+      nextTourTitle = tour.title;
+    } else {
+      nextTourTitle = null;
+    }
+  }
+
   // Conversion is an intentional CTA flow (POST /api/leads/[id]/convert), never a
   // casual status edit — block CONVERTED from the normal status update path.
   if (status === LeadStatus.CONVERTED) {
@@ -198,7 +219,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const itin = existing.itinerary;
   const tripFactsTouched =
     rest.name !== undefined ||
-    rest.category !== undefined ||
+    tourId !== undefined ||
     rest.adults !== undefined ||
     rest.children !== undefined ||
     startDate !== undefined ||
@@ -210,7 +231,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (parsedItin.success) {
       const facts = {
         name: rest.name ?? existing.name,
-        category: rest.category !== undefined ? rest.category : existing.category,
+        tourTitle: tourId !== undefined ? (nextTourTitle ?? null) : (existing.tour?.title ?? null),
         adults: rest.adults ?? existing.adults,
         children: rest.children !== undefined ? rest.children : existing.children,
         startDate:
@@ -260,10 +281,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(assignedToId !== undefined && {
           assignedTo: assignedToId ? { connect: { id: assignedToId } } : { disconnect: true },
         }),
+        ...(tourId !== undefined && {
+          tour: tourId ? { connect: { id: tourId } } : { disconnect: true },
+        }),
         ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
         ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
         ...(followUpAt !== undefined && { followUpAt: followUpAt ? new Date(followUpAt) : null }),
       },
+      include: { tour: { select: { title: true } } },
     }),
     ...(status !== undefined && status !== existing.status
       ? [
@@ -348,7 +373,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       name: updated.name,
       phone: updated.phone,
       email: updated.email,
-      category: updated.category,
+      tourTitle: updated.tour?.title ?? null,
       startDate: updated.startDate,
     };
     const newAssignee = assignedToId ?? null;

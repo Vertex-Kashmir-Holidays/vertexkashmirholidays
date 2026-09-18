@@ -50,7 +50,6 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
           phone: true,
           email: true,
           source: true,
-          category: true,
           adults: true,
           status: true,
           startDate: true,

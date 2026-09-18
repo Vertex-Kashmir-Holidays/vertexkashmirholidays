@@ -47,6 +47,9 @@ import {
   CalendarCheck2,
   Layers,
   FolderOpen,
+  IndianRupee,
+  Receipt,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -96,11 +99,14 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   auditLog: History,
   careers: Briefcase,
   docs: FolderOpen,
+  finance: IndianRupee,
+  expenses: Receipt,
 };
 
 const PAGE_TITLES: Record<string, string> = {
   ...Object.fromEntries(MODULES.map((m) => [m.href, m.label])),
   "/admin/b2b-bookings": "B2B Bookings",
+  "/admin/finance-overview": "Finance Overview",
 };
 
 // Sidebar section grouping — purely a display concern, layered on top of the
@@ -137,6 +143,13 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
   { label: "CMS", keys: ["home", "about", "contact", "legal", "banners", "galleries"] },
   { label: "Editorial", keys: ["blogs", "faqs", "seo", "reviews", "careers"] },
   { label: "HR", keys: ["employees", "salary", "leave"] },
+  {
+    label: "Finance",
+    keys: ["finance", "expenses"],
+    extra: [
+      { href: "/admin/finance-overview", label: "Overview & P&L", Icon: BarChart3, permKey: "finance" },
+    ],
+  },
   { label: "Admin", keys: ["settings", "roles", "auditLog", "docs"] },
 ];
 
@@ -203,7 +216,8 @@ function SidebarContent({
             )}
             {group.items.map(({ href, label, Icon }) => {
               const isActive =
-                pathname === href || (href !== "/admin/dashboard" && pathname.startsWith(href));
+                pathname === href ||
+                (href !== "/admin/dashboard" && pathname.startsWith(`${href}/`));
               return (
                 <Link
                   key={href}
