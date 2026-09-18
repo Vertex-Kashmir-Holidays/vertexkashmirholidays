@@ -48,7 +48,7 @@ const schema = z
     phone: phoneField,
     email: z.string().email("Enter a valid email").optional().or(z.literal("")),
     source: z.string().optional(),
-    category: z.string().optional(),
+    tourId: z.string().optional(),
     adults: z.string().optional(),
     children: z.string().optional(),
     startDate: z.string().optional(),
@@ -76,8 +76,14 @@ interface StaffUser {
   name: string | null;
 }
 
+interface TourOption {
+  id: string;
+  title: string;
+}
+
 interface Props {
   staffUsers: StaffUser[];
+  tours: TourOption[];
   /** When set, the form edits this lead (PATCH) instead of creating a new one (POST). */
   leadId?: string;
   /** Pre-fill values for edit mode. */
@@ -103,6 +109,7 @@ const selectCls =
 
 export function LeadForm({
   staffUsers,
+  tours,
   leadId,
   defaultValues,
   readOnly = false,
@@ -215,7 +222,7 @@ export function LeadForm({
           phone: data.phone,
           email: data.email?.trim() ? data.email.trim() : empty,
           source: data.source || "MANUAL",
-          category: data.category || empty,
+          tourId: data.tourId || empty,
           adults: isNaN(adults) ? 1 : adults,
           children: children !== undefined && !isNaN(children) ? children : empty,
           startDate: data.startDate || empty,
@@ -405,17 +412,16 @@ export function LeadForm({
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Category
+                Tour
               </label>
               <div className={selectWrapCls}>
-                <select {...register("category")} className={selectCls}>
-                  <option value="">— Select —</option>
-                  <option value="HONEYMOON_TOUR">Honeymoon</option>
-                  <option value="COUPLE">Couple</option>
-                  <option value="FAMILY_TOUR">Family</option>
-                  <option value="GROUP_TOUR">Group</option>
-                  <option value="SKI_TOUR">Ski</option>
-                  <option value="OFFBEAT_TOUR">Offbeat</option>
+                <select {...register("tourId")} className={selectCls}>
+                  <option value="">— Custom —</option>
+                  {tours.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>

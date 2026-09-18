@@ -38,7 +38,7 @@ const MAX_HIGHLIGHTS = 4;
 export interface LeadSyncData {
   leadId: string;
   name: string;
-  category: string | null;
+  tourTitle: string | null;
   adults: number;
   children: number | null;
   startDate: string; // yyyy-mm-dd or ""

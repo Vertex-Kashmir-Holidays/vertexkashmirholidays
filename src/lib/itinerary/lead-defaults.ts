@@ -1,5 +1,5 @@
 // Builds the initial itinerary document for a lead by overlaying the lead's
-// customer details (name, dates, category, persons, duration) onto the standard
+// customer details (name, dates, tour, persons, duration) onto the standard
 // Kashmir template. Starting price is intentionally 0 — pricing is negotiated
 // later and edited in the generator.
 
@@ -8,21 +8,15 @@ import type { ItineraryData } from "@/types/itinerary";
 
 export interface LeadItinerarySeed {
   name: string;
-  category: string | null;
+  // The real Tour package this lead/booking is for, or null for "Custom" (a
+  // bespoke itinerary not tied to the catalog) — same convention already used
+  // for direct bookings (see src/app/api/bookings/[id]/itinerary/route.ts).
+  tourTitle: string | null;
   adults: number;
   children: number | null;
   startDate: Date | null;
   endDate: Date | null;
 }
-
-const CATEGORY_PACKAGE: Record<string, string> = {
-  HONEYMOON_TOUR: "HONEYMOON PACKAGE",
-  COUPLE: "COUPLE PACKAGE",
-  FAMILY_TOUR: "FAMILY PACKAGE",
-  GROUP_TOUR: "GROUP PACKAGE",
-  SKI_TOUR: "SKI PACKAGE",
-  OFFBEAT_TOUR: "OFFBEAT PACKAGE",
-};
 
 function fmtDay(d: Date): string {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -62,7 +56,7 @@ function deriveLeadFacts(lead: LeadItinerarySeed): DerivedLeadFacts {
   }
 
   const travelers = travelersLabel(lead.adults, lead.children);
-  const packageType = (lead.category && CATEGORY_PACKAGE[lead.category]) || "CUSTOM PACKAGE";
+  const packageType = lead.tourTitle ? lead.tourTitle.toUpperCase() : "CUSTOM PACKAGE";
 
   return {
     duration: durationPlain.toUpperCase(),
@@ -83,9 +77,10 @@ function withLeadFacts(data: ItineraryData, lead: LeadItinerarySeed): ItineraryD
     preparedFor: f.preparedFor,
     travelDates: f.travelDates,
     travelers: f.travelers,
-    // When category is null (direct booking), preserve the existing packageType so
-    // a tour-name seeded at creation isn't reset to "CUSTOM PACKAGE" on every sync.
-    packageType: lead.category ? f.packageType : data.packageType || f.packageType,
+    // When tourTitle is null (direct booking, or a lead re-synced without its
+    // own tour reference), preserve the existing packageType so a tour-name
+    // seeded at creation isn't reset to "CUSTOM PACKAGE" on every sync.
+    packageType: lead.tourTitle ? f.packageType : data.packageType || f.packageType,
     // Keep the info strip's Duration tile in sync with the cover.
     info: data.info.map((it) => (it.id === "info-1" ? { ...it, value: f.durationPlain } : it)),
   };

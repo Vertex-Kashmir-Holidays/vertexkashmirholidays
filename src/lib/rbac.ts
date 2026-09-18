@@ -47,6 +47,8 @@ export const MODULES = [
   { key: "employees", label: "Employees", href: "/admin/employees" },
   { key: "salary", label: "Salary", href: "/admin/salary" },
   { key: "leave", label: "Leave", href: "/admin/leave" },
+  { key: "finance", label: "Finance", href: "/admin/finance" },
+  { key: "expenses", label: "Expenses", href: "/admin/expenses" },
   { key: "connect", label: "Vertex Connect", href: "/admin/connect" },
   { key: "galleries", label: "Galleries", href: "/admin/galleries" },
   { key: "blogs", label: "Blogs", href: "/admin/blogs" },

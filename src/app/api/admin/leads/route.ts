@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { notifyLeadAssigned } from "@/lib/notifications";
-import { LeadSource, LeadCategory, LeadActivityType } from "@prisma/client";
+import { LeadSource, LeadActivityType } from "@prisma/client";
 import { phoneField } from "@/lib/leads/schema";
 import {
   normalizeWhatsAppTokenParam,
@@ -17,7 +17,7 @@ const createSchema = z.object({
   phone: phoneField,
   email: z.string().email().optional().or(z.literal("")),
   source: z.nativeEnum(LeadSource).default(LeadSource.MANUAL),
-  category: z.nativeEnum(LeadCategory).nullable().optional(),
+  tourId: z.string().min(1).nullable().optional(),
   adults: z.coerce.number().int().positive().default(1),
   children: z.coerce.number().int().min(0).nullable().optional(),
   startDate: z.string().nullable().optional(),
@@ -66,10 +66,23 @@ export async function POST(req: NextRequest) {
     tokenAmount,
     whatsappReference,
     source: manualSource,
+    tourId,
     ...rest
   } = parsed.data;
   const performedByName = (guard.user.name ?? guard.user.email) as string;
   const performedById = guard.user.id as string;
+
+  // Resolved once here and reused for the assignment notification below —
+  // avoids a second lookup after create.
+  let tourTitle: string | null = null;
+  if (tourId) {
+    const tour = await prisma.tour.findUnique({
+      where: { id: tourId },
+      select: { title: true },
+    });
+    if (!tour) return NextResponse.json({ error: "Tour not found." }, { status: 422 });
+    tourTitle = tour.title;
+  }
 
   // Re-resolve the reference server-side — never trust a browser-supplied
   // source/attribution. If it was provided but no longer resolves (e.g. it
@@ -94,6 +107,7 @@ export async function POST(req: NextRequest) {
         followUpAt: followUpAt ? new Date(followUpAt) : undefined,
         ...(negotiatedAmount !== undefined && { negotiatedAmount }),
         ...(tokenAmount !== undefined && { tokenAmount }),
+        ...(tourId ? { tour: { connect: { id: tourId } } } : {}),
         ...(assignedToId ? { assignedTo: { connect: { id: assignedToId } } } : {}),
       },
     });
@@ -158,7 +172,7 @@ export async function POST(req: NextRequest) {
         name: lead.name,
         phone: lead.phone,
         email: lead.email,
-        category: lead.category,
+        tourTitle,
         startDate: lead.startDate,
       },
       performedByName,

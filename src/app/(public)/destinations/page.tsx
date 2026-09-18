@@ -24,8 +24,10 @@ const getDestinationsHeroSection = cache(() =>
 export async function generateMetadata(): Promise<Metadata> {
   const section = await getDestinationsHeroSection();
   return buildMetadata({
-    title: "Kashmir Destinations — Gulmarg, Pahalgam, Srinagar & More",
+    title: section?.metaTitle || "Kashmir Destinations — Gulmarg, Pahalgam, Srinagar & More",
     description:
+      section?.metaDescription ||
+      section?.subtitle ||
       "Explore the most beautiful destinations in Kashmir & Ladakh with Vertex Kashmir Holidays — meadows, lakes, glaciers and high passes, with curated tour packages for each.",
     canonical: `${SITE_URL}/destinations`,
     ogImage: section?.ogImage ?? section?.heroImage ?? null,
@@ -86,6 +88,15 @@ export default async function DestinationsPage() {
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       <DestinationsHero
+        heading={{
+          kicker: section?.kicker ?? null,
+          title: section?.title ?? "Explore the breathtaking destinations of Kashmir",
+          subtitle:
+            section?.subtitle ??
+            "From snow-capped peaks to serene valleys and crystal clear lakes – discover paradise on earth.",
+          ctaLabel: section?.ctaLabel ?? null,
+          ctaHref: section?.ctaHref ?? null,
+        }}
         heroImage={section?.heroImage ?? null}
         heroImageMobile={section?.heroImageMobile ?? null}
       />

@@ -107,6 +107,12 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "heroImage", label: "Hero image (desktop)", type: "image" },
     { key: "heroImageMobile", label: "Hero image (mobile)", type: "image" },
     { key: "ogImage", label: "OG / social image", type: "image" },
+    { key: "metaTitle", label: "Meta title (SEO, overrides default)", type: "text" },
+    {
+      key: "metaDescription",
+      label: "Meta description (SEO, overrides Subtitle/default)",
+      type: "textarea",
+    },
   ],
   // ── About ──
   aboutStoryFeatures: [

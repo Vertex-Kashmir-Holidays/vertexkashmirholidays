@@ -8,11 +8,14 @@ export const metadata: Metadata = { title: "New Lead — Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function NewLeadPage() {
-  const staffUsers = await prisma.user.findMany({
-    where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const [staffUsers, tours] = await Promise.all([
+    prisma.user.findMany({
+      where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.tour.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
+  ]);
 
   return (
     <div className="space-y-5">
@@ -33,7 +36,7 @@ export default async function NewLeadPage() {
         <h2 className="font-display font-extrabold text-foreground text-xl">Add Lead</h2>
         <p className="text-muted-foreground text-xs mt-0.5">Create a new lead manually</p>
       </div>
-      <LeadForm staffUsers={staffUsers} />
+      <LeadForm staffUsers={staffUsers} tours={tours} />
     </div>
   );
 }

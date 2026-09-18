@@ -23,6 +23,7 @@ const getLead = cache(async (id: string) =>
     include: {
       activities: { orderBy: { performedAt: "desc" } },
       assignedTo: { select: { id: true, name: true, email: true } },
+      tour: { select: { id: true, title: true } },
       booking: {
         select: { id: true, status: true, amount: true, travelDate: true, guestName: true },
       },
@@ -58,13 +59,14 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
 
-  const [lead, staffUsers] = await Promise.all([
+  const [lead, staffUsers, tours] = await Promise.all([
     getLead(id),
     prisma.user.findMany({
       where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
       select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     }),
+    prisma.tour.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
   ]);
 
   // B2B requests (b2bAgentId set) are managed exclusively under
@@ -118,6 +120,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
       <LeadDetail
         lead={lead}
         staffUsers={staffUsers}
+        tours={tours}
         canManageItinerary={canManageItinerary}
         isAdmin={isAdmin}
         canManage={canManage}

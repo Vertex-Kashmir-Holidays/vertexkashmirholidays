@@ -1,5 +1,6 @@
 // src/app/(public)/adventures/page.tsx
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import { buildMetadata, SITE_URL } from '@/lib/seo';
 import {
@@ -7,7 +8,8 @@ import {
   buildBreadcrumbList,
   buildItemList,
 } from '@/components/seo/JsonLd';
-import { CampaignsHeroSection } from '@/components/campaign/CampaignsHeroSection';
+import { ListingHero } from '@/components/layout/ListingHero';
+import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import { CampaignsPageClient } from '@/components/campaign/CampaignsPageClient';
 import { TransportAssistanceBanner } from '@/components/tours/TransportAssistanceBanner';
 import type { CampaignListItemData, CampaignTier } from '@/types/campaign';
@@ -45,17 +47,27 @@ function priceFromTiers(tiers: CampaignTier[]): { priceFrom: number | null; pric
   return best ?? { priceFrom: null, priceWas: null };
 }
 
+// Wrapped in React's cache() so generateMetadata() and the page component
+// share one query per request instead of each fetching this row separately.
+const getAdventuresHeroSection = cache(() =>
+  prisma.homeSection.findUnique({ where: { key: 'adventuresHero' } }),
+);
+
 export async function generateMetadata(): Promise<Metadata> {
+  const section = await getAdventuresHeroSection();
   return buildMetadata({
-    title: 'Kashmir Campaigns & Seasonal Experiences',
+    title: section?.metaTitle || 'Kashmir Campaigns & Seasonal Experiences',
     description:
+      section?.metaDescription ||
       'Explore curated Kashmir campaigns from Vertex Kashmir Holidays — limited-time seasonal experiences, group departures and themed itineraries with exclusive offers and easy EMI options.',
     canonical: `${SITE_URL}/adventures`,
+    ogImage: section?.ogImage ?? section?.heroImage ?? null,
   });
 }
 
 export default async function CampaignsPage() {
-  const [rows, stats] = await Promise.all([
+  const [section, rows, stats] = await Promise.all([
+    getAdventuresHeroSection(),
     prisma.campaign.findMany({
       where: { published: true },
       orderBy: { createdAt: 'desc' },
@@ -107,10 +119,24 @@ export default async function CampaignsPage() {
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
       {campaigns.length > 0 && <JsonLd data={campaignsJsonLd} />}
-      <CampaignsHeroSection
-        title="Kashmir Campaigns & Seasonal Experiences"
-        subtitle="Limited-time journeys, curated group departures and themed Kashmir itineraries — with exclusive offers and easy EMI options."
+      <ListingHero
+        heading={{
+          kicker: section?.kicker ?? null,
+          title: section?.title ?? 'Kashmir Campaigns & Seasonal Experiences',
+          subtitle:
+            section?.subtitle ??
+            'Limited-time journeys, curated group departures and themed Kashmir itineraries — with exclusive offers and easy EMI options.',
+          ctaLabel: section?.ctaLabel ?? null,
+          ctaHref: section?.ctaHref ?? null,
+        }}
+        breadcrumbLabel="Campaigns"
+        heroImage={section?.heroImage ?? null}
+        heroImageMobile={section?.heroImageMobile ?? null}
+        defaultImage="/hero/pahalgam-lg.webp"
+        defaultImageMobile="/hero/pahalgam.webp"
+        alt="Kashmir campaign experiences"
         stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
+        aside={<HeroLeadCard source="campaign" buttonLabel="Get Campaign Offers" />}
       />
       <CampaignsPageClient campaigns={campaigns} />
       <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">

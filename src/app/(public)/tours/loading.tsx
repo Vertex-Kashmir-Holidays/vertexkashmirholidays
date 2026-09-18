@@ -3,7 +3,7 @@ import { CardGridSkeleton } from "@/components/ui/molecules/card-grid-skeleton";
 import { HeroSkeleton } from "@/components/ui/molecules/hero-skeleton";
 
 // Covers /tours and /tours/category/* (both render the same hero + filtered
-// card grid). Mirrors ToursHeroSection — SecondaryHero with the lead-capture
+// card grid). Mirrors ListingHero — SecondaryHero with the lead-capture
 // card as its aside — followed by ToursPageClient's category chips and grid.
 export default function ToursLoading() {
   return (

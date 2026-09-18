@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Globe, Package, MapPin, FileText, Megaphone } from "lucide-react";
+import { Globe, Package, MapPin, FileText, Megaphone, Layers } from "lucide-react";
 
 export const metadata: Metadata = { title: "SEO & Pages — Admin" };
 
@@ -32,6 +32,14 @@ const SEO_SECTIONS = [
     href: "/admin/campaigns",
     Icon: Megaphone,
     color: "bg-emerald-500/10 text-primary",
+  },
+  {
+    title: "Listing Pages",
+    description:
+      "Edit meta title & description for /tours, /destinations, /activities and /adventures — under Home Sections (toursHero, destinationsHero, activitiesHero, adventuresHero). /blog has its own fields on the Blog Posts page.",
+    href: "/admin/home",
+    Icon: Layers,
+    color: "bg-pink-500/10 text-pink-600 dark:text-pink-400",
   },
   {
     title: "Site Settings",
