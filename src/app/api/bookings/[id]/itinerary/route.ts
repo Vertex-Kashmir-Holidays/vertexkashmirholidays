@@ -69,7 +69,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   // bookings); total cost is seeded from the agreed booking amount.
   const baseData = buildLeadItineraryData({
     name: booking.guestName,
-    category: null,
+    tourTitle: null,
     adults: booking.travellers,
     children: null,
     startDate: booking.travelDate,

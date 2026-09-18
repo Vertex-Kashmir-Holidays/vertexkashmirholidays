@@ -21,8 +21,9 @@ const getBlogContent = cache(() => prisma.blogContent.findUnique({ where: { id: 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getBlogContent();
   return buildMetadata({
-    title: "Kashmir Travel Blog — Guides, Tips & Itineraries",
+    title: content?.metaTitle || "Kashmir Travel Blog — Guides, Tips & Itineraries",
     description:
+      content?.metaDescription ||
       "Expert Kashmir travel guides from Vertex Kashmir Holidays — best time to visit, Gulmarg & Pahalgam tips, houseboat stays, budgets and sample itineraries.",
     canonical: `${SITE_URL}/blog`,
     ogImage: content?.ogImage ?? content?.heroImage ?? null,

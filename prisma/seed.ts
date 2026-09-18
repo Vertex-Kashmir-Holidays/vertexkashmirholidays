@@ -85,6 +85,8 @@ async function main() {
       auditLog: VIEW,
       careers: ALL,
       docs: ALL,
+      finance: VIEW,
+      expenses: ALL,
     },
     DEVELOPER: {
       dashboard: VIEW,
@@ -114,6 +116,8 @@ async function main() {
       auditLog: NONE,
       careers: ALL,
       docs: ALL,
+      finance: NONE,
+      expenses: NONE,
     },
     SALES: {
       dashboard: VIEW,
@@ -143,6 +147,8 @@ async function main() {
       auditLog: NONE,
       careers: VIEW,
       docs: VIEW,
+      finance: NONE,
+      expenses: NONE,
     },
     EDITOR: {
       dashboard: VIEW,
@@ -172,6 +178,8 @@ async function main() {
       auditLog: NONE,
       careers: ALL,
       docs: VIEW,
+      finance: NONE,
+      expenses: NONE,
     },
   };
 
@@ -185,6 +193,32 @@ async function main() {
     }
   }
   console.log("✓ Default role permissions");
+
+  // ── Expense categories ───────────────────────────────────────────────────────
+  // "Salary" is isSystem so it's always present and never deletable — it's the
+  // category an Expense uses when optionally referencing an existing, already
+  // -paid SalaryRecord (see Expense.salaryRecordId). The rest are ordinary,
+  // staff-manageable starter categories, never overwritten once created.
+  const EXPENSE_CATEGORIES: { name: string; isSystem?: boolean }[] = [
+    { name: "Salary", isSystem: true },
+    { name: "Meta Ads" },
+    { name: "Google Ads" },
+    { name: "Office Expenses" },
+    { name: "Software Subscriptions" },
+    { name: "Hosting" },
+    { name: "Travel & Business" },
+    { name: "Telephone & Internet" },
+    { name: "Marketing" },
+    { name: "Other" },
+  ];
+  for (const c of EXPENSE_CATEGORIES) {
+    await prisma.expenseCategory.upsert({
+      where: { name: c.name },
+      update: {},
+      create: { name: c.name, isSystem: c.isSystem ?? false },
+    });
+  }
+  console.log("✓ Expense categories");
 
   // ── Legal / policy pages ─────────────────────────────────────────────────────
   // Seed defaults only when a page doesn't exist yet (never overwrite admin edits).
@@ -1946,6 +1980,23 @@ async function main() {
       key: "toursHero",
       title: "Kashmir Tour Packages",
       subtitle: "Handpicked experiences by locals, crafted with love.",
+    },
+    {
+      key: "adventuresHero",
+      title: "Kashmir Campaigns & Seasonal Experiences",
+      subtitle: "Limited-time seasonal experiences, group departures and themed itineraries.",
+    },
+    {
+      key: "destinationsHero",
+      title: "Explore the breathtaking destinations of Kashmir",
+      subtitle:
+        "From snow-capped peaks to serene valleys and crystal clear lakes – discover paradise on earth.",
+    },
+    {
+      key: "activitiesHero",
+      title: "Things to Do in Kashmir",
+      subtitle:
+        "Shikara sunsets, Gulmarg gondola, alpine treks and more — handpicked experiences for your trip.",
     },
   ];
   for (const section of homeSections) {

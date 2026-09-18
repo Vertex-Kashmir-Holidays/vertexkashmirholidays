@@ -45,8 +45,6 @@ type LeadStatus =
   | "CONVERTED"
   | "REJECTED";
 type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
-type LeadCategory =
-  "HONEYMOON_TOUR" | "COUPLE" | "FAMILY_TOUR" | "GROUP_TOUR" | "SKI_TOUR" | "OFFBEAT_TOUR";
 type LeadActivityType =
   | "STATUS_CHANGE"
   | "ASSIGNMENT_CHANGE"
@@ -101,7 +99,8 @@ interface Lead {
   phone: string;
   email: string | null;
   source: LeadSource;
-  category: LeadCategory | null;
+  tourId: string | null;
+  tour: { id: string; title: string } | null;
   adults: number;
   children: number | null;
   startDate: Date | string | null;
@@ -149,6 +148,11 @@ interface StaffUser {
   email: string;
 }
 
+interface TourOption {
+  id: string;
+  title: string;
+}
+
 interface IpDuplicateLead {
   id: string;
   name: string;
@@ -158,6 +162,7 @@ interface IpDuplicateLead {
 interface Props {
   lead: Lead;
   staffUsers: StaffUser[];
+  tours: TourOption[];
   canManageItinerary: boolean;
   isAdmin: boolean;
   canManage: boolean;
@@ -200,11 +205,6 @@ const ACTIVITY_ICONS: Record<LeadActivityType, LucideIcon> = {
 
 function fmtSource(s: LeadSource) {
   return s.toLowerCase().replace(/_/g, " ");
-}
-
-function fmtCategory(c: LeadCategory | null) {
-  if (!c) return "—";
-  return c.toLowerCase().replace(/_/g, " ");
 }
 
 function fmtDate(d: Date | string | null) {
@@ -292,6 +292,7 @@ const selectCls =
 export function LeadDetail({
   lead,
   staffUsers,
+  tours,
   canManageItinerary,
   isAdmin,
   canManage,
@@ -308,7 +309,7 @@ export function LeadDetail({
   const [showConvert, setShowConvert] = useState(false);
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
-  const [category, setCategory] = useState(lead.category ?? "");
+  const [tourId, setTourId] = useState(lead.tourId ?? "");
   const [notes, setNotes] = useState(lead.notes ?? "");
   const [followUpAt, setFollowUpAt] = useState(
     lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "",
@@ -322,10 +323,10 @@ export function LeadDetail({
   useEffect(() => {
     setStatus(lead.status);
     setAssignedToId(lead.assignedToId ?? "");
-    setCategory(lead.category ?? "");
+    setTourId(lead.tourId ?? "");
     setNotes(lead.notes ?? "");
     setFollowUpAt(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "");
-  }, [lead.status, lead.assignedToId, lead.category, lead.notes, lead.followUpAt]);
+  }, [lead.status, lead.assignedToId, lead.tourId, lead.notes, lead.followUpAt]);
 
   // Clear the booking input when a booking is unlinked.
   useEffect(() => {
@@ -428,9 +429,9 @@ export function LeadDetail({
     patch({ assignedToId: val || null });
   }
 
-  function handleCategoryChange(val: string) {
-    setCategory(val);
-    patch({ category: val || null });
+  function handleTourChange(val: string) {
+    setTourId(val);
+    patch({ tourId: val || null });
   }
 
   function handleDelete() {
@@ -672,10 +673,8 @@ export function LeadDetail({
                 </div>
               )}
               <div>
-                <p className="text-muted-foreground mb-0.5">Category</p>
-                <p className="font-semibold text-foreground capitalize">
-                  {fmtCategory(lead.category)}
-                </p>
+                <p className="text-muted-foreground mb-0.5">Tour</p>
+                <p className="font-semibold text-foreground">{lead.tour?.title ?? "Custom"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Adults</p>
@@ -1074,25 +1073,24 @@ export function LeadDetail({
               </div>
             </div>
 
-            {/* Category */}
+            {/* Tour */}
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Category
+                Tour
               </label>
               <div className="relative">
                 <select
-                  value={category}
-                  onChange={(e) => handleCategoryChange(e.target.value)}
+                  value={tourId}
+                  onChange={(e) => handleTourChange(e.target.value)}
                   disabled={isPending || !canManage || locked}
                   className={selectCls}
                 >
-                  <option value="">— Select —</option>
-                  <option value="HONEYMOON_TOUR">Honeymoon</option>
-                  <option value="COUPLE">Couple</option>
-                  <option value="FAMILY_TOUR">Family</option>
-                  <option value="GROUP_TOUR">Group</option>
-                  <option value="SKI_TOUR">Ski</option>
-                  <option value="OFFBEAT_TOUR">Offbeat</option>
+                  <option value="">— Custom —</option>
+                  {tours.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>

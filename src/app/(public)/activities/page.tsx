@@ -3,11 +3,10 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
-import { SecondaryHero } from "@/components/layout/SecondaryHero";
+import { ListingHero } from "@/components/layout/ListingHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import { ActivitiesPageClient } from "@/components/activities/ActivitiesPageClient";
 import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
-import Link from "next/link";
 
 // 24h safety net — Activity mutations invalidate this page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -21,8 +20,10 @@ const getActivitiesHeroSection = cache(() =>
 export async function generateMetadata(): Promise<Metadata> {
   const section = await getActivitiesHeroSection();
   return buildMetadata({
-    title: "Things to Do in Kashmir — Activities & Experiences",
+    title: section?.metaTitle || "Things to Do in Kashmir — Activities & Experiences",
     description:
+      section?.metaDescription ||
+      section?.subtitle ||
       "Discover the best things to do in Kashmir — shikara rides, Gulmarg gondola, trekking, skiing, river rafting and more. Handpicked activities by Vertex Kashmir Holidays.",
     canonical: `${SITE_URL}/activities`,
     ogImage: section?.ogImage ?? section?.heroImage ?? null,
@@ -62,27 +63,24 @@ export default async function ActivitiesPage() {
       <JsonLd data={breadcrumbJsonLd} />
       {activities.length > 0 && <JsonLd data={listJsonLd} />}
 
-      <SecondaryHero
-        image={section?.heroImage ?? "/hero/gulmarg-lg.webp"}
-        imageMobile={section?.heroImageMobile ?? "/hero/gulmarg.webp"}
+      <ListingHero
+        heading={{
+          kicker: section?.kicker ?? null,
+          title: section?.title ?? "Things to Do in Kashmir",
+          subtitle:
+            section?.subtitle ??
+            "Shikara sunsets, Gulmarg gondola, alpine treks and more — handpicked experiences for your trip.",
+          ctaLabel: section?.ctaLabel ?? null,
+          ctaHref: section?.ctaHref ?? null,
+        }}
+        breadcrumbLabel="Activities"
+        heroImage={section?.heroImage ?? null}
+        heroImageMobile={section?.heroImageMobile ?? null}
+        defaultImage="/hero/gulmarg-lg.webp"
+        defaultImageMobile="/hero/gulmarg.webp"
         alt="Things to do in Kashmir"
         aside={<HeroLeadCard source="activities" buttonLabel="Plan My Activities" />}
-      >
-        <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
-          <Link href="/" className="transition hover:text-white">
-            Home
-          </Link>
-          <span>›</span>
-          <span className="font-semibold text-white">Activities</span>
-        </nav>
-        <h1 className="mt-6 h-display text-3xl font-bold text-white sm:text-4xl lg:text-[44px]">
-          Things to Do in Kashmir
-        </h1>
-        <p className="mt-3 max-w-md text-[16px] text-white/85">
-          Shikara sunsets, Gulmarg gondola, alpine treks and more — handpicked experiences for your
-          trip.
-        </p>
-      </SecondaryHero>
+      />
 
       <ActivitiesPageClient
         activities={activities.map((a) => ({

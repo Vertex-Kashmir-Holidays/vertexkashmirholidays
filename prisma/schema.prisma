@@ -90,6 +90,9 @@ model User {
   meetingParticipants      MeetingParticipant[] @relation("ConnectMeetingParticipants")
   faqsCreated              Faq[]                @relation("FaqCreatedBy")
   faqsUpdated              Faq[]                @relation("FaqUpdatedBy")
+  // ── Finance / Expenses ───────────────────────────────────────────────────
+  expensesAsEmployee       Expense[]            @relation("ExpenseEmployee")
+  expensesCreated          Expense[]            @relation("ExpenseCreatedBy")
 
   // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
@@ -519,6 +522,7 @@ model Tour {
   reviews            Review[]
   destinations       TourDestination[]
   activities         ActivityTour[]
+  leads              Lead[]
 
   // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([category])
@@ -617,6 +621,8 @@ model Booking {
   @@index([deletedAt, createdAt])
   @@index([guestEmail])
   @@index([status, createdAt])
+  @@index([travelDate])
+  @@index([status, travelDate])
 }
 
 // A single payment entry against a booking — the booking payment ledger.
@@ -739,6 +745,7 @@ model SalaryRecord {
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
   claimedCommissions   BookingCommission[]
+  expenses             Expense[]
 
   @@unique([employeeId, salaryMonth])
   @@index([salaryMonth])
@@ -765,6 +772,51 @@ model LeaveRequest {
 
   @@index([employeeId])
   @@index([status])
+}
+
+// Manageable, non-hardcoded expense categories for the Finance module.
+// "Salary" is always seeded with isSystem: true — it's never deletable, so
+// the Employee Salary integration below always has a category to live under.
+model ExpenseCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isSystem  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  expenses  Expense[]
+}
+
+// Business operating expenses — NOT booking/service costs (those live on
+// BookingService and are tracked separately as cost-of-tour, not opex).
+// salaryRecordId is an optional traceability link to an existing, already-paid
+// SalaryRecord — it never introduces a second salary/payment system. Finance
+// reporting (src/lib/finance/operatingExpenses.ts) deliberately EXCLUDES any
+// Expense row that carries a salaryRecordId from its sum, because that
+// money is already counted via SalaryRecord.netSalary where status "PAID" —
+// counting both would double-count the same payout.
+model Expense {
+  id             String          @id @default(cuid())
+  date           DateTime
+  categoryId     String
+  category       ExpenseCategory @relation(fields: [categoryId], references: [id])
+  description    String?
+  amount         Float
+  paymentMethod  String? // same free-text set as BookingPayment.method (Cash/UPI/Card/Bank Transfer/Online)
+  employeeId     String?
+  employee       User?           @relation("ExpenseEmployee", fields: [employeeId], references: [id])
+  salaryRecordId String?
+  salaryRecord   SalaryRecord?   @relation(fields: [salaryRecordId], references: [id])
+  reference      String? // receipt/reference text
+  notes          String?
+  createdById    String
+  createdBy      User            @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  deletedAt      DateTime? // soft-delete marker; non-null = hidden from listings/reports
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([date])
+  @@index([categoryId])
+  @@index([employeeId])
+  @@index([deletedAt, date])
 }
 
 // Append-only payment audit trail. Records every payment-gateway event (order
@@ -797,7 +849,15 @@ model Lead {
   // Free-text page/campaign tag (home, tours, blog-detail, …). The LeadSource
   // enum captures the marketing channel; this captures which on-site form fired.
   sourcePage         String?
+  // Deprecated — superseded by tourId below (mapping a lead to the real Tour
+  // catalog instead of a generic trip-type tag). Left in the schema, unused
+  // by application code, rather than dropped, so no historical data is lost.
   category           LeadCategory?
+  // Which real Tour package this lead is interested in. Null = "Custom" (a
+  // bespoke itinerary, not tied to a catalog package) — same nullable-FK
+  // idiom as Booking.tourId.
+  tourId             String?
+  tour               Tour?               @relation(fields: [tourId], references: [id])
   adults             Int                 @default(1)
   children           Int?
   startDate          DateTime?
@@ -858,6 +918,7 @@ model Lead {
   @@index([status])
   @@index([source])
   @@index([category])
+  @@index([tourId])
   @@index([assignedToId])
   @@index([createdAt])
   @@index([followUpAt])
@@ -1104,6 +1165,11 @@ model BlogContent {
   updatedAt             DateTime @updatedAt
   heroImageMobile       String?
   ogImage               String?
+  // SEO overrides for the /blog listing page's <title>/<meta name="description">
+  // — separate from heroTitle/heroSubtitle above, same convention as
+  // HomeSection.metaTitle/metaDescription.
+  metaTitle             String?
+  metaDescription       String?
 }
 
 model BlogCategory {
@@ -1229,6 +1295,13 @@ model HomeSection {
   heroImage       String? // desktop banner — gallery URL or absolute URL
   heroImageMobile String? // mobile banner (≤640 px)
   ogImage         String? // OG / social-share image for that listing page
+  // SEO overrides for the listing page's <title>/<meta name="description">.
+  // Deliberately separate from title/subtitle above (which drive the on-page
+  // H1/hero copy) — same metaTitle/metaDescription-distinct-from-heading
+  // pattern already used for Tour/Destination/Blog/Campaign. Null = the page
+  // keeps its hardcoded default copy.
+  metaTitle       String?
+  metaDescription String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

@@ -22,7 +22,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: {
       id: true,
       name: true,
-      category: true,
+      tour: { select: { title: true } },
       adults: true,
       children: true,
       startDate: true,
@@ -61,7 +61,10 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const editedByName = (guard.user.name ?? guard.user.email) as string;
   const title = `${lead.name} — Kashmir Itinerary`;
   // Seed the itinerary with the lead's customer details (price starts at 0).
-  const data = buildLeadItineraryData(lead) as unknown as Prisma.InputJsonValue;
+  const data = buildLeadItineraryData({
+    ...lead,
+    tourTitle: lead.tour?.title ?? null,
+  }) as unknown as Prisma.InputJsonValue;
 
   const created = await prisma.itinerary.create({
     data: {

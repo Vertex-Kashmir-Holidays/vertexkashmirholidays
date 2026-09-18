@@ -3,22 +3,11 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, Link2, Loader2 } from "lucide-react";
+import { Link2, Loader2 } from "lucide-react";
 import type { LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
-
-const CATEGORIES: [string, string][] = [
-  ["", "— Category —"],
-  ["HONEYMOON_TOUR", "Honeymoon"],
-  ["COUPLE", "Couple"],
-  ["FAMILY_TOUR", "Family"],
-  ["GROUP_TOUR", "Group"],
-  ["SKI_TOUR", "Ski"],
-  ["OFFBEAT_TOUR", "Offbeat"],
-];
 
 interface TripState {
   name: string;
-  category: string;
   adults: string;
   children: string;
   start: string;
@@ -29,7 +18,7 @@ interface Props {
   leadId: string;
   initial: {
     name: string;
-    category: string | null;
+    tourTitle: string | null;
     adults: number;
     children: number | null;
     startDate: string;
@@ -51,7 +40,6 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
   const [isPending, startTransition] = useTransition();
   const [trip, setTrip] = useState<TripState>({
     name: initial.name,
-    category: initial.category ?? "",
     adults: String(initial.adults),
     children: initial.children != null ? String(initial.children) : "",
     start: initial.startDate,
@@ -61,7 +49,9 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
   function toFacts(t: TripState): LeadItinerarySeed {
     return {
       name: t.name,
-      category: t.category || null,
+      // Tour is set from the Lead page, not editable here — see the
+      // read-only field below.
+      tourTitle: initial.tourTitle,
       adults: parseInt(t.adults, 10) || 1,
       children: t.children === "" ? null : parseInt(t.children, 10) || 0,
       startDate: t.start ? new Date(t.start) : null,
@@ -80,7 +70,6 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: next.name,
-            category: f.category,
             adults: f.adults,
             children: f.children,
             startDate: next.start || null,
@@ -181,22 +170,16 @@ export function LeadTripSync({ leadId, initial, onFacts }: Props) {
           />
         </label>
 
-        <label className="relative block">
-          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">
-            Category
-          </span>
-          <select
-            value={trip.category}
-            onChange={(e) => set("category", e.target.value, true)}
-            className={`${inputCls} appearance-none pr-7`}
-          >
-            {CATEGORIES.map(([v, label]) => (
-              <option key={v} value={v}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-[30px] h-3.5 w-3.5 text-muted-foreground" />
+        <label className="block">
+          <span className="mb-1 block text-[12px] font-semibold text-muted-foreground">Tour</span>
+          <input
+            value={initial.tourTitle ?? "Custom"}
+            readOnly
+            onClick={() =>
+              toast.warning("Change the tour from the lead's page — it can't be edited here.")
+            }
+            className={`${inputCls} cursor-not-allowed`}
+          />
         </label>
       </div>
     </div>
