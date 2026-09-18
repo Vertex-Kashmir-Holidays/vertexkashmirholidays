@@ -1302,6 +1302,15 @@ model HomeSection {
   // keeps its hardcoded default copy.
   metaTitle       String?
   metaDescription String?
+  // Form Setting — the lead-capture card (HeroLeadCard) shown beside this hero.
+  // Deliberately separate from kicker/title/subtitle above (the H1 heading) —
+  // same formKicker/formTitle/formSubtitle/formButtonLabel pattern already
+  // used on HomeContent for the home page's own hero form. Null = the card
+  // keeps its own component-level default copy.
+  formKicker      String?
+  formTitle       String?
+  formSubtitle    String?
+  formButtonLabel String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

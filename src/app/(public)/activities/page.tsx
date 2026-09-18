@@ -79,7 +79,15 @@ export default async function ActivitiesPage() {
         defaultImage="/hero/gulmarg-lg.webp"
         defaultImageMobile="/hero/gulmarg.webp"
         alt="Things to do in Kashmir"
-        aside={<HeroLeadCard source="activities" buttonLabel="Plan My Activities" />}
+        aside={
+          <HeroLeadCard
+            source="activities"
+            kicker={section?.formKicker ?? undefined}
+            title={section?.formTitle ?? undefined}
+            subtitle={section?.formSubtitle ?? undefined}
+            buttonLabel={section?.formButtonLabel || "Plan My Activities"}
+          />
+        }
       />
 
       <ActivitiesPageClient
