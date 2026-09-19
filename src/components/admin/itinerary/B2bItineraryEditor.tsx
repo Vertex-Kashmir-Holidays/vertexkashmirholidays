@@ -19,9 +19,12 @@ import {
   type ItineraryData,
   type ItineraryStatus,
   type ItineraryDay,
+  type HotelRow,
 } from "@/types/itinerary";
+import { applyDayOrder } from "@/lib/itinerary/dayReorder";
 import type { B2bAgentInfo } from "./B2bItineraryPdf";
 import { PdfIcon } from "./ItineraryPdf";
+import { ReorderableList } from "./ReorderableList";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -110,6 +113,9 @@ export function B2bItineraryEditor({
   function removeDay(dayId: string) {
     setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
   }
+  function reorderDays(next: ItineraryDay[]) {
+    setData((p) => applyDayOrder(p, next));
+  }
 
   /* ---------- hotels ---------- */
   function updateHotel(
@@ -144,6 +150,9 @@ export function B2bItineraryEditor({
   }
   function removeHotel(hid: string) {
     setData((p) => ({ ...p, hotels: p.hotels.filter((h) => h.id !== hid) }));
+  }
+  function reorderHotels(next: HotelRow[]) {
+    setData((p) => ({ ...p, hotels: next }));
   }
 
   /* ---------- payment tags (still a plain string[]) ---------- */
@@ -366,9 +375,14 @@ export function B2bItineraryEditor({
             <Plus className="h-3.5 w-3.5" /> Add Day
           </button>
         </div>
-        <div className="mt-4 space-y-4">
-          {data.days.map((day, i) => (
-            <div key={day.id} className="rounded-xl border border-border p-4">
+        <ReorderableList
+          items={data.days}
+          onReorder={reorderDays}
+          noun="day"
+          className="mt-4 space-y-4 pl-7"
+        >
+          {(day, i) => (
+            <div className="rounded-xl border border-border p-4">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-xs font-bold text-primary">DAY {String(i + 1).padStart(2, "0")}</p>
                 <button
@@ -412,8 +426,8 @@ export function B2bItineraryEditor({
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+        </ReorderableList>
       </div>
 
       {/* Stay Plan — maps to the Stay Plan table (no images) */}
@@ -428,10 +442,14 @@ export function B2bItineraryEditor({
             <Plus className="h-3.5 w-3.5" /> Add Hotel
           </button>
         </div>
-        <div className="mt-4 space-y-3">
-          {data.hotels.map((h) => (
+        <ReorderableList
+          items={data.hotels}
+          onReorder={reorderHotels}
+          noun="hotel"
+          className="mt-4 space-y-3 pl-7"
+        >
+          {(h) => (
             <div
-              key={h.id}
               className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.8fr_1.2fr_auto]"
             >
               <div>
@@ -475,8 +493,8 @@ export function B2bItineraryEditor({
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
-          ))}
-        </div>
+          )}
+        </ReorderableList>
       </div>
 
       {/* Transportation + Price */}
