@@ -93,7 +93,15 @@ export default async function ToursPage() {
         defaultImageMobile="/hero/gulmarg.webp"
         alt="Kashmir valley"
         stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
-        aside={<HeroLeadCard source="tours" buttonLabel="Get Tour Quotes" />}
+        aside={
+          <HeroLeadCard
+            source="tours"
+            kicker={section?.formKicker ?? undefined}
+            title={section?.formTitle ?? undefined}
+            subtitle={section?.formSubtitle ?? undefined}
+            buttonLabel={section?.formButtonLabel || "Get Tour Quotes"}
+          />
+        }
       />
       <ToursPageClient
         browseCategories={[...new Set(tours.map((t) => t.category))]}

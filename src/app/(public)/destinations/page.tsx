@@ -97,6 +97,12 @@ export default async function DestinationsPage() {
           ctaLabel: section?.ctaLabel ?? null,
           ctaHref: section?.ctaHref ?? null,
         }}
+        formSetting={{
+          kicker: section?.formKicker,
+          title: section?.formTitle,
+          subtitle: section?.formSubtitle,
+          buttonLabel: section?.formButtonLabel,
+        }}
         heroImage={section?.heroImage ?? null}
         heroImageMobile={section?.heroImageMobile ?? null}
       />

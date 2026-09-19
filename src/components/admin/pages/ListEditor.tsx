@@ -98,6 +98,7 @@ export function ListEditor({
     if (meta.sortable) payload.sortOrder = Number(sortOrder) || 0;
     if (meta.activatable) payload.isActive = active;
     for (const f of fields) {
+      if (f.type === "heading") continue;
       const v = form[f.key];
       if (f.type === "boolean") {
         payload[f.key] = v === "true";
@@ -298,7 +299,15 @@ export function ListEditor({
             </div>
 
             <div className="space-y-3.5">
-              {fields.map((f) => (
+              {fields.map((f) =>
+                f.type === "heading" ? (
+                  <div
+                    key={f.key}
+                    className="!mt-5 border-t border-border pt-3 text-xs font-bold uppercase tracking-wide text-foreground first:!mt-0 first:border-0 first:pt-0"
+                  >
+                    {f.label}
+                  </div>
+                ) : (
                 <div key={f.key}>
                   <label className="mb-1 block text-xs font-semibold text-muted-foreground">
                     {f.label}
@@ -343,7 +352,8 @@ export function ListEditor({
                     />
                   )}
                 </div>
-              ))}
+                ),
+              )}
 
               {(meta.sortable || meta.activatable) && (
                 <div className="flex items-center gap-4">
