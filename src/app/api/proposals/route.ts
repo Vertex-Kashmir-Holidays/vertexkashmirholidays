@@ -3,8 +3,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
+import { listProposalSummaries, proposalTitleExists } from "@/lib/proposal/list";
+import {
+  PROPOSAL_TITLE_PREFIX,
+  buildDocumentTitle,
+  duplicateTitleMessage,
+} from "@/lib/itinerary/documentTitle";
+import { parsePageParams } from "@/lib/pagination";
 import type { Role } from "@/lib/rbac";
-import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -12,45 +18,30 @@ function isAdmin(role?: Role | string | null): boolean {
   return role === "SUPERADMIN" || role === "ADMIN";
 }
 
-// List proposals. Staff see their own; ADMIN/SUPERADMIN see all.
-export async function GET() {
+// List proposals (paginated). Staff see their own; ADMIN/SUPERADMIN see all.
+export async function GET(req: NextRequest) {
   const guard = await requirePermission("proposals", "view");
   if (guard instanceof NextResponse) return guard;
 
   const { id: userId, role } = guard.user;
-  const where: Prisma.ProposalItineraryWhereInput = isAdmin(role) ? {} : { ownerId: userId };
-
-  const items = await prisma.proposalItinerary.findMany({
-    where,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      owner: { select: { name: true } },
-    },
+  const { searchParams } = new URL(req.url);
+  const { items, total } = await listProposalSummaries({
+    ownerId: isAdmin(role) ? undefined : userId,
+    search: searchParams.get("search")?.trim() ?? "",
+    status: searchParams.get("status") ?? undefined,
+    ...parsePageParams(searchParams),
   });
 
-  return NextResponse.json({
-    proposals: items.map((i) => ({
-      id: i.id,
-      title: i.title,
-      status: i.status,
-      ownerId: i.ownerId,
-      ownerName: i.owner?.name ?? null,
-      createdAt: i.createdAt,
-      updatedAt: i.updatedAt,
-    })),
-  });
+  return NextResponse.json({ proposals: items, total });
 }
 
+// The title is generated from the document itself (see documentTitle.ts), so
+// it's not accepted from the client.
 const createSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200),
   status: z.enum(["DRAFT", "SENT"]).optional(),
   data: proposalDataSchema,
+  // Sent by the list's Duplicate action — a copy may share its source's name.
+  allowDuplicate: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -72,9 +63,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const title = buildDocumentTitle(PROPOSAL_TITLE_PREFIX, parsed.data.data);
+  if (!parsed.data.allowDuplicate && (await proposalTitleExists(title))) {
+    return NextResponse.json({ error: duplicateTitleMessage(title) }, { status: 409 });
+  }
+
   const created = await prisma.proposalItinerary.create({
     data: {
-      title: parsed.data.title,
+      title,
       status: parsed.data.status ?? "DRAFT",
       data: parsed.data.data,
       ownerId: guard.user.id,

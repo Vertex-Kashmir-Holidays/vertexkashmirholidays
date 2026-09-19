@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { resolveItineraryAccess } from "@/lib/itinerary/access";
+import { itineraryTitleExists } from "@/lib/itinerary/list";
+import {
+  ITINERARY_TITLE_PREFIX,
+  buildDocumentTitle,
+  duplicateTitleMessage,
+} from "@/lib/itinerary/documentTitle";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -122,11 +128,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const editedByName = (guard.user.name ?? guard.user.email) as string;
 
+  // Standalone itineraries are titled from their content (see documentTitle.ts)
+  // and must stay unique. Lead/booking-linked ones keep the CRM-owned title —
+  // the 1:1 link already keeps them distinct.
+  const isLinked = !!existing.leadId || !!existing.bookingId;
+  let title = isLinked ? parsed.data.title : undefined;
+  if (!isLinked && parsed.data.data !== undefined) {
+    title = buildDocumentTitle(ITINERARY_TITLE_PREFIX, parsed.data.data);
+    // Only re-check when the name actually changes, so a copy (which shares its
+    // source's name) can still be saved unchanged.
+    if (title !== existing.title && (await itineraryTitleExists(title, id))) {
+      return NextResponse.json({ error: duplicateTitleMessage(title) }, { status: 409 });
+    }
+  }
+
   const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.itinerary.update({
       where: { id },
       data: {
-        ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+        ...(title !== undefined ? { title } : {}),
         ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
         ...(parsed.data.data !== undefined ? { data: parsed.data.data } : {}),
         lastEditedById: guard.user.id,
