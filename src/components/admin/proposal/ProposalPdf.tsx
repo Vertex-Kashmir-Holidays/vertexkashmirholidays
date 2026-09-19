@@ -339,6 +339,7 @@ const s = StyleSheet.create({
   simpleTableCell: { padding: SP.sm + 3 },
   simpleTableCellText: { fontSize: 9, color: C.body, lineHeight: 1.5 },
   simpleTableCellStrong: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.ink, lineHeight: 1.4 },
+  simpleTableDate: { fontSize: 8, color: C.muted, marginTop: 2, lineHeight: 1.3 },
   simpleTableNote: { fontSize: 8, color: C.muted, marginTop: SP.sm, lineHeight: 1.5, fontStyle: "italic" },
 
   // ── Six Days timeline (page 4) ──────────────────────────────────────────
@@ -851,6 +852,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
   footerLogoSrc = img(LOGO_SRC);
   const incRuns = withCategoryRuns(data.inc);
   const excRuns = withCategoryRuns(data.exc);
+  // The Day column only widens when a date is present, so proposals without
+  // day dates lay out exactly as they always did.
+  const hasDayDates = data.days.some((d) => d.dateLabel.trim() !== "");
 
   return (
     <Document title={`Proposal - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -1076,8 +1080,16 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                 <SectionHead title="Day Plan at a Glance" tag={data.duration} />
                 <View style={s.simpleTable}>
                   <View style={s.simpleTableHeadRow} wrap={false}>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.5 }]}>Day</Text>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 3 }]}>Plan</Text>
+                    <Text
+                      style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: hasDayDates ? 0.95 : 0.5 }]}
+                    >
+                      Day
+                    </Text>
+                    <Text
+                      style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: hasDayDates ? 2.55 : 3 }]}
+                    >
+                      Plan
+                    </Text>
                     <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
                       Night Stay
                     </Text>
@@ -1085,10 +1097,11 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                   </View>
                   {data.days.map((day, i) => (
                     <View key={day.id} style={s.simpleTableRow} wrap={false}>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 0.5 }]}>
-                        {String(i + 1).padStart(2, "0")}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 3 }]}>
+                      <View style={[s.simpleTableCell, { flex: hasDayDates ? 0.95 : 0.5 }]}>
+                        <Text style={s.simpleTableCellStrong}>{String(i + 1).padStart(2, "0")}</Text>
+                        {day.dateLabel.trim() ? <Text style={s.simpleTableDate}>{day.dateLabel}</Text> : null}
+                      </View>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: hasDayDates ? 2.55 : 3 }]}>
                         <Text style={s.simpleTableCellStrong}>{day.title}</Text>
                         {day.body ? ` – ${day.body}` : ""}
                       </Text>

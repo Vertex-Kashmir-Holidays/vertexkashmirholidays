@@ -21,7 +21,11 @@ export async function listItinerarySummaries({
   page,
   pageSize,
 }: ListOptions): Promise<{ items: ItinerarySummary[]; total: number }> {
-  const where: Prisma.ItineraryWhereInput = {};
+  const where: Prisma.ItineraryWhereInput = {
+    // B2B itineraries are edited at /admin/b2b-itineraries/[id]; the standard
+    // editor and API 404 on them, so listing them here only yields dead links.
+    NOT: { lead: { is: { b2bAgentId: { not: null } } } },
+  };
   if (ownerId) where.ownerId = ownerId;
   if (status && (STATUSES as string[]).includes(status)) where.status = status as ItineraryStatus;
   if (search) where.title = { contains: search, mode: "insensitive" };
