@@ -15,6 +15,8 @@ const DOC_TYPES: { value: ProposalDocType; label: string }[] = [
 interface ToolbarProps {
   title: string;
   onTitleChange: (v: string) => void;
+  /** Title is generated from the customer name + duration, so it can't be edited by hand. */
+  titleReadOnly?: boolean;
   status: ProposalStatus;
   onStatusChange: (v: ProposalStatus) => void;
   docType: ProposalDocType;
@@ -30,6 +32,7 @@ interface ToolbarProps {
 export function Toolbar({
   title,
   onTitleChange,
+  titleReadOnly = false,
   status,
   onStatusChange,
   docType,
@@ -56,6 +59,8 @@ export function Toolbar({
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Proposal title"
+            readOnly={titleReadOnly}
+            title={titleReadOnly ? "Generated from the customer name and duration" : undefined}
             className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-bold text-foreground transition focus:border-border focus:bg-muted/40 focus:outline-none"
           />
         </div>

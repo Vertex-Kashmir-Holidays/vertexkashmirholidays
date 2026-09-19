@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma";
+import { listProposalSummaries } from "@/lib/proposal/list";
+import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { ProposalsClient } from "@/components/admin/proposal/ProposalsClient";
-import type { ProposalSummary } from "@/types/proposal";
 
 export const metadata: Metadata = { title: "Proposals — Admin" };
 export const dynamic = "force-dynamic";
@@ -18,29 +18,11 @@ export default async function AdminProposalsPage() {
 
   const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
 
-  const items = await prisma.proposalItinerary.findMany({
-    where: isAdmin ? {} : { ownerId: session!.user.id },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      status: true,
-      ownerId: true,
-      createdAt: true,
-      updatedAt: true,
-      owner: { select: { name: true } },
-    },
+  const { items, total } = await listProposalSummaries({
+    ownerId: isAdmin ? undefined : session!.user.id,
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
   });
-
-  const summaries: ProposalSummary[] = items.map((i) => ({
-    id: i.id,
-    title: i.title,
-    status: i.status,
-    ownerId: i.ownerId,
-    ownerName: i.owner?.name ?? null,
-    createdAt: i.createdAt,
-    updatedAt: i.updatedAt,
-  }));
 
   const [canCreate, canDelete] = await Promise.all([
     can(role, "proposals", "create"),
@@ -49,7 +31,8 @@ export default async function AdminProposalsPage() {
 
   return (
     <ProposalsClient
-      initialItems={summaries}
+      initialItems={items}
+      initialTotal={total}
       showOwner={isAdmin}
       canCreate={canCreate}
       canDelete={canDelete}

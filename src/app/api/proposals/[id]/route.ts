@@ -3,6 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
+import { proposalTitleExists } from "@/lib/proposal/list";
+import {
+  PROPOSAL_TITLE_PREFIX,
+  buildDocumentTitle,
+  duplicateTitleMessage,
+} from "@/lib/itinerary/documentTitle";
 
 export const dynamic = "force-dynamic";
 
@@ -38,8 +44,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
 }
 
+// The title is generated from `data` (see documentTitle.ts), not accepted from the client.
 const patchSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
   status: z.enum(["DRAFT", "SENT"]).optional(),
   data: proposalDataSchema.optional(),
 });
@@ -49,7 +55,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
-  const existing = await prisma.proposalItinerary.findUnique({ where: { id }, select: { ownerId: true } });
+  const existing = await prisma.proposalItinerary.findUnique({
+    where: { id },
+    select: { ownerId: true, title: true },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!isAdmin(guard.user.role) && existing.ownerId !== guard.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -70,10 +79,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     );
   }
 
+  // Only re-check when the name actually changes, so a copy (which shares its
+  // source's name) can still be saved unchanged.
+  let title: string | undefined;
+  if (parsed.data.data !== undefined) {
+    title = buildDocumentTitle(PROPOSAL_TITLE_PREFIX, parsed.data.data);
+    if (title !== existing.title && (await proposalTitleExists(title, id))) {
+      return NextResponse.json({ error: duplicateTitleMessage(title) }, { status: 409 });
+    }
+  }
+
   const updated = await prisma.proposalItinerary.update({
     where: { id },
     data: {
-      ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+      ...(title !== undefined ? { title } : {}),
       ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
       ...(parsed.data.data !== undefined ? { data: parsed.data.data } : {}),
     },

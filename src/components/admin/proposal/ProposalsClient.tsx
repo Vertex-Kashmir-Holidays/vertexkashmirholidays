@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Search, Trash2, Pencil, Copy, FileText } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { useServerPagedList } from "@/components/admin/ui/useServerPagedList";
 import type { ProposalSummary, ProposalStatus } from "@/types/proposal";
 
 const STATUSES: ("ALL" | ProposalStatus)[] = ["ALL", "DRAFT", "SENT"];
@@ -16,24 +18,31 @@ const STATUS_VARIANT: Record<ProposalStatus, BadgeProps["variant"]> = {
 };
 
 interface Props {
+  /** First page of results, rendered by the server. */
   initialItems: ProposalSummary[];
+  /** Total proposals visible to this user, across all pages. */
+  initialTotal: number;
   showOwner: boolean;
   canCreate: boolean;
   canDelete: boolean;
 }
 
-export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete }: Props) {
+export function ProposalsClient({ initialItems, initialTotal, showOwner, canCreate, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const filtered = initialItems.filter((i) => {
-    const matchesStatus = statusFilter === "ALL" || i.status === statusFilter;
-    const matchesSearch = search === "" || i.title.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const { items, total, page, setPage, pageSize, changePageSize, pageCount, loading, reload } =
+    useServerPagedList<ProposalSummary>({
+      endpoint: "/api/proposals",
+      itemsKey: "proposals",
+      initialItems,
+      initialTotal,
+      search,
+      filters: { status: statusFilter },
+    });
 
   function remove(item: ProposalSummary) {
     startTransition(async () => {
@@ -43,6 +52,7 @@ export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete 
         toast.success("Proposal deleted.");
         setConfirmDelete(null);
         router.refresh();
+        reload();
       } catch {
         toast.error("Failed to delete.");
       }
@@ -56,7 +66,7 @@ export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete 
         const res = await fetch("/api/proposals", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: `${item.title} (copy)`, status: "DRAFT", data: full.data }),
+          body: JSON.stringify({ status: "DRAFT", data: full.data, allowDuplicate: true }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
@@ -74,7 +84,7 @@ export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete 
         <div>
           <h2 className="font-display text-xl font-extrabold text-foreground">Proposals</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {initialItems.length} saved {initialItems.length === 1 ? "proposal" : "proposals"}
+            {initialTotal} saved {initialTotal === 1 ? "proposal" : "proposals"}
           </p>
         </div>
         {canCreate && (
@@ -111,8 +121,11 @@ export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete 
           </select>
         </div>
 
-        <div className="divide-y divide-border border-t border-border">
-          {filtered.length === 0 ? (
+        <div
+          className={`divide-y divide-border border-t border-border transition-opacity ${loading ? "opacity-60" : ""}`}
+          aria-busy={loading}
+        >
+          {items.length === 0 ? (
             <div className="px-4 py-16 text-center">
               <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
               <p className="mt-2 text-sm text-muted-foreground">No proposals yet.</p>
@@ -126,7 +139,7 @@ export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete 
               )}
             </div>
           ) : (
-            filtered.map((item) => (
+            items.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -200,6 +213,16 @@ export function ProposalsClient({ initialItems, showOwner, canCreate, canDelete 
             ))
           )}
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="proposals"
+        />
       </div>
     </div>
   );
