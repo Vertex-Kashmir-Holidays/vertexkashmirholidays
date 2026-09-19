@@ -136,7 +136,15 @@ export default async function CampaignsPage() {
         defaultImageMobile="/hero/pahalgam.webp"
         alt="Kashmir campaign experiences"
         stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
-        aside={<HeroLeadCard source="campaign" buttonLabel="Get Campaign Offers" />}
+        aside={
+          <HeroLeadCard
+            source="campaign"
+            kicker={section?.formKicker ?? undefined}
+            title={section?.formTitle ?? undefined}
+            subtitle={section?.formSubtitle ?? undefined}
+            buttonLabel={section?.formButtonLabel || 'Get Campaign Offers'}
+          />
+        }
       />
       <CampaignsPageClient campaigns={campaigns} />
       <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">

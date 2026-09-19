@@ -3,7 +3,19 @@
 // API (server). All list models share `sortOrder` + `isActive`, appended below.
 import { z } from "zod";
 
-export type FieldType = "text" | "textarea" | "number" | "date" | "image" | "video" | "boolean";
+// "heading" is a presentational-only pseudo-field — a section divider inside
+// a resource's otherwise-flat field list (e.g. "Form Setting" ahead of the
+// HeroLeadCard fields on homeSections). It carries no value: excluded from
+// the Zod schema (buildItemSchema) and from the save payload (ListEditor).
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "date"
+  | "image"
+  | "video"
+  | "boolean"
+  | "heading";
 
 export interface FieldDef {
   key: string;
@@ -47,7 +59,10 @@ export function buildItemSchema(
   meta: ResourceMeta = { sortable: true, activatable: true },
 ) {
   const shape: Record<string, z.ZodTypeAny> = {};
-  for (const f of fields) shape[f.key] = fieldSchema(f);
+  for (const f of fields) {
+    if (f.type === "heading") continue;
+    shape[f.key] = fieldSchema(f);
+  }
   if (meta.sortable) shape.sortOrder = z.coerce.number().int().optional();
   if (meta.activatable) shape.isActive = z.boolean().optional();
   return z.object(shape);
@@ -113,6 +128,11 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
       label: "Meta description (SEO, overrides Subtitle/default)",
       type: "textarea",
     },
+    { key: "_formSettingHeading", label: "Form Setting", type: "heading" },
+    { key: "formKicker", label: "Form kicker", type: "text" },
+    { key: "formTitle", label: "Form title", type: "text" },
+    { key: "formSubtitle", label: "Form subtitle", type: "textarea" },
+    { key: "formButtonLabel", label: "Form button label", type: "text" },
   ],
   // ── About ──
   aboutStoryFeatures: [

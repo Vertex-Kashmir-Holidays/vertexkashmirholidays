@@ -17,11 +17,25 @@ const badges: { t: string; s: string; Icon: LucideIcon }[] = [
 
 interface DestinationsHeroProps {
   heading: SectionHeading;
+  /** Lead-capture card copy — separate from `heading` (the H1), same
+   * kicker/title/subtitle/buttonLabel-distinct-from-heading pattern used
+   * elsewhere. Undefined fields fall through to HeroLeadCard's own defaults. */
+  formSetting?: {
+    kicker?: string | null;
+    title?: string | null;
+    subtitle?: string | null;
+    buttonLabel?: string | null;
+  };
   heroImage?: string | null;
   heroImageMobile?: string | null;
 }
 
-export function DestinationsHero({ heading, heroImage, heroImageMobile }: DestinationsHeroProps) {
+export function DestinationsHero({
+  heading,
+  formSetting,
+  heroImage,
+  heroImageMobile,
+}: DestinationsHeroProps) {
   const isExternal = !!heading.ctaHref && /^https?:\/\//.test(heading.ctaHref);
 
   return (
@@ -29,7 +43,15 @@ export function DestinationsHero({ heading, heroImage, heroImageMobile }: Destin
       image={heroImage ?? "/hero/srinagar-lg.webp"}
       imageMobile={heroImageMobile ?? "/hero/srinagar.webp"}
       alt="Dal Lake, Kashmir"
-      aside={<HeroLeadCard source="destinations" />}
+      aside={
+        <HeroLeadCard
+          source="destinations"
+          kicker={formSetting?.kicker ?? undefined}
+          title={formSetting?.title ?? undefined}
+          subtitle={formSetting?.subtitle ?? undefined}
+          buttonLabel={formSetting?.buttonLabel ?? undefined}
+        />
+      }
     >
       <nav className="flex items-center gap-2 text-[14px] text-white/85" aria-label="Breadcrumb">
         <a href="/" className="transition hover:text-white">
