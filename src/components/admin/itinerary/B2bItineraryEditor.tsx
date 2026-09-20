@@ -120,7 +120,7 @@ export function B2bItineraryEditor({
   /* ---------- hotels ---------- */
   function updateHotel(
     hid: string,
-    field: "destination" | "nights" | "hotelDetails" | "roomType",
+    field: "destination" | "nights" | "hotelDetails" | "roomType" | "rooms",
     value: string,
   ) {
     setData((p) => ({ ...p, hotels: p.hotels.map((h) => (h.id === hid ? { ...h, [field]: value } : h)) }));
@@ -450,7 +450,7 @@ export function B2bItineraryEditor({
         >
           {(h) => (
             <div
-              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.8fr_1.2fr_auto]"
+              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.8fr_1.2fr_0.8fr_auto]"
             >
               <div>
                 <label className={fieldLabel}>Destination</label>
@@ -482,6 +482,23 @@ export function B2bItineraryEditor({
                   className={inputCls + " mt-1"}
                   value={h.roomType}
                   onChange={(e) => updateHotel(h.id, "roomType", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={fieldLabel}>No. of Rooms</label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  className={inputCls + " mt-1"}
+                  value={h.rooms}
+                  onChange={(e) => updateHotel(h.id, "rooms", e.target.value)}
+                  onBlur={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    if (!e.target.value.trim() || Number.isNaN(n) || n < 1) {
+                      updateHotel(h.id, "rooms", "1");
+                    }
+                  }}
                 />
               </div>
               <button

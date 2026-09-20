@@ -168,12 +168,19 @@ export function ProposalEditor({
       ...p,
       stayPlan: [
         ...p.stayPlan,
-        { id: genId("sp"), destination: "", nights: "", hotelName: "", roomType: "Double Sharing" },
+        {
+          id: genId("sp"),
+          destination: "",
+          nights: "",
+          hotelName: "",
+          roomType: "Double Sharing",
+          rooms: "1",
+        },
       ],
     }));
   const updateStayPlanRow = (
     rowId: string,
-    field: "destination" | "nights" | "hotelName" | "roomType",
+    field: "destination" | "nights" | "hotelName" | "roomType" | "rooms",
     value: string,
   ) =>
     setData((p) => ({
@@ -636,11 +643,12 @@ export function ProposalEditor({
               {/* Stay Plan */}
               <article className={pageCard}>
                 <h2 className={greenHead}>Stay Plan</h2>
-                <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
+                <div className="mt-6 hidden grid-cols-5 gap-x-3 px-3 sm:grid">
                   <span className={fieldLabel}>Destination</span>
                   <span className={fieldLabel}>Nights</span>
                   <span className={fieldLabel}>Hotel Name</span>
                   <span className={fieldLabel}>Room Type</span>
+                  <span className={fieldLabel}>No. of Rooms</span>
                 </div>
                 <ReorderableList
                   items={data.stayPlan}
@@ -650,7 +658,7 @@ export function ProposalEditor({
                 >
                   {(row) => (
                     <div
-                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
+                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-5"
                     >
                       <EditableField
                         value={row.destination}
@@ -674,6 +682,12 @@ export function ProposalEditor({
                         value={row.roomType}
                         onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
                         placeholder="Room Type"
+                        className="text-xs"
+                      />
+                      <EditableField
+                        value={row.rooms}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
+                        placeholder="1"
                         className="text-xs"
                       />
                       <button

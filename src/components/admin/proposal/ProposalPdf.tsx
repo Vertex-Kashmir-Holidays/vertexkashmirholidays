@@ -1135,6 +1135,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                     <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
                       Room Type
                     </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.8 }]}>
+                      No. of Rooms
+                    </Text>
                   </View>
                   {data.stayPlan.map((row) => (
                     <View key={row.id} style={s.simpleTableRow} wrap={false}>
@@ -1149,6 +1152,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                       </Text>
                       <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
                         {row.roomType}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.8 }]}>
+                        {row.rooms}
                       </Text>
                     </View>
                   ))}
