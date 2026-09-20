@@ -90,6 +90,8 @@ export const stayPlanRowSchema = z.object({
   nights: z.string(),
   hotelName: z.string(),
   roomType: z.string(),
+  // Defaulted so proposals saved before this field existed load as one room.
+  rooms: z.string().default("1"),
 });
 export type StayPlanRow = z.infer<typeof stayPlanRowSchema>;
 

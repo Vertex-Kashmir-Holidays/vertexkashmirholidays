@@ -436,6 +436,7 @@ export function B2bItineraryPdf({
                   <Text style={[s.tHeadCell, { width: 60 }]}>NIGHTS</Text>
                   <Text style={[s.tHeadCell, { flex: 1 }]}>HOTEL NAME</Text>
                   <Text style={[s.tHeadCell, { width: 90 }]}>ROOM TYPE</Text>
+                  <Text style={[s.tHeadCell, { width: 64 }]}>NO. OF ROOMS</Text>
                 </View>
                 {data.hotels.map((h, i) => (
                   <View key={h.id} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]} wrap={false}>
@@ -445,6 +446,7 @@ export function B2bItineraryPdf({
                     <Text style={[s.tCell, { width: 60 }]}>{h.nights}</Text>
                     <Text style={[s.tCell, { flex: 1 }]}>{h.hotelDetails}</Text>
                     <Text style={[s.tCell, { width: 90 }]}>{h.roomType}</Text>
+                    <Text style={[s.tCell, { width: 64 }]}>{h.rooms}</Text>
                   </View>
                 ))}
               </View>
