@@ -61,7 +61,7 @@ export function Navbar() {
     { href: "/activities", label: "Things To Do" },
     { href: "/blog", label: "Travel Stories" },
     { href: "/reviews", label: "Reviews" },
-    { href: "/b2b-travel-partner-program", label: "B2B Partner" },
+    { href: "/b2b-travel-partner-program", label: "B2B" },
   ];
 
   const bottomNavLinks: { href: string; label: string; Icon: LucideIcon }[] = [
