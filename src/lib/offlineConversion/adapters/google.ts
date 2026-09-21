@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { PlatformAdapter } from "../types";
+import type { ConversionEvent, PlatformAdapter } from "../types";
 import { env as appEnv } from "@/lib/env";
 
 // Google Ads offline conversions / enhanced conversions for leads — via the
@@ -10,10 +10,10 @@ import { env as appEnv } from "@/lib/env";
 // created after that cutoff. Verified against developers.google.com/data-manager
 // (events.ingest reference + Google Ads offline-conversions devguide) —
 // plain REST, no SDK, same style as the Meta adapter.
-const INGEST_URL = "https://datamanager.googleapis.com/v1/events:ingest";
+export const INGEST_URL = "https://datamanager.googleapis.com/v1/events:ingest";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
-interface GoogleAdsEnv {
+export interface GoogleAdsEnv {
   clientId: string;
   clientSecret: string;
   refreshToken: string;
@@ -22,7 +22,7 @@ interface GoogleAdsEnv {
   conversionActionId: string;
 }
 
-function readEnv(): Partial<GoogleAdsEnv> {
+export function readEnv(): Partial<GoogleAdsEnv> {
   return {
     clientId: appEnv.GOOGLE_CLIENT_ID,
     clientSecret: appEnv.GOOGLE_CLIENT_SECRET,
@@ -33,7 +33,7 @@ function readEnv(): Partial<GoogleAdsEnv> {
   };
 }
 
-function isFullyConfigured(env: Partial<GoogleAdsEnv>): env is GoogleAdsEnv {
+export function isFullyConfigured(env: Partial<GoogleAdsEnv>): env is GoogleAdsEnv {
   return Object.values(env).every((v) => typeof v === "string" && v.length > 0);
 }
 
@@ -51,7 +51,7 @@ function sha256Hex(value: string): string {
 // conversion upload within the same warm serverless instance.
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
-async function getAccessToken(env: GoogleAdsEnv): Promise<string> {
+export async function getAccessToken(env: GoogleAdsEnv): Promise<string> {
   if (cachedToken && cachedToken.expiresAt - 60_000 > Date.now()) {
     return cachedToken.token;
   }
@@ -121,6 +121,56 @@ interface IngestEventsResponse {
   requestId?: string;
 }
 
+export interface IngestBody {
+  destinations: Destination[];
+  events: DataManagerEvent[];
+  encoding: "HEX";
+}
+
+/**
+ * Builds the events:ingest request body for one conversion event. Pure — no I/O,
+ * no side effects. Shared by googleAdapter.send() (the real upload) and the
+ * validate-only admin diagnostic (googleDiagnostic.ts), so both send the exact
+ * same shape. Deliberately knows nothing about `validateOnly`: the production
+ * body never carries that key.
+ */
+export function buildIngestBody(env: GoogleAdsEnv, event: ConversionEvent): IngestBody {
+  const customerId = digitsOnly(env.customerId);
+  const loginCustomerId = digitsOnly(env.loginCustomerId);
+
+  const destination: Destination = {
+    operatingAccount: { accountType: "GOOGLE_ADS", accountId: customerId },
+    // Only needed when accessing through a manager (MCC) account, which we are.
+    ...(loginCustomerId && loginCustomerId !== customerId
+      ? { loginAccount: { accountType: "GOOGLE_ADS" as const, accountId: loginCustomerId } }
+      : {}),
+    productDestinationId: env.conversionActionId,
+  };
+
+  const userIdentifiers: UserIdentifier[] = [];
+  if (event.email)
+    userIdentifiers.push({ emailAddress: sha256Hex(event.email.trim().toLowerCase()) });
+  // Google wants E.164 (with leading +), unlike Meta which wants digits only —
+  // our stored phone numbers are already E.164, so hash as-is.
+  if (event.phone) userIdentifiers.push({ phoneNumber: sha256Hex(event.phone.trim()) });
+
+  const dmEvent: DataManagerEvent = {
+    eventTimestamp: event.conversionTime.toISOString(),
+    eventSource: "WEB",
+    currency: event.currency,
+    ...(event.dedupeKey ? { transactionId: event.dedupeKey } : {}),
+    ...(event.conversionValue !== undefined ? { conversionValue: event.conversionValue } : {}),
+    adIdentifiers: {
+      ...(event.attribution.gclid ? { gclid: event.attribution.gclid } : {}),
+      ...(event.attribution.gbraid ? { gbraid: event.attribution.gbraid } : {}),
+      ...(event.attribution.wbraid ? { wbraid: event.attribution.wbraid } : {}),
+    },
+    ...(userIdentifiers.length > 0 ? { userData: { userIdentifiers } } : {}),
+  };
+
+  return { destinations: [destination], events: [dmEvent], encoding: "HEX" };
+}
+
 export const googleAdapter: PlatformAdapter = {
   platform: "GOOGLE",
 
@@ -151,38 +201,7 @@ export const googleAdapter: PlatformAdapter = {
       return { success: false, error: message };
     }
 
-    const customerId = digitsOnly(env.customerId);
-    const loginCustomerId = digitsOnly(env.loginCustomerId);
-
-    const destination: Destination = {
-      operatingAccount: { accountType: "GOOGLE_ADS", accountId: customerId },
-      // Only needed when accessing through a manager (MCC) account, which we are.
-      ...(loginCustomerId && loginCustomerId !== customerId
-        ? { loginAccount: { accountType: "GOOGLE_ADS" as const, accountId: loginCustomerId } }
-        : {}),
-      productDestinationId: env.conversionActionId,
-    };
-
-    const userIdentifiers: UserIdentifier[] = [];
-    if (event.email)
-      userIdentifiers.push({ emailAddress: sha256Hex(event.email.trim().toLowerCase()) });
-    // Google wants E.164 (with leading +), unlike Meta which wants digits only —
-    // our stored phone numbers are already E.164, so hash as-is.
-    if (event.phone) userIdentifiers.push({ phoneNumber: sha256Hex(event.phone.trim()) });
-
-    const dmEvent: DataManagerEvent = {
-      eventTimestamp: event.conversionTime.toISOString(),
-      eventSource: "WEB",
-      currency: event.currency,
-      ...(event.dedupeKey ? { transactionId: event.dedupeKey } : {}),
-      ...(event.conversionValue !== undefined ? { conversionValue: event.conversionValue } : {}),
-      adIdentifiers: {
-        ...(event.attribution.gclid ? { gclid: event.attribution.gclid } : {}),
-        ...(event.attribution.gbraid ? { gbraid: event.attribution.gbraid } : {}),
-        ...(event.attribution.wbraid ? { wbraid: event.attribution.wbraid } : {}),
-      },
-      ...(userIdentifiers.length > 0 ? { userData: { userIdentifiers } } : {}),
-    };
+    const body = JSON.stringify(buildIngestBody(env, event));
 
     try {
       const res = await fetch(INGEST_URL, {
@@ -195,7 +214,7 @@ export const googleAdapter: PlatformAdapter = {
           // headers under the legacy Ads API) now lives entirely in the body
           // via `destinations`. GOOGLE_ADS_DEVELOPER_TOKEN is no longer used here.
         },
-        body: JSON.stringify({ destinations: [destination], events: [dmEvent], encoding: "HEX" }),
+        body,
       });
 
       const json = (await res.json().catch(() => null)) as
