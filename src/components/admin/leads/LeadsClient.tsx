@@ -13,8 +13,10 @@ import {
   CalendarClock,
   TrendingUp,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/atoms/button";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/organisms/select";
@@ -230,6 +232,20 @@ export function LeadsClient({
       }
     : { page, pageSize, pageCount, total, onPage: setPage, onPageSize: changePageSize };
 
+  // Re-fetches without a page reload. router.refresh() re-runs the server
+  // component, so the stat cards / header count (and, in IP mode, the rows
+  // themselves) update while client state — filters, search, page — is kept.
+  // The server-paginated list is client state and isn't re-derived from props,
+  // so fetchLeads() reloads the current page — same pairing as handleDelete.
+  const refreshing = isPending || loading;
+
+  function handleRefresh() {
+    startTransition(() => {
+      router.refresh();
+    });
+    if (!isIpMode) fetchLeads();
+  }
+
   function handleDelete(id: string) {
     startTransition(async () => {
       try {
@@ -369,6 +385,17 @@ export function LeadsClient({
           <p className="text-xs text-muted-foreground self-center shrink-0">
             {resultsCount} results{!isIpMode && loading ? " · loading…" : ""}
           </p>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="ml-auto"
+          >
+            <RefreshCw className={refreshing ? "animate-spin" : undefined} />
+            Refresh
+          </Button>
         </div>
 
         {/* Table */}
