@@ -1,11 +1,11 @@
 import { Download, FolderOpen } from "lucide-react";
+import { docDownloadFilename } from "@/lib/docs/categories";
 
 export interface AgencyDocItem {
   id: string;
   title: string;
   category: string;
-  url: string;
-  sizeBytes: number;
+  mimeType: string;
 }
 
 // Read-only — B2B agents can view and download, not upload or delete.
@@ -28,9 +28,8 @@ export function AgencyDocsCard({ docs }: { docs: AgencyDocItem[] }) {
           {docs.map((doc) => (
             <li key={doc.id}>
               <a
-                href={doc.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/api/docs/${doc.id}/download`}
+                download={docDownloadFilename(doc.title, doc.mimeType)}
                 className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5 transition hover:border-primary/40 hover:bg-primary/5"
               >
                 <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Upload, Trash2, Loader2, FileText, Download, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DOC_CATEGORIES, type DocCategory } from "@/lib/docs/categories";
+import { DOC_CATEGORIES, docDownloadFilename, type DocCategory } from "@/lib/docs/categories";
 import { DocLinksSection, type DocLinkItem } from "./DocLinksSection";
 
 // Mirrors the server's authoritative check (src/app/api/admin/docs/route.ts) —
@@ -199,9 +199,8 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
                         </p>
                       </div>
                       <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/api/docs/${doc.id}/download`}
+                        download={docDownloadFilename(doc.title, doc.mimeType)}
                         title="Download"
                         className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-primary hover:bg-primary/10"
                       >

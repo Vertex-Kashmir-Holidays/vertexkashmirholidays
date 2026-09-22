@@ -38,7 +38,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
     ? await prisma.adminDocument.findMany({
         where: { category: { in: B2B_VISIBLE_DOC_CATEGORIES as string[] } },
         orderBy: [{ category: "asc" }, { createdAt: "desc" }],
-        select: { id: true, title: true, category: true, url: true, sizeBytes: true },
+        select: { id: true, title: true, category: true, mimeType: true },
       })
     : [];
 
