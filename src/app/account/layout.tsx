@@ -4,9 +4,11 @@ import { headers } from "next/headers";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { AccountShell } from "@/components/account/AccountShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
+import { B2B_VISIBLE_DOC_CATEGORIES } from "@/lib/docs/categories";
 
 // Belt-and-suspenders on top of robots.ts's `disallow: "/account/"` — see
 // src/app/admin/layout.tsx for the identical rationale.
@@ -31,6 +33,15 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
+  const isB2bAgent = session.user.agencyStatus !== null;
+  const agencyDocs = isB2bAgent
+    ? await prisma.adminDocument.findMany({
+        where: { category: { in: B2B_VISIBLE_DOC_CATEGORIES as string[] } },
+        orderBy: [{ category: "asc" }, { createdAt: "desc" }],
+        select: { id: true, title: true, category: true, url: true, sizeBytes: true },
+      })
+    : [];
+
   // SessionProvider lets client components (e.g. the forced password-change form)
   // call useSession().update() to refresh the JWT after a server-side change.
   return (
@@ -45,7 +56,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
         <AccountShell
           userName={session.user.name ?? "Traveller"}
           userEmail={session.user.email ?? ""}
-          isB2bAgent={session.user.agencyStatus !== null}
+          isB2bAgent={isB2bAgent}
+          agencyDocs={agencyDocs}
         >
           {children}
         </AccountShell>

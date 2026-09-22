@@ -54,8 +54,7 @@ function fmtDate(iso: string | Date): string {
 
 const CATEGORY_HINTS: Record<DocCategory, string> = {
   "Company Profile": "The company profile PDF shared with partners and clients.",
-  "B2B Payment Policy": "Payment terms shared with B2B agents.",
-  "B2B Itinerary Sample": "Sample itineraries used to pitch B2B agents.",
+  B2B: "Rates, payment policy, privacy policy, itinerary samples — anything shared with B2B agents. Every file uploaded here shows up on the agent's account profile.",
   General: "Anything else worth keeping here for staff to find and share.",
 };
 
@@ -122,8 +121,8 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
       <div>
         <h2 className="font-display font-extrabold text-foreground text-xl">Docs</h2>
         <p className="text-muted-foreground text-xs mt-0.5">
-          Reference documents for staff to view, download, and share — company profile, B2B
-          policy, and itinerary samples.
+          Reference documents for staff to view, download, and share — company profile and B2B
+          documents (rates, policies, itinerary samples).
         </p>
       </div>
 
