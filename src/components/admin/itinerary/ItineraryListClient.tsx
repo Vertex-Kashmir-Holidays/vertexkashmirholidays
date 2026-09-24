@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Search, Trash2, Pencil, Copy, FileText } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { useServerPagedList } from "@/components/admin/ui/useServerPagedList";
 import type { ItinerarySummary, ItineraryStatus } from "@/types/itinerary";
 
 const STATUSES: ("ALL" | ItineraryStatus)[] = ["ALL", "DRAFT", "SENT", "CONFIRMED"];
@@ -17,24 +19,31 @@ const STATUS_VARIANT: Record<ItineraryStatus, BadgeProps["variant"]> = {
 };
 
 interface Props {
+  /** First page of results, rendered by the server. */
   initialItems: ItinerarySummary[];
+  /** Total itineraries visible to this user, across all pages. */
+  initialTotal: number;
   showOwner: boolean;
   canCreate: boolean;
   canDelete: boolean;
 }
 
-export function ItineraryListClient({ initialItems, showOwner, canCreate, canDelete }: Props) {
+export function ItineraryListClient({ initialItems, initialTotal, showOwner, canCreate, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const filtered = initialItems.filter((i) => {
-    const matchesStatus = statusFilter === "ALL" || i.status === statusFilter;
-    const matchesSearch = search === "" || i.title.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const { items, total, page, setPage, pageSize, changePageSize, pageCount, loading, reload } =
+    useServerPagedList<ItinerarySummary>({
+      endpoint: "/api/itineraries",
+      itemsKey: "itineraries",
+      initialItems,
+      initialTotal,
+      search,
+      filters: { status: statusFilter },
+    });
 
   function remove(item: ItinerarySummary) {
     startTransition(async () => {
@@ -44,6 +53,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
         toast.success("Itinerary deleted.");
         setConfirmDelete(null);
         router.refresh();
+        reload();
       } catch {
         toast.error("Failed to delete.");
       }
@@ -57,7 +67,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
         const res = await fetch("/api/itineraries", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: `${item.title} (copy)`, status: "DRAFT", data: full.data }),
+          body: JSON.stringify({ status: "DRAFT", data: full.data, allowDuplicate: true }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
@@ -75,7 +85,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
         <div>
           <h2 className="font-display text-xl font-extrabold text-foreground">Itineraries</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {initialItems.length} saved {initialItems.length === 1 ? "itinerary" : "itineraries"}
+            {initialTotal} saved {initialTotal === 1 ? "itinerary" : "itineraries"}
           </p>
         </div>
         {canCreate && (
@@ -112,8 +122,11 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
           </select>
         </div>
 
-        <div className="divide-y divide-border border-t border-border">
-          {filtered.length === 0 ? (
+        <div
+          className={`divide-y divide-border border-t border-border transition-opacity ${loading ? "opacity-60" : ""}`}
+          aria-busy={loading}
+        >
+          {items.length === 0 ? (
             <div className="px-4 py-16 text-center">
               <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
               <p className="mt-2 text-sm text-muted-foreground">No itineraries yet.</p>
@@ -127,7 +140,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
               )}
             </div>
           ) : (
-            filtered.map((item) => (
+            items.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -211,6 +224,16 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
             ))
           )}
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="itineraries"
+        />
       </div>
     </div>
   );

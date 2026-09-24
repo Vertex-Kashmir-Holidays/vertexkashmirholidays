@@ -18,32 +18,32 @@ export const ORIGIN_CITIES: OriginCity[] = [
     slug: "mumbai",
     name: "Mumbai",
     metaDescription:
-      "Kashmir tour packages from Mumbai with flights or train arranged separately. Compare honeymoon, family and group packages, then get a personalised travel quote.",
+      "Kashmir tour packages from Mumbai with flight or train options arranged for you. Compare Kashmir honeymoon packages, family tour packages and group packages, then get a personalised travel quote.",
   },
   {
     slug: "delhi",
     name: "Delhi",
     metaDescription:
-      "Kashmir tour packages from Delhi with flights or train arranged separately. Compare honeymoon, family and group packages, then get a personalised travel quote.",
+      "Kashmir tour packages from Delhi with flight or train options arranged for you. Compare Kashmir honeymoon packages, family tour packages and group packages, then get a personalised travel quote.",
   },
   {
     slug: "bangalore",
     name: "Bengaluru",
     akaName: "Bangalore",
     metaDescription:
-      "Kashmir tour packages from Bengaluru (Bangalore) with flights or train arranged separately. Compare honeymoon, family and group packages, then get a personalised travel quote.",
+      "Kashmir tour packages from Bengaluru (Bangalore) with flight or train options arranged for you. Compare Kashmir honeymoon packages, family tour packages and group packages, then get a personalised travel quote.",
   },
   {
     slug: "hyderabad",
     name: "Hyderabad",
     metaDescription:
-      "Kashmir tour packages from Hyderabad with flights or train arranged separately. Compare honeymoon, family and group packages, then get a personalised travel quote.",
+      "Kashmir tour packages from Hyderabad with flight or train options arranged for you. Compare Kashmir honeymoon packages, family tour packages and group packages, then get a personalised travel quote.",
   },
   {
     slug: "kolkata",
     name: "Kolkata",
     metaDescription:
-      "Kashmir tour packages from Kolkata with flights or train arranged separately. Compare honeymoon, family and group packages, then get a personalised travel quote.",
+      "Kashmir tour packages from Kolkata with flight or train options arranged for you. Compare Kashmir honeymoon packages, family tour packages and group packages, then get a personalised travel quote.",
   },
 ];
 

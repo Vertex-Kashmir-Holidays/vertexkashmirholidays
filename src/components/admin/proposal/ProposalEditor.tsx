@@ -5,15 +5,20 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
+import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
 import { ItineraryIcon } from "../itinerary/icons";
 import { DEFAULT_PROPOSAL_DATA, DEFAULT_SINGLE_PROPOSAL_DATA } from "./default-data";
 import { downloadProposalPdf } from "@/lib/proposal/export-pdf";
+import { PROPOSAL_TITLE_PREFIX, buildDocumentTitle } from "@/lib/itinerary/documentTitle";
+import { keepDateLabelsInSlots } from "@/lib/itinerary/dayReorder";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
 import { genId, type ListItem, type CancelTier } from "@/types/itinerary";
 import {
   type ProposalData,
+  type ProposalDay,
+  type StayPlanRow,
   type ProposalDocType,
   type ProposalStatus,
   type ProposalTier,
@@ -29,7 +34,6 @@ type ListKey = "pay";
 interface ProposalEditorProps {
   id?: string;
   initialData: ProposalData;
-  initialTitle: string;
   initialStatus: ProposalStatus;
   canSave?: boolean;
   companyAddress?: string;
@@ -41,7 +45,6 @@ interface ProposalEditorProps {
 export function ProposalEditor({
   id,
   initialData,
-  initialTitle,
   initialStatus,
   canSave = true,
   companyAddress,
@@ -51,7 +54,9 @@ export function ProposalEditor({
 }: ProposalEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ProposalData>(initialData);
-  const [title, setTitle] = useState(initialTitle);
+  // Generated from the cover's customer name + duration; the API derives the
+  // same string on save, so this is what the list will show.
+  const title = buildDocumentTitle(PROPOSAL_TITLE_PREFIX, data);
   const [status, setStatus] = useState<ProposalStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
@@ -154,6 +159,8 @@ export function ProposalEditor({
       ],
     }));
   const removeDay = (dayId: string) => setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
+  const reorderDays = (next: ProposalDay[]) =>
+    setData((p) => ({ ...p, days: keepDateLabelsInSlots(p.days, next) }));
 
   /* ---------- stay plan (single-package only) ---------- */
   const addStayPlanRow = () =>
@@ -161,12 +168,19 @@ export function ProposalEditor({
       ...p,
       stayPlan: [
         ...p.stayPlan,
-        { id: genId("sp"), destination: "", nights: "", hotelName: "", roomType: "Double Sharing" },
+        {
+          id: genId("sp"),
+          destination: "",
+          nights: "",
+          hotelName: "",
+          roomType: "Double Sharing",
+          rooms: "1",
+        },
       ],
     }));
   const updateStayPlanRow = (
     rowId: string,
-    field: "destination" | "nights" | "hotelName" | "roomType",
+    field: "destination" | "nights" | "hotelName" | "roomType" | "rooms",
     value: string,
   ) =>
     setData((p) => ({
@@ -175,6 +189,7 @@ export function ProposalEditor({
     }));
   const removeStayPlanRow = (rowId: string) =>
     setData((p) => ({ ...p, stayPlan: p.stayPlan.filter((r) => r.id !== rowId) }));
+  const reorderStayPlan = (next: StayPlanRow[]) => setData((p) => ({ ...p, stayPlan: next }));
 
   /* ---------- transportation (single-package only) ---------- */
   const addTransportRow = () =>
@@ -234,13 +249,9 @@ export function ProposalEditor({
 
   /* ---------- actions ---------- */
   async function handleSave() {
-    if (!title.trim()) {
-      toast.error("Please enter a proposal title.");
-      return;
-    }
     setSaving(true);
     try {
-      const payload = { title: title.trim(), status, data };
+      const payload = { status, data };
       const res = await fetch(id ? `${apiBasePath}/${id}` : apiBasePath, {
         method: id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -307,7 +318,8 @@ export function ProposalEditor({
     <div className="pb-8">
       <Toolbar
         title={title}
-        onTitleChange={setTitle}
+        onTitleChange={() => {}}
+        titleReadOnly
         status={status}
         onStatusChange={setStatus}
         docType={data.docType}
@@ -556,10 +568,14 @@ export function ProposalEditor({
               in multi-package). */}
           <article className={pageCard}>
             <h2 className={greenHead}>{data.docType === "multi" ? "Your Six Days" : "Day Plan at a Glance"}</h2>
-            <div className="mt-6 space-y-3">
-              {data.days.map((day, dayIdx) => (
+            <ReorderableList
+              items={data.days}
+              onReorder={reorderDays}
+              noun="day"
+              className="mt-6 space-y-3"
+            >
+              {(day, dayIdx) => (
                 <div
-                  key={day.id}
                   className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-4 dark:border-mute/20"
                 >
                   <button
@@ -615,8 +631,8 @@ export function ProposalEditor({
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </ReorderableList>
             <button onClick={addDay} className={addBtn}>
               <Plus className="h-3 w-3" /> Add day
             </button>
@@ -627,17 +643,22 @@ export function ProposalEditor({
               {/* Stay Plan */}
               <article className={pageCard}>
                 <h2 className={greenHead}>Stay Plan</h2>
-                <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
+                <div className="mt-6 hidden grid-cols-5 gap-x-3 px-3 sm:grid">
                   <span className={fieldLabel}>Destination</span>
                   <span className={fieldLabel}>Nights</span>
                   <span className={fieldLabel}>Hotel Name</span>
                   <span className={fieldLabel}>Room Type</span>
+                  <span className={fieldLabel}>No. of Rooms</span>
                 </div>
-                <div className="mt-2 space-y-3">
-                  {data.stayPlan.map((row) => (
+                <ReorderableList
+                  items={data.stayPlan}
+                  onReorder={reorderStayPlan}
+                  noun="stay plan row"
+                  className="mt-2 space-y-3"
+                >
+                  {(row) => (
                     <div
-                      key={row.id}
-                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
+                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-5"
                     >
                       <EditableField
                         value={row.destination}
@@ -663,6 +684,12 @@ export function ProposalEditor({
                         placeholder="Room Type"
                         className="text-xs"
                       />
+                      <EditableField
+                        value={row.rooms}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
+                        placeholder="1"
+                        className="text-xs"
+                      />
                       <button
                         onClick={() => removeStayPlanRow(row.id)}
                         aria-label={`Remove stay plan row ${row.destination}`}
@@ -671,8 +698,8 @@ export function ProposalEditor({
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </ReorderableList>
                 <button onClick={addStayPlanRow} className={addBtn}>
                   <Plus className="h-3 w-3" /> Add row
                 </button>

@@ -5,6 +5,9 @@ import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Plane, X } from "lucide-react";
 import { EASE_BRAND as EASE } from "@/lib/motion";
+import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { trackWhatsappClick } from "@/lib/analytics";
+import { isWhatsAppCtaUrl, getWhatsAppCtaMessage } from "@/lib/whatsappCtaUrl";
 
 export interface StripBannerData {
   id: string;
@@ -61,6 +64,14 @@ export function BannerStripView({
 }) {
   const hasCta = Boolean(banner.ctaLabel && banner.ctaUrl);
   const interactive = typeof onClose === "function";
+  // A CTA URL of "whatsapp:<message>" (set via BannerForm's CTA type toggle)
+  // opens WhatsApp with a proper pre-filled message — see
+  // src/lib/whatsappCtaUrl.ts for why this needs no schema change.
+  const wa = useWhatsAppLink();
+  const isWhatsAppCta = isWhatsAppCtaUrl(banner.ctaUrl);
+  const whatsAppHref = isWhatsAppCtaUrl(banner.ctaUrl)
+    ? wa(getWhatsAppCtaMessage(banner.ctaUrl))
+    : undefined;
   // On mobile the icon + body are hidden so the line never wraps or overflows.
   const iconCls = forceMobile ? "hidden" : "hidden sm:block";
   const bodyCls = forceMobile ? "hidden" : "hidden sm:inline";
@@ -92,13 +103,26 @@ export function BannerStripView({
           )}
           {hasCta &&
             (interactive ? (
-              <Link
-                href={banner.ctaUrl!}
-                className={`ring-inner ml-1 inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider text-[#0F3D2E] shadow-sm transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 ${ctaText}`}
-                style={{ backgroundColor: GOLD }}
-              >
-                {banner.ctaLabel}
-              </Link>
+              isWhatsAppCta ? (
+                <a
+                  href={whatsAppHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackWhatsappClick("strip_banner", { sourcePage: banner.id })}
+                  className={`ring-inner ml-1 inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider text-[#0F3D2E] shadow-sm transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 ${ctaText}`}
+                  style={{ backgroundColor: GOLD }}
+                >
+                  {banner.ctaLabel}
+                </a>
+              ) : (
+                <Link
+                  href={banner.ctaUrl!}
+                  className={`ring-inner ml-1 inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider text-[#0F3D2E] shadow-sm transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 ${ctaText}`}
+                  style={{ backgroundColor: GOLD }}
+                >
+                  {banner.ctaLabel}
+                </Link>
+              )
             ) : (
               // Preview: non-navigating, styled identically.
               <span

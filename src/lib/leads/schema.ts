@@ -31,9 +31,38 @@ export const LEAD_SOURCES = [
   "faq",
   "flight-train-quote",
   "tour-origin-city",
+  "trip-planner",
 ] as const;
 
 export type LeadSourcePage = (typeof LEAD_SOURCES)[number];
+
+// ── Trip Planner structured intent ───────────────────────────────────────────
+// WHAT the customer wants — orthogonal to `source` (WHERE they came from) and
+// `sourcePage` (WHICH form fired). Mirrors Lead.requestedComponents/
+// transportModes exactly (see prisma/schema.prisma's doc comment on those
+// columns for the full rationale). "PLAN" ("Help Me Plan") is its own
+// distinct value — never expand it into the other three at write time.
+export const REQUESTED_COMPONENTS = ["TRANSPORT", "TOUR", "HOTEL", "PLAN"] as const;
+export type RequestedComponent = (typeof REQUESTED_COMPONENTS)[number];
+
+export const TRANSPORT_MODES = ["FLIGHT", "TRAIN", "BUS"] as const;
+export type TransportModeValue = (typeof TRANSPORT_MODES)[number];
+
+// Shared display labels — the one place these are authored, reused by the
+// public TripPlannerForm/LeadForm WhatsApp message, POST /api/leads' notes
+// summary, and the admin Leads list/detail views, so the three never drift.
+export const REQUESTED_COMPONENT_LABELS: Record<RequestedComponent, string> = {
+  TRANSPORT: "Transport",
+  TOUR: "Kashmir Tour",
+  HOTEL: "Hotel/Stay",
+  PLAN: "Help Me Plan",
+};
+
+export const TRANSPORT_MODE_LABELS: Record<TransportModeValue, string> = {
+  FLIGHT: "Flight",
+  TRAIN: "Train",
+  BUS: "Bus",
+};
 
 // ── Name ─────────────────────────────────────────────────────────────────────
 // Letters (any script), spaces, and . ' - only. ASCII control chars (incl.
@@ -83,12 +112,19 @@ export const leadContextSchema = z.object({
   // no live fare API, so this is what sales needs to check Akbar/Riya/TripJack
   // and call the customer back with real options.
   fromCity: z.string().max(100).optional(),
-  transportMode: z.enum(["FLIGHT", "TRAIN", "EITHER"]).optional(),
+  transportMode: z.enum(["FLIGHT", "TRAIN", "BUS", "EITHER"]).optional(),
   returnDate: z.string().max(40).optional(),
   // Which on-page instance of the transport-assistance banner this came from
   // (homepage, tour detail, listing sidebar, etc.) — lets sales and analytics
   // tell placements apart even though they all share source "flight-train-quote".
   placement: z.string().max(40).optional(),
+  // Trip Planner (source: "trip-planner") + TransportAssistanceBanner (which
+  // maps its own single-value transportMode above into this array). toCity
+  // defaults to Srinagar on the public page but is still carried explicitly
+  // so a future multi-destination trip isn't a schema change.
+  requestedComponents: z.array(z.enum(REQUESTED_COMPONENTS)).max(4).optional(),
+  transportModes: z.array(z.enum(TRANSPORT_MODES)).max(3).optional(),
+  toCity: z.string().max(100).optional(),
 });
 
 export type LeadContext = z.infer<typeof leadContextSchema>;

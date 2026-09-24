@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
 import { PasswordInput } from "@/components/ui/atoms/PasswordInput";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
 
 interface CustomerRow {
   id: string;
@@ -17,18 +18,35 @@ interface CustomerRow {
   deletedAt: Date | string | null;
   createdAt: Date | string;
   lastLoginAt: Date | string | null;
+  agencyStatus: "PENDING" | "ACTIVE" | "SUSPENDED" | null;
   _count: { bookings: number; reviews: number };
 }
+
+type Tab = "normal" | "b2b";
+
+// Matches AgencyDetailsCard's status styling (src/components/account/AgencyDetailsCard.tsx).
+const AGENCY_STATUS_STYLES: Record<"PENDING" | "ACTIVE" | "SUSPENDED", string> = {
+  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  ACTIVE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  SUSPENDED: "bg-red-500/15 text-red-700 dark:text-red-300",
+};
 
 interface Props {
   initialCustomers: CustomerRow[];
   totalCount: number;
   deletedCount: number;
+  initialB2bCount: number;
 }
 
-export function UsersClient({ initialCustomers, totalCount, deletedCount }: Props) {
+export function UsersClient({
+  initialCustomers,
+  totalCount,
+  deletedCount,
+  initialB2bCount,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [tab, setTab] = useState<Tab>("normal");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
@@ -47,6 +65,10 @@ export function UsersClient({ initialCustomers, totalCount, deletedCount }: Prop
   // figure) back in sync.
   const [customers, setCustomers] = useState(initialCustomers);
   const [total, setTotal] = useState(totalCount);
+  // Tab badge counts — kept roughly fresh: the active tab's count is updated
+  // from every fetch response, the inactive one only changes when visited.
+  const [normalCount, setNormalCount] = useState(totalCount);
+  const [b2bCount, setB2bCount] = useState(initialB2bCount);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
@@ -63,13 +85,14 @@ export function UsersClient({ initialCustomers, totalCount, deletedCount }: Prop
   // pagination's auto-clamp when the filtered set shrank.
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, showDeleted]);
+  }, [tab, debouncedSearch, showDeleted]);
 
   async function fetchCustomers() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         role: "CUSTOMER",
+        agency: tab,
         page: String(page),
         pageSize: String(pageSize),
       });
@@ -80,6 +103,8 @@ export function UsersClient({ initialCustomers, totalCount, deletedCount }: Prop
       const data = (await res.json()) as { users: CustomerRow[]; total: number };
       setCustomers(data.users);
       setTotal(data.total);
+      if (tab === "normal") setNormalCount(data.total);
+      else setB2bCount(data.total);
     } catch {
       toast.error("Failed to load customers.");
     } finally {
@@ -96,7 +121,7 @@ export function UsersClient({ initialCustomers, totalCount, deletedCount }: Prop
     }
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, debouncedSearch, showDeleted]);
+  }, [tab, page, pageSize, debouncedSearch, showDeleted]);
 
   function changePageSize(n: number) {
     setPageSize(n);
@@ -163,6 +188,33 @@ export function UsersClient({ initialCustomers, totalCount, deletedCount }: Prop
           <p className="text-muted-foreground text-xs mt-0.5">{total} customers</p>
         </div>
       </div>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+        <TabsList className="gap-2 border-none px-0">
+          <TabsTrigger
+            value="normal"
+            className={cn(
+              "rounded-xl border px-4 py-2 text-[13px] font-bold whitespace-nowrap transition-colors",
+              "border-border text-muted-foreground hover:text-foreground hover:border-primary/40",
+              "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=active]:shadow-sm data-[state=active]:shadow-primary/25",
+            )}
+          >
+            Normal
+            <span className="ml-1.5 font-normal opacity-80">({normalCount})</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="b2b"
+            className={cn(
+              "rounded-xl border px-4 py-2 text-[13px] font-bold whitespace-nowrap transition-colors",
+              "border-border text-muted-foreground hover:text-foreground hover:border-primary/40",
+              "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=active]:shadow-sm data-[state=active]:shadow-primary/25",
+            )}
+          >
+            B2B
+            <span className="ml-1.5 font-normal opacity-80">({b2bCount})</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3 p-4">
@@ -238,6 +290,16 @@ export function UsersClient({ initialCustomers, totalCount, deletedCount }: Prop
                               {isDeleted && (
                                 <span className="ml-2 text-[10px] font-bold text-destructive uppercase">
                                   deleted
+                                </span>
+                              )}
+                              {u.agencyStatus && (
+                                <span
+                                  className={cn(
+                                    "ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase",
+                                    AGENCY_STATUS_STYLES[u.agencyStatus],
+                                  )}
+                                >
+                                  {u.agencyStatus}
                                 </span>
                               )}
                             </p>

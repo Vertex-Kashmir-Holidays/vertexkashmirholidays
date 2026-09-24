@@ -38,7 +38,6 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
     <ProposalEditor
       id={record.id}
       initialData={data}
-      initialTitle={record.title}
       initialStatus={record.status}
       canSave={canSave}
       companyAddress={companyAddress}

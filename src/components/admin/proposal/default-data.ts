@@ -356,6 +356,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       nights: "02",
       hotelName: "Hidden Leaf Resort / The Royale / Mollys Resort / Similar",
       roomType: "Double Sharing",
+      rooms: "1",
     },
     {
       id: "sp-2",
@@ -363,6 +364,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       nights: "01",
       hotelName: "Apple Tree Resort / Hotel Grand Hill View / Similar",
       roomType: "Double Sharing",
+      rooms: "1",
     },
     {
       id: "sp-3",
@@ -370,6 +372,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       nights: "02",
       hotelName: "Sideeq Palace / Welcome Residency",
       roomType: "Double Sharing",
+      rooms: "1",
     },
   ],
   stayPlanNote:

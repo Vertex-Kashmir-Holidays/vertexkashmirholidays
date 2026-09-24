@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { notifyLeadAssigned } from "@/lib/notifications";
-import { LeadSource, LeadActivityType } from "@prisma/client";
+import { LeadSource, LeadActivityType, LeadContactChannel } from "@prisma/client";
 import { phoneField } from "@/lib/leads/schema";
 import {
   normalizeWhatsAppTokenParam,
@@ -27,6 +27,10 @@ const createSchema = z.object({
   followUpAt: z.string().nullable().optional(),
   negotiatedAmount: z.coerce.number().positive().nullable().optional(),
   tokenAmount: z.coerce.number().positive().nullable().optional(),
+  // HOW staff actually contacted this customer — this form exists precisely
+  // for logging a WhatsApp/phone conversation, so it defaults to WHATSAPP
+  // (never FORM — that's set only by the public POST /api/leads route).
+  contactChannel: z.nativeEnum(LeadContactChannel).default(LeadContactChannel.WHATSAPP),
   // Optional WhatsApp reference pasted from a customer's message (e.g.
   // "G-CgVI13IE") — see src/lib/whatsappAttribution.server.ts. Deliberately
   // just the raw string, not the individual attribution fields: the server
@@ -100,6 +104,18 @@ export async function POST(req: NextRequest) {
         source: resolved?.channel ?? manualSource,
         sourcePage: resolved ? "whatsapp" : undefined,
         ...resolved?.attribution,
+        // Trip Planner intent, carried across the WhatsApp gap the same way
+        // attribution already is — see resolveWhatsAppAttributionToken()'s
+        // `intent` field. Absent (undefined) for any resolved reference that
+        // wasn't minted from the Trip Planner page.
+        ...(resolved?.intent?.requestedComponents?.length
+          ? { requestedComponents: JSON.stringify(resolved.intent.requestedComponents) }
+          : {}),
+        ...(resolved?.intent?.transportModes?.length
+          ? { transportModes: JSON.stringify(resolved.intent.transportModes) }
+          : {}),
+        ...(resolved?.intent?.fromCity ? { fromCity: resolved.intent.fromCity } : {}),
+        ...(resolved?.intent?.toCity ? { toCity: resolved.intent.toCity } : {}),
         email: email || undefined,
         notes: notes || undefined,
         startDate: startDate ? new Date(startDate) : undefined,

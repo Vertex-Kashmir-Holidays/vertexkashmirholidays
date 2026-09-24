@@ -2,32 +2,48 @@
 
 import Link from "next/link";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
-import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
+import { TripPlannerForm } from "@/components/leads/TripPlannerForm";
 
 interface CityOriginHeroProps {
+  /** Display heading text — may include a parenthetical aka (e.g. "Bengaluru
+   *  (Bangalore)"). Used only for copy, never sent to the form. */
   cityName: string;
+  /** Clean city name (no parenthetical) — prefills the Trip Planner form's
+   *  "Travelling from" field. Falls back to `cityName` if not given. */
+  originCity?: string;
 }
 
-// Same SecondaryHero + breadcrumb + HeroLeadCard shell used by every other
-// listing page (Tours, Destinations, Categories) — kept identical so these
-// origin-city SEO pages read as a natural part of the site, not a bolted-on
-// template built only to rank for a keyword.
-export function CityOriginHero({ cityName }: CityOriginHeroProps) {
+// Same SecondaryHero shell used by every other listing page (Tours,
+// Destinations, Categories) — kept identical so these origin-city SEO pages
+// read as a natural part of the site, not a bolted-on template built only to
+// rank for a keyword. The aside is the same TripPlannerForm the standalone
+// /plan-your-kashmir-trip page uses (source="tour-origin-city" so these leads
+// keep reporting under this page's own tag), with the origin pre-filled —
+// one form, one lead pipeline, not a separate one per page.
+export function CityOriginHero({ cityName, originCity }: CityOriginHeroProps) {
   return (
     <SecondaryHero
       image="/hero/gulmarg-lg.webp"
       imageMobile="/hero/gulmarg.webp"
       alt="Kashmir valley"
+      // Same desktop content/form split as /plan-your-kashmir-trip (both use
+      // the same TripPlannerForm as their primary CTA) — keep these two in
+      // sync if either one's split changes.
+      contentWidth="0.85fr"
+      asideWidth="minmax(0,560px)"
+      asideMaxWidthClass="max-w-xl"
       aside={
-        <HeroLeadCard
+        <TripPlannerForm
           source="tour-origin-city"
-          title="Get a free quote in 60 seconds"
-          subtitle="Free, no spam — a real human replies on WhatsApp."
-          buttonLabel="Get a Free Quote"
+          defaultFromCity={originCity ?? cityName}
+          className="max-w-xl"
         />
       }
     >
-      <nav className="flex flex-wrap items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
+      <nav
+        className="flex flex-wrap items-center gap-2 text-[14px] text-white/80"
+        aria-label="Breadcrumb"
+      >
         <Link href="/" className="transition hover:text-white">
           Home
         </Link>

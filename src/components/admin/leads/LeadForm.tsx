@@ -48,6 +48,10 @@ const schema = z
     phone: phoneField,
     email: z.string().email("Enter a valid email").optional().or(z.literal("")),
     source: z.string().optional(),
+    // HOW staff actually contacted this customer — separate from `source`
+    // above (WHERE the customer originated). This form exists precisely for
+    // logging a WhatsApp/phone conversation, so it defaults to WhatsApp.
+    contactChannel: z.string().optional(),
     tourId: z.string().optional(),
     adults: z.string().optional(),
     children: z.string().optional(),
@@ -129,7 +133,7 @@ export function LeadForm({
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: defaultValues ?? { source: "MANUAL", adults: "1" },
+    defaultValues: defaultValues ?? { source: "MANUAL", adults: "1", contactChannel: "WHATSAPP" },
   });
 
   // Phone — country-aware input matching the public LeadForm/BookingForm,
@@ -235,6 +239,9 @@ export function LeadForm({
           // Only sent once successfully resolved — an unresolved/abandoned
           // reference never reaches the API, same as never having pasted one.
           ...(waState === "resolved" && waRef.trim() ? { whatsappReference: waRef.trim() } : {}),
+          // Only meaningful at creation — how this lead was originally
+          // contacted, not something an edit should retroactively change.
+          ...(!isEdit ? { contactChannel: data.contactChannel || "WHATSAPP" } : {}),
         };
 
         const res = await fetch(isEdit ? `/api/leads/${leadId}` : "/api/admin/leads", {
@@ -411,9 +418,7 @@ export function LeadForm({
               <input {...register("followUpAt")} type="datetime-local" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Tour
-              </label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Tour</label>
               <div className={selectWrapCls}>
                 <select {...register("tourId")} className={selectCls}>
                   <option value="">— Custom —</option>
@@ -485,7 +490,9 @@ export function LeadForm({
                           disabled={!waRef.trim() || waState === "loading"}
                           className="shrink-0 flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-foreground transition hover:bg-muted disabled:opacity-50"
                         >
-                          {waState === "loading" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                          {waState === "loading" && (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          )}
                           Resolve
                         </button>
                       </div>
@@ -522,6 +529,19 @@ export function LeadForm({
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   </div>
                 )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Contact Channel
+                </label>
+                <div className={selectWrapCls}>
+                  <select {...register("contactChannel")} className={selectCls}>
+                    <option value="WHATSAPP">WhatsApp</option>
+                    <option value="PHONE">Phone</option>
+                    <option value="FORM">Form</option>
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">

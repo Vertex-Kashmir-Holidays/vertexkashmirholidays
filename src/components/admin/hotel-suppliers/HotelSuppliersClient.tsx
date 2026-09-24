@@ -4,7 +4,18 @@ import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Plus, Pencil, Trash2, Mail, Star, ChevronDown, ChevronUp, Check, Download } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+  Mail,
+  Star,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Download,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/organisms/tabs";
@@ -48,6 +59,14 @@ export interface HotelSupplierRecord {
   data: HotelData;
   createdAt: string;
   updatedAt: string;
+  // Plan Your Kashmir Trip public hotel carousel — see this field's own doc
+  // comment in prisma/schema.prisma. showOnWebsite is the only one of these
+  // that's a genuine publish gate; the others are inert until it's true.
+  coverImageUrl: string | null;
+  roomImageUrl: string | null;
+  showOnWebsite: boolean;
+  // System-derived (POST /api/hotel-suppliers/[id]/like) — read-only here.
+  publicLikeCount: number;
 }
 
 interface Props {
@@ -69,7 +88,10 @@ const PAGE_SIZE_OPTIONS: { value: PageSize; label: string }[] = [
   { value: "ALL", label: "All" },
 ];
 
-const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({ value: c, label: HOTEL_CATEGORY_LABELS[c] }));
+const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({
+  value: c,
+  label: HOTEL_CATEGORY_LABELS[c],
+}));
 // Columns before Actions: Select, Sr, Name, Phone, Email, Category,
 // Recommended, Rating, MAP (Deluxe), Bookings, Valid Till, Sent — kept as one
 // constant so the expand-row colSpan can't silently drift from the header
@@ -86,7 +108,11 @@ function fmtMoney(n: number | null): string {
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDelete }: Props) {
@@ -144,7 +170,9 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
     );
     const buffer = await wb.xlsx.writeBuffer();
     const url = URL.createObjectURL(
-      new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
     );
     const a = document.createElement("a");
     a.href = url;
@@ -231,9 +259,12 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
     const filtered = initialHotels.filter((h) => {
       if (h.destination !== activeTab) return false;
       if (categoryFilter !== "ALL" && h.category !== categoryFilter) return false;
-      if (recommendedFilter !== "ALL" && h.recommended !== (recommendedFilter === "YES")) return false;
-      if (sentFilter !== "ALL" && !!h.lastRateRequestSentAt !== (sentFilter === "YES")) return false;
-      if (emailFilter !== "ALL" && !!h.data.property.email !== (emailFilter === "YES")) return false;
+      if (recommendedFilter !== "ALL" && h.recommended !== (recommendedFilter === "YES"))
+        return false;
+      if (sentFilter !== "ALL" && !!h.lastRateRequestSentAt !== (sentFilter === "YES"))
+        return false;
+      if (emailFilter !== "ALL" && !!h.data.property.email !== (emailFilter === "YES"))
+        return false;
       if (search && !h.hotelName.toLowerCase().includes(search.toLowerCase())) return false;
       const minMap = getMinMapRate(h.data.rate);
       // Once the user has manually narrowed the range, a hotel with no rate
@@ -305,7 +336,8 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Hotel Rates</h2>
           <p className="text-muted-foreground text-xs mt-0.5">
-            Curated hotel options and exact supplier EP/CP/MAP net rates for itinerary and quotation prep.
+            Curated hotel options and exact supplier EP/CP/MAP net rates for itinerary and quotation
+            prep.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -379,7 +411,10 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             />
           </div>
 
-          <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}>
+          <Select
+            value={categoryFilter}
+            onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -393,7 +428,10 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             </SelectContent>
           </Select>
 
-          <Select value={recommendedFilter} onValueChange={(v) => setRecommendedFilter(v as TriState)}>
+          <Select
+            value={recommendedFilter}
+            onValueChange={(v) => setRecommendedFilter(v as TriState)}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Recommended" />
             </SelectTrigger>
@@ -461,7 +499,8 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         {priceBounds.max > priceBounds.min && (
           <div className="border-t border-border px-4 py-3.5">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
-              Price Range <span className="font-normal normal-case">(cheapest room&apos;s MAP)</span>
+              Price Range{" "}
+              <span className="font-normal normal-case">(cheapest room&apos;s MAP)</span>
             </p>
             <div className="max-w-sm">
               <PriceRangeSlider
@@ -517,7 +556,10 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             <tbody className="divide-y divide-border">
               {pagedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={HOTEL_COL_COUNT} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td
+                    colSpan={HOTEL_COL_COUNT}
+                    className="px-4 py-12 text-center text-muted-foreground text-sm"
+                  >
                     No hotels match the current filters for {activeTab}.
                   </td>
                 </tr>
@@ -538,7 +580,9 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                       onEditClick={() => setEditingHotel(hotel)}
                       onRequestRatesClick={() => setRequestRatesFor(hotel)}
                       expanded={expandedFor === hotel.id}
-                      onToggleExpand={() => setExpandedFor(expandedFor === hotel.id ? null : hotel.id)}
+                      onToggleExpand={() =>
+                        setExpandedFor(expandedFor === hotel.id ? null : hotel.id)
+                      }
                     />
                     {expandedFor === hotel.id && (
                       <HotelDetailsRow
@@ -671,7 +715,10 @@ function HotelRow({
       </td>
       <td className="px-3 py-2.5 text-xs text-muted-foreground">{sr}</td>
       <td
-        className={cn("sticky left-0 bg-card", hotel.recommended && "bg-emerald-50 dark:bg-emerald-950/40")}
+        className={cn(
+          "sticky left-0 bg-card",
+          hotel.recommended && "bg-emerald-50 dark:bg-emerald-950/40",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <NameCell
@@ -721,7 +768,10 @@ function HotelRow({
           className="min-w-[130px]"
         />
       </td>
-      <td className="px-3 py-2.5 text-right whitespace-nowrap" title="MAP rate for the Deluxe room type">
+      <td
+        className="px-3 py-2.5 text-right whitespace-nowrap"
+        title="MAP rate for the Deluxe room type"
+      >
         {fmtMoney(getDeluxeMapRate(hotel.data.rate))}
       </td>
       <td onClick={(e) => e.stopPropagation()} title="Manual tally — double-click to edit">
@@ -734,7 +784,9 @@ function HotelRow({
           className="min-w-[70px]"
         />
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDate(hotel.data.rate?.validTo ?? null)}</td>
+      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+        {fmtDate(hotel.data.rate?.validTo ?? null)}
+      </td>
       <td className="px-3 py-2.5 whitespace-nowrap">
         {hotel.lastRateRequestSentAt ? (
           <span className="flex items-center gap-1 text-[12px] text-emerald-600 dark:text-emerald-400">
@@ -755,7 +807,11 @@ function HotelRow({
               title={expanded ? "Hide details" : "View more"}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
             >
-              {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {expanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
             </button>
             {canEdit && (
               <button

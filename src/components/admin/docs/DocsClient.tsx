@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Upload, Trash2, Loader2, FileText, Download, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DOC_CATEGORIES, type DocCategory } from "@/lib/docs/categories";
+import { DOC_CATEGORIES, docDownloadFilename, type DocCategory } from "@/lib/docs/categories";
 import { DocLinksSection, type DocLinkItem } from "./DocLinksSection";
 
 // Mirrors the server's authoritative check (src/app/api/admin/docs/route.ts) —
@@ -54,8 +54,7 @@ function fmtDate(iso: string | Date): string {
 
 const CATEGORY_HINTS: Record<DocCategory, string> = {
   "Company Profile": "The company profile PDF shared with partners and clients.",
-  "B2B Payment Policy": "Payment terms shared with B2B agents.",
-  "B2B Itinerary Sample": "Sample itineraries used to pitch B2B agents.",
+  B2B: "Rates, payment policy, privacy policy, itinerary samples — anything shared with B2B agents. Every file uploaded here shows up on the agent's account profile.",
   General: "Anything else worth keeping here for staff to find and share.",
 };
 
@@ -122,8 +121,8 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
       <div>
         <h2 className="font-display font-extrabold text-foreground text-xl">Docs</h2>
         <p className="text-muted-foreground text-xs mt-0.5">
-          Reference documents for staff to view, download, and share — company profile, B2B
-          policy, and itinerary samples.
+          Reference documents for staff to view, download, and share — company profile and B2B
+          documents (rates, policies, itinerary samples).
         </p>
       </div>
 
@@ -200,9 +199,8 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
                         </p>
                       </div>
                       <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/api/docs/${doc.id}/download`}
+                        download={docDownloadFilename(doc.title, doc.mimeType)}
                         title="Download"
                         className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-primary hover:bg-primary/10"
                       >

@@ -117,7 +117,10 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
       <JsonLd data={itemListJsonLd} />
       <JsonLd data={faqJsonLd} />
 
-      <CityOriginHero cityName={city.akaName ? `${city.name} (${city.akaName})` : city.name} />
+      <CityOriginHero
+        cityName={city.akaName ? `${city.name} (${city.akaName})` : city.name}
+        originCity={city.name}
+      />
 
       <main className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-14">
         {/* Intro — genuinely city-specific, not a templated blurb. */}
