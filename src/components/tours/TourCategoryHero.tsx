@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
+import { HeroStats } from "@/components/layout/HeroStats";
+import { HeroWhatsAppCta } from "@/components/leads/HeroWhatsAppCta";
+import type { SiteStatData } from "@/types/home";
 
 interface TourCategoryHeroProps {
   pageTitle: string;
@@ -13,6 +16,14 @@ interface TourCategoryHeroProps {
   // per-category page; only the /tours/category hub passes this.
   ctaLabel?: string;
   ctaHref?: string;
+  // Same shared, genuinely live-computed stats as /tours and
+  // /plan-your-kashmir-trip (see src/lib/publicHeroStats.ts) — omitted
+  // (no strip rendered) on the /tours/category hub, which doesn't pass it.
+  stats?: SiteStatData[];
+  // WhatsApp message + analytics sourcePage — per-category, so omitted (no
+  // CTA rendered) on the hub page, which doesn't pass it.
+  whatsappMessage?: string;
+  sourcePage?: string;
 }
 
 // Same SecondaryHero + breadcrumb + HeroLeadCard shell used by every other
@@ -25,6 +36,9 @@ export function TourCategoryHero({
   heroImageMobile,
   ctaLabel,
   ctaHref,
+  stats,
+  whatsappMessage,
+  sourcePage,
 }: TourCategoryHeroProps) {
   return (
     <SecondaryHero
@@ -67,6 +81,14 @@ export function TourCategoryHero({
               {ctaLabel}
             </Link>
           </div>
+        )}
+        {stats && <HeroStats stats={stats} />}
+        {whatsappMessage && sourcePage && (
+          <HeroWhatsAppCta
+            message={whatsappMessage}
+            source="tour_category_hero"
+            sourcePage={sourcePage}
+          />
         )}
       </div>
     </SecondaryHero>

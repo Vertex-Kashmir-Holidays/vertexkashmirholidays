@@ -11,7 +11,11 @@ import {
 } from "@/lib/mail";
 import { resolvePrimaryOffice } from "@/lib/companyOffice";
 import { requirePermission } from "@/lib/permissions";
-import { leadInputSchema } from "@/lib/leads/schema";
+import {
+  leadInputSchema,
+  REQUESTED_COMPONENT_LABELS,
+  TRANSPORT_MODE_LABELS,
+} from "@/lib/leads/schema";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { checkBotSignals } from "@/lib/security/formGuard";
@@ -59,6 +63,11 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status")?.trim();
   const source = searchParams.get("source")?.trim();
   const assignedToId = searchParams.get("assignedToId")?.trim();
+  // Trip Planner request-type filter — e.g. "TRANSPORT". requestedComponents
+  // is a JSON string column (["TRANSPORT","TOUR"], not a relation), so this
+  // is a substring `contains` match, cheap at this table's row count rather
+  // than a relational filter.
+  const requestedComponent = searchParams.get("requestedComponent")?.trim();
   const search = searchParams.get("search")?.trim() ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const take = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "30")));
@@ -75,6 +84,9 @@ export async function GET(req: NextRequest) {
   if (source && source !== "ALL") where.source = source as Prisma.LeadWhereInput["source"];
   if (isAdminOrSuper && assignedToId && assignedToId !== "ALL") {
     where.assignedToId = assignedToId === "UNASSIGNED" ? null : assignedToId;
+  }
+  if (requestedComponent && requestedComponent !== "ALL") {
+    where.requestedComponents = { contains: `"${requestedComponent}"` };
   }
   if (search) {
     where.OR = [
@@ -100,6 +112,12 @@ export async function GET(req: NextRequest) {
         phone: true,
         email: true,
         source: true,
+        sourcePage: true,
+        contactChannel: true,
+        requestedComponents: true,
+        transportModes: true,
+        fromCity: true,
+        toCity: true,
         category: true,
         adults: true,
         status: true,
@@ -130,9 +148,13 @@ const leadServerSchema = leadInputSchema.extend({
   travellers: z.coerce.number().int().positive().max(99).optional(),
 });
 
-const TRANSPORT_MODE_LABEL: Record<string, string> = {
-  FLIGHT: "Flight",
-  TRAIN: "Train",
+// Local extension of the shared TRANSPORT_MODE_LABELS: TransportAssistanceBanner's
+// legacy context.transportMode also allows "EITHER" (Flight or Train), a value
+// that only ever appears in that one free-text field, never in the new
+// requestedComponents/transportModes arrays — so it's kept local rather than
+// added to the shared map.
+const LEGACY_TRANSPORT_MODE_LABEL: Record<string, string> = {
+  ...TRANSPORT_MODE_LABELS,
   EITHER: "Flight or Train",
 };
 
@@ -158,22 +180,50 @@ function composeNotes(
         tourName?: string;
         destinationName?: string;
         fromCity?: string;
+        toCity?: string;
         transportMode?: string;
         returnDate?: string;
         placement?: string;
+        requestedComponents?: string[];
+        transportModes?: string[];
       }
     | undefined,
 ): string | undefined {
   const parts: string[] = [];
-  // Flight/train quote requests have no live fare API — flag this clearly at
-  // the top of the notes so sales knows to check Akbar/Riya/TripJack.
-  if (context?.fromCity || context?.transportMode) {
-    parts.push("✈️ Flight/Train Quote Request");
+  // Trip Planner (source: "trip-planner") — structured fields are the source
+  // of truth (see the Lead columns), this is only a human-readable summary
+  // for anyone still reading notes. TransportAssistanceBanner's legacy
+  // context.transportMode is handled separately below so its existing notes
+  // format is untouched.
+  if (context?.requestedComponents?.length) {
+    const labels = context.requestedComponents.map(
+      (c) => REQUESTED_COMPONENT_LABELS[c as keyof typeof REQUESTED_COMPONENT_LABELS] ?? c,
+    );
+    parts.push(`🧭 Trip Planner Request: ${labels.join(" + ")}`);
+    if (context.transportModes?.length) {
+      const modeLabels = context.transportModes.map(
+        (m) => TRANSPORT_MODE_LABELS[m as keyof typeof TRANSPORT_MODE_LABELS] ?? m,
+      );
+      parts.push(`Transport preference: ${modeLabels.join(", ")}`);
+    }
     if (context.fromCity) parts.push(`From: ${context.fromCity}`);
-    if (context.transportMode)
-      parts.push(`Mode: ${TRANSPORT_MODE_LABEL[context.transportMode] ?? context.transportMode}`);
-    if (context.returnDate) parts.push(`Return: ${context.returnDate}`);
-    if (context.placement) parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
+    if (context.toCity) parts.push(`To: ${context.toCity}`);
+  }
+  // Flight/train quote requests have no live fare API — flag this clearly at
+  // the top of the notes so sales knows to check Akbar/Riya/TripJack. Skipped
+  // when requestedComponents is already set (TransportAssistanceBanner now
+  // sends both) — otherwise this and the block above would duplicate the same
+  // fromCity/mode text for every banner submission.
+  if (!context?.requestedComponents?.length && (context?.fromCity || context?.transportMode)) {
+    parts.push("✈️ Flight/Train Quote Request");
+    if (context?.fromCity) parts.push(`From: ${context.fromCity}`);
+    if (context?.transportMode)
+      parts.push(
+        `Mode: ${LEGACY_TRANSPORT_MODE_LABEL[context.transportMode] ?? context.transportMode}`,
+      );
+    if (context?.returnDate) parts.push(`Return: ${context.returnDate}`);
+    if (context?.placement)
+      parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
   }
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
@@ -320,6 +370,21 @@ export async function POST(req: NextRequest) {
       startDate: effectiveDate ? new Date(effectiveDate) : undefined,
       endDate: effectiveReturnDate ? new Date(effectiveReturnDate) : undefined,
       notes: composeNotes(message, context),
+      // Trip Planner structured intent — WHAT the customer wants, separate
+      // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
+      // when nothing was selected, so this stays indistinguishable from an
+      // old pre-Trip-Planner lead at read time.
+      requestedComponents: context?.requestedComponents?.length
+        ? JSON.stringify(context.requestedComponents)
+        : undefined,
+      transportModes: context?.transportModes?.length
+        ? JSON.stringify(context.transportModes)
+        : undefined,
+      fromCity: context?.fromCity || undefined,
+      toCity: context?.toCity || undefined,
+      // HOW they contacted us — always FORM for a public submission; never
+      // client-supplied (leadServerSchema has no contactChannel field).
+      contactChannel: "FORM",
       ...buildAttributionCreateInput(attribution, req),
     },
   });

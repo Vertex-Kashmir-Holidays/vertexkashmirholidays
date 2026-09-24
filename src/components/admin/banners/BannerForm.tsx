@@ -36,6 +36,18 @@ const PAGE_OPTIONS: { key: string; label: string }[] = [
   { key: "blog", label: "Blog" },
   { key: "about", label: "About" },
   { key: "contact", label: "Contact" },
+  {
+    key: "trip-planner-before-tours",
+    label: "Plan Your Trip — full banner before “Kashmir Tour Packages”",
+  },
+  {
+    key: "trip-planner-after-pricing",
+    label: "Plan Your Trip — full banner after “How Pricing Works”",
+  },
+  {
+    key: "trip-planner-after-why",
+    label: "Plan Your Trip — full banner after “Why Plan With Vertex”",
+  },
 ];
 
 function parsePages(raw: string): string[] {

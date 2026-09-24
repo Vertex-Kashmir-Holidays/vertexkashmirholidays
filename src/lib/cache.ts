@@ -31,9 +31,12 @@ export function flushPublicCache() {
   revalidateTag("role-permissions", "max");
   revalidateTag("faqs", "max");
   revalidateTag("hotel-supplier-counts", "max");
+  revalidateTag("hotel-supplier-public", "max");
   revalidateTag("banners", "max");
   revalidateTag("tour-categories", "max");
   revalidateTag("home-content", "max");
+  revalidateTag("trip-planner-content", "max");
+  revalidateTag("public-hero-stats", "max");
   revalidateTag("corporate-offices", "max");
 }
 

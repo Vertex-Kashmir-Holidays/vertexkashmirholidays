@@ -40,7 +40,7 @@ export const TOUR_CATEGORY_META: Record<TourCategory, TourCategoryMeta> = {
     cardDescription:
       "Comfortable holidays designed for families with children and senior travellers.",
     metaDescription:
-      "Discover family-friendly Kashmir tour packages with comfortable hotels, private cabs, sightseeing, and flexible itineraries for all ages.",
+      "Book a Kashmir family tour package with comfortable hotels, private cabs, sightseeing, and flexible itineraries — perfect for a Kashmir family tour with kids, parents or grandparents of all ages.",
   },
   ADVENTURE: {
     slug: "adventure-tour-packages",
