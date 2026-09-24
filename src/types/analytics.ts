@@ -17,7 +17,9 @@ export type WhatsAppSource =
   | "b2b_page"
   | "trip_planner_hotel_carousel"
   | "trip_planner_hero"
-  | "tour_category_hero";
+  | "tour_category_hero"
+  | "promo_banner"
+  | "strip_banner";
 
 // Trip Planner structured-intent params, reused by lead_submit/whatsapp_click/
 // trip_request_start below — kept as plain string[]/string here (not imported

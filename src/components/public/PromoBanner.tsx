@@ -5,6 +5,9 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { EASE_BRAND as EASE } from "@/lib/motion";
+import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { trackWhatsappClick } from "@/lib/analytics";
+import { isWhatsAppCtaUrl, getWhatsAppCtaMessage } from "@/lib/whatsappCtaUrl";
 
 export interface PromoBannerData {
   id: string;
@@ -40,6 +43,15 @@ export function PromoBannerCard({
 
   const desktopSrc = b.imageUrl ?? undefined;
   const mobileSrc = b.imageMobileUrl ?? undefined;
+
+  // A CTA URL of "whatsapp:<message>" (set via BannerForm's CTA type toggle)
+  // opens WhatsApp with a proper pre-filled message instead of navigating —
+  // built at render time via the same hook every other WhatsApp CTA on the
+  // site uses, so it gets the real phone number and attribution ref tag,
+  // never a stale/hardcoded link.
+  const wa = useWhatsAppLink();
+  const isWhatsAppCta = isWhatsAppCtaUrl(b.ctaUrl);
+  const whatsAppHref = isWhatsAppCtaUrl(b.ctaUrl) ? wa(getWhatsAppCtaMessage(b.ctaUrl)) : undefined;
 
   return (
     // Floating card: 32px radius on all corners, image clipped by overflow-hidden,
@@ -140,6 +152,17 @@ export function PromoBannerCard({
               {b.ctaLabel}
               <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
             </span>
+          ) : isWhatsAppCta ? (
+            <a
+              href={whatsAppHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackWhatsappClick("promo_banner", { sourcePage: b.id })}
+              className={ctaClass}
+            >
+              {b.ctaLabel}
+              <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+            </a>
           ) : (
             b.ctaUrl && (
               <Link href={b.ctaUrl} className={ctaClass}>

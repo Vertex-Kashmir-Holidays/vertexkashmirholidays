@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { BannerStripView } from "@/components/public/BannerStrip";
 import { PromoBannerCard } from "@/components/public/PromoBanner";
 import { ImageField } from "@/components/admin/pages/ImageField";
+import { isWhatsAppCtaUrl, getWhatsAppCtaMessage, buildWhatsAppCtaUrl } from "@/lib/whatsappCtaUrl";
 
 type BannerType = "STRIP" | "PROMO";
 
@@ -83,7 +84,14 @@ export function BannerForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [ctaLabel, setCtaLabel] = useState(initial?.ctaLabel ?? "");
-  const [ctaUrl, setCtaUrl] = useState(initial?.ctaUrl ?? "");
+  const initialIsWhatsApp = isWhatsAppCtaUrl(initial?.ctaUrl ?? null);
+  const [ctaType, setCtaType] = useState<"LINK" | "WHATSAPP">(
+    initialIsWhatsApp ? "WHATSAPP" : "LINK",
+  );
+  const [ctaUrl, setCtaUrl] = useState(initialIsWhatsApp ? "" : (initial?.ctaUrl ?? ""));
+  const [ctaMessage, setCtaMessage] = useState(
+    initialIsWhatsApp ? getWhatsAppCtaMessage(initial!.ctaUrl!) : "",
+  );
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
   const [imageMobileUrl, setImageMobileUrl] = useState(initial?.imageMobileUrl ?? "");
   const [pages, setPages] = useState<string[]>(initial ? parsePages(initial.pages) : ["*"]);
@@ -97,6 +105,12 @@ export function BannerForm({
     setPages((prev) => (prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key]));
   }
 
+  // The composed value actually stored in Banner.ctaUrl — either a plain
+  // link, or "whatsapp:<message>" so the public renderer opens WhatsApp with
+  // a proper pre-filled message (see src/lib/whatsappCtaUrl.ts).
+  const composedCtaUrl =
+    ctaType === "WHATSAPP" ? buildWhatsAppCtaUrl(ctaMessage.trim()) : ctaUrl.trim();
+
   function submit() {
     if (!title.trim()) {
       toast.error("Title is required.");
@@ -106,13 +120,17 @@ export function BannerForm({
       toast.error("Select at least one page.");
       return;
     }
+    if (ctaType === "WHATSAPP" && ctaLabel.trim() && !ctaMessage.trim()) {
+      toast.error("Enter a WhatsApp message for the CTA.");
+      return;
+    }
 
     const payload = {
       type,
       title: title.trim(),
       body,
       ctaLabel,
-      ctaUrl,
+      ctaUrl: composedCtaUrl,
       imageUrl: type === "PROMO" ? imageUrl : "",
       imageMobileUrl: type === "PROMO" ? imageMobileUrl : "",
       pages,
@@ -153,14 +171,14 @@ export function BannerForm({
     title: title.trim() || "Your announcement headline goes here",
     body: body.trim() || null,
     ctaLabel: ctaLabel.trim() || null,
-    ctaUrl: ctaUrl.trim() || "#",
+    ctaUrl: composedCtaUrl || "#",
   };
   const previewPromo = {
     id: "preview",
     title: title.trim() || "Your promo headline",
     body: body.trim() || "Supporting copy that describes the offer in a sentence or two.",
     ctaLabel: ctaLabel.trim() || null,
-    ctaUrl: ctaUrl.trim() || "#",
+    ctaUrl: composedCtaUrl || "#",
     imageUrl: type === "PROMO" ? imageUrl.trim() || null : null,
     imageMobileUrl: type === "PROMO" ? imageMobileUrl.trim() || null : null,
   };
@@ -235,7 +253,7 @@ export function BannerForm({
         </div>
 
         {/* CTA */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="bf-cta-label" className={labelClass}>
               CTA Label
@@ -249,19 +267,66 @@ export function BannerForm({
               placeholder="Book now"
             />
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor="bf-cta-url" className={labelClass}>
-              CTA URL
-            </label>
-            <input
-              id="bf-cta-url"
-              className={inputClass}
-              value={ctaUrl}
-              onChange={(e) => setCtaUrl(e.target.value)}
-              disabled={!canEdit}
-              placeholder="/tours"
-            />
+
+          <div className="space-y-2">
+            <label className={labelClass}>CTA opens</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["LINK", "WHATSAPP"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={!canEdit}
+                  aria-pressed={ctaType === t}
+                  onClick={() => setCtaType(t)}
+                  className={cn(
+                    "rounded-xl border px-4 py-2.5 text-left text-sm font-semibold transition disabled:opacity-60",
+                    ctaType === t
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <span className="block">{t === "LINK" ? "A page" : "WhatsApp"}</span>
+                  <span className="mt-0.5 block text-[12px] font-normal opacity-80">
+                    {t === "LINK" ? "Navigates to a URL" : "Opens chat with a pre-filled message"}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {ctaType === "LINK" ? (
+            <div className="space-y-1.5">
+              <label htmlFor="bf-cta-url" className={labelClass}>
+                CTA URL
+              </label>
+              <input
+                id="bf-cta-url"
+                className={inputClass}
+                value={ctaUrl}
+                onChange={(e) => setCtaUrl(e.target.value)}
+                disabled={!canEdit}
+                placeholder="/tours"
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <label htmlFor="bf-cta-message" className={labelClass}>
+                WhatsApp message
+              </label>
+              <textarea
+                id="bf-cta-message"
+                className={cn(inputClass, "min-h-[72px] resize-y")}
+                value={ctaMessage}
+                onChange={(e) => setCtaMessage(e.target.value)}
+                disabled={!canEdit}
+                placeholder="Hi Vertex Kashmir Holidays! I'd like help with train travel to Kashmir."
+              />
+              <p className={hintClass}>
+                Sent exactly as typed — the phone number and tracking reference are added
+                automatically, same as every other WhatsApp button on the site.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Images — PROMO only. Paste a URL, pick from the gallery, or upload.
