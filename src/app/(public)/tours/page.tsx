@@ -9,6 +9,7 @@ import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import { ToursNewsletter } from "@/components/tours/ToursNewsletter";
 import { ToursPageClient } from "@/components/tours/ToursPageClient";
 import { ToursTrustBar } from "@/components/tours/ToursTrustBar";
+import { getPublicHeroStats } from "@/lib/publicHeroStats";
 
 // 24h safety net — Tour mutations invalidate this page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -36,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ToursPage() {
   const [section, stats, tours] = await Promise.all([
     getToursHeroSection(),
-    prisma.siteStat.findMany({ where: { section: "hero" }, orderBy: { sortOrder: "asc" } }),
+    getPublicHeroStats(),
     prisma.tour.findMany({
       where: { published: true },
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
@@ -92,7 +93,7 @@ export default async function ToursPage() {
         defaultImage="/hero/gulmarg-lg.webp"
         defaultImageMobile="/hero/gulmarg.webp"
         alt="Kashmir valley"
-        stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
+        stats={stats}
         aside={
           <HeroLeadCard
             source="tours"

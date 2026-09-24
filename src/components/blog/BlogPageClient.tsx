@@ -89,7 +89,12 @@ export function BlogPageClient({
             <BlogPagination currentPage={safePage} totalPages={totalPages} onPageChange={setPage} />
           </div>
 
-          <BlogSidebar content={content} categories={categories} trending={trending} />
+          <BlogSidebar
+            content={content}
+            categories={categories}
+            trending={trending}
+            onCategoryChange={handleCategoryChange}
+          />
         </div>
       </main>
     </div>

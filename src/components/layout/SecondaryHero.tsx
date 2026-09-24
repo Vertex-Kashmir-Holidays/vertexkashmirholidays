@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import type { ReactNode } from "react";
 
@@ -31,6 +32,22 @@ interface SecondaryHeroProps {
    *  that don't need a full-height hero. Top padding (nav clearance) stays
    *  the same either way — only the height band and bottom padding shrink. */
   compact?: boolean;
+  /**
+   * Desktop-only (lg+) content/aside column split, as CSS grid track values —
+   * e.g. `contentWidth="0.9fr"` `asideWidth="minmax(0,520px)"` to give a wider
+   * form more room. Both default to the original 1.1fr / 420px split every
+   * other hero page already uses, so omitting these changes nothing. Applied
+   * via CSS custom properties (not a raw arbitrary Tailwind class) so the
+   * lg:grid-cols-[...] class stays a fixed string Tailwind's JIT can compile,
+   * regardless of the actual value passed per page. Mobile/tablet always
+   * stack single-column, unaffected either way.
+   */
+  contentWidth?: string;
+  asideWidth?: string;
+  /** Max-width Tailwind class for the aside column itself — bump alongside a
+   *  wider `asideWidth` if you want the aside content wider than the default
+   *  max-w-md (448px) cap. */
+  asideMaxWidthClass?: string;
 }
 
 export function SecondaryHero({
@@ -40,6 +57,9 @@ export function SecondaryHero({
   children,
   aside,
   compact = false,
+  contentWidth = "1.1fr",
+  asideWidth = "minmax(0,420px)",
+  asideMaxWidthClass = "max-w-md",
 }: SecondaryHeroProps) {
   return (
     <section className="relative overflow-hidden bg-brand-dark">
@@ -97,9 +117,19 @@ export function SecondaryHero({
         }
       >
         {aside ? (
-          <div className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[1.1fr_minmax(0,420px)]">
+          <div
+            className="grid w-full items-center gap-8 sm:gap-10 lg:grid-cols-[var(--sh-content)_var(--sh-aside)]"
+            style={
+              { "--sh-content": contentWidth, "--sh-aside": asideWidth } as React.CSSProperties
+            }
+          >
             <div className="min-w-0">{children}</div>
-            <div className="min-w-0 w-full max-w-md justify-self-center lg:justify-self-end">
+            <div
+              className={cn(
+                "min-w-0 w-full justify-self-center lg:justify-self-end",
+                asideMaxWidthClass,
+              )}
+            >
               {aside}
             </div>
           </div>

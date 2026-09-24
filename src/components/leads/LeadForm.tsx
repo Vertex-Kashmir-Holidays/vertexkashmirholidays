@@ -19,6 +19,8 @@ import {
   type LeadInput,
   type LeadContext,
   type LeadSourcePage,
+  REQUESTED_COMPONENT_LABELS,
+  TRANSPORT_MODE_LABELS,
 } from "@/lib/leads/schema";
 import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/analytics";
 import { readAttributionForSubmit } from "@/lib/attribution";
@@ -96,10 +98,37 @@ export function LeadForm({
   const waMessage = (() => {
     const first = (watchedName ?? "").trim().split(/\s+/)[0];
     const greeting = first ? `Hi, I'm ${first}! ` : "Hi! ";
+    // TransportAssistanceBanner's own message stays exactly as it was —
+    // checked first, before the generic Trip Planner branch below, even
+    // though that banner now also sets context.requestedComponents (see
+    // TransportAssistanceBanner.tsx) — otherwise this would silently change
+    // wording for an existing, already-working submission path.
     if (source === "flight-train-quote") {
       const from = context?.fromCity ? ` from ${context.fromCity}` : "";
       const forTour = context?.tourName ? ` for the "${context.tourName}" tour` : "";
       return `${greeting}I'd like a flight/train quote${from}${forTour}. Please share the best options.`;
+    }
+    // Trip Planner intent — keyed on context.requestedComponents being
+    // present, not on `source` alone, so this also covers TripPlannerForm
+    // used on origin-city pages (source="tour-origin-city" there, to keep
+    // their own sourcePage tag) as well as the standalone page. Only ever
+    // mentions what the visitor actually selected/typed; travel date and
+    // travellers are never collected on this low-friction form, so never
+    // invented here either (per the Trip Planner spec).
+    if (context?.requestedComponents !== undefined) {
+      const components = context.requestedComponents ?? [];
+      const componentLabels = components.map(
+        (c) => REQUESTED_COMPONENT_LABELS[c as keyof typeof REQUESTED_COMPONENT_LABELS] ?? c,
+      );
+      const what = componentLabels.length
+        ? componentLabels.join(" and ")
+        : "planning my Kashmir trip";
+      const modeLabels = (context?.transportModes ?? []).map(
+        (m) => TRANSPORT_MODE_LABELS[m as keyof typeof TRANSPORT_MODE_LABELS] ?? m,
+      );
+      const modeNote = modeLabels.length ? ` (${modeLabels.join("/")})` : "";
+      const from = context?.fromCity ? ` from ${context.fromCity}` : "";
+      return `${greeting}I'd like help with ${what}${modeNote}${from}. Please share options.`;
     }
     if (context?.tourName)
       return `${greeting}I'd like more details about the "${context.tourName}" Kashmir tour. Please help.`;
@@ -172,16 +201,33 @@ export function LeadForm({
       setSent(true);
       const isTour = source === "tour-detail";
       const isFlightTrainQuote = source === "flight-train-quote";
+      const isTripPlanner = source === "trip-planner";
+      // Broader than isTripPlanner: also true for TripPlannerForm rendered on
+      // an origin-city page (source="tour-origin-city" there), which carries
+      // the same requestedComponents context but keeps its own lead_type/
+      // sourcePage classification below — only the extra intent params piggyback.
+      const hasTripPlannerIntent = context?.requestedComponents !== undefined;
       trackLeadSubmit(
         isTour
           ? "tour_inquiry"
           : isFlightTrainQuote
             ? "flight_train_quote"
-            : source === "contact"
-              ? "contact"
-              : "itinerary",
+            : isTripPlanner
+              ? "trip_planner_request"
+              : source === "contact"
+                ? "contact"
+                : "itinerary",
         isTour || isFlightTrainQuote ? context?.tourName : undefined,
         json.id,
+        hasTripPlannerIntent || isFlightTrainQuote
+          ? {
+              requestedComponents: context?.requestedComponents,
+              transportModes: context?.transportModes,
+              sourcePage: source,
+              hasTourInterest: context?.requestedComponents?.includes("TOUR"),
+              hasHotelInterest: context?.requestedComponents?.includes("HOTEL"),
+            }
+          : undefined,
       );
       if (isTour) trackTourInquiry(context?.tourName, context?.tourId);
       reset();
@@ -389,7 +435,18 @@ export function LeadForm({
           href={waHref}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackWhatsappClick("lead_form")}
+          onClick={() =>
+            trackWhatsappClick(
+              "lead_form",
+              context?.requestedComponents !== undefined
+                ? {
+                    requestedComponents: context?.requestedComponents,
+                    transportModes: context?.transportModes,
+                    sourcePage: source,
+                  }
+                : undefined,
+            )
+          }
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-[14px] font-bold transition hover:border-[#25D366] hover:text-[#25D366]"
         >
           <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />

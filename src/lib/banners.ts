@@ -14,6 +14,17 @@ export const BANNER_PAGE_KEYS = [
   "blog",
   "about",
   "contact",
+  // Three distinct promo slots within /plan-your-kashmir-trip (rendered via
+  // the existing PromoBanner/PromoBannerCard, same as the sitewide promo
+  // banners elsewhere) — separate page keys, not a "position" field on
+  // Banner, so this reuses 100% of the existing admin Banner module/UI with
+  // zero schema change. Positioned per transport mode, e.g. train before the
+  // packages, flights after the pricing block, bus after "Why Plan With
+  // Vertex" — but any PROMO banner can be assigned to any of the three,
+  // admin's choice.
+  "trip-planner-before-tours",
+  "trip-planner-after-pricing",
+  "trip-planner-after-why",
 ] as const;
 
 export type BannerPageKey = (typeof BANNER_PAGE_KEYS)[number];

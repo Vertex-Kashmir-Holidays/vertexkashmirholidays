@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { getPublicHeroStats } from "@/lib/publicHeroStats";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { formatINR } from "@/lib/accents";
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const meta = TOUR_CATEGORY_META[category];
   return buildMetadata({
-    title: `${meta.pageTitle} — Curated Kashmir Tours`,
+    title: `Kashmir ${meta.pageTitle} — Free Quote & Transparent Pricing`,
     description: meta.metaDescription,
     canonical: `${SITE_URL}/tours/category/${meta.slug}`,
   });
@@ -79,9 +80,10 @@ export default async function TourCategoryPage({ params }: PageProps) {
   if (!category) notFound();
 
   const meta = TOUR_CATEGORY_META[category];
-  const [data, settings] = await Promise.all([
+  const [data, settings, heroStats] = await Promise.all([
     getFeaturedAndRecommended(category),
     getSiteSettings(),
+    getPublicHeroStats(),
   ]);
   if (!data) notFound();
 
@@ -120,6 +122,9 @@ export default async function TourCategoryPage({ params }: PageProps) {
       <TourCategoryHero
         pageTitle={meta.pageTitle}
         subtitle={`Handpicked ${meta.shortLabel.toLowerCase()} tours in Kashmir, curated by local experts — compare packages and get a free quote today.`}
+        stats={heroStats}
+        whatsappMessage={`Hi! I'd like help planning a Kashmir ${meta.shortLabel.toLowerCase()} trip.`}
+        sourcePage={`tours/category/${meta.slug}`}
       />
 
       <div className="mx-auto max-w-[1300px] px-4 py-12 sm:px-6 sm:py-16">

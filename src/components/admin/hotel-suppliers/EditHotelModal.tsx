@@ -24,7 +24,12 @@ import {
   type HotelRate,
   type RoomRateRow,
 } from "@/lib/hotelSuppliers/schema";
-import { RoomRatesEditor, EMPTY_ROOM_RATE_ROW_DRAFT, type RoomRateRowDraft } from "./RoomRatesEditor";
+import {
+  RoomRatesEditor,
+  EMPTY_ROOM_RATE_ROW_DRAFT,
+  type RoomRateRowDraft,
+} from "./RoomRatesEditor";
+import { ImageField } from "@/components/admin/pages/ImageField";
 import type { HotelSupplierRecord } from "./HotelSuppliersClient";
 
 interface EditHotelModalProps {
@@ -61,9 +66,18 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
   const [services, setServices] = useState(hotel.data.property.services ?? "");
   const [recommended, setRecommended] = useState(hotel.recommended);
   const [isActive, setIsActive] = useState(hotel.isActive);
+  // Plan Your Kashmir Trip public hotel carousel — see HotelSupplierRecord's
+  // doc comment. showOnWebsite is the actual publish gate; the others are
+  // inert until it's true. publicLikeCount is shown read-only, not editable
+  // here — it's a system-derived counter (POST .../like), not a form field.
+  const [coverImageUrl, setCoverImageUrl] = useState(hotel.coverImageUrl ?? "");
+  const [roomImageUrl, setRoomImageUrl] = useState(hotel.roomImageUrl ?? "");
+  const [showOnWebsite, setShowOnWebsite] = useState(hotel.showOnWebsite);
   const [validTo, setValidTo] = useState(hotel.data.rate?.validTo ?? "");
   const [rows, setRows] = useState<RoomRateRowDraft[]>(
-    hotel.data.rate?.rooms.length ? hotel.data.rate.rooms.map(roomToDraft) : [EMPTY_ROOM_RATE_ROW_DRAFT],
+    hotel.data.rate?.rooms.length
+      ? hotel.data.rate.rooms.map(roomToDraft)
+      : [EMPTY_ROOM_RATE_ROW_DRAFT],
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,9 +93,14 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
     setServices(hotel.data.property.services ?? "");
     setRecommended(hotel.recommended);
     setIsActive(hotel.isActive);
+    setCoverImageUrl(hotel.coverImageUrl ?? "");
+    setRoomImageUrl(hotel.roomImageUrl ?? "");
+    setShowOnWebsite(hotel.showOnWebsite);
     setValidTo(hotel.data.rate?.validTo ?? "");
     setRows(
-      hotel.data.rate?.rooms.length ? hotel.data.rate.rooms.map(roomToDraft) : [EMPTY_ROOM_RATE_ROW_DRAFT],
+      hotel.data.rate?.rooms.length
+        ? hotel.data.rate.rooms.map(roomToDraft)
+        : [EMPTY_ROOM_RATE_ROW_DRAFT],
     );
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,7 +143,16 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
       },
       rate,
     };
-    const ok = await onSave({ destination, category, isActive, recommended, data });
+    const ok = await onSave({
+      destination,
+      category,
+      isActive,
+      recommended,
+      data,
+      coverImageUrl: coverImageUrl || null,
+      roomImageUrl: roomImageUrl || null,
+      showOnWebsite,
+    });
     setSaving(false);
     if (ok) onOpenChange(false);
     else setError("Save failed — please try again.");
@@ -145,7 +173,11 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Destination</label>
-              <select value={destination} onChange={(e) => setDestination(e.target.value)} className={inputCls}>
+              <select
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                className={inputCls}
+              >
                 {HOTEL_DESTINATIONS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -155,7 +187,11 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
             </div>
             <div>
               <label className={labelCls}>Location</label>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} className={inputCls} />
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={inputCls}
+              />
             </div>
             <div>
               <label className={labelCls}>Contact Person</label>
@@ -186,6 +222,57 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
               />
               Active
             </label>
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-bold text-foreground">
+                Plan Your Kashmir Trip — Public Listing
+              </p>
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={showOnWebsite}
+                  onChange={(e) => setShowOnWebsite(e.target.checked)}
+                  className="cbx"
+                />
+                Show on Website
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Only hotels with this on, and a cover image set, appear in the public Trip Planner
+              hotel carousel.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Cover Image</label>
+                <ImageField
+                  value={coverImageUrl}
+                  onChange={setCoverImageUrl}
+                  folder="hotel-suppliers"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Room Image</label>
+                <ImageField
+                  value={roomImageUrl}
+                  onChange={setRoomImageUrl}
+                  folder="hotel-suppliers"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The public &quot;View on Google&quot; button on the Trip Planner carousel uses this
+              hotel&apos;s Google Maps URL — double-click the hotel name in the main table to set or
+              edit it. No separate field needed here.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Public interest signal:{" "}
+              <span className="font-bold text-foreground">
+                {hotel.publicLikeCount} like{hotel.publicLikeCount === 1 ? "" : "s"}
+              </span>{" "}
+              — an aggregate visitor counter, not editable here.
+            </p>
           </div>
 
           <div className="border-t border-border pt-4">

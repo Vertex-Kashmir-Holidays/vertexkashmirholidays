@@ -56,12 +56,15 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/tours", label: "Tours" },
+    // Distinct label from the header's own "Plan My Trip" WhatsApp button
+    // (see planTripHref below) — that opens WhatsApp directly; this links to
+    // the Plan Your Kashmir Trip page. Same label, two different actions
+    // would be confusing, so deliberately worded differently.
+    { href: "/plan-your-kashmir-trip", label: "Trip Planner" },
     { href: "/destinations", label: "Destinations" },
-    { href: "/adventures", label: "Adventures" },
     { href: "/activities", label: "Things To Do" },
     { href: "/blog", label: "Travel Stories" },
     { href: "/reviews", label: "Reviews" },
-    { href: "/b2b-travel-partner-program", label: "B2B" },
   ];
 
   const bottomNavLinks: { href: string; label: string; Icon: LucideIcon }[] = [

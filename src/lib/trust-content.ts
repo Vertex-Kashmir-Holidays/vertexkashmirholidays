@@ -18,7 +18,8 @@ export type TrustSectionType =
   | "destination"
   | "activity"
   | "blog"
-  | "origin-city";
+  | "origin-city"
+  | "trip-planner";
 
 interface TrustContent {
   heading: string;
@@ -68,5 +69,10 @@ export const TRUST_CONTENT: Record<TrustSectionType, TrustContent> = {
       name
         ? `Vertex Kashmir Tour & Travels has helped travellers from ${name} plan complete Kashmir holidays — the ground itinerary, hotels and experiences, plus optional help arranging flights or train tickets for the journey itself.`
         : "Vertex Kashmir Tour & Travels helps travellers from across India plan complete Kashmir holidays — the ground itinerary, hotels and experiences, plus optional help arranging flights or train tickets for the journey itself.",
+  },
+  "trip-planner": {
+    heading: "One Enquiry, Handled By Real People",
+    text: () =>
+      "Vertex Kashmir Tour & Travels is a local Kashmir operator — whether you need transport, a tour, a hotel, or your whole trip planned, our team checks real options and gets back to you directly, not through an automated booking engine.",
   },
 };

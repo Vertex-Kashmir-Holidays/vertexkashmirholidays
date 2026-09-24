@@ -29,6 +29,20 @@ export const ATTRIBUTION_FIELDS = [
 export type AttributionField = (typeof ATTRIBUTION_FIELDS)[number];
 export type AttributionData = Partial<Record<AttributionField, string>>;
 
+// Trip Planner structured intent, carried alongside (never merged into)
+// attribution across the WhatsApp gap by ensureWhatsAppAttributionToken()
+// below. Deliberately a standalone, plain-string-array shape here (not
+// importing REQUESTED_COMPONENTS/TRANSPORT_MODES from src/lib/leads/schema.ts)
+// — that module already imports attributionSchema FROM this file, so an
+// import the other way would be circular. Server-side validation of the
+// actual enum values happens in the token route, not here.
+export interface PlannerIntent {
+  requestedComponents?: string[];
+  transportModes?: string[];
+  fromCity?: string;
+  toCity?: string;
+}
+
 // Click IDs / UTM values are short tokens; landingPage/referrer are URLs.
 // Caps guard against a forged oversized payload — this is client-controlled input.
 const shortField = z.string().trim().max(255).optional();
@@ -399,8 +413,18 @@ function writeWaTokenCache(cache: WhatsAppTokenCache): void {
 // equal attribution snapshots always fingerprint identically regardless of
 // key insertion order — this is what lets us detect "attribution unchanged
 // since the cached token was minted" without re-fetching.
-function fingerprint(attribution: AttributionData): string {
-  return JSON.stringify(ATTRIBUTION_FIELDS.map((field) => attribution[field] ?? ""));
+function fingerprint(attribution: AttributionData, intent?: PlannerIntent): string {
+  return JSON.stringify([
+    ATTRIBUTION_FIELDS.map((field) => attribution[field] ?? ""),
+    intent
+      ? [
+          (intent.requestedComponents ?? []).join(","),
+          (intent.transportModes ?? []).join(","),
+          intent.fromCity ?? "",
+          intent.toCity ?? "",
+        ]
+      : null,
+  ]);
 }
 
 /**
@@ -423,24 +447,49 @@ function fingerprint(attribution: AttributionData): string {
  * consent already happened to be granted, otherwise the pre-consent buffer
  * (see bufferAttributionRaw() above, which already runs unconditionally) —
  * rather than requiring the cookie specifically.
+ *
+ * `intent` (optional): Trip Planner structured intent (Plan Your Kashmir
+ * Trip) — passed through to the token route and stored alongside attribution
+ * on the same WhatsAppAttributionToken row, so staff resolving the reference
+ * later see both. Included in the fingerprint, so changing the planner's
+ * selected chips mints a fresh token even when the underlying attribution
+ * snapshot hasn't changed. Every other caller (AttributionCapture's
+ * unconditional call) omits it and behaves exactly as before.
  */
-export function ensureWhatsAppAttributionToken(): void {
+function hasIntentData(intent: PlannerIntent | undefined): boolean {
+  if (!intent) return false;
+  return Boolean(
+    intent.requestedComponents?.length ||
+    intent.transportModes?.length ||
+    intent.fromCity ||
+    intent.toCity,
+  );
+}
+
+export function ensureWhatsAppAttributionToken(intent?: PlannerIntent): void {
   if (typeof window === "undefined") return;
   if (isInternalRoute(window.location.pathname)) return;
 
-  const attribution = readAttributionClient() ?? readBuffer()?.data;
-  if (!attribution || !ATTRIBUTION_FIELDS.some((field) => attribution[field])) return;
+  const rawAttribution = readAttributionClient() ?? readBuffer()?.data;
+  const hasRealAttribution = !!rawAttribution && ATTRIBUTION_FIELDS.some((f) => rawAttribution[f]);
+  // Proceed if there's marketing attribution to bridge OR planner intent to
+  // preserve — an organic/direct visitor using the Trip Planner still has
+  // intent worth carrying to sales, even with nothing to attribute.
+  if (!hasRealAttribution && !hasIntentData(intent)) return;
+  const attribution: AttributionData = rawAttribution ?? {};
 
-  const fp = fingerprint(attribution);
+  const fp = fingerprint(attribution, intent);
   const cached = readWaTokenCache();
   if (cached?.forData === fp) return; // already have a token for this exact snapshot
 
   fetch("/api/attribution/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(attribution),
+    body: JSON.stringify(intent ? { ...attribution, intent } : attribution),
   })
-    .then((res) => (res.ok ? (res.json() as Promise<{ token: string | null; prefix?: string }>) : null))
+    .then((res) =>
+      res.ok ? (res.json() as Promise<{ token: string | null; prefix?: string }>) : null,
+    )
     .then((json) => {
       if (json?.token && json.prefix) {
         writeWaTokenCache({ token: json.token, prefix: json.prefix, forData: fp });

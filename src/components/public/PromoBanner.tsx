@@ -44,8 +44,17 @@ export function PromoBannerCard({
   return (
     // Floating card: 32px radius on all corners, image clipped by overflow-hidden,
     // subtle glass edge (inset white ring) and the site's soft `shadow-glass`.
-    <div className="relative overflow-hidden rounded-4xl bg-brand-dark shadow-glass ring-1 ring-inset ring-white/10">
-      {/* Background image — absolutely positioned so text overlays it. */}
+    // Height follows the image's own aspect ratio (width=0/height=0 + CSS
+    // width:100%/height:auto is next/image's documented pattern for an
+    // intrinsic-ratio responsive image) instead of a fixed min-height box
+    // that cropped portrait/odd-ratio mobile images via object-cover.
+    <div
+      className={
+        stacked
+          ? "relative min-h-[160px] overflow-hidden rounded-4xl bg-brand-dark shadow-glass ring-1 ring-inset ring-white/10"
+          : "relative min-h-[200px] overflow-hidden rounded-4xl bg-brand-dark shadow-glass ring-1 ring-inset ring-white/10 sm:min-h-[260px]"
+      }
+    >
       {(desktopSrc || mobileSrc) &&
         (stacked ? (
           // Preview mobile: show the mobile image explicitly (media queries can't
@@ -53,9 +62,11 @@ export function PromoBannerCard({
           <Image
             src={mobileSrc ?? desktopSrc!}
             alt={b.title}
-            fill
+            width={0}
+            height={0}
             sizes="100vw"
-            className="object-cover object-center"
+            className="block w-full"
+            style={{ height: "auto" }}
           />
         ) : (
           <>
@@ -63,22 +74,28 @@ export function PromoBannerCard({
               <Image
                 src={mobileSrc}
                 alt={b.title}
-                fill
+                width={0}
+                height={0}
                 sizes="100vw"
-                className="object-cover object-center sm:hidden"
+                className="block w-full sm:hidden"
+                style={{ height: "auto" }}
               />
             )}
             <Image
               src={desktopSrc ?? mobileSrc!}
               alt={b.title}
-              fill
+              width={0}
+              height={0}
               sizes="100vw"
-              className={`object-cover object-center ${mobileSrc ? "hidden sm:block" : ""}`}
+              className={`block w-full ${mobileSrc ? "hidden sm:block" : ""}`}
+              style={{ height: "auto" }}
             />
           </>
         ))}
 
-      {/* Scrim for legibility — bottom-up on mobile, left-to-right on desktop. */}
+      {/* Scrim for legibility — bottom-up on mobile, left-to-right on desktop.
+          Absolutely positioned over the image now that the image itself sets
+          the card's height. */}
       <div
         className={
           stacked
@@ -87,12 +104,14 @@ export function PromoBannerCard({
         }
       />
 
-      {/* Overlaid content — padding matches the CTA card (p-10). */}
+      {/* Overlaid content — padding matches the CTA card (p-10). Top-aligned
+          on every breakpoint, since the card's height now varies with each
+          image's real aspect ratio. */}
       <div
         className={
           stacked
-            ? "relative flex min-h-[200px] flex-col justify-center gap-2.5 p-6"
-            : "relative flex min-h-[240px] flex-col justify-center gap-3 p-8 sm:min-h-[300px] sm:p-10 lg:p-12"
+            ? "absolute inset-0 flex flex-col justify-start gap-2.5 p-6"
+            : "absolute inset-0 flex flex-col justify-start gap-3 p-8 sm:p-10 lg:p-12"
         }
       >
         <h3
