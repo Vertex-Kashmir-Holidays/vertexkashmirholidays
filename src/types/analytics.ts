@@ -26,11 +26,13 @@ export type WhatsAppSource =
   | "promo_banner"
   | "strip_banner"
   | "tour_collection_hero"
+  | "listing_hero"
   | "tour_package_card"
   | "offer_hero"
   | "offer_package_card"
   | "offer_mobile_bar"
-  | "offer_closing_cta";
+  | "offer_closing_cta"
+  | "destinations_cta";
 
 // Trip Planner structured-intent params, reused by lead_submit/whatsapp_click/
 // trip_request_start below — kept as plain string[]/string here (not imported
