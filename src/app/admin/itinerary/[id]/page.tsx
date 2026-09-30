@@ -31,6 +31,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         select: {
           id: true,
           name: true,
+          phone: true,
           assignedToId: true,
           status: true,
           locked: true,
@@ -47,6 +48,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
           servicesLocked: true,
           razorpayOrderId: true,
           guestName: true,
+          guestPhone: true,
           travellers: true,
           travelDate: true,
           travelEndDate: true,
@@ -73,6 +75,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
     const bk = record.booking;
     const withFacts = applyLeadFactsToItinerary(data, {
       name: bk.guestName,
+      phone: bk.guestPhone,
       tourTitle: null,
       adults: bk.travellers,
       children: null,
@@ -85,7 +88,21 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
     };
   }
 
+  // Lead-linked itineraries created before the customer phone existed: show
+  // the lead's phone until the next lead sync writes it into the data.
+  if (record.lead && !data.customerPhone) {
+    data = { ...data, customerPhone: record.lead.phone };
+  }
+
   const canSave = (await can(role, "itinerary", "edit")) && access.canEdit;
+  // Only the copy's own author (who can edit and delete) is held to "update it
+  // or it's deleted" — an admin just viewing someone's fresh copy never deletes it.
+  const ownsCopy =
+    canSave &&
+    !record.leadId &&
+    !record.bookingId &&
+    record.ownerId === session!.user.id &&
+    (await can(role, "itinerary", "delete"));
 
   const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
   const { address: companyAddress } = await resolvePrimaryOffice(settings);
@@ -170,7 +187,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         initialTitle={record.title}
         initialStatus={record.status}
         canSave={canSave}
-        autoTitle={!record.leadId && !record.bookingId}
+        ownsCopy={ownsCopy}
         leadSync={leadSync}
         lockCost={!!record.bookingId && !!record.booking?.razorpayOrderId}
         isBookingLinked={!!record.bookingId}

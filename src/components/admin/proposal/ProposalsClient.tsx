@@ -4,7 +4,17 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, Copy, FileText } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Trash2,
+  Pencil,
+  Eye,
+  Copy,
+  FileText,
+  Phone,
+  IndianRupee,
+} from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { useServerPagedList } from "@/components/admin/ui/useServerPagedList";
@@ -24,10 +34,18 @@ interface Props {
   initialTotal: number;
   showOwner: boolean;
   canCreate: boolean;
+  canEdit: boolean;
   canDelete: boolean;
 }
 
-export function ProposalsClient({ initialItems, initialTotal, showOwner, canCreate, canDelete }: Props) {
+export function ProposalsClient({
+  initialItems,
+  initialTotal,
+  showOwner,
+  canCreate,
+  canEdit,
+  canDelete,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -62,15 +80,16 @@ export function ProposalsClient({ initialItems, initialTotal, showOwner, canCrea
   function duplicate(item: ProposalSummary) {
     startTransition(async () => {
       try {
-        const full = await fetch(`/api/proposals/${item.id}`).then((r) => r.json());
+        // Created as "<title> - copy"; the editor makes the user rename it
+        // (customer name/phone) or deletes it on leave — see UntouchedCopyGuard.
         const res = await fetch("/api/proposals", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "DRAFT", data: full.data, allowDuplicate: true }),
+          body: JSON.stringify({ copyOf: item.id }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
-        toast.success("Proposal duplicated.");
+        toast.success("Proposal copied — update the customer name or phone, then save.");
         router.push(`/admin/proposals/${json.id}`);
       } catch {
         toast.error("Failed to duplicate.");
@@ -104,7 +123,7 @@ export function ProposalsClient({ initialItems, initialTotal, showOwner, canCrea
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title…"
+              placeholder="Search by title, customer name or phone…"
               className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
             />
           </div>
@@ -151,6 +170,32 @@ export function ProposalsClient({ initialItems, initialTotal, showOwner, canCrea
                     </p>
                     <Badge variant={STATUS_VARIANT[item.status]}>{item.status}</Badge>
                   </div>
+                  {(item.customerName || item.customerPhone || item.packageCosts?.length) && (
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px] font-medium text-foreground/85">
+                      {item.customerName && <span>{item.customerName}</span>}
+                      {item.customerPhone && (
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Phone className="h-3.5 w-3.5" />
+                          {item.customerPhone}
+                        </span>
+                      )}
+                      {item.packageCosts && item.packageCosts.length > 0 && (
+                        <span className="inline-flex flex-wrap items-center gap-x-2 text-foreground">
+                          <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
+                          {item.packageCosts.length === 1 ? (
+                            <span className="font-semibold">{item.packageCosts[0].price}</span>
+                          ) : (
+                            item.packageCosts.map((c) => (
+                              <span key={c.label} className="whitespace-nowrap">
+                                <span className="text-muted-foreground">{c.label}:</span>{" "}
+                                <span className="font-semibold">{c.price}</span>
+                              </span>
+                            ))
+                          )}
+                        </span>
+                      )}
+                    </p>
+                  )}
                   <p className="mt-1 text-[12px] text-muted-foreground">
                     {showOwner && item.ownerName ? `${item.ownerName} · ` : ""}
                     Updated{" "}
@@ -165,14 +210,25 @@ export function ProposalsClient({ initialItems, initialTotal, showOwner, canCrea
                 </Link>
 
                 <div className="flex shrink-0 items-center gap-1.5">
+                  {item.customerPhone && (
+                    <a
+                      href={`tel:${item.customerPhone.replace(/[^\d+]/g, "")}`}
+                      className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
+                      aria-label={`Call ${item.customerName || "customer"}`}
+                      title={`Call ${item.customerPhone}`}
+                    >
+                      <Phone className="h-4 w-4" />
+                    </a>
+                  )}
                   <Link
                     href={`/admin/proposals/${item.id}`}
                     className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
-                    aria-label="Edit"
+                    aria-label={canEdit ? "Edit" : "View"}
                   >
-                    <Pencil className="h-4 w-4" />
+                    {canEdit ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Link>
-                  {canCreate && (
+                  {/* A copy must be edited and saved, or it's deleted — so all three. */}
+                  {canCreate && canEdit && canDelete && (
                     <button
                       onClick={() => duplicate(item)}
                       disabled={isPending}

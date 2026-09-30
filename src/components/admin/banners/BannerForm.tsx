@@ -3,13 +3,21 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Monitor, Smartphone } from "lucide-react";
+import { Loader2, Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BannerStripView } from "@/components/public/BannerStrip";
 import { PromoBannerCard } from "@/components/public/PromoBanner";
 import { ImageField } from "@/components/admin/pages/ImageField";
+import { isWhatsAppCtaUrl, getWhatsAppCtaMessage, buildWhatsAppCtaUrl } from "@/lib/whatsappCtaUrl";
+import {
+  BANNER_ICONS,
+  MAX_BANNER_FEATURES,
+  parseBannerFeatures,
+  type BannerFeature,
+} from "@/components/public/bannerIcons";
 
 type BannerType = "STRIP" | "PROMO";
+type BannerLayout = "OVERLAY" | "SPLIT";
 
 export interface BannerFormData {
   id: string;
@@ -20,6 +28,11 @@ export interface BannerFormData {
   ctaUrl: string | null;
   imageUrl: string | null;
   imageMobileUrl: string | null;
+  layout: BannerLayout;
+  contentBackground: boolean;
+  kicker: string | null;
+  subtitle: string | null;
+  features: string; // JSON BannerFeature[]
   pages: string; // JSON string array
   isActive: boolean;
   sortOrder: number;
@@ -48,7 +61,125 @@ const PAGE_OPTIONS: { key: string; label: string }[] = [
     key: "trip-planner-after-why",
     label: "Plan Your Trip — full banner after “Why Plan With Vertex”",
   },
+  {
+    key: "tour-collection-after-6",
+    label: "Tour Packages pages — banner after the first 6 tour cards",
+  },
+  {
+    key: "tour-collection-after-all",
+    label: "Tour Packages pages — banner after all tour cards",
+  },
+  {
+    key: "offer-after-plans",
+    label: "Offer pages — banner after “Plans & Prices”",
+  },
+  {
+    key: "offer-after-itinerary",
+    label: "Offer pages — banner after the day-by-day itinerary",
+  },
 ];
+
+// Example content for the three Plan Your Trip promo slots — each slot has its
+// own travel mode (train before the packages, flights after "How Pricing
+// Works", bus after "Why Plan With Vertex"). When one of these slots is ticked
+// under "Show on pages", empty fields preview as its example (never saved) and
+// "Fill with example" loads it into the empty fields. Each example covers both
+// promo layouts (overlay uses title/body/CTA; split adds kicker/subtitle/features).
+interface BannerExample {
+  label: string;
+  kicker: string;
+  title: string;
+  subtitle: string;
+  body: string;
+  features: BannerFeature[];
+  ctaLabel: string;
+  ctaMessage: string;
+  imageUrl: string;
+  imageMobileUrl: string;
+}
+const TRIP_PLANNER_EXAMPLES: Record<string, BannerExample> = {
+  // Offer pages (/offers/…) — transport around the fixed-date trip.
+  "offer-after-plans": {
+    label: "getting to Kashmir",
+    kicker: "Getting to Kashmir",
+    title: "Flights & trains to your offer dates",
+    subtitle: "Arranged with your package",
+    body: "Tell us your city — we compare flights to Srinagar and trains to Jammu/Katra for your travel dates and time your airport pickup to your arrival.",
+    features: [
+      { icon: "plane", title: "Flights", text: "Direct & connecting to Srinagar" },
+      { icon: "train", title: "Trains", text: "To Jammu, Katra & Srinagar" },
+      { icon: "car", title: "Pickup", text: "Timed to your arrival" },
+    ],
+    ctaLabel: "Get Travel Options",
+    ctaMessage: "Hi! I'd like flight/train options to Kashmir for my offer dates.",
+    imageUrl: "/hero/srinagar-lg.webp",
+    imageMobileUrl: "/hero/srinagar.webp",
+  },
+  "offer-after-itinerary": {
+    label: "local union cabs",
+    kicker: "Local transport",
+    title: "Pahalgam & Sonamarg sightseeing by union cab",
+    subtitle: "Booked for you, before you arrive",
+    body: "Aru, Betaab Valley and Chandanwari in Pahalgam, and Thajiwas Glacier / Zero Point in Sonamarg, are reached by local union taxis. Add them to your plan and we'll arrange them.",
+    features: [
+      { icon: "car", title: "ABC Union", text: "Aru, Betaab & Chandanwari" },
+      { icon: "mountain", title: "Sonamarg Union", text: "Thajiwas & Zero Point" },
+      { icon: "calendar", title: "Pre-booked", text: "No waiting on the day" },
+    ],
+    ctaLabel: "Add Union Cabs",
+    ctaMessage: "Hi! I'd like to add Pahalgam/Sonamarg union cabs to my offer package.",
+    imageUrl: "/hero/pahalgam-lg.webp",
+    imageMobileUrl: "/hero/pahalgam.webp",
+  },
+  "trip-planner-before-tours": {
+    label: "train travel",
+    kicker: "Reach Kashmir by rail",
+    title: "Travelling by train?",
+    subtitle: "We'll sort out your tickets",
+    body: "Vande Bharat and express trains to Katra and Srinagar — we help you pick the right train and confirm your seats along with your tour.",
+    features: [
+      { icon: "train", title: "Right train", text: "Best connections to Katra & Srinagar" },
+      { icon: "ticket", title: "Seat booking", text: "Confirmed reservations" },
+      { icon: "car", title: "Station pickup", text: "Cab waiting on arrival" },
+    ],
+    ctaLabel: "Get Train Assistance",
+    ctaMessage: "Hi! I'd like help booking train tickets to Kashmir.",
+    imageUrl: "/hero/pahalgam-lg.webp",
+    imageMobileUrl: "/hero/pahalgam.webp",
+  },
+  "trip-planner-after-pricing": {
+    label: "flights",
+    kicker: "Fly into Srinagar",
+    title: "Need help getting to Kashmir?",
+    subtitle: "Flights arranged with your tour",
+    body: "Direct and connecting flights to Srinagar from major cities — we compare routes and fares and time your airport pickup to your landing.",
+    features: [
+      { icon: "plane", title: "Best fares", text: "Compared across airlines" },
+      { icon: "calendar", title: "Right timing", text: "Matched to your itinerary" },
+      { icon: "car", title: "Airport pickup", text: "Waiting when you land" },
+    ],
+    ctaLabel: "Get Flight Assistance",
+    ctaMessage: "Hi! I'd like help booking flights to Srinagar for my Kashmir trip.",
+    imageUrl: "/hero/srinagar-lg.webp",
+    imageMobileUrl: "/hero/srinagar.webp",
+  },
+  "trip-planner-after-why": {
+    label: "bus travel",
+    kicker: "Road trips made easy",
+    title: "Prefer bus travel?",
+    subtitle: "Comfortable seats, trusted operators",
+    body: "Volvo and sleeper buses to Jammu and Srinagar — we suggest reliable operators and book seats that fit your plan.",
+    features: [
+      { icon: "bus", title: "Trusted operators", text: "Volvo & sleeper options" },
+      { icon: "ticket", title: "Seat booking", text: "Confirmed seats" },
+      { icon: "support", title: "On-trip support", text: "Help along the way" },
+    ],
+    ctaLabel: "Get Bus Assistance",
+    ctaMessage: "Hi! I'd like help booking a bus to Kashmir.",
+    imageUrl: "/hero/sonamarg-lg.webp",
+    imageMobileUrl: "/hero/sonamarg.webp",
+  },
+};
 
 function parsePages(raw: string): string[] {
   try {
@@ -83,10 +214,56 @@ export function BannerForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [ctaLabel, setCtaLabel] = useState(initial?.ctaLabel ?? "");
-  const [ctaUrl, setCtaUrl] = useState(initial?.ctaUrl ?? "");
+  const initialIsWhatsApp = isWhatsAppCtaUrl(initial?.ctaUrl ?? null);
+  const [ctaType, setCtaType] = useState<"LINK" | "WHATSAPP">(
+    initialIsWhatsApp ? "WHATSAPP" : "LINK",
+  );
+  const [ctaUrl, setCtaUrl] = useState(initialIsWhatsApp ? "" : (initial?.ctaUrl ?? ""));
+  const [ctaMessage, setCtaMessage] = useState(
+    initialIsWhatsApp ? getWhatsAppCtaMessage(initial!.ctaUrl!) : "",
+  );
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
   const [imageMobileUrl, setImageMobileUrl] = useState(initial?.imageMobileUrl ?? "");
+  // PROMO presentation — SPLIT adds kicker/subtitle/features in a white or
+  // navy content panel beside the image (see SplitPromoCard).
+  const [layout, setLayout] = useState<BannerLayout>(initial?.layout ?? "OVERLAY");
+  const [contentBackground, setContentBackground] = useState(initial?.contentBackground ?? true);
+  const [kicker, setKicker] = useState(initial?.kicker ?? "");
+  const [subtitle, setSubtitle] = useState(initial?.subtitle ?? "");
+  const [features, setFeatures] = useState<BannerFeature[]>(
+    parseBannerFeatures(initial?.features ?? "[]"),
+  );
+  const isSplit = type === "PROMO" && layout === "SPLIT";
+
+  // The example for the Plan Your Trip slot being targeted (PROMO only), if any.
   const [pages, setPages] = useState<string[]>(initial ? parsePages(initial.pages) : ["*"]);
+  const exampleKey = type === "PROMO" ? pages.find((p) => p in TRIP_PLANNER_EXAMPLES) : undefined;
+  const example = exampleKey ? TRIP_PLANNER_EXAMPLES[exampleKey] : null;
+
+  // Loads the slot's example into every EMPTY field — never overwrites
+  // anything already typed.
+  function fillWithExample() {
+    if (!example) return;
+    if (!title.trim()) setTitle(example.title);
+    if (!body.trim()) setBody(example.body);
+    if (!ctaLabel.trim()) setCtaLabel(example.ctaLabel);
+    if (ctaType === "WHATSAPP" ? !ctaMessage.trim() : !ctaUrl.trim()) {
+      setCtaType("WHATSAPP");
+      setCtaMessage(example.ctaMessage);
+    }
+    if (!imageUrl.trim()) setImageUrl(example.imageUrl);
+    if (!imageMobileUrl.trim()) setImageMobileUrl(example.imageMobileUrl);
+    if (isSplit) {
+      if (!kicker.trim()) setKicker(example.kicker);
+      if (!subtitle.trim()) setSubtitle(example.subtitle);
+      if (!features.some((f) => f.title.trim())) setFeatures(example.features);
+    }
+    toast.success("Example content added to the empty fields — edit it to suit.");
+  }
+
+  function updateFeature(i: number, patch: Partial<BannerFeature>) {
+    setFeatures((prev) => prev.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+  }
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [sortOrder, setSortOrder] = useState(String(initial?.sortOrder ?? 0));
   const [startsAt, setStartsAt] = useState(toDateInput(initial?.startsAt ?? null));
@@ -97,6 +274,12 @@ export function BannerForm({
     setPages((prev) => (prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key]));
   }
 
+  // The composed value actually stored in Banner.ctaUrl — either a plain
+  // link, or "whatsapp:<message>" so the public renderer opens WhatsApp with
+  // a proper pre-filled message (see src/lib/whatsappCtaUrl.ts).
+  const composedCtaUrl =
+    ctaType === "WHATSAPP" ? buildWhatsAppCtaUrl(ctaMessage.trim()) : ctaUrl.trim();
+
   function submit() {
     if (!title.trim()) {
       toast.error("Title is required.");
@@ -106,15 +289,32 @@ export function BannerForm({
       toast.error("Select at least one page.");
       return;
     }
+    if (ctaType === "WHATSAPP" && ctaLabel.trim() && !ctaMessage.trim()) {
+      toast.error("Enter a WhatsApp message for the CTA.");
+      return;
+    }
 
     const payload = {
       type,
       title: title.trim(),
       body,
       ctaLabel,
-      ctaUrl,
+      ctaUrl: composedCtaUrl,
       imageUrl: type === "PROMO" ? imageUrl : "",
       imageMobileUrl: type === "PROMO" ? imageMobileUrl : "",
+      layout: type === "PROMO" ? layout : "OVERLAY",
+      contentBackground,
+      kicker: isSplit ? kicker : "",
+      subtitle: isSplit ? subtitle : "",
+      features: isSplit
+        ? features
+            .filter((f) => f.title.trim())
+            .map((f) => ({
+              icon: f.icon,
+              title: f.title.trim(),
+              text: f.text?.trim() || undefined,
+            }))
+        : [],
       pages,
       isActive,
       sortOrder: Number(sortOrder) || 0,
@@ -147,22 +347,37 @@ export function BannerForm({
   }
 
   // Live preview data — mirrors the public rendering, with graceful placeholders
-  // so the preview is never empty while the admin is still typing.
+  // so the preview is never empty while the admin is still typing. For a
+  // Plan Your Trip slot, empty fields preview as that slot's example instead.
   const previewStrip = {
     id: "preview",
     title: title.trim() || "Your announcement headline goes here",
     body: body.trim() || null,
     ctaLabel: ctaLabel.trim() || null,
-    ctaUrl: ctaUrl.trim() || "#",
+    ctaUrl: composedCtaUrl || "#",
   };
+  const filledFeatures = features.filter((f) => f.title.trim());
   const previewPromo = {
     id: "preview",
-    title: title.trim() || "Your promo headline",
-    body: body.trim() || "Supporting copy that describes the offer in a sentence or two.",
-    ctaLabel: ctaLabel.trim() || null,
-    ctaUrl: ctaUrl.trim() || "#",
-    imageUrl: type === "PROMO" ? imageUrl.trim() || null : null,
-    imageMobileUrl: type === "PROMO" ? imageMobileUrl.trim() || null : null,
+    title: title.trim() || example?.title || "Your promo headline",
+    body:
+      body.trim() ||
+      example?.body ||
+      "Supporting copy that describes the offer in a sentence or two.",
+    ctaLabel: ctaLabel.trim() || example?.ctaLabel || null,
+    ctaUrl: composedCtaUrl || "#",
+    imageUrl: type === "PROMO" ? imageUrl.trim() || example?.imageUrl || null : null,
+    // A typed desktop image with no mobile image falls back to the desktop
+    // one (as on the site), rather than to the example's mobile image.
+    imageMobileUrl:
+      type === "PROMO"
+        ? imageMobileUrl.trim() || (imageUrl.trim() ? null : example?.imageMobileUrl || null)
+        : null,
+    layout,
+    contentBackground,
+    kicker: kicker.trim() || example?.kicker || null,
+    subtitle: subtitle.trim() || example?.subtitle || null,
+    features: filledFeatures.length ? filledFeatures : (example?.features ?? []),
   };
 
   return (
@@ -196,6 +411,101 @@ export function BannerForm({
           </div>
         </div>
 
+        {/* PROMO layout */}
+        {type === "PROMO" && (
+          <div className="space-y-2">
+            <label className={labelClass}>Promo layout</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["OVERLAY", "Image overlay", "Text over a full-width image"],
+                  ["SPLIT", "Split content", "Content panel + image, with features"],
+                ] as const
+              ).map(([value, name, hint]) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={!canEdit}
+                  aria-pressed={layout === value}
+                  onClick={() => setLayout(value)}
+                  className={cn(
+                    "rounded-xl border px-4 py-2.5 text-left text-sm font-semibold transition disabled:opacity-60",
+                    layout === value
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <span className="block">{name}</span>
+                  <span className="mt-0.5 block text-[12px] font-normal opacity-80">{hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isSplit && (
+          <div className="space-y-2">
+            <label className={labelClass}>Content background</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  [true, "With background", "Gold in light mode · navy in dark mode"],
+                  [false, "No background", "Content sits directly on the image"],
+                ] as const
+              ).map(([value, name, hint]) => (
+                <button
+                  key={String(value)}
+                  type="button"
+                  disabled={!canEdit}
+                  aria-pressed={contentBackground === value}
+                  onClick={() => setContentBackground(value)}
+                  className={cn(
+                    "rounded-xl border px-4 py-2.5 text-left text-sm font-semibold transition disabled:opacity-60",
+                    contentBackground === value
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {value ? (
+                      <span className="flex h-5 w-5 overflow-hidden rounded-full border border-border">
+                        <span className="h-full w-1/2 bg-[#F8F1DD]" />
+                        <span className="h-full w-1/2 bg-[#0B1F3A]" />
+                      </span>
+                    ) : (
+                      <span className="h-5 w-5 rounded-full border border-dashed border-muted-foreground/60" />
+                    )}
+                    {name}
+                  </span>
+                  <span className="mt-0.5 block text-[12px] font-normal opacity-80">{hint}</span>
+                </button>
+              ))}
+            </div>
+            <p className={hintClass}>
+              {contentBackground
+                ? "The panel runs the full banner height in the site's background colour and fades into the image with a gradient — it switches automatically with light/dark mode."
+                : "No panel or gradient — pick an image with a clear, darker area on the left so the white text stays readable."}
+            </p>
+          </div>
+        )}
+
+        {isSplit && (
+          <div className="space-y-1.5">
+            <label htmlFor="bf-kicker" className={labelClass}>
+              Kicker <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <input
+              id="bf-kicker"
+              className={inputClass}
+              value={kicker}
+              onChange={(e) => setKicker(e.target.value)}
+              disabled={!canEdit}
+              maxLength={120}
+              placeholder="Travel to Kashmir, your way"
+            />
+          </div>
+        )}
+
         {/* Title */}
         <div className="space-y-1.5">
           <label htmlFor="bf-title" className={labelClass}>
@@ -215,10 +525,28 @@ export function BannerForm({
           </p>
         </div>
 
+        {isSplit && (
+          <div className="space-y-1.5">
+            <label htmlFor="bf-subtitle" className={labelClass}>
+              Subtitle <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <input
+              id="bf-subtitle"
+              className={inputClass}
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              disabled={!canEdit}
+              maxLength={200}
+              placeholder="We Help You Plan It All"
+            />
+          </div>
+        )}
+
         {/* Body */}
         <div className="space-y-1.5">
           <label htmlFor="bf-body" className={labelClass}>
-            Body text
+            {isSplit ? "Description" : "Body text"}{" "}
+            <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <textarea
             id="bf-body"
@@ -234,8 +562,87 @@ export function BannerForm({
           />
         </div>
 
+        {/* Features — SPLIT only: icon + heading + optional short line */}
+        {isSplit && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className={labelClass}>
+                Features{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional, up to {MAX_BANNER_FEATURES})
+                </span>
+              </label>
+              {canEdit && features.length < MAX_BANNER_FEATURES && (
+                <button
+                  type="button"
+                  onClick={() => setFeatures((f) => [...f, { icon: "plane", title: "", text: "" }])}
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add feature
+                </button>
+              )}
+            </div>
+            {features.length === 0 ? (
+              <p className={hintClass}>
+                No features — e.g. Flights · Trains · Buses with a short line each.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {features.map((f, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-muted/40 p-3 sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center"
+                  >
+                    <select
+                      className={inputClass}
+                      value={f.icon}
+                      onChange={(e) => updateFeature(i, { icon: e.target.value })}
+                      disabled={!canEdit}
+                      aria-label={`Feature ${i + 1} icon`}
+                    >
+                      {Object.entries(BANNER_ICONS).map(([key, { label }]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className={inputClass}
+                      value={f.title}
+                      onChange={(e) => updateFeature(i, { title: e.target.value })}
+                      disabled={!canEdit}
+                      maxLength={40}
+                      placeholder="Heading — e.g. Flights"
+                      aria-label={`Feature ${i + 1} heading`}
+                    />
+                    <input
+                      className={inputClass}
+                      value={f.text ?? ""}
+                      onChange={(e) => updateFeature(i, { text: e.target.value })}
+                      disabled={!canEdit}
+                      maxLength={80}
+                      placeholder="Short line — e.g. Best routes & fares"
+                      aria-label={`Feature ${i + 1} text`}
+                    />
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => setFeatures((prev) => prev.filter((_, idx) => idx !== i))}
+                        aria-label={`Remove feature ${i + 1}`}
+                        className="grid h-9 w-9 place-items-center justify-self-end rounded-lg text-muted-foreground transition hover:bg-rose-500/10 hover:text-rose-500"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* CTA */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="bf-cta-label" className={labelClass}>
               CTA Label
@@ -249,19 +656,66 @@ export function BannerForm({
               placeholder="Book now"
             />
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor="bf-cta-url" className={labelClass}>
-              CTA URL
-            </label>
-            <input
-              id="bf-cta-url"
-              className={inputClass}
-              value={ctaUrl}
-              onChange={(e) => setCtaUrl(e.target.value)}
-              disabled={!canEdit}
-              placeholder="/tours"
-            />
+
+          <div className="space-y-2">
+            <label className={labelClass}>CTA opens</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["LINK", "WHATSAPP"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  disabled={!canEdit}
+                  aria-pressed={ctaType === t}
+                  onClick={() => setCtaType(t)}
+                  className={cn(
+                    "rounded-xl border px-4 py-2.5 text-left text-sm font-semibold transition disabled:opacity-60",
+                    ctaType === t
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <span className="block">{t === "LINK" ? "A page" : "WhatsApp"}</span>
+                  <span className="mt-0.5 block text-[12px] font-normal opacity-80">
+                    {t === "LINK" ? "Navigates to a URL" : "Opens chat with a pre-filled message"}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {ctaType === "LINK" ? (
+            <div className="space-y-1.5">
+              <label htmlFor="bf-cta-url" className={labelClass}>
+                CTA URL
+              </label>
+              <input
+                id="bf-cta-url"
+                className={inputClass}
+                value={ctaUrl}
+                onChange={(e) => setCtaUrl(e.target.value)}
+                disabled={!canEdit}
+                placeholder="/tours"
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <label htmlFor="bf-cta-message" className={labelClass}>
+                WhatsApp message
+              </label>
+              <textarea
+                id="bf-cta-message"
+                className={cn(inputClass, "min-h-[72px] resize-y")}
+                value={ctaMessage}
+                onChange={(e) => setCtaMessage(e.target.value)}
+                disabled={!canEdit}
+                placeholder="Hi Vertex Kashmir Holidays! I'd like help with train travel to Kashmir."
+              />
+              <p className={hintClass}>
+                Sent exactly as typed — the phone number and tracking reference are added
+                automatically, same as every other WhatsApp button on the site.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Images — PROMO only. Paste a URL, pick from the gallery, or upload.
@@ -277,7 +731,11 @@ export function BannerForm({
               ) : (
                 <input className={inputClass} value={imageUrl} readOnly disabled />
               )}
-              <p className={hintClass}>Full-bleed background. Wide landscape (≈21:9) works best.</p>
+              <p className={hintClass}>
+                {isSplit
+                  ? "Fills the banner behind the content panel, aligned right — wide art (≈3:1) with the subject on the right works best."
+                  : "Full-bleed background. Wide landscape (≈21:9) works best."}
+              </p>
             </div>
             <div className="space-y-1.5">
               <label className={labelClass}>Mobile image</label>
@@ -320,6 +778,23 @@ export function BannerForm({
             ))}
           </div>
         </div>
+
+        {/* Example content — only for promo slots that have one (Plan Your Trip, offer pages) */}
+        {example && canEdit && (
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[12px] text-foreground/80">
+              This slot is for <strong>{example.label}</strong>. Empty fields show example content
+              in the preview (not saved) — load it into the form to start from it.
+            </p>
+            <button
+              type="button"
+              onClick={fillWithExample}
+              className="shrink-0 rounded-lg border border-primary px-3 py-1.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-primary-foreground"
+            >
+              Fill with example
+            </button>
+          </div>
+        )}
 
         {/* Sort order + Active */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -475,7 +950,10 @@ export function BannerForm({
             )}
           </div>
 
-          <p className={hintClass}>Updates live as you edit. Mirrors the public site.</p>
+          <p className={hintClass}>
+            Updates live as you edit. Mirrors the public site.
+            {example && " Empty fields show example content here only — it isn't saved."}
+          </p>
         </div>
       </aside>
     </div>

@@ -155,11 +155,22 @@ export async function POST(req: NextRequest) {
       duration: true,
       minPersons: true,
       published: true,
+      formMode: true,
     },
   });
 
   if (!tour || !tour.published) {
     return NextResponse.json({ error: "Tour not found" }, { status: 404 });
+  }
+
+  // Inquiry-only tours (incl. every tour with package options) are never sold
+  // online — Sales quotes the final price. Authoritative server-side block;
+  // the checkout page redirects too, but a direct POST must never get through.
+  if (tour.formMode === "INQUIRY_ONLY") {
+    return NextResponse.json(
+      { error: "This tour isn't available for online booking. Please send an enquiry instead." },
+      { status: 422 },
+    );
   }
 
   if (travellers < tour.minPersons) {

@@ -23,6 +23,7 @@ import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
+import { publishedPackageOptions } from "@/lib/tours/content";
 import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
@@ -68,6 +69,8 @@ export async function GET(req: NextRequest) {
   // is a substring `contains` match, cheap at this table's row count rather
   // than a relational filter.
   const requestedComponent = searchParams.get("requestedComponent")?.trim();
+  // Occasion Offer filter: an offer id, or "ANY" for leads from any offer.
+  const offer = searchParams.get("offer")?.trim();
   const search = searchParams.get("search")?.trim() ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const take = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "30")));
@@ -87,6 +90,9 @@ export async function GET(req: NextRequest) {
   }
   if (requestedComponent && requestedComponent !== "ALL") {
     where.requestedComponents = { contains: `"${requestedComponent}"` };
+  }
+  if (offer && offer !== "ALL") {
+    where.occasionOfferId = offer === "ANY" ? { not: null } : offer;
   }
   if (search) {
     where.OR = [
@@ -114,6 +120,8 @@ export async function GET(req: NextRequest) {
         source: true,
         sourcePage: true,
         contactChannel: true,
+        packageName: true,
+        occasionOffer: { select: { id: true, name: true } },
         requestedComponents: true,
         transportModes: true,
         fromCity: true,
@@ -186,6 +194,8 @@ function composeNotes(
         placement?: string;
         requestedComponents?: string[];
         transportModes?: string[];
+        packageName?: string;
+        offerName?: string;
       }
     | undefined,
 ): string | undefined {
@@ -225,7 +235,9 @@ function composeNotes(
     if (context?.placement)
       parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
   }
+  if (context?.offerName) parts.push(`🎉 Offer: ${context.offerName}`);
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
+  if (context?.packageName) parts.push(`Package: ${context.packageName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
   if (message) parts.push(message);
   return parts.length ? parts.join("\n") : undefined;
@@ -357,6 +369,38 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // The tour the enquiry was made from (tour page sidebar, package cards,
+  // tour-page flight quote…). Linked only when it's a real, published tour —
+  // an unknown/forged id is silently ignored, never a failed enquiry. The
+  // package name is kept only if it matches one of that tour's published
+  // options, so Lead.packageName is always a real package.
+  const leadTour = context?.tourId
+    ? await prisma.tour.findFirst({
+        where: { id: context.tourId, published: true },
+        select: { id: true, packageOptions: true },
+      })
+    : null;
+  // Occasion Offer page — same rule: only a real, published offer is linked,
+  // and the tier name is kept only if it's one of that offer's published tiers
+  // ("Not sure" and anything forged are dropped).
+  const leadOffer = context?.offerId
+    ? await prisma.occasionOffer.findFirst({
+        where: { id: context.offerId, published: true },
+        select: {
+          id: true,
+          name: true,
+          crmTourId: true,
+          packages: { where: { published: true }, select: { name: true } },
+        },
+      })
+    : null;
+  const packageName = !context?.packageName
+    ? undefined
+    : leadTour
+      ? publishedPackageOptions(leadTour.packageOptions).find((o) => o.name === context.packageName)
+          ?.name
+      : leadOffer?.packages.find((p) => p.name === context.packageName)?.name;
+
   const lead = await prisma.lead.create({
     data: {
       // name is sanitized (control chars stripped, trimmed) and phone is E.164,
@@ -369,7 +413,15 @@ export async function POST(req: NextRequest) {
       adults: effectiveTravellers ?? 1,
       startDate: effectiveDate ? new Date(effectiveDate) : undefined,
       endDate: effectiveReturnDate ? new Date(effectiveReturnDate) : undefined,
-      notes: composeNotes(message, context),
+      // An offer lead is also tagged with the offer's hidden CRM tour.
+      tourId: leadTour?.id ?? leadOffer?.crmTourId ?? undefined,
+      occasionOfferId: leadOffer?.id,
+      packageName,
+      notes: composeNotes(
+        message,
+        // offerName from the DB, never the client-sent display copy.
+        context ? { ...context, packageName, offerName: leadOffer?.name } : undefined,
+      ),
       // Trip Planner structured intent — WHAT the customer wants, separate
       // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
       // when nothing was selected, so this stays indistinguishable from an

@@ -10,7 +10,8 @@ import { EditableField } from "../itinerary/EditableField";
 import { ItineraryIcon } from "../itinerary/icons";
 import { DEFAULT_PROPOSAL_DATA, DEFAULT_SINGLE_PROPOSAL_DATA } from "./default-data";
 import { downloadProposalPdf } from "@/lib/proposal/export-pdf";
-import { PROPOSAL_TITLE_PREFIX, buildDocumentTitle } from "@/lib/itinerary/documentTitle";
+import { buildDocumentTitle, isCopyTitle } from "@/lib/itinerary/documentTitle";
+import { UntouchedCopyGuard } from "../itinerary/UntouchedCopyGuard";
 import { keepDateLabelsInSlots } from "@/lib/itinerary/dayReorder";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
@@ -34,8 +35,12 @@ type ListKey = "pay";
 interface ProposalEditorProps {
   id?: string;
   initialData: ProposalData;
+  /** Saved title — shown until the first edit (a copy's is "… - copy"). */
+  initialTitle?: string;
   initialStatus: ProposalStatus;
   canSave?: boolean;
+  /** Current user authored this record and may edit + delete it — see UntouchedCopyGuard. */
+  ownsCopy?: boolean;
   companyAddress?: string;
   trustContent?: PdfTrustContent;
   socialLinks?: PdfSocialLinks;
@@ -45,8 +50,10 @@ interface ProposalEditorProps {
 export function ProposalEditor({
   id,
   initialData,
+  initialTitle,
   initialStatus,
   canSave = true,
+  ownsCopy = false,
   companyAddress,
   trustContent,
   socialLinks,
@@ -54,9 +61,10 @@ export function ProposalEditor({
 }: ProposalEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ProposalData>(initialData);
-  // Generated from the cover's customer name + duration; the API derives the
+  // "<customer> - <duration> - <phone>" from the cover; the API derives the
   // same string on save, so this is what the list will show.
-  const title = buildDocumentTitle(PROPOSAL_TITLE_PREFIX, data);
+  const title =
+    initialTitle && data === initialData ? initialTitle : buildDocumentTitle(data);
   const [status, setStatus] = useState<ProposalStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
@@ -249,6 +257,10 @@ export function ProposalEditor({
 
   /* ---------- actions ---------- */
   async function handleSave() {
+    if (!data.preparedFor.trim()) {
+      toast.error("Please enter the customer name (Prepared For).");
+      return;
+    }
     setSaving(true);
     try {
       const payload = { status, data };
@@ -318,8 +330,6 @@ export function ProposalEditor({
     <div className="pb-8">
       <Toolbar
         title={title}
-        onTitleChange={() => {}}
-        titleReadOnly
         status={status}
         onStatusChange={setStatus}
         docType={data.docType}
@@ -331,6 +341,13 @@ export function ProposalEditor({
         isExporting={isExporting}
         canSave={canSave}
       />
+      {id && initialTitle && (
+        <UntouchedCopyGuard
+          active={ownsCopy && isCopyTitle(initialTitle)}
+          deleteUrl={`${apiBasePath}/${id}`}
+          noun="proposal"
+        />
+      )}
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[920px] space-y-8">
@@ -353,6 +370,14 @@ export function ProposalEditor({
               <div>
                 <label className={fieldLabel}>Prepared For</label>
                 <EditableField value={data.preparedFor} onValueChange={(v) => updateField("preparedFor", v)} />
+              </div>
+              <div>
+                <label className={fieldLabel}>Customer Phone</label>
+                <EditableField
+                  value={data.customerPhone}
+                  onValueChange={(v) => updateField("customerPhone", v)}
+                  placeholder="+91 ..."
+                />
               </div>
               <div>
                 <label className={fieldLabel}>Travellers</label>

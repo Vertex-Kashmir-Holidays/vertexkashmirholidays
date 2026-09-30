@@ -30,6 +30,8 @@ interface RequestRow {
   createdById: string | null;
   createdAt: Date | string;
   b2bAgent: { id: string; name: string | null; agencyName: string | null; email: string } | null;
+  /** Total quoted on this request's itinerary ("" when none yet). */
+  quotedCost: string;
 }
 
 interface AgentOption {
@@ -261,8 +263,16 @@ export function B2bRequestsClient({ initialRequests, agents, initialAgentFilter 
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs font-semibold text-foreground whitespace-nowrap">
-                        {r.budget ? inr.format(r.budget) : "—"}
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        <p className="font-semibold text-foreground">
+                          {r.budget ? inr.format(r.budget) : "—"}
+                        </p>
+                        {r.quotedCost && (
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            Quoted:{" "}
+                            <span className="font-semibold text-primary">{r.quotedCost}</span>
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span

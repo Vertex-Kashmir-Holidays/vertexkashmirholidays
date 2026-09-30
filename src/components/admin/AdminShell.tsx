@@ -51,6 +51,7 @@ import {
   IndianRupee,
   Receipt,
   BarChart3,
+  PartyPopper,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -109,6 +110,7 @@ const PAGE_TITLES: Record<string, string> = {
   ...Object.fromEntries(MODULES.map((m) => [m.href, m.label])),
   "/admin/b2b-bookings": "B2B Bookings",
   "/admin/finance-overview": "Finance Overview",
+  "/admin/offers": "Occasion Offers",
 };
 
 // Sidebar section grouping — purely a display concern, layered on top of the
@@ -129,7 +131,15 @@ interface ExtraNavItem {
 }
 const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavItem[] }[] = [
   { label: null, keys: ["dashboard", "connect"] },
-  { label: "Catalog", keys: ["destinations", "packages", "activities", "campaigns"] },
+  {
+    label: "Catalog",
+    keys: ["destinations", "packages", "activities", "campaigns"],
+    extra: [
+      // Occasion Offer landing pages — tour merchandising, so gated by the
+      // Packages permission (same as Tour Collections), no RBAC module of its own.
+      { href: "/admin/offers", label: "Offers", Icon: PartyPopper, permKey: "packages" },
+    ],
+  },
   {
     label: "CRM",
     keys: ["leads", "itinerary", "proposals", "hotelSuppliers", "bookings", "users"],

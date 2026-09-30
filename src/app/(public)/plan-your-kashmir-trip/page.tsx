@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import type { Banner } from "@prisma/client";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
@@ -16,8 +15,8 @@ import { PackagesSection } from "@/components/home/PackagesSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TrustSection } from "@/components/common/TrustSection";
-import { PromoBanner, type PromoBannerData } from "@/components/public/PromoBanner";
-import { getBannersForPage } from "@/lib/banners";
+import { PromoBanner } from "@/components/public/PromoBanner";
+import { getBannersForPage, toPromoBannerData } from "@/lib/banners";
 import { getFaqsForPlacement } from "@/lib/faqs";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getPublicHotels } from "@/lib/hotelSuppliers/stats";
@@ -29,20 +28,6 @@ import { getPublicHeroStats } from "@/lib/publicHeroStats";
 // eligible for static rendering + periodic revalidation rather than forcing
 // a dynamic render on every request.
 export const revalidate = 300;
-
-// Banner and PromoBannerData already share every field name 1:1 — this just
-// narrows to the subset PromoBannerCard actually reads.
-function toPromoBannerData(banners: Banner[]): PromoBannerData[] {
-  return banners.map((b) => ({
-    id: b.id,
-    title: b.title,
-    body: b.body,
-    ctaLabel: b.ctaLabel,
-    ctaUrl: b.ctaUrl,
-    imageUrl: b.imageUrl,
-    imageMobileUrl: b.imageMobileUrl,
-  }));
-}
 
 // Keyword-aligned defaults (Google Ads: "kashmir packages" / "kashmir trip
 // package" / "kashmir tour" / "kashmir tour packages" / "kashmir tourism
@@ -223,7 +208,7 @@ export default async function PlanYourKashmirTripPage() {
       {/* Pricing-intent block ("kashmir tour package price") — explains how
         pricing works; the only figure shown is the real, live minimum
         priceFrom across the packages just rendered above, never invented. */}
-      <section className="mx-auto max-w-[1300px] px-4 pb-4 sm:px-6">
+      <section className="mx-auto max-w-[1300px] px-4 pb-4 pt-12 sm:px-6 sm:pt-16">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-soft sm:p-8">
           <h2 className="text-[18px] font-bold text-foreground">
             {content?.pricingTitle ?? DEFAULTS.pricingTitle}

@@ -38,48 +38,64 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
   // expected to return a handful of rows, so it still loads everything that
   // matches in one shot and skips client-side pagination entirely (see
   // LeadsClient's initialIpFilter handling).
-  const [leads, staffUsers, total, todayFollowUps, converted, canCreate, canEdit, canDelete] =
-    await Promise.all([
-      prisma.lead.findMany({
-        where: { ...scopeWhere, ...ipWhere },
-        orderBy: { updatedAt: "desc" },
-        take: ipFilter ? undefined : 10,
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          source: true,
-          sourcePage: true,
-          contactChannel: true,
-          requestedComponents: true,
-          transportModes: true,
-          fromCity: true,
-          toCity: true,
-          adults: true,
-          status: true,
-          startDate: true,
-          followUpAt: true,
-          updatedAt: true,
-          negotiatedAmount: true,
-          tokenAmount: true,
-          assignedToId: true,
-          assignedTo: { select: { id: true, name: true, email: true } },
-          createdAt: true,
-        },
-      }),
-      prisma.user.findMany({
-        where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
-        select: { id: true, name: true, email: true },
-        orderBy: { name: "asc" },
-      }),
-      prisma.lead.count({ where: scopeWhere }),
-      prisma.lead.count({ where: { ...scopeWhere, followUpAt: { gte: today, lt: tomorrow } } }),
-      prisma.lead.count({ where: { ...scopeWhere, status: "CONVERTED" } }),
-      can(role, "leads", "create"),
-      can(role, "leads", "edit"),
-      can(role, "leads", "delete"),
-    ]);
+  const [
+    leads,
+    staffUsers,
+    total,
+    todayFollowUps,
+    converted,
+    canCreate,
+    canEdit,
+    canDelete,
+    offers,
+  ] = await Promise.all([
+    prisma.lead.findMany({
+      where: { ...scopeWhere, ...ipWhere },
+      orderBy: { updatedAt: "desc" },
+      take: ipFilter ? undefined : 10,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        source: true,
+        sourcePage: true,
+        contactChannel: true,
+        requestedComponents: true,
+        transportModes: true,
+        fromCity: true,
+        toCity: true,
+        adults: true,
+        status: true,
+        startDate: true,
+        followUpAt: true,
+        updatedAt: true,
+        negotiatedAmount: true,
+        tokenAmount: true,
+        assignedToId: true,
+        assignedTo: { select: { id: true, name: true, email: true } },
+        packageName: true,
+        occasionOffer: { select: { id: true, name: true } },
+        createdAt: true,
+      },
+    }),
+    prisma.user.findMany({
+      where: { role: { in: ["SUPERADMIN", "ADMIN", "SALES"] }, deletedAt: null },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.lead.count({ where: scopeWhere }),
+    prisma.lead.count({ where: { ...scopeWhere, followUpAt: { gte: today, lt: tomorrow } } }),
+    prisma.lead.count({ where: { ...scopeWhere, status: "CONVERTED" } }),
+    can(role, "leads", "create"),
+    can(role, "leads", "edit"),
+    can(role, "leads", "delete"),
+    // Occasion Offers for the list's Offer filter.
+    prisma.occasionOffer.findMany({
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
+  ]);
 
   const stats = { total, todayFollowUps, converted };
 
@@ -94,6 +110,7 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
       canDelete={canDelete}
       isAdmin={isAdminOrSuper}
       initialIpFilter={ipFilter}
+      offers={offers}
     />
   );
 }

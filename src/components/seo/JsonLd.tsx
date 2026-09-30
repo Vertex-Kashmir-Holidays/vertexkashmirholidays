@@ -447,6 +447,74 @@ export function buildCollectionPage(opts: { name: string; description?: string; 
   };
 }
 
+// Occasion Offer landing page (/diwali-kashmir-tour-package-2026, …).
+export function buildWebPage(opts: {
+  name: string;
+  description?: string;
+  url: string;
+  image?: string | null;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: opts.name,
+    ...(opts.description ? { description: opts.description } : {}),
+    url: opts.url,
+    ...(opts.image ? { primaryImageOfPage: { "@type": "ImageObject", url: opts.image } } : {}),
+    isPartOf: { "@id": `${siteUrl}/#website` },
+  };
+}
+
+// An Occasion Offer's trip, built only from what the page visibly shows: its
+// day titles and each published tier's price — stated as the total for 2
+// adults via referenceQuantity, never as a per-person price. No availability,
+// rating or review claims (none are shown on the page).
+export function buildOccasionOfferTrip(offer: {
+  name: string;
+  description?: string;
+  url: string;
+  image?: string | null;
+  itineraryDays: string[];
+  tiers: Array<{ name: string; priceForTwo: number }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TouristTrip",
+    name: offer.name,
+    ...(offer.description ? { description: offer.description } : {}),
+    url: offer.url,
+    ...(offer.image ? { image: offer.image } : {}),
+    provider: { "@id": `${siteUrl}/#organization` },
+    ...(offer.itineraryDays.length > 0
+      ? {
+          itinerary: {
+            "@type": "ItemList",
+            numberOfItems: offer.itineraryDays.length,
+            itemListElement: offer.itineraryDays.map((name, i) => ({
+              "@type": "ListItem",
+              position: i + 1,
+              name,
+            })),
+          },
+        }
+      : {}),
+    offers: offer.tiers.map((t) => ({
+      "@type": "Offer",
+      name: t.name,
+      url: offer.url,
+      priceCurrency: "INR",
+      price: t.priceForTwo,
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: t.priceForTwo,
+        priceCurrency: "INR",
+        referenceQuantity: { "@type": "QuantitativeValue", value: 2, unitText: "adults" },
+      },
+      seller: { "@id": `${siteUrl}/#organization` },
+    })),
+  };
+}
+
 export function buildBreadcrumbList(items: { name: string; url: string }[]) {
   return {
     "@context": "https://schema.org",

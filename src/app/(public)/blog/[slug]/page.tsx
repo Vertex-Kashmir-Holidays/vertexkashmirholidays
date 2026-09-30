@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import {
   JsonLd,
@@ -130,7 +131,8 @@ export default async function BlogPostPage({ params }: PageProps) {
       take: 4,
     }),
     prisma.tour.findFirst({
-      where: { published: true },
+      // Kashmir travel blog — its featured-tour card stays Kashmir/Ladakh.
+      where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
       include: { destinations: { include: { destination: { select: { name: true } } } } },
     }),

@@ -173,7 +173,9 @@ export async function downloadB2bItineraryPdf(
   // stored column (Phase 4 is presentation-only, see B2bItineraryPdf.tsx).
   // "Issued" is the moment this PDF is generated, which is also the most
   // accurate reading of that label — not the itinerary row's last save time.
-  const quoteRef = `B2B-${itineraryId.slice(-8).toUpperCase()}`;
+  // "TP" = travel proposal — never "B2B": the end customer must not see that
+  // this came through a partner.
+  const quoteRef = `TP-${itineraryId.slice(-8).toUpperCase()}`;
   const issuedAt = new Date();
   const [{ pdf }, { B2bItineraryPdf }, { LOGO_SRC }] = await Promise.all([
     import("@react-pdf/renderer"),
@@ -200,7 +202,7 @@ export async function downloadB2bItineraryPdf(
   // No "vertex" in the filename either — an agent forwarding this file to
   // their own customer would otherwise leak the underlying provider even
   // though the document content itself is fully white-labeled.
-  a.download = `travel-quotation-${slugify(data.preparedFor)}-${new Date().toISOString().slice(0, 10)}.pdf`;
+  a.download = `travel-proposal-${slugify(data.preparedFor)}-${new Date().toISOString().slice(0, 10)}.pdf`;
   document.body.appendChild(a);
   a.click();
   a.remove();

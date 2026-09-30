@@ -5,9 +5,10 @@
 // visual language (photo-hero cover, per-day/hotel image pickers, Trust
 // strip, Activities, arbitrary "detail"/Highlights meta rows) maps to the
 // normal ItineraryPdf.tsx, not B2bItineraryPdf.tsx — editing those fields for
-// a B2B quotation silently has zero effect on the exported PDF, which is
+// a B2B proposal silently has zero effect on the exported PDF, which is
 // exactly the ambiguity this component exists to remove. Every field below
-// corresponds 1:1 to something B2bItineraryPdf.tsx actually renders.
+// corresponds 1:1 to something B2bItineraryPdf.tsx actually renders
+// (including Included Activities, as compact text cards without photos).
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import {
   type HotelRow,
 } from "@/types/itinerary";
 import { applyDayOrder } from "@/lib/itinerary/dayReorder";
+import { buildDocumentTitle } from "@/lib/itinerary/documentTitle";
 import type { B2bAgentInfo } from "./B2bItineraryPdf";
 import { PdfIcon } from "./ItineraryPdf";
 import { ReorderableList } from "./ReorderableList";
@@ -72,7 +74,9 @@ export function B2bItineraryEditor({
 }: Props) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
-  const [title, setTitle] = useState(initialTitle);
+  // Standard name (customer name - duration - phone); the server assigns the
+  // saved one, which may carry a " (2)" suffix — shown until the next edit.
+  const title = data === initialData ? initialTitle : buildDocumentTitle(data);
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -155,6 +159,26 @@ export function B2bItineraryEditor({
     setData((p) => ({ ...p, hotels: next }));
   }
 
+  /* ---------- included activities (text cards in the PDF — no photo) ---------- */
+  function addActivity() {
+    setData((p) => ({
+      ...p,
+      activities: [
+        ...p.activities,
+        { id: genId("act"), name: "", place: "", time: "", image: "", day: "" },
+      ],
+    }));
+  }
+  function updateActivity(aid: string, field: "name" | "place" | "time" | "day", value: string) {
+    setData((p) => ({
+      ...p,
+      activities: p.activities.map((a) => (a.id === aid ? { ...a, [field]: value } : a)),
+    }));
+  }
+  function removeActivity(aid: string) {
+    setData((p) => ({ ...p, activities: p.activities.filter((a) => a.id !== aid) }));
+  }
+
   /* ---------- payment tags (still a plain string[]) ---------- */
   function addListItem(key: ListKey) {
     setData((p) => ({ ...p, [key]: [...p[key], ""] }));
@@ -205,16 +229,12 @@ export function B2bItineraryEditor({
   }
 
   async function handleSave() {
-    if (!title.trim()) {
-      toast.error("Please enter a title.");
-      return;
-    }
     setSaving(true);
     try {
       const res = await fetch(`${apiBasePath}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), status, data }),
+        body: JSON.stringify({ status, data }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Save failed");
@@ -256,12 +276,12 @@ export function B2bItineraryEditor({
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Quotation title"
-          className="min-w-0 flex-1 basis-[200px] rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-bold text-foreground transition focus:border-border focus:bg-muted/40 focus:outline-none"
-        />
+        <p
+          title="Named automatically from the customer name, duration and phone"
+          className="min-w-0 flex-1 basis-[200px] truncate px-2 py-1 text-sm font-bold text-foreground"
+        >
+          {title}
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           <span
             title={
@@ -320,12 +340,30 @@ export function B2bItineraryEditor({
               onChange={(e) => update("coverTitle", e.target.value)}
             />
           </div>
+          <div className="sm:col-span-2">
+            <label className={fieldLabel}>Subtitle (cover)</label>
+            <input
+              className={inputCls + " mt-1.5"}
+              placeholder="e.g. Autumn Escape"
+              value={data.subtitle}
+              onChange={(e) => update("subtitle", e.target.value)}
+            />
+          </div>
           <div>
             <label className={fieldLabel}>Prepared For</label>
             <input
               className={inputCls + " mt-1.5"}
               value={data.preparedFor}
               onChange={(e) => update("preparedFor", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className={fieldLabel}>Customer Phone</label>
+            <input
+              className={inputCls + " mt-1.5"}
+              value={data.customerPhone}
+              onChange={(e) => update("customerPhone", e.target.value)}
+              placeholder="+91 98765 43210"
             />
           </div>
           <div>
@@ -544,6 +582,71 @@ export function B2bItineraryEditor({
             />
           </div>
         </div>
+      </div>
+
+      {/* Included Activities */}
+      <div className={card}>
+        <div className="flex items-center justify-between">
+          <h2 className={sectionTitle}>Included Activities</h2>
+          {canSave && (
+            <button
+              type="button"
+              onClick={addActivity}
+              className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add activity
+            </button>
+          )}
+        </div>
+        {data.activities.length === 0 ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            No activities — the section is left out of the PDF.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {data.activities.map((a) => (
+              <div
+                key={a.id}
+                className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-muted/40 p-3 sm:grid-cols-[1.3fr_1.3fr_0.8fr_0.7fr_auto] sm:items-center"
+              >
+                <input
+                  className={inputCls}
+                  placeholder="Activity — e.g. Shikara Ride"
+                  value={a.name}
+                  onChange={(e) => updateActivity(a.id, "name", e.target.value)}
+                />
+                <input
+                  className={inputCls}
+                  placeholder="Place — e.g. Dal Lake, Srinagar"
+                  value={a.place}
+                  onChange={(e) => updateActivity(a.id, "place", e.target.value)}
+                />
+                <input
+                  className={inputCls}
+                  placeholder="Duration — 1 Hour"
+                  value={a.time}
+                  onChange={(e) => updateActivity(a.id, "time", e.target.value)}
+                />
+                <input
+                  className={inputCls}
+                  placeholder="Day 02"
+                  value={a.day}
+                  onChange={(e) => updateActivity(a.id, "day", e.target.value)}
+                />
+                {canSave && (
+                  <button
+                    type="button"
+                    onClick={() => removeActivity(a.id)}
+                    aria-label={`Remove activity ${a.name || ""}`}
+                    className="grid h-9 w-9 place-items-center justify-self-end rounded-lg text-muted-foreground transition hover:bg-rose-500/10 hover:text-rose-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Inclusions / Exclusions */}

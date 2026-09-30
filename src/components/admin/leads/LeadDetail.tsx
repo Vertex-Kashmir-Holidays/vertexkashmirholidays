@@ -101,6 +101,9 @@ interface Lead {
   source: LeadSource;
   tourId: string | null;
   tour: { id: string; title: string } | null;
+  packageName: string | null;
+  /** Occasion Offer the lead came from (offer form or resolved WhatsApp reference). */
+  occasionOffer?: { id: string; name: string; slug: string } | null;
   adults: number;
   children: number | null;
   startDate: Date | string | null;
@@ -160,6 +163,7 @@ interface StaffUser {
 interface TourOption {
   id: string;
   title: string;
+  packageNames?: string[];
 }
 
 interface IpDuplicateLead {
@@ -268,6 +272,7 @@ const SOURCE_PAGE_LABELS: Record<string, string> = {
   "trip-planner": "Plan Your Kashmir Trip",
   contact: "Contact page",
   campaign: "Campaign page",
+  "tour-collection": "Tour Collection page",
 };
 
 const REQUESTED_COMPONENT_LABELS: Record<string, string> = {
@@ -359,6 +364,7 @@ export function LeadDetail({
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
   const [tourId, setTourId] = useState(lead.tourId ?? "");
+  const [packageName, setPackageName] = useState(lead.packageName ?? "");
   const [notes, setNotes] = useState(lead.notes ?? "");
   const [followUpAt, setFollowUpAt] = useState(
     lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "",
@@ -373,9 +379,10 @@ export function LeadDetail({
     setStatus(lead.status);
     setAssignedToId(lead.assignedToId ?? "");
     setTourId(lead.tourId ?? "");
+    setPackageName(lead.packageName ?? "");
     setNotes(lead.notes ?? "");
     setFollowUpAt(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "");
-  }, [lead.status, lead.assignedToId, lead.tourId, lead.notes, lead.followUpAt]);
+  }, [lead.status, lead.assignedToId, lead.tourId, lead.packageName, lead.notes, lead.followUpAt]);
 
   // Clear the booking input when a booking is unlinked.
   useEffect(() => {
@@ -480,8 +487,17 @@ export function LeadDetail({
 
   function handleTourChange(val: string) {
     setTourId(val);
+    // The server clears the package when the tour changes (it belongs to the old tour).
+    setPackageName("");
     patch({ tourId: val || null });
   }
+
+  function handlePackageChange(val: string) {
+    setPackageName(val);
+    patch({ packageName: val || null });
+  }
+
+  const selectedTourPackages = tours.find((t) => t.id === tourId)?.packageNames ?? [];
 
   function handleDelete() {
     startTransition(async () => {
@@ -739,9 +755,32 @@ export function LeadDetail({
                   </div>
                 </div>
               )}
+              {lead.occasionOffer ? (
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Offer</p>
+                  <p className="font-semibold text-foreground">
+                    <a
+                      href={`/offers/${lead.occasionOffer.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary hover:underline"
+                    >
+                      🎉 {lead.occasionOffer.name}
+                    </a>
+                    {lead.packageName && !lead.tour && (
+                      <span className="text-primary"> — {lead.packageName} plan</span>
+                    )}
+                  </p>
+                </div>
+              ) : null}
               <div>
                 <p className="text-muted-foreground mb-0.5">Tour</p>
-                <p className="font-semibold text-foreground">{lead.tour?.title ?? "Custom"}</p>
+                <p className="font-semibold text-foreground">
+                  {lead.tour?.title ?? "Custom"}
+                  {lead.packageName && (lead.tour || !lead.occasionOffer) && (
+                    <span className="text-primary"> — {lead.packageName} package</span>
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Adults</p>
@@ -1207,6 +1246,31 @@ export function LeadDetail({
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
             </div>
+
+            {/* Package — only for tours sold as package options */}
+            {selectedTourPackages.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Package
+                </label>
+                <div className="relative">
+                  <select
+                    value={packageName}
+                    onChange={(e) => handlePackageChange(e.target.value)}
+                    disabled={isPending || !canManage || locked}
+                    className={selectCls}
+                  >
+                    <option value="">— Not chosen —</option>
+                    {selectedTourPackages.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Booking Amounts — read-only, shown only after conversion when recorded.

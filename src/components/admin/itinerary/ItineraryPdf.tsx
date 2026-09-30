@@ -234,6 +234,7 @@ const s = StyleSheet.create({
   preparedForBlock: { marginTop: 24 },
   preparedLabel: { fontSize: 8.5, letterSpacing: 1.6, color: C.mint },
   preparedName: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 6 },
+  preparedPhone: { fontSize: 11, color: C.mint, marginTop: 5, letterSpacing: 1 },
 
   coverGrid: {
     flexDirection: "row",
@@ -874,6 +875,9 @@ export function ItineraryPdf({
             <View style={s.preparedForBlock}>
               <Text style={s.preparedLabel}>PREPARED FOR</Text>
               <Text style={s.preparedName}>{data.preparedFor}</Text>
+              {data.customerPhone ? (
+                <Text style={s.preparedPhone}>{data.customerPhone}</Text>
+              ) : null}
             </View>
 
             <View style={s.coverGrid}>

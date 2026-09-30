@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getLeadTourOptions } from "@/lib/leads/tourOptions";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
@@ -24,6 +25,7 @@ const getLead = cache(async (id: string) =>
       activities: { orderBy: { performedAt: "desc" } },
       assignedTo: { select: { id: true, name: true, email: true } },
       tour: { select: { id: true, title: true } },
+      occasionOffer: { select: { id: true, name: true, slug: true } },
       booking: {
         select: { id: true, status: true, amount: true, travelDate: true, guestName: true },
       },
@@ -66,7 +68,7 @@ export default async function AdminLeadDetailPage({ params }: PageProps) {
       select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     }),
-    prisma.tour.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
+    getLeadTourOptions(),
   ]);
 
   // B2B requests (b2bAgentId set) are managed exclusively under

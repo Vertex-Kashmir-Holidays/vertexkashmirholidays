@@ -2,6 +2,9 @@ import { Toaster } from "sonner";
 import { unstable_cache } from "next/cache";
 import { TooltipProvider } from "@/components/ui/atoms/tooltip";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
+import { getLiveTourCollections } from "@/lib/tours/collectionQueries";
+import { getLiveOccasionOffers } from "@/lib/offers/queries";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getHomeContent } from "@/lib/homeContent";
 import { PublicChrome } from "@/components/layout/PublicChrome";
@@ -10,7 +13,12 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SiteAnalytics } from "@/components/providers/SiteAnalytics";
 import { CookieConsentManager } from "@/components/providers/CookieConsentManager";
 import { AnnouncementModal } from "@/components/common/AnnouncementModal";
-import { getActiveStrip, getActivePromoBanners, parseBannerPages } from "@/lib/banners";
+import {
+  bannerToPromoData,
+  getActiveStrip,
+  getActivePromoBanners,
+  parseBannerPages,
+} from "@/lib/banners";
 import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
 import { getActiveCorporateOffices } from "@/lib/companyOffice";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
@@ -26,7 +34,9 @@ import type { FooterSettings } from "@/components/layout/Footer";
 async function fetchPublishedTourCategories() {
   return prisma.tour.groupBy({
     by: ["category"],
-    where: { published: true },
+    // Links to the Kashmir-branded /tours/category/* pages, which only list
+    // Kashmir/Ladakh tours — count the same set so no link lands on a 404.
+    where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
     _count: { _all: true },
   });
 }
@@ -37,14 +47,48 @@ const getPublishedTourCategories = unstable_cache(
   { revalidate: 3600, tags: ["tour-categories"] },
 );
 
+// Tour Collections for the navbar's "Tours" dropdown (desktop + mobile read
+// the same list). Only live collections — published with ≥1 published tour —
+// since an empty collection page 404s. Invalidated by any Tour or Tour
+// Collection mutation (src/lib/cache.ts).
+const getNavTourCollections = unstable_cache(
+  async () => (await getLiveTourCollections()).map((c) => ({ name: c.name, slug: c.slug })),
+  ["nav-tour-collections-v2"],
+  { revalidate: 3600, tags: ["tour-collections-nav"] },
+);
+
+// Published Occasion Offers for the navbar's "Offers" dropdown (desktop +
+// mobile). Invalidated by any offer mutation (src/lib/cache.ts).
+const getNavOccasionOffers = unstable_cache(
+  async () =>
+    (await getLiveOccasionOffers()).map((o) => ({
+      name: o.name,
+      slug: o.slug,
+      occasionType: o.occasionType,
+    })),
+  ["nav-occasion-offers-v3"],
+  { revalidate: 3600, tags: ["occasion-offers-nav"] },
+);
+
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [s, strip, promos, categoryRows, homeContent, corporateOffices] = await Promise.all([
+  const [
+    s,
+    strip,
+    promos,
+    categoryRows,
+    homeContent,
+    corporateOffices,
+    tourCollections,
+    occasionOffers,
+  ] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
     getActivePromoBanners(),
     getPublishedTourCategories(),
     getHomeContent(),
     getActiveCorporateOffices(),
+    getNavTourCollections(),
+    getNavOccasionOffers(),
   ]);
   const tourCategories = categoryRows.filter((c) => c._count._all > 0).map((c) => c.category);
   // First active row (lowest sortOrder) is "the" Corporate Office shown in
@@ -67,13 +111,7 @@ export default async function PublicLayout({ children }: { children: React.React
   // Parse each banner's target pages once on the server; the client slot filters
   // by the current pathname (so "*"/All Pages shows everywhere).
   const promoBanners: SlotBanner[] = promos.map((b) => ({
-    id: b.id,
-    title: b.title,
-    body: b.body,
-    ctaLabel: b.ctaLabel,
-    ctaUrl: b.ctaUrl,
-    imageUrl: b.imageUrl,
-    imageMobileUrl: b.imageMobileUrl,
+    ...bannerToPromoData(b),
     pages: parseBannerPages(b.pages),
   }));
 
@@ -164,6 +202,8 @@ export default async function PublicLayout({ children }: { children: React.React
             corporateOffice={corporateOffice}
             promoBanners={promoBanners}
             tourCategories={tourCategories}
+            tourCollections={tourCollections}
+            occasionOffers={occasionOffers}
             strip={
               strip
                 ? {

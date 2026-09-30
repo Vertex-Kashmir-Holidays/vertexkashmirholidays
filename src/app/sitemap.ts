@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { SITE_URL } from "@/lib/seo";
 import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import { ORIGIN_CITIES } from "@/lib/originCities";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
+import { getLiveTourCollections } from "@/lib/tours/collectionQueries";
+import { getLiveOccasionOffers } from "@/lib/offers/queries";
 
 // 24h safety net — every content mutation (Tour/Destination/Activity/Blog/
 // Campaign/Career) invalidates /sitemap.xml directly (src/lib/cache.ts), and
@@ -10,47 +13,61 @@ import { ORIGIN_CITIES } from "@/lib/originCities";
 export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tours, destinations, blogs, campaigns, activities, jobs, tourCategoryRows] =
-    await Promise.all([
-      prisma.tour.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      // Destinations have no published/draft concept — the model has no
-      // `published` field and the public /destinations listing shows every row.
-      // So there is intentionally no `where` filter here, unlike tours/blogs/etc.
-      prisma.destination.findMany({
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.blog.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.campaign.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.activity.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.job.findMany({
-        where: { published: true },
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.tour.groupBy({
-        by: ["category"],
-        where: { published: true },
-        _count: true,
-        _max: { updatedAt: true },
-      }),
-    ]);
+  const [
+    tours,
+    destinations,
+    blogs,
+    campaigns,
+    activities,
+    jobs,
+    tourCategoryRows,
+    collections,
+    offers,
+  ] = await Promise.all([
+    prisma.tour.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    // Destinations have no published/draft concept — the model has no
+    // `published` field and the public /destinations listing shows every row.
+    // So there is intentionally no `where` filter here, unlike tours/blogs/etc.
+    prisma.destination.findMany({
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.blog.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.campaign.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.activity.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.job.findMany({
+      where: { published: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    // Trip-type pages (/tours/category/*) only list Kashmir/Ladakh tours,
+    // so a category is only live when it has one of those.
+    prisma.tour.groupBy({
+      by: ["category"],
+      where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
+      _count: true,
+      _max: { updatedAt: true },
+    }),
+    // Only collections with ≥1 published tour — empty ones 404.
+    getLiveTourCollections(),
+    getLiveOccasionOffers(),
+  ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
@@ -185,8 +202,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.75,
   }));
 
+  const collectionRoutes: MetadataRoute.Sitemap = collections.map((c) => ({
+    url: `${SITE_URL}/${c.slug}`,
+    lastModified: c.updatedAt,
+    changeFrequency: "weekly",
+    priority: 0.85,
+  }));
+
+  // /offers hub (only while something is published) + each published
+  // Occasion Offer, minus any the admin marked noindex.
+  const offerRoutes: MetadataRoute.Sitemap = [
+    ...(offers.length
+      ? [
+          {
+            url: `${SITE_URL}/offers`,
+            lastModified: new Date(),
+            changeFrequency: "weekly" as const,
+            priority: 0.8,
+          },
+        ]
+      : []),
+    ...offers
+      .filter((o) => !o.noindex)
+      .map((o) => ({
+        url: `${SITE_URL}/offers/${o.slug}`,
+        lastModified: o.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.85,
+      })),
+  ];
+
   return [
     ...staticRoutes,
+    ...collectionRoutes,
+    ...offerRoutes,
     ...tourRoutes,
     ...tourCategoryRoutes,
     ...originCityRoutes,

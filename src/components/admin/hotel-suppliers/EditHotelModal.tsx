@@ -65,6 +65,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
   const [contactPerson, setContactPerson] = useState(hotel.data.property.contactPerson ?? "");
   const [services, setServices] = useState(hotel.data.property.services ?? "");
   const [recommended, setRecommended] = useState(hotel.recommended);
+  const [hasFamilyRoom, setHasFamilyRoom] = useState(hotel.hasFamilyRoom);
   const [isActive, setIsActive] = useState(hotel.isActive);
   // Plan Your Kashmir Trip public hotel carousel — see HotelSupplierRecord's
   // doc comment. showOnWebsite is the actual publish gate; the others are
@@ -92,6 +93,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
     setContactPerson(hotel.data.property.contactPerson ?? "");
     setServices(hotel.data.property.services ?? "");
     setRecommended(hotel.recommended);
+    setHasFamilyRoom(hotel.hasFamilyRoom);
     setIsActive(hotel.isActive);
     setCoverImageUrl(hotel.coverImageUrl ?? "");
     setRoomImageUrl(hotel.roomImageUrl ?? "");
@@ -148,6 +150,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
       category,
       isActive,
       recommended,
+      hasFamilyRoom,
       data,
       coverImageUrl: coverImageUrl || null,
       roomImageUrl: roomImageUrl || null,
@@ -212,6 +215,15 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
                 className="cbx"
               />
               Recommended
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasFamilyRoom}
+                onChange={(e) => setHasFamilyRoom(e.target.checked)}
+                className="cbx"
+              />
+              Family Room
             </label>
             <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer">
               <input

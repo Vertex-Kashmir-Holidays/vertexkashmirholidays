@@ -24,8 +24,9 @@ export default async function AdminProposalsPage() {
     pageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const [canCreate, canDelete] = await Promise.all([
+  const [canCreate, canEdit, canDelete] = await Promise.all([
     can(role, "proposals", "create"),
+    can(role, "proposals", "edit"),
     can(role, "proposals", "delete"),
   ]);
 
@@ -35,6 +36,7 @@ export default async function AdminProposalsPage() {
       initialTotal={total}
       showOwner={isAdmin}
       canCreate={canCreate}
+      canEdit={canEdit}
       canDelete={canDelete}
     />
   );

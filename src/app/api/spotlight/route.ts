@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
@@ -21,14 +22,15 @@ export async function GET(req: NextRequest) {
   }
 
   const [tourCount, blogCount] = await Promise.all([
-    prisma.tour.count({ where: { published: true } }),
+    // Feeds the Kashmir-branded /tours/category hub — Kashmir/Ladakh tours only.
+    prisma.tour.count({ where: { published: true, region: { in: KASHMIR_SITE_REGIONS } } }),
     prisma.blog.count({ where: { published: true } }),
   ]);
 
   const [tour, blog] = await Promise.all([
     tourCount > 0
       ? prisma.tour.findFirst({
-          where: { published: true },
+          where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
           orderBy: { id: "asc" },
           skip: Math.floor(Math.random() * tourCount),
           select: {

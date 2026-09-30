@@ -39,6 +39,15 @@ export interface TripPlannerAnalyticsExtra {
   hasHotelInterest?: boolean;
 }
 
+/** Occasion Offer page context — see OfferParams in src/types/analytics.ts. */
+export interface OfferAnalyticsContext {
+  offerId: string;
+  offerSlug: string;
+}
+
+const offerParams = (offer?: OfferAnalyticsContext) =>
+  offer ? { offer_id: offer.offerId, offer_slug: offer.offerSlug } : {};
+
 function tripPlannerParams(extra?: TripPlannerAnalyticsExtra) {
   if (!extra) return {};
   return {
@@ -65,6 +74,8 @@ export function trackLeadSubmit(
   tourName?: string,
   leadId?: string,
   tripPlanner?: TripPlannerAnalyticsExtra,
+  packageOption?: string,
+  offer?: OfferAnalyticsContext,
 ): void {
   push({
     event: "lead_submit",
@@ -72,6 +83,8 @@ export function trackLeadSubmit(
     ...(tourName ? { package_name: tourName } : {}),
     ...(leadId ? { lead_id: leadId } : {}),
     ...tripPlannerParams(tripPlanner),
+    ...(packageOption ? { package_option: packageOption } : {}),
+    ...offerParams(offer),
   });
 }
 
@@ -80,8 +93,37 @@ export function trackLeadSubmit(
 export function trackWhatsappClick(
   source: WhatsAppSource,
   tripPlanner?: TripPlannerAnalyticsExtra,
+  pkg?: { tourName: string; packageOption: string },
+  offer?: OfferAnalyticsContext & { packageOption?: string },
 ): void {
-  push({ event: "whatsapp_click", source, ...tripPlannerParams(tripPlanner) });
+  push({
+    event: "whatsapp_click",
+    source,
+    ...tripPlannerParams(tripPlanner),
+    ...(pkg ? { package_name: pkg.tourName, package_option: pkg.packageOption } : {}),
+    ...offerParams(offer),
+    ...(offer?.packageOption ? { package_option: offer.packageOption } : {}),
+  });
+}
+
+/** Fire once when an Occasion Offer page loads. */
+export function trackOfferView(offer: OfferAnalyticsContext, occasionType: string): void {
+  push({
+    event: "offer_view",
+    offer_id: offer.offerId,
+    offer_slug: offer.offerSlug,
+    occasion_type: occasionType,
+  });
+}
+
+/** Fire when a stay tier is picked on an Occasion Offer page (card CTA or form). */
+export function trackOfferPackageSelect(offer: OfferAnalyticsContext, packageOption: string): void {
+  push({
+    event: "offer_package_select",
+    offer_id: offer.offerId,
+    offer_slug: offer.offerSlug,
+    package_option: packageOption,
+  });
 }
 
 /** Fire once, on the Trip Planner's first intent-chip interaction — never on
@@ -110,11 +152,12 @@ export function trackPackageView(packageName: string): void {
 }
 
 /** Fire when a user opens an inquiry modal / form tab. */
-export function trackTourInquiry(tourName?: string, tourId?: string): void {
+export function trackTourInquiry(tourName?: string, tourId?: string, packageOption?: string): void {
   push({
     event: "inquiry_started",
     ...(tourName ? { package_name: tourName } : {}),
     ...(tourId ? { tour_id: tourId } : {}),
+    ...(packageOption ? { package_option: packageOption } : {}),
   });
 }
 

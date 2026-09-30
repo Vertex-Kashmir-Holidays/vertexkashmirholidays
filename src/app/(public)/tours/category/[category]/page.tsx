@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getPublicHeroStats } from "@/lib/publicHeroStats";
 import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
@@ -27,7 +28,7 @@ type PageProps = { params: Promise<{ category: string }> };
 export async function generateStaticParams() {
   const categories = await prisma.tour.groupBy({
     by: ["category"],
-    where: { published: true },
+    where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
     _count: true,
   });
   return categories
@@ -37,7 +38,8 @@ export async function generateStaticParams() {
 
 async function getFeaturedAndRecommended(category: TourCategory) {
   const categoryTours = await prisma.tour.findMany({
-    where: { category, published: true },
+    // Kashmir-branded trip-type page — Kashmir/Ladakh tours only.
+    where: { category, published: true, region: { in: KASHMIR_SITE_REGIONS } },
     include: { destinations: { include: { destination: { select: { name: true } } } } },
     orderBy: [{ bestseller: "desc" }, { rating: "desc" }, { reviewCount: "desc" }],
   });
@@ -51,7 +53,12 @@ async function getFeaturedAndRecommended(category: TourCategory) {
   const otherBestsellers =
     needed > 0
       ? await prisma.tour.findMany({
-          where: { published: true, category: { not: category }, id: { notIn: [featured.id] } },
+          where: {
+            published: true,
+            region: { in: KASHMIR_SITE_REGIONS },
+            category: { not: category },
+            id: { notIn: [featured.id] },
+          },
           include: { destinations: { include: { destination: { select: { name: true } } } } },
           orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
           take: needed,

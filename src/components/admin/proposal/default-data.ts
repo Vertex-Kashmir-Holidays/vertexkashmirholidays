@@ -15,6 +15,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
   preparedByName: "",
   preparedByPhone: "",
   preparedFor: "Mr Farooq Sheikh",
+  customerPhone: "",
   travelDates: "10 - 15 Jun 2026",
   travelers: "2 Adults · 1 Child",
 
@@ -265,6 +266,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
   coverIntro: "Srinagar, Pahalgam, Gulmarg and Sonamarg — one complete, ready-to-book package.",
   duration: "5 Nights · 6 Days",
   preparedFor: "Mr Farooq Sheikh",
+  customerPhone: "",
   travelDates: "06 - 11 Jan 2027",
   travelers: "4 Adults",
 

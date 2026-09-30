@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getLeadTourOptions } from "@/lib/leads/tourOptions";
 import { LeadForm } from "@/components/admin/leads/LeadForm";
 
 export const metadata: Metadata = { title: "New Lead — Admin" };
@@ -14,7 +15,7 @@ export default async function NewLeadPage() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    prisma.tour.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
+    getLeadTourOptions(),
   ]);
 
   return (

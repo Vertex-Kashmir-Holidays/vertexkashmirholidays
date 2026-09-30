@@ -39,7 +39,6 @@ export default async function NewItineraryPage() {
       initialData={initialData}
       initialTitle="Kashmir Escape Itinerary"
       initialStatus="DRAFT"
-      autoTitle
       canSave
       companyAddress={companyAddress}
       trustContent={trustContent}

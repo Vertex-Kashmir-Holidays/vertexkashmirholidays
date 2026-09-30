@@ -24,8 +24,9 @@ export default async function AdminItineraryPage() {
     pageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const [canCreate, canDelete] = await Promise.all([
+  const [canCreate, canEdit, canDelete] = await Promise.all([
     can(role, "itinerary", "create"),
+    can(role, "itinerary", "edit"),
     can(role, "itinerary", "delete"),
   ]);
 
@@ -35,6 +36,7 @@ export default async function AdminItineraryPage() {
       initialTotal={total}
       showOwner={isAdmin}
       canCreate={canCreate}
+      canEdit={canEdit}
       canDelete={canDelete}
     />
   );

@@ -21,6 +21,10 @@ const plannerIntentSchema = z.object({
   transportModes: z.array(z.enum(TRANSPORT_MODES)).max(3).optional(),
   fromCity: z.string().trim().max(100).optional(),
   toCity: z.string().trim().max(100).optional(),
+  // Occasion Offer page context — validated against a real offer only when
+  // staff resolve the reference (src/app/api/admin/leads/route.ts).
+  offerId: z.string().trim().max(40).optional(),
+  packageName: z.string().trim().max(60).optional(),
 });
 
 // Single-letter display prefix for the WhatsApp reference tag (e.g.
@@ -79,7 +83,8 @@ export async function POST(req: NextRequest) {
     (intent.requestedComponents?.length ||
       intent.transportModes?.length ||
       intent.fromCity ||
-      intent.toCity)
+      intent.toCity ||
+      intent.offerId)
   );
 
   // A visitor with no meaningful attribution (no UTM/click-id/landing page/

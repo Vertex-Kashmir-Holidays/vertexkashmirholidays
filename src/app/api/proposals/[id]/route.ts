@@ -4,11 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
 import { proposalTitleExists } from "@/lib/proposal/list";
-import {
-  PROPOSAL_TITLE_PREFIX,
-  buildDocumentTitle,
-  duplicateTitleMessage,
-} from "@/lib/itinerary/documentTitle";
+import { buildDocumentTitle, duplicateTitleMessage } from "@/lib/itinerary/documentTitle";
 
 export const dynamic = "force-dynamic";
 
@@ -79,12 +75,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     );
   }
 
-  // Only re-check when the name actually changes, so a copy (which shares its
-  // source's name) can still be saved unchanged.
+  // Names are unique, drafts and sent alike. A copy saved without changing the
+  // customer name/phone/duration regenerates its source's name and is refused.
   let title: string | undefined;
   if (parsed.data.data !== undefined) {
-    title = buildDocumentTitle(PROPOSAL_TITLE_PREFIX, parsed.data.data);
-    if (title !== existing.title && (await proposalTitleExists(title, id))) {
+    title = buildDocumentTitle(parsed.data.data);
+    if (await proposalTitleExists(title, id)) {
       return NextResponse.json({ error: duplicateTitleMessage(title) }, { status: 409 });
     }
   }

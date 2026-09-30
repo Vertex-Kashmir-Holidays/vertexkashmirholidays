@@ -184,6 +184,19 @@ const s = StyleSheet.create({
   coverPreparedForCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
   coverPreparedForLabel: { fontSize: 11, letterSpacing: 7, color: C.mint },
   coverPreparedForName: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 10 },
+  coverPreparedForPhone: { fontSize: 12, color: C.mint, marginTop: 6, letterSpacing: 1 },
+  // "This is a proposal, not the final itinerary" note at the foot of the cover.
+  coverProposalNote: {
+    marginTop: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(127,191,158,0.35)",
+    backgroundColor: "rgba(127,191,158,0.08)",
+  },
+  coverProposalNoteTitle: { fontSize: 7.5, letterSpacing: 1.4, color: C.mint, fontFamily: "Helvetica-Bold" },
+  coverProposalNoteText: { fontSize: 8.5, color: C.mintPale, lineHeight: 1.5, marginTop: 4 },
   quoteLine: { fontSize: 8.5, letterSpacing: 2.5, color: C.mint, marginBottom: 12 },
   coverTitle: { fontSize: 44, fontFamily: "Helvetica-Bold", color: C.white, lineHeight: 1 },
   coverSubtitle: { fontSize: 44, fontFamily: "Helvetica", fontWeight: 300, color: C.mint, lineHeight: 1.1 },
@@ -900,6 +913,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             <View style={s.coverPreparedForCenter}>
               <Text style={s.coverPreparedForLabel}>PREPARED FOR</Text>
               <Text style={s.coverPreparedForName}>{data.preparedFor}</Text>
+              {data.customerPhone ? (
+                <Text style={s.coverPreparedForPhone}>{data.customerPhone}</Text>
+              ) : null}
             </View>
           ) : null}
 
@@ -941,6 +957,20 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             <Text style={s.coverFootnote}>
               TOTAL FOR THE PARTY · ALL INCLUSIVE OF GST · VALID 7 DAYS
             </Text>
+
+            {/* Sets expectations: this document is for choosing a package, not
+                the booking confirmation. */}
+            <View style={s.coverProposalNote} wrap={false}>
+              <Text style={s.coverProposalNoteTitle}>
+                PLEASE NOTE — THIS IS A PROPOSAL, NOT YOUR FINAL ITINERARY
+              </Text>
+              <Text style={s.coverProposalNoteText}>
+                This proposal is shared to help you compare and choose your package; hotels, vehicles and
+                prices are indicative and subject to availability. Once you confirm your package with the
+                token payment, we will send your final detailed itinerary with confirmed hotels, vehicle
+                details, a day-by-day plan, inclusions and all booking information.
+              </Text>
+            </View>
           </View>
         </View>
       </Page>

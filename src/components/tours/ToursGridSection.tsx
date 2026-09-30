@@ -1,7 +1,7 @@
 "use client";
 
 import { TourCard } from "@/components/ui/organisms/TourCard";
-import { formatINR } from "@/lib/accents";
+import { tourCardPricing, tourCardInclusions } from "@/lib/tours/cards";
 import { motion } from "framer-motion";
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import type { TourListItemData, TourSortOption } from "@/types/tours";
@@ -20,7 +20,9 @@ interface ToursGridSectionProps {
 
 const badgeColors = ["orange", "blue", "green"] as const;
 
-const sortLabels: Record<TourSortOption, string> = {
+// Shared with Tour Collection pages (TourCollectionGrid) so both listings
+// offer the same sort options with the same wording.
+export const TOUR_SORT_LABELS: Record<TourSortOption, string> = {
   popular: "Popular",
   "price-asc": "Price: Low to High",
   "price-desc": "Price: High to Low",
@@ -57,7 +59,7 @@ export function ToursGridSection({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Kashmir Tour Packages{" "}
+          All Tour Packages{" "}
           <span className="font-sans text-[14px] font-semibold text-primary">
             — Handpicked &amp; Ready to Book
           </span>
@@ -82,7 +84,7 @@ export function ToursGridSection({
             onChange={(e) => onSortChange(e.target.value as TourSortOption)}
             className="cursor-pointer appearance-none rounded-lg border border-border bg-card px-3.5 py-2 font-semibold shadow-soft outline-none transition hover:border-primary"
           >
-            {Object.entries(sortLabels).map(([value, label]) => (
+            {Object.entries(TOUR_SORT_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -121,16 +123,15 @@ export function ToursGridSection({
                   ? (tour.badgeColor as (typeof badgeColors)[number])
                   : "green",
                 image: tour.image ?? undefined,
-                detailHref: `/tours/${tour.slug}`,
+                detailHref: tour.detailHref ?? `/tours/${tour.slug}`,
                 bookHref: `/booking?tour=${tour.slug}`,
                 t: tour.title,
                 d: tour.durationLabel,
                 places: tour.places,
                 r: tour.rating.toFixed(1),
                 n: String(tour.reviewCount),
-                old: tour.priceWas ? formatINR(tour.priceWas) : undefined,
-                p: formatINR(tour.priceFrom),
-                minPersons: tour.minPersons,
+                ...tourCardPricing(tour),
+                inclusions: tour.inclusions ?? tourCardInclusions(tour.region),
               }}
               index={i}
               variant="tours"

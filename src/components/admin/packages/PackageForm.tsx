@@ -26,6 +26,7 @@ import { LinkChecklist, type LinkOption } from "@/components/admin/activities/Li
 import { Button } from "@/components/ui/atoms/button";
 import { cn } from "@/lib/utils";
 import { stringifyList } from "@/lib/tours/content";
+import type { TourPackageOption } from "@/types/tours";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,20 @@ const noteItemSchema = z.object({
 const relatedTourItemSchema = z.object({
   tourId: z.string().default(""),
   ctaSentence: z.string().default(""),
+});
+// Package variant of this tour (Tour.packageOptions). Inclusions are edited as
+// one-per-line text and split on submit. Only the public 2-person price.
+const packageOptionItemSchema = z.object({
+  id: z.string(),
+  name: z.string().trim().min(1, "Name required"),
+  image: z.string().default(""),
+  hotel: z.string().trim().min(1, "Hotel required"),
+  stay: z.string().default(""),
+  transport: z.string().trim().min(1, "Transport required"),
+  meals: z.string().trim().min(1, "Meals required"),
+  inclusionsText: z.string().default(""),
+  priceForTwo: z.number({ message: "Price required" }).positive("Price must be positive"),
+  published: z.boolean().default(true),
 });
 
 const nanToNull = z.preprocess(
@@ -128,7 +143,7 @@ const packageSchema = z.object({
   metaTitle: z.string().default(""),
   metaDesc: z.string().default(""),
   ogImage: z.string().default(""),
-  region: z.enum(["KASHMIR", "LADAKH"]).default("KASHMIR"),
+  region: z.enum(["KASHMIR", "LADAKH", "HIMACHAL"]).default("KASHMIR"),
   badge: z.string().default(""),
   badgeColor: z.enum(["green", "blue", "orange"]).default("green"),
   tagline: z.string().default(""),
@@ -165,6 +180,7 @@ const packageSchema = z.object({
   ogTitle: z.string().default(""),
   ogDescription: z.string().default(""),
   relatedTours: z.array(relatedTourItemSchema).max(4, "Up to 4 related tours").default([]),
+  packageOptions: z.array(packageOptionItemSchema).max(12).default([]),
 });
 
 type PackageFormData = z.infer<typeof packageSchema>;
@@ -236,6 +252,8 @@ export interface PackageFormDefaults {
   ogTitle?: string;
   ogDescription?: string;
   relatedTours?: { tourId: string; ctaSentence: string }[];
+  packageOptions?: TourPackageOption[];
+  collectionIds?: string[];
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -453,6 +471,7 @@ interface PackageFormProps {
   defaults?: PackageFormDefaults;
   activityOptions?: LinkOption[];
   relatedTourOptions?: { id: string; title: string }[];
+  collectionOptions?: LinkOption[];
 }
 
 function toArrayField<T>(arr: T[] | undefined, map: (v: T) => unknown) {
@@ -463,11 +482,13 @@ export function PackageForm({
   defaults,
   activityOptions = [],
   relatedTourOptions = [],
+  collectionOptions = [],
 }: PackageFormProps) {
   const router = useRouter();
   const isEdit = Boolean(defaults?.id);
   const [activeSection, setActiveSection] = useState("basics");
   const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
+  const [collectionIds, setCollectionIds] = useState<string[]>(defaults?.collectionIds ?? []);
 
   const {
     register,
@@ -581,6 +602,18 @@ export function PackageForm({
         tourId: r.tourId,
         ctaSentence: r.ctaSentence,
       })),
+      packageOptions: (defaults?.packageOptions ?? []).map((o) => ({
+        id: o.id,
+        name: o.name,
+        image: o.image ?? "",
+        hotel: o.hotel,
+        stay: o.stay ?? "",
+        transport: o.transport,
+        meals: o.meals,
+        inclusionsText: o.inclusions.join("\n"),
+        priceForTwo: o.priceForTwo,
+        published: o.published,
+      })),
     },
   });
 
@@ -660,6 +693,12 @@ export function PackageForm({
     append: addRelated,
     remove: removeRelated,
   } = useFieldArray({ control, name: "relatedTours" });
+  const {
+    fields: packageOptionFields,
+    append: addPackageOption,
+    remove: removePackageOption,
+    move: movePackageOption,
+  } = useFieldArray({ control, name: "packageOptions" });
   const [galleryPickerOpen, setGalleryPickerOpen] = useState(false);
 
   // ── Auto-slug from title (new tours only) ──────────────────────────────────
@@ -705,7 +744,19 @@ export function PackageForm({
       priceWas: data.priceWas || null,
       discountPct: data.discountPct || null,
       happyCount: data.happyCount || null,
+      packageOptions: stringifyList(
+        data.packageOptions.map(({ inclusionsText, image, stay, ...o }) => ({
+          ...o,
+          ...(image.trim() ? { image: image.trim() } : {}),
+          ...(stay.trim() ? { stay: stay.trim() } : {}),
+          inclusions: inclusionsText
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean),
+        })),
+      ),
       activityIds,
+      collectionIds,
     };
 
     const url = isEdit ? `/api/tours/${defaults!.id}` : "/api/tours";
@@ -722,8 +773,14 @@ export function PackageForm({
         toast.error("You don't have permission to save packages. Contact your administrator.");
         return;
       }
-      const json = (await res.json()) as { error?: unknown };
-      const msg = typeof json.error === "string" ? json.error : "Save failed";
+      const json = (await res.json()) as {
+        error?: string | { fieldErrors?: Record<string, string[]> };
+      };
+      const fieldMsg =
+        json.error && typeof json.error === "object"
+          ? Object.entries(json.error.fieldErrors ?? {}).map(([k, v]) => `${k}: ${v[0]}`)[0]
+          : null;
+      const msg = typeof json.error === "string" ? json.error : (fieldMsg ?? "Save failed");
       toast.error(msg);
       return;
     }
@@ -961,6 +1018,147 @@ export function PackageForm({
             </div>
             <span className="text-sm font-medium text-foreground">Mark as Bestseller</span>
           </label>
+
+          {/* Package Options — variants of THIS tour sharing its itinerary */}
+          <div className="border-t border-border pt-5">
+            <div className="flex items-center justify-between mb-1">
+              <FieldLabel>Package Options</FieldLabel>
+              <button
+                type="button"
+                onClick={() =>
+                  addPackageOption({
+                    id: crypto.randomUUID(),
+                    name: "",
+                    image: "",
+                    hotel: "",
+                    stay: "",
+                    transport: "",
+                    meals: "",
+                    inclusionsText: "",
+                    priceForTwo: undefined as unknown as number,
+                    published: true,
+                  })
+                }
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Package Option
+              </button>
+            </div>
+            <p className="text-[12px] text-muted-foreground mb-3">
+              Optional variants of this tour (e.g. Basic / Comfort / Premium / Luxury) — same
+              itinerary, different stay and services. Enter the public price for 2 persons only;
+              other group sizes are quoted by Sales. When any option exists, the tour is saved as
+              Inquiry Only and &ldquo;Price From&rdquo; is set automatically (lowest 2-person price
+              ÷ 2).
+            </p>
+            {packageOptionFields.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">
+                No package options — a normal tour.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {packageOptionFields.map((field, i) => (
+                  <div
+                    key={field.id}
+                    className="border border-border rounded-xl p-4 bg-muted/50 space-y-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground">#{i + 1}</span>
+                      <TextInput
+                        {...register(`packageOptions.${i}.name`)}
+                        placeholder="Package name — e.g. Premium"
+                        className="flex-1"
+                      />
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-foreground shrink-0">
+                        <input
+                          type="checkbox"
+                          {...register(`packageOptions.${i}.published`)}
+                          className="h-4 w-4 accent-primary"
+                        />
+                        Published
+                      </label>
+                      <button
+                        type="button"
+                        disabled={i === 0}
+                        onClick={() => movePackageOption(i, i - 1)}
+                        aria-label="Move up"
+                        className="text-xs text-muted-foreground hover:text-primary disabled:opacity-30 px-1"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === packageOptionFields.length - 1}
+                        onClick={() => movePackageOption(i, i + 1)}
+                        aria-label="Move down"
+                        className="text-xs text-muted-foreground hover:text-primary disabled:opacity-30 px-1"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removePackageOption(i)}
+                        aria-label={`Remove package option ${i + 1}`}
+                        className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <FieldError message={errors.packageOptions?.[i]?.name?.message} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <TextInput
+                          {...register(`packageOptions.${i}.hotel`)}
+                          placeholder="Hotel — e.g. 3★ hotel near Mall Road"
+                        />
+                        <FieldError message={errors.packageOptions?.[i]?.hotel?.message} />
+                      </div>
+                      <TextInput
+                        {...register(`packageOptions.${i}.stay`)}
+                        placeholder="Stay (optional) — e.g. 2 Nights · Deluxe Room"
+                      />
+                      <div>
+                        <TextInput
+                          {...register(`packageOptions.${i}.transport`)}
+                          placeholder="Transport — e.g. Private Sedan"
+                        />
+                        <FieldError message={errors.packageOptions?.[i]?.transport?.message} />
+                      </div>
+                      <div>
+                        <TextInput
+                          {...register(`packageOptions.${i}.meals`)}
+                          placeholder="Meals — e.g. Breakfast & Dinner"
+                        />
+                        <FieldError message={errors.packageOptions?.[i]?.meals?.message} />
+                      </div>
+                    </div>
+                    <TextArea
+                      {...register(`packageOptions.${i}.inclusionsText`)}
+                      rows={3}
+                      placeholder={"Package-specific inclusions — one per line"}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                      <div>
+                        <FieldLabel required>Price for 2 persons (₹)</FieldLabel>
+                        <TextInput
+                          {...register(`packageOptions.${i}.priceForTwo`, { valueAsNumber: true })}
+                          type="number"
+                          min={0}
+                          placeholder="16000"
+                        />
+                        <FieldError message={errors.packageOptions?.[i]?.priceForTwo?.message} />
+                      </div>
+                      <ImageUploadField
+                        value={watch(`packageOptions.${i}.image`)}
+                        onChange={(url) => setValue(`packageOptions.${i}.image`, url)}
+                        label="Package image (optional)"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </SectionCard>
 
         {/* 3. Itinerary & Gallery */}
@@ -1310,7 +1508,12 @@ export function PackageForm({
               >
                 <option value="KASHMIR">Kashmir</option>
                 <option value="LADAKH">Ladakh</option>
+                <option value="HIMACHAL">Himachal</option>
               </select>
+              <p className="text-[12px] text-muted-foreground mt-1">
+                Only Kashmir/Ladakh tours appear on Kashmir-branded pages (homepage, trip-type
+                categories, origin-city pages). Every region appears on /tours.
+              </p>
             </div>
             <div>
               <FieldLabel>Tagline</FieldLabel>
@@ -1319,6 +1522,22 @@ export function PackageForm({
                 placeholder="e.g. A romantic escape through the paradise on earth"
               />
             </div>
+          </div>
+
+          <div>
+            <FieldLabel>Tour Collections</FieldLabel>
+            <p className="text-[12px] text-muted-foreground mb-2">
+              Landing pages this tour is listed on (e.g. Kashmir Tour Packages + Offbeat Kashmir
+              Tour Packages). The tour keeps one URL (/tours/slug); its breadcrumb uses the
+              lowest-sort-order published collection. Manage collections under Packages → Tour
+              Collections.
+            </p>
+            <LinkChecklist
+              title="Collections"
+              options={collectionOptions}
+              value={collectionIds}
+              onChange={setCollectionIds}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

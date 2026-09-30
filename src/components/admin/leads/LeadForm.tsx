@@ -53,6 +53,7 @@ const schema = z
     // logging a WhatsApp/phone conversation, so it defaults to WhatsApp.
     contactChannel: z.string().optional(),
     tourId: z.string().optional(),
+    packageName: z.string().optional(),
     adults: z.string().optional(),
     children: z.string().optional(),
     startDate: z.string().optional(),
@@ -83,6 +84,8 @@ interface StaffUser {
 interface TourOption {
   id: string;
   title: string;
+  /** The tour's package options (e.g. Basic/Comfort/Premium/Luxury), if any. */
+  packageNames?: string[];
 }
 
 interface Props {
@@ -161,6 +164,8 @@ export function LeadForm({
   const [waError, setWaError] = useState<string | null>(null);
   const [waChannel, setWaChannel] = useState<string | null>(null);
   const [waCampaign, setWaCampaign] = useState<string | null>(null);
+  // Occasion Offer the WhatsApp CTA came from — the lead is tagged with it on save.
+  const [waOffer, setWaOffer] = useState<string | null>(null);
 
   function clearResolvedReference() {
     setWaRef("");
@@ -168,6 +173,7 @@ export function LeadForm({
     setWaError(null);
     setWaChannel(null);
     setWaCampaign(null);
+    setWaOffer(null);
   }
 
   async function handleResolveReference() {
@@ -181,6 +187,7 @@ export function LeadForm({
         error?: string;
         attribution?: Record<string, string>;
         channel?: string;
+        offer?: { name: string; packageName: string | null } | null;
       };
       if (!res.ok) {
         setWaState("error");
@@ -194,11 +201,18 @@ export function LeadForm({
       setWaState("resolved");
       setWaChannel(json.channel ?? null);
       setWaCampaign(json.attribution?.utmCampaign ?? null);
+      setWaOffer(
+        json.offer
+          ? [json.offer.name, json.offer.packageName].filter(Boolean).join(" · ")
+          : null,
+      );
     } catch {
       setWaState("error");
       setWaError("Network error. Please try again or continue manually.");
     }
   }
+
+  const selectedTourPackages = tours.find((t) => t.id === watch("tourId"))?.packageNames ?? [];
 
   const startDate = watch("startDate");
   const startReg = register("startDate");
@@ -227,6 +241,8 @@ export function LeadForm({
           email: data.email?.trim() ? data.email.trim() : empty,
           source: data.source || "MANUAL",
           tourId: data.tourId || empty,
+          // A package only applies alongside its tour.
+          packageName: (data.tourId && data.packageName) || empty,
           adults: isNaN(adults) ? 1 : adults,
           children: children !== undefined && !isNaN(children) ? children : empty,
           startDate: data.startDate || empty,
@@ -420,7 +436,13 @@ export function LeadForm({
             <div>
               <label className="block text-xs font-semibold text-muted-foreground mb-1">Tour</label>
               <div className={selectWrapCls}>
-                <select {...register("tourId")} className={selectCls}>
+                <select
+                  {...register("tourId", {
+                    // A package belongs to its tour — reset it when the tour changes.
+                    onChange: () => setValue("packageName", ""),
+                  })}
+                  className={selectCls}
+                >
                   <option value="">— Custom —</option>
                   {tours.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -431,6 +453,24 @@ export function LeadForm({
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
             </div>
+            {selectedTourPackages.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Package
+                </label>
+                <div className={selectWrapCls}>
+                  <select {...register("packageName")} className={selectCls}>
+                    <option value="">— Not chosen —</option>
+                    {selectedTourPackages.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
         </fieldset>
 
@@ -459,6 +499,7 @@ export function LeadForm({
                         <span>
                           Resolved — {waChannel ? (CHANNEL_LABELS[waChannel] ?? waChannel) : "—"}
                           {waCampaign ? ` · ${waCampaign}` : ""}
+                          {waOffer ? ` · 🎉 ${waOffer}` : ""}
                         </span>
                       </div>
                       <button

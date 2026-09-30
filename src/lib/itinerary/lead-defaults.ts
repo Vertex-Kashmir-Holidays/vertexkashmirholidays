@@ -16,6 +16,8 @@ export interface LeadItinerarySeed {
   children: number | null;
   startDate: Date | null;
   endDate: Date | null;
+  /** Customer phone (lead/booking) — synced into the itinerary when given. */
+  phone?: string | null;
 }
 
 function fmtDay(d: Date): string {
@@ -81,6 +83,9 @@ function withLeadFacts(data: ItineraryData, lead: LeadItinerarySeed): ItineraryD
     // own tour reference), preserve the existing packageType so a tour-name
     // seeded at creation isn't reset to "CUSTOM PACKAGE" on every sync.
     packageType: lead.tourTitle ? f.packageType : data.packageType || f.packageType,
+    // Customer phone follows the lead/booking when the caller supplies it;
+    // otherwise whatever staff typed is kept.
+    ...(lead.phone ? { customerPhone: lead.phone } : {}),
     // Keep the info strip's Duration tile in sync with the cover.
     info: data.info.map((it) => (it.id === "info-1" ? { ...it, value: f.durationPlain } : it)),
   };
