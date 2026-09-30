@@ -41,6 +41,9 @@ export interface PlannerIntent {
   transportModes?: string[];
   fromCity?: string;
   toCity?: string;
+  /** Occasion Offer page context — the offer and the plan the visitor chose. */
+  offerId?: string;
+  packageName?: string;
 }
 
 // Click IDs / UTM values are short tokens; landingPage/referrer are URLs.
@@ -359,6 +362,8 @@ interface WhatsAppTokenCache {
   prefix: string;
   /** Fingerprint of the attribution snapshot this token was minted from — see fingerprint(). */
   forData: string;
+  /** Fingerprint of the attribution alone (no intent) — lets a plain call keep an intent token. */
+  forAttribution?: string;
 }
 
 function readWaTokenCache(): WhatsAppTokenCache | null {
@@ -422,6 +427,8 @@ function fingerprint(attribution: AttributionData, intent?: PlannerIntent): stri
           (intent.transportModes ?? []).join(","),
           intent.fromCity ?? "",
           intent.toCity ?? "",
+          intent.offerId ?? "",
+          intent.packageName ?? "",
         ]
       : null,
   ]);
@@ -462,9 +469,16 @@ function hasIntentData(intent: PlannerIntent | undefined): boolean {
     intent.requestedComponents?.length ||
     intent.transportModes?.length ||
     intent.fromCity ||
-    intent.toCity,
+    intent.toCity ||
+    intent.offerId,
   );
 }
+
+// An intent token (Trip Planner / Occasion Offer page) in flight. The plain
+// call from AttributionCapture (in the layout) runs AFTER a page's own effect
+// on a full page load, so without this it would race — and could overwrite —
+// the richer token with an attribution-only one.
+let intentRequestPending = false;
 
 export function ensureWhatsAppAttributionToken(intent?: PlannerIntent): void {
   if (typeof window === "undefined") return;
@@ -479,9 +493,17 @@ export function ensureWhatsAppAttributionToken(intent?: PlannerIntent): void {
   const attribution: AttributionData = rawAttribution ?? {};
 
   const fp = fingerprint(attribution, intent);
+  const attributionFp = fingerprint(attribution);
   const cached = readWaTokenCache();
   if (cached?.forData === fp) return; // already have a token for this exact snapshot
+  // A plain (no-intent) call never downgrades an intent token minted for the
+  // same attribution, nor races one that's still being minted.
+  if (!hasIntentData(intent) && (intentRequestPending || cached?.forAttribution === attributionFp)) {
+    return;
+  }
 
+  const withIntent = hasIntentData(intent);
+  if (withIntent) intentRequestPending = true;
   fetch("/api/attribution/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -492,11 +514,19 @@ export function ensureWhatsAppAttributionToken(intent?: PlannerIntent): void {
     )
     .then((json) => {
       if (json?.token && json.prefix) {
-        writeWaTokenCache({ token: json.token, prefix: json.prefix, forData: fp });
+        writeWaTokenCache({
+          token: json.token,
+          prefix: json.prefix,
+          forData: fp,
+          forAttribution: attributionFp,
+        });
       }
     })
     .catch(() => {
       // best-effort — see doc comment above.
+    })
+    .finally(() => {
+      if (withIntent) intentRequestPending = false;
     });
 }
 

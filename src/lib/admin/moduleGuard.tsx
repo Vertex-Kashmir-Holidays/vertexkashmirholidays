@@ -46,6 +46,9 @@ const MODULE_PATH_ALIASES: Record<string, ModuleKey> = {
   // P&L / Business Money overview is a second view over the same Finance data
   // the "finance" module already covers, not a separate resource.
   "/admin/finance-overview": "finance",
+  // Occasion Offers are tour merchandising, managed under the Packages
+  // permission like Tour Collections — see src/app/api/occasion-offers.
+  "/admin/offers": "packages",
 };
 
 /**

@@ -270,6 +270,11 @@ export function Footer({
                     </Link>
                   </li>
                   <li>
+                    <Link href="/activities" className="transition hover:text-primary">
+                      Things To Do
+                    </Link>
+                  </li>
+                  <li>
                     {/* Plain <a>, not next/link — /reviews embeds TripAdvisor's widget
                        script, which only reliably initializes on a fresh page load,
                        not a client-side (SPA) transition. */}

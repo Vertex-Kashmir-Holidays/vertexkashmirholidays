@@ -42,6 +42,10 @@ interface TourDetailsSidebarProps {
   tourType: string;
   pickupDrop: string;
   helpPhone: string;
+  /** Replaces "per person (min N pax)" — e.g. "/ 2 persons" for package-option tours. */
+  priceSuffix?: string;
+  /** Shown before the price, e.g. "From". */
+  pricePrefix?: string;
 }
 
 // Online advance is 10% of the booking total (kept in sync with the server +
@@ -64,6 +68,8 @@ export function TourDetailsSidebar({
   tourType,
   pickupDrop,
   helpPhone,
+  priceSuffix,
+  pricePrefix,
 }: TourDetailsSidebarProps) {
   const router = useRouter();
   const showInquiry = formMode !== "BOOKING_ONLY";
@@ -88,7 +94,7 @@ export function TourDetailsSidebar({
   }
 
   const wa = useWhatsAppLink();
-  const helpHref = wa(`Hi! I'd like help with the "${tourName}" Kashmir tour. Please assist.`);
+  const helpHref = wa(`Hi! I'd like help with the "${tourName}" tour. Please assist.`);
 
   const trustItems: { t: string; s?: string; Icon: LucideIcon }[] = [
     { t: "Transparent Pricing", s: "No hidden charges", Icon: BadgeCheck },
@@ -119,11 +125,14 @@ export function TourDetailsSidebar({
           </span>
         ) : null}
         <p className="mt-3 flex items-baseline gap-2">
+          {pricePrefix && (
+            <span className="text-[14px] font-medium text-muted-foreground">{pricePrefix}</span>
+          )}
           <span className="text-[30px] font-extrabold leading-none">
             ₹{price.toLocaleString("en-IN")}
           </span>
           <span className="text-[14px] font-medium text-muted-foreground">
-            per person{minPersons > 1 ? ` (min ${minPersons} pax)` : ""}
+            {priceSuffix ?? `per person${minPersons > 1 ? ` (min ${minPersons} pax)` : ""}`}
           </span>
         </p>
         {oldPrice && (

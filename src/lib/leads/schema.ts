@@ -32,6 +32,12 @@ export const LEAD_SOURCES = [
   "flight-train-quote",
   "tour-origin-city",
   "trip-planner",
+  // Tour Collection landing pages (/kashmir-tour-packages, …) — which
+  // collection is carried in context.destinationName.
+  "tour-collection",
+  // Occasion Offer pages (/diwali-kashmir-tour-package-2026, …) — which offer
+  // is carried in context.offerId and stored as Lead.occasionOfferId.
+  "occasion-offer",
 ] as const;
 
 export type LeadSourcePage = (typeof LEAD_SOURCES)[number];
@@ -104,6 +110,9 @@ export const leadContextSchema = z.object({
   tourSlug: z.string().max(160).optional(),
   tourId: z.string().max(40).optional(),
   tourName: z.string().max(200).optional(),
+  // Selected Tour.packageOptions entry (e.g. "Premium") — validated against
+  // the tour's published options server-side before it reaches Lead.packageName.
+  packageName: z.string().max(60).optional(),
   destinationSlug: z.string().max(160).optional(),
   destinationName: z.string().max(200).optional(),
   travelDate: z.string().max(40).optional(),
@@ -125,6 +134,14 @@ export const leadContextSchema = z.object({
   requestedComponents: z.array(z.enum(REQUESTED_COMPONENTS)).max(4).optional(),
   transportModes: z.array(z.enum(TRANSPORT_MODES)).max(3).optional(),
   toCity: z.string().max(100).optional(),
+  // Occasion Offer pages — offerId is validated server-side against a
+  // published offer (→ Lead.occasionOfferId); packageName above then carries
+  // the chosen tier and must match one of that offer's published tiers. The
+  // slug/name/dates are display + analytics only (WhatsApp text, events).
+  offerId: z.string().max(40).optional(),
+  offerSlug: z.string().max(160).optional(),
+  offerName: z.string().max(200).optional(),
+  offerDates: z.string().max(60).optional(),
 });
 
 export type LeadContext = z.infer<typeof leadContextSchema>;

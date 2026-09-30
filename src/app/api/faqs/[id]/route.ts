@@ -25,6 +25,7 @@ const patchSchema = z.object({
   blogIds: idArray,
   campaignIds: idArray,
   activityIds: idArray,
+  collectionIds: idArray,
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -41,6 +42,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         blogs: { select: { id: true, title: true } },
         campaigns: { select: { id: true, name: true } },
         activities: { select: { id: true, name: true } },
+        collections: { select: { id: true, name: true } },
       },
     }),
   );
@@ -66,6 +68,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     blogIds,
     campaignIds,
     activityIds,
+    collectionIds,
     lastReviewedAt,
     question,
     ...rest
@@ -93,6 +96,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(blogIds ? { blogs: { set: blogIds.map((bid) => ({ id: bid })) } } : {}),
         ...(campaignIds ? { campaigns: { set: campaignIds.map((cid) => ({ id: cid })) } } : {}),
         ...(activityIds ? { activities: { set: activityIds.map((aid) => ({ id: aid })) } } : {}),
+        ...(collectionIds
+          ? { collections: { set: collectionIds.map((cid) => ({ id: cid })) } }
+          : {}),
       },
     });
     revalidateTag("faqs", "max");

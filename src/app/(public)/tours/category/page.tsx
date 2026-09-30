@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import {
   JsonLd,
   buildBreadcrumbList,
@@ -43,9 +44,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 async function getCategoryCards(): Promise<TourCategoryCardData[]> {
   const [counts, representative] = await Promise.all([
-    prisma.tour.groupBy({ by: ["category"], where: { published: true }, _count: true }),
+    prisma.tour.groupBy({
+      by: ["category"],
+      where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
+      _count: true,
+    }),
     prisma.tour.findMany({
-      where: { published: true },
+      where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
       distinct: ["category"],
       orderBy: [{ bestseller: "desc" }, { rating: "desc" }, { reviewCount: "desc" }],
       select: { category: true, coverImage: true },

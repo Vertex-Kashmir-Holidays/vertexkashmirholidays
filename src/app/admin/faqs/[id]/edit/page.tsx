@@ -27,28 +27,34 @@ export default async function EditFaqPage({ params }: PageProps) {
   const role = session?.user?.role;
   if (!role || !(await can(role, "faqs", "edit"))) redirect("/admin/faqs");
 
-  const [faq, categories, tours, destinations, blogs, campaigns, activities] = await Promise.all([
-    prisma.faq.findUnique({
-      where: { id },
-      include: {
-        tours: { select: { id: true, title: true, slug: true } },
-        destinations: { select: { id: true, name: true, slug: true } },
-        blogs: { select: { id: true, title: true, slug: true } },
-        campaigns: { select: { id: true, name: true, slug: true } },
-        activities: { select: { id: true, name: true, slug: true } },
-      },
-    }),
-    prisma.faqCategory.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-    prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-    prisma.campaign.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-  ]);
+  const [faq, categories, tours, destinations, blogs, campaigns, activities, collections] =
+    await Promise.all([
+      prisma.faq.findUnique({
+        where: { id },
+        include: {
+          tours: { select: { id: true, title: true, slug: true } },
+          destinations: { select: { id: true, name: true, slug: true } },
+          blogs: { select: { id: true, title: true, slug: true } },
+          campaigns: { select: { id: true, name: true, slug: true } },
+          activities: { select: { id: true, name: true, slug: true } },
+          collections: { select: { id: true, name: true, slug: true } },
+        },
+      }),
+      prisma.faqCategory.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+      prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+      prisma.campaign.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.tourCollection.findMany({
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { id: true, name: true },
+      }),
+    ]);
 
   if (!faq) notFound();
 
@@ -74,6 +80,10 @@ export default async function EditFaqPage({ params }: PageProps) {
     ...faq.activities.map((a) => ({
       label: `Activity: ${a.name}`,
       href: `${SITE_URL}/activities/${a.slug}`,
+    })),
+    ...faq.collections.map((c) => ({
+      label: `Tour Collection: ${c.name}`,
+      href: `${SITE_URL}/${c.slug}`,
     })),
   ];
 
@@ -111,6 +121,7 @@ export default async function EditFaqPage({ params }: PageProps) {
           blogIds: faq.blogs.map((b) => b.id),
           campaignIds: faq.campaigns.map((c) => c.id),
           activityIds: faq.activities.map((a) => a.id),
+          collectionIds: faq.collections.map((c) => c.id),
           usedOn,
         }}
         categoryOptions={categories.map((c) => ({ id: c.id, label: c.name }))}
@@ -119,6 +130,7 @@ export default async function EditFaqPage({ params }: PageProps) {
         blogOptions={blogs.map((b) => ({ id: b.id, label: b.title }))}
         campaignOptions={campaigns.map((c) => ({ id: c.id, label: c.name }))}
         activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
+        collectionOptions={collections.map((c) => ({ id: c.id, label: c.name }))}
       />
     </div>
   );

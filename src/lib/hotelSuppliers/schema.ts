@@ -186,6 +186,36 @@ export function getDeluxeMapRate(rate: HotelRate | null | undefined): number | n
   return room?.map ?? null;
 }
 
+// Room types are free text ("Family Suite", "Luxuary", "SUPER DELUXE" …), so
+// the Room Category filter groups them by keyword. First match wins, so
+// "Family Suite" is Family and "Super Deluxe" isn't also Deluxe. Extra beds,
+// child rates and the like match nothing and are ignored.
+export const ROOM_CATEGORIES = [
+  { value: "FAMILY", label: "Family", match: /family/i },
+  { value: "SUITE", label: "Suite", match: /\bsuit/i },
+  { value: "VILLA", label: "Villa / Cottage / Tent", match: /villa|cottage|tent|duplex|attic/i },
+  { value: "SUPER_DELUXE", label: "Super Deluxe", match: /super\s*deluxe/i },
+  { value: "LUXURY", label: "Luxury", match: /luxu/i },
+  { value: "EXECUTIVE", label: "Executive / Club", match: /executive|club|corporate/i },
+  { value: "PREMIUM", label: "Premium / Superior", match: /premi|superior/i },
+  { value: "DELUXE", label: "Deluxe", match: /deluxe/i },
+] as const;
+export type RoomCategoryValue = (typeof ROOM_CATEGORIES)[number]["value"];
+
+/** Room categories a hotel offers. `hasFamilyRoom` (the staff-ticked flag) also counts as Family. */
+export function hotelRoomCategories(
+  rate: HotelRate | null | undefined,
+  hasFamilyRoom: boolean,
+): Set<RoomCategoryValue> {
+  const found = new Set<RoomCategoryValue>();
+  if (hasFamilyRoom) found.add("FAMILY");
+  for (const room of rate?.rooms ?? []) {
+    const category = ROOM_CATEGORIES.find((c) => c.match.test(room.roomType));
+    if (category) found.add(category.value);
+  }
+  return found;
+}
+
 // Meal-plan abbreviation legend, shown at the top of the Hotel Rates page.
 export const MEAL_PLAN_LEGEND: { code: "EP" | "CP" | "MAP"; meaning: string }[] = [
   { code: "EP", meaning: "Room only" },
@@ -240,6 +270,7 @@ export const createHotelSupplierSchema = z.object({
   category: z.enum(HOTEL_CATEGORIES),
   isActive: z.boolean().default(true),
   recommended: z.boolean().default(false),
+  hasFamilyRoom: z.boolean().default(false),
   // Manual tally of bookings sent to this hotel — staff-entered, not derived
   // from any Booking relation (HotelSupplier is a supplier reference, not
   // bookable inventory — see the module comment at the top of this file).
@@ -257,6 +288,7 @@ export const patchHotelSupplierSchema = z.object({
   category: z.enum(HOTEL_CATEGORIES).optional(),
   isActive: z.boolean().optional(),
   recommended: z.boolean().optional(),
+  hasFamilyRoom: z.boolean().optional(),
   bookingsCount: z.coerce.number().int().min(0).optional(),
   data: hotelDataSchema.optional(),
   coverImageUrl: nullableUrl.optional(),

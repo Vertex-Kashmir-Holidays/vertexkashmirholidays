@@ -2,7 +2,12 @@
 // Every event shape is a discriminated union — never use `any` or free-form objects.
 
 export type LeadType =
-  "itinerary" | "contact" | "tour_inquiry" | "flight_train_quote" | "trip_planner_request";
+  | "itinerary"
+  | "contact"
+  | "tour_inquiry"
+  | "flight_train_quote"
+  | "trip_planner_request"
+  | "occasion_offer";
 
 export type WhatsAppSource =
   | "header"
@@ -19,7 +24,13 @@ export type WhatsAppSource =
   | "trip_planner_hero"
   | "tour_category_hero"
   | "promo_banner"
-  | "strip_banner";
+  | "strip_banner"
+  | "tour_collection_hero"
+  | "tour_package_card"
+  | "offer_hero"
+  | "offer_package_card"
+  | "offer_mobile_bar"
+  | "offer_closing_cta";
 
 // Trip Planner structured-intent params, reused by lead_submit/whatsapp_click/
 // trip_request_start below — kept as plain string[]/string here (not imported
@@ -33,6 +44,21 @@ interface TripPlannerIntentParams {
   has_hotel_interest?: boolean;
 }
 
+// Selected Tour.packageOptions entry (e.g. "Premium") for tours sold as package
+// variants — rides along on the existing inquiry/WhatsApp/lead events rather
+// than a new event. package_name stays the TOUR title, as on every other event.
+interface PackageOptionParams {
+  package_option?: string;
+}
+
+// Occasion Offer page context (/diwali-kashmir-tour-package-2026, …) — rides
+// along on lead_submit/whatsapp_click fired from an offer page; package_option
+// (above) carries the chosen tier there.
+interface OfferParams {
+  offer_id?: string;
+  offer_slug?: string;
+}
+
 export type AnalyticsEvent =
   | ({
       event: "lead_submit";
@@ -44,8 +70,19 @@ export type AnalyticsEvent =
       // dedupe this browser event against the server-side Conversions API
       // call for the same Lead (see src/lib/offlineConversion/adapters/meta.ts).
       lead_id?: string;
-    } & TripPlannerIntentParams)
-  | ({ event: "whatsapp_click"; source: WhatsAppSource } & TripPlannerIntentParams)
+    } & TripPlannerIntentParams &
+      PackageOptionParams &
+      OfferParams)
+  | ({
+      event: "whatsapp_click";
+      source: WhatsAppSource;
+      package_name?: string;
+    } & TripPlannerIntentParams &
+      PackageOptionParams &
+      OfferParams)
+  // Occasion Offer page load, and a stay tier being picked on it.
+  | { event: "offer_view"; offer_id: string; offer_slug: string; occasion_type: string }
+  | { event: "offer_package_select"; offer_id: string; offer_slug: string; package_option: string }
   // Fires once, on the Trip Planner's first chip interaction — never on every
   // page view. entry_intent reflects whatever the entry point (this page's
   // hub form vs. a tour page's pre-set chip) started the visitor with.
@@ -53,7 +90,7 @@ export type AnalyticsEvent =
   | { event: "phone_click" }
   | { event: "email_click" }
   | { event: "package_view"; package_name: string }
-  | { event: "inquiry_started"; package_name?: string; tour_id?: string }
+  | ({ event: "inquiry_started"; package_name?: string; tour_id?: string } & PackageOptionParams)
   | { event: "flight_train_quote_click"; package_name?: string; placement: string }
   | { event: "booking_started"; package_name?: string }
   | {

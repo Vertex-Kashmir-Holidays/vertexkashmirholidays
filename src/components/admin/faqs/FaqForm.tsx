@@ -51,6 +51,7 @@ export interface FaqFormDefaults {
   blogIds?: string[];
   campaignIds?: string[];
   activityIds?: string[];
+  collectionIds?: string[];
   slug?: string;
   usedOn?: { label: string; href: string }[];
 }
@@ -63,6 +64,7 @@ interface FaqFormProps {
   blogOptions: LinkOption[];
   campaignOptions: LinkOption[];
   activityOptions: LinkOption[];
+  collectionOptions: LinkOption[];
 }
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
@@ -90,6 +92,7 @@ export function FaqForm({
   blogOptions,
   campaignOptions,
   activityOptions,
+  collectionOptions,
 }: FaqFormProps) {
   const router = useRouter();
   const isEdit = Boolean(defaults?.id);
@@ -99,6 +102,7 @@ export function FaqForm({
   const [blogIds, setBlogIds] = useState<string[]>(defaults?.blogIds ?? []);
   const [campaignIds, setCampaignIds] = useState<string[]>(defaults?.campaignIds ?? []);
   const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
+  const [collectionIds, setCollectionIds] = useState<string[]>(defaults?.collectionIds ?? []);
   const [placements, setPlacements] = useState<string[]>(defaults?.placements ?? []);
 
   const {
@@ -138,6 +142,7 @@ export function FaqForm({
       blogIds,
       campaignIds,
       activityIds,
+      collectionIds,
     };
 
     const url = isEdit ? `/api/faqs/${defaults!.id}` : "/api/faqs";
@@ -212,8 +217,8 @@ export function FaqForm({
             <h3 className="font-bold text-foreground text-sm">Attach to specific records</h3>
             <p className="text-[12px] text-muted-foreground -mt-2">
               Optional. A FAQ can attach to any number of Tours, Destinations, Blog posts,
-              Campaigns, or Activities — it still exists once and is shown wherever it&apos;s
-              attached, never duplicated.
+              Campaigns, Activities, or Tour Collections — it still exists once and is shown
+              wherever it&apos;s attached, never duplicated.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <LinkChecklist
@@ -245,6 +250,12 @@ export function FaqForm({
                 options={activityOptions}
                 value={activityIds}
                 onChange={setActivityIds}
+              />
+              <LinkChecklist
+                title="Tour Collections"
+                options={collectionOptions}
+                value={collectionIds}
+                onChange={setCollectionIds}
               />
             </div>
           </div>

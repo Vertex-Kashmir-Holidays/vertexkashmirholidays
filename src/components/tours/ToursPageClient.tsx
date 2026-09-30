@@ -5,12 +5,15 @@ import { Heart, Users, Mountain, Crown, type LucideIcon } from "lucide-react";
 import type { TourCategory } from "@prisma/client";
 import { ToursFiltersSidebar } from "@/components/tours/ToursFiltersSidebar";
 import { ToursGridSection } from "@/components/tours/ToursGridSection";
-import { AffordabilityWidget } from "@/components/payments/AffordabilityWidget";
+import { TourCollectionsCard } from "@/components/tours/TourCollectionsCard";
+import type { TourCollectionLinkData } from "@/components/tours/TourCollectionLinks";
 import type { TourListItemData, TourSortOption } from "@/types/tours";
 
 interface ToursPageClientProps {
   tours: TourListItemData[];
   browseCategories: TourCategory[];
+  /** Live Tour Collections for the sidebar "Tour Packages" card. */
+  collections: TourCollectionLinkData[];
 }
 
 const CATEGORY_META: Record<string, { label: string; Icon: LucideIcon }> = {
@@ -35,11 +38,12 @@ const REGION_TABS = [
   { id: "ALL", label: "All Tours" },
   { id: "KASHMIR", label: "Kashmir" },
   { id: "LADAKH", label: "Ladakh" },
+  { id: "HIMACHAL", label: "Himachal" },
 ] as const;
 
-export function ToursPageClient({ tours, browseCategories }: ToursPageClientProps) {
+export function ToursPageClient({ tours, browseCategories, collections }: ToursPageClientProps) {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [activeRegion, setActiveRegion] = useState<"ALL" | "KASHMIR" | "LADAKH">("ALL");
+  const [activeRegion, setActiveRegion] = useState<(typeof REGION_TABS)[number]["id"]>("ALL");
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDurations, setSelectedDurations] = useState<string[]>([]);
@@ -163,7 +167,11 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
   return (
     <main className="mx-auto max-w-[1300px] px-3 sm:px-6 py-10">
       <div className="mb-7 flex gap-2 overflow-x-auto scrollbar-none -mx-3 px-3 pb-1 sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0">
-        {REGION_TABS.map((tab) => (
+        {/* Region tabs with no published tours are hidden (e.g. before any
+           Himachal tour exists) rather than showing an empty "(0)" tab. */}
+        {REGION_TABS.filter(
+          (tab) => tab.id === "ALL" || tours.some((t) => t.region === tab.id),
+        ).map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleRegionChange(tab.id as typeof activeRegion)}
@@ -182,9 +190,7 @@ export function ToursPageClient({ tours, browseCategories }: ToursPageClientProp
       </div>
       <div className="grid gap-7 lg:grid-cols-[252px_1fr]">
         <div className="space-y-5">
-          {priceBounds.min > 0 && (
-            <AffordabilityWidget amount={priceBounds.min} title="Easy EMI Available" />
-          )}
+          <TourCollectionsCard collections={collections} />
           <ToursFiltersSidebar
             browseCategories={browseCategories}
             search={search}

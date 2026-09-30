@@ -14,7 +14,8 @@ import { ReorderableList } from "./ReorderableList";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf, type TokenPaymentLink } from "@/lib/itinerary/export-pdf";
-import { ITINERARY_TITLE_PREFIX, buildDocumentTitle } from "@/lib/itinerary/documentTitle";
+import { buildDocumentTitle, isCopyTitle } from "@/lib/itinerary/documentTitle";
+import { UntouchedCopyGuard } from "./UntouchedCopyGuard";
 import { applyDayOrder } from "@/lib/itinerary/dayReorder";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
@@ -55,12 +56,8 @@ interface ItineraryEditorProps {
   initialTitle: string;
   initialStatus: ItineraryStatus;
   canSave?: boolean;
-  /**
-   * Standalone itineraries are titled "Kashmir Itinerary - <name> - <duration>"
-   * from their own content (the API derives the same string on save). Lead- and
-   * booking-linked itineraries keep their CRM-owned, hand-editable title.
-   */
-  autoTitle?: boolean;
+  /** Current user authored this record and may edit + delete it — see UntouchedCopyGuard. */
+  ownsCopy?: boolean;
   leadSync?: LeadSyncData;
   /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
@@ -93,7 +90,7 @@ export function ItineraryEditor({
   initialTitle,
   initialStatus,
   canSave = true,
-  autoTitle = false,
+  ownsCopy = false,
   leadSync,
   isBookingLinked = false,
   lockCost = false,
@@ -105,8 +102,10 @@ export function ItineraryEditor({
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
-  const [title, setTitle] = useState(initialTitle);
-  const displayTitle = autoTitle ? buildDocumentTitle(ITINERARY_TITLE_PREFIX, data) : title;
+  // Every itinerary is named "<customer> - <duration> - <phone>" from its own
+  // content; the API derives the same string on save (a lead/booking-linked
+  // one may get a " (2)" suffix there — shown until the next edit).
+  const displayTitle = id && data === initialData ? initialTitle : buildDocumentTitle(data);
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
@@ -379,13 +378,13 @@ export function ItineraryEditor({
 
   /* ---------- actions ---------- */
   async function handleSave() {
-    if (!displayTitle.trim()) {
-      toast.error("Please enter an itinerary title.");
+    if (!data.preparedFor.trim()) {
+      toast.error("Please enter the customer name (Prepared For).");
       return;
     }
     setSaving(true);
     try {
-      const payload = { title: displayTitle.trim(), status, data };
+      const payload = { status, data };
       const res = await fetch(id ? `${apiBasePath}/${id}` : apiBasePath, {
         method: id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -487,8 +486,6 @@ export function ItineraryEditor({
     <div className="pb-8">
       <Toolbar
         title={displayTitle}
-        onTitleChange={setTitle}
-        titleReadOnly={autoTitle}
         status={status}
         onStatusChange={setStatus}
         onSave={handleSave}
@@ -498,6 +495,13 @@ export function ItineraryEditor({
         isExporting={isExporting}
         canSave={canSave}
       />
+      {id && (
+        <UntouchedCopyGuard
+          active={ownsCopy && isCopyTitle(initialTitle)}
+          deleteUrl={`${apiBasePath}/${id}`}
+          noun="itinerary"
+        />
+      )}
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[920px] space-y-8">

@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, requireExisting } from "@/lib/api/route-helpers";
+import { bannerFeaturesSchema } from "@/lib/banners";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,11 @@ const patchSchema = z.object({
   ctaUrl: z.string().max(2048).nullable().optional(),
   imageUrl: z.string().max(2048).nullable().optional(),
   imageMobileUrl: z.string().max(2048).nullable().optional(),
+  layout: z.enum(["OVERLAY", "SPLIT"]).optional(),
+  contentBackground: z.boolean().optional(),
+  kicker: z.string().max(120).nullable().optional(),
+  subtitle: z.string().max(200).nullable().optional(),
+  features: bannerFeaturesSchema.optional(),
   pages: z.array(z.string().min(1)).min(1, "Select at least one page").optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.coerce.number().int().optional(),
@@ -61,6 +67,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (d.ctaUrl !== undefined) data.ctaUrl = normalizeText(d.ctaUrl);
   if (d.imageUrl !== undefined) data.imageUrl = normalizeText(d.imageUrl);
   if (d.imageMobileUrl !== undefined) data.imageMobileUrl = normalizeText(d.imageMobileUrl);
+  if (d.layout !== undefined) data.layout = d.layout;
+  if (d.contentBackground !== undefined) data.contentBackground = d.contentBackground;
+  if (d.kicker !== undefined) data.kicker = normalizeText(d.kicker);
+  if (d.subtitle !== undefined) data.subtitle = normalizeText(d.subtitle);
+  if (d.features !== undefined) data.features = JSON.stringify(d.features);
   if (d.pages !== undefined) data.pages = JSON.stringify(d.pages);
   if (d.isActive !== undefined) data.isActive = d.isActive;
   if (d.sortOrder !== undefined) data.sortOrder = d.sortOrder;

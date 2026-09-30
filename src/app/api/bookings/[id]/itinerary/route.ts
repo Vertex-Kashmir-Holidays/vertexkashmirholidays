@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { buildLeadItineraryData } from "@/lib/itinerary/lead-defaults";
+import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import type { Role } from "@/lib/rbac";
 import type { Prisma } from "@prisma/client";
@@ -27,6 +28,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: {
       id: true,
       guestName: true,
+      guestPhone: true,
       travellers: true,
       travelDate: true,
       travelEndDate: true,
@@ -64,22 +66,24 @@ export async function POST(_req: NextRequest, { params }: Params) {
   }
 
   const editedByName = (guard.user.name ?? guard.user.email) as string;
-  const title = `${booking.guestName} — Kashmir Itinerary`;
   // Seed with booking facts. Package type defaults to the tour name (website
   // bookings); total cost is seeded from the agreed booking amount.
   const baseData = buildLeadItineraryData({
     name: booking.guestName,
+    phone: booking.guestPhone,
     tourTitle: null,
     adults: booking.travellers,
     children: null,
     startDate: booking.travelDate,
     endDate: booking.travelEndDate ?? null,
   });
-  const data = {
+  const seeded = {
     ...baseData,
     packageType: booking.tour?.title?.toUpperCase() ?? baseData.packageType,
     totalCost: `Rs ${booking.amount.toLocaleString("en-IN")}/-`,
-  } as unknown as Prisma.InputJsonValue;
+  };
+  const title = await uniqueItineraryTitle(seeded);
+  const data = seeded as unknown as Prisma.InputJsonValue;
 
   const created = await prisma.itinerary.create({
     data: {

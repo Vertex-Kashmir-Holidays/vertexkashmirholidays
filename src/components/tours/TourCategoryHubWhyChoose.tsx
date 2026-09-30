@@ -33,6 +33,25 @@ const WHY_CHOOSE_ITEMS = [
   },
 ];
 
+// Used on Tour Collection pages whose tours aren't all in Kashmir/Ladakh
+// (e.g. Himachal) — same six-up layout, minus the two Kashmir-specific claims.
+const GENERAL_ITEMS = [
+  {
+    t: "One Point of Contact",
+    s: "A dedicated Vertex travel planner from your first enquiry to drop-off",
+    Icon: Compass,
+  },
+  WHY_CHOOSE_ITEMS[1],
+  {
+    t: "Clear Package Options",
+    s: "Know exactly which hotel, transport and meals each package includes",
+    Icon: BedDouble,
+  },
+  WHY_CHOOSE_ITEMS[3],
+  WHY_CHOOSE_ITEMS[4],
+  WHY_CHOOSE_ITEMS[5],
+];
+
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
@@ -46,7 +65,12 @@ const itemVariants: Variants = {
 // Static trust section for the /tours/category hub — same visual language as
 // ToursTrustBar (icon chip + title + subtitle) but six items instead of four,
 // since there's no CMS-managed content backing this page.
-export function TourCategoryHubWhyChoose() {
+export function TourCategoryHubWhyChoose({
+  variant = "kashmir",
+}: {
+  variant?: "kashmir" | "general";
+} = {}) {
+  const items = variant === "general" ? GENERAL_ITEMS : WHY_CHOOSE_ITEMS;
   return (
     <section>
       <h2 className="h-display text-[22px] font-bold text-foreground sm:text-[26px]">
@@ -59,7 +83,7 @@ export function TourCategoryHubWhyChoose() {
         whileInView="visible"
         viewport={{ once: true, margin: "-80px" }}
       >
-        {WHY_CHOOSE_ITEMS.map((x, i) => (
+        {items.map((x, i) => (
           <motion.div key={i} variants={itemVariants} className="flex items-start gap-3.5">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-muted text-primary shadow-soft">
               <x.Icon className="h-5 w-5" strokeWidth={1.8} />

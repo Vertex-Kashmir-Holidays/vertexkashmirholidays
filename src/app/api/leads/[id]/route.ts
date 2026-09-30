@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { parsePackageOptions } from "@/lib/tours/content";
 import { requirePermission } from "@/lib/permissions";
 import { LeadStatus, LeadSource, LeadActivityType } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
+import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 import { phoneField } from "@/lib/leads/schema";
@@ -52,6 +54,8 @@ const patchSchema = z.object({
   assignedToId: z.string().nullable().optional(),
   notes: z.string().optional(),
   tourId: z.string().min(1).nullable().optional(),
+  // One of the (effective) tour's package options; null clears it.
+  packageName: z.string().trim().max(60).nullable().optional(),
   adults: z.coerce.number().int().positive().optional(),
   children: z.coerce.number().int().min(0).nullable().optional(),
   startDate: z.string().nullable().optional(),
@@ -119,6 +123,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     followUpAt,
     bookingId,
     tourId,
+    packageName,
     negotiatedAmount,
     tokenAmount,
     ...rest
@@ -153,6 +158,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     (rest.email !== undefined && (rest.email ?? null) !== (existing.email ?? null)) ||
     (rest.source !== undefined && rest.source !== existing.source) ||
     (tourId !== undefined && (tourId ?? null) !== (existing.tourId ?? null)) ||
+    (packageName !== undefined && (packageName ?? null) !== (existing.packageName ?? null)) ||
     (rest.adults !== undefined && rest.adults !== existing.adults) ||
     (rest.children !== undefined && (rest.children ?? null) !== (existing.children ?? null));
   if (workChanged && !canManage) {
@@ -186,16 +192,40 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // Resolve the new tour's title up front (also reused below for the
   // itinerary-sync facts and stays null for "Custom").
   let nextTourTitle: string | null | undefined;
+  // Picking an Occasion Offer's hidden CRM tour also tags the lead with the offer.
+  let tourOfferId: string | null = null;
   if (tourId !== undefined) {
     if (tourId) {
       const tour = await prisma.tour.findUnique({
         where: { id: tourId },
-        select: { title: true },
+        select: { title: true, crmForOffer: { select: { id: true } } },
       });
       if (!tour) return NextResponse.json({ error: "Tour not found." }, { status: 422 });
       nextTourTitle = tour.title;
+      tourOfferId = tour.crmForOffer?.id ?? null;
     } else {
       nextTourTitle = null;
+    }
+  }
+
+  // A package belongs to a tour: validate it against the effective tour, and
+  // drop the stored one when the tour changes without a new package given.
+  const tourChanged = tourId !== undefined && (tourId ?? null) !== (existing.tourId ?? null);
+  const effectiveTourId = tourId !== undefined ? tourId : existing.tourId;
+  const nextPackageName: string | null | undefined =
+    packageName !== undefined ? packageName || null : tourChanged ? null : undefined;
+  if (nextPackageName) {
+    const pkgTour = effectiveTourId
+      ? await prisma.tour.findUnique({
+          where: { id: effectiveTourId },
+          select: { packageOptions: true },
+        })
+      : null;
+    if (
+      !pkgTour ||
+      !parsePackageOptions(pkgTour.packageOptions).some((o) => o.name === nextPackageName)
+    ) {
+      return NextResponse.json({ error: "Package not found for this tour." }, { status: 422 });
     }
   }
 
@@ -219,6 +249,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const itin = existing.itinerary;
   const tripFactsTouched =
     rest.name !== undefined ||
+    rest.phone !== undefined ||
     tourId !== undefined ||
     rest.adults !== undefined ||
     rest.children !== undefined ||
@@ -231,6 +262,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (parsedItin.success) {
       const facts = {
         name: rest.name ?? existing.name,
+        phone: rest.phone ?? existing.phone,
         tourTitle: tourId !== undefined ? (nextTourTitle ?? null) : (existing.tour?.title ?? null),
         adults: rest.adults ?? existing.adults,
         children: rest.children !== undefined ? rest.children : existing.children,
@@ -244,18 +276,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         nextData.travelDates !== parsedItin.data.travelDates ||
         nextData.duration !== parsedItin.data.duration ||
         nextData.travelers !== parsedItin.data.travelers ||
-        nextData.packageType !== parsedItin.data.packageType;
+        nextData.packageType !== parsedItin.data.packageType ||
+        nextData.customerPhone !== parsedItin.data.customerPhone;
       if (changed) {
         const jsonData = nextData as unknown as Prisma.InputJsonValue;
+        // The standard name (name - duration - phone) follows the synced facts.
+        const title = await uniqueItineraryTitle(nextData, itin.id);
         itinerarySyncOps.push(
           prisma.itinerary.update({
             where: { id: itin.id },
-            data: { data: jsonData, lastEditedById: performedById },
+            data: { title, data: jsonData, lastEditedById: performedById },
           }),
           prisma.itineraryHistory.create({
             data: {
               itineraryId: itin.id,
-              title: itin.title,
+              title,
               data: jsonData,
               editedById: performedById,
               editedByName: performedByName,
@@ -284,6 +319,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ...(tourId !== undefined && {
           tour: tourId ? { connect: { id: tourId } } : { disconnect: true },
         }),
+        ...(tourOfferId && { occasionOffer: { connect: { id: tourOfferId } } }),
+        ...(nextPackageName !== undefined && { packageName: nextPackageName }),
         ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
         ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
         ...(followUpAt !== undefined && { followUpAt: followUpAt ? new Date(followUpAt) : null }),

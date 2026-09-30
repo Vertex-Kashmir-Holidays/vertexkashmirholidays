@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import type { ProposalSummary, ProposalStatus } from "@/types/proposal";
+import { STALE_COPY_MS, isCopyTitle } from "@/lib/itinerary/documentTitle";
+import {
+  SINGLE_TIER_KEY,
+  TIER_ORDER,
+  type ProposalSummary,
+  type ProposalStatus,
+} from "@/types/proposal";
 
 const STATUSES: ProposalStatus[] = ["DRAFT", "SENT"];
 
@@ -21,10 +27,19 @@ export async function listProposalSummaries({
   page,
   pageSize,
 }: ListOptions): Promise<{ items: ProposalSummary[]; total: number }> {
+  await purgeStaleProposalCopies();
   const where: Prisma.ProposalItineraryWhereInput = {};
   if (ownerId) where.ownerId = ownerId;
   if (status && (STATUSES as string[]).includes(status)) where.status = status as ProposalStatus;
-  if (search) where.title = { contains: search, mode: "insensitive" };
+  // Title, or the customer's name/phone stored in the proposal content —
+  // staff following up often only have the number to hand.
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: "insensitive" } },
+      { data: { path: ["customerPhone"], string_contains: search } },
+      { data: { path: ["preparedFor"], string_contains: search } },
+    ];
+  }
 
   const [rows, total] = await Promise.all([
     prisma.proposalItinerary.findMany({
@@ -40,6 +55,9 @@ export async function listProposalSummaries({
         createdAt: true,
         updatedAt: true,
         owner: { select: { name: true } },
+        // Only two short strings are read from it, but Prisma can't select
+        // JSON sub-paths — acceptable at this list's page size.
+        data: true,
       },
     }),
     prisma.proposalItinerary.count({ where }),
@@ -53,10 +71,29 @@ export async function listProposalSummaries({
       status: i.status,
       ownerId: i.ownerId,
       ownerName: i.owner?.name ?? null,
+      ...customerFrom(i.data),
       createdAt: i.createdAt,
       updatedAt: i.updatedAt,
     })),
   };
+}
+
+function customerFrom(data: Prisma.JsonValue): {
+  customerName: string;
+  customerPhone: string;
+  packageCosts: { label: string; price: string }[];
+} {
+  const obj = (v: unknown) =>
+    (v && typeof v === "object" && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const d = obj(data);
+  const tiers = obj(d.tiers);
+  // Same tier selection as the PDF cover's price boxes.
+  const keys = d.docType === "single" ? [SINGLE_TIER_KEY] : TIER_ORDER;
+  const packageCosts = keys
+    .map((k) => ({ label: str(obj(tiers[k]).label), price: str(obj(tiers[k]).priceLabel) }))
+    .filter((c) => c.price);
+  return { customerName: str(d.preparedFor), customerPhone: str(d.customerPhone), packageCosts };
 }
 
 // Deliberately global (not per-owner): two staff quoting the same customer the
@@ -70,4 +107,18 @@ export async function proposalTitleExists(title: string, excludeId?: string): Pr
     select: { id: true },
   });
   return match !== null;
+}
+
+// Backstop for copies abandoned without the editor's leave hook firing — see
+// purgeStaleItineraryCopies in src/lib/itinerary/list.ts.
+async function purgeStaleProposalCopies() {
+  const candidates = await prisma.proposalItinerary.findMany({
+    where: {
+      title: { contains: " - copy", mode: "insensitive" },
+      updatedAt: { lt: new Date(Date.now() - STALE_COPY_MS) },
+    },
+    select: { id: true, title: true },
+  });
+  const ids = candidates.filter((c) => isCopyTitle(c.title)).map((c) => c.id);
+  if (ids.length) await prisma.proposalItinerary.deleteMany({ where: { id: { in: ids } } });
 }

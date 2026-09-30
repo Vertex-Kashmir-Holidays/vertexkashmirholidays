@@ -24,6 +24,7 @@ const createSchema = z.object({
   blogIds: idArray,
   campaignIds: idArray,
   activityIds: idArray,
+  collectionIds: idArray,
 });
 
 export async function POST(request: Request) {
@@ -35,8 +36,16 @@ export async function POST(request: Request) {
   const parsed = parseWithSchema(createSchema, body.data);
   if (!parsed.ok) return parsed.response;
 
-  const { tourIds, destinationIds, blogIds, campaignIds, activityIds, lastReviewedAt, ...rest } =
-    parsed.data;
+  const {
+    tourIds,
+    destinationIds,
+    blogIds,
+    campaignIds,
+    activityIds,
+    collectionIds,
+    lastReviewedAt,
+    ...rest
+  } = parsed.data;
 
   try {
     const slug = await generateFaqSlug(rest.question);
@@ -52,6 +61,7 @@ export async function POST(request: Request) {
         blogs: { connect: blogIds.map((id) => ({ id })) },
         campaigns: { connect: campaignIds.map((id) => ({ id })) },
         activities: { connect: activityIds.map((id) => ({ id })) },
+        collections: { connect: collectionIds.map((id) => ({ id })) },
       },
     });
     revalidateTag("faqs", "max");

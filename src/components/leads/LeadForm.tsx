@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -43,6 +43,9 @@ interface LeadFormProps {
   avatars?: string[];
   /** Extra classes on the form wrapper. */
   className?: string;
+  /** Page-specific fields rendered after Email (e.g. an offer's package picker);
+   *  the caller owns their state and feeds it back through `context`. */
+  extraFields?: ReactNode;
 }
 
 // Match the country-aware PhoneInput (.input-wrap): solid card background,
@@ -62,6 +65,7 @@ export function LeadForm({
   note,
   avatars = [],
   className,
+  extraFields,
 }: LeadFormProps) {
   const [sent, setSent] = useState(false);
   const [sentName, setSentName] = useState("");
@@ -130,8 +134,22 @@ export function LeadForm({
       const from = context?.fromCity ? ` from ${context.fromCity}` : "";
       return `${greeting}I'd like help with ${what}${modeNote}${from}. Please share options.`;
     }
+    // Occasion Offer page — offer name, its dates and the chosen tier, if any.
+    if (context?.offerName) {
+      const dates = context.offerDates ? ` (${context.offerDates})` : "";
+      const pkg = context.packageName ? ` — ${context.packageName} package` : "";
+      return `${greeting}I'm interested in the ${context.offerName}${dates}${pkg}. Please share details.`;
+    }
+    // Package-option enquiry (Tour.packageOptions) — name the chosen package.
+    if (context?.tourName && context.packageName)
+      return `${greeting}I'm interested in the "${context.tourName}" — ${context.packageName} package. Please share details and availability.`;
+    // Tour titles already name their destination, so no region word here —
+    // the same form serves Kashmir, Ladakh and Himachal tours.
     if (context?.tourName)
-      return `${greeting}I'd like more details about the "${context.tourName}" Kashmir tour. Please help.`;
+      return `${greeting}I'd like more details about the "${context.tourName}" tour. Please help.`;
+    // Tour Collection pages carry the collection name ("Himachal Tour Packages").
+    if (source === "tour-collection" && context?.destinationName)
+      return `${greeting}I'm interested in your ${context.destinationName}. Can you help me choose?`;
     if (context?.destinationName)
       return `${greeting}I'd like to plan a trip to ${context.destinationName}. Can you help?`;
     return `${greeting}I'd like to plan a Kashmir holiday. Can you help me?`;
@@ -207,6 +225,10 @@ export function LeadForm({
       // the same requestedComponents context but keeps its own lead_type/
       // sourcePage classification below — only the extra intent params piggyback.
       const hasTripPlannerIntent = context?.requestedComponents !== undefined;
+      const offer =
+        context?.offerId && context.offerSlug
+          ? { offerId: context.offerId, offerSlug: context.offerSlug }
+          : undefined;
       trackLeadSubmit(
         isTour
           ? "tour_inquiry"
@@ -214,7 +236,9 @@ export function LeadForm({
             ? "flight_train_quote"
             : isTripPlanner
               ? "trip_planner_request"
-              : source === "contact"
+              : offer
+                ? "occasion_offer"
+                : source === "contact"
                 ? "contact"
                 : "itinerary",
         isTour || isFlightTrainQuote ? context?.tourName : undefined,
@@ -228,8 +252,10 @@ export function LeadForm({
               hasHotelInterest: context?.requestedComponents?.includes("HOTEL"),
             }
           : undefined,
+        context?.packageName,
+        offer,
       );
-      if (isTour) trackTourInquiry(context?.tourName, context?.tourId);
+      if (isTour) trackTourInquiry(context?.tourName, context?.tourId, context?.packageName);
       reset();
       setNational("");
     } catch {
@@ -256,7 +282,7 @@ export function LeadForm({
           <p className="mx-auto mt-1.5 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
             {source === "flight-train-quote"
               ? "Our team is checking live fares for your route and will share the best flight/train options on WhatsApp shortly."
-              : "Our local Kashmir expert will connect with you on WhatsApp shortly — usually within 30 minutes."}
+              : "Our travel expert will connect with you on WhatsApp shortly — usually within 30 minutes."}
           </p>
           <a
             href={successWaHref}
@@ -362,6 +388,8 @@ export function LeadForm({
           {errors.email && <p className="mt-1 text-[12px] text-red-500">{errors.email.message}</p>}
         </div>
 
+        {extraFields}
+
         {/* Consent */}
         <div>
           <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-muted-foreground">
@@ -443,6 +471,14 @@ export function LeadForm({
                     requestedComponents: context?.requestedComponents,
                     transportModes: context?.transportModes,
                     sourcePage: source,
+                  }
+                : undefined,
+              undefined,
+              context?.offerId && context.offerSlug
+                ? {
+                    offerId: context.offerId,
+                    offerSlug: context.offerSlug,
+                    packageOption: context.packageName,
                   }
                 : undefined,
             )

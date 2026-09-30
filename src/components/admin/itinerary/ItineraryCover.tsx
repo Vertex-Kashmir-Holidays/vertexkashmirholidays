@@ -11,6 +11,7 @@ type CoverField =
   | "subtitle"
   | "duration"
   | "preparedFor"
+  | "customerPhone"
   | "travelDates"
   | "travelers"
   | "packageType"
@@ -139,6 +140,22 @@ export function ItineraryCover({
               value={data.preparedFor}
               onValueChange={(v) => onUpdate("preparedFor", v)}
               className="font-serif mt-1.5 text-center text-2xl font-semibold text-white sm:text-3xl md:text-4xl"
+            />
+          )}
+          {/* Customer phone — synced from the linked lead/booking (read-only
+              there, like the name); editable on standalone itineraries. */}
+          {nameLocked || readOnlyDerived ? (
+            data.customerPhone ? (
+              <p className="mt-1.5 text-center text-sm tracking-[0.15em] text-[hsl(146_35%_70%)]">
+                {data.customerPhone}
+              </p>
+            ) : null
+          ) : (
+            <EditableField
+              value={data.customerPhone}
+              onValueChange={(v) => onUpdate("customerPhone", v)}
+              placeholder="Customer phone"
+              className="mt-1.5 text-center text-sm tracking-[0.15em] text-[hsl(146_35%_70%)]"
             />
           )}
 

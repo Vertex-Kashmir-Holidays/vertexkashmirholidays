@@ -38,6 +38,9 @@ import { BookingMobileBar } from "@/components/tours/BookingMobileBar";
 import { PackageViewTracker } from "@/components/analytics/PackageViewTracker";
 import { ScrollToTopOnMount } from "@/components/layout/ScrollToTopOnMount";
 import { TrustSection } from "@/components/common/TrustSection";
+import { TourPackageCards } from "@/components/tours/TourPackageCards";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
+import { pickPrimaryCollection } from "@/lib/tours/collections";
 import {
   parseJson,
   parseItinerary,
@@ -48,6 +51,7 @@ import {
   parsePackingList,
   parseImportantNotes,
   parseRelatedTours,
+  publishedPackageOptions,
 } from "@/lib/tours/content";
 
 // 24h safety net — Tour mutations invalidate this exact page directly (src/lib/cache.ts).
@@ -110,6 +114,12 @@ const getTour = cache(async (slug: string) => {
             },
           },
         },
+      },
+      // Tour Collections — the primary (lowest sortOrder, published) one is
+      // this page's breadcrumb parent. The tour's URL never depends on them.
+      collections: {
+        where: { published: true },
+        select: { name: true, slug: true, sortOrder: true, published: true },
       },
       // Centralized FAQ module.
       relatedFaqs: {
@@ -185,6 +195,17 @@ export default async function TourDetailsPage({ params }: PageProps) {
   const localTravelTips = parseStringList(tour.localTravelTips);
   const importantNotes = parseImportantNotes(tour.importantNotes);
   const relatedTourEntries = parseRelatedTours(tour.relatedTours);
+  // Package variants (Tour.packageOptions) — shared itinerary, per-package
+  // stay/services and a public 2-person price. Empty for ordinary tours, in
+  // which case this page renders exactly as before.
+  const packageOptions = publishedPackageOptions(tour.packageOptions);
+  const lowestPriceForTwo = packageOptions.length
+    ? Math.min(...packageOptions.map((o) => o.priceForTwo))
+    : null;
+  // Kashmir/Ladakh-specific blocks (flight/train-to-Srinagar help, Kashmir
+  // trust copy) are skipped for other regions (e.g. Himachal).
+  const isKashmirSite = KASHMIR_SITE_REGIONS.includes(tour.region);
+  const primaryCollection = pickPrimaryCollection(tour.collections);
 
   const itinerary = rawItinerary.map((d) => ({
     day: d.day,
@@ -278,6 +299,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
   const tabs = [
     { id: "overview", label: "Overview" },
     ...(itinerary.length ? [{ id: "itinerary", label: "Itinerary" }] : []),
+    ...(packageOptions.length ? [{ id: "packages", label: "Packages" }] : []),
     ...(highlights.length ? [{ id: "highlights", label: "Highlights" }] : []),
     ...(inclusions.length || exclusions.length ? [{ id: "inclusions", label: "Inclusions" }] : []),
     ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
@@ -299,7 +321,10 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
-    { name: "Tour Packages", url: `${SITE_URL}/tours` },
+    { name: "Tours", url: `${SITE_URL}/tours` },
+    ...(primaryCollection
+      ? [{ name: primaryCollection.name, url: `${SITE_URL}/${primaryCollection.slug}` }]
+      : []),
     { name: tour.title, url: `${SITE_URL}/tours/${tour.slug}` },
   ]);
 
@@ -308,7 +333,9 @@ export default async function TourDetailsPage({ params }: PageProps) {
     slug: tour.slug,
     description: tour.excerpt ?? tour.description,
     coverImage: tour.coverImage,
-    priceFrom: tour.priceFrom,
+    // Package tours show "From ₹X / 2 persons" — the offer matches that
+    // visible price rather than the derived per-person priceFrom.
+    priceFrom: lowestPriceForTwo ?? tour.priceFrom,
     rating: tour.rating,
     reviews: tour.reviews.map((r) => ({
       name: r.name,
@@ -334,7 +361,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
     description: tour.excerpt ?? tour.description,
     coverImage: tour.coverImage,
     duration: tour.duration,
-    priceFrom: tour.priceFrom,
+    priceFrom: lowestPriceForTwo ?? tour.priceFrom,
     touristType: TOURIST_TYPE[tour.category] ?? "General",
     itineraryItems: rawItinerary.map((d) => ({ position: d.day, name: d.title })),
   });
@@ -364,7 +391,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
         days={tour.duration}
         category={categoryLabel}
         transport={tour.transport ?? "Private Cab"}
-        startCity={tour.startCity ?? "Srinagar"}
+        startCity={tour.startCity ?? (isKashmirSite ? "Srinagar" : "On request")}
         difficulty={tour.difficulty ?? "Easy"}
         tagline={tour.tagline ?? tour.excerpt ?? ""}
         badge={tour.badge ?? categoryLabel}
@@ -378,6 +405,11 @@ export default async function TourDetailsPage({ params }: PageProps) {
         happyLabel={happyLabel}
         images={heroImages}
         coverImageMobile={tour.coverImageMobile ?? undefined}
+        breadcrumbParent={
+          primaryCollection
+            ? { name: primaryCollection.name, href: `/${primaryCollection.slug}` }
+            : undefined
+        }
       />
 
       <main className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-3 sm:pt-6 pb-28 lg:pb-6">
@@ -402,10 +434,23 @@ export default async function TourDetailsPage({ params }: PageProps) {
               </section>
             )}
 
+            {packageOptions.length > 0 && (
+              <section id="packages" className="scroll-mt-16">
+                <TourPackageCards tourId={tour.id} tourName={tour.title} options={packageOptions} />
+              </section>
+            )}
+
             {/* Positive follow-through right after the itinerary is understood —
                the honest "Airfare — Excluded" messaging still lives in
-               Inclusions/Exclusions below, unchanged. */}
-            <TransportAssistanceBanner placement="tour-detail" tourId={tour.id} tourName={tour.title} />
+               Inclusions/Exclusions below, unchanged. Kashmir/Ladakh only —
+               its copy and fare help are Srinagar/Leh-specific. */}
+            {isKashmirSite && (
+              <TransportAssistanceBanner
+                placement="tour-detail"
+                tourId={tour.id}
+                tourName={tour.title}
+              />
+            )}
 
             <div className="scroll-mt-16">
               <TourDetailsHighlights highlights={highlights} />
@@ -499,11 +544,14 @@ export default async function TourDetailsPage({ params }: PageProps) {
           </div>
 
           <div className="space-y-5">
-            <AffordabilityWidget amount={tour.priceFrom} />
+            {/* EMI on a per-person price doesn't apply to package tours (enquiry only). */}
+            {lowestPriceForTwo === null && <AffordabilityWidget amount={tour.priceFrom} />}
             <TourDetailsSidebar
-              price={tour.priceFrom}
-              oldPrice={tour.priceWas ?? undefined}
-              discountPct={tour.discountPct ?? undefined}
+              price={lowestPriceForTwo ?? tour.priceFrom}
+              pricePrefix={lowestPriceForTwo !== null ? "From" : undefined}
+              priceSuffix={lowestPriceForTwo !== null ? "/ 2 persons" : undefined}
+              oldPrice={lowestPriceForTwo === null ? (tour.priceWas ?? undefined) : undefined}
+              discountPct={lowestPriceForTwo === null ? (tour.discountPct ?? undefined) : undefined}
               minPersons={tour.minPersons}
               rating={tour.rating}
               reviews={tour.reviewCount}
@@ -514,7 +562,10 @@ export default async function TourDetailsPage({ params }: PageProps) {
               nextDeparture={nextDeparture}
               bestTime={tour.bestTime ?? "Apr – Oct"}
               tourType={tour.tourType ?? "Private Tour"}
-              pickupDrop={tour.pickupDrop ?? `${tour.startCity ?? "Srinagar"} Airport`}
+              pickupDrop={
+                tour.pickupDrop ??
+                (isKashmirSite ? `${tour.startCity ?? "Srinagar"} Airport` : "On request")
+              }
               helpPhone={settings?.sitePhone ?? "+91 94190 00000"}
             />
           </div>
@@ -533,7 +584,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
         minPersons={tour.minPersons}
       />
 
-      <TrustSection type="tour" name={tour.title} />
+      <TrustSection type={isKashmirSite ? "tour" : "tour-general"} name={tour.title} />
     </div>
   );
 }

@@ -19,7 +19,11 @@ export type TrustSectionType =
   | "activity"
   | "blog"
   | "origin-city"
-  | "trip-planner";
+  | "trip-planner"
+  // Tour Collection landing pages, and tour pages outside Kashmir/Ladakh —
+  // same idea as category/tour, without the Kashmir-local claims.
+  | "collection"
+  | "tour-general";
 
 interface TrustContent {
   heading: string;
@@ -69,6 +73,16 @@ export const TRUST_CONTENT: Record<TrustSectionType, TrustContent> = {
       name
         ? `Vertex Kashmir Tour & Travels has helped travellers from ${name} plan complete Kashmir holidays — the ground itinerary, hotels and experiences, plus optional help arranging flights or train tickets for the journey itself.`
         : "Vertex Kashmir Tour & Travels helps travellers from across India plan complete Kashmir holidays — the ground itinerary, hotels and experiences, plus optional help arranging flights or train tickets for the journey itself.",
+  },
+  collection: {
+    heading: "Tour Packages Planned by Vertex",
+    text: (name) =>
+      `Browse our ${name ?? "tour packages"} — each one planned and supported end-to-end by the Vertex Kashmir Holidays team, with clear inclusions and one point of contact from enquiry to return.`,
+  },
+  "tour-general": {
+    heading: "Book With Vertex Travel Experts",
+    text: (name) =>
+      `${name ?? "This tour"} is planned and supported by the Vertex Kashmir Holidays team — one point of contact for your stay, transport and sightseeing, from enquiry to drop-off.`,
   },
   "trip-planner": {
     heading: "One Enquiry, Handled By Real People",

@@ -6,8 +6,15 @@ import Image from "next/image";
 import { FileCheck, FileText, BadgeIndianRupee, Clock } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
+import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { trackWhatsappClick } from "@/lib/analytics";
 
 export function DestinationsCTABand() {
+  const { siteName } = useSiteSettings();
+  const wa = useWhatsAppLink();
+  const expertHref = wa(
+    `Hi ${siteName}! I can't decide which Kashmir destination is right for me. Can you help me plan?`,
+  );
   const features = [
     { t: "Free Consultation", s: "No obligation", Icon: FileCheck },
     { t: "Custom Itineraries", s: "Tailored for you", Icon: FileText },
@@ -50,7 +57,10 @@ export function DestinationsCTABand() {
             </div>
             <div className="text-right">
               <motion.a
-                href="#"
+                href={expertHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackWhatsappClick("destinations_cta")}
                 className="inline-flex items-center gap-2.5 rounded-xl bg-white px-6 py-3.5 text-[16px] font-bold text-brand-ink shadow-card transition hover:brightness-95"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

@@ -1982,8 +1982,9 @@ async function main() {
     },
     {
       key: "toursHero",
-      title: "Kashmir Tour Packages",
-      subtitle: "Handpicked experiences by locals, crafted with love.",
+      title: "All Tour Packages",
+      subtitle:
+        "Every Vertex tour in one place — Kashmir, Ladakh, Himachal and more. Filter by trip type, duration or budget.",
     },
     {
       key: "adventuresHero",

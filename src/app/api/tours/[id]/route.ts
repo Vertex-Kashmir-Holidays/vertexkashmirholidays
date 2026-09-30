@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { invalidateTour } from "@/lib/cache";
+import { applyPackageOptionRules } from "@/lib/tours/content";
 import { z } from "zod";
 import { TourCategory } from "@prisma/client";
 
@@ -47,7 +48,7 @@ const patchSchema = z.object({
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
   activityIds: z.array(z.string()).optional(),
-  region: z.enum(["KASHMIR", "LADAKH"]).optional(),
+  region: z.enum(["KASHMIR", "LADAKH", "HIMACHAL"]).optional(),
   badge: z.string().optional().nullable(),
   badgeColor: z.string().optional().nullable(),
   tagline: z.string().optional().nullable(),
@@ -78,6 +79,8 @@ const patchSchema = z.object({
   ogTitle: z.string().optional().nullable(),
   ogDescription: z.string().optional().nullable(),
   relatedTours: z.string().optional(),
+  packageOptions: z.string().optional(),
+  collectionIds: z.array(z.string()).optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -100,6 +103,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     include: {
       destinations: { select: { destination: { select: { slug: true } } } },
       activities: { select: { activity: { select: { slug: true } } } },
+      collections: { select: { slug: true } },
+      crmForOffer: { select: { id: true } },
     },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -116,13 +121,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { category, activityIds, ...rest } = parsed.data;
+  // An Occasion Offer's hidden CRM tour (src/lib/offers/crmTour.ts) never goes on the website.
+  if (existing.crmForOffer && parsed.data.published) {
+    return NextResponse.json(
+      { error: "This tour is an offer's CRM tag and can't be published — edit the offer instead." },
+      { status: 422 },
+    );
+  }
+
+  const { category, activityIds, collectionIds, packageOptions, ...rest } = parsed.data;
+  // Re-applied on every save (falling back to the stored options when the
+  // payload omits them) so a PATCH of formMode/priceFrom alone can never
+  // re-open checkout on a tour that has package options.
+  const packageRules = applyPackageOptionRules(packageOptions ?? existing.packageOptions);
+  if (!packageRules.ok) return NextResponse.json({ error: packageRules.error }, { status: 422 });
   try {
     const updated = await prisma.tour.update({
       where: { id },
       data: {
         ...rest,
+        ...packageRules.data,
         ...(category ? { category: category as TourCategory } : {}),
+        ...(collectionIds
+          ? { collections: { set: collectionIds.map((cid) => ({ id: cid })) } }
+          : {}),
         ...(activityIds
           ? {
               activities: {
@@ -132,6 +154,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             }
           : {}),
       },
+      include: { collections: { select: { slug: true } } },
     });
 
     // Cross-invalidate every Destination/Activity page this tour was already
@@ -155,6 +178,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       previousCategory: existing.category,
       destinationSlugs,
       activitySlugs,
+      collectionSlugs: [
+        ...existing.collections.map((c) => c.slug),
+        ...updated.collections.map((c) => c.slug),
+      ],
     });
 
     return NextResponse.json(updated);
@@ -176,6 +203,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     include: {
       destinations: { select: { destination: { select: { slug: true } } } },
       activities: { select: { activity: { select: { slug: true } } } },
+      collections: { select: { slug: true } },
     },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -186,6 +214,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     category: existing.category,
     destinationSlugs: existing.destinations.map((d) => d.destination.slug),
     activitySlugs: existing.activities.map((a) => a.activity.slug),
+    collectionSlugs: existing.collections.map((c) => c.slug),
   });
   return NextResponse.json({ success: true });
 }

@@ -73,6 +73,9 @@ interface Lead {
   negotiatedAmount: number | null;
   tokenAmount: number | null;
   assignedTo: { id: string; name: string | null; email: string } | null;
+  // Occasion Offer the lead came from (form, or a resolved WhatsApp reference).
+  occasionOffer?: { id: string; name: string } | null;
+  packageName?: string | null;
   createdAt: Date | string;
 }
 
@@ -129,6 +132,8 @@ interface Props {
   canDelete: boolean;
   isAdmin: boolean;
   initialIpFilter?: string;
+  /** Occasion Offers for the Offer filter. */
+  offers?: { id: string; name: string }[];
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -164,6 +169,7 @@ export function LeadsClient({
   canDelete,
   isAdmin,
   initialIpFilter,
+  offers = [],
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -175,6 +181,7 @@ export function LeadsClient({
   // Trip Planner request-type filter (TRANSPORT/TOUR/HOTEL/PLAN) — what the
   // customer wants, orthogonal to sourceFilter (where they came from).
   const [requestFilter, setRequestFilter] = useState("ALL");
+  const [offerFilter, setOfferFilter] = useState("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // The IP-investigation view (?ip=...) is a rare, narrow fraud-check lookup:
@@ -190,6 +197,10 @@ export function LeadsClient({
       if (assigneeFilter !== "UNASSIGNED" && l.assignedTo?.id !== assigneeFilter) return false;
     }
     if (requestFilter !== "ALL" && !parseJsonArray(l.requestedComponents).includes(requestFilter)) {
+      return false;
+    }
+    if (offerFilter === "ANY" && !l.occasionOffer) return false;
+    if (offerFilter !== "ALL" && offerFilter !== "ANY" && l.occasionOffer?.id !== offerFilter) {
       return false;
     }
     if (search) {
@@ -233,7 +244,7 @@ export function LeadsClient({
     if (isIpMode) return;
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, statusFilter, sourceFilter, assigneeFilter, requestFilter]);
+  }, [debouncedSearch, statusFilter, sourceFilter, assigneeFilter, requestFilter, offerFilter]);
 
   async function fetchLeads() {
     setLoading(true);
@@ -243,6 +254,7 @@ export function LeadsClient({
       if (sourceFilter !== "ALL") params.set("source", sourceFilter);
       if (isAdmin && assigneeFilter !== "ALL") params.set("assignedToId", assigneeFilter);
       if (requestFilter !== "ALL") params.set("requestedComponent", requestFilter);
+      if (offerFilter !== "ALL") params.set("offer", offerFilter);
       if (debouncedSearch) params.set("search", debouncedSearch);
       const res = await fetch(`/api/leads?${params.toString()}`);
       if (!res.ok) throw new Error();
@@ -266,7 +278,16 @@ export function LeadsClient({
     }
     fetchLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, statusFilter, sourceFilter, assigneeFilter, requestFilter, debouncedSearch]);
+  }, [
+    page,
+    pageSize,
+    statusFilter,
+    sourceFilter,
+    assigneeFilter,
+    requestFilter,
+    offerFilter,
+    debouncedSearch,
+  ]);
 
   function changePageSize(n: number) {
     setPageSize(n);
@@ -433,6 +454,23 @@ export function LeadsClient({
             </SelectContent>
           </Select>
 
+          {offers.length > 0 && (
+            <Select value={offerFilter} onValueChange={setOfferFilter}>
+              <SelectTrigger className="w-auto min-w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Offers</SelectItem>
+                <SelectItem value="ANY">Any offer</SelectItem>
+                {offers.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {isAdmin && (
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
               <SelectTrigger className="w-auto min-w-[150px]">
@@ -495,7 +533,8 @@ export function LeadsClient({
                     {search ||
                     statusFilter !== "ALL" ||
                     sourceFilter !== "ALL" ||
-                    requestFilter !== "ALL"
+                    requestFilter !== "ALL" ||
+                    offerFilter !== "ALL"
                       ? "No leads match your filters."
                       : "No leads yet. Create your first one!"}
                   </td>
@@ -529,6 +568,16 @@ export function LeadsClient({
                         {lead.email && (
                           <p className="text-[12px] text-muted-foreground truncate max-w-[160px]">
                             {lead.email}
+                          </p>
+                        )}
+                        {/* Occasion Offer tag — from the offer form or a resolved
+                          WhatsApp reference. */}
+                        {lead.occasionOffer && (
+                          <p className="mt-1">
+                            <span className="inline-block max-w-[200px] truncate rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                              🎉 {lead.occasionOffer.name}
+                              {lead.packageName ? ` · ${lead.packageName}` : ""}
+                            </span>
                           </p>
                         )}
                         {/* Trip Planner request — what they want, at a glance. Absent

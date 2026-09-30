@@ -95,6 +95,9 @@ export async function createWhatsAppAttributionToken(
   }
   if (intent?.fromCity) data.fromCity = intent.fromCity;
   if (intent?.toCity) data.toCity = intent.toCity;
+  // Occasion Offer page context (offer + chosen plan).
+  if (intent?.offerId) data.occasionOfferId = intent.offerId;
+  if (intent?.packageName) data.packageName = intent.packageName;
 
   for (let attempt = 0; attempt < MAX_GENERATE_ATTEMPTS; attempt++) {
     const token = generateToken();
@@ -142,8 +145,8 @@ export interface ResolvedWhatsAppAttribution {
    *  moment of creation, exactly as this function does, rather than trust a
    *  value that passed through the browser in between. */
   channel: LeadSource;
-  /** Trip Planner intent, present only when this token was minted from Plan
-   *  Your Kashmir Trip — undefined for every other WhatsApp CTA's token. */
+  /** Trip Planner intent / Occasion Offer context (offerId + packageName),
+   *  present only when the token was minted from one of those pages. */
   intent?: PlannerIntent;
 }
 
@@ -186,6 +189,8 @@ export async function resolveWhatsAppAttributionToken(
   }
   if (row.fromCity) intent.fromCity = row.fromCity;
   if (row.toCity) intent.toCity = row.toCity;
+  if (row.occasionOfferId) intent.offerId = row.occasionOfferId;
+  if (row.packageName) intent.packageName = row.packageName;
   const hasIntent = Object.keys(intent).length > 0;
 
   return {

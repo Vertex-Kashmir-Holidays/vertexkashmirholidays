@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/permissions";
+import { can, requirePermission } from "@/lib/permissions";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { listItinerarySummaries, itineraryTitleExists } from "@/lib/itinerary/list";
+import { resolveItineraryAccess } from "@/lib/itinerary/access";
 import {
-  ITINERARY_TITLE_PREFIX,
   buildDocumentTitle,
+  copyTitleCandidates,
   duplicateTitleMessage,
+  firstFreeTitle,
 } from "@/lib/itinerary/documentTitle";
 import { parsePageParams } from "@/lib/pagination";
 import type { Role } from "@/lib/rbac";
@@ -36,13 +38,16 @@ export async function GET(req: NextRequest) {
 }
 
 // Standalone itineraries are titled from the document itself (see
-// documentTitle.ts), so the title is not accepted from the client.
-const createSchema = z.object({
-  status: z.enum(["DRAFT", "SENT", "CONFIRMED"]).optional(),
-  data: itineraryDataSchema,
-  // Sent by the list's Duplicate action — a copy may share its source's name.
-  allowDuplicate: z.boolean().optional(),
-});
+// documentTitle.ts), so the title is not accepted from the client. `copyOf`
+// (the list's Duplicate action) clones that itinerary as a standalone DRAFT
+// titled "<source title> - copy".
+const createSchema = z.union([
+  z.object({ copyOf: z.string().min(1) }),
+  z.object({
+    status: z.enum(["DRAFT", "SENT", "CONFIRMED"]).optional(),
+    data: itineraryDataSchema,
+  }),
+]);
 
 export async function POST(req: NextRequest) {
   const guard = await requirePermission("itinerary", "create");
@@ -63,8 +68,44 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const title = buildDocumentTitle(ITINERARY_TITLE_PREFIX, parsed.data.data);
-  if (!parsed.data.allowDuplicate && (await itineraryTitleExists(title))) {
+  if ("copyOf" in parsed.data) {
+    // A copy must be edited and saved, or it's deleted — so copying needs all three.
+    const role = guard.user.role as Role;
+    if (!(await can(role, "itinerary", "edit")) || !(await can(role, "itinerary", "delete"))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const source = await prisma.itinerary.findUnique({
+      where: { id: parsed.data.copyOf },
+      select: {
+        title: true,
+        data: true,
+        ownerId: true,
+        leadId: true,
+        bookingId: true,
+        locked: true,
+        lead: { select: { assignedToId: true, locked: true, b2bAgentId: true } },
+        booking: { select: { servicesLocked: true } },
+      },
+    });
+    const canView =
+      source &&
+      source.lead?.b2bAgentId == null &&
+      resolveItineraryAccess(source, { id: guard.user.id, role: guard.user.role }).canView;
+    if (!source || !canView) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const copy = await prisma.itinerary.create({
+      data: {
+        title: await firstFreeTitle(copyTitleCandidates(source.title), (t) => itineraryTitleExists(t)),
+        status: "DRAFT",
+        data: source.data ?? {},
+        ownerId: guard.user.id,
+      },
+      select: { id: true },
+    });
+    return NextResponse.json({ id: copy.id }, { status: 201 });
+  }
+
+  const title = buildDocumentTitle(parsed.data.data);
+  if (await itineraryTitleExists(title)) {
     return NextResponse.json({ error: duplicateTitleMessage(title) }, { status: 409 });
   }
 

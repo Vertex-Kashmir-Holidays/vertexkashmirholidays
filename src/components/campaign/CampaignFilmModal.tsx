@@ -2,6 +2,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { withVideoWatermark } from "@/lib/videoWatermark";
 
 interface CampaignFilmModalProps {
   isOpen: boolean;
@@ -32,7 +33,8 @@ export function CampaignFilmModal({ isOpen, onClose, src, poster }: CampaignFilm
               </button>
               <div className="overflow-hidden rounded-2xl border border-white/15 bg-black shadow-glass">
                 <video className="aspect-video w-full" controls preload="none" poster={poster}>
-                  <source src={src} type="video/mp4" />
+                  {/* Uploaded (Cloudinary) films play with the Vertex logo overlaid. */}
+                  <source src={withVideoWatermark(src)} type="video/mp4" />
                 </video>
               </div>
             </div>

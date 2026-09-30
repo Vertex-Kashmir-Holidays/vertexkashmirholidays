@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { B2bItineraryEditor } from "@/components/admin/itinerary/B2bItineraryEditor";
-import { itineraryDataSchema, type ItineraryData } from "@/types/itinerary";
+import { genId, itineraryDataSchema, type ItineraryData } from "@/types/itinerary";
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { getPdfTrustContent, toItineraryWhyChoose } from "@/lib/itinerary/pdfTrustContent";
 import { isB2bAgentWhiteLabelEligible } from "@/lib/b2b/whiteLabelEligibility";
@@ -46,13 +46,18 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
 
   const canSave = await can(role, "itinerary", "edit");
 
-  // Same backfill as the normal itinerary editor page — itineraries saved
-  // before this field existed parse as `[]`. (No activities backfill here —
-  // B2bItineraryPdf never renders activities, so the B2B editor doesn't
-  // surface them either; see B2bItineraryEditor.tsx.)
+  // Same backfills as the normal itinerary editor page — itineraries saved
+  // before these fields existed parse them as `[]`. Not written back until
+  // the next explicit Save.
   const trustContent = await getPdfTrustContent();
   if (data.whyChoose.length === 0 && trustContent.whyChoose.length > 0) {
     data = { ...data, whyChoose: toItineraryWhyChoose(trustContent.whyChoose) };
+  }
+  if (data.activities.length === 0) {
+    data = {
+      ...data,
+      activities: DEFAULT_ITINERARY_DATA.activities.map((a) => ({ ...a, id: genId("act") })),
+    };
   }
 
   const whiteLabel = await isB2bAgentWhiteLabelEligible(record.lead.b2bAgentId);

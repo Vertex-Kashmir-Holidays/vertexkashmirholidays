@@ -13,6 +13,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { formatINR } from "@/lib/accents";
 import {
@@ -60,7 +61,7 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
   if (!city) notFound();
 
   const tours = await prisma.tour.findMany({
-    where: { published: true },
+    where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
     include: { destinations: { include: { destination: { select: { name: true } } } } },
     orderBy: [{ bestseller: "desc" }, { rating: "desc" }, { reviewCount: "desc" }],
     take: 6,
