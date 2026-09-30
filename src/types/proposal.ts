@@ -90,6 +90,8 @@ export const stayPlanRowSchema = z.object({
   nights: z.string(),
   hotelName: z.string(),
   roomType: z.string(),
+  // Defaulted so proposals saved before this field existed load as one room.
+  rooms: z.string().default("1"),
 });
 export type StayPlanRow = z.infer<typeof stayPlanRowSchema>;
 
@@ -118,6 +120,10 @@ export const proposalDataSchema = z.object({
   preparedByName: z.string().default(""),
   preparedByPhone: z.string().default(""),
   preparedFor: z.string(),
+  // Customer's phone — shown under their name on the cover and in the
+  // proposals list (for follow-ups). Defaulted so proposals saved before this
+  // field existed still parse as blank.
+  customerPhone: z.string().default(""),
   travelDates: z.string(),
   travelers: z.string(),
 
@@ -182,6 +188,12 @@ export interface ProposalSummary {
   status: ProposalStatus;
   ownerId: string;
   ownerName?: string | null;
+  /** From `data` — who the proposal is for, and their phone (follow-ups). */
+  customerName?: string;
+  customerPhone?: string;
+  /** Package cost(s) from `data.tiers` — one for a single-package proposal,
+   *  one per option (in TIER_ORDER) for a multi-option one. */
+  packageCosts?: { label: string; price: string }[];
   createdAt: string | Date;
   updatedAt: string | Date;
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { itineraryDataSchema } from "@/types/itinerary";
+import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -42,8 +43,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
 }
 
+// The title is generated from `data` (see documentTitle.ts), not accepted from the client.
 const patchSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
   status: z.enum(["DRAFT", "SENT", "CONFIRMED"]).optional(),
   data: itineraryDataSchema.optional(),
 });
@@ -76,12 +77,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const editedByName = (guard.user.name ?? guard.user.email) as string;
+  // Standard unique name, as for lead-linked itineraries (see /api/itineraries/[id]).
+  const title =
+    parsed.data.data !== undefined ? await uniqueItineraryTitle(parsed.data.data, id) : undefined;
 
   const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.itinerary.update({
       where: { id },
       data: {
-        ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+        ...(title !== undefined ? { title } : {}),
         ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
         ...(parsed.data.data !== undefined ? { data: parsed.data.data } : {}),
         lastEditedById: guard.user.id,
@@ -96,7 +100,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       prisma.itineraryHistory.create({
         data: {
           itineraryId: id,
-          title: parsed.data.title ?? existing.title,
+          title: title ?? existing.title,
           data: parsed.data.data,
           editedById: guard.user.id,
           editedByName,

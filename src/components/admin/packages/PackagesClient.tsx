@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Clock,
   ChevronDown,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -107,15 +108,24 @@ export function PackagesClient({
             Manage all packages, itineraries and pricing
           </p>
         </div>
-        {canCreate && (
+        <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/admin/packages/new"
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+            href="/admin/packages/collections"
+            className="flex items-center gap-2 border border-border text-foreground hover:border-primary hover:text-primary text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            New Package
+            <Layers className="w-4 h-4" />
+            Tour Collections
           </Link>
-        )}
+          {canCreate && (
+            <Link
+              href="/admin/packages/new"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25"
+            >
+              <Plus className="w-4 h-4" />
+              New Package
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Filters */}

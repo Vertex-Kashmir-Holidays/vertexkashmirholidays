@@ -46,11 +46,18 @@ export default async function AdminHotelSuppliersPage() {
       category: row.category,
       isActive: row.isActive,
       recommended: row.recommended,
+      hasFamilyRoom: row.hasFamilyRoom,
       bookingsCount: row.bookingsCount,
-      lastRateRequestSentAt: row.lastRateRequestSentAt ? row.lastRateRequestSentAt.toISOString() : null,
+      lastRateRequestSentAt: row.lastRateRequestSentAt
+        ? row.lastRateRequestSentAt.toISOString()
+        : null,
       data: parsed.success ? parsed.data : EMPTY_DATA,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+      coverImageUrl: row.coverImageUrl,
+      roomImageUrl: row.roomImageUrl,
+      showOnWebsite: row.showOnWebsite,
+      publicLikeCount: row.publicLikeCount,
     };
   });
 

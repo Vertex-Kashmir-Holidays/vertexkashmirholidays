@@ -15,6 +15,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
   preparedByName: "",
   preparedByPhone: "",
   preparedFor: "Mr Farooq Sheikh",
+  customerPhone: "",
   travelDates: "10 - 15 Jun 2026",
   travelers: "2 Adults · 1 Child",
 
@@ -265,6 +266,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
   coverIntro: "Srinagar, Pahalgam, Gulmarg and Sonamarg — one complete, ready-to-book package.",
   duration: "5 Nights · 6 Days",
   preparedFor: "Mr Farooq Sheikh",
+  customerPhone: "",
   travelDates: "06 - 11 Jan 2027",
   travelers: "4 Adults",
 
@@ -356,6 +358,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       nights: "02",
       hotelName: "Hidden Leaf Resort / The Royale / Mollys Resort / Similar",
       roomType: "Double Sharing",
+      rooms: "1",
     },
     {
       id: "sp-2",
@@ -363,6 +366,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       nights: "01",
       hotelName: "Apple Tree Resort / Hotel Grand Hill View / Similar",
       roomType: "Double Sharing",
+      rooms: "1",
     },
     {
       id: "sp-3",
@@ -370,6 +374,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       nights: "02",
       hotelName: "Sideeq Palace / Welcome Residency",
       roomType: "Double Sharing",
+      rooms: "1",
     },
   ],
   stayPlanNote:

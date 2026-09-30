@@ -28,29 +28,112 @@ function push(payload: AnalyticsEvent): void {
   }
 }
 
+/** Optional Trip Planner structured-intent params — see TripPlannerIntentParams
+ *  in src/types/analytics.ts. Every existing call site omits this and behaves
+ *  exactly as before. */
+export interface TripPlannerAnalyticsExtra {
+  requestedComponents?: string[];
+  transportModes?: string[];
+  sourcePage?: string;
+  hasTourInterest?: boolean;
+  hasHotelInterest?: boolean;
+}
+
+/** Occasion Offer page context — see OfferParams in src/types/analytics.ts. */
+export interface OfferAnalyticsContext {
+  offerId: string;
+  offerSlug: string;
+}
+
+const offerParams = (offer?: OfferAnalyticsContext) =>
+  offer ? { offer_id: offer.offerId, offer_slug: offer.offerSlug } : {};
+
+function tripPlannerParams(extra?: TripPlannerAnalyticsExtra) {
+  if (!extra) return {};
+  return {
+    ...(extra.requestedComponents?.length
+      ? { requested_components: extra.requestedComponents }
+      : {}),
+    ...(extra.transportModes?.length ? { transport_modes: extra.transportModes } : {}),
+    ...(extra.sourcePage ? { source_page: extra.sourcePage } : {}),
+    ...(extra.hasTourInterest !== undefined ? { has_tour_interest: extra.hasTourInterest } : {}),
+    ...(extra.hasHotelInterest !== undefined ? { has_hotel_interest: extra.hasHotelInterest } : {}),
+  };
+}
+
 /**
  * Fire after a lead form submits successfully — never on validation errors.
  * `leadId` (the just-created Lead's own database id, returned by POST
  * /api/leads) rides along as `lead_id` so GTM's Facebook Pixel Lead tag can
  * map it to Meta's "Event ID" field for CAPI dedup — see the field comment on
- * `AnalyticsEvent`'s `lead_submit` variant.
+ * `AnalyticsEvent`'s `lead_submit` variant. `tripPlanner` is optional and only
+ * ever populated by the Trip Planner form/TransportAssistanceBanner.
  */
 export function trackLeadSubmit(
   leadType: LeadType = "itinerary",
   tourName?: string,
   leadId?: string,
+  tripPlanner?: TripPlannerAnalyticsExtra,
+  packageOption?: string,
+  offer?: OfferAnalyticsContext,
 ): void {
   push({
     event: "lead_submit",
     lead_type: leadType,
     ...(tourName ? { package_name: tourName } : {}),
     ...(leadId ? { lead_id: leadId } : {}),
+    ...tripPlannerParams(tripPlanner),
+    ...(packageOption ? { package_option: packageOption } : {}),
+    ...offerParams(offer),
   });
 }
 
-/** Fire when any WhatsApp CTA is clicked. */
-export function trackWhatsappClick(source: WhatsAppSource): void {
-  push({ event: "whatsapp_click", source });
+/** Fire when any WhatsApp CTA is clicked. `tripPlanner` is optional, populated
+ *  only by the Trip Planner page's own WhatsApp CTAs. */
+export function trackWhatsappClick(
+  source: WhatsAppSource,
+  tripPlanner?: TripPlannerAnalyticsExtra,
+  pkg?: { tourName: string; packageOption: string },
+  offer?: OfferAnalyticsContext & { packageOption?: string },
+): void {
+  push({
+    event: "whatsapp_click",
+    source,
+    ...tripPlannerParams(tripPlanner),
+    ...(pkg ? { package_name: pkg.tourName, package_option: pkg.packageOption } : {}),
+    ...offerParams(offer),
+    ...(offer?.packageOption ? { package_option: offer.packageOption } : {}),
+  });
+}
+
+/** Fire once when an Occasion Offer page loads. */
+export function trackOfferView(offer: OfferAnalyticsContext, occasionType: string): void {
+  push({
+    event: "offer_view",
+    offer_id: offer.offerId,
+    offer_slug: offer.offerSlug,
+    occasion_type: occasionType,
+  });
+}
+
+/** Fire when a stay tier is picked on an Occasion Offer page (card CTA or form). */
+export function trackOfferPackageSelect(offer: OfferAnalyticsContext, packageOption: string): void {
+  push({
+    event: "offer_package_select",
+    offer_id: offer.offerId,
+    offer_slug: offer.offerSlug,
+    package_option: packageOption,
+  });
+}
+
+/** Fire once, on the Trip Planner's first intent-chip interaction — never on
+ *  every page view or every chip change after the first. */
+export function trackTripRequestStart(sourcePage: string, entryIntent?: string[]): void {
+  push({
+    event: "trip_request_start",
+    source_page: sourcePage,
+    ...(entryIntent?.length ? { entry_intent: entryIntent } : {}),
+  });
 }
 
 /** Fire when a tel: link is clicked. */
@@ -69,11 +152,12 @@ export function trackPackageView(packageName: string): void {
 }
 
 /** Fire when a user opens an inquiry modal / form tab. */
-export function trackTourInquiry(tourName?: string, tourId?: string): void {
+export function trackTourInquiry(tourName?: string, tourId?: string, packageOption?: string): void {
   push({
     event: "inquiry_started",
     ...(tourName ? { package_name: tourName } : {}),
     ...(tourId ? { tour_id: tourId } : {}),
+    ...(packageOption ? { package_option: packageOption } : {}),
   });
 }
 

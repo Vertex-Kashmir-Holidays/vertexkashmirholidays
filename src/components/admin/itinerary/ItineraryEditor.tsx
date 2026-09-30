@@ -10,9 +10,13 @@ import { LeadTripSync, LinkItineraryPanel } from "./LeadTripSync";
 import { EditableField } from "./EditableField";
 import { ImagePicker } from "./ImagePicker";
 import { ItineraryIcon } from "./icons";
+import { ReorderableList } from "./ReorderableList";
 import { PDF_CONTACT } from "@/lib/pdf/contact";
 import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf, type TokenPaymentLink } from "@/lib/itinerary/export-pdf";
+import { buildDocumentTitle, isCopyTitle } from "@/lib/itinerary/documentTitle";
+import { UntouchedCopyGuard } from "./UntouchedCopyGuard";
+import { applyDayOrder } from "@/lib/itinerary/dayReorder";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
 import { applyLeadFactsToItinerary, type LeadItinerarySeed } from "@/lib/itinerary/lead-defaults";
@@ -20,6 +24,7 @@ import {
   type ItineraryData,
   type ItineraryStatus,
   type ItineraryDay,
+  type HotelRow,
   type ListItem,
   type CancelTier,
   type PriceActivityItem,
@@ -51,6 +56,8 @@ interface ItineraryEditorProps {
   initialTitle: string;
   initialStatus: ItineraryStatus;
   canSave?: boolean;
+  /** Current user authored this record and may edit + delete it — see UntouchedCopyGuard. */
+  ownsCopy?: boolean;
   leadSync?: LeadSyncData;
   /** Website-booking itineraries — total cost is fixed at checkout, show as read-only. */
   lockCost?: boolean;
@@ -83,6 +90,7 @@ export function ItineraryEditor({
   initialTitle,
   initialStatus,
   canSave = true,
+  ownsCopy = false,
   leadSync,
   isBookingLinked = false,
   lockCost = false,
@@ -94,7 +102,10 @@ export function ItineraryEditor({
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
-  const [title, setTitle] = useState(initialTitle);
+  // Every itinerary is named "<customer> - <duration> - <phone>" from its own
+  // content; the API derives the same string on save (a lead/booking-linked
+  // one may get a " (2)" suffix there — shown until the next edit).
+  const displayTitle = id && data === initialData ? initialTitle : buildDocumentTitle(data);
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
@@ -143,6 +154,7 @@ export function ItineraryEditor({
 
   const removeDay = (dayId: string) =>
     setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
+  const reorderDays = (next: ItineraryDay[]) => setData((p) => applyDayOrder(p, next));
 
   const addMeta = (dayId: string) =>
     setData((p) => ({
@@ -256,6 +268,7 @@ export function ItineraryEditor({
 
   const removeHotel = (hid: string) =>
     setData((p) => ({ ...p, hotels: p.hotels.filter((h) => h.id !== hid) }));
+  const reorderHotels = (next: HotelRow[]) => setData((p) => ({ ...p, hotels: next }));
 
   /* ---------- activities ---------- */
   const updateActivity = (
@@ -365,13 +378,13 @@ export function ItineraryEditor({
 
   /* ---------- actions ---------- */
   async function handleSave() {
-    if (!title.trim()) {
-      toast.error("Please enter an itinerary title.");
+    if (!data.preparedFor.trim()) {
+      toast.error("Please enter the customer name (Prepared For).");
       return;
     }
     setSaving(true);
     try {
-      const payload = { title: title.trim(), status, data };
+      const payload = { status, data };
       const res = await fetch(id ? `${apiBasePath}/${id}` : apiBasePath, {
         method: id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -472,8 +485,7 @@ export function ItineraryEditor({
   return (
     <div className="pb-8">
       <Toolbar
-        title={title}
-        onTitleChange={setTitle}
+        title={displayTitle}
         status={status}
         onStatusChange={setStatus}
         onSave={handleSave}
@@ -483,6 +495,13 @@ export function ItineraryEditor({
         isExporting={isExporting}
         canSave={canSave}
       />
+      {id && (
+        <UntouchedCopyGuard
+          active={ownsCopy && isCopyTitle(initialTitle)}
+          deleteUrl={`${apiBasePath}/${id}`}
+          noun="itinerary"
+        />
+      )}
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[920px] space-y-8">
@@ -548,10 +567,14 @@ export function ItineraryEditor({
               <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
             </div>
 
-            <div className="mt-7 space-y-4">
-              {data.days.map((day, dayIdx) => (
+            <ReorderableList
+              items={data.days}
+              onReorder={reorderDays}
+              noun="day"
+              className="mt-7 space-y-4"
+            >
+              {(day, dayIdx) => (
                 <div
-                  key={day.id}
                   className="dayitem group relative flex flex-col rounded-xl border border-[#DCE7E0] dark:border-mute/20 sm:flex-row sm:items-stretch"
                 >
                   <button
@@ -693,8 +716,8 @@ export function ItineraryEditor({
                     />
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </ReorderableList>
 
             <button
               onClick={addDay}
@@ -713,10 +736,14 @@ export function ItineraryEditor({
               <span className="h-px flex-1 bg-[hsl(40_14%_87%)] dark:bg-mute/20" />
             </div>
 
-            <div className="mt-6 space-y-5">
-              {data.hotels.map((h, idx) => (
+            <ReorderableList
+              items={data.hotels}
+              onReorder={reorderHotels}
+              noun="hotel"
+              className="mt-6 space-y-5"
+            >
+              {(h, idx) => (
                 <div
-                  key={h.id}
                   className="group/hotel relative flex flex-col rounded-xl border border-[hsl(40_14%_87%)] dark:border-mute/20 sm:flex-row sm:items-stretch"
                 >
                   <button
@@ -906,8 +933,8 @@ export function ItineraryEditor({
                     />
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </ReorderableList>
 
             <button onClick={addHotel} className={addBtn}>
               <Plus className="h-3 w-3" /> Add Hotel

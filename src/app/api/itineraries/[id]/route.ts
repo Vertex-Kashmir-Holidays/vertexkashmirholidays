@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { resolveItineraryAccess } from "@/lib/itinerary/access";
+import { itineraryTitleExists, uniqueItineraryTitle } from "@/lib/itinerary/list";
+import { buildDocumentTitle, duplicateTitleMessage } from "@/lib/itinerary/documentTitle";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -75,8 +77,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
 }
 
+// The title is generated from `data` (see documentTitle.ts), not accepted from the client.
 const patchSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
   status: z.enum(["DRAFT", "SENT", "CONFIRMED"]).optional(),
   data: itineraryDataSchema.optional(),
 });
@@ -122,11 +124,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const editedByName = (guard.user.name ?? guard.user.email) as string;
 
+  // Every itinerary is titled from its content (see documentTitle.ts) and names
+  // are unique, drafts and sent alike. A standalone one whose regenerated name
+  // is taken — e.g. a copy saved without changing the customer name/phone — is
+  // refused; a lead/booking-linked one gets a " (2)" suffix instead, since its
+  // link already identifies it and CRM saves must not fail on a name.
+  const isLinked = !!existing.leadId || !!existing.bookingId;
+  let title: string | undefined;
+  if (parsed.data.data !== undefined) {
+    if (isLinked) {
+      title = await uniqueItineraryTitle(parsed.data.data, id);
+    } else {
+      title = buildDocumentTitle(parsed.data.data);
+      if (await itineraryTitleExists(title, id)) {
+        return NextResponse.json({ error: duplicateTitleMessage(title) }, { status: 409 });
+      }
+    }
+  }
+
   const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.itinerary.update({
       where: { id },
       data: {
-        ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+        ...(title !== undefined ? { title } : {}),
         ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
         ...(parsed.data.data !== undefined ? { data: parsed.data.data } : {}),
         lastEditedById: guard.user.id,
@@ -142,7 +162,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       prisma.itineraryHistory.create({
         data: {
           itineraryId: id,
-          title: parsed.data.title ?? existing.title,
+          title: title ?? existing.title,
           data: parsed.data.data,
           editedById: guard.user.id,
           editedByName,

@@ -5,6 +5,9 @@ import Link from "next/link";
 import { renderAccents } from "@/lib/accents";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroStats } from "@/components/layout/HeroStats";
+import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { trackWhatsappClick } from "@/lib/analytics";
+import { isWhatsAppCtaUrl, getWhatsAppCtaMessage } from "@/lib/whatsappCtaUrl";
 import type { SectionHeading, SiteStatData } from "@/types/home";
 
 interface ListingHeroProps {
@@ -43,7 +46,13 @@ export function ListingHero({
   alt,
   aside,
 }: ListingHeroProps) {
-  const isExternal = !!heading.ctaHref && /^https?:\/\//.test(heading.ctaHref);
+  const wa = useWhatsAppLink();
+  // "whatsapp:<message>" (same encoding as Banner CTAs) opens WhatsApp with
+  // the live phone number + attribution tag built at render time.
+  const isWhatsApp = isWhatsAppCtaUrl(heading.ctaHref);
+  const href =
+    isWhatsApp && heading.ctaHref ? wa(getWhatsAppCtaMessage(heading.ctaHref)) : heading.ctaHref;
+  const isExternal = !!href && /^https?:\/\//.test(href);
 
   return (
     <SecondaryHero
@@ -90,9 +99,10 @@ export function ListingHero({
       {heading.ctaLabel && heading.ctaHref && (
         <div className="hero-reveal mt-6" style={{ "--hr-delay": "0.3s" } as React.CSSProperties}>
           <Link
-            href={heading.ctaHref}
+            href={href!}
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
+            onClick={isWhatsApp ? () => trackWhatsappClick("listing_hero") : undefined}
             className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
           >
             {heading.ctaLabel}

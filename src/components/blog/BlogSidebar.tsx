@@ -12,9 +12,10 @@ interface BlogSidebarProps {
   content: BlogPageContent;
   categories: BlogCategoryData[];
   trending: BlogTrendingData[];
+  onCategoryChange: (category: string) => void;
 }
 
-export function BlogSidebar({ content, categories, trending }: BlogSidebarProps) {
+export function BlogSidebar({ content, categories, trending, onCategoryChange }: BlogSidebarProps) {
   return (
     <aside className="space-y-6">
       {/* About Blog */}
@@ -67,7 +68,8 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
                 transition={{ delay: i * 0.05 }}
               >
                 <Link
-                  href="#"
+                  href={`/blog?category=${cat.slug}`}
+                  onClick={() => onCategoryChange(cat.name)}
                   className="group flex items-center justify-between py-2.5 text-[14px]"
                 >
                   <span className="font-medium text-foreground/85 transition group-hover:text-primary">
@@ -80,9 +82,13 @@ export function BlogSidebar({ content, categories, trending }: BlogSidebarProps)
               </motion.li>
             ))}
           </ul>
-          <button className="mt-4 w-full rounded-lg border-[1.5px] border-border py-2.5 text-[14px] font-bold text-primary transition hover:border-primary">
+          <Link
+            href="/blog"
+            onClick={() => onCategoryChange("All")}
+            className="mt-4 block w-full rounded-lg border-[1.5px] border-border py-2.5 text-center text-[14px] font-bold text-primary transition hover:border-primary"
+          >
             View All Categories
-          </button>
+          </Link>
         </motion.div>
       )}
 

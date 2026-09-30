@@ -13,6 +13,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { formatINR } from "@/lib/accents";
 import {
@@ -60,7 +61,7 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
   if (!city) notFound();
 
   const tours = await prisma.tour.findMany({
-    where: { published: true },
+    where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
     include: { destinations: { include: { destination: { select: { name: true } } } } },
     orderBy: [{ bestseller: "desc" }, { rating: "desc" }, { reviewCount: "desc" }],
     take: 6,
@@ -117,7 +118,10 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
       <JsonLd data={itemListJsonLd} />
       <JsonLd data={faqJsonLd} />
 
-      <CityOriginHero cityName={city.akaName ? `${city.name} (${city.akaName})` : city.name} />
+      <CityOriginHero
+        cityName={city.akaName ? `${city.name} (${city.akaName})` : city.name}
+        originCity={city.name}
+      />
 
       <main className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-14">
         {/* Intro — genuinely city-specific, not a templated blurb. */}

@@ -3,8 +3,11 @@
 // page content via getBannersForPage().
 import "server-only";
 import { unstable_cache } from "next/cache";
+import { z } from "zod";
 import type { Banner, BannerType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { PromoBannerData } from "@/components/public/PromoBanner";
+import { parseBannerFeatures } from "@/components/public/bannerIcons";
 
 /** Public page keys a banner may target (plus "*" for all pages). */
 export const BANNER_PAGE_KEYS = [
@@ -14,6 +17,27 @@ export const BANNER_PAGE_KEYS = [
   "blog",
   "about",
   "contact",
+  // Three distinct promo slots within /plan-your-kashmir-trip (rendered via
+  // the existing PromoBanner/PromoBannerCard, same as the sitewide promo
+  // banners elsewhere) — separate page keys, not a "position" field on
+  // Banner, so this reuses 100% of the existing admin Banner module/UI with
+  // zero schema change. Positioned per transport mode, e.g. train before the
+  // packages, flights after the pricing block, bus after "Why Plan With
+  // Vertex" — but any PROMO banner can be assigned to any of the three,
+  // admin's choice.
+  "trip-planner-before-tours",
+  "trip-planner-after-pricing",
+  "trip-planner-after-why",
+  // Two promo slots on every Tour Collection page (/kashmir-tour-packages, …):
+  // one inside the tour grid after the 6th card (only when more than 6 tours
+  // are showing), one after the full grid. Same page-key approach as above.
+  "tour-collection-after-6",
+  "tour-collection-after-all",
+  // Two promo slots on every Occasion Offer page (/offers/…) — typically
+  // transport (getting to Kashmir, local union cabs): one after Plans &
+  // Prices, one after the day-by-day itinerary.
+  "offer-after-plans",
+  "offer-after-itinerary",
 ] as const;
 
 export type BannerPageKey = (typeof BANNER_PAGE_KEYS)[number];
@@ -63,6 +87,28 @@ export const getActiveStrip = unstable_cache(
   { revalidate: 300, tags: ["banners"] },
 );
 
+/** Narrow a Banner row to the fields PromoBannerCard reads (both layouts). */
+export function bannerToPromoData(b: Banner): PromoBannerData {
+  return {
+    id: b.id,
+    title: b.title,
+    body: b.body,
+    ctaLabel: b.ctaLabel,
+    ctaUrl: b.ctaUrl,
+    imageUrl: b.imageUrl,
+    imageMobileUrl: b.imageMobileUrl,
+    layout: b.layout,
+    contentBackground: b.contentBackground,
+    kicker: b.kicker,
+    subtitle: b.subtitle,
+    features: parseBannerFeatures(b.features),
+  };
+}
+
+export function toPromoBannerData(banners: Banner[]): PromoBannerData[] {
+  return banners.map(bannerToPromoData);
+}
+
 /**
  * Active PROMO banners targeting `pageKey` (or "*"). Page RSCs call this and
  * pass the result to <PromoBanner>. Ordered by sortOrder ascending.
@@ -96,3 +142,19 @@ export const getActivePromoBanners = unstable_cache(
   ["active-promo-banners"],
   { revalidate: 300, tags: ["banners"] },
 );
+
+// SPLIT-layout feature rows (icon + heading + optional line); max 4.
+export const bannerFeaturesSchema = z
+  .array(
+    z.object({
+      icon: z.string().trim().min(1).max(30),
+      title: z.string().trim().min(1, "Feature heading is required").max(40),
+      text: z
+        .string()
+        .trim()
+        .max(80)
+        .optional()
+        .transform((v) => v || undefined),
+    }),
+  )
+  .max(4, "Up to 4 features");

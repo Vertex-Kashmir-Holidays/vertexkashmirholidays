@@ -312,6 +312,8 @@ model HotelSupplier {
   // Sales-curated "push this property first" flag — separate from `category`
   // (which is auto-derived from rate) since recommendation is a judgment call.
   recommended           Boolean       @default(false)
+  // Staff-ticked: the hotel has a family room set (for family enquiries).
+  hasFamilyRoom         Boolean       @default(false)
   // Manual tally of bookings sent to this hotel — staff-entered (not derived
   // from any Booking relation; HotelSupplier is a supplier reference, not
   // bookable inventory, per the module's own design — see schema.ts).
@@ -320,6 +322,27 @@ model HotelSupplier {
   // send — never set any other way. Null means no request has been sent yet.
   lastRateRequestSentAt DateTime?
   data                  Json
+  // ── Public Trip Planner carousel (Plan Your Kashmir Trip) ────────────────
+  // Distinct from `isActive` (that flag means "still an active supplier
+  // relationship" — internal). `showOnWebsite` is a separate publish gate:
+  // a hotel can be an active supplier without being public-ready yet (no
+  // photos, not curated), or vice versa. Ordering reuses the existing
+  // `recommended` flag (recommended DESC, hotelName ASC) rather than a new
+  // sortOrder column — see src/lib/hotelSuppliers/stats.ts.
+  coverImageUrl         String?
+  roomImageUrl          String?
+  showOnWebsite         Boolean       @default(false)
+  // The public "View on Google" CTA reuses data.property.mapUrl (already
+  // admin-configured, already inline-editable in the Hotel Rates table) —
+  // confirmed against real rows that it's already a proper Google listing
+  // link (maps.app.goo.gl/... or a maps.google.com search-by-name URL, both
+  // resolving to the business's own Google listing), not a bare pin. No
+  // second URL field needed.
+  // Aggregate, anonymous visitor-interest counter incremented by
+  // POST /api/hotel-suppliers/[id]/like — never tied to a Lead or a specific
+  // visitor's identity. Read-only in the admin UI; only the like route
+  // writes it.
+  publicLikeCount       Int           @default(0)
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
@@ -327,6 +350,7 @@ model HotelSupplier {
   @@index([category])
   @@index([isActive])
   @@index([recommended])
+  @@index([showOnWebsite])
 }
 
 enum HotelCategory {
@@ -518,17 +542,54 @@ model Tour {
   ogTitle            String?
   ogDescription      String?
   relatedTours       String            @default("[]") // JSON RelatedTourEntry[], max 4
+  // JSON TourPackageOption[] — package variants of THIS tour (e.g. Basic/
+  // Comfort/Premium/Luxury), sharing its itinerary. "[]" = an ordinary tour.
+  // Only the public 2-person price is stored; group pricing is Sales-internal.
+  packageOptions     String            @default("[]")
   bookings           Booking[]
   reviews            Review[]
   destinations       TourDestination[]
   activities         ActivityTour[]
   leads              Lead[]
+  collections        TourCollection[]
+  // Occasion Offer pages that link to this tour as a related package.
+  occasionOffers     OccasionOffer[]   @relation("OccasionOfferToTour")
+  // Set when this is an Occasion Offer's hidden CRM tour (see OccasionOffer.crmTour).
+  crmForOffer        OccasionOffer?    @relation("OccasionOfferCrmTour")
 
   // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([category])
   @@index([region])
   @@index([published])
   @@index([bestseller])
+}
+
+// A search-intent / destination / theme landing page served at the top level
+// (/kashmir-tour-packages, /himachal-tour-packages, …) listing every published
+// Tour assigned to it. Deliberately distinct from the TourCategory enum (trip
+// TYPE — honeymoon, family… — at /tours/category/*). Many-to-many: one Tour can
+// sit in several collections (e.g. Kashmir + Offbeat Kashmir) while keeping its
+// single canonical /tours/[slug] URL. sortOrder also picks a tour's "primary"
+// collection for its breadcrumb (lowest published sortOrder wins).
+model TourCollection {
+  id              String   @id @default(cuid())
+  name            String // H1, breadcrumb label, internal-link anchor text
+  slug            String   @unique
+  intro           String? // hero subtitle
+  content         String? // HTML — the collection's genuinely useful body content
+  heroImage       String?
+  heroImageMobile String?
+  metaTitle       String?
+  metaDesc        String?
+  ogImage         String?
+  published       Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tours           Tour[]
+  faqs            Faq[]
+
+  @@index([published, sortOrder])
 }
 
 model TourDestination {
@@ -841,79 +902,116 @@ model PaymentAudit {
 }
 
 model Lead {
-  id                 String              @id @default(cuid())
-  name               String
-  phone              String
-  email              String?
-  source             LeadSource          @default(WEBSITE)
+  id                  String              @id @default(cuid())
+  name                String
+  phone               String
+  email               String?
+  source              LeadSource          @default(WEBSITE)
   // Free-text page/campaign tag (home, tours, blog-detail, …). The LeadSource
   // enum captures the marketing channel; this captures which on-site form fired.
-  sourcePage         String?
+  sourcePage          String?
   // Deprecated — superseded by tourId below (mapping a lead to the real Tour
   // catalog instead of a generic trip-type tag). Left in the schema, unused
   // by application code, rather than dropped, so no historical data is lost.
-  category           LeadCategory?
+  category            LeadCategory?
   // Which real Tour package this lead is interested in. Null = "Custom" (a
   // bespoke itinerary, not tied to a catalog package) — same nullable-FK
   // idiom as Booking.tourId.
-  tourId             String?
-  tour               Tour?               @relation(fields: [tourId], references: [id])
-  adults             Int                 @default(1)
-  children           Int?
-  startDate          DateTime?
-  endDate            DateTime?
-  attachments        String              @default("[]")
-  notes              String?
-  followUpAt         DateTime?
-  assignedToId       String?
-  assignedTo         User?               @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  tourId              String?
+  tour                Tour?               @relation(fields: [tourId], references: [id])
+  // Name of the selected Tour.packageOptions entry (e.g. "Premium"), snapshot
+  // at enquiry time so a later rename never rewrites history. Null = no
+  // package chosen / the tour has no package options.
+  packageName         String?
+  adults              Int                 @default(1)
+  children            Int?
+  startDate           DateTime?
+  endDate             DateTime?
+  attachments         String              @default("[]")
+  notes               String?
+  followUpAt          DateTime?
+  assignedToId        String?
+  assignedTo          User?               @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   // ── B2B request (Phase 2) ────────────────────────────────────────────────
   // Non-null b2bAgentId is the ONLY discriminator for "this Lead is a B2B
   // request" — no separate leadType field (mirrors the Itinerary.leadId/
   // bookingId nullable-FK-as-discriminator idiom already used elsewhere in
   // this schema). Restrict (not Cascade/SetNull): a B2B agent must never be
   // hard-deletable while historical requests exist.
-  b2bAgentId         String?
-  b2bAgent           User?               @relation("B2BAgentLeads", fields: [b2bAgentId], references: [id], onDelete: Restrict)
+  b2bAgentId          String?
+  b2bAgent            User?               @relation("B2BAgentLeads", fields: [b2bAgentId], references: [id], onDelete: Restrict)
   // Who created this request: null = the agent self-submitted; set = a staff
   // member created it on the agent's behalf (mirrors assignedToId's shape).
   // Normal (non-B2B) leads never set this.
-  createdById        String?
-  createdBy          User?               @relation("LeadCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById         String?
+  createdBy           User?               @relation("LeadCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   // B2B-request-only fields — always null on normal leads.
-  days               Int?
-  rooms              Int?
-  budget             Float?
-  status             LeadStatus          @default(NEW)
-  bookingId          String?
-  booking            Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  negotiatedAmount   Float?
-  tokenAmount        Float?
+  days                Int?
+  rooms               Int?
+  budget              Float?
+  status              LeadStatus          @default(NEW)
+  bookingId           String?
+  booking             Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  negotiatedAmount    Float?
+  tokenAmount         Float?
   // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
-  locked             Boolean             @default(false)
-  ipAddress          String?
-  userAgent          String?
+  locked              Boolean             @default(false)
+  ipAddress           String?
+  userAgent           String?
   // ── Marketing attribution — captured once at submission, permanent from then
   // on. See src/lib/attribution.ts (single shared field list/schema). Copied
   // verbatim onto Booking at conversion time (src/app/api/leads/[id]/convert) —
   // never re-derived or duplicated as separate logic.
-  utmSource          String?
-  utmMedium          String?
-  utmCampaign        String?
-  utmTerm            String?
-  utmContent         String?
-  gclid              String?
-  gbraid             String?
-  wbraid             String?
-  fbclid             String?
-  msclkid            String?
-  landingPage        String?
-  referrer           String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  activities         LeadActivity[]
-  itinerary          Itinerary?
-  offlineConversions OfflineConversion[]
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  utmTerm             String?
+  utmContent          String?
+  gclid               String?
+  gbraid              String?
+  wbraid              String?
+  fbclid              String?
+  msclkid             String?
+  landingPage         String?
+  referrer            String?
+  // ── Trip Planner structured intent (Plan Your Kashmir Trip) ─────────────
+  // WHAT the customer wants, orthogonal to `source` (WHERE they came from —
+  // GOOGLE_ADS/META_ADS/…) and `sourcePage` (WHICH on-site form fired). All
+  // nullable/no-default so every pre-existing lead simply has null here —
+  // never backfilled, never reclassified. JSON string arrays, same
+  // convention as Tour.perfectFor — not a relation table; these are a fixed,
+  // small enum set, not independently queryable entities.
+  // Values: "TRANSPORT" | "TOUR" | "HOTEL" | "PLAN" (any subset). "PLAN"
+  // ("Help Me Plan") is its own distinct, undecided intent — it must NEVER
+  // be expanded into all three at write time; that expansion, if ever
+  // wanted, is a read-time/reporting decision, not a stored fact.
+  requestedComponents String?
+  // Values: "FLIGHT" | "TRAIN" | "BUS" (any subset) — only meaningful when
+  // requestedComponents includes "TRANSPORT". Distinct from the older,
+  // single-value `Itinerary`/proposal transport fields (unrelated) and from
+  // TransportAssistanceBanner's legacy context.transportMode (FLIGHT/TRAIN/
+  // EITHER) — that banner's mode maps into this array at submission time.
+  transportModes      String?
+  fromCity            String?
+  toCity              String?
+  // HOW the customer actually contacted us (this submission/creation) — set
+  // server-side only, never client-supplied. FORM for anything created via
+  // POST /api/leads; WHATSAPP/PHONE for staff-created leads logged from a
+  // conversation (src/app/api/admin/leads/route.ts). Deliberately NOT named
+  // `channel` — src/lib/whatsappAttribution.server.ts already uses that word
+  // to mean marketing channel (a LeadSource), a different concept.
+  contactChannel      LeadContactChannel?
+  // Occasion Offer page the enquiry came from (/diwali-kashmir-tour-package-2026,
+  // …). The chosen tier's name is stored in packageName above. SetNull so an
+  // offer can't take its leads' history with it (the API also refuses to
+  // delete an offer that has leads).
+  occasionOfferId     String?
+  occasionOffer       OccasionOffer?      @relation(fields: [occasionOfferId], references: [id], onDelete: SetNull)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  activities          LeadActivity[]
+  itinerary           Itinerary?
+  offlineConversions  OfflineConversion[]
 
   @@index([status])
   @@index([source])
@@ -931,6 +1029,14 @@ model Lead {
   @@index([bookingId])
   // Agent's-own-requests + CRM B2B-requests-listing queries.
   @@index([b2bAgentId])
+  @@index([occasionOfferId])
+}
+
+// HOW the customer contacted us for a given Lead — see Lead.contactChannel.
+enum LeadContactChannel {
+  FORM
+  WHATSAPP
+  PHONE
 }
 
 // Bridges attribution across the WhatsApp gap: a visitor's captured attribution
@@ -941,23 +1047,37 @@ model Lead {
 // Deliberately standalone — no relation to Lead, since the Lead doesn't exist
 // yet when the token is minted.
 model WhatsAppAttributionToken {
-  id          String    @id @default(cuid())
-  token       String    @unique
-  utmSource   String?
-  utmMedium   String?
-  utmCampaign String?
-  utmTerm     String?
-  utmContent  String?
-  gclid       String?
-  gbraid      String?
-  wbraid      String?
-  fbclid      String?
-  msclkid     String?
-  landingPage String?
-  referrer    String?
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime
-  consumedAt  DateTime?
+  id                  String    @id @default(cuid())
+  token               String    @unique
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  utmTerm             String?
+  utmContent          String?
+  gclid               String?
+  gbraid              String?
+  wbraid              String?
+  fbclid              String?
+  msclkid             String?
+  landingPage         String?
+  referrer            String?
+  // Trip Planner intent — same shape/meaning as Lead.requestedComponents/
+  // transportModes/fromCity/toCity above, carried across the WhatsApp gap
+  // the same way attribution already is. Populated only when the token was
+  // minted from the Trip Planner page; null for every other WhatsApp CTA.
+  requestedComponents String?
+  transportModes      String?
+  fromCity            String?
+  toCity              String?
+  // Occasion Offer page the WhatsApp CTA was clicked on, and the plan the
+  // visitor had chosen — copied onto Lead.occasionOfferId/packageName when
+  // staff create the lead from this reference. Plain string (no FK): the
+  // token outlives nothing important and must never block an offer delete.
+  occasionOfferId     String?
+  packageName         String?
+  createdAt           DateTime  @default(now())
+  expiresAt           DateTime
+  consumedAt          DateTime?
 
   // token already has a unique index via @unique above.
   @@index([expiresAt])
@@ -1549,6 +1669,33 @@ model ReviewsContent {
   updatedAt       DateTime @updatedAt
 }
 
+// Admin-editable copy for /plan-your-kashmir-trip, same singleton-per-page
+// pattern as HomeContent/AboutContent/ContactContent/ReviewsContent — edited
+// via the same generic ContentForm + PATCH /api/pages/content/[key] (see
+// src/lib/admin/pageResources.ts's CONTENT_DELEGATES). All fields nullable;
+// the page falls back to sensible keyword-aligned defaults in code when null,
+// same convention every other *Content model already uses.
+model TripPlannerContent {
+  id              String   @id @default("singleton")
+  heroKicker      String?
+  heroTitle       String?
+  heroSubtitle    String?
+  // "Recommended Kashmir Tours" section, renamed to lead with the primary
+  // "Kashmir Tour Packages" search intent.
+  tourKicker      String?
+  tourTitle       String?
+  tourSubtitle    String?
+  // New pricing-intent block ("kashmir tour package price") — body should
+  // explain how pricing works; never a stored/invented starting price (the
+  // real range comes from live Tour.priceFrom data at render time).
+  pricingTitle    String?
+  pricingBody     String?
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model ContactContent {
   id                 String   @id @default("singleton")
   heroBreadcrumb     String?
@@ -1692,8 +1839,124 @@ model Faq {
   blogs        Blog[]
   campaigns    Campaign[]
   activities   Activity[]
+  collections  TourCollection[]
 
   @@index([status, categoryId, sortOrder])
+}
+
+// ── Occasion Offers ──────────────────────────────────────────────────────
+// Seasonal campaign landing pages (/offers/diwali-kashmir-tour-package-2026,
+// …). One reusable page template; every offer is just data. A fixed-date trip:
+// the dates set the number of days/nights, the itinerary has one entry per
+// day, and each package tier has one stay per night. Not to be confused with
+// the older `Offer` model above, which holds the home page's offer cards.
+enum OccasionType {
+  DIWALI
+  CHRISTMAS
+  NEW_YEAR
+  EID
+  HOLI
+  SUMMER
+  OTHER
+}
+
+model OccasionOffer {
+  id               String                 @id @default(cuid())
+  name             String // internal + breadcrumb name, e.g. "Diwali Kashmir Tour Package 2026"
+  slug             String                 @unique
+  published        Boolean                @default(false)
+  sortOrder        Int                    @default(0)
+  occasionType     OccasionType           @default(OTHER)
+  // Fixed travel window — date-only values (stored at UTC midnight), null
+  // until marketing confirms them. Nights = endDate − startDate; the page's
+  // "5 Nights / 6 Days" and "Day 1 · Fri 6 Nov" labels are derived from these.
+  startDate        DateTime?
+  endDate          DateTime?
+  shortDescription String?
+  heroTitle        String? // H1 — falls back to name
+  heroSubtitle     String?
+  heroImage        String?
+  heroImageMobile  String?
+  // Lead-form CTA, e.g. "Get My Diwali Package" — null derives one from occasionType.
+  ctaLabel         String?
+  overview         String? // HTML body (sanitized on render)
+  // JSON-string arrays, same convention as Tour/Campaign content columns:
+  whyThisOffer     String                 @default("[]") // [{ title, text }]
+  // One per day: [{ destination (Destination slug), title, description, highlights[], image }]
+  itinerary        String                 @default("[]")
+  inclusions       String                 @default("[]") // string[]
+  exclusions       String                 @default("[]") // string[]
+  gallery          String                 @default("[]") // image URLs
+  filmUrl          String? // optional campaign video (Cloudinary/YouTube)
+  filmPoster       String?
+  faqs             String                 @default("[]") // [{ question, answer }] — offer-specific
+  // Extra Compare Plans rows, e.g. Activities › "Gondola ride", Transport ›
+  // "ABC Union": [{ id, group, label }]. Each plan's value per row lives in
+  // OccasionOfferPackage.compareValues.
+  compareRows      String                 @default("[]")
+  // "Optional Activities" section (e.g. snow activities for Christmas / New
+  // Year): cards [{ title, description, image, priceNote }] plus an editable
+  // heading, intro and note (e.g. "Subject to snow and weather").
+  activitiesTitle  String?
+  activitiesIntro  String?
+  activitiesNote   String?
+  activities       String                 @default("[]")
+  // SEO
+  metaTitle        String?
+  metaDesc         String?
+  canonicalUrl     String? // null = the offer's own URL
+  ogTitle          String?
+  ogDesc           String?
+  ogImage          String?
+  noindex          Boolean                @default(false)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  packages         OccasionOfferPackage[]
+  relatedTours     Tour[]                 @relation("OccasionOfferToTour")
+  // Hidden (never published) tour that represents this offer in the CRM's
+  // Tour picker — kept in sync by src/lib/offers/crmTour.ts.
+  crmTourId        String?                @unique
+  crmTour          Tour?                  @relation("OccasionOfferCrmTour", fields: [crmTourId], references: [id], onDelete: SetNull)
+  leads            Lead[]
+
+  @@index([published, sortOrder])
+}
+
+// One stay tier of an offer (Budget / 3-Star / 4-Star / 5-Star …). Prices are
+// whole rupees for 2 adults and are only ever read from here — never
+// hard-coded in the page.
+model OccasionOfferPackage {
+  id                  String        @id @default(cuid())
+  offerId             String
+  offer               OccasionOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  name                String // short tier name used in the form + CRM, e.g. "4-Star"
+  displayName         String // card heading, e.g. "4-Star Comfort"
+  description         String?
+  priceForTwo         Int
+  originalPriceForTwo Int?
+  published           Boolean       @default(true)
+  sortOrder           Int           @default(0)
+  image               String?
+  highlights          String        @default("[]") // string[]
+  inclusions          String        @default("[]") // string[]
+  // One per night, in order: [{ destination (slug), stayType, category }] —
+  // WHERE each night is spent. Drives the night split ("3N Srinagar · 1N
+  // Pahalgam · 1N Houseboat"), the itinerary's "Overnight Stay" lines and the
+  // Compare Plans table.
+  stays               String        @default("[]")
+  // The plan's hotel options per place (2–3 each, shown "… / Similar"):
+  // [{ destination (slug), stayType, name, category, googleUrl, image }] —
+  // matched to nights by destination + stayType.
+  hotels              String        @default("[]")
+  // This plan's value per OccasionOffer.compareRows row: { [rowId]: "Included" | "Not included" | text }
+  compareValues       String        @default("{}")
+  badge               String? // e.g. "Most booked" — only if true
+  mealPlan            String? // e.g. "Breakfast & dinner"
+  vehicle             String? // e.g. "Private sedan"
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([offerId, sortOrder])
 }
 
 model ContactOffice {
@@ -1856,6 +2119,7 @@ enum TourCategory {
 enum TourRegion {
   KASHMIR
   LADAKH
+  HIMACHAL
 }
 
 enum BookingStatus {
@@ -2124,24 +2388,41 @@ model MeetingParticipant {
 // overlaid text placed within page content areas. `pages` is a JSON string array
 // of page keys ("home","tours",…) or ["*"] for all pages.
 model Banner {
-  id             String     @id @default(cuid())
-  type           BannerType @default(STRIP)
-  title          String
-  body           String?
-  ctaLabel       String?
-  ctaUrl         String?
-  imageUrl       String? // PROMO desktop background image
-  imageMobileUrl String? // PROMO ≤640px background image (falls back to imageUrl)
-  pages          String     @default("[\"*\"]") // JSON string array: ["home","tours"] or ["*"] for all
-  isActive       Boolean    @default(true)
-  sortOrder      Int        @default(0)
-  startsAt       DateTime?
-  endsAt         DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id                String       @id @default(cuid())
+  type              BannerType   @default(STRIP)
+  title             String
+  body              String?
+  ctaLabel          String?
+  ctaUrl            String?
+  imageUrl          String? // PROMO desktop background image
+  imageMobileUrl    String? // PROMO ≤640px background image (falls back to imageUrl)
+  // PROMO presentation. OVERLAY = text over a full-bleed image (original).
+  // SPLIT = kicker/title/subtitle/description/features/CTA in a full-height
+  // white or navy content panel that fades into the image on the right
+  // (stacked, image on top, on mobile).
+  layout            BannerLayout @default(OVERLAY)
+  // SPLIT: true = content panel in the site background colour (cream-gold in
+  // light mode, navy in dark mode) with a gradient into the image; false = no
+  // panel/gradient, content sits directly on the image.
+  contentBackground Boolean      @default(true)
+  kicker            String? // SPLIT — small uppercase line above the title
+  subtitle          String? // SPLIT — second, lighter headline line
+  features          String       @default("[]") // SPLIT — JSON BannerFeature[] {icon, title, text?}, max 4
+  pages             String       @default("[\"*\"]") // JSON string array: ["home","tours"] or ["*"] for all
+  isActive          Boolean      @default(true)
+  sortOrder         Int          @default(0)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@index([type, isActive])
   @@index([sortOrder])
+}
+
+enum BannerLayout {
+  OVERLAY
+  SPLIT
 }
 
 enum BannerType {

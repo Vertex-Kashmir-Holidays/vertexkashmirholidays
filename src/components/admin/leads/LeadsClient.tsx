@@ -13,11 +13,19 @@ import {
   CalendarClock,
   TrendingUp,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/atoms/button";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/organisms/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/organisms/select";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/atoms/tooltip";
 import { PageHeader } from "@/components/ui/molecules/page-header";
 import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
@@ -39,6 +47,7 @@ type LeadStatus =
   | "CONVERTED"
   | "REJECTED";
 type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
+type LeadContactChannel = "FORM" | "WHATSAPP" | "PHONE";
 
 interface Lead {
   id: string;
@@ -46,6 +55,16 @@ interface Lead {
   phone: string;
   email: string | null;
   source: LeadSource;
+  // Trip Planner structured intent — WHAT they want (requestedComponents/
+  // transportModes/fromCity/toCity), distinct from `source` above (WHERE
+  // they came from). JSON string arrays, null on any pre-Trip-Planner lead —
+  // never backfilled. sourcePage/contactChannel are plain strings.
+  sourcePage: string | null;
+  contactChannel: LeadContactChannel | null;
+  requestedComponents: string | null;
+  transportModes: string | null;
+  fromCity: string | null;
+  toCity: string | null;
   adults: number;
   status: LeadStatus;
   startDate: Date | string | null;
@@ -54,8 +73,42 @@ interface Lead {
   negotiatedAmount: number | null;
   tokenAmount: number | null;
   assignedTo: { id: string; name: string | null; email: string } | null;
+  // Occasion Offer the lead came from (form, or a resolved WhatsApp reference).
+  occasionOffer?: { id: string; name: string } | null;
+  packageName?: string | null;
   createdAt: Date | string;
 }
+
+// Parses the JSON string array columns above — malformed/legacy data never
+// throws, just renders as "no request info" rather than crashing the row.
+function parseJsonArray(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+const REQUESTED_COMPONENT_LABELS: Record<string, string> = {
+  TRANSPORT: "Transport",
+  TOUR: "Tour",
+  HOTEL: "Hotel",
+  PLAN: "Help Me Plan",
+};
+
+const TRANSPORT_MODE_LABELS: Record<string, string> = {
+  FLIGHT: "Flight",
+  TRAIN: "Train",
+  BUS: "Bus",
+};
+
+const CONTACT_CHANNEL_LABELS: Record<LeadContactChannel, string> = {
+  FORM: "Form",
+  WHATSAPP: "WhatsApp",
+  PHONE: "Phone",
+};
 
 interface StaffUser {
   id: string;
@@ -79,6 +132,8 @@ interface Props {
   canDelete: boolean;
   isAdmin: boolean;
   initialIpFilter?: string;
+  /** Occasion Offers for the Offer filter. */
+  offers?: { id: string; name: string }[];
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -114,6 +169,7 @@ export function LeadsClient({
   canDelete,
   isAdmin,
   initialIpFilter,
+  offers = [],
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -122,6 +178,10 @@ export function LeadsClient({
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
   const [assigneeFilter, setAssigneeFilter] = useState("ALL");
+  // Trip Planner request-type filter (TRANSPORT/TOUR/HOTEL/PLAN) — what the
+  // customer wants, orthogonal to sourceFilter (where they came from).
+  const [requestFilter, setRequestFilter] = useState("ALL");
+  const [offerFilter, setOfferFilter] = useState("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // The IP-investigation view (?ip=...) is a rare, narrow fraud-check lookup:
@@ -135,6 +195,13 @@ export function LeadsClient({
     if (isAdmin && assigneeFilter !== "ALL") {
       if (assigneeFilter === "UNASSIGNED" && l.assignedTo !== null) return false;
       if (assigneeFilter !== "UNASSIGNED" && l.assignedTo?.id !== assigneeFilter) return false;
+    }
+    if (requestFilter !== "ALL" && !parseJsonArray(l.requestedComponents).includes(requestFilter)) {
+      return false;
+    }
+    if (offerFilter === "ANY" && !l.occasionOffer) return false;
+    if (offerFilter !== "ALL" && offerFilter !== "ANY" && l.occasionOffer?.id !== offerFilter) {
+      return false;
     }
     if (search) {
       const q = search.toLowerCase();
@@ -177,7 +244,7 @@ export function LeadsClient({
     if (isIpMode) return;
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, statusFilter, sourceFilter, assigneeFilter]);
+  }, [debouncedSearch, statusFilter, sourceFilter, assigneeFilter, requestFilter, offerFilter]);
 
   async function fetchLeads() {
     setLoading(true);
@@ -186,6 +253,8 @@ export function LeadsClient({
       if (statusFilter !== "ALL") params.set("status", statusFilter);
       if (sourceFilter !== "ALL") params.set("source", sourceFilter);
       if (isAdmin && assigneeFilter !== "ALL") params.set("assignedToId", assigneeFilter);
+      if (requestFilter !== "ALL") params.set("requestedComponent", requestFilter);
+      if (offerFilter !== "ALL") params.set("offer", offerFilter);
       if (debouncedSearch) params.set("search", debouncedSearch);
       const res = await fetch(`/api/leads?${params.toString()}`);
       if (!res.ok) throw new Error();
@@ -209,7 +278,16 @@ export function LeadsClient({
     }
     fetchLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, statusFilter, sourceFilter, assigneeFilter, debouncedSearch]);
+  }, [
+    page,
+    pageSize,
+    statusFilter,
+    sourceFilter,
+    assigneeFilter,
+    requestFilter,
+    offerFilter,
+    debouncedSearch,
+  ]);
 
   function changePageSize(n: number) {
     setPageSize(n);
@@ -229,6 +307,20 @@ export function LeadsClient({
         onPageSize: ipPagination.changePageSize,
       }
     : { page, pageSize, pageCount, total, onPage: setPage, onPageSize: changePageSize };
+
+  // Re-fetches without a page reload. router.refresh() re-runs the server
+  // component, so the stat cards / header count (and, in IP mode, the rows
+  // themselves) update while client state — filters, search, page — is kept.
+  // The server-paginated list is client state and isn't re-derived from props,
+  // so fetchLeads() reloads the current page — same pairing as handleDelete.
+  const refreshing = isPending || loading;
+
+  function handleRefresh() {
+    startTransition(() => {
+      router.refresh();
+    });
+    if (!isIpMode) fetchLeads();
+  }
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -349,6 +441,36 @@ export function LeadsClient({
             </SelectContent>
           </Select>
 
+          <Select value={requestFilter} onValueChange={setRequestFilter}>
+            <SelectTrigger className="w-auto min-w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Requests</SelectItem>
+              <SelectItem value="TRANSPORT">Transport</SelectItem>
+              <SelectItem value="TOUR">Tour</SelectItem>
+              <SelectItem value="HOTEL">Hotel</SelectItem>
+              <SelectItem value="PLAN">Help Me Plan</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {offers.length > 0 && (
+            <Select value={offerFilter} onValueChange={setOfferFilter}>
+              <SelectTrigger className="w-auto min-w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Offers</SelectItem>
+                <SelectItem value="ANY">Any offer</SelectItem>
+                {offers.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {isAdmin && (
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
               <SelectTrigger className="w-auto min-w-[150px]">
@@ -369,10 +491,26 @@ export function LeadsClient({
           <p className="text-xs text-muted-foreground self-center shrink-0">
             {resultsCount} results{!isIpMode && loading ? " · loading…" : ""}
           </p>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="ml-auto"
+          >
+            <RefreshCw className={refreshing ? "animate-spin" : undefined} />
+            Refresh
+          </Button>
         </div>
 
         {/* Table */}
-        <div className={cn("overflow-x-auto", !isIpMode && loading && "opacity-60 pointer-events-none")}>
+        <div
+          className={cn(
+            "overflow-x-auto",
+            !isIpMode && loading && "opacity-60 pointer-events-none",
+          )}
+        >
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
@@ -392,7 +530,11 @@ export function LeadsClient({
               {isEmpty ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    {search || statusFilter !== "ALL" || sourceFilter !== "ALL"
+                    {search ||
+                    statusFilter !== "ALL" ||
+                    sourceFilter !== "ALL" ||
+                    requestFilter !== "ALL" ||
+                    offerFilter !== "ALL"
                       ? "No leads match your filters."
                       : "No leads yet. Create your first one!"}
                   </td>
@@ -428,6 +570,43 @@ export function LeadsClient({
                             {lead.email}
                           </p>
                         )}
+                        {/* Occasion Offer tag — from the offer form or a resolved
+                          WhatsApp reference. */}
+                        {lead.occasionOffer && (
+                          <p className="mt-1">
+                            <span className="inline-block max-w-[200px] truncate rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                              🎉 {lead.occasionOffer.name}
+                              {lead.packageName ? ` · ${lead.packageName}` : ""}
+                            </span>
+                          </p>
+                        )}
+                        {/* Trip Planner request — what they want, at a glance. Absent
+                          (not shown) for any pre-Trip-Planner lead. */}
+                        {(() => {
+                          const components = parseJsonArray(lead.requestedComponents);
+                          if (components.length === 0) return null;
+                          const modes = parseJsonArray(lead.transportModes);
+                          return (
+                            <p className="mt-1 flex flex-wrap gap-1">
+                              {components.map((c) => (
+                                <span
+                                  key={c}
+                                  className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary"
+                                >
+                                  {REQUESTED_COMPONENT_LABELS[c] ?? c}
+                                </span>
+                              ))}
+                              {modes.map((m) => (
+                                <span
+                                  key={m}
+                                  className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground"
+                                >
+                                  {TRANSPORT_MODE_LABELS[m] ?? m}
+                                </span>
+                              ))}
+                            </p>
+                          );
+                        })()}
                       </div>
                     </td>
 
@@ -459,11 +638,16 @@ export function LeadsClient({
                       </span>
                     </td>
 
-                    {/* Source */}
+                    {/* Source (WHERE they came from) + Channel (HOW they contacted us) */}
                     <td className="px-4 py-3">
                       <span className="text-[12px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
                         {SOURCE_LABELS[lead.source]}
                       </span>
+                      {lead.contactChannel && (
+                        <span className="mt-1 block text-[11px] text-muted-foreground">
+                          via {CONTACT_CHANNEL_LABELS[lead.contactChannel]}
+                        </span>
+                      )}
                     </td>
 
                     {/* Last Updated */}

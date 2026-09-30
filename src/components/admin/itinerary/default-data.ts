@@ -7,6 +7,7 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   subtitle: "Escape",
   duration: "5 NIGHTS · 6 DAYS",
   preparedFor: "Mr Farooq Sheikh",
+  customerPhone: "",
   travelDates: "10 - 15 JUNE 2026",
   travelers: "2 ADULTS · 1 CHILD",
   packageType: "PREMIUM PACKAGE",

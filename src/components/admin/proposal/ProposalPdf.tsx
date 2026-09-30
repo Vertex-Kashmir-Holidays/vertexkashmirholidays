@@ -184,6 +184,19 @@ const s = StyleSheet.create({
   coverPreparedForCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
   coverPreparedForLabel: { fontSize: 11, letterSpacing: 7, color: C.mint },
   coverPreparedForName: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.white, marginTop: 10 },
+  coverPreparedForPhone: { fontSize: 12, color: C.mint, marginTop: 6, letterSpacing: 1 },
+  // "This is a proposal, not the final itinerary" note at the foot of the cover.
+  coverProposalNote: {
+    marginTop: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(127,191,158,0.35)",
+    backgroundColor: "rgba(127,191,158,0.08)",
+  },
+  coverProposalNoteTitle: { fontSize: 7.5, letterSpacing: 1.4, color: C.mint, fontFamily: "Helvetica-Bold" },
+  coverProposalNoteText: { fontSize: 8.5, color: C.mintPale, lineHeight: 1.5, marginTop: 4 },
   quoteLine: { fontSize: 8.5, letterSpacing: 2.5, color: C.mint, marginBottom: 12 },
   coverTitle: { fontSize: 44, fontFamily: "Helvetica-Bold", color: C.white, lineHeight: 1 },
   coverSubtitle: { fontSize: 44, fontFamily: "Helvetica", fontWeight: 300, color: C.mint, lineHeight: 1.1 },
@@ -339,6 +352,7 @@ const s = StyleSheet.create({
   simpleTableCell: { padding: SP.sm + 3 },
   simpleTableCellText: { fontSize: 9, color: C.body, lineHeight: 1.5 },
   simpleTableCellStrong: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.ink, lineHeight: 1.4 },
+  simpleTableDate: { fontSize: 8, color: C.muted, marginTop: 2, lineHeight: 1.3 },
   simpleTableNote: { fontSize: 8, color: C.muted, marginTop: SP.sm, lineHeight: 1.5, fontStyle: "italic" },
 
   // ── Six Days timeline (page 4) ──────────────────────────────────────────
@@ -851,6 +865,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
   footerLogoSrc = img(LOGO_SRC);
   const incRuns = withCategoryRuns(data.inc);
   const excRuns = withCategoryRuns(data.exc);
+  // The Day column only widens when a date is present, so proposals without
+  // day dates lay out exactly as they always did.
+  const hasDayDates = data.days.some((d) => d.dateLabel.trim() !== "");
 
   return (
     <Document title={`Proposal - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -896,6 +913,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             <View style={s.coverPreparedForCenter}>
               <Text style={s.coverPreparedForLabel}>PREPARED FOR</Text>
               <Text style={s.coverPreparedForName}>{data.preparedFor}</Text>
+              {data.customerPhone ? (
+                <Text style={s.coverPreparedForPhone}>{data.customerPhone}</Text>
+              ) : null}
             </View>
           ) : null}
 
@@ -937,6 +957,20 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             <Text style={s.coverFootnote}>
               TOTAL FOR THE PARTY · ALL INCLUSIVE OF GST · VALID 7 DAYS
             </Text>
+
+            {/* Sets expectations: this document is for choosing a package, not
+                the booking confirmation. */}
+            <View style={s.coverProposalNote} wrap={false}>
+              <Text style={s.coverProposalNoteTitle}>
+                PLEASE NOTE — THIS IS A PROPOSAL, NOT YOUR FINAL ITINERARY
+              </Text>
+              <Text style={s.coverProposalNoteText}>
+                This proposal is shared to help you compare and choose your package; hotels, vehicles and
+                prices are indicative and subject to availability. Once you confirm your package with the
+                token payment, we will send your final detailed itinerary with confirmed hotels, vehicle
+                details, a day-by-day plan, inclusions and all booking information.
+              </Text>
+            </View>
           </View>
         </View>
       </Page>
@@ -1076,8 +1110,16 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                 <SectionHead title="Day Plan at a Glance" tag={data.duration} />
                 <View style={s.simpleTable}>
                   <View style={s.simpleTableHeadRow} wrap={false}>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.5 }]}>Day</Text>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 3 }]}>Plan</Text>
+                    <Text
+                      style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: hasDayDates ? 0.95 : 0.5 }]}
+                    >
+                      Day
+                    </Text>
+                    <Text
+                      style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: hasDayDates ? 2.55 : 3 }]}
+                    >
+                      Plan
+                    </Text>
                     <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
                       Night Stay
                     </Text>
@@ -1085,10 +1127,11 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                   </View>
                   {data.days.map((day, i) => (
                     <View key={day.id} style={s.simpleTableRow} wrap={false}>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 0.5 }]}>
-                        {String(i + 1).padStart(2, "0")}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 3 }]}>
+                      <View style={[s.simpleTableCell, { flex: hasDayDates ? 0.95 : 0.5 }]}>
+                        <Text style={s.simpleTableCellStrong}>{String(i + 1).padStart(2, "0")}</Text>
+                        {day.dateLabel.trim() ? <Text style={s.simpleTableDate}>{day.dateLabel}</Text> : null}
+                      </View>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: hasDayDates ? 2.55 : 3 }]}>
                         <Text style={s.simpleTableCellStrong}>{day.title}</Text>
                         {day.body ? ` – ${day.body}` : ""}
                       </Text>
@@ -1122,6 +1165,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                     <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
                       Room Type
                     </Text>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.8 }]}>
+                      No. of Rooms
+                    </Text>
                   </View>
                   {data.stayPlan.map((row) => (
                     <View key={row.id} style={s.simpleTableRow} wrap={false}>
@@ -1136,6 +1182,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                       </Text>
                       <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
                         {row.roomType}
+                      </Text>
+                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.8 }]}>
+                        {row.rooms}
                       </Text>
                     </View>
                   ))}

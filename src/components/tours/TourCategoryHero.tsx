@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
+import { HeroStats } from "@/components/layout/HeroStats";
+import { HeroWhatsAppCta } from "@/components/leads/HeroWhatsAppCta";
+import type { SiteStatData } from "@/types/home";
+import type { LeadContext, LeadSourcePage } from "@/lib/leads/schema";
+import type { WhatsAppSource } from "@/types/analytics";
 
 interface TourCategoryHeroProps {
   pageTitle: string;
@@ -13,6 +18,22 @@ interface TourCategoryHeroProps {
   // per-category page; only the /tours/category hub passes this.
   ctaLabel?: string;
   ctaHref?: string;
+  // Same shared, genuinely live-computed stats as /tours and
+  // /plan-your-kashmir-trip (see src/lib/publicHeroStats.ts) — omitted
+  // (no strip rendered) on the /tours/category hub, which doesn't pass it.
+  stats?: SiteStatData[];
+  // WhatsApp message + analytics sourcePage — per-category, so omitted (no
+  // CTA rendered) on the hub page, which doesn't pass it.
+  whatsappMessage?: string;
+  sourcePage?: string;
+  // Overrides for non-Kashmir pages (Tour Collections) — every existing
+  // caller omits these and keeps the Kashmir defaults.
+  imageAlt?: string;
+  leadSource?: LeadSourcePage;
+  leadContext?: LeadContext;
+  leadKicker?: string;
+  whatsappSource?: WhatsAppSource;
+  whatsappLabel?: string;
 }
 
 // Same SecondaryHero + breadcrumb + HeroLeadCard shell used by every other
@@ -25,13 +46,29 @@ export function TourCategoryHero({
   heroImageMobile,
   ctaLabel,
   ctaHref,
+  stats,
+  whatsappMessage,
+  sourcePage,
+  imageAlt = "Kashmir valley",
+  leadSource = "tour-category",
+  leadContext,
+  leadKicker,
+  whatsappSource = "tour_category_hero",
+  whatsappLabel,
 }: TourCategoryHeroProps) {
   return (
     <SecondaryHero
       image={heroImage ?? "/hero/gulmarg-lg.webp"}
       imageMobile={heroImageMobile ?? "/hero/gulmarg.webp"}
-      alt="Kashmir valley"
-      aside={<HeroLeadCard source="tour-category" buttonLabel="Get a Free Quote" />}
+      alt={imageAlt}
+      aside={
+        <HeroLeadCard
+          source={leadSource}
+          context={leadContext}
+          kicker={leadKicker}
+          buttonLabel="Get a Free Quote"
+        />
+      }
     >
       <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
         <Link href="/" className="transition hover:text-white">
@@ -67,6 +104,15 @@ export function TourCategoryHero({
               {ctaLabel}
             </Link>
           </div>
+        )}
+        {stats && <HeroStats stats={stats} />}
+        {whatsappMessage && sourcePage && (
+          <HeroWhatsAppCta
+            message={whatsappMessage}
+            source={whatsappSource}
+            sourcePage={sourcePage}
+            label={whatsappLabel}
+          />
         )}
       </div>
     </SecondaryHero>

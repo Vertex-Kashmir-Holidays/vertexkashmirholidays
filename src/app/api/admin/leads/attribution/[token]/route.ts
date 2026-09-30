@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePermission } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 import {
   normalizeWhatsAppTokenParam,
   resolveWhatsAppAttributionToken,
@@ -45,5 +46,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Reference not found or expired" }, { status: 404 });
   }
 
-  return NextResponse.json({ attribution: resolved.attribution, channel: resolved.channel });
+  // Occasion Offer the WhatsApp CTA was clicked on — shown in the preview so
+  // staff see the lead will be tagged with it.
+  const offer = resolved.intent?.offerId
+    ? await prisma.occasionOffer.findUnique({
+        where: { id: resolved.intent.offerId },
+        select: { name: true },
+      })
+    : null;
+
+  return NextResponse.json({
+    attribution: resolved.attribution,
+    channel: resolved.channel,
+    offer: offer ? { name: offer.name, packageName: resolved.intent?.packageName ?? null } : null,
+  });
 }

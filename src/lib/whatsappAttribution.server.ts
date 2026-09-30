@@ -9,7 +9,12 @@
 import { randomBytes } from "crypto";
 import { Prisma, type LeadSource } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ATTRIBUTION_FIELDS, pickAttribution, type AttributionData } from "@/lib/attribution";
+import {
+  ATTRIBUTION_FIELDS,
+  pickAttribution,
+  type AttributionData,
+  type PlannerIntent,
+} from "@/lib/attribution";
 import { deriveChannel } from "@/lib/attribution.server";
 
 // A WhatsApp attribution token bridges "visitor sends a WhatsApp message" to
@@ -63,6 +68,7 @@ export function hasAttributionData(attribution: AttributionData): boolean {
  */
 export async function createWhatsAppAttributionToken(
   attribution: AttributionData,
+  intent?: PlannerIntent,
 ): Promise<string> {
   const expiresAt = new Date(
     Date.now() + WHATSAPP_ATTRIBUTION_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
@@ -77,6 +83,21 @@ export async function createWhatsAppAttributionToken(
     const value = attribution[field];
     if (value) data[field] = value;
   }
+  // Trip Planner intent — same JSON-string-array convention as
+  // Lead.requestedComponents/transportModes. Only populated when the caller
+  // (the token route, for a Trip Planner-minted token) passes it; every other
+  // WhatsApp CTA on the site leaves these null on the row, same as today.
+  if (intent?.requestedComponents?.length) {
+    data.requestedComponents = JSON.stringify(intent.requestedComponents);
+  }
+  if (intent?.transportModes?.length) {
+    data.transportModes = JSON.stringify(intent.transportModes);
+  }
+  if (intent?.fromCity) data.fromCity = intent.fromCity;
+  if (intent?.toCity) data.toCity = intent.toCity;
+  // Occasion Offer page context (offer + chosen plan).
+  if (intent?.offerId) data.occasionOfferId = intent.offerId;
+  if (intent?.packageName) data.packageName = intent.packageName;
 
   for (let attempt = 0; attempt < MAX_GENERATE_ATTEMPTS; attempt++) {
     const token = generateToken();
@@ -124,6 +145,9 @@ export interface ResolvedWhatsAppAttribution {
    *  moment of creation, exactly as this function does, rather than trust a
    *  value that passed through the browser in between. */
   channel: LeadSource;
+  /** Trip Planner intent / Occasion Offer context (offerId + packageName),
+   *  present only when the token was minted from one of those pages. */
+  intent?: PlannerIntent;
 }
 
 /**
@@ -148,5 +172,30 @@ export async function resolveWhatsAppAttributionToken(
   if (!row || row.expiresAt < new Date()) return null;
 
   const attribution = pickAttribution(row);
-  return { attribution, channel: deriveChannel(attribution) };
+  const intent: PlannerIntent = {};
+  if (row.requestedComponents) {
+    try {
+      intent.requestedComponents = JSON.parse(row.requestedComponents) as string[];
+    } catch {
+      // malformed JSON on an old/corrupted row — treat as absent rather than throwing.
+    }
+  }
+  if (row.transportModes) {
+    try {
+      intent.transportModes = JSON.parse(row.transportModes) as string[];
+    } catch {
+      // same as above.
+    }
+  }
+  if (row.fromCity) intent.fromCity = row.fromCity;
+  if (row.toCity) intent.toCity = row.toCity;
+  if (row.occasionOfferId) intent.offerId = row.occasionOfferId;
+  if (row.packageName) intent.packageName = row.packageName;
+  const hasIntent = Object.keys(intent).length > 0;
+
+  return {
+    attribution,
+    channel: deriveChannel(attribution),
+    intent: hasIntent ? intent : undefined,
+  };
 }

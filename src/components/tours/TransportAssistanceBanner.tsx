@@ -44,13 +44,23 @@ interface TransportAssistanceBannerProps {
   className?: string;
 }
 
-type TransportMode = "FLIGHT" | "TRAIN" | "EITHER";
+type TransportMode = "FLIGHT" | "TRAIN" | "BUS" | "EITHER";
 
 const MODES: { value: TransportMode; label: string }[] = [
   { value: "FLIGHT", label: "Flight" },
   { value: "TRAIN", label: "Train" },
-  { value: "EITHER", label: "Either" },
+  { value: "BUS", label: "Bus" },
+  { value: "EITHER", label: "Not sure" },
 ];
+
+// Maps this banner's single-value legacy mode onto the Trip Planner's
+// requestedComponents/transportModes arrays, so a banner submission is
+// visible in the CRM's structured Request display exactly like a Trip
+// Planner submission — same lead pipeline, same fields, no parallel system.
+function toTransportModes(mode: TransportMode): ("FLIGHT" | "TRAIN" | "BUS")[] {
+  if (mode === "EITHER") return ["FLIGHT", "TRAIN"];
+  return [mode];
+}
 
 const today = () => new Date().toISOString().split("T")[0];
 
@@ -266,6 +276,8 @@ export function TransportAssistanceBanner({
               returnDate: returnDate || undefined,
               travellers: Number(travellers) || undefined,
               placement,
+              requestedComponents: ["TRANSPORT"],
+              transportModes: toTransportModes(mode),
             }}
             buttonLabel="Get My Quote"
             note="Free, no spam — our team replies with real fare options on WhatsApp."

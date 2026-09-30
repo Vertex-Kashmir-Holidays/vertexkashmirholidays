@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { renderAccents } from "@/lib/accents";
+import { withVideoWatermark } from "@/lib/videoWatermark";
 import type { SectionHeading, VideoReviewData } from "@/types/home";
 
 interface VideoReviewsSectionProps {
@@ -19,7 +20,8 @@ function resolveVideo(url: string): { kind: "iframe" | "file"; src: string } {
   const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   if (vimeo)
     return { kind: "iframe", src: `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1` };
-  return { kind: "file", src: url };
+  // Uploaded (Cloudinary) videos play with the Vertex logo overlaid.
+  return { kind: "file", src: withVideoWatermark(url) };
 }
 
 export function VideoReviewsSection({ heading, videos }: VideoReviewsSectionProps) {

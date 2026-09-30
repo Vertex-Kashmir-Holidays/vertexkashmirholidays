@@ -55,6 +55,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
   const [rows, setRows] = useState<RoomRateRowDraft[]>([{ ...EMPTY_ROOM_RATE_ROW_DRAFT }]);
   const [validTo, setValidTo] = useState("");
   const [recommended, setRecommended] = useState(false);
+  const [hasFamilyRoom, setHasFamilyRoom] = useState(false);
   const [rateError, setRateError] = useState<string | null>(null);
 
   const initialDestination = DESTINATION_SET.includes(defaultDestination ?? "")
@@ -117,6 +118,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       category: computeCategoryFromMap(getDeluxeMapRate(rate)),
       isActive: true,
       recommended,
+      hasFamilyRoom,
       bookingsCount: Math.max(0, Math.round(Number(data.bookingsCount) || 0)),
       data: {
         property: {
@@ -162,15 +164,26 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-bold text-foreground">Hotel Details</h3>
-          <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer shrink-0">
-            <input
-              type="checkbox"
-              checked={recommended}
-              onChange={(e) => setRecommended(e.target.checked)}
-              className="cbx"
-            />
-            Recommended
-          </label>
+          <div className="flex items-center gap-5 shrink-0">
+            <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasFamilyRoom}
+                onChange={(e) => setHasFamilyRoom(e.target.checked)}
+                className="cbx"
+              />
+              Family Room
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={recommended}
+                onChange={(e) => setRecommended(e.target.checked)}
+                className="cbx"
+              />
+              Recommended
+            </label>
+          </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">

@@ -4,8 +4,20 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, Copy, FileText } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Trash2,
+  Pencil,
+  Eye,
+  Copy,
+  FileText,
+  Phone,
+  IndianRupee,
+} from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
+import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { useServerPagedList } from "@/components/admin/ui/useServerPagedList";
 import type { ItinerarySummary, ItineraryStatus } from "@/types/itinerary";
 
 const STATUSES: ("ALL" | ItineraryStatus)[] = ["ALL", "DRAFT", "SENT", "CONFIRMED"];
@@ -17,24 +29,32 @@ const STATUS_VARIANT: Record<ItineraryStatus, BadgeProps["variant"]> = {
 };
 
 interface Props {
+  /** First page of results, rendered by the server. */
   initialItems: ItinerarySummary[];
+  /** Total itineraries visible to this user, across all pages. */
+  initialTotal: number;
   showOwner: boolean;
   canCreate: boolean;
+  canEdit: boolean;
   canDelete: boolean;
 }
 
-export function ItineraryListClient({ initialItems, showOwner, canCreate, canDelete }: Props) {
+export function ItineraryListClient({ initialItems, initialTotal, showOwner, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const filtered = initialItems.filter((i) => {
-    const matchesStatus = statusFilter === "ALL" || i.status === statusFilter;
-    const matchesSearch = search === "" || i.title.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const { items, total, page, setPage, pageSize, changePageSize, pageCount, loading, reload } =
+    useServerPagedList<ItinerarySummary>({
+      endpoint: "/api/itineraries",
+      itemsKey: "itineraries",
+      initialItems,
+      initialTotal,
+      search,
+      filters: { status: statusFilter },
+    });
 
   function remove(item: ItinerarySummary) {
     startTransition(async () => {
@@ -44,6 +64,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
         toast.success("Itinerary deleted.");
         setConfirmDelete(null);
         router.refresh();
+        reload();
       } catch {
         toast.error("Failed to delete.");
       }
@@ -53,15 +74,16 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
   function duplicate(item: ItinerarySummary) {
     startTransition(async () => {
       try {
-        const full = await fetch(`/api/itineraries/${item.id}`).then((r) => r.json());
+        // Created as "<title> - copy"; the editor makes the user rename it
+        // (customer name/phone) or deletes it on leave — see UntouchedCopyGuard.
         const res = await fetch("/api/itineraries", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: `${item.title} (copy)`, status: "DRAFT", data: full.data }),
+          body: JSON.stringify({ copyOf: item.id }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error);
-        toast.success("Itinerary duplicated.");
+        toast.success("Itinerary copied — update the customer name or phone, then save.");
         router.push(`/admin/itinerary/${json.id}`);
       } catch {
         toast.error("Failed to duplicate.");
@@ -75,7 +97,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
         <div>
           <h2 className="font-display text-xl font-extrabold text-foreground">Itineraries</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {initialItems.length} saved {initialItems.length === 1 ? "itinerary" : "itineraries"}
+            {initialTotal} saved {initialTotal === 1 ? "itinerary" : "itineraries"}
           </p>
         </div>
         {canCreate && (
@@ -95,7 +117,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title…"
+              placeholder="Search by title, customer name or phone…"
               className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
             />
           </div>
@@ -112,8 +134,11 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
           </select>
         </div>
 
-        <div className="divide-y divide-border border-t border-border">
-          {filtered.length === 0 ? (
+        <div
+          className={`divide-y divide-border border-t border-border transition-opacity ${loading ? "opacity-60" : ""}`}
+          aria-busy={loading}
+        >
+          {items.length === 0 ? (
             <div className="px-4 py-16 text-center">
               <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
               <p className="mt-2 text-sm text-muted-foreground">No itineraries yet.</p>
@@ -127,7 +152,7 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
               )}
             </div>
           ) : (
-            filtered.map((item) => (
+            items.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -139,6 +164,23 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
                     </p>
                     <Badge variant={STATUS_VARIANT[item.status]}>{item.status}</Badge>
                   </div>
+                  {(item.customerName || item.customerPhone || item.totalCost) && (
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px] font-medium text-foreground/85">
+                      {item.customerName && <span>{item.customerName}</span>}
+                      {item.customerPhone && (
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Phone className="h-3.5 w-3.5" />
+                          {item.customerPhone}
+                        </span>
+                      )}
+                      {item.totalCost && (
+                        <span className="inline-flex items-center gap-1 text-foreground">
+                          <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-semibold">{item.totalCost}</span>
+                        </span>
+                      )}
+                    </p>
+                  )}
                   <p className="mt-1 text-[12px] text-muted-foreground">
                     {showOwner && item.ownerName ? `${item.ownerName} · ` : ""}
                     Updated{" "}
@@ -153,14 +195,25 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
                 </Link>
 
                 <div className="flex shrink-0 items-center gap-1.5">
+                  {item.customerPhone && (
+                    <a
+                      href={`tel:${item.customerPhone.replace(/[^\d+]/g, "")}`}
+                      className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
+                      aria-label={`Call ${item.customerName || "customer"}`}
+                      title={`Call ${item.customerPhone}`}
+                    >
+                      <Phone className="h-4 w-4" />
+                    </a>
+                  )}
                   <Link
                     href={`/admin/itinerary/${item.id}`}
                     className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
-                    aria-label="Edit"
+                    aria-label={canEdit ? "Edit" : "View"}
                   >
-                    <Pencil className="h-4 w-4" />
+                    {canEdit ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Link>
-                  {canCreate && (
+                  {/* A copy must be edited and saved, or it's deleted — so all three. */}
+                  {canCreate && canEdit && canDelete && (
                     <button
                       onClick={() => duplicate(item)}
                       disabled={isPending}
@@ -211,6 +264,16 @@ export function ItineraryListClient({ initialItems, showOwner, canCreate, canDel
             ))
           )}
         </div>
+
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          pageCount={pageCount}
+          total={total}
+          onPage={setPage}
+          onPageSize={changePageSize}
+          noun="itineraries"
+        />
       </div>
     </div>
   );

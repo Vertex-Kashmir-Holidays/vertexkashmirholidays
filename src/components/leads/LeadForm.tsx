@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -19,6 +19,8 @@ import {
   type LeadInput,
   type LeadContext,
   type LeadSourcePage,
+  REQUESTED_COMPONENT_LABELS,
+  TRANSPORT_MODE_LABELS,
 } from "@/lib/leads/schema";
 import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/analytics";
 import { readAttributionForSubmit } from "@/lib/attribution";
@@ -41,6 +43,9 @@ interface LeadFormProps {
   avatars?: string[];
   /** Extra classes on the form wrapper. */
   className?: string;
+  /** Page-specific fields rendered after Email (e.g. an offer's package picker);
+   *  the caller owns their state and feeds it back through `context`. */
+  extraFields?: ReactNode;
 }
 
 // Match the country-aware PhoneInput (.input-wrap): solid card background,
@@ -60,6 +65,7 @@ export function LeadForm({
   note,
   avatars = [],
   className,
+  extraFields,
 }: LeadFormProps) {
   const [sent, setSent] = useState(false);
   const [sentName, setSentName] = useState("");
@@ -96,13 +102,54 @@ export function LeadForm({
   const waMessage = (() => {
     const first = (watchedName ?? "").trim().split(/\s+/)[0];
     const greeting = first ? `Hi, I'm ${first}! ` : "Hi! ";
+    // TransportAssistanceBanner's own message stays exactly as it was —
+    // checked first, before the generic Trip Planner branch below, even
+    // though that banner now also sets context.requestedComponents (see
+    // TransportAssistanceBanner.tsx) — otherwise this would silently change
+    // wording for an existing, already-working submission path.
     if (source === "flight-train-quote") {
       const from = context?.fromCity ? ` from ${context.fromCity}` : "";
       const forTour = context?.tourName ? ` for the "${context.tourName}" tour` : "";
       return `${greeting}I'd like a flight/train quote${from}${forTour}. Please share the best options.`;
     }
+    // Trip Planner intent — keyed on context.requestedComponents being
+    // present, not on `source` alone, so this also covers TripPlannerForm
+    // used on origin-city pages (source="tour-origin-city" there, to keep
+    // their own sourcePage tag) as well as the standalone page. Only ever
+    // mentions what the visitor actually selected/typed; travel date and
+    // travellers are never collected on this low-friction form, so never
+    // invented here either (per the Trip Planner spec).
+    if (context?.requestedComponents !== undefined) {
+      const components = context.requestedComponents ?? [];
+      const componentLabels = components.map(
+        (c) => REQUESTED_COMPONENT_LABELS[c as keyof typeof REQUESTED_COMPONENT_LABELS] ?? c,
+      );
+      const what = componentLabels.length
+        ? componentLabels.join(" and ")
+        : "planning my Kashmir trip";
+      const modeLabels = (context?.transportModes ?? []).map(
+        (m) => TRANSPORT_MODE_LABELS[m as keyof typeof TRANSPORT_MODE_LABELS] ?? m,
+      );
+      const modeNote = modeLabels.length ? ` (${modeLabels.join("/")})` : "";
+      const from = context?.fromCity ? ` from ${context.fromCity}` : "";
+      return `${greeting}I'd like help with ${what}${modeNote}${from}. Please share options.`;
+    }
+    // Occasion Offer page — offer name, its dates and the chosen tier, if any.
+    if (context?.offerName) {
+      const dates = context.offerDates ? ` (${context.offerDates})` : "";
+      const pkg = context.packageName ? ` — ${context.packageName} package` : "";
+      return `${greeting}I'm interested in the ${context.offerName}${dates}${pkg}. Please share details.`;
+    }
+    // Package-option enquiry (Tour.packageOptions) — name the chosen package.
+    if (context?.tourName && context.packageName)
+      return `${greeting}I'm interested in the "${context.tourName}" — ${context.packageName} package. Please share details and availability.`;
+    // Tour titles already name their destination, so no region word here —
+    // the same form serves Kashmir, Ladakh and Himachal tours.
     if (context?.tourName)
-      return `${greeting}I'd like more details about the "${context.tourName}" Kashmir tour. Please help.`;
+      return `${greeting}I'd like more details about the "${context.tourName}" tour. Please help.`;
+    // Tour Collection pages carry the collection name ("Himachal Tour Packages").
+    if (source === "tour-collection" && context?.destinationName)
+      return `${greeting}I'm interested in your ${context.destinationName}. Can you help me choose?`;
     if (context?.destinationName)
       return `${greeting}I'd like to plan a trip to ${context.destinationName}. Can you help?`;
     return `${greeting}I'd like to plan a Kashmir holiday. Can you help me?`;
@@ -172,18 +219,43 @@ export function LeadForm({
       setSent(true);
       const isTour = source === "tour-detail";
       const isFlightTrainQuote = source === "flight-train-quote";
+      const isTripPlanner = source === "trip-planner";
+      // Broader than isTripPlanner: also true for TripPlannerForm rendered on
+      // an origin-city page (source="tour-origin-city" there), which carries
+      // the same requestedComponents context but keeps its own lead_type/
+      // sourcePage classification below — only the extra intent params piggyback.
+      const hasTripPlannerIntent = context?.requestedComponents !== undefined;
+      const offer =
+        context?.offerId && context.offerSlug
+          ? { offerId: context.offerId, offerSlug: context.offerSlug }
+          : undefined;
       trackLeadSubmit(
         isTour
           ? "tour_inquiry"
           : isFlightTrainQuote
             ? "flight_train_quote"
-            : source === "contact"
-              ? "contact"
-              : "itinerary",
+            : isTripPlanner
+              ? "trip_planner_request"
+              : offer
+                ? "occasion_offer"
+                : source === "contact"
+                ? "contact"
+                : "itinerary",
         isTour || isFlightTrainQuote ? context?.tourName : undefined,
         json.id,
+        hasTripPlannerIntent || isFlightTrainQuote
+          ? {
+              requestedComponents: context?.requestedComponents,
+              transportModes: context?.transportModes,
+              sourcePage: source,
+              hasTourInterest: context?.requestedComponents?.includes("TOUR"),
+              hasHotelInterest: context?.requestedComponents?.includes("HOTEL"),
+            }
+          : undefined,
+        context?.packageName,
+        offer,
       );
-      if (isTour) trackTourInquiry(context?.tourName, context?.tourId);
+      if (isTour) trackTourInquiry(context?.tourName, context?.tourId, context?.packageName);
       reset();
       setNational("");
     } catch {
@@ -210,7 +282,7 @@ export function LeadForm({
           <p className="mx-auto mt-1.5 max-w-[16rem] text-[14px] leading-relaxed text-muted-foreground">
             {source === "flight-train-quote"
               ? "Our team is checking live fares for your route and will share the best flight/train options on WhatsApp shortly."
-              : "Our local Kashmir expert will connect with you on WhatsApp shortly — usually within 30 minutes."}
+              : "Our travel expert will connect with you on WhatsApp shortly — usually within 30 minutes."}
           </p>
           <a
             href={successWaHref}
@@ -316,6 +388,8 @@ export function LeadForm({
           {errors.email && <p className="mt-1 text-[12px] text-red-500">{errors.email.message}</p>}
         </div>
 
+        {extraFields}
+
         {/* Consent */}
         <div>
           <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-muted-foreground">
@@ -389,7 +463,26 @@ export function LeadForm({
           href={waHref}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackWhatsappClick("lead_form")}
+          onClick={() =>
+            trackWhatsappClick(
+              "lead_form",
+              context?.requestedComponents !== undefined
+                ? {
+                    requestedComponents: context?.requestedComponents,
+                    transportModes: context?.transportModes,
+                    sourcePage: source,
+                  }
+                : undefined,
+              undefined,
+              context?.offerId && context.offerSlug
+                ? {
+                    offerId: context.offerId,
+                    offerSlug: context.offerSlug,
+                    packageOption: context.packageName,
+                  }
+                : undefined,
+            )
+          }
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-[14px] font-bold transition hover:border-[#25D366] hover:text-[#25D366]"
         >
           <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />

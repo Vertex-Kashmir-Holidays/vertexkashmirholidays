@@ -26,6 +26,10 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
   const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
   const canEditModule = await can(role, "proposals", "edit");
   const canSave = canEditModule && (isAdmin || record.ownerId === session!.user.id);
+  // Only the copy's own author (who can edit and delete) is held to "update it
+  // or it's deleted" — an admin just viewing someone's fresh copy never deletes it.
+  const ownsCopy =
+    canSave && record.ownerId === session!.user.id && (await can(role, "proposals", "delete"));
 
   const parsed = proposalDataSchema.safeParse(record.data);
   const data = parsed.success ? parsed.data : DEFAULT_PROPOSAL_DATA;
@@ -41,6 +45,7 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
       initialTitle={record.title}
       initialStatus={record.status}
       canSave={canSave}
+      ownsCopy={ownsCopy}
       companyAddress={companyAddress}
       trustContent={trustContent}
       socialLinks={{

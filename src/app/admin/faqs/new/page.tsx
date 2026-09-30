@@ -14,18 +14,23 @@ export default async function NewFaqPage() {
   const role = session?.user?.role;
   if (!role || !(await can(role, "faqs", "create"))) redirect("/admin/faqs");
 
-  const [categories, tours, destinations, blogs, campaigns, activities] = await Promise.all([
-    prisma.faqCategory.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-    prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-    prisma.campaign.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-  ]);
+  const [categories, tours, destinations, blogs, campaigns, activities, collections] =
+    await Promise.all([
+      prisma.faqCategory.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+      prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+      prisma.campaign.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.tourCollection.findMany({
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { id: true, name: true },
+      }),
+    ]);
 
   return (
     <div className="space-y-5">
@@ -50,6 +55,7 @@ export default async function NewFaqPage() {
         blogOptions={blogs.map((b) => ({ id: b.id, label: b.title }))}
         campaignOptions={campaigns.map((c) => ({ id: c.id, label: c.name }))}
         activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
+        collectionOptions={collections.map((c) => ({ id: c.id, label: c.name }))}
       />
     </div>
   );

@@ -118,7 +118,12 @@ export const FIELD_DEFS: Record<string, FieldDef[]> = {
     { key: "title", label: "Title", type: "text" },
     { key: "subtitle", label: "Subtitle", type: "textarea" },
     { key: "ctaLabel", label: "CTA label", type: "text" },
-    { key: "ctaHref", label: "CTA link", type: "text" },
+    {
+      key: "ctaHref",
+      label: "CTA link",
+      type: "text",
+      placeholder: "/tours  or  whatsapp:Hi! I'd like to plan my Kashmir trip.",
+    },
     { key: "heroImage", label: "Hero image (desktop)", type: "image" },
     { key: "heroImageMobile", label: "Hero image (mobile)", type: "image" },
     { key: "ogImage", label: "OG / social image", type: "image" },

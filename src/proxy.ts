@@ -62,7 +62,11 @@ function sharedCspDirectives(): string[] {
     // our own server to avoid Vercel's ~4.5 MB Serverless Function body limit).
     // accounts.google.com — Google One Tap's client library calls this for
     // credential issuance and session status checks.
-    `connect-src 'self' https://api.cloudinary.com https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://accounts.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
+    // dv-c3e594c6….on.aws / bded8a3c6ae-….run.app — Meta Pixel 333297669112114's
+    // OpenBridge (Conversions API Gateway) endpoint and its fallback domain, exactly
+    // as configured in the pixel's own signals config. Without these the pixel's
+    // browser→gateway events are CSP-blocked.
+    `connect-src 'self' https://api.cloudinary.com https://challenges.cloudflare.com https://*.razorpay.com https://api.open-meteo.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://tagassistant.google.com https://www.google.com https://*.google.com https://accounts.google.com https://ad.doubleclick.net https://*.doubleclick.net https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://dv-c3e594c6d429469e90b54478358619c3.ecs.us-east-1.on.aws https://bded8a3c6ae-1-1053047382554.us-central1.run.app https://meet.jit.si https://*.jit.si wss://meet.jit.si wss://*.jit.si https://8x8.vc https://*.8x8.vc wss://8x8.vc wss://*.8x8.vc https://*.jaas.8x8.vc https://*.api.jaas.8x8.vc wss://*.jaas.8x8.vc${connectExtra}`,
     // blob: — Jitsi/JaaS creates blob: URLs for local audio/video preview tracks
     // res.cloudinary.com — video review clips uploaded via the Gallery/Cloudinary flow
     "media-src 'self' blob: data: https://res.cloudinary.com https://meet.jit.si https://*.jit.si https://8x8.vc https://*.8x8.vc",

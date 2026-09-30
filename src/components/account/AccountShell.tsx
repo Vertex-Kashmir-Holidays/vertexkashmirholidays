@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
+import { AgencyDocsCard, type AgencyDocItem } from "@/components/account/AgencyDocsCard";
 import { cn } from "@/lib/utils";
 
 const BASE_NAV = [
@@ -38,9 +39,16 @@ interface AccountShellProps {
   userName: string;
   userEmail: string;
   isB2bAgent?: boolean;
+  agencyDocs?: AgencyDocItem[];
 }
 
-export function AccountShell({ children, userName, userEmail, isB2bAgent = false }: AccountShellProps) {
+export function AccountShell({
+  children,
+  userName,
+  userEmail,
+  isB2bAgent = false,
+  agencyDocs = [],
+}: AccountShellProps) {
   const pathname = usePathname();
   const NAV = isB2bAgent ? [BASE_NAV[0], B2B_NAV_ITEM, ...BASE_NAV.slice(1)] : BASE_NAV;
 
@@ -48,7 +56,7 @@ export function AccountShell({ children, userName, userEmail, isB2bAgent = false
     <div className="min-h-screen bg-background">
       {/* Top bar */}
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 lg:px-6">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 lg:px-4">
           <Logo href="/" />
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="min-w-0 text-right">
@@ -69,7 +77,12 @@ export function AccountShell({ children, userName, userEmail, isB2bAgent = false
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-24 pt-6 lg:grid-cols-[220px_1fr] lg:px-6 lg:pb-6">
+      <div
+        className={cn(
+          "mx-auto grid max-w-[1600px] gap-6 px-4 pb-24 pt-6 lg:px-4 lg:pb-6",
+          isB2bAgent ? "lg:grid-cols-[220px_1fr_340px]" : "lg:grid-cols-[220px_1fr]",
+        )}
+      >
         {/* Sidebar — desktop only */}
         <aside className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
           <nav className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-2">
@@ -96,6 +109,13 @@ export function AccountShell({ children, userName, userEmail, isB2bAgent = false
 
         {/* Content */}
         <main className="min-w-0">{children}</main>
+
+        {/* Documents — desktop only, B2B agents only; sticky like the sidebar */}
+        {isB2bAgent && (
+          <aside className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
+            <AgencyDocsCard docs={agencyDocs} />
+          </aside>
+        )}
       </div>
 
       {/* Bottom tab bar — mobile only */}

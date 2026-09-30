@@ -1,30 +1,25 @@
 // src/components/sections/DestinationsThingsToDo.tsx
 "use client";
 
+import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import {
   Sailboat,
   CableCar,
-  Footprints,
   Snowflake,
   MountainSnow,
   Flower2,
-  Camera,
-  Utensils,
   ArrowRight,
 } from "lucide-react";
 
 export function DestinationsThingsToDo() {
   const things = [
-    { t: "Shikara Ride", s: "Dal Lake", Icon: Sailboat },
-    { t: "Gondola Ride", s: "Gulmarg", Icon: CableCar },
-    { t: "Trekking", s: "High Altitude", Icon: Footprints },
-    { t: "Skiing", s: "Winter Sports", Icon: Snowflake },
-    { t: "Gulmarg", s: "Ski Resort", Icon: MountainSnow },
-    { t: "Mughal Gardens", s: "Heritage", Icon: Flower2 },
-    { t: "Photography", s: "Scenic Views", Icon: Camera },
-    { t: "Local Cuisine", s: "Wazwan", Icon: Utensils },
+    { t: "Shikara Ride", s: "Dal Lake", Icon: Sailboat, href: "/activities/shikara-ride" },
+    { t: "Gondola Ride", s: "Gulmarg", Icon: CableCar, href: "/activities/gulmarg-gondola-ride" },
+    { t: "Skiing", s: "Winter Sports", Icon: Snowflake, href: "/activities/skiing-in-gulmarg" },
+    { t: "Gulmarg", s: "Ski Resort", Icon: MountainSnow, href: "/destinations/gulmarg" },
+    { t: "Mughal Gardens", s: "Heritage", Icon: Flower2, href: "/destinations/srinagar" },
   ];
 
   const containerVariants = {
@@ -58,7 +53,7 @@ export function DestinationsThingsToDo() {
         Popular things to do in Kashmir
       </motion.h2>
       <motion.div
-        className="mt-5 grid grid-cols-2 gap-3.5 sm:grid-cols-4 lg:grid-cols-8"
+        className="mt-5 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5"
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"
@@ -67,7 +62,7 @@ export function DestinationsThingsToDo() {
         {things.map((thing, i) => (
           <motion.a
             key={i}
-            href="#"
+            href={thing.href}
             variants={itemVariants}
             className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-3 shadow-soft transition hover:-translate-y-0.5 hover:border-primary hover:shadow-card"
           >
@@ -82,13 +77,13 @@ export function DestinationsThingsToDo() {
         ))}
       </motion.div>
       <div className="mt-4 flex justify-end">
-        <a
-          href="#"
+        <Link
+          href="/activities"
           className="flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
         >
           View all experiences
           <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
-        </a>
+        </Link>
       </div>
     </div>
   );

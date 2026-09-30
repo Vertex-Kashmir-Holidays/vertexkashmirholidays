@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { parsePackageOptions } from "@/lib/tours/content";
 import { requirePermission } from "@/lib/permissions";
 import { notifyLeadAssigned } from "@/lib/notifications";
-import { LeadSource, LeadActivityType } from "@prisma/client";
+import { LeadSource, LeadActivityType, LeadContactChannel } from "@prisma/client";
 import { phoneField } from "@/lib/leads/schema";
 import {
   normalizeWhatsAppTokenParam,
@@ -18,6 +19,8 @@ const createSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   source: z.nativeEnum(LeadSource).default(LeadSource.MANUAL),
   tourId: z.string().min(1).nullable().optional(),
+  // One of the selected tour's package options (Tour.packageOptions), if any.
+  packageName: z.string().trim().max(60).nullable().optional(),
   adults: z.coerce.number().int().positive().default(1),
   children: z.coerce.number().int().min(0).nullable().optional(),
   startDate: z.string().nullable().optional(),
@@ -27,6 +30,10 @@ const createSchema = z.object({
   followUpAt: z.string().nullable().optional(),
   negotiatedAmount: z.coerce.number().positive().nullable().optional(),
   tokenAmount: z.coerce.number().positive().nullable().optional(),
+  // HOW staff actually contacted this customer — this form exists precisely
+  // for logging a WhatsApp/phone conversation, so it defaults to WHATSAPP
+  // (never FORM — that's set only by the public POST /api/leads route).
+  contactChannel: z.nativeEnum(LeadContactChannel).default(LeadContactChannel.WHATSAPP),
   // Optional WhatsApp reference pasted from a customer's message (e.g.
   // "G-CgVI13IE") — see src/lib/whatsappAttribution.server.ts. Deliberately
   // just the raw string, not the individual attribution fields: the server
@@ -67,6 +74,7 @@ export async function POST(req: NextRequest) {
     whatsappReference,
     source: manualSource,
     tourId,
+    packageName,
     ...rest
   } = parsed.data;
   const performedByName = (guard.user.name ?? guard.user.email) as string;
@@ -75,13 +83,22 @@ export async function POST(req: NextRequest) {
   // Resolved once here and reused for the assignment notification below —
   // avoids a second lookup after create.
   let tourTitle: string | null = null;
+  // Set when staff picked an Occasion Offer's hidden CRM tour.
+  let tourOfferId: string | null = null;
   if (tourId) {
     const tour = await prisma.tour.findUnique({
       where: { id: tourId },
-      select: { title: true },
+      select: { title: true, packageOptions: true, crmForOffer: { select: { id: true } } },
     });
     if (!tour) return NextResponse.json({ error: "Tour not found." }, { status: 422 });
     tourTitle = tour.title;
+    tourOfferId = tour.crmForOffer?.id ?? null;
+    if (
+      packageName &&
+      !parsePackageOptions(tour.packageOptions).some((o) => o.name === packageName)
+    ) {
+      return NextResponse.json({ error: "Package not found for this tour." }, { status: 422 });
+    }
   }
 
   // Re-resolve the reference server-side — never trust a browser-supplied
@@ -93,6 +110,23 @@ export async function POST(req: NextRequest) {
   const normalizedToken = whatsappReference ? normalizeWhatsAppTokenParam(whatsappReference) : null;
   const resolved = normalizedToken ? await resolveWhatsAppAttributionToken(normalizedToken) : null;
 
+  // Occasion Offer the visitor's WhatsApp CTA came from — tag the lead with it
+  // (and the plan they'd chosen, if it's one of the offer's plans) unless
+  // staff linked a catalog tour package instead.
+  const waOffer = resolved?.intent?.offerId
+    ? await prisma.occasionOffer.findUnique({
+        where: { id: resolved.intent.offerId },
+        select: { id: true, crmTourId: true, packages: { select: { name: true } } },
+      })
+    : null;
+  // No tour picked → the offer's hidden CRM tour stands in for it.
+  const waOfferTourId = waOffer && !tourId ? waOffer.crmTourId : null;
+  const offerId = waOffer?.id ?? tourOfferId;
+  const waOfferPackage =
+    waOffer && !tourId
+      ? waOffer.packages.find((p) => p.name === resolved?.intent?.packageName)?.name
+      : undefined;
+
   const lead = await prisma.$transaction(async (tx) => {
     const created = await tx.lead.create({
       data: {
@@ -100,6 +134,18 @@ export async function POST(req: NextRequest) {
         source: resolved?.channel ?? manualSource,
         sourcePage: resolved ? "whatsapp" : undefined,
         ...resolved?.attribution,
+        // Trip Planner intent, carried across the WhatsApp gap the same way
+        // attribution already is — see resolveWhatsAppAttributionToken()'s
+        // `intent` field. Absent (undefined) for any resolved reference that
+        // wasn't minted from the Trip Planner page.
+        ...(resolved?.intent?.requestedComponents?.length
+          ? { requestedComponents: JSON.stringify(resolved.intent.requestedComponents) }
+          : {}),
+        ...(resolved?.intent?.transportModes?.length
+          ? { transportModes: JSON.stringify(resolved.intent.transportModes) }
+          : {}),
+        ...(resolved?.intent?.fromCity ? { fromCity: resolved.intent.fromCity } : {}),
+        ...(resolved?.intent?.toCity ? { toCity: resolved.intent.toCity } : {}),
         email: email || undefined,
         notes: notes || undefined,
         startDate: startDate ? new Date(startDate) : undefined,
@@ -107,7 +153,13 @@ export async function POST(req: NextRequest) {
         followUpAt: followUpAt ? new Date(followUpAt) : undefined,
         ...(negotiatedAmount !== undefined && { negotiatedAmount }),
         ...(tokenAmount !== undefined && { tokenAmount }),
-        ...(tourId ? { tour: { connect: { id: tourId } } } : {}),
+        ...(tourId || waOfferTourId
+          ? { tour: { connect: { id: (tourId || waOfferTourId)! } } }
+          : {}),
+        // A package only means something alongside its tour.
+        ...(tourId && packageName ? { packageName } : {}),
+        ...(offerId ? { occasionOffer: { connect: { id: offerId } } } : {}),
+        ...(waOfferPackage ? { packageName: waOfferPackage } : {}),
         ...(assignedToId ? { assignedTo: { connect: { id: assignedToId } } } : {}),
       },
     });

@@ -38,7 +38,9 @@ export const CATEGORY_SORT_ORDER: Record<HotelCategoryValue, number> = {
 // 3,501-7,000 4 Star, 7,001+ 5 Star. Recomputed every time the rate table is
 // saved. A hotel with no Deluxe row (or no MAP figure on it yet) defaults to
 // Budget until one is entered.
-export function computeCategoryFromMap(deluxeMapNet: number | null | undefined): HotelCategoryValue {
+export function computeCategoryFromMap(
+  deluxeMapNet: number | null | undefined,
+): HotelCategoryValue {
   if (deluxeMapNet == null) return "BUDGET";
   if (deluxeMapNet <= 2000) return "BUDGET";
   if (deluxeMapNet <= 3500) return "DELUXE";
@@ -70,15 +72,9 @@ const nonNegativeMoney = z.preprocess(
   z.number().min(0).nullable(),
 );
 
-const dateString = z.preprocess(
-  (v) => (v === "" || v == null ? null : v),
-  z.string().nullable(),
-);
+const dateString = z.preprocess((v) => (v === "" || v == null ? null : v), z.string().nullable());
 
-const nullableText = z.preprocess(
-  (v) => (v === "" || v == null ? null : v),
-  z.string().nullable(),
-);
+const nullableText = z.preprocess((v) => (v === "" || v == null ? null : v), z.string().nullable());
 
 // One row of the rate table — "Deluxe", "Super Deluxe", "Extra Bed", etc. are
 // all just room-type rows with their own EP/CP/MAP, per the business's actual
@@ -190,6 +186,36 @@ export function getDeluxeMapRate(rate: HotelRate | null | undefined): number | n
   return room?.map ?? null;
 }
 
+// Room types are free text ("Family Suite", "Luxuary", "SUPER DELUXE" …), so
+// the Room Category filter groups them by keyword. First match wins, so
+// "Family Suite" is Family and "Super Deluxe" isn't also Deluxe. Extra beds,
+// child rates and the like match nothing and are ignored.
+export const ROOM_CATEGORIES = [
+  { value: "FAMILY", label: "Family", match: /family/i },
+  { value: "SUITE", label: "Suite", match: /\bsuit/i },
+  { value: "VILLA", label: "Villa / Cottage / Tent", match: /villa|cottage|tent|duplex|attic/i },
+  { value: "SUPER_DELUXE", label: "Super Deluxe", match: /super\s*deluxe/i },
+  { value: "LUXURY", label: "Luxury", match: /luxu/i },
+  { value: "EXECUTIVE", label: "Executive / Club", match: /executive|club|corporate/i },
+  { value: "PREMIUM", label: "Premium / Superior", match: /premi|superior/i },
+  { value: "DELUXE", label: "Deluxe", match: /deluxe/i },
+] as const;
+export type RoomCategoryValue = (typeof ROOM_CATEGORIES)[number]["value"];
+
+/** Room categories a hotel offers. `hasFamilyRoom` (the staff-ticked flag) also counts as Family. */
+export function hotelRoomCategories(
+  rate: HotelRate | null | undefined,
+  hasFamilyRoom: boolean,
+): Set<RoomCategoryValue> {
+  const found = new Set<RoomCategoryValue>();
+  if (hasFamilyRoom) found.add("FAMILY");
+  for (const room of rate?.rooms ?? []) {
+    const category = ROOM_CATEGORIES.find((c) => c.match.test(room.roomType));
+    if (category) found.add(category.value);
+  }
+  return found;
+}
+
 // Meal-plan abbreviation legend, shown at the top of the Hotel Rates page.
 export const MEAL_PLAN_LEGEND: { code: "EP" | "CP" | "MAP"; meaning: string }[] = [
   { code: "EP", meaning: "Room only" },
@@ -228,17 +254,31 @@ export function parseRatingValue(rating: string | null | undefined): number | nu
   return Number.isFinite(n) ? n : null;
 }
 
+// ── Public Trip Planner carousel fields (Plan Your Kashmir Trip) ────────────
+// Nullable/optional throughout — a hotel is never required to have these to
+// keep working as a plain rate-sheet row. publicLikeCount is deliberately
+// NOT part of either schema below: it's a system-derived counter, written
+// only by POST /api/hotel-suppliers/[id]/like, never by this create/edit form.
+const nullableUrl = z.preprocess(
+  (v) => (v === "" || v == null ? null : v),
+  z.string().trim().url("Enter a valid URL").nullable(),
+);
+
 export const createHotelSupplierSchema = z.object({
   hotelName: z.string().min(2, "Hotel name is required"),
   destination: z.enum(HOTEL_DESTINATIONS),
   category: z.enum(HOTEL_CATEGORIES),
   isActive: z.boolean().default(true),
   recommended: z.boolean().default(false),
+  hasFamilyRoom: z.boolean().default(false),
   // Manual tally of bookings sent to this hotel — staff-entered, not derived
   // from any Booking relation (HotelSupplier is a supplier reference, not
   // bookable inventory — see the module comment at the top of this file).
   bookingsCount: z.coerce.number().int().min(0).default(0),
   data: hotelDataSchema,
+  coverImageUrl: nullableUrl.optional(),
+  roomImageUrl: nullableUrl.optional(),
+  showOnWebsite: z.boolean().default(false),
 });
 export type CreateHotelSupplierInput = z.infer<typeof createHotelSupplierSchema>;
 
@@ -248,8 +288,12 @@ export const patchHotelSupplierSchema = z.object({
   category: z.enum(HOTEL_CATEGORIES).optional(),
   isActive: z.boolean().optional(),
   recommended: z.boolean().optional(),
+  hasFamilyRoom: z.boolean().optional(),
   bookingsCount: z.coerce.number().int().min(0).optional(),
   data: hotelDataSchema.optional(),
+  coverImageUrl: nullableUrl.optional(),
+  roomImageUrl: nullableUrl.optional(),
+  showOnWebsite: z.boolean().optional(),
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;
 

@@ -3,7 +3,11 @@
 import { usePathname } from "next/navigation";
 import type { TourCategory } from "@prisma/client";
 import { Footer, type FooterSettings } from "@/components/layout/Footer";
-import { Navbar } from "@/components/layout/Navbar";
+import {
+  Navbar,
+  type NavOccasionOffer,
+  type NavTourCollection,
+} from "@/components/layout/Navbar";
 import { AuroraBackground } from "@/components/ui/effects/AuroraBackground";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { BannerStrip, type StripBannerData } from "@/components/public/BannerStrip";
@@ -17,6 +21,8 @@ interface PublicChromeProps {
   strip: StripBannerData | null;
   promoBanners: SlotBanner[];
   tourCategories: TourCategory[];
+  tourCollections: NavTourCollection[];
+  occasionOffers: NavOccasionOffer[];
 }
 
 export function PublicChrome({
@@ -26,6 +32,8 @@ export function PublicChrome({
   strip,
   promoBanners,
   tourCategories,
+  tourCollections,
+  occasionOffers,
 }: PublicChromeProps) {
   const pathname = usePathname();
 
@@ -49,14 +57,18 @@ export function PublicChrome({
       <OfflineBanner />
       {strip && <BannerStrip banner={strip} />}
       <AuroraBackground />
-      <Navbar />
+      <Navbar tourCollections={tourCollections} occasionOffers={occasionOffers} />
       <main className="min-h-screen bg-background text-foreground">
         <PageTransition>{children}</PageTransition>
       </main>
       {/* PROMO banners for the current page (path-filtered). Placed just above
           the footer so it's consistent site-wide and never fights a page hero. */}
       <PromoBannerSlot banners={promoBanners} />
-      <Footer settings={settings} corporateOffice={corporateOffice} tourCategories={tourCategories} />
+      <Footer
+        settings={settings}
+        corporateOffice={corporateOffice}
+        tourCategories={tourCategories}
+      />
     </>
   );
 }

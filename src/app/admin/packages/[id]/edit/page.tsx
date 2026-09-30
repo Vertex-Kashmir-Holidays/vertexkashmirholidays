@@ -15,6 +15,7 @@ import {
   parsePackingList,
   parseImportantNotes,
   parseRelatedTours,
+  parsePackageOptions,
 } from "@/lib/tours/content";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,10 @@ type Props = { params: Promise<{ id: string }> };
 const getTour = cache(async (id: string) =>
   prisma.tour.findUnique({
     where: { id },
-    include: { activities: { select: { activityId: true } } },
+    include: {
+      activities: { select: { activityId: true } },
+      collections: { select: { id: true } },
+    },
   }),
 );
 
@@ -38,13 +42,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EditPackagePage({ params }: Props) {
   const { id } = await params;
-  const [tour, activities, otherTours] = await Promise.all([
+  const [tour, activities, otherTours, collections] = await Promise.all([
     getTour(id),
     prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.tour.findMany({
       where: { id: { not: id } },
       orderBy: { title: "asc" },
       select: { id: true, title: true },
+    }),
+    prisma.tourCollection.findMany({
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
     }),
   ]);
   if (!tour) notFound();
@@ -110,6 +118,8 @@ export default async function EditPackagePage({ params }: Props) {
     ogTitle: tour.ogTitle ?? "",
     ogDescription: tour.ogDescription ?? "",
     relatedTours: parseRelatedTours(tour.relatedTours),
+    packageOptions: parsePackageOptions(tour.packageOptions),
+    collectionIds: tour.collections.map((c) => c.id),
   };
 
   return (
@@ -148,6 +158,7 @@ export default async function EditPackagePage({ params }: Props) {
         defaults={defaults}
         activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
         relatedTourOptions={otherTours}
+        collectionOptions={collections.map((c) => ({ id: c.id, label: c.name }))}
       />
     </div>
   );

@@ -35,7 +35,7 @@ export function TourDetailsRelatedTours({
   if (!hasRelated && !hasClosing) return null;
 
   const whatsappHref = wa(
-    `Hi ${siteName}! I'm interested in the "${tourName}" Kashmir package. Could you share details and availability?`,
+    `Hi ${siteName}! I'm interested in the "${tourName}" package. Could you share details and availability?`,
   );
 
   return (

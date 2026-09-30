@@ -25,6 +25,8 @@ interface TourDetailsHeroProps {
   images: string[];
   /** Mobile-cropped variant of images[0] (the cover image). Falls back to images[0] when absent. */
   coverImageMobile?: string;
+  /** The tour's primary Tour Collection, shown between "Tours" and the tour name. */
+  breadcrumbParent?: { name: string; href: string };
 }
 
 const badgeCls = {
@@ -50,6 +52,7 @@ export function TourDetailsHero({
   happyLabel,
   images = [],
   coverImageMobile,
+  breadcrumbParent,
 }: TourDetailsHeroProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -223,6 +226,17 @@ export function TourDetailsHero({
               Tours
             </a>
             <span className="shrink-0">›</span>
+            {breadcrumbParent && (
+              <>
+                <a
+                  href={breadcrumbParent.href}
+                  className="hidden shrink-0 transition hover:text-white sm:inline"
+                >
+                  {breadcrumbParent.name}
+                </a>
+                <span className="hidden shrink-0 sm:inline">›</span>
+              </>
+            )}
             <span className="truncate text-white">{tourName}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-2.5">

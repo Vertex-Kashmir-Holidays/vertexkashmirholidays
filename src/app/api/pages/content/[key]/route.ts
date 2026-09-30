@@ -12,9 +12,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const delegate = getContentDelegate(key);
   if (!delegate) return NextResponse.json({ error: "Unknown page" }, { status: 404 });
 
-  // key is home | about | contact | blogs | reviews — which is also the RBAC module.
+  // key is home | about | contact | blogs | reviews | tripPlanner — which is
+  // also the RBAC module.
   const guard = await requirePermission(
-    key as "home" | "about" | "contact" | "blogs" | "reviews",
+    key as "home" | "about" | "contact" | "blogs" | "reviews" | "tripPlanner",
     "edit",
   );
   if (guard instanceof NextResponse) return guard;

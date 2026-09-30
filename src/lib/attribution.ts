@@ -29,6 +29,23 @@ export const ATTRIBUTION_FIELDS = [
 export type AttributionField = (typeof ATTRIBUTION_FIELDS)[number];
 export type AttributionData = Partial<Record<AttributionField, string>>;
 
+// Trip Planner structured intent, carried alongside (never merged into)
+// attribution across the WhatsApp gap by ensureWhatsAppAttributionToken()
+// below. Deliberately a standalone, plain-string-array shape here (not
+// importing REQUESTED_COMPONENTS/TRANSPORT_MODES from src/lib/leads/schema.ts)
+// — that module already imports attributionSchema FROM this file, so an
+// import the other way would be circular. Server-side validation of the
+// actual enum values happens in the token route, not here.
+export interface PlannerIntent {
+  requestedComponents?: string[];
+  transportModes?: string[];
+  fromCity?: string;
+  toCity?: string;
+  /** Occasion Offer page context — the offer and the plan the visitor chose. */
+  offerId?: string;
+  packageName?: string;
+}
+
 // Click IDs / UTM values are short tokens; landingPage/referrer are URLs.
 // Caps guard against a forged oversized payload — this is client-controlled input.
 const shortField = z.string().trim().max(255).optional();
@@ -345,6 +362,8 @@ interface WhatsAppTokenCache {
   prefix: string;
   /** Fingerprint of the attribution snapshot this token was minted from — see fingerprint(). */
   forData: string;
+  /** Fingerprint of the attribution alone (no intent) — lets a plain call keep an intent token. */
+  forAttribution?: string;
 }
 
 function readWaTokenCache(): WhatsAppTokenCache | null {
@@ -399,8 +418,20 @@ function writeWaTokenCache(cache: WhatsAppTokenCache): void {
 // equal attribution snapshots always fingerprint identically regardless of
 // key insertion order — this is what lets us detect "attribution unchanged
 // since the cached token was minted" without re-fetching.
-function fingerprint(attribution: AttributionData): string {
-  return JSON.stringify(ATTRIBUTION_FIELDS.map((field) => attribution[field] ?? ""));
+function fingerprint(attribution: AttributionData, intent?: PlannerIntent): string {
+  return JSON.stringify([
+    ATTRIBUTION_FIELDS.map((field) => attribution[field] ?? ""),
+    intent
+      ? [
+          (intent.requestedComponents ?? []).join(","),
+          (intent.transportModes ?? []).join(","),
+          intent.fromCity ?? "",
+          intent.toCity ?? "",
+          intent.offerId ?? "",
+          intent.packageName ?? "",
+        ]
+      : null,
+  ]);
 }
 
 /**
@@ -423,31 +454,79 @@ function fingerprint(attribution: AttributionData): string {
  * consent already happened to be granted, otherwise the pre-consent buffer
  * (see bufferAttributionRaw() above, which already runs unconditionally) —
  * rather than requiring the cookie specifically.
+ *
+ * `intent` (optional): Trip Planner structured intent (Plan Your Kashmir
+ * Trip) — passed through to the token route and stored alongside attribution
+ * on the same WhatsAppAttributionToken row, so staff resolving the reference
+ * later see both. Included in the fingerprint, so changing the planner's
+ * selected chips mints a fresh token even when the underlying attribution
+ * snapshot hasn't changed. Every other caller (AttributionCapture's
+ * unconditional call) omits it and behaves exactly as before.
  */
-export function ensureWhatsAppAttributionToken(): void {
+function hasIntentData(intent: PlannerIntent | undefined): boolean {
+  if (!intent) return false;
+  return Boolean(
+    intent.requestedComponents?.length ||
+    intent.transportModes?.length ||
+    intent.fromCity ||
+    intent.toCity ||
+    intent.offerId,
+  );
+}
+
+// An intent token (Trip Planner / Occasion Offer page) in flight. The plain
+// call from AttributionCapture (in the layout) runs AFTER a page's own effect
+// on a full page load, so without this it would race — and could overwrite —
+// the richer token with an attribution-only one.
+let intentRequestPending = false;
+
+export function ensureWhatsAppAttributionToken(intent?: PlannerIntent): void {
   if (typeof window === "undefined") return;
   if (isInternalRoute(window.location.pathname)) return;
 
-  const attribution = readAttributionClient() ?? readBuffer()?.data;
-  if (!attribution || !ATTRIBUTION_FIELDS.some((field) => attribution[field])) return;
+  const rawAttribution = readAttributionClient() ?? readBuffer()?.data;
+  const hasRealAttribution = !!rawAttribution && ATTRIBUTION_FIELDS.some((f) => rawAttribution[f]);
+  // Proceed if there's marketing attribution to bridge OR planner intent to
+  // preserve — an organic/direct visitor using the Trip Planner still has
+  // intent worth carrying to sales, even with nothing to attribute.
+  if (!hasRealAttribution && !hasIntentData(intent)) return;
+  const attribution: AttributionData = rawAttribution ?? {};
 
-  const fp = fingerprint(attribution);
+  const fp = fingerprint(attribution, intent);
+  const attributionFp = fingerprint(attribution);
   const cached = readWaTokenCache();
   if (cached?.forData === fp) return; // already have a token for this exact snapshot
+  // A plain (no-intent) call never downgrades an intent token minted for the
+  // same attribution, nor races one that's still being minted.
+  if (!hasIntentData(intent) && (intentRequestPending || cached?.forAttribution === attributionFp)) {
+    return;
+  }
 
+  const withIntent = hasIntentData(intent);
+  if (withIntent) intentRequestPending = true;
   fetch("/api/attribution/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(attribution),
+    body: JSON.stringify(intent ? { ...attribution, intent } : attribution),
   })
-    .then((res) => (res.ok ? (res.json() as Promise<{ token: string | null; prefix?: string }>) : null))
+    .then((res) =>
+      res.ok ? (res.json() as Promise<{ token: string | null; prefix?: string }>) : null,
+    )
     .then((json) => {
       if (json?.token && json.prefix) {
-        writeWaTokenCache({ token: json.token, prefix: json.prefix, forData: fp });
+        writeWaTokenCache({
+          token: json.token,
+          prefix: json.prefix,
+          forData: fp,
+          forAttribution: attributionFp,
+        });
       }
     })
     .catch(() => {
       // best-effort — see doc comment above.
+    })
+    .finally(() => {
+      if (withIntent) intentRequestPending = false;
     });
 }
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema } from "@/lib/api/route-helpers";
+import { bannerFeaturesSchema } from "@/lib/banners";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,11 @@ export const bannerSchema = z.object({
   ctaUrl: optionalText,
   imageUrl: optionalText,
   imageMobileUrl: optionalText,
+  layout: z.enum(["OVERLAY", "SPLIT"]).default("OVERLAY"),
+  contentBackground: z.boolean().default(true),
+  kicker: optionalText,
+  subtitle: optionalText,
+  features: bannerFeaturesSchema.default([]),
   pages: z.array(z.string().min(1)).min(1, "Select at least one page").default(["*"]),
   isActive: z.boolean().default(true),
   sortOrder: z.coerce.number().int().default(0),
@@ -65,6 +71,11 @@ export async function POST(request: Request) {
       // Images only apply to PROMO banners.
       imageUrl: d.type === "PROMO" ? d.imageUrl : null,
       imageMobileUrl: d.type === "PROMO" ? d.imageMobileUrl : null,
+      layout: d.layout,
+      contentBackground: d.contentBackground,
+      kicker: d.kicker,
+      subtitle: d.subtitle,
+      features: JSON.stringify(d.features),
       pages: JSON.stringify(d.pages),
       isActive: d.isActive,
       sortOrder: d.sortOrder,

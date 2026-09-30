@@ -9,8 +9,8 @@ import type { ItineraryStatus } from "@/types/itinerary";
 const STATUSES: ItineraryStatus[] = ["DRAFT", "SENT", "CONFIRMED"];
 
 interface ToolbarProps {
+  /** Generated from the customer name, duration and phone — not editable by hand. */
   title: string;
-  onTitleChange: (v: string) => void;
   status: ItineraryStatus;
   onStatusChange: (v: ItineraryStatus) => void;
   onSave: () => void;
@@ -23,7 +23,6 @@ interface ToolbarProps {
 
 export function Toolbar({
   title,
-  onTitleChange,
   status,
   onStatusChange,
   onSave,
@@ -44,12 +43,12 @@ export function Toolbar({
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <input
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Itinerary title"
-            className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-bold text-foreground transition focus:border-border focus:bg-muted/40 focus:outline-none"
-          />
+          <p
+            title="Named automatically from the customer name, duration and phone"
+            className="min-w-0 flex-1 truncate px-2 py-1 text-sm font-bold text-foreground"
+          >
+            {title}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

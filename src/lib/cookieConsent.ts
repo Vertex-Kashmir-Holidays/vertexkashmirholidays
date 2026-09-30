@@ -11,6 +11,9 @@ const CONSENT_VERSION = 1;
 const CONSENT_CHANGE_EVENT = "vkh-cookie-consent-change";
 const OPEN_PREFERENCES_EVENT = "vkh-open-cookie-preferences";
 
+// TEMP (2–3 day measurement test): treat every visitor as having accepted analytics. Set to false to restore the normal consent flow.
+const TEMP_CONSENT_GATE_DISABLED = true;
+
 export interface CookieConsent {
   analytics: boolean;
   version: number;
@@ -19,6 +22,9 @@ export interface CookieConsent {
 
 export function getCookieConsent(): CookieConsent | null {
   if (typeof window === "undefined") return null;
+  if (TEMP_CONSENT_GATE_DISABLED) {
+    return { analytics: true, version: CONSENT_VERSION, timestamp: 0 };
+  }
   try {
     const raw = localStorage.getItem(CONSENT_KEY);
     if (!raw) return null;

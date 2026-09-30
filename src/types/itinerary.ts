@@ -175,6 +175,10 @@ export const itineraryDataSchema = z.object({
   subtitle: z.string(),
   duration: z.string(),
   preparedFor: z.string(),
+  // Customer's phone — shown under their name on the cover and in the
+  // itineraries list (follow-ups). Seeded/synced from the linked lead or
+  // booking; defaulted so itineraries saved before this field still parse.
+  customerPhone: z.string().default(""),
   travelDates: z.string(),
   travelers: z.string(),
   packageType: z.string(),
@@ -281,6 +285,10 @@ export interface ItinerarySummary {
   updatedAt: string | Date;
   /** Linked to a lead or a direct booking — can't be deleted. */
   linked: boolean;
+  /** Customer name/phone and quoted total, for the list (follow-ups). */
+  customerName?: string;
+  customerPhone?: string;
+  totalCost?: string;
 }
 
 /** Full record returned by GET /api/itineraries/[id]. */

@@ -101,6 +101,9 @@ interface Lead {
   source: LeadSource;
   tourId: string | null;
   tour: { id: string; title: string } | null;
+  packageName: string | null;
+  /** Occasion Offer the lead came from (offer form or resolved WhatsApp reference). */
+  occasionOffer?: { id: string; name: string; slug: string } | null;
   adults: number;
   children: number | null;
   startDate: Date | string | null;
@@ -140,6 +143,15 @@ interface Lead {
   msclkid: string | null;
   landingPage: string | null;
   referrer: string | null;
+  // Trip Planner structured intent — WHAT they want, distinct from `source`
+  // (WHERE they came from) above. See prisma/schema.prisma's doc comment on
+  // Lead.requestedComponents. Null on any pre-Trip-Planner lead.
+  sourcePage: string | null;
+  contactChannel: "FORM" | "WHATSAPP" | "PHONE" | null;
+  requestedComponents: string | null;
+  transportModes: string | null;
+  fromCity: string | null;
+  toCity: string | null;
 }
 
 interface StaffUser {
@@ -151,6 +163,7 @@ interface StaffUser {
 interface TourOption {
   id: string;
   title: string;
+  packageNames?: string[];
 }
 
 interface IpDuplicateLead {
@@ -247,6 +260,44 @@ function activityLabel(a: Activity): string {
   }
 }
 
+// Human-readable label for Lead.sourcePage — same values as LEAD_SOURCES in
+// src/lib/leads/schema.ts. Falls back to the raw value for anything not
+// listed (never blocks display on an unmapped/legacy value).
+const SOURCE_PAGE_LABELS: Record<string, string> = {
+  home: "Homepage",
+  tours: "Tours listing",
+  "tour-detail": "Tour detail page",
+  "flight-train-quote": "Transport assistance banner",
+  "tour-origin-city": "Origin-city SEO page",
+  "trip-planner": "Plan Your Kashmir Trip",
+  contact: "Contact page",
+  campaign: "Campaign page",
+  "tour-collection": "Tour Collection page",
+};
+
+const REQUESTED_COMPONENT_LABELS: Record<string, string> = {
+  TRANSPORT: "Transport",
+  TOUR: "Kashmir Tour",
+  HOTEL: "Hotel/Stay",
+  PLAN: "Help Me Plan",
+};
+
+const TRANSPORT_MODE_LABELS: Record<string, string> = {
+  FLIGHT: "Flight",
+  TRAIN: "Train",
+  BUS: "Bus",
+};
+
+function parseJsonArray(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 // Order mirrors deriveChannel()'s own precedence (click IDs first, then UTMs)
 // so the field staff most needs to check to explain a classification appears
 // first, not alphabetically.
@@ -279,7 +330,10 @@ function parseAttachments(raw: string): LeadAttachment[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (a): a is LeadAttachment =>
-        !!a && typeof a === "object" && typeof a.label === "string" && typeof a.dataUrl === "string",
+        !!a &&
+        typeof a === "object" &&
+        typeof a.label === "string" &&
+        typeof a.dataUrl === "string",
     );
   } catch {
     return [];
@@ -310,6 +364,7 @@ export function LeadDetail({
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
   const [tourId, setTourId] = useState(lead.tourId ?? "");
+  const [packageName, setPackageName] = useState(lead.packageName ?? "");
   const [notes, setNotes] = useState(lead.notes ?? "");
   const [followUpAt, setFollowUpAt] = useState(
     lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "",
@@ -324,9 +379,10 @@ export function LeadDetail({
     setStatus(lead.status);
     setAssignedToId(lead.assignedToId ?? "");
     setTourId(lead.tourId ?? "");
+    setPackageName(lead.packageName ?? "");
     setNotes(lead.notes ?? "");
     setFollowUpAt(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "");
-  }, [lead.status, lead.assignedToId, lead.tourId, lead.notes, lead.followUpAt]);
+  }, [lead.status, lead.assignedToId, lead.tourId, lead.packageName, lead.notes, lead.followUpAt]);
 
   // Clear the booking input when a booking is unlinked.
   useEffect(() => {
@@ -431,8 +487,17 @@ export function LeadDetail({
 
   function handleTourChange(val: string) {
     setTourId(val);
+    // The server clears the package when the tour changes (it belongs to the old tour).
+    setPackageName("");
     patch({ tourId: val || null });
   }
+
+  function handlePackageChange(val: string) {
+    setPackageName(val);
+    patch({ packageName: val || null });
+  }
+
+  const selectedTourPackages = tours.find((t) => t.id === tourId)?.packageNames ?? [];
 
   function handleDelete() {
     startTransition(async () => {
@@ -488,7 +553,9 @@ export function LeadDetail({
                 <Lock className="w-3 h-3" /> Locked
               </span>
             )}
-            <span className="text-xs text-muted-foreground">Added {fmtDateTime(lead.createdAt)}</span>
+            <span className="text-xs text-muted-foreground">
+              Added {fmtDateTime(lead.createdAt)}
+            </span>
           </div>
         </div>
 
@@ -646,6 +713,22 @@ export function LeadDetail({
                 <p className="text-muted-foreground mb-0.5">Source</p>
                 <p className="font-semibold text-foreground capitalize">{fmtSource(lead.source)}</p>
               </div>
+              {lead.contactChannel && (
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Channel</p>
+                  <p className="font-semibold text-foreground capitalize">
+                    {lead.contactChannel.toLowerCase()}
+                  </p>
+                </div>
+              )}
+              {lead.sourcePage && (
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Source Page</p>
+                  <p className="font-semibold text-foreground">
+                    {SOURCE_PAGE_LABELS[lead.sourcePage] ?? lead.sourcePage}
+                  </p>
+                </div>
+              )}
               {lead.ipAddress && (
                 <div>
                   <p className="text-muted-foreground mb-0.5">IP Address</p>
@@ -672,9 +755,32 @@ export function LeadDetail({
                   </div>
                 </div>
               )}
+              {lead.occasionOffer ? (
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Offer</p>
+                  <p className="font-semibold text-foreground">
+                    <a
+                      href={`/offers/${lead.occasionOffer.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary hover:underline"
+                    >
+                      🎉 {lead.occasionOffer.name}
+                    </a>
+                    {lead.packageName && !lead.tour && (
+                      <span className="text-primary"> — {lead.packageName} plan</span>
+                    )}
+                  </p>
+                </div>
+              ) : null}
               <div>
                 <p className="text-muted-foreground mb-0.5">Tour</p>
-                <p className="font-semibold text-foreground">{lead.tour?.title ?? "Custom"}</p>
+                <p className="font-semibold text-foreground">
+                  {lead.tour?.title ?? "Custom"}
+                  {lead.packageName && (lead.tour || !lead.occasionOffer) && (
+                    <span className="text-primary"> — {lead.packageName} package</span>
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Adults</p>
@@ -787,6 +893,48 @@ export function LeadDetail({
             </div>
           )}
 
+          {/* Trip Planner request — WHAT the customer wants, distinct from the
+            Attribution card below (WHERE they came from). Renders nothing for
+            any pre-Trip-Planner lead (requestedComponents null). */}
+          {(() => {
+            const components = parseJsonArray(lead.requestedComponents);
+            if (components.length === 0) return null;
+            const modes = parseJsonArray(lead.transportModes);
+            return (
+              <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+                <h3 className="font-bold text-foreground text-sm mb-4">Trip Planner Request</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
+                  <div>
+                    <p className="text-muted-foreground mb-0.5">Request</p>
+                    <p className="font-semibold text-foreground">
+                      {components.map((c) => REQUESTED_COMPONENT_LABELS[c] ?? c).join(" + ")}
+                    </p>
+                  </div>
+                  {modes.length > 0 && (
+                    <div>
+                      <p className="text-muted-foreground mb-0.5">Transport</p>
+                      <p className="font-semibold text-foreground">
+                        {modes.map((m) => TRANSPORT_MODE_LABELS[m] ?? m).join(", ")}
+                      </p>
+                    </div>
+                  )}
+                  {lead.fromCity && (
+                    <div>
+                      <p className="text-muted-foreground mb-0.5">From</p>
+                      <p className="font-semibold text-foreground">{lead.fromCity}</p>
+                    </div>
+                  )}
+                  {lead.toCity && (
+                    <div>
+                      <p className="text-muted-foreground mb-0.5">To</p>
+                      <p className="font-semibold text-foreground">{lead.toCity}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Attribution — the raw signals deriveChannel() classified `source` from. */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
             <h3 className="font-bold text-foreground text-sm mb-4">Attribution</h3>
@@ -798,7 +946,12 @@ export function LeadDetail({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-xs">
                 {populatedAttribution.map(({ key, label }) => (
-                  <div key={key} className={key === "landingPage" || key === "referrer" ? "sm:col-span-2" : undefined}>
+                  <div
+                    key={key}
+                    className={
+                      key === "landingPage" || key === "referrer" ? "sm:col-span-2" : undefined
+                    }
+                  >
                     <p className="text-muted-foreground mb-0.5">{label}</p>
                     <p className="font-mono font-semibold text-foreground break-all">
                       {lead[key] as string}
@@ -1075,9 +1228,7 @@ export function LeadDetail({
 
             {/* Tour */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Tour
-              </label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Tour</label>
               <div className="relative">
                 <select
                   value={tourId}
@@ -1095,6 +1246,31 @@ export function LeadDetail({
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
             </div>
+
+            {/* Package — only for tours sold as package options */}
+            {selectedTourPackages.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Package
+                </label>
+                <div className="relative">
+                  <select
+                    value={packageName}
+                    onChange={(e) => handlePackageChange(e.target.value)}
+                    disabled={isPending || !canManage || locked}
+                    className={selectCls}
+                  >
+                    <option value="">— Not chosen —</option>
+                    {selectedTourPackages.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Booking Amounts — read-only, shown only after conversion when recorded.

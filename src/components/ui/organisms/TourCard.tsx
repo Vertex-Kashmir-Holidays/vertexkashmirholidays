@@ -27,6 +27,9 @@ interface TourCardProps {
     old?: string;
     p: string;
     minPersons?: number;
+    // Replaces the default "per person (min N pax)" label — e.g. "/ 2 persons"
+    // for tours sold as package options (see Tour.packageOptions).
+    priceSuffix?: string;
     inclusions?: {
       transfers?: boolean;
       hotel?: string;
@@ -66,7 +69,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
   const whatsappHref =
     explicitWa ||
     wa(
-      `Hi ${siteName}! I'm interested in the "${tour.t}" Kashmir package. Could you share details and availability?`,
+      `Hi ${siteName}! I'm interested in the "${tour.t}" package. Could you share details and availability?`,
     );
 
   return (
@@ -140,7 +143,11 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
 
             {/* Inclusions Grid */}
             <div
-              className={`mt-3 grid grid-cols-4 gap-2 py-2 border-t border-b ${isHome ? "border-border" : "border-border"}`}
+              className={`mt-3 grid ${
+                ["grid-cols-2", "grid-cols-3", "grid-cols-4"][
+                  (inclusions.meals === false ? 0 : 1) + (inclusions.shikara === false ? 0 : 1)
+                ]
+              } gap-2 py-2 border-t border-b ${isHome ? "border-border" : "border-border"}`}
             >
               {/* Transfers */}
               <div className="flex flex-col items-center gap-1">
@@ -162,25 +169,29 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                 </span>
               </div>
 
-              {/* Meals */}
-              <div className="flex flex-col items-center gap-1">
-                <Utensils className="h-5 w-5 text-primary" strokeWidth={1.8} />
-                <span
-                  className={`text-[10px] font-medium ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
-                >
-                  Meals
-                </span>
-              </div>
+              {/* Meals — hidden with meals: false (e.g. a no-meals package option) */}
+              {inclusions.meals !== false && (
+                <div className="flex flex-col items-center gap-1">
+                  <Utensils className="h-5 w-5 text-primary" strokeWidth={1.8} />
+                  <span
+                    className={`text-[10px] font-medium ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
+                  >
+                    Meals
+                  </span>
+                </div>
+              )}
 
-              {/* Shikara */}
-              <div className="flex flex-col items-center gap-1">
-                <Sailboat className="h-5 w-5 text-primary" strokeWidth={1.8} />
-                <span
-                  className={`text-[10px] font-medium ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
-                >
-                  Shikara
-                </span>
-              </div>
+              {/* Shikara — Kashmir-specific, so a caller can opt out with shikara: false */}
+              {inclusions.shikara !== false && (
+                <div className="flex flex-col items-center gap-1">
+                  <Sailboat className="h-5 w-5 text-primary" strokeWidth={1.8} />
+                  <span
+                    className={`text-[10px] font-medium ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
+                  >
+                    Shikara
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Price Section */}
@@ -202,8 +213,12 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
               <p
                 className={`text-[10px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
               >
-                per person
-                {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
+                {tour.priceSuffix ?? (
+                  <>
+                    per person
+                    {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
+                  </>
+                )}
               </p>
             </div>
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { saveUpload } from "@/lib/storage";
-import { DOC_CATEGORIES, isDocCategory } from "@/lib/docs/categories";
+import { DOC_CATEGORIES, isDocCategory, DOC_EXT_BY_MIME } from "@/lib/docs/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +17,6 @@ const ALLOWED_DOC_TYPES = new Set([
   "image/png",
   "image/jpeg",
 ]);
-const DOC_EXT_BY_TYPE: Record<string, string> = {
-  "application/pdf": "pdf",
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-  "image/png": "png",
-  "image/jpeg": "jpg",
-};
-
 export async function GET() {
   const guard = await requirePermission("docs", "view");
   if (guard instanceof NextResponse) return guard;
@@ -73,7 +65,7 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const ext = DOC_EXT_BY_TYPE[file.type];
+  const ext = DOC_EXT_BY_MIME[file.type];
 
   let url: string;
   let publicId: string | null;

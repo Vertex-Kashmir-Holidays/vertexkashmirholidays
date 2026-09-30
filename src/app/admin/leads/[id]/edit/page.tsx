@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getLeadTourOptions } from "@/lib/leads/tourOptions";
 import { auth } from "@/lib/auth";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { LeadForm } from "@/components/admin/leads/LeadForm";
@@ -24,6 +25,7 @@ const getLead = cache(async (id: string) =>
       email: true,
       source: true,
       tourId: true,
+      packageName: true,
       adults: true,
       children: true,
       startDate: true,
@@ -56,7 +58,7 @@ export default async function EditLeadPage({ params }: PageProps) {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    prisma.tour.findMany({ select: { id: true, title: true }, orderBy: { title: "asc" } }),
+    getLeadTourOptions(),
   ]);
 
   if (!lead) notFound();
@@ -96,6 +98,7 @@ export default async function EditLeadPage({ params }: PageProps) {
     email: lead.email ?? "",
     source: lead.source,
     tourId: lead.tourId ?? "",
+    packageName: lead.packageName ?? "",
     adults: String(lead.adults),
     children: lead.children != null ? String(lead.children) : "",
     startDate: lead.startDate ? new Date(lead.startDate).toISOString().slice(0, 10) : "",

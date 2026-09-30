@@ -5,9 +5,14 @@ import { TourCard } from "@/components/ui/organisms/TourCard";
 
 interface TourCategoryRecommendedProps {
   tours: React.ComponentProps<typeof TourCard>["tour"][];
+  /** Section heading — defaults to the trip-type pages' "Recommended Packages". */
+  title?: string;
 }
 
-export function TourCategoryRecommended({ tours }: TourCategoryRecommendedProps) {
+export function TourCategoryRecommended({
+  tours,
+  title = "Recommended Packages",
+}: TourCategoryRecommendedProps) {
   if (tours.length === 0) return null;
   return (
     <motion.section
@@ -17,7 +22,7 @@ export function TourCategoryRecommended({ tours }: TourCategoryRecommendedProps)
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-[20px] font-bold">Recommended Packages</h2>
+      <h2 className="text-[20px] font-bold">{title}</h2>
       <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {tours.map((tour, i) => (
           <TourCard key={tour.detailHref ?? i} tour={tour} index={i} variant="tours" />

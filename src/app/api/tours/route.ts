@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { invalidateTour } from "@/lib/cache";
+import { applyPackageOptionRules } from "@/lib/tours/content";
 import { z } from "zod";
 import { TourCategory } from "@prisma/client";
 
@@ -128,7 +129,7 @@ const createSchema = z.object({
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
   activityIds: z.array(z.string()).optional(),
-  region: z.enum(["KASHMIR", "LADAKH"]).optional(),
+  region: z.enum(["KASHMIR", "LADAKH", "HIMACHAL"]).optional(),
   badge: z.string().optional().nullable(),
   badgeColor: z.string().optional().nullable(),
   tagline: z.string().optional().nullable(),
@@ -159,6 +160,8 @@ const createSchema = z.object({
   ogTitle: z.string().optional().nullable(),
   ogDescription: z.string().optional().nullable(),
   relatedTours: z.string().optional(),
+  packageOptions: z.string().optional(),
+  collectionIds: z.array(z.string()).optional(),
 });
 
 export async function POST(request: Request) {
@@ -177,16 +180,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { category, activityIds = [], ...rest } = parsed.data;
+  const { category, activityIds = [], collectionIds = [], packageOptions, ...rest } = parsed.data;
+  const packageRules = applyPackageOptionRules(packageOptions ?? "[]");
+  if (!packageRules.ok) return NextResponse.json({ error: packageRules.error }, { status: 422 });
   try {
     const tour = await prisma.tour.create({
       data: {
         ...rest,
+        ...packageRules.data,
         category: category as TourCategory,
         activities: { create: activityIds.map((activityId) => ({ activityId })) },
+        collections: { connect: collectionIds.map((cid) => ({ id: cid })) },
       },
+      include: { collections: { select: { slug: true } } },
     });
-    invalidateTour({ slug: tour.slug, category: tour.category });
+    invalidateTour({
+      slug: tour.slug,
+      category: tour.category,
+      collectionSlugs: tour.collections.map((c) => c.slug),
+    });
     return NextResponse.json(tour, { status: 201 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Create failed";

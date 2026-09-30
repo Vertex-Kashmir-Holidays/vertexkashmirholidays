@@ -48,7 +48,12 @@ const schema = z
     phone: phoneField,
     email: z.string().email("Enter a valid email").optional().or(z.literal("")),
     source: z.string().optional(),
+    // HOW staff actually contacted this customer — separate from `source`
+    // above (WHERE the customer originated). This form exists precisely for
+    // logging a WhatsApp/phone conversation, so it defaults to WhatsApp.
+    contactChannel: z.string().optional(),
     tourId: z.string().optional(),
+    packageName: z.string().optional(),
     adults: z.string().optional(),
     children: z.string().optional(),
     startDate: z.string().optional(),
@@ -79,6 +84,8 @@ interface StaffUser {
 interface TourOption {
   id: string;
   title: string;
+  /** The tour's package options (e.g. Basic/Comfort/Premium/Luxury), if any. */
+  packageNames?: string[];
 }
 
 interface Props {
@@ -129,7 +136,7 @@ export function LeadForm({
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: defaultValues ?? { source: "MANUAL", adults: "1" },
+    defaultValues: defaultValues ?? { source: "MANUAL", adults: "1", contactChannel: "WHATSAPP" },
   });
 
   // Phone — country-aware input matching the public LeadForm/BookingForm,
@@ -157,6 +164,8 @@ export function LeadForm({
   const [waError, setWaError] = useState<string | null>(null);
   const [waChannel, setWaChannel] = useState<string | null>(null);
   const [waCampaign, setWaCampaign] = useState<string | null>(null);
+  // Occasion Offer the WhatsApp CTA came from — the lead is tagged with it on save.
+  const [waOffer, setWaOffer] = useState<string | null>(null);
 
   function clearResolvedReference() {
     setWaRef("");
@@ -164,6 +173,7 @@ export function LeadForm({
     setWaError(null);
     setWaChannel(null);
     setWaCampaign(null);
+    setWaOffer(null);
   }
 
   async function handleResolveReference() {
@@ -177,6 +187,7 @@ export function LeadForm({
         error?: string;
         attribution?: Record<string, string>;
         channel?: string;
+        offer?: { name: string; packageName: string | null } | null;
       };
       if (!res.ok) {
         setWaState("error");
@@ -190,11 +201,18 @@ export function LeadForm({
       setWaState("resolved");
       setWaChannel(json.channel ?? null);
       setWaCampaign(json.attribution?.utmCampaign ?? null);
+      setWaOffer(
+        json.offer
+          ? [json.offer.name, json.offer.packageName].filter(Boolean).join(" · ")
+          : null,
+      );
     } catch {
       setWaState("error");
       setWaError("Network error. Please try again or continue manually.");
     }
   }
+
+  const selectedTourPackages = tours.find((t) => t.id === watch("tourId"))?.packageNames ?? [];
 
   const startDate = watch("startDate");
   const startReg = register("startDate");
@@ -223,6 +241,8 @@ export function LeadForm({
           email: data.email?.trim() ? data.email.trim() : empty,
           source: data.source || "MANUAL",
           tourId: data.tourId || empty,
+          // A package only applies alongside its tour.
+          packageName: (data.tourId && data.packageName) || empty,
           adults: isNaN(adults) ? 1 : adults,
           children: children !== undefined && !isNaN(children) ? children : empty,
           startDate: data.startDate || empty,
@@ -235,6 +255,9 @@ export function LeadForm({
           // Only sent once successfully resolved — an unresolved/abandoned
           // reference never reaches the API, same as never having pasted one.
           ...(waState === "resolved" && waRef.trim() ? { whatsappReference: waRef.trim() } : {}),
+          // Only meaningful at creation — how this lead was originally
+          // contacted, not something an edit should retroactively change.
+          ...(!isEdit ? { contactChannel: data.contactChannel || "WHATSAPP" } : {}),
         };
 
         const res = await fetch(isEdit ? `/api/leads/${leadId}` : "/api/admin/leads", {
@@ -411,11 +434,15 @@ export function LeadForm({
               <input {...register("followUpAt")} type="datetime-local" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Tour
-              </label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Tour</label>
               <div className={selectWrapCls}>
-                <select {...register("tourId")} className={selectCls}>
+                <select
+                  {...register("tourId", {
+                    // A package belongs to its tour — reset it when the tour changes.
+                    onChange: () => setValue("packageName", ""),
+                  })}
+                  className={selectCls}
+                >
                   <option value="">— Custom —</option>
                   {tours.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -426,6 +453,24 @@ export function LeadForm({
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               </div>
             </div>
+            {selectedTourPackages.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Package
+                </label>
+                <div className={selectWrapCls}>
+                  <select {...register("packageName")} className={selectCls}>
+                    <option value="">— Not chosen —</option>
+                    {selectedTourPackages.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
         </fieldset>
 
@@ -454,6 +499,7 @@ export function LeadForm({
                         <span>
                           Resolved — {waChannel ? (CHANNEL_LABELS[waChannel] ?? waChannel) : "—"}
                           {waCampaign ? ` · ${waCampaign}` : ""}
+                          {waOffer ? ` · 🎉 ${waOffer}` : ""}
                         </span>
                       </div>
                       <button
@@ -485,7 +531,9 @@ export function LeadForm({
                           disabled={!waRef.trim() || waState === "loading"}
                           className="shrink-0 flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-xs font-bold text-foreground transition hover:bg-muted disabled:opacity-50"
                         >
-                          {waState === "loading" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                          {waState === "loading" && (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          )}
                           Resolve
                         </button>
                       </div>
@@ -522,6 +570,19 @@ export function LeadForm({
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   </div>
                 )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Contact Channel
+                </label>
+                <div className={selectWrapCls}>
+                  <select {...register("contactChannel")} className={selectCls}>
+                    <option value="WHATSAPP">WhatsApp</option>
+                    <option value="PHONE">Phone</option>
+                    <option value="FORM">Form</option>
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">

@@ -31,9 +31,13 @@ export function flushPublicCache() {
   revalidateTag("role-permissions", "max");
   revalidateTag("faqs", "max");
   revalidateTag("hotel-supplier-counts", "max");
+  revalidateTag("hotel-supplier-public", "max");
   revalidateTag("banners", "max");
   revalidateTag("tour-categories", "max");
+  revalidateTag("tour-collections-nav", "max");
   revalidateTag("home-content", "max");
+  revalidateTag("trip-planner-content", "max");
+  revalidateTag("public-hero-stats", "max");
   revalidateTag("corporate-offices", "max");
 }
 
@@ -54,7 +58,8 @@ function revalidateOriginCityPages() {
 // origin-city page (see above), the homepage ("Featured Tours" + the Kashmir
 // tour count stat), sitemap.xml, and any Destination/Activity page it's
 // currently linked to (their own pages render live Tour fields via the
-// TourDestination/ActivityTour joins). Deliberately NOT chased: a Blog post
+// TourDestination/ActivityTour joins), and every Tour Collection page it is
+// (or was) assigned to. Deliberately NOT chased: a Blog post
 // that curated this tour into its `relatedTours` JSON field — there's no
 // index for that reverse lookup, and the blog page's own TTL is the safety net.
 export function invalidateTour(input: {
@@ -64,6 +69,8 @@ export function invalidateTour(input: {
   previousCategory?: TourCategory | null;
   destinationSlugs?: string[];
   activitySlugs?: string[];
+  // Current AND previous collection slugs (served at the top level).
+  collectionSlugs?: string[];
 }) {
   revalidatePath(`/tours/${input.slug}`);
   if (input.previousSlug && input.previousSlug !== input.slug) {
@@ -73,6 +80,9 @@ export function invalidateTour(input: {
   // The layout's published-category nav strip (src/app/(public)/layout.tsx)
   // is a tagged unstable_cache read, not tied to any one page path.
   revalidateTag("tour-categories", "max");
+  // Publishing/unpublishing a tour can make a collection live or empty,
+  // which adds/removes it from the navbar's Tours dropdown.
+  revalidateTag("tour-collections-nav", "max");
   revalidatePath(`/tours/category/${TOUR_CATEGORY_META[input.category].slug}`);
   if (input.previousCategory && input.previousCategory !== input.category) {
     revalidatePath(`/tours/category/${TOUR_CATEGORY_META[input.previousCategory].slug}`);
@@ -82,6 +92,28 @@ export function invalidateTour(input: {
   revalidatePath("/sitemap.xml");
   for (const slug of input.destinationSlugs ?? []) revalidatePath(`/destinations/${slug}`);
   for (const slug of input.activitySlugs ?? []) revalidatePath(`/activities/${slug}`);
+  for (const slug of new Set(input.collectionSlugs ?? [])) revalidatePath(`/${slug}`);
+}
+
+// ── Tour Collection ──────────────────────────────────────────────────────
+// Affects: its own page (+ previous slug), /tours (the "Browse Tour Packages"
+// collection row), sitemap.xml, and every Tour page assigned to it — a tour's
+// breadcrumb shows its primary collection's name, which depends on this
+// collection's name/slug/published/sortOrder.
+export function invalidateTourCollection(input: {
+  slug: string;
+  previousSlug?: string | null;
+  tourSlugs?: string[];
+}) {
+  revalidatePath(`/${input.slug}`);
+  if (input.previousSlug && input.previousSlug !== input.slug) {
+    revalidatePath(`/${input.previousSlug}`);
+  }
+  revalidatePath("/tours");
+  revalidatePath("/sitemap.xml");
+  // Navbar "Tours" dropdown (name, slug, published and sortOrder all show there).
+  revalidateTag("tour-collections-nav", "max");
+  for (const slug of input.tourSlugs ?? []) revalidatePath(`/tours/${slug}`);
 }
 
 // ── Destination ──────────────────────────────────────────────────────────
@@ -148,6 +180,21 @@ export function invalidateCampaign(input: { slug: string; previousSlug?: string 
   }
   revalidatePath("/adventures");
   revalidatePath("/sitemap.xml");
+}
+
+// ── Occasion Offer ───────────────────────────────────────────────────────
+// Affects its own /offers/[slug] page (+ previous slug), the /offers hub,
+// sitemap.xml and the navbar's "Offers" dropdown (name, slug, published and
+// sortOrder show there). Price/package edits go through the same save, so the
+// public price updates as soon as the admin saves.
+export function invalidateOccasionOffer(input: { slug: string; previousSlug?: string | null }) {
+  revalidatePath(`/offers/${input.slug}`);
+  if (input.previousSlug && input.previousSlug !== input.slug) {
+    revalidatePath(`/offers/${input.previousSlug}`);
+  }
+  revalidatePath("/offers");
+  revalidatePath("/sitemap.xml");
+  revalidateTag("occasion-offers-nav", "max");
 }
 
 // ── Blog ─────────────────────────────────────────────────────────────────

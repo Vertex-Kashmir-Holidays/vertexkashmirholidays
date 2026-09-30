@@ -97,6 +97,7 @@ export const CONTENT_DELEGATES: Record<string, SingletonDelegate> = {
   contact: prisma.contactContent as unknown as SingletonDelegate,
   blogs: prisma.blogContent as unknown as SingletonDelegate,
   reviews: prisma.reviewsContent as unknown as SingletonDelegate,
+  tripPlanner: prisma.tripPlannerContent as unknown as SingletonDelegate,
 };
 
 export function getContentDelegate(key: string): SingletonDelegate | null {

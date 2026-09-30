@@ -40,7 +40,6 @@ export default async function NewProposalPage() {
   return (
     <ProposalEditor
       initialData={initialData}
-      initialTitle="Kashmir Proposal"
       initialStatus="DRAFT"
       canSave
       companyAddress={companyAddress}

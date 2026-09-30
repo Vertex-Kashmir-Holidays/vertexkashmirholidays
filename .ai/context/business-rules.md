@@ -83,6 +83,8 @@ Business rules always take precedence over implementation assumptions. Where the
 - On conversion, the lead's itinerary is locked (`locked: true`) and its status forced to `CONFIRMED` — it becomes the final, immutable plan the booking is built on.
 - On conversion, the booking's services (Hotel/Transport/Activity rows) are auto-seeded from the itinerary's hotels/transport/included-activities (`buildServicesFromItinerary`, `src/lib/bookings/itineraryToServices.ts`) — every row starts at amount ₹0 since the itinerary carries no internal cost data; staff fills in real costs afterward. Same code path for a normal lead and a B2B request (both convert via `convertLeadToBooking`), so this applies to both.
 - Every save produces an `ItineraryHistory` snapshot — full version history is retained, not just the latest state.
+- **Standalone itineraries and proposals are auto-titled** `"<Kashmir Itinerary | Kashmir Proposal> - <Prepared For> - <Duration>"` (e.g. `Kashmir Proposal - Mr Farooq Sheikh - 5 Nights · 6 Days`) by `buildDocumentTitle` (`src/lib/itinerary/documentTitle.ts`) — the API derives it from the document on every create/save; a client-sent title is ignored. Lead- and booking-linked itineraries keep their CRM-owned, hand-editable title and are exempt.
+- **Duplicate titles are blocked** (409, "may already exist") on create and on save-with-a-changed-title, checked case-insensitively across all owners. The list's **Duplicate** action bypasses the check (`allowDuplicate`), so a copy may share its source's title; saving a copy without changing its name/duration is not re-checked.
 
 ## 7. Pricing Rules — Implemented
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { itineraryQuotedCost } from "@/lib/itinerary/list";
 import { B2bRequestsClient } from "@/components/admin/b2b/B2bRequestsClient";
 
 export const metadata: Metadata = { title: "B2B Requests — Admin" };
@@ -33,6 +34,8 @@ export default async function AdminB2bRequestsPage({
         createdById: true,
         createdAt: true,
         b2bAgent: { select: { id: true, name: true, agencyName: true, email: true } },
+        // Quoted total from the request's itinerary (shown under the budget).
+        itinerary: { select: { data: true } },
       },
     }),
     prisma.user.findMany({
@@ -42,5 +45,10 @@ export default async function AdminB2bRequestsPage({
     }),
   ]);
 
-  return <B2bRequestsClient initialRequests={requests} agents={agents} initialAgentFilter={agent} />;
+  const rows = requests.map(({ itinerary, ...r }) => ({
+    ...r,
+    quotedCost: itineraryQuotedCost(itinerary?.data),
+  }));
+
+  return <B2bRequestsClient initialRequests={rows} agents={agents} initialAgentFilter={agent} />;
 }
