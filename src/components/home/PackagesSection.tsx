@@ -102,6 +102,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
               bc: (badgeColors as readonly string[]).includes(tour.badgeColor ?? "")
                 ? (tour.badgeColor as "orange" | "blue" | "green")
                 : "green",
+              category: tour.category,
               image: tour.image ?? undefined,
               detailHref: `/tours/${tour.slug}`,
               bookHref: `/booking?tour=${tour.slug}`,

@@ -122,6 +122,7 @@ export function ToursGridSection({
                 bc: badgeColors.includes(tour.badgeColor as (typeof badgeColors)[number])
                   ? (tour.badgeColor as (typeof badgeColors)[number])
                   : "green",
+                category: tour.category,
                 image: tour.image ?? undefined,
                 detailHref: tour.detailHref ?? `/tours/${tour.slug}`,
                 bookHref: `/booking?tour=${tour.slug}`,

@@ -14,6 +14,7 @@ interface SpotlightTour {
   id: string;
   slug: string;
   title: string;
+  category: string;
   badge: string | null;
   badgeColor: string | null;
   duration: number;
@@ -120,6 +121,7 @@ export function TourCategoryHubSpotlight() {
                 bc: (BADGE_COLORS as readonly string[]).includes(data.tour.badgeColor ?? "")
                   ? (data.tour.badgeColor as (typeof BADGE_COLORS)[number])
                   : "green",
+                category: data.tour.category,
                 image: data.tour.coverImage ?? undefined,
                 detailHref: `/tours/${data.tour.slug}`,
                 bookHref: `/booking?tour=${data.tour.slug}`,

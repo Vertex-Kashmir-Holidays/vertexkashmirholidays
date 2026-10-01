@@ -7,6 +7,7 @@ import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroStats } from "@/components/layout/HeroStats";
 import { TripPlannerForm } from "@/components/leads/TripPlannerForm";
 import { HeroWhatsAppCta } from "@/components/leads/HeroWhatsAppCta";
+import { TripPlannerClosingCta } from "@/components/leads/TripPlannerClosingCta";
 import { TripPlannerHowItWorks } from "@/components/leads/TripPlannerHowItWorks";
 import { TripPlannerHotelCarousel } from "@/components/leads/TripPlannerHotelCarousel";
 import { TripPlannerMobileBar } from "@/components/leads/TripPlannerMobileBar";
@@ -15,6 +16,7 @@ import { PackagesSection } from "@/components/home/PackagesSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TrustSection } from "@/components/common/TrustSection";
+import { JsonLd, buildBreadcrumbList, buildFAQPage, buildItemList } from "@/components/seo/JsonLd";
 import { PromoBanner } from "@/components/public/PromoBanner";
 import { getBannersForPage, toPromoBannerData } from "@/lib/banners";
 import { getFaqsForPlacement } from "@/lib/faqs";
@@ -22,6 +24,7 @@ import { getDisplayReviews } from "@/lib/reviews";
 import { getPublicHotels } from "@/lib/hotelSuppliers/stats";
 import { getTripPlannerContent } from "@/lib/tripPlannerContent";
 import { getPublicHeroStats } from "@/lib/publicHeroStats";
+import { compareToursForCards } from "@/lib/tours/ordering";
 
 // ISR, same as every other public content page (Tours, Destinations, …) —
 // this page reads no per-request data (no cookies()/headers()), so it stays
@@ -87,30 +90,34 @@ export default async function PlanYourKashmirTripPage() {
     getBannersForPage("trip-planner-before-tours"),
     getBannersForPage("trip-planner-after-pricing"),
     getBannersForPage("trip-planner-after-why"),
-    // Same selection/query shape as the homepage's own tour cross-sell — no
-    // separate "recommended tours" config for this page; the existing
-    // bestseller/rating-driven query (already admin-configurable via each
-    // Tour's own edit form) is the single source of truth for both.
-    prisma.tour.findMany({
-      where: { published: true, region: "KASHMIR" },
-      orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
-      take: 4,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        badge: true,
-        badgeColor: true,
-        duration: true,
-        coverImage: true,
-        rating: true,
-        reviewCount: true,
-        priceFrom: true,
-        priceWas: true,
-        minPersons: true,
-        destinations: { select: { destination: { select: { name: true } } } },
-      },
-    }),
+    // Same published-Kashmir-tours pool and bestseller/rating ranking as the
+    // homepage's tour cross-sell (both driven by each Tour's own admin fields —
+    // no separate "recommended tours" config). Unlike the homepage, ties are
+    // then broken by compareToursForCards so the four cards are stable.
+    prisma.tour
+      .findMany({
+        where: { published: true, region: "KASHMIR" },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          category: true,
+          bestseller: true,
+          badge: true,
+          badgeColor: true,
+          duration: true,
+          coverImage: true,
+          rating: true,
+          reviewCount: true,
+          priceFrom: true,
+          priceWas: true,
+          minPersons: true,
+          destinations: { select: { destination: { select: { name: true } } } },
+        },
+      })
+      // Deterministic order (src/lib/tours/ordering.ts) so the four cards
+      // never depend on DB row order.
+      .then((rows) => rows.sort(compareToursForCards).slice(0, 4)),
     // Sitewide "Why Choose Us" content — same query/content the homepage
     // already uses, real and admin-managed, not invented for this page.
     prisma.whyChooseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
@@ -127,8 +134,23 @@ export default async function PlanYourKashmirTripPage() {
   // rather than showing a fabricated one.
   const startingPrice = tours.length > 0 ? Math.min(...tours.map((t) => t.priceFrom)) : null;
 
+  const breadcrumbJsonLd = buildBreadcrumbList([
+    { name: "Home", url: SITE_URL },
+    { name: "Kashmir Tour Packages", url: `${SITE_URL}/plan-your-kashmir-trip` },
+  ]);
+  const toursJsonLd = buildItemList(
+    tours.map((t) => ({ name: t.title, url: `${SITE_URL}/tours/${t.slug}` })),
+    "Kashmir Tour Packages",
+  );
+  const faqJsonLd = buildFAQPage(
+    faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })),
+  );
+
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd} />
+      {tours.length > 0 && <JsonLd data={toursJsonLd} />}
+      {faqs.length > 0 && <JsonLd data={faqJsonLd} />}
       <SecondaryHero
         image="/hero/gulmarg-lg.webp"
         imageMobile="/hero/gulmarg.webp"
@@ -192,6 +214,7 @@ export default async function PlanYourKashmirTripPage() {
           id: t.id,
           slug: t.slug,
           title: t.title,
+          category: t.category,
           badge: t.badge,
           badgeColor: t.badgeColor,
           durationLabel: `${t.duration - 1}N / ${t.duration}D`,
@@ -282,12 +305,7 @@ export default async function PlanYourKashmirTripPage() {
             No form needed — tell us what you&apos;re thinking and we&apos;ll take it from there.
           </p>
           <div className="mt-6">
-            <a
-              href="#trip-planner-form"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
-            >
-              Get My Trip Quote
-            </a>
+            <TripPlannerClosingCta message="Hi! I'd like help planning my Kashmir trip." />
           </div>
         </div>
       </section>

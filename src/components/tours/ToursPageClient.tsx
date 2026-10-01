@@ -1,10 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Heart, Users, Mountain, Crown, type LucideIcon } from "lucide-react";
+import {
+  Heart,
+  Users,
+  UsersRound,
+  Mountain,
+  Crown,
+  Wallet,
+  Landmark,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import type { TourCategory } from "@prisma/client";
 import { ToursFiltersSidebar } from "@/components/tours/ToursFiltersSidebar";
 import { ToursGridSection } from "@/components/tours/ToursGridSection";
+import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import { TourCollectionsCard } from "@/components/tours/TourCollectionsCard";
 import type { TourCollectionLinkData } from "@/components/tours/TourCollectionLinks";
 import type { TourListItemData, TourSortOption } from "@/types/tours";
@@ -16,11 +27,17 @@ interface ToursPageClientProps {
   collections: TourCollectionLinkData[];
 }
 
-const CATEGORY_META: Record<string, { label: string; Icon: LucideIcon }> = {
-  HONEYMOON: { label: "Honeymoon", Icon: Heart },
-  FAMILY: { label: "Family", Icon: Users },
-  ADVENTURE: { label: "Adventure", Icon: Mountain },
-  LUXURY: { label: "Luxury", Icon: Crown },
+// Filter icons per category; labels come from TOUR_CATEGORY_META. Only categories
+// that have a published tour in the current region tab are offered (see `categories`).
+const CATEGORY_ICONS: Record<TourCategory, LucideIcon> = {
+  HONEYMOON: Heart,
+  FAMILY: Users,
+  ADVENTURE: Mountain,
+  LUXURY: Crown,
+  BUDGET: Wallet,
+  GROUP: UsersRound,
+  PILGRIMAGE: Landmark,
+  PREMIUM: Sparkles,
 };
 
 const DURATION_BUCKETS = [
@@ -59,11 +76,14 @@ export function ToursPageClient({ tours, browseCategories, collections }: ToursP
 
   const categories = useMemo(
     () =>
-      Object.entries(CATEGORY_META).map(([id, meta]) => ({
-        id,
-        ...meta,
-        count: regionFiltered.filter((t) => t.category === id).length,
-      })),
+      (Object.keys(CATEGORY_ICONS) as TourCategory[])
+        .map((id) => ({
+          id,
+          label: TOUR_CATEGORY_META[id].shortLabel,
+          Icon: CATEGORY_ICONS[id],
+          count: regionFiltered.filter((t) => t.category === id).length,
+        }))
+        .filter((c) => c.count > 0),
     [regionFiltered],
   );
 

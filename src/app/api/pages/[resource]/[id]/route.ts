@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { z } from "zod";
 import { requirePermission } from "@/lib/permissions";
 import { getResource } from "@/lib/admin/pageResources";
+import { invalidateListingHero } from "@/lib/cache";
 
 type Params = { params: Promise<{ resource: string; id: string }> };
 
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const updated = await def.model.update({ where: { id }, data: parsed.data });
+  if (resource === "homeSections") invalidateListingHero((updated as { key: string }).key);
   return NextResponse.json(updated);
 }
 

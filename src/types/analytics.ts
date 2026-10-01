@@ -22,6 +22,8 @@ export type WhatsAppSource =
   | "b2b_page"
   | "trip_planner_hotel_carousel"
   | "trip_planner_hero"
+  | "trip_planner_closing_cta"
+  | "tours_card"
   | "tour_category_hero"
   | "promo_banner"
   | "strip_banner"

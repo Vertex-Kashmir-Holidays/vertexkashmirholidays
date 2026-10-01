@@ -11,6 +11,7 @@ export interface DestinationTour {
   image?: string;
   bookHref?: string;
   whatsappHref?: string;
+  category?: string;
   t: string;
   d: string;
   places: string;

@@ -135,6 +135,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
       ? (t.badgeColor as (typeof BADGE_COLORS)[number])
       : "green",
+    category: t.category,
     seed: t.id,
     image: t.coverImage ?? undefined,
     bookHref: `/tours/${t.slug}`,
