@@ -416,6 +416,14 @@ model Destination {
 
 // Things to do — a first-class admin entity linked many-to-many to destinations
 // and tours. Public listing/detail pages are planned but not built yet.
+enum ActivityPriceUnit {
+  PER_PERSON
+  PER_BOAT
+  PER_VEHICLE
+  PER_HOUR
+  PER_GROUP
+}
+
 model Activity {
   id                 String                @id @default(cuid())
   name               String
@@ -428,6 +436,8 @@ model Activity {
   icon               String? // emoji or short icon label
   duration           String? // e.g. "2 hours", "Half day"
   price              Float?
+  // What `price` is charged per — shown after it on cards and quick facts.
+  priceUnit          ActivityPriceUnit     @default(PER_PERSON)
   published          Boolean               @default(false)
   sortOrder          Int                   @default(0)
   // HTML — richer "Why Experience This" blurb; `description` above stays as the short Overview text.

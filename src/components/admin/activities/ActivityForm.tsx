@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
+import { PRICE_UNITS, PRICE_UNIT_LABELS } from "@/lib/activities/priceUnit";
 import { Loader2 } from "lucide-react";
 import { ImageField } from "@/components/admin/pages/ImageField";
 import { SectionArrayEditor } from "@/components/admin/pages/SectionArrayEditor";
@@ -28,6 +29,8 @@ const schema = z.object({
   whyExperience: z.string().optional(),
   bestTime: z.string().optional(),
   difficulty: z.string().optional(),
+  sortOrder: z.string().regex(/^\d*$/, "Whole numbers only").optional(),
+  priceUnit: z.enum(PRICE_UNITS),
   pricingGuide: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDesc: z.string().optional(),
@@ -109,6 +112,8 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
       whyExperience: defaults?.whyExperience ?? "",
       bestTime: defaults?.bestTime ?? "",
       difficulty: defaults?.difficulty ?? "",
+      sortOrder: defaults?.sortOrder ?? "",
+      priceUnit: defaults?.priceUnit ?? "PER_PERSON",
       pricingGuide: defaults?.pricingGuide ?? "",
       metaTitle: defaults?.metaTitle ?? "",
       metaDesc: defaults?.metaDesc ?? "",
@@ -206,7 +211,7 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
                 <input {...register("duration")} className={inputCls} placeholder="e.g. 2 hours" />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">
                   Price (₹)
@@ -223,6 +228,18 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Price is
+                </label>
+                <select {...register("priceUnit")} className={inputCls}>
+                  {PRICE_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {PRICE_UNIT_LABELS[u]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
                   Difficulty
                 </label>
                 <input
@@ -230,6 +247,20 @@ export function ActivityForm({ defaults, destinationOptions, tourOptions }: Prop
                   className={inputCls}
                   placeholder="e.g. Very Easy, Moderate"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                  Sort order
+                </label>
+                <input
+                  {...register("sortOrder")}
+                  inputMode="numeric"
+                  className={`${inputCls} font-mono`}
+                  placeholder="0 = first"
+                />
+                {errors.sortOrder && (
+                  <p className="text-[12px] text-red-500 mt-1">{errors.sortOrder.message}</p>
+                )}
               </div>
             </div>
             <div>

@@ -2,11 +2,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { Sparkles, Compass, BadgeIndianRupee, type LucideIcon } from "lucide-react";
 import { renderAccents } from "@/lib/accents";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 import type { SectionHeading } from "@/types/home";
 
 const badges: { t: string; s: string; Icon: LucideIcon }[] = [
@@ -36,8 +36,6 @@ export function DestinationsHero({
   heroImage,
   heroImageMobile,
 }: DestinationsHeroProps) {
-  const isExternal = !!heading.ctaHref && /^https?:\/\//.test(heading.ctaHref);
-
   return (
     <SecondaryHero
       image={heroImage ?? "/hero/srinagar-lg.webp"}
@@ -85,14 +83,13 @@ export function DestinationsHero({
 
       {heading.ctaLabel && heading.ctaHref && (
         <div className="hero-reveal mt-5" style={{ "--hr-delay": "0.15s" } as React.CSSProperties}>
-          <Link
+          <CmsCtaLink
             href={heading.ctaHref}
-            target={isExternal ? "_blank" : undefined}
-            rel={isExternal ? "noopener noreferrer" : undefined}
+            source="listing_hero"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
           >
             {heading.ctaLabel}
-          </Link>
+          </CmsCtaLink>
         </div>
       )}
 

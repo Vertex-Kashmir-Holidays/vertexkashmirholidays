@@ -3,10 +3,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, RotateCcw } from "lucide-react";
-import { PriceRangeSlider } from "@/components/ui/molecules/PriceRangeSlider";
 import { ActivityCard, type ActivityCardData } from "@/components/activities/ActivityCard";
 
-const PRICE_STEP = 1000;
 const PAGE_SIZE = 9;
 
 type SortOption = "popular" | "price-asc" | "price-desc";
@@ -18,37 +16,19 @@ const sortLabels: Record<SortOption, string> = {
 
 export function ActivitiesPageClient({ activities }: { activities: ActivityCardData[] }) {
   const [search, setSearch] = useState("");
-  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sort, setSort] = useState<SortOption>("popular");
   const [page, setPage] = useState(1);
 
-  // Price bounds from priced activities only, snapped to the ₹1000 step.
-  const priceBounds = useMemo(() => {
-    const prices = activities.map((a) => a.price).filter((p): p is number => p != null);
-    if (prices.length === 0) return { min: 0, max: 0 };
-    return {
-      min: Math.floor(Math.min(...prices) / PRICE_STEP) * PRICE_STEP,
-      max: Math.ceil(Math.max(...prices) / PRICE_STEP) * PRICE_STEP,
-    };
-  }, [activities]);
-
-  const effectiveRange: [number, number] = priceRange ?? [priceBounds.min, priceBounds.max];
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const [lo, hi] = priceRange ?? [priceBounds.min, priceBounds.max];
-    const result = activities.filter((a) => {
-      const searchMatch =
-        !q || a.name.toLowerCase().includes(q) || (a.location ?? "").toLowerCase().includes(q);
-      // Activities without a price ("On request") are never filtered out by price.
-      const priceMatch = a.price == null || (a.price >= lo && a.price <= hi);
-      return searchMatch && priceMatch;
-    });
+    const result = activities.filter(
+      (a) => !q || a.name.toLowerCase().includes(q) || (a.location ?? "").toLowerCase().includes(q),
+    );
     if (sort === "price-asc") result.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
     if (sort === "price-desc")
       result.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
     return result;
-  }, [activities, search, priceRange, priceBounds, sort]);
+  }, [activities, search, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -56,7 +36,6 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
 
   const clear = () => {
     setSearch("");
-    setPriceRange(null);
     setPage(1);
   };
 
@@ -78,23 +57,6 @@ export function ActivitiesPageClient({ activities }: { activities: ActivityCardD
             />
             <Search className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
           </label>
-
-          <div className="mt-7 border-t border-border pt-6">
-            <p className="text-[16px] font-bold">
-              Price Range{" "}
-              <span className="text-[12px] font-medium text-muted-foreground">(per person)</span>
-            </p>
-            <PriceRangeSlider
-              min={priceBounds.min}
-              max={priceBounds.max}
-              step={PRICE_STEP}
-              value={effectiveRange}
-              onChange={(r) => {
-                setPriceRange(r);
-                setPage(1);
-              }}
-            />
-          </div>
 
           <button
             onClick={clear}

@@ -2,7 +2,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/components/icons/brand";
 import type { ContactSocialContent, ContactSocialLink } from "@/types/contact";
 import { imgSrc } from "@/lib/placeholder";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 interface ContactSocialProps {
   content: ContactSocialContent;
@@ -97,13 +97,14 @@ export function ContactSocial({ content, socials }: ContactSocialProps) {
         ))}
       </div>
       {content.ctaLabel && (
-        <Link
+        <CmsCtaLink
           href={content.ctaHref ?? "#"}
+          source="contact_social_cta"
           className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-bold text-primary hover:underline"
         >
           {content.ctaLabel}
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-        </Link>
+        </CmsCtaLink>
       )}
     </motion.div>
   );

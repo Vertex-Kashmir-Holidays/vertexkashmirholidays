@@ -135,6 +135,7 @@ export default async function HomePage() {
           coverImage: true,
           duration: true,
           price: true,
+          priceUnit: true,
           sortOrder: true,
         },
       })
@@ -344,6 +345,7 @@ export default async function HomePage() {
             location: a.location,
             duration: a.duration,
             price: a.price,
+            priceUnit: a.priceUnit,
             image: a.coverImage,
           }))}
         />

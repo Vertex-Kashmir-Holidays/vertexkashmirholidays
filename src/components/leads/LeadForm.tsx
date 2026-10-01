@@ -140,6 +140,9 @@ export function LeadForm({
       const pkg = context.packageName ? ` — ${context.packageName} package` : "";
       return `${greeting}I'm interested in the ${context.offerName}${dates}${pkg}. Please share details.`;
     }
+    // Activity detail page — name the activity being viewed.
+    if (context?.activityName)
+      return `${greeting}I'd like to book ${context.activityName}. Can you help with availability and rates?`;
     // Package-option enquiry (Tour.packageOptions) — name the chosen package.
     if (context?.tourName && context.packageName)
       return `${greeting}I'm interested in the "${context.tourName}" — ${context.packageName} package. Please share details and availability.`;

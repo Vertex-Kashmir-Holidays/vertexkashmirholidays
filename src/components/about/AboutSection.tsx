@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { imgSrc } from "@/lib/placeholder";
 import { renderAccents } from "@/lib/accents";
 import type { AboutContentData, SectionHeading, SiteStatData } from "@/types/home";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 interface AboutSectionProps {
   heading: SectionHeading;
@@ -66,13 +66,14 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
               </div>
             )}
             {heading.ctaLabel && (
-              <Link
+              <CmsCtaLink
                 href={heading.ctaHref ?? "#"}
+                source="home_section_cta"
                 className="rv mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03]"
                 style={{ "--rd": "0.32s" } as React.CSSProperties}
               >
                 {heading.ctaLabel}
-              </Link>
+              </CmsCtaLink>
             )}
           </div>
           <div

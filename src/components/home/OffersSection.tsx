@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 import { OfferCard, type OfferCardData } from "@/components/offers/OfferCard";
 import { renderAccents } from "@/lib/accents";
 import type { SectionHeading } from "@/types/home";
@@ -39,13 +39,14 @@ export function OffersSection({ heading, offers }: OffersSectionProps) {
           )}
         </div>
         {heading.ctaLabel && (
-          <Link
+          <CmsCtaLink
             href={heading.ctaHref ?? "/offers"}
+            source="home_section_cta"
             className="rv inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
             style={{ "--rd": "0.2s" } as React.CSSProperties}
           >
             {heading.ctaLabel}
-          </Link>
+          </CmsCtaLink>
         )}
       </div>
       <div className="mt-9 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
