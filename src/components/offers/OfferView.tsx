@@ -15,6 +15,7 @@ import {
   OCCASION_LABELS,
   defaultOfferCta,
   formatOfferDates,
+  isOfferCurrent,
   parseCompareRows,
   parseOfferActivities,
   parseOfferFaqs,
@@ -69,6 +70,12 @@ import {
 // OccasionOffer row and the Destination records it references; nothing here is
 // specific to one occasion. Unpublished offers never reach this component
 // (getOfferPage filters on published).
+//
+// Once the end date passes the page stays up (backlinks, search) but is no
+// longer bookable: noindex, a "this offer ran …" notice in the hero, and no
+// plans/prices, enquiry CTAs, add-on activities, mobile bar or enquiry modal.
+// The trip content — overview, route, itinerary, stays, inclusions, FAQs —
+// stays, and the "More Seasonal Offers" strip points at current ones.
 
 const KASHMIR_COLLECTION_SLUG = "kashmir-tour-packages";
 
@@ -97,7 +104,7 @@ export async function occasionOfferMetadata(slug: string): Promise<Metadata> {
     ogTitle: o.ogTitle || null,
     ogDescription: o.ogDesc || null,
     ogImage: o.ogImage || o.heroImage || null,
-    noindex: o.noindex,
+    noindex: o.noindex || !isOfferCurrent(o.endDate),
   });
 }
 
@@ -154,6 +161,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
   const activities = parseOfferActivities(o.activities);
   const otherOffers = liveOffers.filter((x) => x.slug !== o.slug).slice(0, 3);
   const isGeneric = o.occasionType === "OTHER";
+  const ended = !isOfferCurrent(o.endDate);
 
   const offerInfo: OfferClientInfo = {
     offerId: o.id,
@@ -176,10 +184,10 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
 
   // Sticky section nav — only sections this offer actually renders.
   const nav: OfferNavItem[] = [
-    ...(view.plans.length ? [{ id: "plans", label: "Packages & Prices" }] : []),
+    ...(view.plans.length && !ended ? [{ id: "plans", label: "Packages & Prices" }] : []),
     ...(view.days.length ? [{ id: "itinerary", label: "Itinerary" }] : []),
     ...(view.plans.some((p) => p.stays.length) ? [{ id: "stays", label: "Stays" }] : []),
-    ...(activities.length ? [{ id: "activities", label: "Activities" }] : []),
+    ...(activities.length && !ended ? [{ id: "activities", label: "Activities" }] : []),
     ...(inclusions.length || exclusions.length ? [{ id: "inclusions", label: "Inclusions" }] : []),
     ...(reviews.items.length ? [{ id: "reviews", label: "Reviews" }] : []),
     ...(faqs.length ? [{ id: "faqs", label: "FAQs" }] : []),
@@ -187,7 +195,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
 
   return (
     <OfferSelectionProvider offer={offerInfo} defaultPlan={view.plans[0]?.name ?? null}>
-      <div className="bg-background pb-24 text-foreground lg:pb-0">
+      <div className={`bg-background text-foreground ${ended ? "" : "pb-24 lg:pb-0"}`}>
         <JsonLd
           data={buildBreadcrumbList([
             { name: "Home", url: SITE_URL },
@@ -196,7 +204,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
           ])}
         />
         <JsonLd data={buildWebPage({ name: title, description, url, image: o.heroImage })} />
-        {view.plans.length > 0 && (
+        {view.plans.length > 0 && !ended && (
           <JsonLd
             data={buildOccasionOfferTrip({
               name: o.name,
@@ -220,10 +228,11 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
           routeLabel={view.route.map((r) => r.name).join(" · ") || null}
           heroImage={o.heroImage}
           heroImageMobile={o.heroImageMobile}
-          plans={view.plans}
+          plans={ended ? [] : view.plans}
           stats={stats}
+          ended={ended}
         />
-        {nav.length > 1 && <OfferSectionNav items={nav} />}
+        {nav.length > 1 && <OfferSectionNav items={nav} showEnquiry={!ended} />}
 
         {/* No bottom padding — the video stories section below brings its own. */}
         <div className="mx-auto max-w-[1300px] space-y-14 px-4 pt-10 sm:space-y-20 sm:px-6 sm:pt-20">
@@ -237,7 +246,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
               kicker="The route"
               title={`${view.route.length} Places${view.duration ? ` · ${view.duration}` : ""}`}
             >
-              <OfferCustomizeNote />
+              {!ended && <OfferCustomizeNote />}
               <OfferRoute stops={view.route} />
             </OfferSection>
           )}
@@ -264,7 +273,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
         )}
 
         <div className="mx-auto max-w-[1300px] space-y-14 px-4 py-10 sm:space-y-20 sm:px-6 sm:py-20">
-          {view.plans.length > 0 && (
+          {view.plans.length > 0 && !ended && (
             <OfferSection
               id="plans"
               kicker="Packages & prices"
@@ -305,7 +314,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
             </OfferSection>
           )}
 
-          {activities.length > 0 && (
+          {activities.length > 0 && !ended && (
             <OfferSection
               id="activities"
               kicker="Optional activities"
@@ -374,7 +383,7 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
             </OfferSection>
           )}
 
-          <OfferClosingCta fromPrice={view.fromPrice} />
+          {!ended && <OfferClosingCta fromPrice={view.fromPrice} />}
 
           <TourCategoryHubWhyChoose variant="kashmir" />
 
@@ -395,8 +404,12 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
         </div>
 
         <TrustSection type="category" />
-        <OfferMobileBar />
-        <OfferEnquiryModal plans={view.plans} duration={view.duration} />
+        {!ended && (
+          <>
+            <OfferMobileBar />
+            <OfferEnquiryModal plans={view.plans} duration={view.duration} />
+          </>
+        )}
       </div>
     </OfferSelectionProvider>
   );

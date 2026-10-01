@@ -189,6 +189,8 @@ export function LeadForm({
         error?: string;
         blocked?: boolean;
         whatsapp?: string;
+        offerEnded?: boolean;
+        offersHref?: string;
         fieldErrors?: Record<string, string[] | undefined>;
         id?: string;
       };
@@ -200,6 +202,15 @@ export function LeadForm({
           toast.error(json.error || "Your query is already in progress.", {
             duration: 8000,
             action: { label: "WhatsApp", onClick: () => window.open(wa, "_blank") },
+          });
+          return;
+        }
+        // Ended Occasion Offer (410) — point to the current offers.
+        if (json.offerEnded && json.offersHref) {
+          const href = json.offersHref;
+          toast.error(json.error || "This offer has ended.", {
+            duration: 8000,
+            action: { label: "See current offers", onClick: () => (window.location.href = href) },
           });
           return;
         }

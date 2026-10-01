@@ -183,9 +183,9 @@ export function invalidateCampaign(input: { slug: string; previousSlug?: string 
 }
 
 // ── Occasion Offer ───────────────────────────────────────────────────────
-// Affects its own /offers/[slug] page (+ previous slug), the /offers hub,
-// sitemap.xml and the navbar's "Offers" dropdown (name, slug, published and
-// sortOrder show there). Price/package edits go through the same save, so the
+// Affects its own /offers/[slug] page (+ previous slug), the /offers hub, the
+// homepage (its "offers" section), sitemap.xml and the navbar's "Offers"
+// dropdown (name, slug, published and sortOrder show there). Price/package edits go through the same save, so the
 // public price updates as soon as the admin saves.
 export function invalidateOccasionOffer(input: { slug: string; previousSlug?: string | null }) {
   revalidatePath(`/offers/${input.slug}`);
@@ -193,6 +193,7 @@ export function invalidateOccasionOffer(input: { slug: string; previousSlug?: st
     revalidatePath(`/offers/${input.previousSlug}`);
   }
   revalidatePath("/offers");
+  revalidatePath("/");
   revalidatePath("/sitemap.xml");
   revalidateTag("occasion-offers-nav", "max");
 }

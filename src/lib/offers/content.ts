@@ -368,6 +368,17 @@ export function tripNights(start: Date | null, end: Date | null): number | null 
   return Math.round((end.getTime() - start.getTime()) / DAY_MS);
 }
 
+/**
+ * True until the trip's last day (endDate, stored at UTC midnight) has passed
+ * in India — the offer is still shown on its end date. Undated offers stay live.
+ */
+export function isOfferCurrent(end: Date | null, now = new Date()): boolean {
+  if (!end) return true;
+  // "YYYY-MM-DD" of today in IST, parsed back as UTC midnight to match endDate.
+  const today = new Date(now.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
+  return end.getTime() >= today.getTime();
+}
+
 /** "5 Nights / 6 Days" */
 export function formatDuration(nights: number): string {
   const days = nights + 1;
