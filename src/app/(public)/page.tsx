@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { TourCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getHomeContent } from "@/lib/homeContent";
@@ -24,6 +23,7 @@ import { TrustSection } from "@/components/common/TrustSection";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getFaqsForPlacement } from "@/lib/faqs";
 import { getLiveOccasionOffers } from "@/lib/offers/queries";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { getKashmirWeather } from "@/lib/weather";
 import { HERO_FEATURES, PAYMENT_METHODS } from "@/lib/home/heroContent";
 import { getVerifiedPropertiesCount } from "@/lib/hotelSuppliers/stats";
@@ -36,11 +36,10 @@ import type { SectionHeading } from "@/types/home";
 // revalidation call that didn't fire, not normal edit-to-publish latency.
 export const revalidate = 21600;
 
-// Tie-breaks for the featured cards: every rated Kashmir tour is bestseller=true /
-// rating 5 and every activity has sortOrder 0, so the DB alone decided who led
-// (and cached vs fresh renders could disagree). Entries listed here come first,
-// in this order (winter picks); anything else follows, then title/name.
-const TOUR_CATEGORY_ORDER: TourCategory[] = ["HONEYMOON", "FAMILY", "PREMIUM", "GROUP"];
+// Tie-break for the featured activity cards: every activity has sortOrder 0, so the
+// DB alone decided who led (and cached vs fresh renders could disagree). Slugs listed
+// here come first, in this order (winter picks); anything else follows, then name.
+// Tours use the shared compareToursForCards (src/lib/tours/ordering.ts).
 const ACTIVITY_SLUG_ORDER = [
   "skiing-in-gulmarg",
   "gulmarg-gondola-ride",
@@ -115,18 +114,8 @@ export default async function HomePage() {
           destinations: { select: { destination: { select: { name: true } } } },
         },
       })
-      // bestseller → rating → TOUR_CATEGORY_ORDER → title (see above).
-      .then((rows) =>
-        rows
-          .sort(
-            (a, b) =>
-              Number(b.bestseller) - Number(a.bestseller) ||
-              b.rating - a.rating ||
-              rankIn(TOUR_CATEGORY_ORDER, a.category) - rankIn(TOUR_CATEGORY_ORDER, b.category) ||
-              a.title.localeCompare(b.title),
-          )
-          .slice(0, 4),
-      ),
+      // Deterministic order (src/lib/tours/ordering.ts), same as /tours and the plan page.
+      .then((rows) => rows.sort(compareToursForCards).slice(0, 4)),
     prisma.whyChooseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.destination.findMany({
       where: { isFeatured: true },
@@ -291,6 +280,7 @@ export default async function HomePage() {
           id: t.id,
           slug: t.slug,
           title: t.title,
+          category: t.category,
           badge: t.badge,
           badgeColor: t.badgeColor,
           durationLabel: `${t.duration - 1}N / ${t.duration}D`,

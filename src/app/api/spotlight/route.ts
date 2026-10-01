@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
             id: true,
             slug: true,
             title: true,
+            category: true,
             badge: true,
             badgeColor: true,
             duration: true,

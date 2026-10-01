@@ -198,6 +198,23 @@ export function invalidateOccasionOffer(input: { slug: string; previousSlug?: st
   revalidateTag("occasion-offers-nav", "max");
 }
 
+// ── Listing-page heroes (HomeSection keys toursHero / destinationsHero /
+// activitiesHero / adventuresHero) ───────────────────────────────────────
+// Each row's title, subtitle, CTA, hero images and meta title/description render
+// only on its own listing page. They're saved through the generic
+// /api/pages/homeSections route, which doesn't revalidate anything on its own.
+const LISTING_HERO_PATHS: Record<string, string> = {
+  toursHero: "/tours",
+  destinationsHero: "/destinations",
+  activitiesHero: "/activities",
+  adventuresHero: "/adventures",
+};
+
+export function invalidateListingHero(key: string) {
+  const path = LISTING_HERO_PATHS[key];
+  if (path) revalidatePath(path);
+}
+
 // ── Blog ─────────────────────────────────────────────────────────────────
 // Affects: its own detail page (+ previous slug), /blog, the homepage
 // ("Latest Blog" shows the 3 most recent published posts — always busted

@@ -5,9 +5,11 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { fadeUpLg, viewportOnce } from "@/lib/motion";
 import { Tilt3D } from "../effects/3DTilt";
-import { Heart, Car, Hotel, Utensils, Sailboat, Calendar } from "lucide-react";
+import { Car, Hotel, Utensils, Sailboat, Calendar } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
+import { hotelClassLabel } from "@/lib/tours/categories";
+import { trackWhatsappClick } from "@/lib/analytics";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 
 interface TourCardProps {
@@ -19,6 +21,8 @@ interface TourCardProps {
     detailHref?: string;
     bookHref?: string;
     whatsappHref?: string;
+    /** TourCategory — drives the hotel label when `inclusions.hotel` isn't set. */
+    category?: string;
     t: string;
     d: string;
     places: string;
@@ -53,10 +57,10 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
   // Default inclusions if not provided
   const inclusions = tour.inclusions || {
     transfers: true,
-    hotel: "3★",
     meals: true,
     shikara: true,
   };
+  const hotelLabel = inclusions.hotel || hotelClassLabel(tour.category);
 
   // Clicking the card (image, title or primary CTA) opens the tour detail page.
   const detailHref = tour.detailHref || tour.bookHref || "#";
@@ -107,18 +111,6 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
             >
               {tour.badge}
             </motion.span>
-            <motion.button
-              aria-label="Save to wishlist"
-              className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full backdrop-blur transition-all duration-300 hover:scale-110 ${
-                isHome
-                  ? "glass text-foreground hover:bg-foreground/20"
-                  : "bg-white/25 text-white hover:bg-white hover:text-rose-500"
-              }`}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Heart className="h-4 w-4" strokeWidth={2} />
-            </motion.button>
           </div>
 
           {/* Content Section */}
@@ -165,7 +157,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                 <span
                   className={`text-[10px] font-medium ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
                 >
-                  {inclusions.hotel || "3★"}
+                  {hotelLabel}
                 </span>
               </div>
 
@@ -238,7 +230,10 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    trackWhatsappClick("tours_card");
+                  }}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[14px] font-semibold transition-all duration-300 ${
                     isHome
                       ? "border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-glow"

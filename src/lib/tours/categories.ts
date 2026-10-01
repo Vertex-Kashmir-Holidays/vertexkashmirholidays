@@ -110,3 +110,19 @@ export function getCategoryBySlug(slug: string): TourCategory | null {
   );
   return match ? match[0] : null;
 }
+
+// Hotel class shown on tour cards. Tour has no star-rating field, so this follows
+// the hotel class each category's own page copy promises; anything else (Adventure,
+// no category, non-Kashmir regions) reads plain "Hotel" rather than claiming a star.
+const HOTEL_CLASS_BY_CATEGORY: Partial<Record<TourCategory, string>> = {
+  BUDGET: "Standard",
+  FAMILY: "Deluxe",
+  GROUP: "Deluxe",
+  PILGRIMAGE: "Deluxe",
+  PREMIUM: "Premium",
+  LUXURY: "Premium",
+  HONEYMOON: "Boutique",
+};
+
+export const hotelClassLabel = (category?: string | null): string =>
+  (category && HOTEL_CLASS_BY_CATEGORY[category as TourCategory]) || "Hotel";

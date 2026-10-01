@@ -174,6 +174,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
             ? (t.badgeColor as (typeof BADGE_COLORS)[number])
             : ("green" as const),
+          category: t.category,
           image: t.coverImage ?? undefined,
           detailHref: `/tours/${t.slug}`,
           bookHref: `/booking?tour=${t.slug}`,

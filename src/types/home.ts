@@ -61,6 +61,8 @@ export interface HomeTourData {
   id: string;
   slug: string;
   title: string;
+  /** TourCategory — picks the hotel label on the card. */
+  category?: string;
   badge: string | null;
   badgeColor: string | null;
   durationLabel: string;
