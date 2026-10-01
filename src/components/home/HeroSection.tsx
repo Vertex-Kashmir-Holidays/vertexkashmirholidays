@@ -27,8 +27,8 @@ import type {
 import { motion, AnimatePresence } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 // String-key → icon lookups, same convention as WHY_ICONS in
 // WhyChooseSection.tsx — keeps HeroFeatureData/PaymentMethodData serializable
@@ -284,21 +284,23 @@ export function HeroSection({
             style={{ "--hr-y": "30px", "--hr-delay": "0.5s" } as React.CSSProperties}
           >
             {content.ctaPrimaryLabel && (
-              <Link
+              <CmsCtaLink
                 href={content.ctaPrimaryHref ?? "#"}
+                source="home_hero"
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-glow ring-inner transition hover:scale-[1.03] hover:brightness-110 sm:inline-flex sm:w-auto"
               >
                 {content.ctaPrimaryLabel}
                 <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
-              </Link>
+              </CmsCtaLink>
             )}
             {content.ctaSecondaryLabel && (
-              <Link
+              <CmsCtaLink
                 href={content.ctaSecondaryHref ?? "#"}
+                source="home_hero"
                 className="glass hidden items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold primary-foreground transition hover:scale-[1.03] hover:bg-white/15 sm:inline-flex"
               >
                 ▶&nbsp; {content.ctaSecondaryLabel}
-              </Link>
+              </CmsCtaLink>
             )}
           </div>
           {stats.length > 0 && (

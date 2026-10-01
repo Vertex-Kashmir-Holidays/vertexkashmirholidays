@@ -146,8 +146,9 @@ export function TransportAssistanceBanner({
               Kolkata and other cities through our travel partners.
             </p>
             <p className="mt-1.5 text-[12px] italic text-muted-foreground/80">
-              Ticket fare is separate from this package and depends on your travel dates &amp;
-              availability.
+              {placement === "tour-detail"
+                ? "Ticket fare is separate from this package and depends on your travel dates & availability."
+                : "Ticket fares are quoted separately and depend on your travel dates & availability."}
             </p>
           </div>
           <button

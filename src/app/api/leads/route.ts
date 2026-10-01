@@ -197,6 +197,7 @@ function composeNotes(
         transportModes?: string[];
         packageName?: string;
         offerName?: string;
+        activityName?: string;
       }
     | undefined,
 ): string | undefined {
@@ -237,6 +238,7 @@ function composeNotes(
       parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
   }
   if (context?.offerName) parts.push(`🎉 Offer: ${context.offerName}`);
+  if (context?.activityName) parts.push(`🎯 Activity: ${context.activityName}`);
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
   if (context?.packageName) parts.push(`Package: ${context.packageName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
@@ -410,6 +412,14 @@ export async function POST(req: NextRequest) {
       { status: 410 },
     );
   }
+  // Activity detail page — same rule: only a real, published activity is
+  // named in the notes, by its DB name (never the client-sent display copy).
+  const leadActivity = context?.activitySlug
+    ? await prisma.activity.findFirst({
+        where: { slug: context.activitySlug, published: true },
+        select: { name: true },
+      })
+    : null;
   const packageName = !context?.packageName
     ? undefined
     : leadTour
@@ -436,7 +446,14 @@ export async function POST(req: NextRequest) {
       notes: composeNotes(
         message,
         // offerName from the DB, never the client-sent display copy.
-        context ? { ...context, packageName, offerName: leadOffer?.name } : undefined,
+        context
+          ? {
+              ...context,
+              packageName,
+              offerName: leadOffer?.name,
+              activityName: leadActivity?.name,
+            }
+          : undefined,
       ),
       // Trip Planner structured intent — WHAT the customer wants, separate
       // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
