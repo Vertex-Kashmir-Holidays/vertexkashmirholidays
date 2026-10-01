@@ -6,8 +6,9 @@ import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { OfferCard } from "@/components/offers/OfferCard";
 import { getLiveOccasionOffers } from "@/lib/offers/queries";
 
-// /offers — every published Occasion Offer. Offer saves revalidate this page
-// (src/lib/cache.ts → invalidateOccasionOffer); the TTL is only a safety net.
+// /offers — every published Occasion Offer whose dates haven't passed. Offer
+// saves revalidate this page (src/lib/cache.ts → invalidateOccasionOffer); the
+// TTL is what drops an offer once its end date passes.
 export const revalidate = 3600;
 
 const TITLE = "Kashmir Holiday Offers";

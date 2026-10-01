@@ -24,6 +24,7 @@ import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
 import { publishedPackageOptions } from "@/lib/tours/content";
+import { isOfferCurrent } from "@/lib/offers/content";
 import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
@@ -390,10 +391,25 @@ export async function POST(req: NextRequest) {
           id: true,
           name: true,
           crmTourId: true,
+          endDate: true,
           packages: { where: { published: true }, select: { name: true } },
         },
       })
     : null;
+  // An ended offer's page hides its enquiry form, but a page loaded before the
+  // end date can still submit — refuse it rather than take a lead for dates
+  // that have passed (same IST cut-off as the public listings).
+  if (leadOffer && !isOfferCurrent(leadOffer.endDate)) {
+    return NextResponse.json(
+      {
+        error:
+          "Sorry — this offer has ended and is no longer taking bookings. Please see our current offers at /offers.",
+        offerEnded: true,
+        offersHref: "/offers",
+      },
+      { status: 410 },
+    );
+  }
   const packageName = !context?.packageName
     ? undefined
     : leadTour

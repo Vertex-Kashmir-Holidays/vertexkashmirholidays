@@ -7,7 +7,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 // Manual "Flush cache" control. Public pages are served from ISR (5 min), so
 // this lets staff force every public page to re-render immediately after an
 // important content or image change.
-export function FlushCacheButton() {
+export function FlushCacheButton({ className }: { className?: string }) {
   const [isPending, startTransition] = useTransition();
 
   const flush = () => {
@@ -26,7 +26,10 @@ export function FlushCacheButton() {
       type="button"
       onClick={flush}
       disabled={isPending}
-      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
+      className={
+        className ??
+        "inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
+      }
     >
       {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
       Flush cache
