@@ -28,7 +28,8 @@ export function tourCardPricing(t: {
 }
 
 /** TourCard inclusion icons — undefined keeps the card's Kashmir default
- *  (incl. Shikara); other regions drop the Shikara icon and the "3★" claim. */
+ *  (incl. Shikara, hotel label from the tour's category); other regions drop the
+ *  Shikara icon and show a plain "Hotel". */
 export function tourCardInclusions(region: string) {
   return (KASHMIR_SITE_REGIONS as string[]).includes(region)
     ? undefined
@@ -56,7 +57,7 @@ export function packageOptionCard(
 ) {
   const base = tourCardInclusions(tour.region) ?? {
     transfers: true,
-    hotel: "3★",
+    hotel: "Hotel",
     meals: true,
     shikara: true,
   };

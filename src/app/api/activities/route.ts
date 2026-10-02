@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { PRICE_UNITS } from "@/lib/activities/priceUnit";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody, parseWithSchema, mapPrismaError } from "@/lib/api/route-helpers";
@@ -29,6 +30,7 @@ const createSchema = z.object({
   price: priceField.optional(),
   published: z.boolean().optional(),
   sortOrder: z.coerce.number().int().optional(),
+  priceUnit: z.enum(PRICE_UNITS).optional(),
   whyExperience: z.string().optional(),
   activityHighlights: z.string().optional(),
   bestTime: z.string().optional(),

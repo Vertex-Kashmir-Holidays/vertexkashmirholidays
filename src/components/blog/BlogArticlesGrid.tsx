@@ -5,7 +5,7 @@ import { motion, type Variants } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, Bookmark } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
 import type { BlogArticleData } from "@/types/blog";
 
@@ -103,13 +103,6 @@ export function BlogArticlesGrid({ articles }: BlogArticlesGridProps) {
                         .filter(Boolean)
                         .join("  ·  ")}
                     </span>
-                    <button
-                      aria-label="Bookmark"
-                      className="text-muted-foreground transition hover:text-primary"
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      <Bookmark className="h-4 w-4" strokeWidth={2} />
-                    </button>
                   </div>
                 </div>
               </Link>

@@ -11,7 +11,8 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: { a: ["href", "name", "target", "rel"] },
   allowedSchemes: ["http", "https", "mailto", "tel"],
   transformTags: {
-    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, false),
+    // merge=true keeps href/target; false would replace them with just `rel`.
+    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, true),
   },
 };
 

@@ -12,6 +12,7 @@ import { DestinationsSection } from "@/components/destinations/DestinationsSecti
 import { HeroSection } from "@/components/home/HeroSection";
 import { ActivitiesCarousel } from "@/components/activities/ActivitiesCarousel";
 import { PackagesSection } from "@/components/home/PackagesSection";
+import { OffersSection } from "@/components/home/OffersSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { UpdatesStrip } from "@/components/home/UpdatesStrip";
 import { VideoReviewsSection } from "@/components/home/VideoReviewsSection";
@@ -21,6 +22,8 @@ import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanc
 import { TrustSection } from "@/components/common/TrustSection";
 import { getDisplayReviews } from "@/lib/reviews";
 import { getFaqsForPlacement } from "@/lib/faqs";
+import { getLiveOccasionOffers } from "@/lib/offers/queries";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { getKashmirWeather } from "@/lib/weather";
 import { HERO_FEATURES, PAYMENT_METHODS } from "@/lib/home/heroContent";
 import { getVerifiedPropertiesCount } from "@/lib/hotelSuppliers/stats";
@@ -33,12 +36,27 @@ import type { SectionHeading } from "@/types/home";
 // revalidation call that didn't fire, not normal edit-to-publish latency.
 export const revalidate = 21600;
 
+// Tie-break for the featured activity cards: every activity has sortOrder 0, so the
+// DB alone decided who led (and cached vs fresh renders could disagree). Slugs listed
+// here come first, in this order (winter picks); anything else follows, then name.
+// Tours use the shared compareToursForCards (src/lib/tours/ordering.ts).
+const ACTIVITY_SLUG_ORDER = [
+  "skiing-in-gulmarg",
+  "gulmarg-gondola-ride",
+  "snowmobile-gulmarg",
+  "shikara-ride",
+];
+const rankIn = <T,>(order: readonly T[], value: T) => {
+  const i = order.indexOf(value);
+  return i === -1 ? order.length : i;
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
 
   return buildMetadata({
-    // No brand suffix here — the root layout title template appends
-    // "| Vertex Kashmir Holidays" automatically.
+    // No brand suffix here — buildMetadata adds " | Vertex Kashmir Holidays"
+    // only when the result fits in 60 chars, otherwise the title stands alone.
     title:
       settings?.metaTitle ??
       "Premium Kashmir Tour Packages — Honeymoon, Family & Adventure Holidays",
@@ -67,6 +85,7 @@ export default async function HomePage() {
     faqs,
     verifiedPropertiesCount,
     publishedToursCount,
+    offers,
   ] = await Promise.all([
     getHomeContent(),
     prisma.homeSection.findMany(),
@@ -74,47 +93,62 @@ export default async function HomePage() {
     prisma.siteStat.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.tickerItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.videoReview.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.tour.findMany({
-      where: { published: true, region: "KASHMIR" },
-      orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
-      take: 4,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        badge: true,
-        badgeColor: true,
-        duration: true,
-        coverImage: true,
-        rating: true,
-        reviewCount: true,
-        priceFrom: true,
-        priceWas: true,
-        minPersons: true,
-        destinations: { select: { destination: { select: { name: true } } } },
-      },
-    }),
+    prisma.tour
+      .findMany({
+        where: { published: true, region: "KASHMIR" },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          category: true,
+          bestseller: true,
+          badge: true,
+          badgeColor: true,
+          duration: true,
+          coverImage: true,
+          rating: true,
+          reviewCount: true,
+          priceFrom: true,
+          priceWas: true,
+          minPersons: true,
+          destinations: { select: { destination: { select: { name: true } } } },
+        },
+      })
+      // Deterministic order (src/lib/tours/ordering.ts), same as /tours and the plan page.
+      .then((rows) => rows.sort(compareToursForCards).slice(0, 4)),
     prisma.whyChooseItem.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.destination.findMany({
       where: { isFeatured: true },
       orderBy: { sortOrder: "asc" },
       take: 5,
     }),
-    // Homepage "Popular Things to Do" carousel — 4 handpicked activities.
-    prisma.activity.findMany({
-      where: { published: true },
-      orderBy: { sortOrder: "asc" },
-      take: 4,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        location: true,
-        coverImage: true,
-        duration: true,
-        price: true,
-      },
-    }),
+    // Homepage "Popular Things to Do" carousel — 4 handpicked activities:
+    // sortOrder → ACTIVITY_SLUG_ORDER → name (see above).
+    prisma.activity
+      .findMany({
+        where: { published: true },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          location: true,
+          coverImage: true,
+          duration: true,
+          price: true,
+          priceUnit: true,
+          sortOrder: true,
+        },
+      })
+      .then((rows) =>
+        rows
+          .sort(
+            (a, b) =>
+              a.sortOrder - b.sortOrder ||
+              rankIn(ACTIVITY_SLUG_ORDER, a.slug) - rankIn(ACTIVITY_SLUG_ORDER, b.slug) ||
+              a.name.localeCompare(b.name),
+          )
+          .slice(0, 4),
+      ),
     // Approved customer reviews power the "what travellers say" section — the
     // admin Review module is the single source of truth (no CMS testimonials).
     // Capped at 4 — the full list lives on /reviews (linked via "View all").
@@ -131,6 +165,9 @@ export default async function HomePage() {
     // has a LADAKH region, which this page's featured list already excludes).
     getVerifiedPropertiesCount(),
     prisma.tour.count({ where: { published: true, region: "KASHMIR" } }),
+    // Published Occasion Offers whose dates haven't passed — same list and
+    // cards as the /offers hub.
+    getLiveOccasionOffers(),
   ]);
 
   // Live weather for the updates strip — fetched in parallel but outside the
@@ -244,6 +281,7 @@ export default async function HomePage() {
           id: t.id,
           slug: t.slug,
           title: t.title,
+          category: t.category,
           badge: t.badge,
           badgeColor: t.badgeColor,
           durationLabel: `${t.duration - 1}N / ${t.duration}D`,
@@ -256,6 +294,7 @@ export default async function HomePage() {
           minPersons: t.minPersons,
         }))}
       />
+      <OffersSection heading={heading("offers")} offers={offers} />
       <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">
         <TransportAssistanceBanner placement="homepage" />
       </div>
@@ -306,6 +345,7 @@ export default async function HomePage() {
             location: a.location,
             duration: a.duration,
             price: a.price,
+            priceUnit: a.priceUnit,
             image: a.coverImage,
           }))}
         />

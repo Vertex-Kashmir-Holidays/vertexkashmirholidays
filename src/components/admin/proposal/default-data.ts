@@ -24,21 +24,21 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       label: "Budget",
       title: "The Essentials",
       priceLabel: "Rs. 24,500",
-      coverNote: "Comfortable hotels",
+      coverNote: "3-star · Breakfast",
       description:
-        "Clean, well-located hotels and a private car. Everything you need to see the valley, nothing you don't.",
-      tags: ["Budget hotels", "Breakfast only", "Sedan", "Support 9am – 9pm"],
+        "Clean, well-located 3-star hotels and a private sedan. Everything you need to see the valley, nothing you don't.",
+      tags: ["3-star hotels", "Breakfast only", "Sedan", "Support 9am – 9pm"],
       badgeLabel: "",
     },
     premium: {
       label: "Premium",
       title: "The Valley, Properly",
       priceLabel: "Rs. 30,500",
-      coverNote: "3-star · Shikara ride",
+      coverNote: "4-star · Shikara ride",
       description:
-        "3-star hotels, dinner included every night, and a sunset Shikara ride on Dal Lake already paid for.",
+        "4-star hotels, dinner included every night, and a sunset Shikara ride on Dal Lake already paid for.",
       tags: [
-        "3-star hotels",
+        "4-star hotels",
         "Breakfast + dinner",
         "Sedan or Ertiga",
         "Shikara ride included",
@@ -53,7 +53,13 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       coverNote: "5-star · Shikara & Gondola",
       description:
         "5-star properties and a night on a heritage houseboat. Shikara, Gondola and the Pahalgam valley taxis are all prepaid — you never open your wallet on the road.",
-      tags: ["5-star hotels", "1 houseboat night", "Innova Crysta", "Shikara + Gondola", "Trip manager"],
+      tags: [
+        "5-star hotels",
+        "1 houseboat night",
+        "Innova Crysta",
+        "Shikara + Gondola",
+        "Trip manager",
+      ],
       badgeLabel: "",
     },
   },
@@ -61,36 +67,40 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
   tipText:
     "You can mix these. Take Premium hotels with the Luxury vehicle, or add the Gondola to Budget. Tell us what matters most and we will re-quote the same day.",
 
+  // Hotels, vehicles and activities are NOT rows here — the PDF builds the
+  // comparison's Stays / Transport / Activities sections from stayPlan,
+  // transport and activities below. These rows are only what's left over.
   comparisonRows: [
-    { id: "cmp-1", label: "Hotels", budget: "Budget category", premium: "3-star", luxury: "5-star" },
-    { id: "cmp-2", label: "Houseboat night", budget: "–", premium: "on request", luxury: "✓" },
     {
-      id: "cmp-3",
-      label: "Meals",
-      budget: "Breakfast",
-      premium: "Breakfast + dinner",
-      luxury: "Breakfast + dinner",
-    },
-    { id: "cmp-4", label: "Vehicle", budget: "Sedan", premium: "Sedan or Ertiga", luxury: "Innova Crysta" },
-    { id: "cmp-5", label: "Shikara ride", budget: "–", premium: "✓", luxury: "✓" },
-    { id: "cmp-6", label: "Gulmarg Gondola", budget: "–", premium: "–", luxury: "Phase 1" },
-    {
-      id: "cmp-7",
-      label: "Pahalgam valley taxis — Aru, Betaab, Chandanwari",
-      budget: "–",
-      premium: "–",
-      luxury: "✓",
+      id: "cmp-1",
+      label: "Meal plan",
+      budget: "Breakfast (CP)",
+      premium: "Breakfast + dinner (MAP)",
+      luxury: "Breakfast + dinner (MAP)",
     },
     {
-      id: "cmp-8",
+      id: "cmp-5",
+      label: "Room category",
+      budget: "Standard room",
+      premium: "Deluxe room",
+      luxury: "Premium / view room",
+    },
+    {
+      id: "cmp-2",
       label: "Airport welcome",
       budget: "Driver pickup",
       premium: "Meet & greet",
       luxury: "Meet, greet & kahwa",
     },
-    { id: "cmp-9", label: "Early check-in", budget: "–", premium: "if available", luxury: "guaranteed" },
     {
-      id: "cmp-10",
+      id: "cmp-3",
+      label: "Early check-in",
+      budget: "–",
+      premium: "if available",
+      luxury: "guaranteed",
+    },
+    {
+      id: "cmp-4",
       label: "Support",
       budget: "9am – 9pm",
       premium: "24×7 helpline",
@@ -98,7 +108,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     },
   ],
   comparisonFootnote:
-    "Prices are for the full party of 2 adults and 1 child, sharing one room with an extra bed, and hold for 7 days from the date of this proposal. Hotel names are confirmed at booking; if a property is unavailable we substitute within the same category and tell you before the balance is due.",
+    "Prices are for the full party shown on the cover, with the rooms listed in the Stay Plan, and hold for 7 days from the date of this proposal. Hotel names are confirmed at booking; if a property is unavailable we substitute within the same category and tell you before the balance is due.",
 
   days: [
     {
@@ -160,11 +170,92 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     },
   ],
 
-  // Single-package-only fields — unused by this ("multi") document.
-  stayPlan: [],
-  stayPlanNote: "",
-  transport: [],
-  transportNote: "",
+  // Matches the six days above (Srinagar ×3, Pahalgam ×1, Srinagar ×1) and
+  // each option's card: Luxury's "1 houseboat night" is the last night.
+  // Real properties from Admin → Hotel Rates, one class per option (Budget =
+  // 3 Star, Premium = 4 Star, Luxury = 5 Star), written "A / B / Similar"
+  // until the named hotel is confirmed at booking.
+  stayPlan: [
+    {
+      id: "psp-1",
+      destination: "Srinagar",
+      nights: "03",
+      hotelBudget: "Hotel Zaman / Badshah Inn / Similar",
+      hotelName: "Grand Mir International / Walisons Hotel / Similar",
+      hotelLuxury: "Hotel Meerz / The Kabo / Similar",
+      roomType: "Double + extra bed",
+      rooms: "1",
+    },
+    {
+      id: "psp-2",
+      destination: "Pahalgam",
+      nights: "01",
+      hotelBudget: "Royale Comfort / AS Resorts / Similar",
+      hotelName: "River View Resort / White Water Resort / Similar",
+      hotelLuxury: "The Chinar Resort & Spa / Eden Resorts and Spa / Similar",
+      roomType: "Double + extra bed",
+      rooms: "1",
+    },
+    {
+      id: "psp-3",
+      destination: "Srinagar",
+      nights: "01",
+      hotelBudget: "Hotel Zaman / Badshah Inn / Similar",
+      hotelName: "Grand Mir International / Walisons Hotel / Similar",
+      hotelLuxury: "Wangnoo Paradise Heritage Houseboat / Similar",
+      roomType: "Double + extra bed",
+      rooms: "1",
+    },
+  ],
+  stayPlanNote:
+    "Hotel names are confirmed at booking; if a property is unavailable we substitute within the same category.",
+  transport: [
+    {
+      id: "ptr-1",
+      vehicleBudget: "Sedan (Dzire / Etios)",
+      vehicle: "Sedan or Ertiga",
+      vehicleLuxury: "Innova Crysta",
+      seating: "04 + driver",
+      usedFor: "Airport transfers & all sightseeing",
+      duration: "06 Days",
+    },
+    {
+      id: "ptr-2",
+      vehicleBudget: "–",
+      vehicle: "–",
+      vehicleLuxury: "✓",
+      seating: "Union taxi",
+      usedFor: "Pahalgam valley taxis — Aru, Betaab, Chandanwari",
+      duration: "Day 4",
+    },
+    {
+      id: "ptr-3",
+      vehicleBudget: "–",
+      vehicle: "–",
+      vehicleLuxury: "✓",
+      seating: "Union taxi",
+      usedFor: "Sonamarg union taxi — Thajiwas Glacier",
+      duration: "Day 3",
+    },
+  ],
+  transportNote:
+    "The vehicle stays with your group for the whole trip — it is not shared with other guests.",
+  activities: [
+    {
+      id: "pact-1",
+      label: "Shikara ride on Dal Lake",
+      budget: "–",
+      premium: "Sunset, 1 hour",
+      luxury: "Sunset, 1 hour",
+    },
+    {
+      id: "pact-2",
+      label: "Gulmarg Gondola",
+      budget: "–",
+      premium: "–",
+      luxury: "Phase 1",
+    },
+  ],
 
   inc: [
     { id: "pinc-1", category: "Stay", text: "5 nights with all hotel taxes paid" },
@@ -357,6 +448,8 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       destination: "Pahalgam",
       nights: "02",
       hotelName: "Hidden Leaf Resort / The Royale / Mollys Resort / Similar",
+      hotelBudget: "",
+      hotelLuxury: "",
       roomType: "Double Sharing",
       rooms: "1",
     },
@@ -365,6 +458,8 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       destination: "Gulmarg",
       nights: "01",
       hotelName: "Apple Tree Resort / Hotel Grand Hill View / Similar",
+      hotelBudget: "",
+      hotelLuxury: "",
       roomType: "Double Sharing",
       rooms: "1",
     },
@@ -373,6 +468,8 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       destination: "Srinagar",
       nights: "02",
       hotelName: "Sideeq Palace / Welcome Residency",
+      hotelBudget: "",
+      hotelLuxury: "",
       roomType: "Double Sharing",
       rooms: "1",
     },
@@ -384,6 +481,8 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
     {
       id: "tr-1",
       vehicle: "Sedan",
+      vehicleBudget: "",
+      vehicleLuxury: "",
       seating: "04 + driver",
       usedFor: "Airport pick-up & drop, all sightseeing and inter-city transfers",
       duration: "06 Days",
@@ -391,6 +490,10 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
   ],
   transportNote:
     "The vehicle stays with your group for the whole trip — it is not shared with any other guests. Vehicle model may be replaced with a similar category on availability.",
+  // Only the Premium (single) value is used — see proposalDataSchema.activities.
+  activities: [
+    { id: "sact-1", label: "Shikara ride on Dal Lake", budget: "", premium: "1 hour", luxury: "" },
+  ],
 
   inc: [
     { id: "sinc-1", category: "", text: "Hotel stay for 5 nights as per plan" },

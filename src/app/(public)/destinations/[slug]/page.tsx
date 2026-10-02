@@ -13,6 +13,7 @@ import {
   buildFAQPage,
 } from "@/components/seo/JsonLd";
 import { formatINR } from "@/lib/accents";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import {
   parseStringList,
   parseTopAttractions,
@@ -100,6 +101,8 @@ const getDestination = cache(async (slug: string) => {
               id: true,
               slug: true,
               title: true,
+              category: true,
+              bestseller: true,
               badge: true,
               badgeColor: true,
               duration: true,
@@ -265,7 +268,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
       ? await getLiveWeather(dest.latitude, dest.longitude)
       : null;
 
-  const tours = dest.tours.map((td) => td.tour);
+  const tours = dest.tours.map((td) => td.tour).sort(compareToursForCards);
   const totalReviews = tours.reduce((sum, t) => sum + t.reviewCount, 0);
   const avgRating = tours.length ? tours.reduce((sum, t) => sum + t.rating, 0) / tours.length : 4.8;
 
@@ -305,6 +308,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
       ? (t.badgeColor as (typeof BADGE_COLORS)[number])
       : "green",
+    category: t.category,
     seed: t.id,
     image: t.coverImage ?? undefined,
     bookHref: `/tours/${t.slug}`,
@@ -404,7 +408,16 @@ export default async function DestinationDetailPage({ params }: PageProps) {
         weather={liveWeather}
       />
 
-      <DestinationDetailTabs sections={TABS} />
+      {/* A tab whose section renders nothing (no tours, activities or images)
+          would scroll nowhere, so it's left out. */}
+      <DestinationDetailTabs
+        sections={TABS.filter(
+          (t) =>
+            (t.id !== "things" || things.length > 0) &&
+            (t.id !== "tours" || destinationTours.length > 0) &&
+            (t.id !== "gallery" || gallery.length > 0),
+        )}
+      />
 
       <main className="relative z-10 bg-background pb-16">
         <div className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-8">

@@ -4,9 +4,8 @@ import type { Metadata } from "next";
 import { Suspense, cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
-import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
-import { BlogPageClient } from "@/components/blog/BlogPageClient";
-import { BlogHero } from "@/components/blog/BlogHero";
+import { JsonLd, buildBlog, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
+import { BlogPageClient, BlogPageView } from "@/components/blog/BlogPageClient";
 import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { TrustSection } from "@/components/common/TrustSection";
 
@@ -79,59 +78,72 @@ export default async function BlogPage() {
     newsletterText: content?.newsletterText ?? null,
   };
 
+  const viewProps = {
+    content: blogContent,
+    featured: featuredPost
+      ? {
+          slug: featuredPost.slug,
+          title: featuredPost.title,
+          excerpt: featuredPost.excerpt,
+          image: featuredPost.coverImage,
+          authorName: featuredPost.author,
+          authorImage: featuredPost.authorImage,
+          dateLabel: dateLabel(featuredPost.publishedAt),
+          readTime: featuredPost.readTime,
+        }
+      : null,
+    articles: articlePosts.map((b) => ({
+      id: b.id,
+      slug: b.slug,
+      title: b.title,
+      excerpt: b.excerpt,
+      coverImage: b.coverImage,
+      category: b.category,
+      dateLabel: dateLabel(b.publishedAt),
+      readTime: b.readTime,
+    })),
+    // Only categories with at least one published post — an empty chip just
+    // shows an empty grid.
+    chips: categories
+      .filter((c) => (countMap.get(c.name) ?? 0) > 0)
+      .map((c) => ({ name: c.name, slug: c.slug, icon: c.icon })),
+    categories: categories.map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      count: countMap.get(c.name) ?? 0,
+    })),
+    trending: trendingPosts.map((b) => ({
+      id: b.id,
+      slug: b.slug,
+      title: b.title,
+      image: b.coverImage,
+      dateLabel: dateLabel(b.publishedAt),
+    })),
+  };
+
+  // Every published post, newest first — the same order as the page.
+  const blogJsonLd = buildBlog({
+    name: content?.heroTitle || "Kashmir Travel Blog",
+    posts: blogs,
+  });
+  const postsJsonLd = buildItemList(
+    blogs.map((b) => ({ name: b.title, url: `${SITE_URL}/blog/${b.slug}` })),
+    "Kashmir Travel Blog Posts",
+  );
+
   return (
     <>
       <JsonLd data={breadcrumbJsonLd} />
-      {/* BlogPageClient reads ?category= itself via useSearchParams() — that
-        hook requires a Suspense boundary on a statically-rendered page (see
-        BlogPageClient.tsx for why this moved off the server). Without a
-        fallback, the statically-generated HTML shell contains none of
-        BlogPageClient's content until client hydration — including its <h1>,
-        which is otherwise invisible to non-JS crawlers. The fallback renders
-        the same server-known hero content (search is a no-op here; the real
-        interactive version takes over the instant JS hydrates) so the H1 is
-        always present in the served HTML. */}
-      <Suspense fallback={<BlogHero content={blogContent} />}>
-        <BlogPageClient
-          content={blogContent}
-          featured={
-            featuredPost
-              ? {
-                  slug: featuredPost.slug,
-                  title: featuredPost.title,
-                  excerpt: featuredPost.excerpt,
-                  image: featuredPost.coverImage,
-                  authorName: featuredPost.author,
-                  authorImage: featuredPost.authorImage,
-                  dateLabel: dateLabel(featuredPost.publishedAt),
-                  readTime: featuredPost.readTime,
-                }
-              : null
-          }
-          articles={articlePosts.map((b) => ({
-            id: b.id,
-            slug: b.slug,
-            title: b.title,
-            excerpt: b.excerpt,
-            coverImage: b.coverImage,
-            category: b.category,
-            dateLabel: dateLabel(b.publishedAt),
-            readTime: b.readTime,
-          }))}
-          chips={categories.map((c) => ({ name: c.name, slug: c.slug, icon: c.icon }))}
-          categories={categories.map((c) => ({
-            name: c.name,
-            slug: c.slug,
-            count: countMap.get(c.name) ?? 0,
-          }))}
-          trending={trendingPosts.map((b) => ({
-            id: b.id,
-            slug: b.slug,
-            title: b.title,
-            image: b.coverImage,
-            dateLabel: dateLabel(b.publishedAt),
-          }))}
-        />
+      {blogs.length > 0 && <JsonLd data={blogJsonLd} />}
+      {blogs.length > 0 && <JsonLd data={postsJsonLd} />}
+      {/* BlogPageClient reads ?category= via useSearchParams(), which needs a
+        Suspense boundary on a statically-rendered page — everything inside it
+        is client-rendered. The fallback is the same view with no category
+        filter, so the served HTML has the hero, every post card and their
+        links (not just the hero); the interactive version takes over on
+        hydration. */}
+      <Suspense fallback={<BlogPageView {...viewProps} initialCategory="All" />}>
+        <BlogPageClient {...viewProps} />
       </Suspense>
       <div className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-12">
         <TransportAssistanceBanner placement="travel-stories" />

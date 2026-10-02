@@ -28,6 +28,7 @@ import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TrustSection } from "@/components/common/TrustSection";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
 import { formatINR } from "@/lib/accents";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { parseJson } from "@/lib/tours/content";
@@ -130,23 +131,28 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   const relatedDestinations = activity.destinations.map((d) => d.destination);
 
-  const relatedTours: DestinationTour[] = activity.tours.map(({ tour: t }) => ({
-    badge: t.badge ?? "FEATURED",
-    bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
-      ? (t.badgeColor as (typeof BADGE_COLORS)[number])
-      : "green",
-    seed: t.id,
-    image: t.coverImage ?? undefined,
-    bookHref: `/tours/${t.slug}`,
-    whatsappHref: "#",
-    t: t.title,
-    d: `${t.duration - 1}N / ${t.duration}D`,
-    places: t.destinations.map((td) => td.destination.name).join(", "),
-    r: t.rating.toFixed(1),
-    n: String(t.reviewCount),
-    old: t.priceWas ? formatINR(t.priceWas) : undefined,
-    p: formatINR(t.priceFrom),
-  }));
+  const relatedTours: DestinationTour[] = activity.tours
+    .map(({ tour }) => tour)
+    .sort(compareToursForCards)
+    .map((t) => ({
+      badge: t.badge ?? "FEATURED",
+      bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
+        ? (t.badgeColor as (typeof BADGE_COLORS)[number])
+        : "green",
+      category: t.category,
+      seed: t.id,
+      image: t.coverImage ?? undefined,
+      bookHref: `/tours/${t.slug}`,
+      whatsappHref: "#",
+      t: t.title,
+      d: `${t.duration - 1}N / ${t.duration}D`,
+      places: t.destinations.map((td) => td.destination.name).join(", "),
+      r: t.rating.toFixed(1),
+      n: String(t.reviewCount),
+      old: t.priceWas ? formatINR(t.priceWas) : undefined,
+      p: formatINR(t.priceFrom),
+      minPersons: t.minPersons,
+    }));
 
   // Nearby Activities — derived from shared destinations, no new relation.
   const destinationIds = relatedDestinations.map((d) => d.id);
@@ -167,6 +173,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
             location: true,
             duration: true,
             price: true,
+            priceUnit: true,
             coverImage: true,
           },
         })
@@ -178,6 +185,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     location: a.location,
     duration: a.duration,
     price: a.price,
+    priceUnit: a.priceUnit,
     image: a.coverImage,
   }));
 
@@ -249,7 +257,13 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         image={activity.coverImage ?? "/hero/gulmarg-lg.webp"}
         imageMobile={activity.coverImageMobile}
         alt={activity.name}
-        aside={<HeroLeadCard source="activity-detail" buttonLabel="Enquire Now" />}
+        aside={
+          <HeroLeadCard
+            source="activity-detail"
+            buttonLabel="Enquire Now"
+            context={{ activitySlug: activity.slug, activityName: activity.name }}
+          />
+        }
       >
         <nav className="flex items-center gap-2 text-[14px] text-white/80" aria-label="Breadcrumb">
           <Link href="/" className="transition hover:text-white">
@@ -283,6 +297,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           location={activity.location}
           duration={activity.duration}
           price={activity.price}
+          priceUnit={activity.priceUnit}
           difficulty={activity.difficulty}
         />
 
@@ -331,7 +346,11 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* Featured Tours — moved here, right before Gallery */}
         {relatedTours.length > 0 && (
-          <DestinationDetailTours name={activity.name} tours={relatedTours} />
+          <DestinationDetailTours
+            name={activity.name}
+            tours={relatedTours}
+            title={`Tours where you can try ${activity.name}`}
+          />
         )}
 
         {/* 13 + 16. Gallery (60%) | Where to Experience This (40%) */}

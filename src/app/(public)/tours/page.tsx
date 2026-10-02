@@ -13,6 +13,7 @@ import { getPublicHeroStats } from "@/lib/publicHeroStats";
 import { packageOptionCard, tourCardOptions } from "@/lib/tours/cards";
 import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { getLiveTourCollections } from "@/lib/tours/collectionQueries";
+import { compareToursForCards } from "@/lib/tours/ordering";
 
 // 24h safety net — Tour mutations invalidate this page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -44,28 +45,32 @@ export default async function ToursPage() {
     getToursHeroSection(),
     getPublicHeroStats(),
     getLiveTourCollections(),
-    prisma.tour.findMany({
-      where: { published: true },
-      orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        badge: true,
-        badgeColor: true,
-        duration: true,
-        coverImage: true,
-        rating: true,
-        reviewCount: true,
-        priceFrom: true,
-        priceWas: true,
-        minPersons: true,
-        category: true,
-        region: true,
-        packageOptions: true,
-        destinations: { select: { destination: { select: { name: true } } } },
-      },
-    }),
+    prisma.tour
+      .findMany({
+        where: { published: true },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          bestseller: true,
+          badge: true,
+          badgeColor: true,
+          duration: true,
+          coverImage: true,
+          rating: true,
+          reviewCount: true,
+          priceFrom: true,
+          priceWas: true,
+          minPersons: true,
+          category: true,
+          region: true,
+          packageOptions: true,
+          destinations: { select: { destination: { select: { name: true } } } },
+        },
+      })
+      // "Popular" order: bestseller → rating → category tie-break → title
+      // (src/lib/tours/ordering.ts), so it never depends on DB row order.
+      .then((rows) => rows.sort(compareToursForCards)),
   ]);
 
   // ── Structured data (JSON-LD) ────────────────────────────────────────────

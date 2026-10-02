@@ -8,6 +8,7 @@ import {
   Trash2,
   Loader2,
   Lock,
+  Unlock,
   X,
   Hotel,
   Car,
@@ -193,6 +194,8 @@ export function BookingServicesClient({
   gstRates,
   canEdit,
   canViewProfit,
+  canUnlock,
+  isRelock,
 }: {
   booking: BookingData;
   gstRates: number[];
@@ -200,6 +203,11 @@ export function BookingServicesClient({
   canEdit: boolean;
   /** Admin/Superadmin only — company profit margin is not shown to Sales. */
   canViewProfit: boolean;
+  /** Admin/Superadmin only — may unlock locked services for corrections. */
+  canUnlock: boolean;
+  /** Services were unlocked before, so the next lock is a re-lock and the
+   *  customer email is optional. */
+  isRelock: boolean;
 }) {
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
@@ -229,7 +237,8 @@ export function BookingServicesClient({
   );
   // Lock flow dialog: "email" prompts for a missing email, "confirm" confirms the
   // lock. Replaces the old window.confirm() so we never use a browser alert.
-  const [dialog, setDialog] = useState<null | "email" | "confirm">(null);
+  const [dialog, setDialog] = useState<null | "email" | "confirm" | "unlock">(null);
+  const [unlocking, startUnlock] = useTransition();
   const [savingEmail, startSaveEmail] = useTransition();
   // Edit booking details (guest contact + trip/amount) — esp. for direct bookings.
   const [editOpen, setEditOpen] = useState(false);
@@ -397,10 +406,14 @@ export function BookingServicesClient({
     });
   }
 
-  function performLock() {
+  function performLock(sendEmail: boolean) {
     startLock(async () => {
       try {
-        const res = await fetch(`/api/bookings/${booking.id}/lock-services`, { method: "POST" });
+        const res = await fetch(`/api/bookings/${booking.id}/lock-services`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sendEmail }),
+        });
         const j = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
           emailed?: boolean;
@@ -423,6 +436,27 @@ export function BookingServicesClient({
         toast.success(
           j.emailed ? "Services locked. Summary emailed to customer." : "Services locked.",
         );
+        router.refresh();
+      } catch {
+        toast.error("An error occurred.");
+      }
+    });
+  }
+
+  // Admin correction: unlock services so they (and the itinerary and trip/amount
+  // details) can be edited again; re-locking goes through performLock.
+  function performUnlock() {
+    startUnlock(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${booking.id}/unlock-services`, { method: "POST" });
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          toast.error(j.error ?? "Failed to unlock services.");
+          return;
+        }
+        setLocked(false);
+        setDialog(null);
+        toast.success("Services unlocked — make your changes, then re-lock.");
         router.refresh();
       } catch {
         toast.error("An error occurred.");
@@ -734,14 +768,30 @@ export function BookingServicesClient({
               ) : (
                 <Lock className="w-4 h-4" />
               )}
-              Lock Services &amp; Email Summary
+              {isRelock ? "Re-lock Services" : "Lock Services & Email Summary"}
             </button>
           </div>
         )
       ) : (
-        <div className="flex items-center gap-2 justify-end text-xs text-muted-foreground">
-          <CheckCircle2 className="w-4 h-4 text-green-600" /> Services are locked. A summary was
-          emailed to the customer.
+        <div className="flex items-center gap-3 justify-end text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-600" /> Services are locked.
+          </span>
+          {canUnlock && (
+            <button
+              type="button"
+              onClick={() => setDialog("unlock")}
+              disabled={unlocking}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              {unlocking ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Unlock className="w-3.5 h-3.5" />
+              )}
+              Unlock for changes
+            </button>
+          )}
         </div>
       )}
 
@@ -752,9 +802,12 @@ export function BookingServicesClient({
           customerName={booking.lead?.name ?? booking.customer?.name ?? booking.guestName}
           savingEmail={savingEmail}
           locking={locking}
+          unlocking={unlocking}
+          isRelock={isRelock}
           onClose={() => setDialog(null)}
           onSaveEmail={saveEmailAndContinue}
           onConfirm={performLock}
+          onUnlock={performUnlock}
         />
       )}
 
@@ -1322,20 +1375,28 @@ function LockDialog({
   customerName,
   savingEmail,
   locking,
+  unlocking,
+  isRelock,
   onClose,
   onSaveEmail,
   onConfirm,
+  onUnlock,
 }: {
-  mode: "email" | "confirm";
+  mode: "email" | "confirm" | "unlock";
   initialEmail: string;
   customerName: string;
   savingEmail: boolean;
   locking: boolean;
+  unlocking: boolean;
+  isRelock: boolean;
   onClose: () => void;
   onSaveEmail: (email: string) => void;
-  onConfirm: () => void;
+  onConfirm: (sendEmail: boolean) => void;
+  onUnlock: () => void;
 }) {
   const [value, setValue] = useState(initialEmail);
+  // Re-lock only: whether to email the updated summary (first lock always does).
+  const [sendEmail, setSendEmail] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   function submitEmail(e: React.FormEvent) {
@@ -1358,7 +1419,43 @@ function LockDialog({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
       >
-        {mode === "email" ? (
+        {mode === "unlock" ? (
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                <Unlock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Unlock services?
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Services, the itinerary, travel dates, travellers, amount and discount become
+                editable again. The booking stays confirmed and payments are untouched. Re-lock when
+                you&apos;re done — you can choose then whether to email the customer the updated
+                summary.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onUnlock}
+                disabled={unlocking}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {unlocking ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Unlock className="w-3.5 h-3.5" />
+                )}
+                Unlock Services
+              </button>
+            </div>
+          </div>
+        ) : mode === "email" ? (
           <form onSubmit={submitEmail} className="space-y-4">
             <div>
               <h3 className="font-display font-bold text-foreground flex items-center gap-2">
@@ -1410,11 +1507,29 @@ function LockDialog({
                 <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Lock services?
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Services can no longer be edited and a booking summary will be emailed to{" "}
-                <span className="font-semibold text-foreground">{initialEmail}</span>. This cannot
-                be undone.
+                Services can no longer be edited until an admin unlocks them.
+                {!isRelock && (
+                  <>
+                    {" "}
+                    A booking summary will be emailed to{" "}
+                    <span className="font-semibold text-foreground">{initialEmail}</span>.
+                  </>
+                )}
               </p>
             </div>
+            {isRelock && (
+              <label className="flex items-start gap-2 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                />
+                <span>
+                  Email the updated summary to <span className="font-semibold">{initialEmail}</span>
+                </span>
+              </label>
+            )}
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
@@ -1425,7 +1540,7 @@ function LockDialog({
               </button>
               <button
                 type="button"
-                onClick={onConfirm}
+                onClick={() => onConfirm(!isRelock || sendEmail)}
                 disabled={locking}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
               >
@@ -1434,7 +1549,7 @@ function LockDialog({
                 ) : (
                   <Lock className="w-3.5 h-3.5" />
                 )}
-                Lock &amp; Email Summary
+                {!isRelock || sendEmail ? "Lock & Email Summary" : "Lock Services"}
               </button>
             </div>
           </div>

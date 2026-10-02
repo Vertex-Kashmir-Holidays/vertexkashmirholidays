@@ -17,14 +17,17 @@ interface BookingItineraryCardProps {
    *  export the agent-branded quotation PDF. */
   isB2bLead: boolean;
   leadItineraryId: string | null;
+  /** Converted lead's lock — opened and closed together with the booking's
+   *  services ("Unlock for changes" / re-lock), never separately. */
+  leadLocked: boolean;
   itinerary: { id: string; status: string } | null;
   /** Server checks `itinerary:create` (not `bookings:edit`) for this action. */
   canCreate: boolean;
 }
 
 // Booking-detail itinerary panel.
-//   • Lead-converted booking → links to the lead's finalised (locked) itinerary,
-//     read-only. No creation/editing here.
+//   • Lead-converted booking → links to the lead's finalised (locked) itinerary.
+//     Unlocking the booking's services also unlocks it for admin corrections.
 //   • Direct booking → generate / manage the booking's own itinerary; once the
 //     booking's services are locked it becomes view-only (history preserved).
 export function BookingItineraryCard({
@@ -33,6 +36,7 @@ export function BookingItineraryCard({
   isLeadConverted,
   isB2bLead,
   leadItineraryId,
+  leadLocked,
   itinerary,
   canCreate,
 }: BookingItineraryCardProps) {
@@ -63,8 +67,19 @@ export function BookingItineraryCard({
       {isLeadConverted ? (
         <div className="mt-2">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            This booking was converted from a lead — its itinerary is the lead&apos;s finalised plan
-            and is <strong className="text-foreground">read-only</strong>.
+            This booking was converted from a lead — its itinerary is the lead&apos;s finalised
+            plan.{" "}
+            {leadLocked ? (
+              <>
+                It is <strong className="text-foreground">locked</strong> — an admin can use
+                &ldquo;Unlock for changes&rdquo; on this booking to edit it.
+              </>
+            ) : (
+              <>
+                It is <strong className="text-amber-600 dark:text-amber-400">unlocked</strong> for
+                corrections — re-lock the booking&apos;s services when the changes are done.
+              </>
+            )}
           </p>
           {leadItineraryId ? (
             <Link
@@ -73,7 +88,8 @@ export function BookingItineraryCard({
               rel="noopener noreferrer"
               className={linkClass}
             >
-              <FileText className="w-4 h-4" /> View Itinerary <ArrowRight className="w-4 h-4" />
+              <FileText className="w-4 h-4" /> {leadLocked ? "View Itinerary" : "Edit Itinerary"}{" "}
+              <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
             <p className="mt-2 text-xs text-muted-foreground">

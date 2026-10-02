@@ -24,6 +24,7 @@ import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
 import { publishedPackageOptions } from "@/lib/tours/content";
+import { isOfferCurrent } from "@/lib/offers/content";
 import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
@@ -196,6 +197,7 @@ function composeNotes(
         transportModes?: string[];
         packageName?: string;
         offerName?: string;
+        activityName?: string;
       }
     | undefined,
 ): string | undefined {
@@ -236,6 +238,7 @@ function composeNotes(
       parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
   }
   if (context?.offerName) parts.push(`🎉 Offer: ${context.offerName}`);
+  if (context?.activityName) parts.push(`🎯 Activity: ${context.activityName}`);
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
   if (context?.packageName) parts.push(`Package: ${context.packageName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
@@ -390,8 +393,31 @@ export async function POST(req: NextRequest) {
           id: true,
           name: true,
           crmTourId: true,
+          endDate: true,
           packages: { where: { published: true }, select: { name: true } },
         },
+      })
+    : null;
+  // An ended offer's page hides its enquiry form, but a page loaded before the
+  // end date can still submit — refuse it rather than take a lead for dates
+  // that have passed (same IST cut-off as the public listings).
+  if (leadOffer && !isOfferCurrent(leadOffer.endDate)) {
+    return NextResponse.json(
+      {
+        error:
+          "Sorry — this offer has ended and is no longer taking bookings. Please see our current offers at /offers.",
+        offerEnded: true,
+        offersHref: "/offers",
+      },
+      { status: 410 },
+    );
+  }
+  // Activity detail page — same rule: only a real, published activity is
+  // named in the notes, by its DB name (never the client-sent display copy).
+  const leadActivity = context?.activitySlug
+    ? await prisma.activity.findFirst({
+        where: { slug: context.activitySlug, published: true },
+        select: { name: true },
       })
     : null;
   const packageName = !context?.packageName
@@ -420,7 +446,14 @@ export async function POST(req: NextRequest) {
       notes: composeNotes(
         message,
         // offerName from the DB, never the client-sent display copy.
-        context ? { ...context, packageName, offerName: leadOffer?.name } : undefined,
+        context
+          ? {
+              ...context,
+              packageName,
+              offerName: leadOffer?.name,
+              activityName: leadActivity?.name,
+            }
+          : undefined,
       ),
       // Trip Planner structured intent — WHAT the customer wants, separate
       // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")

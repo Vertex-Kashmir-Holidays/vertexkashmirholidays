@@ -140,6 +140,9 @@ export function LeadForm({
       const pkg = context.packageName ? ` — ${context.packageName} package` : "";
       return `${greeting}I'm interested in the ${context.offerName}${dates}${pkg}. Please share details.`;
     }
+    // Activity detail page — name the activity being viewed.
+    if (context?.activityName)
+      return `${greeting}I'd like to book ${context.activityName}. Can you help with availability and rates?`;
     // Package-option enquiry (Tour.packageOptions) — name the chosen package.
     if (context?.tourName && context.packageName)
       return `${greeting}I'm interested in the "${context.tourName}" — ${context.packageName} package. Please share details and availability.`;
@@ -189,6 +192,8 @@ export function LeadForm({
         error?: string;
         blocked?: boolean;
         whatsapp?: string;
+        offerEnded?: boolean;
+        offersHref?: string;
         fieldErrors?: Record<string, string[] | undefined>;
         id?: string;
       };
@@ -200,6 +205,15 @@ export function LeadForm({
           toast.error(json.error || "Your query is already in progress.", {
             duration: 8000,
             action: { label: "WhatsApp", onClick: () => window.open(wa, "_blank") },
+          });
+          return;
+        }
+        // Ended Occasion Offer (410) — point to the current offers.
+        if (json.offerEnded && json.offersHref) {
+          const href = json.offersHref;
+          toast.error(json.error || "This offer has ended.", {
+            duration: 8000,
+            action: { label: "See current offers", onClick: () => (window.location.href = href) },
           });
           return;
         }

@@ -535,7 +535,7 @@ export function buildBlogPosting(post: {
   coverImage?: string | null;
   author?: string | null;
   publishedAt?: Date | null;
-  updatedAt?: Date;
+  contentUpdatedAt?: Date | null;
 }) {
   return {
     "@context": "https://schema.org",
@@ -552,7 +552,29 @@ export function buildBlogPosting(post: {
     // (public)/layout.tsx, instead of inlining a duplicate Organization object.
     publisher: { "@id": `${siteUrl}/#organization` },
     datePublished: post.publishedAt?.toISOString(),
-    dateModified: post.updatedAt?.toISOString(),
+    // Last real content edit (not updatedAt, which any script write bumps).
+    dateModified: (post.contentUpdatedAt ?? post.publishedAt)?.toISOString(),
+  };
+}
+
+// /blog listing — the Blog itself, with each published post as a blogPost.
+export function buildBlog(opts: {
+  name: string;
+  posts: { title: string; slug: string; publishedAt?: Date | null }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${siteUrl}/blog#blog`,
+    name: opts.name,
+    url: `${siteUrl}/blog`,
+    publisher: { "@id": `${siteUrl}/#organization` },
+    blogPost: opts.posts.map((p) => ({
+      "@type": "BlogPosting",
+      headline: p.title,
+      url: `${siteUrl}/blog/${p.slug}`,
+      ...(p.publishedAt ? { datePublished: p.publishedAt.toISOString() } : {}),
+    })),
   };
 }
 

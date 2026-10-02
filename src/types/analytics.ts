@@ -22,6 +22,11 @@ export type WhatsAppSource =
   | "b2b_page"
   | "trip_planner_hotel_carousel"
   | "trip_planner_hero"
+  | "trip_planner_closing_cta"
+  | "tours_card"
+  | "activities_card"
+  | "blog_body"
+  | "blog_about_cta"
   | "tour_category_hero"
   | "promo_banner"
   | "strip_banner"
@@ -32,7 +37,12 @@ export type WhatsAppSource =
   | "offer_package_card"
   | "offer_mobile_bar"
   | "offer_closing_cta"
-  | "destinations_cta";
+  | "destinations_cta"
+  // CMS-authored "whatsapp:" CTA links (CmsCtaLink).
+  | "home_hero"
+  | "home_section_cta"
+  | "about_hero"
+  | "contact_social_cta";
 
 // Trip Planner structured-intent params, reused by lead_submit/whatsapp_click/
 // trip_request_start below — kept as plain string[]/string here (not imported

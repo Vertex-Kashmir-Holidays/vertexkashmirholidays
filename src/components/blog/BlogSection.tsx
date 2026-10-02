@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { renderAccents } from "@/lib/accents";
 import { imgSrc } from "@/lib/placeholder";
 import type { BlogCardData, SectionHeading } from "@/types/home";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 interface BlogSectionProps {
   heading: SectionHeading;
@@ -44,12 +45,13 @@ export function BlogSection({ heading, blogs }: BlogSectionProps) {
           style={{ "--rd": "0.16s" } as React.CSSProperties}
         >
           {heading.ctaLabel && (
-            <Link
+            <CmsCtaLink
               href={heading.ctaHref ?? "#"}
+              source="home_section_cta"
               className="text-sm font-bold text-primary hover:underline"
             >
               {heading.ctaLabel}
-            </Link>
+            </CmsCtaLink>
           )}
           {blogs.length > 1 && (
             <div className="flex gap-2">

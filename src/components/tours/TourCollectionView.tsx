@@ -50,6 +50,7 @@ export const getTourCollectionPage = cache(async (slug: string) => {
           id: true,
           slug: true,
           title: true,
+          category: true,
           badge: true,
           badgeColor: true,
           duration: true,
@@ -114,6 +115,7 @@ export async function TourCollectionView({ slug }: { slug: string }) {
   // published option (each deep-linking to that option on the tour page).
   const items = c.tours.flatMap((t) => {
     const common = {
+      category: t.category,
       bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
         ? (t.badgeColor as (typeof BADGE_COLORS)[number])
         : ("green" as const),

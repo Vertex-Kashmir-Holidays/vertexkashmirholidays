@@ -90,6 +90,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: `${SITE_URL}/plan-your-kashmir-trip`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/activities`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
     { url: `${SITE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     {
       url: `${SITE_URL}/careers`,

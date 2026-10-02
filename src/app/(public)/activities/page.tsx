@@ -43,6 +43,7 @@ export default async function ActivitiesPage() {
         location: true,
         duration: true,
         price: true,
+        priceUnit: true,
         coverImage: true,
       },
     }),
@@ -98,6 +99,7 @@ export default async function ActivitiesPage() {
           location: a.location,
           duration: a.duration,
           price: a.price,
+          priceUnit: a.priceUnit,
           image: a.coverImage,
         }))}
       />

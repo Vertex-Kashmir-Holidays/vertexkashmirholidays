@@ -142,6 +142,11 @@ export const leadContextSchema = z.object({
   offerSlug: z.string().max(160).optional(),
   offerName: z.string().max(200).optional(),
   offerDates: z.string().max(60).optional(),
+  // Activity detail pages — activitySlug is looked up server-side against a
+  // published activity and its DB name goes into the lead notes; activityName
+  // is display-only (the WhatsApp text).
+  activitySlug: z.string().max(160).optional(),
+  activityName: z.string().max(200).optional(),
 });
 
 export type LeadContext = z.infer<typeof leadContextSchema>;

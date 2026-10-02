@@ -1,11 +1,14 @@
 // src/components/activities/ActivityQuickFacts.tsx
+import type { ActivityPriceUnit } from "@prisma/client";
 import { formatINR } from "@/lib/accents";
+import { PRICE_UNIT_LABELS } from "@/lib/activities/priceUnit";
 import { BadgeIndianRupee, Clock, Gauge, MapPin } from "lucide-react";
 
 interface ActivityQuickFactsProps {
   location: string | null;
   duration: string | null;
   price: number | null;
+  priceUnit: ActivityPriceUnit;
   difficulty: string | null;
 }
 
@@ -14,13 +17,20 @@ export function ActivityQuickFacts({
   location,
   duration,
   price,
+  priceUnit,
   difficulty,
 }: ActivityQuickFactsProps) {
   const facts = [
     ...(location ? [{ icon: MapPin, label: "Location", value: location }] : []),
     ...(duration ? [{ icon: Clock, label: "Duration", value: duration }] : []),
     ...(price != null
-      ? [{ icon: BadgeIndianRupee, label: "From", value: `${formatINR(price)} / person` }]
+      ? [
+          {
+            icon: BadgeIndianRupee,
+            label: "From",
+            value: `${formatINR(price)} ${PRICE_UNIT_LABELS[priceUnit]}`,
+          },
+        ]
       : []),
     ...(difficulty ? [{ icon: Gauge, label: "Difficulty", value: difficulty }] : []),
   ];

@@ -13,6 +13,7 @@ import {
   buildFAQPage,
 } from "@/components/seo/JsonLd";
 import { formatINR } from "@/lib/accents";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { imgSrc } from "@/lib/placeholder";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
@@ -120,7 +121,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const post = await getBlogPost(slug);
   if (!post || !post.published) notFound();
 
-  const [relatedRaw, tour] = await Promise.all([
+  const [relatedRaw, sidebarTours] = await Promise.all([
     prisma.blog.findMany({
       where: {
         published: true,
@@ -130,13 +131,27 @@ export default async function BlogPostPage({ params }: PageProps) {
       orderBy: { publishedAt: "desc" },
       take: 4,
     }),
-    prisma.tour.findFirst({
+    prisma.tour.findMany({
       // Kashmir travel blog — its featured-tour card stays Kashmir/Ladakh.
       where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
-      orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
       include: { destinations: { include: { destination: { select: { name: true } } } } },
     }),
   ]);
+
+  // Sidebar "Plan this trip with us" tour: the first tour (compareToursForCards
+  // order) whose TourCategory matches the post's blog category ("Honeymoon" →
+  // HONEYMOON, "Adventure" → ADVENTURE); else the post's first curated related
+  // tour that's published; else the first tour overall.
+  const postTourCategory = post.category?.trim().toUpperCase().replace(/\s+/g, "_");
+  const orderedTours = sidebarTours.sort(compareToursForCards);
+  const curatedTour = parseRelatedTours(post.relatedTours)
+    .map((entry) => orderedTours.find((t) => t.id === entry.tourId))
+    .find((t) => t !== undefined);
+  const tour =
+    orderedTours.find((t) => t.category === postTourCategory) ??
+    curatedTour ??
+    orderedTours[0] ??
+    null;
 
   // Fall back to most-recent posts if the category has fewer than 4 siblings.
   let related = relatedRaw;
@@ -174,6 +189,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
             ? (t.badgeColor as (typeof BADGE_COLORS)[number])
             : ("green" as const),
+          category: t.category,
           image: t.coverImage ?? undefined,
           detailHref: `/tours/${t.slug}`,
           bookHref: `/booking?tour=${t.slug}`,
@@ -194,7 +210,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const fullToc = [
     ...toc,
     ...(faqs.length > 0 ? [{ label: "FAQs", href: "#faqs" }] : []),
-    ...(tour ? [{ label: "Related Tours", href: "#tourCard" }] : []),
+    ...(curatedRelatedTours.length > 0 ? [{ label: "Related Tours", href: "#related" }] : []),
   ];
 
   const breadcrumbJsonLd = buildBreadcrumbList([
@@ -222,6 +238,11 @@ export default async function BlogPostPage({ params }: PageProps) {
         author={{ name: post.author ?? "Vertex Kashmir Holidays", role: post.authorRole, avatar }}
         readTime={post.readTime ? `${post.readTime} min read` : null}
         date={longDate(post.publishedAt)}
+        updated={
+          longDate(post.contentUpdatedAt) !== longDate(post.publishedAt)
+            ? longDate(post.contentUpdatedAt)
+            : null
+        }
         crumbs={[
           { label: "Home", href: "/" },
           { label: "Blog", href: "/blog" },
@@ -235,7 +256,13 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="grid items-start gap-9 lg:grid-cols-[1fr_280px]">
           <article className="min-w-0">
             <BlogPostQuickAnswer html={post.quickAnswer} />
-            <BlogPostBody html={html} />
+            <BlogPostBody
+              html={html}
+              whatsapp={{
+                source: "blog_body",
+                defaultMessage: `Hi! I'm reading "${post.title}" on your blog and would like help planning my Kashmir trip.`,
+              }}
+            />
             {faqs.length > 0 && (
               <section
                 id="faqs"
@@ -291,7 +318,6 @@ export default async function BlogPostPage({ params }: PageProps) {
                     route: tour.destinations.map((d) => d.destination.name).join(" · "),
                     rating: tour.rating.toFixed(1),
                     reviews: `${tour.reviewCount} reviews`,
-                    note: "Free cancellation up to 30 days",
                   }
                 : undefined
             }
