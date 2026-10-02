@@ -62,7 +62,7 @@ export function BlogPostRelated({ posts, title = "Keep Reading" }: BlogPostRelat
 
   return (
     <motion.section
-      id="related"
+      id="related-posts"
       className="mt-12"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}

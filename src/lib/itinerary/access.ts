@@ -17,7 +17,7 @@ export interface ItineraryForAccess {
   ownerId: string;
   leadId: string | null;
   locked: boolean;
-  lead?: { assignedToId: string | null; locked: boolean } | null;
+  lead?: { assignedToId: string | null; locked: boolean; status?: string } | null;
   // Direct-booking link (mutually exclusive with leadId in practice).
   bookingId?: string | null;
   booking?: { servicesLocked: boolean } | null;
@@ -46,11 +46,13 @@ export function resolveItineraryAccess(
   if (it.leadId) {
     const assigned = it.lead?.assignedToId === user.id;
     // Admins may VIEW any lead-linked itinerary, but only the lead's assignee may
-    // EDIT it — managing a lead (incl. its itinerary) is the assignee's job; an
-    // admin's only lead power is reassignment.
+    // EDIT it while the lead is open — managing a lead is the assignee's job.
+    // Exception: a converted lead an admin has unlocked for corrections (via the
+    // booking's "Unlock for changes") is editable by admins too.
     const canView = admin || assigned;
     const locked = it.locked || (it.lead?.locked ?? false);
-    return { canView, canEdit: assigned && !locked, locked };
+    const adminCorrection = admin && it.lead?.status === "CONVERTED";
+    return { canView, canEdit: (assigned || adminCorrection) && !locked, locked };
   }
 
   // Direct-booking itinerary: staff-managed (owner or admin). Editable until the

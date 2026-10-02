@@ -28,23 +28,29 @@ interface BlogPageClientProps {
   trending: BlogTrendingData[];
 }
 
-export function BlogPageClient({
+// Reads ?category= client-side (not via the page's searchParams prop) so /blog
+// can stay statically rendered — reading searchParams server-side forces the
+// whole route dynamic on every request regardless of `revalidate`. The page's
+// Suspense fallback renders <BlogPageView initialCategory="All"> directly, so
+// the served HTML still carries the full grid (every post link) for crawlers.
+export function BlogPageClient(props: BlogPageClientProps) {
+  const categorySlug = useSearchParams().get("category");
+  const initialCategory = categorySlug
+    ? (props.categories.find((c) => c.slug === categorySlug)?.name ?? "All")
+    : "All";
+  // Keyed so a client-side navigation to another ?category= resets the view.
+  return <BlogPageView key={initialCategory} {...props} initialCategory={initialCategory} />;
+}
+
+export function BlogPageView({
   content,
   featured,
   articles,
   chips,
   categories,
   trending,
-}: BlogPageClientProps) {
-  // Read client-side (not via the page's searchParams prop) so this page can
-  // stay statically rendered — reading searchParams server-side forces the
-  // whole route dynamic on every request regardless of `revalidate`.
-  const searchParams = useSearchParams();
-  const categorySlug = searchParams.get("category");
-  const initialCategory = categorySlug
-    ? (categories.find((c) => c.slug === categorySlug)?.name ?? "All")
-    : "All";
-
+  initialCategory,
+}: BlogPageClientProps & { initialCategory: string }) {
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);

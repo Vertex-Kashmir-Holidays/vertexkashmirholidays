@@ -25,6 +25,8 @@ export type WhatsAppSource =
   | "trip_planner_closing_cta"
   | "tours_card"
   | "activities_card"
+  | "blog_body"
+  | "blog_about_cta"
   | "tour_category_hero"
   | "promo_banner"
   | "strip_banner"

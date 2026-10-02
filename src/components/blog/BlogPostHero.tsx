@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, Calendar, Link2, Check } from "lucide-react";
+import { Clock, Calendar, Link2, Check, RefreshCw } from "lucide-react";
 import { WhatsAppIcon, FacebookIcon, TwitterIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
@@ -24,6 +24,8 @@ interface BlogPostHeroProps {
   };
   readTime: string | null;
   date: string | null;
+  /** Last content edit, shown only when it falls on a later day than `date`. */
+  updated: string | null;
   crumbs: Array<{ label: string; href: string }>;
 }
 
@@ -36,6 +38,7 @@ export function BlogPostHero({
   author,
   readTime,
   date,
+  updated,
   crumbs,
 }: BlogPostHeroProps) {
   const [shareUrl, setShareUrl] = useState("");
@@ -175,6 +178,12 @@ export function BlogPostHero({
                 <span className="flex items-center gap-1.5 text-[14px]">
                   <Calendar className="h-4 w-4" strokeWidth={2} />
                   {date}
+                </span>
+              )}
+              {updated && (
+                <span className="flex items-center gap-1.5 text-[14px]">
+                  <RefreshCw className="h-4 w-4" strokeWidth={2} />
+                  Updated {updated}
                 </span>
               )}
             </div>

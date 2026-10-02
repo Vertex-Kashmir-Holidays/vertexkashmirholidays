@@ -1217,6 +1217,10 @@ model Blog {
   ogImage          String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  // Last real content edit (title, body, Quick Answer or excerpt) — set by the
+  // admin PATCH route only, so scripts touching the row don't move it. Drives
+  // BlogPosting.dateModified and the post hero's "Updated" line.
+  contentUpdatedAt DateTime?
   authorImage      String?
   featured         Boolean   @default(false)
   trending         Boolean   @default(false)

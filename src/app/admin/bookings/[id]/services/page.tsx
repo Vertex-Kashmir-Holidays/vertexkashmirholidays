@@ -8,6 +8,8 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { wasServicesUnlocked } from "@/lib/bookings/audit";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
 import {
   BookingServicesClient,
@@ -41,6 +43,8 @@ export default async function BookingServicesPage({ params }: PageProps) {
     can(role, "itinerary", "create"),
   ]);
   const canViewProfit = role === "SUPERADMIN" || role === "ADMIN";
+  // Unlocking (services or the converted lead's itinerary) is an admin-only correction.
+  const canUnlock = canEdit && isAdminRole(role);
 
   const booking = await prisma.booking.findFirst({
     where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
@@ -58,6 +62,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
           email: true,
           endDate: true,
           b2bAgentId: true,
+          locked: true,
           assignedTo: { select: { name: true, email: true } },
           itinerary: { select: { id: true } },
         },
@@ -69,6 +74,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
   if (!booking) notFound();
 
   const lead = booking.leads[0] ?? null;
+  const isRelock = await wasServicesUnlocked(booking.id);
 
   const data = {
     id: booking.id,
@@ -175,6 +181,8 @@ export default async function BookingServicesPage({ params }: PageProps) {
             gstRates={gstRates}
             canEdit={canEdit}
             canViewProfit={canViewProfit}
+            canUnlock={canUnlock}
+            isRelock={isRelock}
           />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}
@@ -185,6 +193,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
             isLeadConverted={!!lead}
             isB2bLead={!!lead?.b2bAgentId}
             leadItineraryId={lead?.itinerary?.id ?? null}
+            leadLocked={lead?.locked ?? false}
             itinerary={booking.itinerary ?? null}
             canCreate={canCreateItinerary}
           />

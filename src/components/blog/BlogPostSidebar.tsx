@@ -4,8 +4,9 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Star, CheckCircle2, ArrowRight, Clock } from "lucide-react";
+import { MapPin, Star, ArrowRight, Clock } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
+import { NewsletterSignupForm } from "@/components/blog/NewsletterSignupForm";
 
 interface BlogPostSidebarProps {
   toc: Array<{ label: string; href: string }>;
@@ -28,7 +29,6 @@ interface BlogPostSidebarProps {
     route: string;
     rating: string;
     reviews: string;
-    note: string;
   };
 }
 
@@ -110,10 +110,6 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
               />
               {relatedTour.rating} ({relatedTour.reviews})
             </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" strokeWidth={2} />
-              {relatedTour.note}
-            </li>
           </ul>
           <Link
             href={relatedTour.href}
@@ -143,21 +139,7 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
         <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
           Weekly travel tips, exclusive deals, and hidden gems — straight from the valley.
         </p>
-        <form className="mt-3.5 space-y-2.5" onSubmit={(e) => e.preventDefault()}>
-          <input
-            type="email"
-            required
-            className="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-[14px] text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/20"
-            placeholder="Enter your email"
-          />
-          <motion.button
-            className="w-full rounded-lg bg-primary py-2.5 text-[14px] font-bold text-primary-foreground transition hover:brightness-110"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Subscribe
-          </motion.button>
-        </form>
+        <NewsletterSignupForm />
         <p className="mt-3 flex items-center gap-1.5 text-[12px] text-muted-foreground">
           <Clock className="h-3.5 w-3.5" strokeWidth={2} />
           No spam. Unsubscribe anytime.
