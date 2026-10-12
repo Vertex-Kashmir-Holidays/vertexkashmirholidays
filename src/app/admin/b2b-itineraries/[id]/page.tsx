@@ -10,6 +10,7 @@ import { genId, itineraryDataSchema, type ItineraryData } from "@/types/itinerar
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { getPdfTrustContent, toItineraryWhyChoose } from "@/lib/itinerary/pdfTrustContent";
 import { isB2bAgentWhiteLabelEligible } from "@/lib/b2b/whiteLabelEligibility";
+import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 
 export const metadata: Metadata = { title: "Edit B2B Itinerary — Admin" };
 export const dynamic = "force-dynamic";
@@ -34,6 +35,9 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
           id: true,
           name: true,
           b2bAgentId: true,
+          locked: true,
+          status: true,
+          bookingId: true,
           b2bAgent: { select: { agencyName: true, agencyLogoUrl: true, phone: true, email: true } },
         },
       },
@@ -44,7 +48,14 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
   const parsed = itineraryDataSchema.safeParse(record.data);
   let data: ItineraryData = parsed.success ? parsed.data : DEFAULT_ITINERARY_DATA;
 
-  const canSave = await can(role, "itinerary", "edit");
+  // Converted → locked with its booking; an admin may edit again while the
+  // booking is unlocked for changes (resolveB2bItineraryAccess — the save API
+  // enforces the same rule).
+  const access = resolveB2bItineraryAccess(
+    { locked: record.locked, lead: record.lead },
+    { role, canEditItineraries: await can(role, "itinerary", "edit") },
+  );
+  const canSave = access.canEdit;
 
   // Same backfills as the normal itinerary editor page — itineraries saved
   // before these fields existed parse them as `[]`. Not written back until
@@ -73,6 +84,41 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
           Back to B2B request: {record.lead.name}
         </Link>
       </div>
+      {access.converted && (
+        <p
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            access.locked
+              ? "border-border bg-muted text-muted-foreground"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          }`}
+        >
+          {access.locked ? (
+            <>
+              This request is converted — its itinerary is{" "}
+              <strong className="text-foreground">locked</strong> with the booking and is
+              view-only. An admin can use &ldquo;Unlock for changes&rdquo; on{" "}
+            </>
+          ) : access.canEdit ? (
+            <>
+              <strong>Unlocked for corrections.</strong> Save your changes, then re-lock the
+              services on{" "}
+            </>
+          ) : (
+            <>Unlocked for corrections — only an admin can edit it. See </>
+          )}
+          {record.lead.bookingId ? (
+            <Link
+              href={`/admin/bookings/${record.lead.bookingId}/services`}
+              className="font-semibold underline underline-offset-2"
+            >
+              the booking
+            </Link>
+          ) : (
+            "the booking"
+          )}
+          {access.locked ? " to edit it." : "."}
+        </p>
+      )}
       <B2bItineraryEditor
         id={record.id}
         initialData={data}

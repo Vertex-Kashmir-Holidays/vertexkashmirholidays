@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       services: true,
       payments: { select: { amount: true, type: true, gstAmount: true } },
       user: { select: { email: true } },
-      leads: { take: 1, select: { id: true, locked: true, status: true, b2bAgentId: true } },
+      leads: { take: 1, select: { id: true, locked: true, status: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // A lead-converted booking's itinerary is the lead's: locking the booking
   // re-locks a lead an admin had unlocked for corrections (see unlock-services).
   const lead = booking.leads[0];
-  const relockLead = !!lead && !lead.b2bAgentId && lead.status === "CONVERTED" && !lead.locked;
+  const relockLead = !!lead && lead.status === "CONVERTED" && !lead.locked;
   await prisma.$transaction([
     prisma.booking.update({
       where: { id },

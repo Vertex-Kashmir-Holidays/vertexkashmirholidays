@@ -65,7 +65,8 @@ export default async function AdminB2bRequestDetailPage({
       b2bAgentId: true,
       bookingId: true,
       b2bAgent: { select: { id: true, name: true, email: true, agencyName: true } },
-      itinerary: { select: { id: true, status: true, updatedAt: true } },
+      locked: true,
+      itinerary: { select: { id: true, status: true, updatedAt: true, locked: true } },
     },
   });
   if (!lead || lead.b2bAgentId === null) notFound();
@@ -73,6 +74,8 @@ export default async function AdminB2bRequestDetailPage({
   const canManageItinerary = await can(role, "itinerary", "create");
   const canConvert = await can(role, "b2bRequests", "edit");
   const itinerarySent = isItinerarySent(lead.itinerary?.status);
+  // Converted → locked with the booking, until an admin unlocks it for changes.
+  const itineraryLocked = lead.locked || !!lead.itinerary?.locked;
   const settings = canConvert ? await getSiteSettings() : null;
   const gstRates = parseGstRates(settings?.gstRates);
 
@@ -149,7 +152,7 @@ export default async function AdminB2bRequestDetailPage({
                 className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted"
               >
                 <FileEdit className="h-4 w-4" />
-                Edit Itinerary
+                {itineraryLocked ? "View Itinerary" : "Edit Itinerary"}
               </Link>
             )}
           </div>

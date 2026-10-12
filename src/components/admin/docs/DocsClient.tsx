@@ -75,7 +75,17 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
         toast.error(error || "Save failed.");
         return false;
       }
-      toast.success(modal.doc ? "Document updated." : "Document uploaded.");
+      // A new B2B document also emails every active agent (see the upload API).
+      const { notifiedAgents = 0 } = modal.doc
+        ? { notifiedAgents: 0 }
+        : ((await res.json().catch(() => ({}))) as { notifiedAgents?: number });
+      toast.success(
+        modal.doc
+          ? "Document updated."
+          : notifiedAgents > 0
+            ? `Document uploaded — emailing ${notifiedAgents} active B2B agent${notifiedAgents === 1 ? "" : "s"}.`
+            : "Document uploaded.",
+      );
       router.refresh();
       return true;
     } catch {

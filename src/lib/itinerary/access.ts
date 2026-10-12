@@ -71,3 +71,21 @@ export function resolveItineraryAccess(
   const canView = admin || owned;
   return { canView, canEdit: canView && !it.locked, locked: it.locked };
 }
+
+/**
+ * B2B itineraries (managed under /admin/b2b-itineraries; not assignee-scoped
+ * like a normal lead's). Same lifecycle as a customer's:
+ *   • before the request is converted — anyone allowed to edit itineraries;
+ *   • once converted — locked with the booking, view-only;
+ *   • while an admin has the booking "Unlocked for changes" — admins may edit;
+ *     re-locking the booking's services locks it again.
+ */
+export function resolveB2bItineraryAccess(
+  it: { locked: boolean; lead: { locked: boolean; status: string } },
+  user: { role: Role | string; canEditItineraries: boolean },
+): { canEdit: boolean; locked: boolean; converted: boolean } {
+  const locked = it.locked || it.lead.locked;
+  const converted = it.lead.status === "CONVERTED";
+  const allowed = converted ? isAdminRole(user.role) : user.canEditItineraries;
+  return { canEdit: allowed && !locked, locked, converted };
+}

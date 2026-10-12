@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/permissions";
 import { itineraryDataSchema } from "@/types/itinerary";
 import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import type { Prisma } from "@prisma/client";
+import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ type Params = { params: Promise<{ id: string }> };
 async function loadB2bItinerary(id: string) {
   const record = await prisma.itinerary.findUnique({
     where: { id },
-    include: { lead: { select: { id: true, b2bAgentId: true } } },
+    include: { lead: { select: { id: true, b2bAgentId: true, locked: true, status: true } } },
   });
   if (!record || record.lead?.b2bAgentId == null) return null;
   return record;
@@ -61,6 +62,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const existing = await loadB2bItinerary(id);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Converted → locked with its booking; editable again only by an admin while
+  // the booking is unlocked for changes (same rule as a customer's itinerary).
+  const access = resolveB2bItineraryAccess(
+    { locked: existing.locked, lead: existing.lead! },
+    { role: guard.user.role, canEditItineraries: true },
+  );
+  if (!access.canEdit) {
+    return NextResponse.json(
+      {
+        error: access.locked
+          ? 'This itinerary is locked with its booking. An admin can use "Unlock for changes" on the booking to edit it.'
+          : "Only an admin can edit a converted request's itinerary.",
+        code: "ITINERARY_LOCKED",
+      },
+      { status: 423 },
+    );
+  }
 
   let body: unknown;
   try {

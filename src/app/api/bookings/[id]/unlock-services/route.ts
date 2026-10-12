@@ -30,13 +30,14 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: {
       id: true,
       servicesLocked: true,
-      leads: { take: 1, select: { id: true, locked: true, status: true, b2bAgentId: true } },
+      leads: { take: 1, select: { id: true, locked: true, status: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-  // B2B requests are managed via their own pages, never unlocked from here.
+  // Same for a B2B request's booking: its request and itinerary unlock with it
+  // (edited in the B2B itinerary editor — see resolveB2bItineraryAccess).
   const lead = booking.leads[0];
-  const unlockLead = !!lead && !lead.b2bAgentId && lead.status === "CONVERTED" && lead.locked;
+  const unlockLead = !!lead && lead.status === "CONVERTED" && lead.locked;
   if (!booking.servicesLocked && !unlockLead) return NextResponse.json({ ok: true });
 
   const performedByName = (guard.user.name ?? guard.user.email) as string;
