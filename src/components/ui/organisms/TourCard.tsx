@@ -207,11 +207,9 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
 
             {/* Price Section */}
             {tour.priceHidden ? (
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-[12px] leading-snug text-muted-foreground">
-                  Price on request
-                  <br />
-                  for your dates
+              <div className="mt-3 flex flex-col items-center gap-2 text-center">
+                <span className="whitespace-nowrap text-[12px] text-muted-foreground">
+                  Price on request for your dates
                 </span>
                 <RequestQuoteButton
                   tourName={tour.t}

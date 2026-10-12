@@ -333,7 +333,7 @@ export function CampaignHero({
               PLAN YOUR TRIP
             </p>
             <h2 className="h-display mt-3 text-[24px] font-bold leading-snug text-white">
-              Get a quote in 60 seconds
+              Get a quote in 15 mins
             </h2>
             <p className="mt-1.5 text-[14px] text-white/60">
               Free callback from our local expert within 30 minutes.

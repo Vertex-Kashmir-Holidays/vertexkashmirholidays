@@ -1902,7 +1902,7 @@ async function main() {
       heroCtaSecondaryLabel: "Watch Film",
       heroCtaSecondaryHref: "#",
       formKicker: "PLAN YOUR KASHMIR TRIP",
-      formTitle: "Get a quote in 60 seconds",
+      formTitle: "Get a quote in 15 mins",
       formSubtitle: "Free, no spam — real human on WhatsApp.",
       formButtonLabel: "Request Free Itinerary →",
       formNote: "12,248+ planned their trip this month",
