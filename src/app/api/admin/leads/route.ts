@@ -10,6 +10,7 @@ import {
   normalizeWhatsAppTokenParam,
   resolveWhatsAppAttributionToken,
 } from "@/lib/whatsappAttribution.server";
+import { resolveQualification } from "@/lib/leads/budgetBands.server";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,10 @@ const createSchema = z.object({
   // could have echoed back, per the "server stays authoritative" rule this
   // whole feature is built around.
   whatsappReference: z.string().trim().max(24).optional().or(z.literal("")),
+  // Lead qualification entered by staff (optional here) — validated like the
+  // public form's; otherwise a resolved WhatsApp reference's answers are used.
+  budgetBandKey: z.string().trim().max(20).optional().or(z.literal("")),
+  travelMonth: z.string().trim().max(10).optional().or(z.literal("")),
 });
 
 // Staff-only: create a fully-populated lead in one step.
@@ -75,8 +80,11 @@ export async function POST(req: NextRequest) {
     source: manualSource,
     tourId,
     packageName,
+    budgetBandKey,
+    travelMonth,
     ...rest
   } = parsed.data;
+  const staffQualification = await resolveQualification({ budgetBandKey, travelMonth });
   const performedByName = (guard.user.name ?? guard.user.email) as string;
   const performedById = guard.user.id as string;
 
@@ -146,6 +154,17 @@ export async function POST(req: NextRequest) {
           : {}),
         ...(resolved?.intent?.fromCity ? { fromCity: resolved.intent.fromCity } : {}),
         ...(resolved?.intent?.toCity ? { toCity: resolved.intent.toCity } : {}),
+        // Lead qualification: staff-entered values first, else the answers the
+        // visitor gave in the WhatsApp modal (carried on the reference token).
+        budgetBandKey:
+          staffQualification.budgetBandKey ?? resolved?.qualification?.budgetBandKey ?? null,
+        budgetBandLabel: staffQualification.budgetBandKey
+          ? staffQualification.budgetBandLabel
+          : (resolved?.qualification?.budgetBandLabel ?? null),
+        budgetBandDerived: staffQualification.budgetBandKey
+          ? false
+          : (resolved?.qualification?.budgetBandDerived ?? false),
+        travelMonth: staffQualification.travelMonth ?? resolved?.qualification?.travelMonth ?? null,
         email: email || undefined,
         notes: notes || undefined,
         startDate: startDate ? new Date(startDate) : undefined,

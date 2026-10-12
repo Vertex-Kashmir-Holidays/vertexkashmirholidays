@@ -1,3 +1,4 @@
+import { publicPriceFields } from "@/lib/tours/cards";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
             reviewCount: true,
             priceFrom: true,
             priceWas: true,
+            hidePrice: true,
             minPersons: true,
             destinations: { select: { destination: { select: { name: true } } } },
           },
@@ -68,5 +70,7 @@ export async function GET(req: NextRequest) {
       : null,
   ]);
 
-  return NextResponse.json({ tour, blog }, { headers: { "Cache-Control": "no-store" } });
+  // A price-on-request tour's stored price never leaves the server.
+  const publicTour = tour ? { ...tour, ...publicPriceFields(tour) } : null;
+  return NextResponse.json({ tour: publicTour, blog }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -17,6 +17,23 @@ export function canEditDriver(travelDate: Date | string, now: Date = new Date())
   return now.getTime() < travel.getTime() + ONE_DAY_MS;
 }
 
+/**
+ * `travelDate` range of bookings whose driver is due: the day before travel
+ * through the end of the travel day (travelDate − 1 day ≤ now < travelDate +
+ * 1 day — the same end-of-day arithmetic as canEditDriver). A booking in this
+ * window without driver details blocks staff with DriverDueGate until added.
+ */
+export function driverDueTravelDateRange(now: Date = new Date()): { gt: Date; lte: Date } {
+  return { gt: new Date(now.getTime() - ONE_DAY_MS), lte: new Date(now.getTime() + ONE_DAY_MS) };
+}
+
+export interface DriverDueBooking {
+  id: string;
+  guestName: string;
+  travelDate: string;
+  servicesLocked: boolean;
+}
+
 export interface DriverDetails {
   driverName: string;
   driverPhone: string;

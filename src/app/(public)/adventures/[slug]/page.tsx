@@ -20,6 +20,7 @@ import type {
   CampaignTestimonial,
   CampaignTier,
 } from '@/types/campaign';
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Campaign mutations invalidate this exact page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -55,7 +56,7 @@ const getCampaign = cache(async (slug: string) =>
       relatedFaqs: {
         where: { status: 'PUBLISHED' },
         orderBy: [{ featured: 'desc' }, { sortOrder: 'asc' }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   }),
@@ -147,7 +148,7 @@ export default async function CampaignPage({ params }: PageProps) {
     gallery: parse<string[]>(c.gallery, []),
     testimonials,
     faqsTitle: sanitizeInlineHtml(c.faqsTitle),
-    faqs: c.relatedFaqs,
+    faqs: c.relatedFaqs.map(toFaqPreview),
     finalTitle: c.finalTitle,
     finalSub: c.finalSub,
     finalCta: c.finalCta,

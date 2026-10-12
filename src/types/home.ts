@@ -72,6 +72,8 @@ export interface HomeTourData {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  /** Tour.hidePrice — the card shows "Request Quote" instead of a price. */
+  hidePrice: boolean;
   minPersons?: number;
 }
 

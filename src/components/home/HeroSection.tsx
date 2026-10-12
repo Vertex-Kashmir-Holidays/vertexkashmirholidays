@@ -29,6 +29,7 @@ import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { CmsCtaLink } from "@/components/common/CmsCtaLink";
+import { formatStatValue } from "@/lib/format";
 
 // String-key → icon lookups, same convention as WHY_ICONS in
 // WhyChooseSection.tsx — keeps HeroFeatureData/PaymentMethodData serializable
@@ -311,9 +312,7 @@ export function HeroSection({
               {stats.map((stat, i) => (
                 <div key={i} className="px-2 sm:px-3">
                   <p className="text-sm font-extrabold primary-foreground sm:text-lg">
-                    {/^\d+$/.test(stat.value)
-                      ? Number(stat.value).toLocaleString("en-IN")
-                      : stat.value}
+                    {formatStatValue(stat.value)}
                     {stat.suffix}
                   </p>
                   <p className="mt-0.5 text-[10px] primary-foreground/55 sm:mt-1 sm:text-[12px]">

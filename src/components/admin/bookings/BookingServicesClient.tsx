@@ -8,6 +8,7 @@ import {
   Trash2,
   Loader2,
   Lock,
+  Unlock,
   X,
   Hotel,
   Car,
@@ -27,6 +28,11 @@ import { computeBookingFinance, round2 } from "@/lib/bookings/finance";
 import { computeBookingProfit, computeGstDeduction } from "@/lib/bookings/commission";
 import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
 import { canEditDriver, type DriverDetails } from "@/lib/bookings/driver";
+import {
+  REQUIRED_SERVICE_FIELDS,
+  isServiceFieldFilled,
+  type RequiredServiceField,
+} from "@/lib/bookings/service-schema";
 import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
@@ -193,6 +199,8 @@ export function BookingServicesClient({
   gstRates,
   canEdit,
   canViewProfit,
+  canUnlock,
+  isRelock,
 }: {
   booking: BookingData;
   gstRates: number[];
@@ -200,6 +208,11 @@ export function BookingServicesClient({
   canEdit: boolean;
   /** Admin/Superadmin only — company profit margin is not shown to Sales. */
   canViewProfit: boolean;
+  /** Admin/Superadmin only — may unlock locked services for corrections. */
+  canUnlock: boolean;
+  /** Services were unlocked before, so the next lock is a re-lock and the
+   *  customer email is optional. */
+  isRelock: boolean;
 }) {
   const router = useRouter();
   const [services, setServices] = useState<Service[]>(booking.services);
@@ -229,7 +242,8 @@ export function BookingServicesClient({
   );
   // Lock flow dialog: "email" prompts for a missing email, "confirm" confirms the
   // lock. Replaces the old window.confirm() so we never use a browser alert.
-  const [dialog, setDialog] = useState<null | "email" | "confirm">(null);
+  const [dialog, setDialog] = useState<null | "email" | "confirm" | "unlock">(null);
+  const [unlocking, startUnlock] = useTransition();
   const [savingEmail, startSaveEmail] = useTransition();
   // Edit booking details (guest contact + trip/amount) — esp. for direct bookings.
   const [editOpen, setEditOpen] = useState(false);
@@ -348,6 +362,9 @@ export function BookingServicesClient({
 
   // ── lock services ──
   const [locking, startLock] = useTransition();
+  // Set when the server refuses a lock for incomplete services — from then on
+  // every row (drafts included) outlines its empty required fields.
+  const [lockAttempted, setLockAttempted] = useState(false);
 
   // At least one persisted HOTEL and one TRANSPORT row must exist before locking.
   // A draft counts once its first auto-save has completed (savedDraftIds) — it's
@@ -397,15 +414,20 @@ export function BookingServicesClient({
     });
   }
 
-  function performLock() {
+  function performLock(sendEmail: boolean) {
     startLock(async () => {
       try {
-        const res = await fetch(`/api/bookings/${booking.id}/lock-services`, { method: "POST" });
+        const res = await fetch(`/api/bookings/${booking.id}/lock-services`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sendEmail }),
+        });
         const j = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
           emailed?: boolean;
           error?: string;
           code?: string;
+          blockers?: string[];
         };
         if (!res.ok) {
           // Server is authoritative: if it still reports a missing email, route the
@@ -413,6 +435,16 @@ export function BookingServicesClient({
           if (j.code === "EMAIL_REQUIRED") {
             toast.error(j.error ?? "A customer email is required.");
             setDialog("email");
+            return;
+          }
+          if (j.code === "SERVICES_INCOMPLETE") {
+            setLockAttempted(true);
+            setDialog(null);
+            toast.error("Complete the highlighted fields before locking", {
+              description: (j.blockers ?? []).join("\n"),
+              descriptionClassName: "whitespace-pre-line",
+              duration: 10000,
+            });
             return;
           }
           toast.error(j.error ?? "Failed to lock services.");
@@ -430,10 +462,31 @@ export function BookingServicesClient({
     });
   }
 
+  // Admin correction: unlock services so they (and the itinerary and trip/amount
+  // details) can be edited again; re-locking goes through performLock.
+  function performUnlock() {
+    startUnlock(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${booking.id}/unlock-services`, { method: "POST" });
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          toast.error(j.error ?? "Failed to unlock services.");
+          return;
+        }
+        setLocked(false);
+        setDialog(null);
+        toast.success("Services unlocked — make your changes, then re-lock.");
+        router.refresh();
+      } catch {
+        toast.error("An error occurred.");
+      }
+    });
+  }
+
   return (
     <div className="space-y-5">
       {/* Summary */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="font-bold text-foreground text-sm">Booking Details</h3>
           {canEdit && withinEditWindow ? (
@@ -449,7 +502,7 @@ export function BookingServicesClient({
             </span>
           )}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-4 text-xs">
           <Detail
             label="Customer"
             value={booking.lead?.name ?? booking.customer?.name ?? booking.guestName}
@@ -490,9 +543,9 @@ export function BookingServicesClient({
 
         {/* Email is mandatory to lock services (invoice destination). */}
         {!email.trim() && !locked && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+          <div className="mt-4 flex flex-wrap items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1 text-xs">
+            <div className="min-w-[180px] flex-1 text-xs">
               <p className="font-semibold text-amber-700 dark:text-amber-300">
                 Customer email required
               </p>
@@ -520,9 +573,9 @@ export function BookingServicesClient({
         return (
           <div
             key={section.kind}
-            className="bg-card rounded-2xl border border-border shadow-sm p-5"
+            className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-5"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-3">
               <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
                 <Icon className="w-4 h-4" /> {section.title}
               </h3>
@@ -546,6 +599,7 @@ export function BookingServicesClient({
                   locked={locked}
                   canEdit={canEdit}
                   capError={capError}
+                  showRequired={lockAttempted}
                   onAmountBlur={setLiveAmount}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
@@ -560,6 +614,7 @@ export function BookingServicesClient({
                   locked={locked}
                   canEdit={canEdit}
                   capError={capError}
+                  showRequired={lockAttempted}
                   onAmountBlur={setLiveAmount}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                   onSaved={() => markDraftSaved(svc.id)}
@@ -727,21 +782,37 @@ export function BookingServicesClient({
             <button
               onClick={openLock}
               disabled={locking || !canLock}
-              className="inline-flex items-center gap-2 text-sm font-bold bg-amber-600 text-white px-5 py-2.5 rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex w-full items-center justify-center gap-2 text-sm font-bold bg-amber-600 text-white px-5 py-2.5 rounded-xl hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
             >
               {locking ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Lock className="w-4 h-4" />
               )}
-              Lock Services &amp; Email Summary
+              {isRelock ? "Re-lock Services" : "Lock Services & Email Summary"}
             </button>
           </div>
         )
       ) : (
-        <div className="flex items-center gap-2 justify-end text-xs text-muted-foreground">
-          <CheckCircle2 className="w-4 h-4 text-green-600" /> Services are locked. A summary was
-          emailed to the customer.
+        <div className="flex flex-wrap items-center gap-3 justify-end text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-600" /> Services are locked.
+          </span>
+          {canUnlock && (
+            <button
+              type="button"
+              onClick={() => setDialog("unlock")}
+              disabled={unlocking}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              {unlocking ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Unlock className="w-3.5 h-3.5" />
+              )}
+              Unlock for changes
+            </button>
+          )}
         </div>
       )}
 
@@ -752,9 +823,12 @@ export function BookingServicesClient({
           customerName={booking.lead?.name ?? booking.customer?.name ?? booking.guestName}
           savingEmail={savingEmail}
           locking={locking}
+          unlocking={unlocking}
+          isRelock={isRelock}
           onClose={() => setDialog(null)}
           onSaveEmail={saveEmailAndContinue}
           onConfirm={performLock}
+          onUnlock={performUnlock}
         />
       )}
 
@@ -902,7 +976,7 @@ function EditDetailsModal({
               placeholder="Full name"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-muted-foreground">
                 Phone <span className="text-red-500">*</span>
@@ -952,7 +1026,7 @@ function EditDetailsModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-muted-foreground">
                 Start date
@@ -978,7 +1052,7 @@ function EditDetailsModal({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-muted-foreground">
                 Travellers
@@ -1071,15 +1145,20 @@ export function DriverSection({
   travelDate,
   initialDriver,
   canEdit,
+  autoOpen = false,
 }: {
   bookingId: string;
   travelDate: string;
   initialDriver: DriverDetails | null;
   canEdit: boolean;
+  /** Open the Add Driver form on load (DriverDueGate's CTA) — only when none is saved yet. */
+  autoOpen?: boolean;
 }) {
   const router = useRouter();
   const [driver, setDriver] = useState<DriverDetails | null>(initialDriver);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(
+    autoOpen && !initialDriver && canEdit && canEditDriver(travelDate),
+  );
   const [saving, startSave] = useTransition();
   const editable = canEditDriver(travelDate) && canEdit;
 
@@ -1200,7 +1279,7 @@ export function DriverSection({
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-card p-5 shadow-xl">
+          <div className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h4 className="font-display text-base font-bold text-foreground">
                 {driver ? "Edit driver details" : "Add driver details"}
@@ -1322,20 +1401,28 @@ function LockDialog({
   customerName,
   savingEmail,
   locking,
+  unlocking,
+  isRelock,
   onClose,
   onSaveEmail,
   onConfirm,
+  onUnlock,
 }: {
-  mode: "email" | "confirm";
+  mode: "email" | "confirm" | "unlock";
   initialEmail: string;
   customerName: string;
   savingEmail: boolean;
   locking: boolean;
+  unlocking: boolean;
+  isRelock: boolean;
   onClose: () => void;
   onSaveEmail: (email: string) => void;
-  onConfirm: () => void;
+  onConfirm: (sendEmail: boolean) => void;
+  onUnlock: () => void;
 }) {
   const [value, setValue] = useState(initialEmail);
+  // Re-lock only: whether to email the updated summary (first lock always does).
+  const [sendEmail, setSendEmail] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   function submitEmail(e: React.FormEvent) {
@@ -1356,9 +1443,45 @@ function LockDialog({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
       >
-        {mode === "email" ? (
+        {mode === "unlock" ? (
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                <Unlock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Unlock services?
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Services, the itinerary, travel dates, travellers, amount and discount become
+                editable again. The booking stays confirmed and payments are untouched. Re-lock when
+                you&apos;re done — you can choose then whether to email the customer the updated
+                summary.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onUnlock}
+                disabled={unlocking}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {unlocking ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Unlock className="w-3.5 h-3.5" />
+                )}
+                Unlock Services
+              </button>
+            </div>
+          </div>
+        ) : mode === "email" ? (
           <form onSubmit={submitEmail} className="space-y-4">
             <div>
               <h3 className="font-display font-bold text-foreground flex items-center gap-2">
@@ -1410,11 +1533,29 @@ function LockDialog({
                 <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Lock services?
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Services can no longer be edited and a booking summary will be emailed to{" "}
-                <span className="font-semibold text-foreground">{initialEmail}</span>. This cannot
-                be undone.
+                Services can no longer be edited until an admin unlocks them.
+                {!isRelock && (
+                  <>
+                    {" "}
+                    A booking summary will be emailed to{" "}
+                    <span className="font-semibold text-foreground">{initialEmail}</span>.
+                  </>
+                )}
               </p>
             </div>
+            {isRelock && (
+              <label className="flex items-start gap-2 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                />
+                <span>
+                  Email the updated summary to <span className="font-semibold">{initialEmail}</span>
+                </span>
+              </label>
+            )}
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
@@ -1425,7 +1566,7 @@ function LockDialog({
               </button>
               <button
                 type="button"
-                onClick={onConfirm}
+                onClick={() => onConfirm(!isRelock || sendEmail)}
                 disabled={locking}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
               >
@@ -1434,7 +1575,7 @@ function LockDialog({
                 ) : (
                   <Lock className="w-3.5 h-3.5" />
                 )}
-                Lock &amp; Email Summary
+                {!isRelock || sendEmail ? "Lock & Email Summary" : "Lock Services"}
               </button>
             </div>
           </div>
@@ -1456,9 +1597,9 @@ function Detail({
   strong?: boolean;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-muted-foreground mb-0.5">{label}</p>
-      <p className={cn("text-foreground", strong ? "font-bold text-sm" : "font-semibold")}>
+      <p className={cn("text-foreground break-words", strong ? "font-bold text-sm" : "font-semibold")}>
         {value}
       </p>
       {sub && <p className="text-[12px] text-muted-foreground truncate">{sub}</p>}
@@ -1478,9 +1619,9 @@ function Row({
   muted?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <dt className={cn("text-muted-foreground", muted && "text-[12px]")}>{label}</dt>
-      <dd className={cn("text-foreground", strong ? "font-extrabold" : "font-semibold")}>
+    <div className="flex items-center justify-between gap-3">
+      <dt className={cn("min-w-0 text-muted-foreground", muted && "text-[12px]")}>{label}</dt>
+      <dd className={cn("shrink-0 whitespace-nowrap text-foreground", strong ? "font-extrabold" : "font-semibold")}>
         {value}
       </dd>
     </div>
@@ -1523,6 +1664,7 @@ function ServiceRow({
   locked,
   canEdit,
   capError,
+  showRequired = false,
   onAmountBlur,
   onRemoved,
   onSaved,
@@ -1534,6 +1676,8 @@ function ServiceRow({
   locked: boolean;
   canEdit: boolean;
   capError: (amount: number, excludeId: string | null) => string | null;
+  /** Outline empty required fields even on unsaved drafts (after a refused lock). */
+  showRequired?: boolean;
   onAmountBlur: (id: string, amount: number) => void;
   onRemoved: () => void;
   onSaved?: () => void;
@@ -1656,7 +1800,15 @@ function ServiceRow({
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
-      {fields.map((f) => (
+      {fields.map((f) => {
+        const required = (REQUIRED_SERVICE_FIELDS[record.kind] as FieldKey[]).includes(f.key);
+        // Saved rows always show their gaps; a fresh draft only after a refused lock.
+        const missing =
+          required &&
+          !locked &&
+          (!!serverId || showRequired) &&
+          !isServiceFieldFilled(f.key as RequiredServiceField, form[f.key]);
+        return (
         <label
           key={f.key}
           className={cn(
@@ -1664,7 +1816,10 @@ function ServiceRow({
             f.key === "amount" || f.key === "nights" ? "w-24" : "flex-1 min-w-[120px]",
           )}
         >
-          <span className="text-[12px] font-semibold text-muted-foreground">{f.label}</span>
+          <span className="text-[12px] font-semibold text-muted-foreground">
+            {f.label}
+            {required && !locked && <span className="text-red-500"> *</span>}
+          </span>
           <input
             type={f.type}
             value={form[f.key]}
@@ -1675,10 +1830,12 @@ function ServiceRow({
               autoSave();
             }}
             disabled={locked || !canEdit}
-            className={`${inputCls} mt-0.5`}
+            aria-invalid={missing || undefined}
+            className={cn(inputCls, "mt-0.5", missing && "border-red-500 focus:border-red-500 focus:ring-red-500/25")}
           />
         </label>
-      ))}
+        );
+      })}
       {!locked && canEdit && (
         <div className="flex items-center gap-1">
           <span
@@ -1815,12 +1972,12 @@ function PaymentsCard({
   }
 
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+    <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-5">
       <h3 className="font-bold text-foreground text-sm mb-3 flex items-center gap-2">
         <Wallet className="w-4 h-4" /> Payments
       </h3>
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full min-w-[680px] text-xs">
           <thead>
             <tr className="text-left text-[12px] uppercase tracking-wide text-muted-foreground border-b border-border">
               <th className="py-2 pr-3 font-bold">Type</th>
@@ -1881,8 +2038,8 @@ function PaymentsCard({
         </div>
       )}
       {canEdit && !completed && (
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
-          <label className="w-24">
+        <div className="mt-4 grid grid-cols-2 items-end gap-2 border-t border-border pt-3 sm:flex sm:flex-wrap">
+          <label className="sm:w-24">
             <span className="text-[12px] font-semibold text-muted-foreground">Amount</span>
             <input
               type="number"
@@ -1892,7 +2049,7 @@ function PaymentsCard({
               className={`${inputCls} mt-0.5`}
             />
           </label>
-          <label className="w-24">
+          <label className="sm:w-24">
             <span className="text-[12px] font-semibold text-muted-foreground">Type</span>
             <select
               value={type}
@@ -1912,7 +2069,7 @@ function PaymentsCard({
               <option value="REFUND">Refund</option>
             </select>
           </label>
-          <label className="w-28">
+          <label className="sm:w-28">
             <span className="text-[12px] font-semibold text-muted-foreground">Method</span>
             <select
               value={method}
@@ -1929,7 +2086,7 @@ function PaymentsCard({
               ))}
             </select>
           </label>
-          <label className="w-24">
+          <label className="sm:w-24">
             <span className="text-[12px] font-semibold text-muted-foreground">GST</span>
             <select
               value={gstPercent}
@@ -1946,7 +2103,7 @@ function PaymentsCard({
               ))}
             </select>
           </label>
-          <label className="flex-1 min-w-[120px]">
+          <label className="col-span-2 sm:flex-1 sm:min-w-[120px]">
             <span className="text-[12px] font-semibold text-muted-foreground">Note</span>
             <input
               value={note}
@@ -1957,7 +2114,7 @@ function PaymentsCard({
           <button
             onClick={add}
             disabled={pending}
-            className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 disabled:opacity-50"
+            className="col-span-2 inline-flex items-center justify-center gap-1.5 text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 disabled:opacity-50"
           >
             {pending ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

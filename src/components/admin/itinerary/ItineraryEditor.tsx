@@ -580,7 +580,7 @@ export function ItineraryEditor({
                   <button
                     onClick={() => removeDay(day.id)}
                     aria-label={`Remove day ${dayIdx + 1}`}
-                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print"
+                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print [@media(hover:none)]:flex [@media(hover:none)]:opacity-100"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -591,9 +591,11 @@ export function ItineraryEditor({
                       boxed highlights panel anymore — same plain card the
                       PDF now uses. */}
                   <div className="min-w-0 flex-1 p-4">
-                    <div className="flex items-baseline gap-3">
+                    {/* Phones: title, then the date on its own line under it.
+                        sm+: date on the right of the title, as before. */}
+                    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
                       <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                        <span className="shrink-0 font-serif text-2xl font-bold text-[#B8D4C4]">
+                        <span className="w-9 shrink-0 font-serif text-2xl font-bold text-[#B8D4C4] sm:w-auto">
                           {String(dayIdx + 1).padStart(2, "0")}
                         </span>
                         <EditableField
@@ -606,7 +608,7 @@ export function ItineraryEditor({
                         value={day.dateLabel}
                         onValueChange={(v) => updateDay(day.id, { dateLabel: v })}
                         placeholder="Wed 10 Jun"
-                        className="w-24 shrink-0 text-right text-xs text-[#6B7C73] dark:text-muted-foreground"
+                        className="pl-12 text-left text-xs text-[#6B7C73] dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
                       />
                     </div>
                     <EditableField
@@ -634,7 +636,7 @@ export function ItineraryEditor({
                                 <button
                                   onClick={() => removeHighlightPoint(day.id, m.id, m.value, i)}
                                   aria-label="Remove highlight"
-                                  className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/hl:flex no-print"
+                                  className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/hl:flex no-print [@media(hover:none)]:flex"
                                 >
                                   ×
                                 </button>
@@ -659,7 +661,7 @@ export function ItineraryEditor({
                           <div key={m.id} className="metaitem group/m relative flex items-center gap-1.5">
                             <button
                               onClick={() => removeMeta(day.id, m.id)}
-                              className="absolute -left-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white text-xs group-hover/m:flex no-print"
+                              className="absolute -left-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white text-xs group-hover/m:flex no-print [@media(hover:none)]:flex"
                             >
                               ×
                             </button>
@@ -749,7 +751,7 @@ export function ItineraryEditor({
                   <button
                     onClick={() => removeHotel(h.id)}
                     aria-label={`Remove hotel row ${idx + 1}`}
-                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover/hotel:flex group-hover/hotel:opacity-100 no-print"
+                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover/hotel:flex group-hover/hotel:opacity-100 no-print [@media(hover:none)]:flex [@media(hover:none)]:opacity-100"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -1034,7 +1036,7 @@ export function ItineraryEditor({
                     <button
                       onClick={() => removeActivity(a.id)}
                       aria-label={`Remove activity ${idx + 1}`}
-                      className="shrink-0 text-rose-500 opacity-0 transition-opacity hover:text-rose-600 group-hover:opacity-100 no-print"
+                      className="shrink-0 text-rose-500 opacity-0 transition-opacity hover:text-rose-600 group-hover:opacity-100 no-print [@media(hover:none)]:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -1122,7 +1124,7 @@ export function ItineraryEditor({
                             }))
                           }
                           aria-label={`Remove tag ${tag}`}
-                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print"
+                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
                         >
                           ×
                         </button>
@@ -1249,7 +1251,7 @@ export function ItineraryEditor({
                         <button
                           onClick={() => removeListItem("pay", idx)}
                           aria-label={`Remove tag ${tag}`}
-                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print"
+                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
                         >
                           ×
                         </button>
@@ -1301,7 +1303,7 @@ export function ItineraryEditor({
                         }))
                       }
                       aria-label={`Remove note ${note}`}
-                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/note:flex no-print"
+                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/note:flex no-print [@media(hover:none)]:flex"
                     >
                       ×
                     </button>
@@ -1534,7 +1536,7 @@ function PriceActivitySection({
             <button
               onClick={() => onRemove(a.id)}
               aria-label={`Remove ${title} row ${idx + 1}`}
-              className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+              className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -1613,7 +1615,7 @@ function ListColumn({
             <button
               onClick={() => onRemove(item.id)}
               aria-label={`Remove item from ${title}`}
-              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
+              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -1675,7 +1677,7 @@ function CancelTierCard({
               <button
                 onClick={() => onRemove(item.id)}
                 aria-label="Remove cancellation tier"
-                className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
+                className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
               >
                 <Trash2 className="h-3 w-3" />
               </button>

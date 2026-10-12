@@ -60,6 +60,7 @@ export interface CampaignFaq {
   question: string;
   shortAnswer: string;
   slug: string;
+  hasFullAnswer?: boolean;
 }
 
 // Fully-parsed campaign passed to the client page wrapper.

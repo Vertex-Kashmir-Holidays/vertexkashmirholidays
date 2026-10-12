@@ -516,6 +516,11 @@ model Tour {
   published          Boolean           @default(false)
   // Which lead-capture forms render on the public tour-detail page.
   formMode           TourFormMode      @default(BOTH)
+  // Price on request: public pages never show priceFrom/package prices for
+  // this tour (cards say "Request Quote"), it's enquiry-only (formMode is
+  // forced to INQUIRY_ONLY on save) and enquiries ASK the budget band instead
+  // of deriving it from the price. The price stays stored for Sales.
+  hidePrice          Boolean           @default(false)
   metaTitle          String?
   metaDesc           String?
   ogImage            String?
@@ -1004,6 +1009,16 @@ model Lead {
   transportModes      String?
   fromCity            String?
   toCity              String?
+  // Lead qualification (lead forms + the WhatsApp modal). budgetBandKey is a
+  // BudgetBand.key ("band1"…) or "undecided"; budgetBandLabel snapshots the
+  // text the visitor saw, so re-pricing a band never rewrites old leads.
+  // travelMonth is "YYYY-MM", "later" or "undecided".
+  budgetBandKey       String?
+  budgetBandLabel     String?
+  travelMonth         String?
+  // True when the band was derived from the tour's price (tour pages / tour
+  // cards) rather than chosen by the visitor.
+  budgetBandDerived   Boolean             @default(false)
   // HOW the customer actually contacted us (this submission/creation) — set
   // server-side only, never client-supplied. FORM for anything created via
   // POST /api/leads; WHATSAPP/PHONE for staff-created leads logged from a
@@ -1028,6 +1043,7 @@ model Lead {
   @@index([category])
   @@index([tourId])
   @@index([assignedToId])
+  @@index([budgetBandKey])
   @@index([createdAt])
   @@index([followUpAt])
   @@index([assignedToId, createdAt])
@@ -1056,6 +1072,20 @@ enum LeadContactChannel {
 // fields when a salesperson manually creates the CRM Lead from that chat.
 // Deliberately standalone — no relation to Lead, since the Lead doesn't exist
 // yet when the token is minted.
+// Lead-qualification budget bands ("What's your budget for 2 persons?"),
+// admin-editable. Deactivate, never delete — old leads reference `key`.
+model BudgetBand {
+  id        String   @id @default(cuid())
+  key       String   @unique // band1, band2, … — fixed once created
+  label     String // generated from the range for active bands, e.g. "₹17,000 – ₹21,999"
+  minAmount Int // per person, in ₹ (the retired band1–4 were "for 2")
+  maxAmount Int? // next active band's start − 1; null = open-ended ("₹28,000+")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model WhatsAppAttributionToken {
   id                  String    @id @default(cuid())
   token               String    @unique
@@ -1085,6 +1115,15 @@ model WhatsAppAttributionToken {
   // token outlives nothing important and must never block an offer delete.
   occasionOfferId     String?
   packageName         String?
+  // Lead qualification answered in the WhatsApp modal (same meaning as the
+  // Lead columns) — copied onto the Lead when staff create it from this ref.
+  budgetBandKey       String?
+  budgetBandLabel     String?
+  travelMonth         String?
+  budgetBandDerived   Boolean   @default(false)
+  // Set only when the visitor actually tapped "Open WhatsApp" — answers saved
+  // on chip-pick but never opened (an abandoned modal) leave this null.
+  waOpenedAt          DateTime?
   createdAt           DateTime  @default(now())
   expiresAt           DateTime
   consumedAt          DateTime?
@@ -1217,6 +1256,10 @@ model Blog {
   ogImage          String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  // Last real content edit (title, body, Quick Answer or excerpt) — set by the
+  // admin PATCH route only, so scripts touching the row don't move it. Drives
+  // BlogPosting.dateModified and the post hero's "Updated" line.
+  contentUpdatedAt DateTime?
   authorImage      String?
   featured         Boolean   @default(false)
   trending         Boolean   @default(false)
@@ -1341,6 +1384,9 @@ model Gallery {
 model AdminDocument {
   id             String   @id @default(cuid())
   title          String
+  // One line on what the document is for — shown under the title to B2B
+  // agents, so they don't have to guess from a file name.
+  description    String   @default("")
   category       String
   url            String
   publicId       String? // Cloudinary public_id — null for local-disk uploads
@@ -1831,6 +1877,9 @@ model Faq {
   category       FaqCategory    @relation(fields: [categoryId], references: [id])
   status         FaqStatus      @default(DRAFT)
   featured       Boolean        @default(false)
+  // "About price" — hidden on hidePrice tours (page + FAQPage schema), since
+  // those tours don't show a price for the answer to refer to.
+  mentionsPrice  Boolean        @default(false)
   placements     FaqPlacement[]
   sortOrder      Int            @default(0)
   // Freshness/trust signal — several answers reference time-sensitive facts

@@ -1,13 +1,19 @@
 // src/app/(public)/tours/category/[category]/page.tsx
+import { effectiveFormMode, publicPriceFields, tourCardPricing } from "@/lib/tours/cards";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getPublicHeroStats } from "@/lib/publicHeroStats";
-import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
+import {
+  JsonLd,
+  buildBreadcrumbList,
+  buildCollectionPage,
+  buildItemList,
+} from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
-import { formatINR } from "@/lib/accents";
 import { TOUR_CATEGORY_META, getCategoryBySlug } from "@/lib/tours/categories";
 import { TourCategoryHero } from "@/components/tours/TourCategoryHero";
 import { TourCategoryFeatured } from "@/components/tours/TourCategoryFeatured";
@@ -41,9 +47,10 @@ async function getFeaturedAndRecommended(category: TourCategory) {
     // Kashmir-branded trip-type page — Kashmir/Ladakh tours only.
     where: { category, published: true, region: { in: KASHMIR_SITE_REGIONS } },
     include: { destinations: { include: { destination: { select: { name: true } } } } },
-    orderBy: [{ bestseller: "desc" }, { rating: "desc" }, { reviewCount: "desc" }],
   });
   if (categoryTours.length === 0) return null;
+  // Same deterministic order as /tours and the homepage (src/lib/tours/ordering.ts).
+  categoryTours.sort(compareToursForCards);
 
   const [featured, ...restOfCategory] = categoryTours;
 
@@ -52,17 +59,19 @@ async function getFeaturedAndRecommended(category: TourCategory) {
   const needed = Math.max(0, 6 - restOfCategory.length);
   const otherBestsellers =
     needed > 0
-      ? await prisma.tour.findMany({
-          where: {
-            published: true,
-            region: { in: KASHMIR_SITE_REGIONS },
-            category: { not: category },
-            id: { notIn: [featured.id] },
-          },
-          include: { destinations: { include: { destination: { select: { name: true } } } } },
-          orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
-          take: needed,
-        })
+      ? (
+          await prisma.tour.findMany({
+            where: {
+              published: true,
+              region: { in: KASHMIR_SITE_REGIONS },
+              category: { not: category },
+              id: { notIn: [featured.id] },
+            },
+            include: { destinations: { include: { destination: { select: { name: true } } } } },
+          })
+        )
+          .sort(compareToursForCards)
+          .slice(0, needed)
       : [];
 
   return { featured, recommended: [...restOfCategory, ...otherBestsellers].slice(0, 6) };
@@ -75,7 +84,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const meta = TOUR_CATEGORY_META[category];
   return buildMetadata({
-    title: `Kashmir ${meta.pageTitle} — Free Quote & Transparent Pricing`,
+    // ≤34 chars, so the " | Vertex Kashmir Holidays" suffix survives the 60-char cap.
+    title: `Kashmir ${meta.pageTitle}`,
     description: meta.metaDescription,
     canonical: `${SITE_URL}/tours/category/${meta.slug}`,
   });
@@ -112,20 +122,30 @@ export default async function TourCategoryPage({ params }: PageProps) {
     places: t.destinations.map((d) => d.destination.name).join(", "),
     r: t.rating.toFixed(1),
     n: String(t.reviewCount),
-    old: t.priceWas ? formatINR(t.priceWas) : undefined,
-    p: formatINR(t.priceFrom),
-    minPersons: t.minPersons,
+    ...tourCardPricing(t),
   }));
 
+  const pageUrl = `${SITE_URL}/tours/category/${meta.slug}`;
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
     { name: "Tours", url: `${SITE_URL}/tours` },
-    { name: meta.pageTitle, url: `${SITE_URL}/tours/category/${meta.slug}` },
+    { name: meta.pageTitle, url: pageUrl },
   ]);
+  const collectionJsonLd = buildCollectionPage({
+    name: `Kashmir ${meta.pageTitle}`,
+    description: meta.metaDescription,
+    url: pageUrl,
+  });
+  const itemListJsonLd = buildItemList(
+    [featured, ...recommended].map((t) => ({ name: t.title, url: `${SITE_URL}/tours/${t.slug}` })),
+    `Kashmir ${meta.pageTitle}`,
+  );
 
   return (
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={collectionJsonLd} />
+      <JsonLd data={itemListJsonLd} />
 
       <TourCategoryHero
         pageTitle={meta.pageTitle}
@@ -148,8 +168,7 @@ export default async function TourCategoryPage({ params }: PageProps) {
                 places: featuredPlaces,
                 rating: featured.rating,
                 reviewCount: featured.reviewCount,
-                priceFrom: featured.priceFrom,
-                priceWas: featured.priceWas,
+                ...publicPriceFields(featured),
                 minPersons: featured.minPersons,
               }}
             />
@@ -159,15 +178,19 @@ export default async function TourCategoryPage({ params }: PageProps) {
           <div className="space-y-5">
             <AffordabilityWidget amount={featured.priceFrom} />
             <TourDetailsSidebar
-              price={featured.priceFrom}
-              oldPrice={featured.priceWas ?? undefined}
-              discountPct={featured.discountPct ?? undefined}
+              priceHidden={featured.hidePrice}
+              price={featured.hidePrice ? 0 : featured.priceFrom}
+              oldPrice={featured.hidePrice ? undefined : (featured.priceWas ?? undefined)}
+              discountPct={featured.hidePrice ? undefined : (featured.discountPct ?? undefined)}
+              minPersons={featured.minPersons}
+              leadSource="tour-category"
+              inlineFormsOnMobile
               rating={featured.rating}
               reviews={featured.reviewCount}
               tourId={featured.id}
               tourName={featured.title}
               tourSlug={featured.slug}
-              formMode={featured.formMode}
+              formMode={effectiveFormMode(featured)}
               bestTime={featured.bestTime ?? "Apr – Oct"}
               tourType={featured.tourType ?? "Private Tour"}
               pickupDrop={featured.pickupDrop ?? `${featured.startCity ?? "Srinagar"} Airport`}

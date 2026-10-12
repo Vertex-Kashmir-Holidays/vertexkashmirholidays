@@ -29,7 +29,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/atoms/button";
 import { PhoneInput } from "@/components/auth/PhoneInput";
-import { ADVANCE_PERCENT, computeChargeable, type PaymentOption } from "@/lib/bookings/finance";
+import {
+  ADVANCE_PERCENT,
+  computeChargeable,
+  MIN_LEAD_DAYS,
+  type PaymentOption,
+} from "@/lib/bookings/finance";
 import { readAttributionClient } from "@/lib/attribution";
 import {
   isAllowedCustomerEmailDomain,
@@ -88,7 +93,6 @@ function parseDefaultPhone(e164: string): { country: CountryCode; national: stri
   }
 }
 
-const MIN_LEAD_DAYS = 4;
 const MAX_BOOKING_MONTHS = 6;
 
 // ── Props ───────────────────────────────────────────────────────────────────

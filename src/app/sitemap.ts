@@ -78,12 +78,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.85,
     },
-    {
-      url: `${SITE_URL}/adventures`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
+    // Listed only while a campaign is published (an empty listing isn't worth indexing).
+    ...(campaigns.length > 0
+      ? [
+          {
+            url: `${SITE_URL}/adventures`,
+            lastModified: new Date(),
+            changeFrequency: "daily" as const,
+            priority: 0.8,
+          },
+        ]
+      : []),
     {
       url: `${SITE_URL}/destinations`,
       lastModified: new Date(),

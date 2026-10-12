@@ -135,6 +135,7 @@ const packageSchema = z.object({
   published: z.boolean().default(false),
   // Which lead-capture forms show on the public tour-detail page.
   formMode: z.enum(["BOOKING_ONLY", "INQUIRY_ONLY", "BOTH"]).default("BOTH"),
+  hidePrice: z.boolean().default(false),
   itinerary: z.array(itineraryDaySchema).default([]),
   inclusions: z.array(listItemSchema).default([]),
   exclusions: z.array(listItemSchema).default([]),
@@ -204,6 +205,7 @@ export interface PackageFormDefaults {
   bestseller?: boolean;
   published?: boolean;
   formMode?: string;
+  hidePrice?: boolean;
   itinerary?: {
     day: number;
     title: string;
@@ -516,6 +518,7 @@ export function PackageForm({
       bestseller: defaults?.bestseller ?? false,
       published: defaults?.published ?? false,
       formMode: (defaults?.formMode as PackageFormData["formMode"]) ?? "BOTH",
+      hidePrice: defaults?.hidePrice ?? false,
       itinerary: (defaults?.itinerary ?? []).map((d) => ({
         day: d.day,
         title: d.title,
@@ -804,6 +807,7 @@ export function PackageForm({
   const priceWas = watch("priceWas");
   const published = watch("published");
   const bestseller = watch("bestseller");
+  const hidePrice = watch("hidePrice");
 
   // Discount % is derived from Original Price vs. Price From — never entered
   // directly, so it can't drift out of sync with the two amounts it's based on.
@@ -903,14 +907,17 @@ export function PackageForm({
               <FieldLabel>Detail-page Forms</FieldLabel>
               <select
                 {...register("formMode")}
-                className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                disabled={hidePrice}
+                className="w-full px-3.5 py-2.5 text-sm border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition disabled:opacity-60"
               >
                 <option value="BOTH">Enable Both (Booking + Inquiry)</option>
                 <option value="BOOKING_ONLY">Enable Booking Only</option>
                 <option value="INQUIRY_ONLY">Enable Inquiry Only</option>
               </select>
               <p className="text-[12px] text-muted-foreground mt-1">
-                Controls which forms visitors see on the tour page.
+                {hidePrice
+                  ? "Locked to Inquiry Only — price on request tours can't be booked online."
+                  : "Controls which forms visitors see on the tour page."}
               </p>
             </div>
           </div>
@@ -1017,6 +1024,36 @@ export function PackageForm({
               />
             </div>
             <span className="text-sm font-medium text-foreground">Mark as Bestseller</span>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <div
+              onClick={() => {
+                const next = !hidePrice;
+                setValue("hidePrice", next, { shouldDirty: true });
+                // Mirrors the server rule: price on request ⇒ enquiry only.
+                if (next) setValue("formMode", "INQUIRY_ONLY", { shouldDirty: true });
+              }}
+              className={cn(
+                "mt-0.5 w-10 h-5.5 shrink-0 rounded-full transition-colors relative cursor-pointer",
+                hidePrice ? "bg-accent" : "bg-muted",
+              )}
+            >
+              <div
+                className={cn(
+                  "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-card shadow-sm transition-transform",
+                  hidePrice ? "translate-x-4.5" : "translate-x-0.5",
+                )}
+              />
+            </div>
+            <span className="text-sm">
+              <span className="font-medium text-foreground">Price on request (hide price)</span>
+              <span className="block text-[12px] text-muted-foreground">
+                Cards show &quot;Request Quote&quot;, the tour page shows no price, booking is off
+                and enquiries ask the visitor&apos;s budget. Use only for tours whose pricing is
+                genuinely unstable. The prices above stay saved for Sales.
+              </span>
+            </span>
           </label>
 
           {/* Package Options — variants of THIS tour sharing its itinerary */}

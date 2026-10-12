@@ -10,6 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import { ensureWhatsAppAttributionToken } from "@/lib/attribution";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
+import {
+  LATER,
+  bandForPrice,
+  setPageQualificationDefaults,
+  travelMonthKeys,
+} from "@/lib/leads/qualification";
 import {
   trackOfferPackageSelect,
   trackTourInquiry,
@@ -30,6 +37,10 @@ export interface OfferClientInfo extends OfferAnalyticsContext {
   dates: string | null;
   occasionType: string;
   ctaLabel: string;
+  /** Trip start month, "YYYY-MM" — pre-selects the travel-month answer. */
+  tripMonth: string | null;
+  /** Plan name → price for 2 — the chosen plan (÷ 2, per person) pre-selects the budget band. */
+  planPrices: Record<string, number>;
 }
 
 interface OfferSelectionValue {
@@ -74,6 +85,27 @@ export function OfferSelectionProvider({
       packageName: selected ?? undefined,
     });
   }, [offer.offerId, selected]);
+
+  // Lead qualification on this page: the trip's month is known, and once a plan
+  // is chosen so is the budget — forms and the WhatsApp modal start with those
+  // selected rather than asking again. A trip beyond the listed months is
+  // "Later than that". Cleared when leaving the page.
+  const { budgetBands } = useSiteSettings();
+  useEffect(() => {
+    const months = travelMonthKeys();
+    const travelMonth = !offer.tripMonth
+      ? undefined
+      : months.includes(offer.tripMonth)
+        ? offer.tripMonth
+        : offer.tripMonth > months[months.length - 1]
+          ? LATER
+          : undefined;
+    // Bands are per person; a plan's price is for 2.
+    const price = selected ? offer.planPrices[selected] : undefined;
+    const budgetBandKey = price != null ? bandForPrice(budgetBands, price / 2)?.key : undefined;
+    setPageQualificationDefaults({ travelMonth, budgetBandKey });
+    return () => setPageQualificationDefaults({});
+  }, [offer.tripMonth, offer.planPrices, selected, budgetBands]);
 
   const select = useCallback(
     (plan: string | null) => {

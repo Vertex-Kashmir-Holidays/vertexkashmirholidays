@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
+import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
 
 // IN_PROGRESS is a real LeadStatus value at the type level (it's a B2B-request
 // -only value — see prisma/schema.prisma), included here only so this type
@@ -104,6 +105,11 @@ interface Lead {
   packageName: string | null;
   /** Occasion Offer the lead came from (offer form or resolved WhatsApp reference). */
   occasionOffer?: { id: string; name: string; slug: string } | null;
+  /** Lead qualification — null on leads captured before it existed. */
+  budgetBandKey?: string | null;
+  budgetBandLabel?: string | null;
+  budgetBandDerived?: boolean;
+  travelMonth?: string | null;
   adults: number;
   children: number | null;
   startDate: Date | string | null;
@@ -455,7 +461,7 @@ export function LeadDetail({
           toast.error(j.error ?? "Unlock failed.");
           return;
         }
-        toast.success("Lead unlocked.");
+        toast.success("Lead unlocked — the itinerary and booking services can now be edited.");
         router.refresh();
       } catch {
         toast.error("An error occurred.");
@@ -536,10 +542,10 @@ export function LeadDetail({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="font-display font-extrabold text-foreground text-xl">{lead.name}</h2>
-          <div className="flex items-center gap-2 mt-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h2 className="font-display font-extrabold text-foreground text-xl break-words">{lead.name}</h2>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
             <span
               className={cn(
                 "text-[12px] font-bold px-2 py-0.5 rounded-full",
@@ -559,7 +565,7 @@ export function LeadDetail({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
           {confirmDelete ? (
             <>
               <button
@@ -684,9 +690,9 @@ export function LeadDetail({
         {/* LEFT: details + notes + activity */}
         <div className="space-y-5">
           {/* Lead info grid */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
             <h3 className="font-bold text-foreground text-sm mb-4">Lead Details</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-4 text-xs [&>*]:min-w-0 [&>*]:break-words">
               <div>
                 <p className="text-muted-foreground mb-0.5">Phone</p>
                 <a
@@ -773,6 +779,27 @@ export function LeadDetail({
                   </p>
                 </div>
               ) : null}
+              <div>
+                <p className="text-muted-foreground mb-0.5">Budget</p>
+                <p className="font-semibold text-foreground">
+                  {lead.budgetBandKey === UNDECIDED
+                    ? "Not sure yet"
+                    : (lead.budgetBandLabel ?? "Not asked")}
+                  {lead.budgetBandDerived && (
+                    <span className="ml-1 text-[12px] font-medium text-muted-foreground">
+                      (from tour price)
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-0.5">Travel month</p>
+                <p className="font-semibold text-foreground">
+                  {lead.travelMonth
+                    ? travelMonthText(lead.travelMonth, new Date(lead.createdAt))
+                    : "Not asked"}
+                </p>
+              </div>
               <div>
                 <p className="text-muted-foreground mb-0.5">Tour</p>
                 <p className="font-semibold text-foreground">
@@ -873,7 +900,7 @@ export function LeadDetail({
 
           {/* Attachments — currently only the B2B registration form's company logo. */}
           {attachments.length > 0 && (
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
               <h3 className="font-bold text-foreground text-sm mb-4 flex items-center gap-2">
                 <Paperclip className="w-4 h-4" /> Attachments
               </h3>
@@ -901,9 +928,9 @@ export function LeadDetail({
             if (components.length === 0) return null;
             const modes = parseJsonArray(lead.transportModes);
             return (
-              <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+              <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
                 <h3 className="font-bold text-foreground text-sm mb-4">Trip Planner Request</h3>
-                <div className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4 [&>*]:min-w-0 [&>*]:break-words">
                   <div>
                     <p className="text-muted-foreground mb-0.5">Request</p>
                     <p className="font-semibold text-foreground">
@@ -936,7 +963,7 @@ export function LeadDetail({
           })()}
 
           {/* Attribution — the raw signals deriveChannel() classified `source` from. */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
             <h3 className="font-bold text-foreground text-sm mb-4">Attribution</h3>
             {populatedAttribution.length === 0 ? (
               <p className="text-xs text-muted-foreground">
@@ -963,7 +990,7 @@ export function LeadDetail({
           </div>
 
           {/* Itinerary */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
                 <FileText className="w-4 h-4" /> Itinerary
@@ -983,7 +1010,7 @@ export function LeadDetail({
                     {itinerary.status}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3 text-xs [&>*]:min-w-0 [&>*]:break-words">
                   <div>
                     <p className="text-muted-foreground mb-0.5">Generated</p>
                     <p className="font-semibold text-foreground">{fmtDate(itinerary.createdAt)}</p>
@@ -1012,7 +1039,7 @@ export function LeadDetail({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2 pt-1">
                   {canManageItinerary && !converted && !itinerary.locked ? (
                     <Link
                       href={`/admin/itinerary/${itinerary.id}`}
@@ -1087,7 +1114,7 @@ export function LeadDetail({
           </div>
 
           {/* Notes */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
             <h3 className="font-bold text-foreground text-sm mb-3">Notes</h3>
             <textarea
               value={notes}
@@ -1112,7 +1139,7 @@ export function LeadDetail({
           </div>
 
           {/* Activity timeline */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
             <h3 className="font-bold text-foreground text-sm mb-4">
               Activity{lead.activities.length > 0 && ` (${lead.activities.length})`}
             </h3>
@@ -1498,7 +1525,7 @@ function ConvertModal({
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="w-full max-w-md bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
       >
         <div>
           <h3 className="font-display font-bold text-foreground">Convert lead</h3>

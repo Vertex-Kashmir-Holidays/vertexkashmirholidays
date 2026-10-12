@@ -15,6 +15,7 @@ import {
   ClipboardList,
   CalendarCheck2,
   Building2,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
@@ -22,6 +23,7 @@ import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
 import { LogoUploadField } from "@/components/b2b/LogoUploadField";
 import { NewB2bRequestForAgentButton } from "./NewB2bRequestForAgentButton";
+import { EmailB2bAgentsDialog } from "./EmailB2bAgentsDialog";
 
 type AgencyStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
 
@@ -86,6 +88,17 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  // Agents ticked for "Email agents" — kept across search and pages.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [emailing, setEmailing] = useState(false);
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -180,16 +193,25 @@ export function B2bAgentsClient({ initialAgents }: Props) {
           <h2 className="font-display font-extrabold text-foreground text-xl">B2B Agents</h2>
           <p className="text-muted-foreground text-xs mt-0.5">{initialAgents.length} agents</p>
         </div>
-        <button
-          onClick={() => {
-            setForm(EMPTY_FORM);
-            setFormError(null);
-            setCreating(true);
-          }}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
-        >
-          <Plus className="w-3.5 h-3.5" /> New B2B Agent
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setEmailing(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground transition hover:bg-muted"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            {selectedIds.size > 0 ? `Email ${selectedIds.size} selected` : "Email agents"}
+          </button>
+          <button
+            onClick={() => {
+              setForm(EMPTY_FORM);
+              setFormError(null);
+              setCreating(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:brightness-110"
+          >
+            <Plus className="w-3.5 h-3.5" /> New B2B Agent
+          </button>
+        </div>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
@@ -205,6 +227,15 @@ export function B2bAgentsClient({ initialAgents }: Props) {
             />
           </div>
           <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+          {selectedIds.size > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="self-center shrink-0 text-xs font-bold text-primary hover:underline"
+            >
+              Clear selection ({selectedIds.size})
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -239,6 +270,14 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${a.agencyName ?? a.email} for email`}
+                          checked={selectedIds.has(a.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleSelected(a.id)}
+                          className="h-4 w-4 shrink-0 accent-primary"
+                        />
                         <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center shrink-0">
                           <Handshake className="w-4 h-4" />
                         </div>
@@ -420,6 +459,15 @@ export function B2bAgentsClient({ initialAgents }: Props) {
           noun="agents"
         />
       </div>
+
+      <EmailB2bAgentsDialog
+        open={emailing}
+        onOpenChange={setEmailing}
+        selected={initialAgents
+          .filter((a) => selectedIds.has(a.id))
+          .map((a) => ({ id: a.id, label: a.agencyName ?? a.name ?? a.email }))}
+        activeCount={initialAgents.filter((a) => a.agencyStatus === "ACTIVE").length}
+      />
 
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent className="max-w-lg">

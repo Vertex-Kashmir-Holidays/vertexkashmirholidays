@@ -1,4 +1,5 @@
 // src/app/(public)/destinations/[slug]/page.tsx
+import { tourCardPricing } from "@/lib/tours/cards";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
@@ -12,7 +13,6 @@ import {
   buildTouristDestination,
   buildFAQPage,
 } from "@/components/seo/JsonLd";
-import { formatINR } from "@/lib/accents";
 import { compareToursForCards } from "@/lib/tours/ordering";
 import {
   parseStringList,
@@ -44,6 +44,7 @@ import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRe
 import { DestinationNearby } from "@/components/destinations/DestinationNearby";
 import { TrustSection } from "@/components/common/TrustSection";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Destination mutations invalidate this exact page directly
 // (src/lib/cache.ts), as do Tour/Activity mutations that touch a linked record.
@@ -111,6 +112,7 @@ const getDestination = cache(async (slug: string) => {
               reviewCount: true,
               priceFrom: true,
               priceWas: true,
+              hidePrice: true,
               minPersons: true,
               destinations: { select: { destination: { select: { name: true } } } },
             },
@@ -137,7 +139,7 @@ const getDestination = cache(async (slug: string) => {
       relatedFaqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   });
@@ -318,9 +320,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     places: t.destinations.map((d) => d.destination.name).join(", "),
     r: t.rating.toFixed(1),
     n: String(t.reviewCount),
-    old: t.priceWas ? formatINR(t.priceWas) : undefined,
-    p: formatINR(t.priceFrom),
-    minPersons: t.minPersons,
+    ...tourCardPricing(t),
   }));
 
   // Things to Do — driven by the Activities module (published, linked to this
@@ -369,7 +369,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   const localFood = parseFoodOrShop(dest.localFood);
   const shopping = parseFoodOrShop(dest.shopping);
   const travelTips = parseStringList(dest.travelTips);
-  const faqs = dest.relatedFaqs;
+  const faqs = dest.relatedFaqs.map(toFaqPreview);
 
   // ── Structured data (JSON-LD) ─────────────────────────────────────────────
   const breadcrumbJsonLd = buildBreadcrumbList([

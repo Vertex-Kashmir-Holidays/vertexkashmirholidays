@@ -3203,6 +3203,21 @@ async function main() {
   }
   console.log("✓ Seed leads (10)");
 
+  // Lead-qualification budget bands, per person (also seeded by the
+  // 20261008090000 migration, which retires the original "for 2" band1–4).
+  // Create-only: admin edits survive a re-seed.
+  const budgetBands = [
+    { key: "band5", label: "₹9,000 – ₹13,999", minAmount: 9000, maxAmount: 13999, sortOrder: 1 },
+    { key: "band6", label: "₹14,000 – ₹16,999", minAmount: 14000, maxAmount: 16999, sortOrder: 2 },
+    { key: "band7", label: "₹17,000 – ₹21,999", minAmount: 17000, maxAmount: 21999, sortOrder: 3 },
+    { key: "band8", label: "₹22,000 – ₹27,999", minAmount: 22000, maxAmount: 27999, sortOrder: 4 },
+    { key: "band9", label: "₹28,000+", minAmount: 28000, maxAmount: null, sortOrder: 5 },
+  ];
+  for (const band of budgetBands) {
+    await prisma.budgetBand.upsert({ where: { key: band.key }, update: {}, create: band });
+  }
+  console.log("✓ Budget bands (5)");
+
   console.log("\n🎉 Seed complete!");
 }
 

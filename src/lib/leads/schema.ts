@@ -7,8 +7,13 @@
 // (libphonenumber-js), so the lead form behaves exactly like registration.
 
 import { z } from "zod";
-import { isValidE164 } from "@/lib/auth/validation";
+import {
+  isValidE164,
+  isAllowedEmailDomain,
+  PUBLIC_DOMAINS_GENERIC_MESSAGE,
+} from "@/lib/auth/validation";
 import { attributionSchema } from "@/lib/attribution";
+import { budgetBandKeyField, travelMonthField } from "@/lib/leads/qualification";
 
 // ── Source page tags ─────────────────────────────────────────────────────────
 // Distinct per-placement identifier stored on Lead.sourcePage for campaign
@@ -97,11 +102,15 @@ export const phoneField = z
 
 // ── Email (optional) ─────────────────────────────────────────────────────────
 // Normalized to lowercase + trimmed. Empty string is treated as "not provided".
+// When given, it must be a public provider — same allowlist as account
+// registration — which keeps out throwaway/spam domains (e.g. the
+// moneysquad.org / linksandmail.com junk leads).
 export const emailField = z
   .string()
   .trim()
   .toLowerCase()
   .email("Please enter a valid email address.")
+  .refine(isAllowedEmailDomain, PUBLIC_DOMAINS_GENERIC_MESSAGE)
   .optional()
   .or(z.literal(""));
 
@@ -146,6 +155,9 @@ export const leadContextSchema = z.object({
   // published activity and its DB name goes into the lead notes; activityName
   // is display-only (the WhatsApp text).
   activitySlug: z.string().max(160).optional(),
+  // Tour.hidePrice — the form asks the budget band (nothing to derive it
+  // from). Display/UX only: the server re-checks the tour's own flag.
+  priceHidden: z.boolean().optional(),
   activityName: z.string().max(200).optional(),
 });
 
@@ -164,6 +176,12 @@ export const leadInputSchema = z.object({
   context: leadContextSchema.optional(),
   // First-touch marketing attribution captured client-side (src/lib/attribution.ts).
   attribution: attributionSchema.optional(),
+  // Lead qualification ("Not sure yet" is a valid answer). The month is always
+  // required; the budget only where it's asked — tour enquiries derive it from
+  // the tour's price server-side, activity enquiries have none (see
+  // /api/leads). Bands are checked against the active BudgetBand rows.
+  budgetBandKey: budgetBandKeyField.optional(),
+  travelMonth: travelMonthField,
 });
 
 export type LeadInput = z.input<typeof leadInputSchema>;

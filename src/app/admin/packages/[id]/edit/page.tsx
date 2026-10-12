@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { prisma, prismaStored } from "@/lib/prisma";
 import { PackageForm } from "@/components/admin/packages/PackageForm";
 import {
   parseJson,
@@ -24,8 +24,10 @@ type Props = { params: Promise<{ id: string }> };
 
 // Wrapped in React's cache() so generateMetadata() and the page component
 // share one query per request instead of each fetching this row separately.
+// prismaStored: the editor shows each tour's own hidePrice, not the sitewide
+// REQUEST_QUOTE switch — otherwise saving would write the switch into the tour.
 const getTour = cache(async (id: string) =>
-  prisma.tour.findUnique({
+  prismaStored.tour.findUnique({
     where: { id },
     include: {
       activities: { select: { activityId: true } },
@@ -73,6 +75,7 @@ export default async function EditPackagePage({ params }: Props) {
     bestseller: tour.bestseller,
     published: tour.published,
     formMode: tour.formMode,
+    hidePrice: tour.hidePrice,
     itinerary: parseItinerary(tour.itinerary),
     inclusions: parseStringList(tour.inclusions),
     exclusions: parseStringList(tour.exclusions),

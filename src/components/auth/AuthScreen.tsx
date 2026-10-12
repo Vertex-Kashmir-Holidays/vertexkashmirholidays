@@ -9,9 +9,11 @@ import { AuthExplore } from "@/components/auth/AuthExplore";
 interface AuthScreenProps {
   /** CSP nonce for this request — forwarded to Google One Tap's injected script. */
   nonce?: string;
+  /** Live approved-review rating, or null while there are none. */
+  rating: { average: number; total: number } | null;
 }
 
-export function AuthScreen({ nonce }: AuthScreenProps) {
+export function AuthScreen({ nonce, rating }: AuthScreenProps) {
   const [view, setView] = useState<"login" | "register">("login");
 
   return (
@@ -21,7 +23,7 @@ export function AuthScreen({ nonce }: AuthScreenProps) {
             AuthImagePanel is decorative and hidden below `lg:`. */}
         <h1 className="sr-only">Sign In or Create an Account — Vertex Kashmir Holidays</h1>
         <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-border bg-card shadow-card sm:rounded-3xl lg:grid-cols-[1fr_1.05fr]">
-          <AuthImagePanel view={view} />
+          <AuthImagePanel view={view} rating={rating} />
           <AuthFormPanel view={view} onViewChange={setView} nonce={nonce} />
         </div>
 

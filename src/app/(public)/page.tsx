@@ -1,3 +1,4 @@
+import { publicPriceFields } from "@/lib/tours/cards";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -27,6 +28,7 @@ import { compareToursForCards } from "@/lib/tours/ordering";
 import { getKashmirWeather } from "@/lib/weather";
 import { HERO_FEATURES, PAYMENT_METHODS } from "@/lib/home/heroContent";
 import { getVerifiedPropertiesCount } from "@/lib/hotelSuppliers/stats";
+import { getPublicHeroStats } from "@/lib/publicHeroStats";
 import type { SectionHeading } from "@/types/home";
 
 // ISR: serve cached HTML and refresh in the background (admin edits appear
@@ -86,6 +88,7 @@ export default async function HomePage() {
     verifiedPropertiesCount,
     publishedToursCount,
     offers,
+    heroStats,
   ] = await Promise.all([
     getHomeContent(),
     prisma.homeSection.findMany(),
@@ -110,6 +113,7 @@ export default async function HomePage() {
           reviewCount: true,
           priceFrom: true,
           priceWas: true,
+          hidePrice: true,
           minPersons: true,
           destinations: { select: { destination: { select: { name: true } } } },
         },
@@ -168,6 +172,8 @@ export default async function HomePage() {
     // Published Occasion Offers whose dates haven't passed — same list and
     // cards as the /offers hub.
     getLiveOccasionOffers(),
+    // Same live stat strip as /tours, categories and collections.
+    getPublicHeroStats(),
   ]);
 
   // Live weather for the updates strip — fetched in parallel but outside the
@@ -254,12 +260,7 @@ export default async function HomePage() {
           formAvatars,
         }}
         slides={slides.map((s) => ({ image: s.image, imageMobile: s.imageMobile, alt: s.alt }))}
-        stats={[
-          ...stats
-            .filter((s) => s.section === "hero")
-            .map((s) => ({ label: s.label, value: s.value, suffix: s.suffix })),
-          ...derivedHeroStats,
-        ]}
+        stats={[...heroStats, ...derivedHeroStats]}
         features={HERO_FEATURES}
         paymentMethods={PAYMENT_METHODS}
       />
@@ -289,8 +290,7 @@ export default async function HomePage() {
           image: t.coverImage,
           rating: t.rating,
           reviewCount: t.reviewCount,
-          priceFrom: t.priceFrom,
-          priceWas: t.priceWas,
+          ...publicPriceFields(t),
           minPersons: t.minPersons,
         }))}
       />

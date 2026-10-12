@@ -15,6 +15,12 @@ import { toE164 } from "@/lib/auth/validation";
 import { HONEYPOT_FIELD, TIMETRAP_FIELD } from "@/lib/security/formGuard";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
+import { QualificationFields } from "@/components/leads/QualificationFields";
+import {
+  initialQualification,
+  writeSessionQualification,
+  type Qualification,
+} from "@/lib/leads/qualification";
 
 interface CampaignHeroProps {
   name: string;
@@ -84,6 +90,15 @@ export function CampaignHero({
       createParticles(embersRef.current, "ember", 30, true);
   }, [particles]);
 
+  // Lead qualification (budget for 2 + travel month) — mandatory; starts from
+  // this session's earlier answers.
+  const [qual, setQual] = useState<Partial<Qualification>>({});
+  useEffect(() => setQual(initialQualification()), []);
+  function changeQual(next: Partial<Qualification>) {
+    setQual(next);
+    writeSessionQualification(next);
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -98,6 +113,10 @@ export function CampaignHero({
     }
     if (!e164) {
       toast.error("Please enter a valid phone number.");
+      return;
+    }
+    if (!qual.budgetBandKey || !qual.travelMonth) {
+      toast.error("Please choose your budget and travel month (or “Not sure yet”).");
       return;
     }
     if (!agree) {
@@ -124,6 +143,8 @@ export function CampaignHero({
           travellers: travellers && /^\d+$/.test(travellers) ? Number(travellers) : undefined,
           agree,
           source: "campaign",
+          budgetBandKey: qual.budgetBandKey,
+          travelMonth: qual.travelMonth,
           [HONEYPOT_FIELD]: String(fd.get(HONEYPOT_FIELD) ?? ""),
           [TIMETRAP_FIELD]: renderedAt.current,
           turnstileToken: captchaToken ?? undefined,
@@ -285,9 +306,6 @@ export function CampaignHero({
                     alt=""
                   />
                 ))}
-                <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[hsl(202_50%_6%)] bg-accent-grad text-[12px] font-extrabold text-white">
-                  2k+
-                </span>
               </div>
               <p className="text-[14px] leading-snug text-white/70">
                 <span className="inline-flex items-center gap-1 font-bold text-amber-300">
@@ -372,6 +390,9 @@ export function CampaignHero({
                     5+
                   </option>
                 </select>
+                <div className="rounded-xl bg-card/95 p-3">
+                  <QualificationFields value={qual} onChange={changeQual} />
+                </div>
                 <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-white/65">
                   <input type="checkbox" name="agree" required className="cbx mt-0.5 shrink-0" />
                   <span>

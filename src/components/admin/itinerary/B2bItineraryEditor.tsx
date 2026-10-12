@@ -5,7 +5,7 @@
 // visual language (photo-hero cover, per-day/hotel image pickers, Trust
 // strip, Activities, arbitrary "detail"/Highlights meta rows) maps to the
 // normal ItineraryPdf.tsx, not B2bItineraryPdf.tsx — editing those fields for
-// a B2B proposal silently has zero effect on the exported PDF, which is
+// a B2B itinerary silently has zero effect on the exported PDF, which is
 // exactly the ambiguity this component exists to remove. Every field below
 // corresponds 1:1 to something B2bItineraryPdf.tsx actually renders
 // (including Included Activities, as compact text cards without photos).
@@ -27,6 +27,9 @@ import { buildDocumentTitle } from "@/lib/itinerary/documentTitle";
 import type { B2bAgentInfo } from "./B2bItineraryPdf";
 import { PdfIcon } from "./ItineraryPdf";
 import { ReorderableList } from "./ReorderableList";
+import { addDaysToStayDate, stayDateInputValue } from "@/lib/itinerary/stayDate";
+import { B2B_DEFAULT_COVER, b2bCoverImage } from "@/lib/b2b/coverImage";
+import { ImagePicker } from "./ImagePicker";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -89,6 +92,23 @@ export function B2bItineraryEditor({
   function updateDay(dayId: string, updates: Partial<Pick<ItineraryDay, "title" | "body">>) {
     setData((p) => ({ ...p, days: p.days.map((d) => (d.id === dayId ? { ...d, ...updates } : d)) }));
   }
+  // Setting a day's date also fills the days after it that have no date yet,
+  // one day apart — pick Day 1 and the rest follow; any of them can be changed.
+  function updateDayDate(dayId: string, value: string) {
+    setData((p) => {
+      const from = p.days.findIndex((d) => d.id === dayId);
+      return {
+        ...p,
+        days: p.days.map((d, i) => {
+          if (i === from) return { ...d, dateLabel: value };
+          if (value && i > from && !d.dateLabel) {
+            return { ...d, dateLabel: addDaysToStayDate(value, i - from) };
+          }
+          return d;
+        }),
+      };
+    });
+  }
   function updateDayMeta(dayId: string, key: "stay" | "meals", titleLabel: string, value: string) {
     setData((p) => ({
       ...p,
@@ -124,7 +144,14 @@ export function B2bItineraryEditor({
   /* ---------- hotels ---------- */
   function updateHotel(
     hid: string,
-    field: "destination" | "nights" | "hotelDetails" | "roomType" | "rooms",
+    field:
+      | "destination"
+      | "nights"
+      | "hotelDetails"
+      | "roomType"
+      | "rooms"
+      | "checkIn"
+      | "checkOut",
     value: string,
   ) {
     setData((p) => ({ ...p, hotels: p.hotels.map((h) => (h.id === hid ? { ...h, [field]: value } : h)) }));
@@ -331,6 +358,39 @@ export function B2bItineraryEditor({
       {/* Trip details — maps to B2bItineraryPdf's title + info bar + destinations */}
       <div className={card}>
         <h2 className={sectionTitle}>Trip Details</h2>
+        {/* Cover photo — fills the PDF's first page behind the title. Starts
+            on the B2B default; change it from the gallery or upload one. */}
+        <div className="mt-4 flex items-start gap-4">
+          <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={b2bCoverImage(data.coverImage)}
+              alt="Cover"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <ImagePicker
+              value={b2bCoverImage(data.coverImage)}
+              onChange={(src) => update("coverImage", src)}
+              className="absolute right-1.5 top-1.5 z-10"
+              label="Change"
+            />
+          </div>
+          <div>
+            <p className={fieldLabel}>Cover Image</p>
+            <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">
+              Shown full-page on the PDF cover. A portrait photo works best.
+            </p>
+            {b2bCoverImage(data.coverImage) !== B2B_DEFAULT_COVER && (
+              <button
+                type="button"
+                onClick={() => update("coverImage", B2B_DEFAULT_COVER)}
+                className="mt-2 text-xs font-bold text-primary hover:underline"
+              >
+                Use default cover
+              </button>
+            )}
+          </div>
+        </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className={fieldLabel}>Package Title</label>
@@ -422,7 +482,19 @@ export function B2bItineraryEditor({
           {(day, i) => (
             <div className="rounded-xl border border-border p-4">
               <div className="flex items-start justify-between gap-3">
-                <p className="text-xs font-bold text-primary">DAY {String(i + 1).padStart(2, "0")}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs font-bold text-primary">
+                    DAY {String(i + 1).padStart(2, "0")}
+                  </p>
+                  {/* Date only (no time), optional — shown under the day number in the PDF. */}
+                  <input
+                    type="date"
+                    aria-label={`Date for day ${i + 1}`}
+                    className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+                    value={stayDateInputValue(day.dateLabel)}
+                    onChange={(e) => updateDayDate(day.id, e.target.value)}
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => removeDay(day.id)}
@@ -547,6 +619,30 @@ export function B2bItineraryEditor({
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
+              {/* Dates only (no time), both optional — a second row of the
+                  same card. The PDF's Stay Plan shows Check-in / Check-out
+                  columns once any hotel has one. */}
+              <div className="col-span-full grid grid-cols-2 gap-3 sm:max-w-md">
+                <div>
+                  <label className={fieldLabel}>Check-in Date</label>
+                  <input
+                    type="date"
+                    className={inputCls + " mt-1"}
+                    value={stayDateInputValue(h.checkIn)}
+                    onChange={(e) => updateHotel(h.id, "checkIn", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={fieldLabel}>Check-out Date</label>
+                  <input
+                    type="date"
+                    className={inputCls + " mt-1"}
+                    min={stayDateInputValue(h.checkIn) || undefined}
+                    value={stayDateInputValue(h.checkOut)}
+                    onChange={(e) => updateHotel(h.id, "checkOut", e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </ReorderableList>

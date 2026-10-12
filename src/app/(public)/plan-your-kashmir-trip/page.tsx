@@ -1,3 +1,4 @@
+import { publicPriceFields } from "@/lib/tours/cards";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -111,6 +112,7 @@ export default async function PlanYourKashmirTripPage() {
           reviewCount: true,
           priceFrom: true,
           priceWas: true,
+          hidePrice: true,
           minPersons: true,
           destinations: { select: { destination: { select: { name: true } } } },
         },
@@ -132,7 +134,10 @@ export default async function PlanYourKashmirTripPage() {
   // block below — never a hardcoded/invented figure. Null when no published
   // Kashmir tour has a price yet, in which case the block omits the figure
   // rather than showing a fabricated one.
-  const startingPrice = tours.length > 0 ? Math.min(...tours.map((t) => t.priceFrom)) : null;
+  // Price-on-request tours don't count — their price isn't shown anywhere.
+  const pricedTours = tours.filter((t) => !t.hidePrice);
+  const startingPrice =
+    pricedTours.length > 0 ? Math.min(...pricedTours.map((t) => t.priceFrom)) : null;
 
   const breadcrumbJsonLd = buildBreadcrumbList([
     { name: "Home", url: SITE_URL },
@@ -222,8 +227,7 @@ export default async function PlanYourKashmirTripPage() {
           image: t.coverImage,
           rating: t.rating,
           reviewCount: t.reviewCount,
-          priceFrom: t.priceFrom,
-          priceWas: t.priceWas,
+          ...publicPriceFields(t),
           minPersons: t.minPersons,
         }))}
       />
