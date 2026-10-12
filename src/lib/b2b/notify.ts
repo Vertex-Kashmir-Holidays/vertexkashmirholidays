@@ -80,7 +80,10 @@ async function sendToEach(
         }
       }),
     );
-    for (const ok of results) (ok ? sent++ : failed++);
+    for (const ok of results) {
+      if (ok) sent++;
+      else failed++;
+    }
   }
   return { sent, failed };
 }

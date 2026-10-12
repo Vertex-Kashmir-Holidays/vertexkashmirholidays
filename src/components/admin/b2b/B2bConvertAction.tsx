@@ -44,7 +44,11 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
     const g = parseFloat(gstPercent);
     if (!b || b <= 0) return setError("Enter a valid total amount.");
     if (!t || t <= 0) return setError("Enter a valid token amount.");
-    if (t >= b) return setError("Token amount must be less than the total amount.");
+    if (t >= b) {
+      return setError(
+        `Token amount (₹${t.toLocaleString("en-IN")}) must be less than the total amount (₹${b.toLocaleString("en-IN")}) — check the total.`,
+      );
+    }
     if (!gstPercent || Number.isNaN(g)) return setError("Select a GST rate.");
     setError(null);
     setSubmitting(true);
@@ -107,7 +111,7 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
                 <input
                   type="number"
                   min={0}
-                  step={1000}
+                  step="any"
                   value={bookingAmount}
                   onChange={(e) => setBookingAmount(e.target.value)}
                   placeholder="e.g. 55000"
@@ -122,7 +126,7 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
                 <input
                   type="number"
                   min={0}
-                  step={1000}
+                  step="any"
                   value={tokenAmount}
                   onChange={(e) => setTokenAmount(e.target.value)}
                   placeholder="e.g. 10000"

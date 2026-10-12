@@ -190,8 +190,8 @@ export function TransportAssistanceBanner({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[14px] font-semibold">Flight / Train</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="mb-1.5 block text-[14px] font-semibold">Flight / Train / Bus</label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {MODES.map((m) => (
                   <button
                     key={m.value}
