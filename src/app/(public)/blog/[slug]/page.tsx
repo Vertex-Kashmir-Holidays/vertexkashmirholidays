@@ -1,4 +1,5 @@
 // src/app/(public)/blog/[slug]/page.tsx
+import { REQUEST_QUOTE_LABEL, tourCardPricing } from "@/lib/tours/cards";
 
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -23,6 +24,7 @@ import { BlogPostRelated } from "@/components/blog/BlogPostRelated";
 import { BlogPostSidebar } from "@/components/blog/BlogPostSidebar";
 import { TourDetailsRelatedTours } from "@/components/tours/TourDetailsRelatedTours";
 import { parseRelatedTours } from "@/lib/tours/content";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Blog mutations invalidate this exact page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -83,7 +85,7 @@ const getBlogPost = cache(async (slug: string) => {
       relatedFaqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   });
@@ -166,7 +168,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const { html, toc } = withHeadingIds(post.body);
 
-  const faqs = post.relatedFaqs;
+  const faqs = post.relatedFaqs.map(toFaqPreview);
 
   // Curated related-tours (editorial pairings), same convention as Tour.relatedTours.
   const relatedTourEntries = parseRelatedTours(post.relatedTours);
@@ -198,8 +200,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           places: t.destinations.map((d) => d.destination.name).join(", "),
           r: t.rating.toFixed(1),
           n: String(t.reviewCount),
-          old: t.priceWas ? formatINR(t.priceWas) : undefined,
-          p: formatINR(t.priceFrom),
+          ...tourCardPricing(t),
         },
       };
     })
@@ -312,9 +313,11 @@ export default async function BlogPostPage({ params }: PageProps) {
                     href: `/tours/${tour.slug}`,
                     name: tour.title,
                     duration: `${tour.duration - 1}N / ${tour.duration}D`,
-                    price: formatINR(tour.priceFrom),
-                    oldPrice: tour.priceWas ? formatINR(tour.priceWas) : undefined,
-                    off: tour.discountPct ? `${tour.discountPct}% OFF` : undefined,
+                    // Price-on-request tours: no figure, no discount badge.
+                    price: tour.hidePrice ? REQUEST_QUOTE_LABEL : formatINR(tour.priceFrom),
+                    priceHidden: tour.hidePrice,
+                    oldPrice: !tour.hidePrice && tour.priceWas ? formatINR(tour.priceWas) : undefined,
+                    off: !tour.hidePrice && tour.discountPct ? `${tour.discountPct}% OFF` : undefined,
                     route: tour.destinations.map((d) => d.destination.name).join(" · "),
                     rating: tour.rating.toFixed(1),
                     reviews: `${tour.reviewCount} reviews`,

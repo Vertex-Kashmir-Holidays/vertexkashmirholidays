@@ -42,12 +42,14 @@ const getAboutContent = cache(async () =>
   prisma.aboutContent.findUnique({ where: { id: "singleton" } }),
 );
 
+const cmsHref = (href: string | null | undefined) => (href && href !== "#" ? href : null);
+
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getAboutContent();
   return buildMetadata({
     title: "About Us — Local Kashmir Travel Experts",
     description:
-      "Meet Vertex Kashmir Holidays — a Kashmir-based team crafting honest, handpicked tours with zero middlemen, transparent pricing and 24/7 on-ground support.",
+      "Meet Vertex Kashmir Holidays — a Kashmir-based team crafting honest, handpicked tours with zero middlemen, transparent pricing and on-ground support.",
     canonical: `${SITE_URL}/about`,
     ogImage: content?.ogImage ?? content?.heroImage ?? null,
   });
@@ -143,12 +145,20 @@ export default async function AboutPage() {
       />
       <AboutStats
         image={content?.statsImage ?? null}
-        stats={stats.map((s) => ({
-          id: s.id,
-          value: s.value,
-          label: s.label,
-          icon: s.icon,
-        }))}
+        // A rating stat always shows the live approved-review average and
+        // count (never a typed figure), and is dropped while there are none.
+        stats={stats
+          .filter((s) => !/rating/i.test(s.label) || reviewStats.total > 0)
+          .map((s) =>
+            /rating/i.test(s.label)
+              ? {
+                  id: s.id,
+                  value: `${reviewStats.average.toFixed(1)} / 5`,
+                  label: `Average rating · ${reviewStats.total} review${reviewStats.total === 1 ? "" : "s"}`,
+                  icon: s.icon,
+                }
+              : { id: s.id, value: s.value, label: s.label, icon: s.icon },
+          )}
       />
       <AboutValues
         heading={{
@@ -241,12 +251,18 @@ export default async function AboutPage() {
           title: content?.ctaTitle ?? null,
           subtitle: content?.ctaSubtitle ?? null,
           image: content?.ctaImage ?? null,
+          // A blank or "#" CMS link falls back to the live contact settings.
           whatsappLabel: content?.ctaWhatsappLabel ?? null,
-          whatsappHref: content?.ctaWhatsappHref ?? null,
+          whatsappHref:
+            cmsHref(content?.ctaWhatsappHref) ?? "whatsapp:Hi! I'd like help planning a Kashmir trip.",
           callLabel: content?.ctaCallLabel ?? null,
-          callHref: content?.ctaCallHref ?? null,
+          callHref:
+            cmsHref(content?.ctaCallHref) ??
+            (settings?.sitePhone ? `tel:${settings.sitePhone.replace(/\s/g, "")}` : null),
           emailLabel: content?.ctaEmailLabel ?? null,
-          emailHref: content?.ctaEmailHref ?? null,
+          emailHref:
+            cmsHref(content?.ctaEmailHref) ??
+            (settings?.siteEmail ? `mailto:${settings.siteEmail}` : null),
         }}
       />
       {(settings?.legalName || settings?.tourismRegNumber || businessAddress) && (

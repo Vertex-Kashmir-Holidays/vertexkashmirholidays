@@ -24,6 +24,8 @@ interface BlogPostSidebarProps {
     name: string;
     duration: string;
     price: string;
+    /** Price-on-request tour — `price` is "Request Quote", no "/ person". */
+    priceHidden?: boolean;
     oldPrice?: string;
     off?: string;
     route: string;
@@ -85,7 +87,9 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           <p className="text-[14px] font-semibold text-muted-foreground">{relatedTour.duration}</p>
           <p className="mt-2.5 flex flex-wrap items-center gap-2">
             <span className="text-[18px] font-extrabold">{relatedTour.price}</span>
-            <span className="text-[14px] text-muted-foreground">/ person</span>
+            {!relatedTour.priceHidden && (
+              <span className="text-[14px] text-muted-foreground">/ person</span>
+            )}
             {relatedTour.oldPrice && (
               <span className="text-[14px] text-muted-foreground line-through">
                 {relatedTour.oldPrice}

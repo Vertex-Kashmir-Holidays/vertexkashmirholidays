@@ -764,7 +764,7 @@ function Footer() {
       <View style={s.footerRow}>
         <View>
           <Text style={s.footerCompany}>{CONTACT.company}</Text>
-          <Text style={s.footerReg}>{CONTACT.address}</Text>
+          <Text style={s.footerReg}>{footerAddress}</Text>
         </View>
         <View style={s.footerCenter}>
           {footerLogoSrc ? <Image src={footerLogoSrc} style={s.footerLogo} /> : null}
@@ -808,6 +808,9 @@ let footerQuoteNumber = "";
 let footerSocialLinks: PdfSocialLinks = {};
 // ...and for the small brand mark centered above them.
 let footerLogoSrc: string | undefined;
+// ...and for the office address — the same Corporate Office as the closing
+// page, not the hardcoded Registered Office in PDF_CONTACT.
+let footerAddress = PDF_CONTACT.address;
 
 function SectionHead({
   title,
@@ -1006,6 +1009,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
   footerQuoteNumber = data.quoteNumber;
   footerSocialLinks = socialLinks;
   footerLogoSrc = img(LOGO_SRC);
+  footerAddress = officeAddress;
   const incRuns = withCategoryRuns(data.inc);
   const excRuns = withCategoryRuns(data.exc);
   // The Day column only widens when a date is present, so proposals without

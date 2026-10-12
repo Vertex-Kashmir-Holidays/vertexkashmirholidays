@@ -7,7 +7,12 @@ import { auth } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { sendMail, bookingRequestReceivedHtml, bookingRequestReceivedText } from "@/lib/mail";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
-import { computeChargeable, round2, type PaymentOption } from "@/lib/bookings/finance";
+import {
+  computeChargeable,
+  MIN_LEAD_DAYS,
+  round2,
+  type PaymentOption,
+} from "@/lib/bookings/finance";
 import { logPaymentAudit } from "@/lib/bookings/audit";
 import { cleanupStalePendingBookings, STALE_BOOKING_MINUTES } from "@/lib/bookings/cleanup";
 import { BOOKING_TOKEN_TTL_MS } from "@/lib/auth/otp";
@@ -25,7 +30,6 @@ const PAYMENT_OPTION_LABEL: Record<PaymentOption, string> = {
 //   • A booking's travel date must be at least MIN_LEAD_DAYS away (lead time).
 //   • A customer's next tour can only start BOOKING_GAP_DAYS after an existing
 //     active booking's start date (trips are kept apart).
-const MIN_LEAD_DAYS = 4;
 const MAX_BOOKING_MONTHS = 6;
 const BOOKING_GAP_DAYS = 15;
 
@@ -95,7 +99,12 @@ export async function POST(req: NextRequest) {
   // email (see /api/bookings/request-otp + verify-otp) — same "verified, proof
   // token issued" shape as the forgot-password flow's resetToken.
   const otpRecord = await prisma.emailOtp.findUnique({ where: { email: emailNorm } });
-  if (!otpRecord || otpRecord.purpose !== "BOOKING" || !otpRecord.verifiedAt || !otpRecord.resetTokenHash) {
+  if (
+    !otpRecord ||
+    otpRecord.purpose !== "BOOKING" ||
+    !otpRecord.verifiedAt ||
+    !otpRecord.resetTokenHash
+  ) {
     return NextResponse.json(
       { error: "Please verify your email again before booking." },
       { status: 400 },
@@ -156,6 +165,7 @@ export async function POST(req: NextRequest) {
       minPersons: true,
       published: true,
       formMode: true,
+      hidePrice: true,
     },
   });
 
@@ -166,7 +176,9 @@ export async function POST(req: NextRequest) {
   // Inquiry-only tours (incl. every tour with package options) are never sold
   // online — Sales quotes the final price. Authoritative server-side block;
   // the checkout page redirects too, but a direct POST must never get through.
-  if (tour.formMode === "INQUIRY_ONLY") {
+  // Price-on-request tours (Tour.hidePrice) are enquiry-only whatever their
+  // stored formMode — never priced or sold online.
+  if (tour.formMode === "INQUIRY_ONLY" || tour.hidePrice) {
     return NextResponse.json(
       { error: "This tour isn't available for online booking. Please send an enquiry instead." },
       { status: 422 },
@@ -323,7 +335,11 @@ export async function POST(req: NextRequest) {
       text: bookingRequestReceivedText(emailPayload),
     });
   } catch (err) {
-    console.error("[bookings/create-order] acknowledgment email failed (order created):", booking.id, err);
+    console.error(
+      "[bookings/create-order] acknowledgment email failed (order created):",
+      booking.id,
+      err,
+    );
   }
 
   return NextResponse.json({

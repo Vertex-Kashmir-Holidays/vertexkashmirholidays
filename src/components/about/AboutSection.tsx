@@ -5,6 +5,7 @@ import { imgSrc } from "@/lib/placeholder";
 import { renderAccents } from "@/lib/accents";
 import type { AboutContentData, SectionHeading, SiteStatData } from "@/types/home";
 import { CmsCtaLink } from "@/components/common/CmsCtaLink";
+import { formatStatValue } from "@/lib/format";
 
 interface AboutSectionProps {
   heading: SectionHeading;
@@ -55,9 +56,7 @@ export function AboutSection({ heading, content, stats }: AboutSectionProps) {
                 {stats.map((stat, i) => (
                   <div key={i} className="glass rounded-2xl p-4 text-center">
                     <p className="text-lg sm:text-xl font-extrabold text-foreground">
-                      {/^\d+$/.test(stat.value)
-                        ? Number(stat.value).toLocaleString("en-IN")
-                        : stat.value}
+                      {formatStatValue(stat.value)}
                       {stat.suffix}
                     </p>
                     <p className="mt-1 text-[12px] text-muted-foreground">{stat.label}</p>

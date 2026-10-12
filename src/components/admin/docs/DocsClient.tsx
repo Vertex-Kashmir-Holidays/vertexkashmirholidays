@@ -1,27 +1,18 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, FileText, Download, FolderOpen } from "lucide-react";
+import { Upload, Trash2, FileText, Download, FolderOpen, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DOC_CATEGORIES, docDownloadFilename, type DocCategory } from "@/lib/docs/categories";
 import { DocLinksSection, type DocLinkItem } from "./DocLinksSection";
-
-// Mirrors the server's authoritative check (src/app/api/admin/docs/route.ts) —
-// this one is UX only, so a rejected file never even reaches the network.
-const MAX_DOC_BYTES = 1 * 1024 * 1024; // 1 MB
-const ALLOWED_DOC_TYPES = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "image/png",
-  "image/jpeg",
-];
+import { DocModal, type DocMetaPayload } from "./DocModal";
 
 interface DocItem {
   id: string;
   title: string;
+  description: string;
   category: string;
   url: string;
   mimeType: string;
@@ -36,10 +27,6 @@ interface Props {
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
-}
-
-function titleFromFilename(name: string): string {
-  return name.replace(/\.[^/.]+$/, "").replace(/[-_]+/g, " ").trim() || name;
 }
 
 function fmtSize(bytes: number): string {
@@ -61,43 +48,39 @@ const CATEGORY_HINTS: Record<DocCategory, string> = {
 export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [uploadingCategory, setUploadingCategory] = useState<DocCategory | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const fileInputs = useRef<Partial<Record<DocCategory, HTMLInputElement | null>>>({});
+  // Upload (doc = null) into a category, or edit an existing doc's title/purpose.
+  const [modal, setModal] = useState<{ category: DocCategory; doc: DocItem | null } | null>(null);
 
-  function triggerUpload(category: DocCategory) {
-    fileInputs.current[category]?.click();
-  }
-
-  async function handleFileSelected(category: DocCategory, file: File | undefined) {
-    if (!file) return;
-    if (!ALLOWED_DOC_TYPES.includes(file.type)) {
-      toast.error("File must be a PDF, DOC, DOCX, PNG, or JPG.");
-      return;
-    }
-    if (file.size > MAX_DOC_BYTES) {
-      toast.error("File is too large — maximum size is 1 MB.");
-      return;
-    }
-
-    setUploadingCategory(category);
+  async function handleSave({ title, description, file }: DocMetaPayload): Promise<boolean> {
+    if (!modal) return false;
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("title", titleFromFilename(file.name));
-      fd.append("category", category);
-      const res = await fetch("/api/admin/docs", { method: "POST", body: fd });
+      let res: Response;
+      if (modal.doc) {
+        res = await fetch(`/api/admin/docs/${modal.doc.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description }),
+        });
+      } else {
+        const fd = new FormData();
+        if (file) fd.append("file", file);
+        fd.append("title", title);
+        fd.append("description", description);
+        fd.append("category", modal.category);
+        res = await fetch("/api/admin/docs", { method: "POST", body: fd });
+      }
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({ error: "" }));
-        toast.error(error || "Upload failed.");
-        return;
+        toast.error(error || "Save failed.");
+        return false;
       }
-      toast.success("Document uploaded.");
+      toast.success(modal.doc ? "Document updated." : "Document uploaded.");
       router.refresh();
+      return true;
     } catch {
-      toast.error("Upload failed.");
-    } finally {
-      setUploadingCategory(null);
+      toast.error("Save failed.");
+      return false;
     }
   }
 
@@ -136,7 +119,6 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {DOC_CATEGORIES.map((category) => {
           const items = initialItems.filter((i) => i.category === category);
-          const uploading = uploadingCategory === category;
           return (
             <div
               key={category}
@@ -151,30 +133,13 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
                 </div>
                 {canCreate && (
                   <button
-                    onClick={() => triggerUpload(category)}
-                    disabled={uploading}
-                    className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold text-primary border border-border px-3 py-1.5 rounded-lg hover:bg-primary/10 disabled:opacity-60"
+                    onClick={() => setModal({ category, doc: null })}
+                    className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold text-primary border border-border px-3 py-1.5 rounded-lg hover:bg-primary/10"
                   >
-                    {uploading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="w-3.5 h-3.5" />
-                    )}
+                    <Upload className="w-3.5 h-3.5" />
                     Upload
                   </button>
                 )}
-                <input
-                  ref={(el) => {
-                    fileInputs.current[category] = el;
-                  }}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                  className="hidden"
-                  onChange={(e) => {
-                    handleFileSelected(category, e.target.files?.[0]);
-                    e.target.value = "";
-                  }}
-                />
               </div>
 
               {items.length === 0 ? (
@@ -191,9 +156,14 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
                     >
                       <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground truncate">
+                        <p className="text-sm font-semibold text-foreground break-words">
                           {doc.title}
                         </p>
+                        {doc.description && (
+                          <p className="text-[12px] text-muted-foreground break-words">
+                            {doc.description}
+                          </p>
+                        )}
                         <p className="text-[11px] text-muted-foreground">
                           {fmtSize(doc.sizeBytes)} · {doc.uploadedByName} · {fmtDate(doc.createdAt)}
                         </p>
@@ -206,6 +176,15 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
                       >
                         <Download className="w-3.5 h-3.5" />
                       </a>
+                      {canEdit && (
+                        <button
+                          onClick={() => setModal({ category, doc })}
+                          title="Edit title & purpose"
+                          className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {canDelete &&
                         (confirmDeleteId === doc.id ? (
                           <button
@@ -234,6 +213,14 @@ export function DocsClient({ initialItems, initialLinks, canCreate, canEdit, can
           );
         })}
       </div>
+
+      <DocModal
+        doc={modal?.doc ?? null}
+        category={modal?.category ?? ""}
+        open={modal !== null}
+        onOpenChange={(open) => !open && setModal(null)}
+        onSave={handleSave}
+      />
     </div>
   );
 }

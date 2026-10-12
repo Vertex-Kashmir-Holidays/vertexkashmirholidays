@@ -1028,7 +1028,7 @@ export function AuthFormPanel({ view, onViewChange, nonce }: AuthFormPanelProps)
                     <Heart className="h-5 w-5 text-primary" fill="currentColor" strokeWidth={0} />
                   </h2>
                   <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
-                    Join thousands of happy travellers.
+                    Join travellers planning Kashmir with local experts.
                     <br />
                     It only takes a minute.
                   </p>

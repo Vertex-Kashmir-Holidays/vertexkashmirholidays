@@ -1,8 +1,9 @@
 "use client";
+import { tourCardPricing } from "@/lib/tours/cards";
 
 import { motion } from "framer-motion";
 import { TourCard } from "@/components/ui/organisms/TourCard";
-import { formatINR, renderAccents } from "@/lib/accents";
+import { renderAccents } from "@/lib/accents";
 import { fadeUp, fadeUpLg, fadeIn, fadeRight, viewportOnce } from "@/lib/motion";
 import type { HomeTourData, SectionHeading } from "@/types/home";
 import { CmsCtaLink } from "@/components/common/CmsCtaLink";
@@ -112,9 +113,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
               places: tour.places,
               r: tour.rating.toFixed(1),
               n: String(tour.reviewCount),
-              old: tour.priceWas ? formatINR(tour.priceWas) : undefined,
-              p: formatINR(tour.priceFrom),
-              minPersons: tour.minPersons,
+              ...tourCardPricing(tour),
             }}
             index={i}
             variant="home"

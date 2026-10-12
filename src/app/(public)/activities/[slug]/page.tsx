@@ -1,4 +1,5 @@
 import { ActivityBestTime } from "@/components/activities/ActivityBestTime";
+import { tourCardPricing } from "@/lib/tours/cards";
 import { ActivityDetailTabs } from "@/components/activities/ActivityDetailTabs";
 import { ActivityDifficulty } from "@/components/activities/ActivityDifficulty";
 import { ActivityHighlights } from "@/components/activities/ActivityHighlights";
@@ -27,7 +28,6 @@ import {
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TrustSection } from "@/components/common/TrustSection";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
-import { formatINR } from "@/lib/accents";
 import { compareToursForCards } from "@/lib/tours/ordering";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
@@ -36,6 +36,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Activity mutations invalidate this exact page directly
 // (src/lib/cache.ts), as do Tour/Destination mutations that touch a linked record.
@@ -84,7 +85,7 @@ const getActivity = cache(async (slug: string) => {
       relatedFaqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   });
@@ -127,7 +128,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   const suitableFor = parseJson<string[]>(activity.suitableFor, []);
   const safetyTips = parseJson<string[]>(activity.safetyTips, []);
   const whatToCarry = parseJson<string[]>(activity.whatToCarry, []);
-  const faqs = activity.relatedFaqs;
+  const faqs = activity.relatedFaqs.map(toFaqPreview);
 
   const relatedDestinations = activity.destinations.map((d) => d.destination);
 
@@ -149,9 +150,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       places: t.destinations.map((td) => td.destination.name).join(", "),
       r: t.rating.toFixed(1),
       n: String(t.reviewCount),
-      old: t.priceWas ? formatINR(t.priceWas) : undefined,
-      p: formatINR(t.priceFrom),
-      minPersons: t.minPersons,
+      ...tourCardPricing(t),
     }));
 
   // Nearby Activities — derived from shared destinations, no new relation.
@@ -242,7 +241,9 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   });
 
   return (
-    <div className="bg-background text-foreground">
+    // Activity context: WhatsApp/forms here ask the travel month only — an
+    // activity's price isn't a trip budget. Tour cards inside keep their own context.
+    <div className="bg-background text-foreground" data-wa-context="activity">
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={attractionJsonLd} />
       {gallery.length > 0 &&

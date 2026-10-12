@@ -44,6 +44,7 @@ const patchSchema = z.object({
   bestseller: z.boolean().optional(),
   published: z.boolean().optional(),
   formMode: z.enum(["BOOKING_ONLY", "INQUIRY_ONLY", "BOTH"]).optional(),
+  hidePrice: z.boolean().optional(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
   ogImage: z.string().optional().nullable(),
@@ -141,6 +142,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data: {
         ...rest,
         ...packageRules.data,
+        // Price on request ⇒ enquiry-only, re-applied on every save (same as
+        // packageRules) so a later formMode-only PATCH can't re-open booking.
+        ...((rest.hidePrice ?? existing.hidePrice) ? { formMode: "INQUIRY_ONLY" as const } : {}),
         ...(category ? { category: category as TourCategory } : {}),
         ...(collectionIds
           ? { collections: { set: collectionIds.map((cid) => ({ id: cid })) } }

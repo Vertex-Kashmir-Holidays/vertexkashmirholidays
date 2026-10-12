@@ -4,7 +4,7 @@
 import { motion } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
 import Image from "next/image";
-import Link from "next/link";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 import { Phone, Mail } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { renderMint } from "@/lib/accents";
@@ -47,32 +47,33 @@ export function AboutCTA({ data }: AboutCTAProps) {
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[16px] text-muted-foreground">{data.subtitle}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3.5">
-          {data.whatsappLabel && (
-            <Link
-              href={data.whatsappHref ?? "#"}
+          {data.whatsappLabel && data.whatsappHref && (
+            <CmsCtaLink
+              href={data.whatsappHref}
+              source="about_cta"
               className="inline-flex items-center gap-2.5 rounded-lg bg-brand-bright px-6 py-3.5 text-[14px] font-bold text-white shadow-card transition hover:brightness-110"
             >
               <WhatsAppIcon className="h-[18px] w-[18px]" />
               {data.whatsappLabel}
-            </Link>
+            </CmsCtaLink>
           )}
-          {data.callLabel && (
-            <Link
-              href={data.callHref ?? "#"}
+          {data.callLabel && data.callHref && (
+            <a
+              href={data.callHref}
               className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[14px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
             >
               <Phone className="h-4 w-4" strokeWidth={2} />
               {data.callLabel}
-            </Link>
+            </a>
           )}
-          {data.emailLabel && (
-            <Link
-              href={data.emailHref ?? "#"}
+          {data.emailLabel && data.emailHref && (
+            <a
+              href={data.emailHref}
               className="inline-flex items-center gap-2.5 rounded-lg border border-border px-6 py-3.5 text-[14px] font-semibold text-foreground transition hover:bg-foreground hover:text-background"
             >
               <Mail className="h-4 w-4" strokeWidth={2} />
               {data.emailLabel}
-            </Link>
+            </a>
           )}
         </div>
       </motion.div>

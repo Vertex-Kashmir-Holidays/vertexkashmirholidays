@@ -6,6 +6,7 @@ import { attributionSchema } from "@/lib/attribution";
 import { deriveChannel } from "@/lib/attribution.server";
 import { LeadSource } from "@prisma/client";
 import { REQUESTED_COMPONENTS, TRANSPORT_MODES } from "@/lib/leads/schema";
+import { budgetBandKeyField, travelMonthField } from "@/lib/leads/qualification";
 import {
   createWhatsAppAttributionToken,
   hasAttributionData,
@@ -25,6 +26,11 @@ const plannerIntentSchema = z.object({
   // staff resolve the reference (src/app/api/admin/leads/route.ts).
   offerId: z.string().trim().max(40).optional(),
   packageName: z.string().trim().max(60).optional(),
+  // Lead qualification from the WhatsApp modal — validated against the active
+  // bands / month window when the token row is written.
+  budgetBandKey: budgetBandKeyField.optional(),
+  travelMonth: travelMonthField.optional(),
+  budgetDerived: z.boolean().optional(),
 });
 
 // Single-letter display prefix for the WhatsApp reference tag (e.g.
@@ -84,7 +90,9 @@ export async function POST(req: NextRequest) {
       intent.transportModes?.length ||
       intent.fromCity ||
       intent.toCity ||
-      intent.offerId)
+      intent.offerId ||
+      intent.budgetBandKey ||
+      intent.travelMonth)
   );
 
   // A visitor with no meaningful attribution (no UTM/click-id/landing page/

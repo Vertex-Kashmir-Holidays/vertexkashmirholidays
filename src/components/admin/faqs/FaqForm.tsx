@@ -28,6 +28,7 @@ const faqSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
   status: z.enum(["DRAFT", "PUBLISHED"]),
   featured: z.boolean().default(false),
+  mentionsPrice: z.boolean().default(false),
   placements: z.array(z.enum(["HOME", "ABOUT", "CONTACT", "FAQ", "REVIEWS"])).default([]),
   sortOrder: z.number().int().default(0),
   lastReviewedAt: z.string().default(""),
@@ -43,6 +44,7 @@ export interface FaqFormDefaults {
   categoryId?: string;
   status?: string;
   featured?: boolean;
+  mentionsPrice?: boolean;
   placements?: string[];
   sortOrder?: number;
   lastReviewedAt?: string | null;
@@ -119,6 +121,7 @@ export function FaqForm({
       categoryId: defaults?.categoryId ?? categoryOptions[0]?.id ?? "",
       status: (defaults?.status as "DRAFT" | "PUBLISHED") ?? "DRAFT",
       featured: defaults?.featured ?? false,
+      mentionsPrice: defaults?.mentionsPrice ?? false,
       sortOrder: defaults?.sortOrder ?? 0,
       lastReviewedAt: defaults?.lastReviewedAt
         ? new Date(defaults.lastReviewedAt).toISOString().slice(0, 10)
@@ -309,6 +312,20 @@ export function FaqForm({
             <label className="flex items-center gap-2.5 cursor-pointer select-none">
               <input type="checkbox" {...register("featured")} className="h-4 w-4 accent-primary" />
               <span className="text-sm font-medium text-foreground">Featured</span>
+            </label>
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                {...register("mentionsPrice")}
+                className="mt-0.5 h-4 w-4 accent-primary"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-foreground">About price</span>
+                <span className="block text-[12px] text-muted-foreground">
+                  The answer refers to the package price — hidden on &quot;price on request&quot;
+                  tours.
+                </span>
+              </span>
             </label>
             <div>
               <FieldLabel>Sort Order</FieldLabel>

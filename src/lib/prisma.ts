@@ -22,11 +22,27 @@ const globalForPrisma = globalThis as unknown as {
 // typical cold-start window without slowing down the (much more common)
 // already-warm case.
 //
+// Local development must never read or write production: `next dev` runs with
+// NODE_ENV=development, so refuse to start when DATABASE_URL names the live
+// database. Deployed builds/servers run as production and are unaffected.
+// const LIVE_DATABASE_NAME = "vertex";
+
+// function assertNotLiveInDevelopment(url: URL): void {
+//   const databaseName = decodeURIComponent(url.pathname.replace(/^\//, ""));
+//   if (process.env.NODE_ENV === "development" && databaseName === LIVE_DATABASE_NAME) {
+//     throw new Error(
+//       `Refusing to start: DATABASE_URL points at the live "${LIVE_DATABASE_NAME}" database in development. ` +
+//         `Point .env / .env.local at vertex_dev instead.`,
+//     );
+//   }
+// 
+
 // DATABASE_URL is guaranteed set by this point — importing `env` above
 // throws a clear error at module load if it's missing, before Prisma ever
 // gets a chance to fail with its own opaque schema-validation error.
 function datasourceUrl(): string {
   const url = new URL(env.DATABASE_URL);
+  // assertNotLiveInDevelopment(url);
   if (!url.searchParams.has("connection_limit")) url.searchParams.set("connection_limit", "10");
   if (!url.searchParams.has("pool_timeout")) url.searchParams.set("pool_timeout", "30");
   if (!url.searchParams.has("connect_timeout")) url.searchParams.set("connect_timeout", "15");

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { saveUpload } from "@/lib/storage";
 import { DOC_CATEGORIES, isDocCategory, DOC_EXT_BY_MIME } from "@/lib/docs/categories";
+import { docMetaSchema } from "@/lib/docs/docSchema";
 
 export const dynamic = "force-dynamic";
 
@@ -39,14 +40,17 @@ export async function POST(req: NextRequest) {
   }
 
   const file = formData.get("file");
-  const title = formData.get("title");
+  const meta = docMetaSchema.safeParse({
+    title: formData.get("title") ?? "",
+    description: formData.get("description") ?? "",
+  });
   const category = formData.get("category");
 
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "Please choose a file to upload." }, { status: 400 });
   }
-  if (typeof title !== "string" || !title.trim()) {
-    return NextResponse.json({ error: "Title is required." }, { status: 400 });
+  if (!meta.success) {
+    return NextResponse.json({ error: meta.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
   if (!isDocCategory(category)) {
     return NextResponse.json(
@@ -88,7 +92,7 @@ export async function POST(req: NextRequest) {
 
   const created = await prisma.adminDocument.create({
     data: {
-      title: title.trim(),
+      ...meta.data,
       category,
       url,
       publicId,

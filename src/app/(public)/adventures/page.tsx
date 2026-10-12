@@ -13,6 +13,7 @@ import { HeroLeadCard } from '@/components/leads/HeroLeadCard';
 import { CampaignsPageClient } from '@/components/campaign/CampaignsPageClient';
 import { TransportAssistanceBanner } from '@/components/tours/TransportAssistanceBanner';
 import type { CampaignListItemData, CampaignTier } from '@/types/campaign';
+import { getPublicHeroStats } from '@/lib/publicHeroStats';
 
 // 24h safety net — Campaign mutations invalidate this page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -83,7 +84,8 @@ export default async function CampaignsPage() {
         tiers: true,
       },
     }),
-    prisma.siteStat.findMany({ where: { section: 'hero' }, orderBy: { sortOrder: 'asc' } }),
+    // Same live stat strip as the homepage, /tours and categories.
+    getPublicHeroStats(),
   ]);
 
   const campaigns: CampaignListItemData[] = rows.map((c) => {
@@ -135,7 +137,7 @@ export default async function CampaignsPage() {
         defaultImage="/hero/pahalgam-lg.webp"
         defaultImageMobile="/hero/pahalgam.webp"
         alt="Kashmir campaign experiences"
-        stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
+        stats={stats}
         aside={
           <HeroLeadCard
             source="campaign"

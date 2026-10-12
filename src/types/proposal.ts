@@ -262,6 +262,8 @@ export interface ProposalSummary {
   /** From `data` — who the proposal is for, and their phone (follow-ups). */
   customerName?: string;
   customerPhone?: string;
+  /** From `data.travelDates`, as typed on the cover. */
+  travelDates?: string;
   /** Package cost(s) from `data.tiers` — one for a single-package proposal,
    *  one per option (in TIER_ORDER) for a multi-option one. */
   packageCosts?: { label: string; price: string }[];

@@ -1,4 +1,5 @@
 // src/app/(public)/tours/[slug]/page.tsx
+import { effectiveFormMode, tourCardPricing } from "@/lib/tours/cards";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
@@ -13,7 +14,6 @@ import {
   buildCampaignEvents,
 } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
-import { formatINR } from "@/lib/accents";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TourDetailsGallery } from "@/components/tours/TourDetailsGallery";
 import { TourDetailsHero } from "@/components/tours/TourDetailsHero";
@@ -53,6 +53,8 @@ import {
   parseRelatedTours,
   publishedPackageOptions,
 } from "@/lib/tours/content";
+import { contextAttrs, trimTourTitle } from "@/lib/leads/qualification";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Tour mutations invalidate this exact page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -125,7 +127,7 @@ const getTour = cache(async (slug: string) => {
       relatedFaqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: { ...FAQ_PREVIEW_SELECT, mentionsPrice: true },
       },
     },
   });
@@ -173,11 +175,18 @@ export default async function TourDetailsPage({ params }: PageProps) {
   const exclusions = parseStringList(tour.exclusions);
   const highlights = parseStringList(tour.highlights);
   // Only shortAnswer is ever selected/rendered here; the full answer is on /faq.
-  const faqs = tour.relatedFaqs;
+  // Price on request (Tour.hidePrice): no price anywhere on the page, the
+  // tour is enquiry-only, and FAQs tagged "About price" are left out (they
+  // refer to a price the visitor can't see) — page and FAQPage schema alike.
+  const priceHidden = tour.hidePrice;
+  const formMode = effectiveFormMode(tour);
+  const faqs = tour.relatedFaqs
+    .filter((f) => !(priceHidden && f.mentionsPrice))
+    .map(toFaqPreview);
   const batches = parseJson<{ date: string; seats: number; price: string; status: string }[]>(
     tour.batches,
     [],
-  );
+  ).map((b) => (priceHidden ? { ...b, price: "" } : b));
   // Real, admin-entered scarcity — already captured for Event schema, now also
   // surfaced to visitors. Only ever shown when a staff member has actually
   // marked a departure "filling"; never fabricated.
@@ -190,6 +199,9 @@ export default async function TourDetailsPage({ params }: PageProps) {
   const notIdealFor = parseStringList(tour.notIdealFor);
   const accommodation = parseAccommodation(tour.accommodation);
   const budgetBreakdown = parseBudgetRows(tour.budgetBreakdown);
+  // The breakdown leads with the price — hidden on price-on-request tours
+  // (Personal Expenses, which carries no package price, still shows).
+  const visibleBudgetBreakdown = tour.hidePrice ? [] : budgetBreakdown;
   const personalExpenses = parsePersonalExpenses(tour.personalExpenses);
   const thingsToCarry = parsePackingList(tour.thingsToCarry);
   const localTravelTips = parseStringList(tour.localTravelTips);
@@ -198,10 +210,13 @@ export default async function TourDetailsPage({ params }: PageProps) {
   // Package variants (Tour.packageOptions) — shared itinerary, per-package
   // stay/services and a public 2-person price. Empty for ordinary tours, in
   // which case this page renders exactly as before.
-  const packageOptions = publishedPackageOptions(tour.packageOptions);
-  const lowestPriceForTwo = packageOptions.length
-    ? Math.min(...packageOptions.map((o) => o.priceForTwo))
-    : null;
+  const packageOptions = publishedPackageOptions(tour.packageOptions).map((o) =>
+    priceHidden ? { ...o, priceForTwo: 0 } : o,
+  );
+  const lowestPriceForTwo =
+    packageOptions.length && !priceHidden
+      ? Math.min(...packageOptions.map((o) => o.priceForTwo))
+      : null;
   // Kashmir/Ladakh-specific blocks (flight/train-to-Srinagar help, Kashmir
   // trust copy) are skipped for other regions (e.g. Himachal).
   const isKashmirSite = KASHMIR_SITE_REGIONS.includes(tour.region);
@@ -246,9 +261,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
           places: t.destinations.map((d) => d.destination.name).join(", "),
           r: t.rating.toFixed(1),
           n: String(t.reviewCount),
-          old: t.priceWas ? formatINR(t.priceWas) : undefined,
-          p: formatINR(t.priceFrom),
-          minPersons: t.minPersons,
+          ...tourCardPricing(t),
         },
       };
     })
@@ -305,7 +318,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
     ...(inclusions.length || exclusions.length ? [{ id: "inclusions", label: "Inclusions" }] : []),
     ...(things.length ? [{ id: "things", label: "Things to Do" }] : []),
     ...(accommodation.length ? [{ id: "accommodation", label: "Accommodation" }] : []),
-    ...(budgetBreakdown.length || personalExpenses.length
+    ...(visibleBudgetBreakdown.length || personalExpenses.length
       ? [{ id: "budget", label: "Budget" }]
       : []),
     ...(gallery.length ? [{ id: "gallery", label: "Gallery" }] : []),
@@ -335,15 +348,9 @@ export default async function TourDetailsPage({ params }: PageProps) {
     description: tour.excerpt ?? tour.description,
     coverImage: tour.coverImage,
     // Package tours show "From ₹X / 2 persons" — the offer matches that
-    // visible price rather than the derived per-person priceFrom.
-    priceFrom: lowestPriceForTwo ?? tour.priceFrom,
-    rating: tour.rating,
-    reviews: tour.reviews.map((r) => ({
-      name: r.name,
-      rating: r.rating,
-      body: r.body,
-      createdAt: r.createdAt,
-    })),
+    // visible price rather than the derived per-person priceFrom. Price on
+    // request: null → no offers block at all.
+    priceFrom: priceHidden ? null : (lowestPriceForTwo ?? tour.priceFrom),
   });
 
   const eventLds =
@@ -362,13 +369,24 @@ export default async function TourDetailsPage({ params }: PageProps) {
     description: tour.excerpt ?? tour.description,
     coverImage: tour.coverImage,
     duration: tour.duration,
-    priceFrom: lowestPriceForTwo ?? tour.priceFrom,
+    priceFrom: priceHidden ? null : (lowestPriceForTwo ?? tour.priceFrom),
     touristType: TOURIST_TYPE[tour.category] ?? "General",
     itineraryItems: rawItinerary.map((d) => ({ position: d.day, name: d.title })),
   });
 
+  // Lead-qualification context for this page's own WhatsApp CTAs: this tour,
+  // priced per person (a package-option tour: its lowest option ÷ 2). The site
+  // header/footer/floating button sit outside this wrapper and stay generic.
+  const waContext = priceHidden
+    ? contextAttrs({ kind: "generic" })
+    : contextAttrs({
+        kind: "tour",
+        pricePerPerson: lowestPriceForTwo !== null ? lowestPriceForTwo / 2 : tour.priceFrom,
+        name: trimTourTitle(tour.title),
+      });
+
   return (
-    <div className="bg-background text-foreground">
+    <div className="bg-background text-foreground" {...waContext}>
       <ScrollToTopOnMount />
       <PackageViewTracker packageName={tour.title} />
       <JsonLd data={breadcrumbJsonLd} />
@@ -437,7 +455,12 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
             {packageOptions.length > 0 && (
               <section id="packages" className="scroll-mt-16">
-                <TourPackageCards tourId={tour.id} tourName={tour.title} options={packageOptions} />
+                <TourPackageCards
+                  tourId={tour.id}
+                  tourName={tour.title}
+                  options={packageOptions}
+                  priceHidden={priceHidden}
+                />
               </section>
             )}
 
@@ -469,6 +492,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
                   title={`Things to Do on This Tour`}
                   items={things}
                   seeAllHref="/activities"
+                  trackPlacement="tour_detail"
                 />
               </section>
             )}
@@ -515,7 +539,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
             <div className="scroll-mt-16">
               <TourDetailsBudget
-                budgetBreakdown={budgetBreakdown}
+                budgetBreakdown={visibleBudgetBreakdown}
                 personalExpenses={personalExpenses}
               />
             </div>
@@ -540,26 +564,37 @@ export default async function TourDetailsPage({ params }: PageProps) {
                 ctaBody={tour.ctaBody ?? undefined}
                 tourName={tour.title}
                 tourSlug={tour.slug}
+                formMode={formMode}
+                priceHidden={priceHidden}
               />
             </div>
           </div>
 
           <div className="space-y-5">
             {/* EMI on a per-person price doesn't apply to package tours (enquiry only). */}
-            {lowestPriceForTwo === null && <AffordabilityWidget amount={tour.priceFrom} />}
+            {lowestPriceForTwo === null && !priceHidden && (
+              <AffordabilityWidget amount={tour.priceFrom} />
+            )}
             <TourDetailsSidebar
-              price={lowestPriceForTwo ?? tour.priceFrom}
+              priceHidden={priceHidden}
+              price={priceHidden ? 0 : (lowestPriceForTwo ?? tour.priceFrom)}
               pricePrefix={lowestPriceForTwo !== null ? "From" : undefined}
               priceSuffix={lowestPriceForTwo !== null ? "/ 2 persons" : undefined}
-              oldPrice={lowestPriceForTwo === null ? (tour.priceWas ?? undefined) : undefined}
-              discountPct={lowestPriceForTwo === null ? (tour.discountPct ?? undefined) : undefined}
+              oldPrice={
+                lowestPriceForTwo === null && !priceHidden ? (tour.priceWas ?? undefined) : undefined
+              }
+              discountPct={
+                lowestPriceForTwo === null && !priceHidden
+                  ? (tour.discountPct ?? undefined)
+                  : undefined
+              }
               minPersons={tour.minPersons}
               rating={tour.rating}
               reviews={tour.reviewCount}
               tourId={tour.id}
               tourName={tour.title}
               tourSlug={tour.slug}
-              formMode={tour.formMode}
+              formMode={formMode}
               nextDeparture={nextDeparture}
               bestTime={tour.bestTime ?? "Apr – Oct"}
               tourType={tour.tourType ?? "Private Tour"}
@@ -575,13 +610,14 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
       {/* Mobile-only sticky Book / Inquiry CTAs (forms open in a bottom-sheet). */}
       <BookingMobileBar
-        formMode={tour.formMode}
+        formMode={formMode}
+        priceHidden={priceHidden}
         tourId={tour.id}
         tourName={tour.title}
         tourSlug={tour.slug}
-        price={tour.priceFrom}
-        oldPrice={tour.priceWas ?? undefined}
-        discountPct={tour.discountPct ?? undefined}
+        price={priceHidden ? 0 : tour.priceFrom}
+        oldPrice={priceHidden ? undefined : (tour.priceWas ?? undefined)}
+        discountPct={priceHidden ? undefined : (tour.discountPct ?? undefined)}
         minPersons={tour.minPersons}
       />
 

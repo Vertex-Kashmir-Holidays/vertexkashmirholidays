@@ -112,6 +112,7 @@ export default async function EditFaqPage({ params }: PageProps) {
           categoryId: faq.categoryId,
           status: faq.status,
           featured: faq.featured,
+          mentionsPrice: faq.mentionsPrice,
           placements: faq.placements,
           sortOrder: faq.sortOrder,
           lastReviewedAt: faq.lastReviewedAt?.toISOString() ?? null,

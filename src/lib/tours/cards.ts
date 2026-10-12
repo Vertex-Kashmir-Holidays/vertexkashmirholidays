@@ -47,7 +47,7 @@ export function tourCardOptions(packageOptionsRaw: string): (TourPackageOption |
   return options.length ? options : [null];
 }
 
-// "No meals included" / "No meals" → the card hides its Meals icon.
+// "No meals included" / "No meals" → the card hides its Meals icon .
 const NO_MEALS = /^\s*no\b/i;
 
 /** Card fields that differ for one package option of a tour. */

@@ -21,7 +21,10 @@ import { BookingAdminPanel } from "@/components/admin/bookings/BookingAdminPanel
 export const metadata: Metadata = { title: "Booking Services — Admin" };
 export const dynamic = "force-dynamic";
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ addDriver?: string }>;
+};
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -32,8 +35,10 @@ function parseInclusions(raw: string): string[] {
   }
 }
 
-export default async function BookingServicesPage({ params }: PageProps) {
+export default async function BookingServicesPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  // Set by DriverDueGate's CTA — opens the Add Driver form straight away.
+  const { addDriver } = await searchParams;
   const guard = await requireModuleView("bookings");
   if (!guard.ok) return guard.page;
   const { role, userId } = guard;
@@ -160,7 +165,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
           </li>
         </ol>
       </nav>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Booking Services</h2>
           <p className="text-muted-foreground text-xs mt-0.5">
@@ -224,6 +229,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
               travelDate={data.travelDate}
               initialDriver={data.driver}
               canEdit={canEdit}
+              autoOpen={addDriver === "1"}
             />
           )}
         </div>

@@ -48,7 +48,10 @@ export function ActivityCard({
       transition={{ duration: 0.5, delay: index * 0.05 }}
     >
       <Tilt3D intensity={6}>
-        <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/10">
+        <article
+          data-wa-context="activity"
+          className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/10"
+        >
           {/* Image */}
           <div className="relative h-44 overflow-hidden">
             <Link

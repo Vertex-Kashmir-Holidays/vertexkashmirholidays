@@ -74,6 +74,15 @@ Business rules always take precedence over implementation assumptions. Where the
 - **Destinations & Activities:** many-to-many via `TourDestination` and `ActivityTour` join tables — a tour can span multiple destinations and offer multiple bookable activities.
 - **Pricing:** a single `priceFrom` (starting price) plus optional `priceWas`/`discountPct` for a struck-through "was" price display. There is no per-date or per-batch price variation stored structurally.
 - **Lead-capture mode:** each tour has a `formMode` (`BOOKING_ONLY` / `INQUIRY_ONLY` / `BOTH`) controlling which form(s) the public tour page shows.
+- **Budget Breakdown table (`Tour.budgetBreakdown`) — a content rule, not enforced in code.** The table is admin-typed JSON, so nothing recomputes it; whoever changes a tour's price or its rows must recompute it by hand, or it drifts (it did on six tours before 2026-10). The rules:
+  - **Row 1 ("Our Tour Package Cost") per-person = `priceFrom`**, exactly. Change `priceFrom` → change row 1 and the total in the same edit.
+  - **Family column = per-person × 4** on every row (the table's "family" is 4 people); **× 2 for `HONEYMOON`** (a couple). Ranges multiply both ends.
+  - **Lunch days = nights** (`duration − 1`): a 6N/7D tour has 6 lunches. The "Daily Lunches" row is priced per day; its note states the day count ("…for 6 days") and the family total for those days.
+  - Any other per-day row (e.g. Leh's oxygen cylinder) counts **once** unless its note states a day count.
+  - **Last row ("ESTIMATED TOTAL BUDGET") = sum of every row above it, optional rows included** (Gondola, helicopter, pony rides…) — low end of each range for the low total, high end for the high total. Family total = per-person total × 4 (× 2 for Honeymoon).
+  - The tour's "How much extra should I budget?" FAQ quotes the total minus row 1 (rounded to the nearest ₹1,000), and says whether flights are included in that figure.
+  - Format: Indian digit grouping, ranges as `₹a - ₹b`.
+  - As of 2026-10-07, Budget, Premium, Leh and Vaishno Devi follow this; Family, Group, Honeymoon, Gurez and the unpublished LoC tour do not yet (wrong row 1, lunch days or totals).
 - **Requires Business Decision — Seasonality/Availability:** there is no real availability calendar, slot count, or capacity field. `bestTime`/`bestTimeDetail` are marketing copy, not bookable-date logic, and `batches` is a free-form JSON string with no enforced structure or seat-count validation. If the business intends to cap seats per departure or block out sold-out dates, that logic does not exist yet and needs a decision on data model before it can be built.
 
 ## 6. Itinerary Rules — Implemented

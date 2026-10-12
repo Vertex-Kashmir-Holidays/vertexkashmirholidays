@@ -1,5 +1,6 @@
 "use client";
 
+import { REQUEST_QUOTE_LABEL } from "@/lib/tours/cards";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,6 +21,8 @@ export interface TourCategoryFeaturedData {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  /** Tour.hidePrice — "Request Quote" instead of the price. */
+  hidePrice: boolean;
   minPersons?: number;
 }
 
@@ -52,6 +55,12 @@ export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData 
               <span className="font-normal text-muted-foreground">({tour.reviewCount})</span>
             </span>
           </div>
+          {tour.hidePrice ? (
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-[20px] font-extrabold">{REQUEST_QUOTE_LABEL}</span>
+              <span className="text-[12px] text-muted-foreground">Price on request</span>
+            </div>
+          ) : (
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-[22px] font-extrabold">
               ₹{tour.priceFrom.toLocaleString("en-IN")}
@@ -66,6 +75,7 @@ export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData 
               {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
             </span>
           </div>
+          )}
           <Link
             href={`/tours/${tour.slug}`}
             className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-[14px] font-bold text-primary-foreground shadow-soft transition hover:brightness-110"

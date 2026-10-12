@@ -12,6 +12,7 @@ import { PhoneInput } from "@/components/auth/PhoneInput";
 import { toE164 } from "@/lib/auth/validation";
 import { phoneField } from "@/lib/leads/schema";
 import { cn } from "@/lib/utils";
+import { travelMonthText } from "@/lib/leads/qualification";
 
 /** Splits a saved E.164 number back into a country + national number to
  * pre-fill the PhoneInput — same helper as BookingForm/B2bRequestForm. */
@@ -166,6 +167,8 @@ export function LeadForm({
   const [waCampaign, setWaCampaign] = useState<string | null>(null);
   // Occasion Offer the WhatsApp CTA came from — the lead is tagged with it on save.
   const [waOffer, setWaOffer] = useState<string | null>(null);
+  // WhatsApp-modal answers on the reference, and whether WhatsApp was opened.
+  const [waQualification, setWaQualification] = useState<string | null>(null);
 
   function clearResolvedReference() {
     setWaRef("");
@@ -174,6 +177,7 @@ export function LeadForm({
     setWaChannel(null);
     setWaCampaign(null);
     setWaOffer(null);
+    setWaQualification(null);
   }
 
   async function handleResolveReference() {
@@ -188,6 +192,12 @@ export function LeadForm({
         attribution?: Record<string, string>;
         channel?: string;
         offer?: { name: string; packageName: string | null } | null;
+        qualification?: {
+          budgetBandLabel: string | null;
+          budgetBandDerived: boolean;
+          travelMonth: string | null;
+          opened: boolean;
+        } | null;
       };
       if (!res.ok) {
         setWaState("error");
@@ -204,6 +214,21 @@ export function LeadForm({
       setWaOffer(
         json.offer
           ? [json.offer.name, json.offer.packageName].filter(Boolean).join(" · ")
+          : null,
+      );
+      setWaQualification(
+        json.qualification
+          ? [
+              json.qualification.budgetBandLabel
+                ? `${json.qualification.budgetBandLabel}${json.qualification.budgetBandDerived ? " (from tour price)" : ""}`
+                : null,
+              json.qualification.travelMonth
+                ? travelMonthText(json.qualification.travelMonth)
+                : null,
+              json.qualification.opened ? "opened WhatsApp" : "modal not opened",
+            ]
+              .filter(Boolean)
+              .join(" · ")
           : null,
       );
     } catch {
@@ -500,6 +525,7 @@ export function LeadForm({
                           Resolved — {waChannel ? (CHANNEL_LABELS[waChannel] ?? waChannel) : "—"}
                           {waCampaign ? ` · ${waCampaign}` : ""}
                           {waOffer ? ` · 🎉 ${waOffer}` : ""}
+                          {waQualification ? ` · 💰 ${waQualification}` : ""}
                         </span>
                       </div>
                       <button

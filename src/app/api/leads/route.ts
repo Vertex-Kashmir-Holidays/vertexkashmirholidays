@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidE164Strict } from "@/lib/auth/phoneStrict.server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
@@ -28,6 +29,7 @@ import { isOfferCurrent } from "@/lib/offers/content";
 import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
+import { deriveBandForPrice, resolveQualification } from "@/lib/leads/budgetBands.server";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +74,9 @@ export async function GET(req: NextRequest) {
   const requestedComponent = searchParams.get("requestedComponent")?.trim();
   // Occasion Offer filter: an offer id, or "ANY" for leads from any offer.
   const offer = searchParams.get("offer")?.trim();
+  // Lead-qualification budget filter: a BudgetBand key, "undecided", or "NONE"
+  // (leads captured before qualification existed / never answered).
+  const budgetBand = searchParams.get("budgetBand")?.trim();
   const search = searchParams.get("search")?.trim() ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const take = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "30")));
@@ -94,6 +99,9 @@ export async function GET(req: NextRequest) {
   }
   if (offer && offer !== "ALL") {
     where.occasionOfferId = offer === "ANY" ? { not: null } : offer;
+  }
+  if (budgetBand && budgetBand !== "ALL") {
+    where.budgetBandKey = budgetBand === "NONE" ? null : budgetBand;
   }
   if (search) {
     where.OR = [
@@ -123,6 +131,10 @@ export async function GET(req: NextRequest) {
         contactChannel: true,
         packageName: true,
         occasionOffer: { select: { id: true, name: true } },
+        budgetBandKey: true,
+        budgetBandLabel: true,
+        budgetBandDerived: true,
+        travelMonth: true,
         requestedComponents: true,
         transportModes: true,
         fromCity: true,
@@ -316,6 +328,75 @@ export async function POST(req: NextRequest) {
   const { name, phone, email, message, source, context, travelDate, travellers, attribution } =
     parsed.data;
 
+  // Strict phone ranges (server-only full metadata) — the shared schema's
+  // lightweight check lets through fake numbers like +91 15067145376.
+  if (!isValidE164Strict(phone)) {
+    console.warn(`[leads] invalid phone range phone=${maskPhone(phone)} ip=${ip}`);
+    return NextResponse.json(
+      {
+        error: "Please check the highlighted fields and try again.",
+        fieldErrors: { phone: ["Please enter a valid phone number."] },
+      },
+      { status: 400 },
+    );
+  }
+
+  // Lead qualification, by context. A tour enquiry's band is derived here from
+  // the tour's own price (never from the client) and flagged as derived; an
+  // activity enquiry has no budget; any other form must answer both (an active
+  // BudgetBand or "undecided"). The month is always required. Labels are the DB's.
+  const isTourContext = !!context?.tourId;
+  const isActivityContext = !!context?.activitySlug || source === "activity-detail";
+  const tour = isTourContext
+    ? await prisma.tour.findFirst({
+        where: { id: context!.tourId, published: true },
+        select: { priceFrom: true, packageOptions: true, hidePrice: true },
+      })
+    : null;
+  // A price-on-request tour (Tour.hidePrice) shows no price, so its band is
+  // never derived from priceFrom — the visitor's own answer is used instead.
+  // The tour's flag is read here, never taken from the client.
+  const priceHiddenTour = !!tour?.hidePrice;
+  const derivesBudget = !!tour && !priceHiddenTour;
+  const answered = await resolveQualification({
+    budgetBandKey:
+      (isTourContext && !priceHiddenTour) || isActivityContext
+        ? undefined
+        : parsed.data.budgetBandKey,
+    travelMonth: parsed.data.travelMonth,
+  });
+  let derivedBand: { budgetBandKey: string; budgetBandLabel: string } | null = null;
+  if (derivesBudget) {
+    const option = context?.packageName
+      ? publishedPackageOptions(tour!.packageOptions).find((o) => o.name === context.packageName)
+      : undefined;
+    derivedBand = await deriveBandForPrice(option ? option.priceForTwo / 2 : tour!.priceFrom);
+  }
+  const qualification = {
+    budgetBandKey: derivedBand?.budgetBandKey ?? answered.budgetBandKey,
+    budgetBandLabel: derivedBand?.budgetBandLabel ?? answered.budgetBandLabel,
+    budgetBandDerived: !!derivedBand,
+    travelMonth: answered.travelMonth,
+  };
+  // A tour/activity visitor was never asked the budget — never block them on
+  // it. Exception: a price-on-request tour's enquiry form asks it (it sends
+  // context.priceHidden), so it's required there; other forms that merely
+  // carry the tourId (e.g. the flight/train quote) still aren't blocked.
+  const budgetRequired =
+    (!isTourContext && !isActivityContext) || (priceHiddenTour && !!context?.priceHidden);
+  if ((budgetRequired && !qualification.budgetBandKey) || !qualification.travelMonth) {
+    return NextResponse.json(
+      {
+        error: "Please choose your budget and travel month (or “Not sure yet”).",
+        fieldErrors: {
+          ...(qualification.budgetBandKey ? {} : { budgetBandKey: ["Choose your budget."] }),
+          ...(qualification.travelMonth ? {} : { travelMonth: ["Choose your travel month."] }),
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   // Context-supplied date/travellers fill in when the top-level fields are absent.
   const effectiveDate = travelDate ?? context?.travelDate;
   const effectiveTravellers = travellers ?? context?.travellers;
@@ -459,6 +540,10 @@ export async function POST(req: NextRequest) {
       // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
       // when nothing was selected, so this stays indistinguishable from an
       // old pre-Trip-Planner lead at read time.
+      budgetBandKey: qualification.budgetBandKey,
+      budgetBandLabel: qualification.budgetBandLabel,
+      budgetBandDerived: qualification.budgetBandDerived,
+      travelMonth: qualification.travelMonth,
       requestedComponents: context?.requestedComponents?.length
         ? JSON.stringify(context.requestedComponents)
         : undefined,
@@ -555,5 +640,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
+  // The stored band (incl. a derived one) goes back for lead_submit analytics.
+  return NextResponse.json(
+    {
+      success: true,
+      id: lead.id,
+      budgetBandKey: qualification.budgetBandKey,
+      budgetBandDerived: qualification.budgetBandDerived,
+    },
+    { status: 201 },
+  );
 }

@@ -10,6 +10,8 @@ export interface FaqPreviewItem {
   question: string;
   shortAnswer: string;
   slug: string;
+  /** /faq has a longer answer for this question (see toFaqPreview). */
+  hasFullAnswer?: boolean;
 }
 
 interface FaqPreviewListProps {
@@ -24,7 +26,8 @@ interface FaqPreviewListProps {
 // honest about what's actually visible). Collapsed by default, one open at a
 // time; "Read Full Answer" links to /faq#<slug> — FaqAccordionPage opens and
 // scrolls to that exact question on the single knowledge-base page, rather
-// than a separate per-question page.
+// than a separate per-question page. Shown only when hasFullAnswer: the
+// question is on /faq and its full answer says more than the short one.
 export function FaqPreviewList({ faqs, columns = 1 }: FaqPreviewListProps) {
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -65,13 +68,15 @@ export function FaqPreviewList({ faqs, columns = 1 }: FaqPreviewListProps) {
                   <p className="text-[14px] leading-relaxed text-muted-foreground">
                     {faq.shortAnswer}
                   </p>
-                  <Link
-                    href={`/faq#${faq.slug}`}
-                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-primary hover:underline"
-                  >
-                    Read Full Answer
-                    <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
-                  </Link>
+                  {faq.hasFullAnswer && (
+                    <Link
+                      href={`/faq#${faq.slug}`}
+                      className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-primary hover:underline"
+                    >
+                      Read Full Answer
+                      <ArrowRight className="h-3 w-3" strokeWidth={2.4} />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

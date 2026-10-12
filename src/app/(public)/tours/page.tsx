@@ -10,7 +10,7 @@ import { ToursNewsletter } from "@/components/tours/ToursNewsletter";
 import { ToursPageClient } from "@/components/tours/ToursPageClient";
 import { ToursTrustBar } from "@/components/tours/ToursTrustBar";
 import { getPublicHeroStats } from "@/lib/publicHeroStats";
-import { packageOptionCard, tourCardOptions } from "@/lib/tours/cards";
+import { packageOptionCard, publicPriceFields, tourCardOptions } from "@/lib/tours/cards";
 import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
 import { getLiveTourCollections } from "@/lib/tours/collectionQueries";
 import { compareToursForCards } from "@/lib/tours/ordering";
@@ -61,6 +61,7 @@ export default async function ToursPage() {
           reviewCount: true,
           priceFrom: true,
           priceWas: true,
+          hidePrice: true,
           minPersons: true,
           category: true,
           region: true,
@@ -140,8 +141,7 @@ export default async function ToursPage() {
               image: t.coverImage,
               rating: t.rating,
               reviewCount: t.reviewCount,
-              priceFrom: t.priceFrom,
-              priceWas: t.priceWas,
+              ...publicPriceFields(t),
               minPersons: t.minPersons,
               category: t.category,
               region: t.region,
@@ -156,10 +156,11 @@ export default async function ToursPage() {
               badge: pkg.badge,
               places: pkg.places,
               image: pkg.image,
-              priceFrom: pkg.priceFrom,
+              // Option prices stay server-side for price-on-request tours.
+              priceFrom: t.hidePrice ? 0 : pkg.priceFrom,
               priceWas: null,
               detailHref: pkg.detailHref,
-              priceForTwo: pkg.priceForTwo,
+              priceForTwo: t.hidePrice ? undefined : pkg.priceForTwo,
               inclusions: pkg.inclusions,
             };
           }),

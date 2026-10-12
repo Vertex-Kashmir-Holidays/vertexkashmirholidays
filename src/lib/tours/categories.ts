@@ -48,9 +48,9 @@ export const TOUR_CATEGORY_META: Record<TourCategory, TourCategoryMeta> = {
     pageTitle: "Adventure Tour Packages",
     emoji: "🏔",
     cardDescription:
-      "For trekking, skiing and outdoor enthusiasts chasing Kashmir's mountain trails.",
+      "Offbeat road trips to Gurez Valley, Nubra and Pangong, with private transport and acclimatisation built in.",
     metaDescription:
-      "Thrilling Kashmir adventure tour packages featuring trekking, skiing, river rafting, and guided mountain expeditions for outdoor enthusiasts.",
+      "Offbeat Kashmir and Ladakh road trips — Gurez Valley, Nubra and Pangong — with private transport, acclimatisation built in and transparent pricing.",
   },
   LUXURY: {
     slug: "luxury-tour-packages",
@@ -78,9 +78,9 @@ export const TOUR_CATEGORY_META: Record<TourCategory, TourCategoryMeta> = {
     pageTitle: "Group Tour Packages",
     emoji: "👥",
     cardDescription:
-      "Affordable shared departures with fixed itineraries, great for friends and colleagues.",
+      "Private trips for your own group, with group-friendly hotels — great for friends and colleagues.",
     metaDescription:
-      "Affordable Kashmir group tour packages with fixed departures, guided sightseeing, quality hotels, and seamless travel planning.",
+      "Private Kashmir group tour packages — your own vehicle and driver, group-friendly hotels, your dates, and one transparent per-person price.",
   },
   PILGRIMAGE: {
     slug: "pilgrimage-tour-packages",

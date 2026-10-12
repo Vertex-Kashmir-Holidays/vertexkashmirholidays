@@ -77,12 +77,6 @@ export function TourDetailsReviews({ reviews, totalReviews }: TourDetailsReviews
             </div>
 
             <p className="mt-3 text-[14px] leading-relaxed text-foreground/75">{review.quote}</p>
-            <a
-              href="#"
-              className="mt-2 inline-block text-[14px] font-bold text-primary hover:underline"
-            >
-              View Full Review
-            </a>
           </motion.div>
         </AnimatePresence>
       </div>

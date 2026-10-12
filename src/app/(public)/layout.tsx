@@ -23,6 +23,8 @@ import { JsonLd, buildTravelAgency } from "@/components/seo/JsonLd";
 import { getActiveCorporateOffices } from "@/lib/companyOffice";
 import type { SlotBanner } from "@/components/public/PromoBannerSlot";
 import type { FooterSettings } from "@/components/layout/Footer";
+import { getActiveBudgetBands } from "@/lib/leads/budgetBands.server";
+import { WhatsAppQualificationGate } from "@/components/leads/WhatsAppQualificationGate";
 
 // The published-category set for the nav strip — rendered on every public
 // page, so it's cached rather than re-querying Prisma's groupBy on each
@@ -80,6 +82,8 @@ export default async function PublicLayout({ children }: { children: React.React
     corporateOffices,
     tourCollections,
     occasionOffers,
+    budgetBands,
+    publishedCampaigns,
   ] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
@@ -89,6 +93,9 @@ export default async function PublicLayout({ children }: { children: React.React
     getActiveCorporateOffices(),
     getNavTourCollections(),
     getNavOccasionOffers(),
+    getActiveBudgetBands(),
+    // The footer's Adventures link shows only while a campaign is published.
+    prisma.campaign.count({ where: { published: true } }),
   ]);
   const tourCategories = categoryRows.filter((c) => c._count._all > 0).map((c) => c.category);
   // First active row (lowest sortOrder) is "the" Corporate Office shown in
@@ -194,6 +201,7 @@ export default async function PublicLayout({ children }: { children: React.React
             showAnnouncementBanner: s?.showAnnouncementBanner ?? false,
             announcementMessage: s?.announcementMessage ?? null,
             formAvatars,
+            budgetBands,
           }}
         >
           <JsonLd data={organizationJsonLd} />
@@ -202,6 +210,7 @@ export default async function PublicLayout({ children }: { children: React.React
             corporateOffice={corporateOffice}
             promoBanners={promoBanners}
             tourCategories={tourCategories}
+            hasAdventures={publishedCampaigns > 0}
             tourCollections={tourCollections}
             occasionOffers={occasionOffers}
             strip={
@@ -219,6 +228,9 @@ export default async function PublicLayout({ children }: { children: React.React
             {children}
           </PublicChrome>
           <AnnouncementModal />
+          {/* Every WhatsApp link on the public site opens the budget/travel
+              qualification modal first (see WhatsAppQualificationGate). */}
+          <WhatsAppQualificationGate />
         </SiteSettingsProvider>
         <Toaster richColors position="top-right" />
       </TooltipProvider>

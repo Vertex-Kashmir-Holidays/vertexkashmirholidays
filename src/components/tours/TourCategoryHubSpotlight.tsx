@@ -1,11 +1,11 @@
 "use client";
+import { tourCardPricing } from "@/lib/tours/cards";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { TourCard } from "@/components/ui/organisms/TourCard";
-import { formatINR } from "@/lib/accents";
 import { imgSrc } from "@/lib/placeholder";
 
 const BADGE_COLORS = ["orange", "blue", "green"] as const;
@@ -23,6 +23,7 @@ interface SpotlightTour {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  hidePrice: boolean;
   minPersons?: number | null;
   destinations: { destination: { name: string } }[];
 }
@@ -130,9 +131,7 @@ export function TourCategoryHubSpotlight() {
                 places: data.tour.destinations.map((d) => d.destination.name).join(", "),
                 r: data.tour.rating.toFixed(1),
                 n: String(data.tour.reviewCount),
-                old: data.tour.priceWas ? formatINR(data.tour.priceWas) : undefined,
-                p: formatINR(data.tour.priceFrom),
-                minPersons: data.tour.minPersons ?? undefined,
+                ...tourCardPricing({ ...data.tour, minPersons: data.tour.minPersons ?? undefined }),
               }}
             />
           )}

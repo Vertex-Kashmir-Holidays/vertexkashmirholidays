@@ -24,6 +24,7 @@ export type WhatsAppSource =
   | "trip_planner_hero"
   | "trip_planner_closing_cta"
   | "tours_card"
+  | "tour_closing_cta"
   | "activities_card"
   | "blog_body"
   | "blog_about_cta"
@@ -42,6 +43,7 @@ export type WhatsAppSource =
   | "home_hero"
   | "home_section_cta"
   | "about_hero"
+  | "about_cta"
   | "contact_social_cta";
 
 // Trip Planner structured-intent params, reused by lead_submit/whatsapp_click/
@@ -71,6 +73,14 @@ interface OfferParams {
   offer_slug?: string;
 }
 
+// Lead qualification (src/lib/leads/qualification.ts): a BudgetBand key or
+// "undecided", and "YYYY-MM" / "later" / "undecided".
+interface QualificationParams {
+  budget_band?: string;
+  travel_month?: string;
+  budget_derived?: boolean;
+}
+
 export type AnalyticsEvent =
   | ({
       event: "lead_submit";
@@ -84,7 +94,8 @@ export type AnalyticsEvent =
       lead_id?: string;
     } & TripPlannerIntentParams &
       PackageOptionParams &
-      OfferParams)
+      OfferParams &
+      QualificationParams)
   | ({
       event: "whatsapp_click";
       source: WhatsAppSource;
@@ -92,6 +103,9 @@ export type AnalyticsEvent =
     } & TripPlannerIntentParams &
       PackageOptionParams &
       OfferParams)
+  // The WhatsApp modal's "Open WhatsApp" tap — the visitor answered both
+  // qualification questions and actually opened WhatsApp.
+  | { event: "whatsapp_open"; budget_band?: string; travel_month: string; budget_derived?: boolean }
   // Occasion Offer page load, and a stay tier being picked on it.
   | { event: "offer_view"; offer_id: string; offer_slug: string; occasion_type: string }
   | { event: "offer_package_select"; offer_id: string; offer_slug: string; package_option: string }
@@ -99,6 +113,8 @@ export type AnalyticsEvent =
   // page view. entry_intent reflects whatever the entry point (this page's
   // hub form vs. a tour page's pre-set chip) started the visitor with.
   | { event: "trip_request_start"; entry_intent?: string[]; source_page: string }
+  // A "Things to Do" card or its "See All" link was clicked (placement = page type).
+  | { event: "things_to_do_click"; placement: string; target: "card" | "see_all"; href: string }
   | { event: "phone_click" }
   | { event: "email_click" }
   | { event: "package_view"; package_name: string }

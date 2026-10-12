@@ -288,6 +288,8 @@ export interface ItinerarySummary {
   /** Customer name/phone and quoted total, for the list (follow-ups). */
   customerName?: string;
   customerPhone?: string;
+  /** From `data.travelDates`, as typed on the cover. */
+  travelDates?: string;
   totalCost?: string;
 }
 

@@ -393,6 +393,8 @@ export function ProposalEditor({
     "addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-3 py-1.5 text-xs font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print";
   const fieldLabel =
     "block text-[11px] font-semibold uppercase tracking-wide text-mute dark:text-muted-foreground mb-1";
+  // Shown only on phones, where table-style column headings are hidden.
+  const mobileLabel = `${fieldLabel} sm:hidden`;
 
   return (
     <div className="pb-8">
@@ -587,7 +589,7 @@ export function ProposalEditor({
                           <button
                             onClick={() => removeTierTag(key, idx)}
                             aria-label={`Remove tag ${tag}`}
-                            className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print"
+                            className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
                           >
                             ×
                           </button>
@@ -655,7 +657,7 @@ export function ProposalEditor({
                     <button
                       onClick={() => removeComparisonRow(row.id)}
                       aria-label={`Remove row ${row.label}`}
-                      className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+                      className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -694,24 +696,28 @@ export function ProposalEditor({
                   <button
                     onClick={() => removeDay(day.id)}
                     aria-label={`Remove day ${dayIdx + 1}`}
-                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print"
+                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print [@media(hover:none)]:flex [@media(hover:none)]:opacity-100"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
-                  <div className="flex items-baseline gap-3">
-                    <span className="shrink-0 font-serif text-xl font-bold text-[#B8D4C4]">
-                      {String(dayIdx + 1).padStart(2, "0")}
-                    </span>
-                    <EditableField
-                      value={day.title}
-                      onValueChange={(v) => updateDay(day.id, "title", v)}
-                      className="min-w-0 flex-1 text-sm font-bold"
-                    />
+                  {/* Phones: title, then the date on its own line under it
+                      (same as ItineraryEditor). sm+: date on the right. */}
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
+                    <div className="flex min-w-0 flex-1 items-baseline gap-3">
+                      <span className="w-8 shrink-0 font-serif text-xl font-bold text-[#B8D4C4] sm:w-auto">
+                        {String(dayIdx + 1).padStart(2, "0")}
+                      </span>
+                      <EditableField
+                        value={day.title}
+                        onValueChange={(v) => updateDay(day.id, "title", v)}
+                        className="min-w-0 flex-1 text-sm font-bold"
+                      />
+                    </div>
                     <EditableField
                       value={day.dateLabel}
                       onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
                       placeholder="Wed 10 Jun"
-                      className="w-24 shrink-0 text-right text-xs text-mute dark:text-muted-foreground"
+                      className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
                     />
                   </div>
                   <EditableField
@@ -773,45 +779,64 @@ export function ProposalEditor({
             >
               {(row) => (
                 <div className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20">
+                  {/* Phones: the column headings above are hidden, so each
+                      field carries its own label (mobileLabel) and the order
+                      is Destination / Nights + Rooms / Hotel / Room Type.
+                      sm+: one row under the headings, labels hidden. */}
                   <div
                     className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-5"}`}
                   >
-                    <EditableField
-                      value={row.destination}
-                      onValueChange={(v) => updateStayPlanRow(row.id, "destination", v)}
-                      placeholder="Destination"
-                      className="text-sm font-bold"
-                    />
-                    <EditableField
-                      value={row.nights}
-                      onValueChange={(v) => updateStayPlanRow(row.id, "nights", v)}
-                      placeholder="Nights"
-                      className="text-xs"
-                    />
-                    {isMulti ? null : (
+                    <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                      <span className={mobileLabel}>Destination</span>
                       <EditableField
-                        value={row.hotelName}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
-                        placeholder="Hotel Name / Similar"
+                        value={row.destination}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "destination", v)}
+                        placeholder="Destination"
+                        className="text-sm font-bold"
+                      />
+                    </div>
+                    <div className="order-2 sm:order-none">
+                      <span className={mobileLabel}>Nights</span>
+                      <EditableField
+                        value={row.nights}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "nights", v)}
+                        placeholder="Nights"
                         className="text-xs"
                       />
+                    </div>
+                    {isMulti ? null : (
+                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Hotel Name</span>
+                        <EditableField
+                          value={row.hotelName}
+                          onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
+                          placeholder="Hotel Name / Similar"
+                          className="text-xs"
+                        />
+                      </div>
                     )}
                     {/* Multi compares room class per option in the
                         comparison rows ("Room category") instead. */}
                     {isMulti ? null : (
+                      <div className="order-5 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Room Type</span>
+                        <EditableField
+                          value={row.roomType}
+                          onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
+                          placeholder="Room Type"
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                    <div className="order-3 sm:order-none">
+                      <span className={mobileLabel}>No. of Rooms</span>
                       <EditableField
-                        value={row.roomType}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
-                        placeholder="Room Type"
+                        value={row.rooms}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
+                        placeholder="1"
                         className="text-xs"
                       />
-                    )}
-                    <EditableField
-                      value={row.rooms}
-                      onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
-                      placeholder="1"
-                      className="text-xs"
-                    />
+                    </div>
                   </div>
                   {isMulti ? (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -831,7 +856,7 @@ export function ProposalEditor({
                   <button
                     onClick={() => removeStayPlanRow(row.id)}
                     aria-label={`Remove stay plan row ${row.destination}`}
-                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+                    className="absolute right-2 top-3 hidden text-rose-500 hover:text-rose-600 group-hover:block no-print sm:top-1/2 sm:-translate-y-1/2 [@media(hover:none)]:block"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -870,45 +895,63 @@ export function ProposalEditor({
                   key={row.id}
                   className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20"
                 >
+                  {/* Phones: labelled fields (mobileLabel), ordered Vehicle
+                      or Used For / Seating + Duration / Used For (single).
+                      sm+: one row under the column headings. */}
                   <div
                     className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-4"}`}
                   >
                     {isMulti ? null : (
-                      <EditableField
-                        value={row.vehicle}
-                        onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
-                        placeholder="Sedan"
-                        className="text-sm font-bold"
-                      />
+                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Vehicle</span>
+                        <EditableField
+                          value={row.vehicle}
+                          onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
+                          placeholder="Sedan"
+                          className="text-sm font-bold"
+                        />
+                      </div>
                     )}
                     {isMulti ? (
-                      <EditableField
-                        value={row.usedFor}
-                        onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
-                        placeholder="Used for"
-                        className="text-sm font-bold"
-                      />
+                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Used For</span>
+                        <EditableField
+                          value={row.usedFor}
+                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          placeholder="Used for"
+                          className="text-sm font-bold"
+                        />
+                      </div>
                     ) : null}
-                    <EditableField
-                      value={row.seating}
-                      onValueChange={(v) => updateTransportRow(row.id, "seating", v)}
-                      placeholder="04 + driver"
-                      className="text-xs"
-                    />
-                    {isMulti ? null : (
+                    <div className="order-2 sm:order-none">
+                      <span className={mobileLabel}>Seating</span>
                       <EditableField
-                        value={row.usedFor}
-                        onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
-                        placeholder="Used for"
+                        value={row.seating}
+                        onValueChange={(v) => updateTransportRow(row.id, "seating", v)}
+                        placeholder="04 + driver"
                         className="text-xs"
                       />
+                    </div>
+                    {isMulti ? null : (
+                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Used For</span>
+                        <EditableField
+                          value={row.usedFor}
+                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          placeholder="Used for"
+                          className="text-xs"
+                        />
+                      </div>
                     )}
-                    <EditableField
-                      value={row.duration}
-                      onValueChange={(v) => updateTransportRow(row.id, "duration", v)}
-                      placeholder="06 Days"
-                      className="text-xs"
-                    />
+                    <div className="order-3 sm:order-none">
+                      <span className={mobileLabel}>Duration</span>
+                      <EditableField
+                        value={row.duration}
+                        onValueChange={(v) => updateTransportRow(row.id, "duration", v)}
+                        placeholder="06 Days"
+                        className="text-xs"
+                      />
+                    </div>
                   </div>
                   {isMulti ? (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -930,7 +973,7 @@ export function ProposalEditor({
                   <button
                     onClick={() => removeTransportRow(row.id)}
                     aria-label={`Remove transport row ${row.vehicle}`}
-                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+                    className="absolute right-2 top-3 hidden text-rose-500 hover:text-rose-600 group-hover:block no-print sm:top-1/2 sm:-translate-y-1/2 [@media(hover:none)]:block"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -990,7 +1033,7 @@ export function ProposalEditor({
                   <button
                     onClick={() => removeActivity(row.id)}
                     aria-label={`Remove activity ${row.label}`}
-                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -1099,7 +1142,7 @@ export function ProposalEditor({
                         <button
                           onClick={() => removeListItem("pay", idx)}
                           aria-label={`Remove tag ${tag}`}
-                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print"
+                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
                         >
                           ×
                         </button>
@@ -1146,7 +1189,7 @@ export function ProposalEditor({
                         }))
                       }
                       aria-label={`Remove note ${note}`}
-                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/note:flex no-print"
+                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/note:flex no-print [@media(hover:none)]:flex"
                     >
                       ×
                     </button>
@@ -1338,7 +1381,7 @@ function ListColumn({
             <button
               onClick={() => onRemove(item.id)}
               aria-label={`Remove item from ${title}`}
-              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
+              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -1400,7 +1443,7 @@ function CancelTierCard({
               <button
                 onClick={() => onRemove(item.id)}
                 aria-label="Remove cancellation tier"
-                className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
+                className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
               >
                 <Trash2 className="h-3 w-3" />
               </button>

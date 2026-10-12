@@ -5,12 +5,13 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { fadeUpLg, viewportOnce } from "@/lib/motion";
 import { Tilt3D } from "../effects/3DTilt";
-import { Car, Hotel, Utensils, Sailboat, Calendar } from "lucide-react";
+import { Car, Hotel, Utensils, Sailboat, ArrowRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
 import { hotelClassLabel } from "@/lib/tours/categories";
 import { trackWhatsappClick } from "@/lib/analytics";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { contextAttrs, trimTourTitle } from "@/lib/leads/qualification";
 
 interface TourCardProps {
   tour: {
@@ -34,6 +35,9 @@ interface TourCardProps {
     // Replaces the default "per person (min N pax)" label — e.g. "/ 2 persons"
     // for tours sold as package options (see Tour.packageOptions).
     priceSuffix?: string;
+    /** Tour.hidePrice — `p` is "Request Quote" (see tourCardPricing); no
+     *  old price / per-person line, and WhatsApp asks the budget. */
+    priceHidden?: boolean;
     inclusions?: {
       transfers?: boolean;
       hotel?: string;
@@ -76,6 +80,19 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
       `Hi ${siteName}! I'm interested in the "${tour.t}" package. Could you share details and availability?`,
     );
 
+  // Lead-qualification context for this card's WhatsApp button: a tour, priced
+  // per person. Every caller formats `p` with formatINR from a number, and a
+  // package-option card (priceSuffix "/ 2 persons") shows the price for 2.
+  // A price-on-request tour carries no price at all — generic context, so
+  // the WhatsApp gate asks the budget (and nothing leaks into the HTML).
+  const shownPrice = tour.priceHidden ? 0 : Number(tour.p.replace(/[^\d]/g, ""));
+  const pricePerPerson = /2 persons/.test(tour.priceSuffix ?? "") ? shownPrice / 2 : shownPrice;
+  const waContext = tour.priceHidden
+    ? contextAttrs({ kind: "generic" })
+    : pricePerPerson > 0
+      ? contextAttrs({ kind: "tour", pricePerPerson, name: trimTourTitle(tour.t) })
+      : {};
+
   return (
     <motion.div
       variants={fadeUpLg}
@@ -83,6 +100,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
       whileInView="visible"
       viewport={viewportOnce}
       transition={{ duration: 0.5, delay: index * 0.05 }}
+      {...waContext}
     >
       <Tilt3D intensity={isHome ? 8 : 6}>
         <article
@@ -187,6 +205,16 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
             </div>
 
             {/* Price Section */}
+            {tour.priceHidden ? (
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-[12px] text-muted-foreground">Price on request</span>
+                <p
+                  className={`text-[18px] font-extrabold leading-tight ${isHome ? "text-primary" : "text-foreground"}`}
+                >
+                  {tour.p}
+                </p>
+              </div>
+            ) : (
             <div className="mt-3 flex items-end justify-between">
               {tour.old ? (
                 <span
@@ -213,6 +241,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                 )}
               </p>
             </div>
+            )}
 
             {/* Customization Text */}
             <p
@@ -254,8 +283,8 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                       : "bg-primary text-primary-foreground hover:brightness-110 hover:shadow-md"
                   }`}
                 >
-                  <Calendar className="h-3.5 w-3.5" strokeWidth={2.2} />
-                  Book Now
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
+                  View Details
                 </Link>
               </motion.div>
             </div>

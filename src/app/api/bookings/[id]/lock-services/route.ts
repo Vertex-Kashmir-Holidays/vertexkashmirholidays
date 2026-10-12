@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { lockBlockers } from "@/lib/bookings/service-schema";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { computeBookingFinance } from "@/lib/bookings/finance";
@@ -33,6 +34,20 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
     return NextResponse.json({ error: "Services are already locked." }, { status: 422 });
+  }
+
+  // Every service must be complete (pick & drop on cabs, nights/room on
+  // hotels, …) and there must be a hotel and a cab — see lockBlockers.
+  const blockers = lockBlockers(booking.services);
+  if (blockers.length) {
+    return NextResponse.json(
+      {
+        error: `Complete these before locking — ${blockers.join(" · ")}`,
+        code: "SERVICES_INCOMPLETE",
+        blockers,
+      },
+      { status: 422 },
+    );
   }
 
   // Invoice is sent to the customer's email, so an email is a hard precondition

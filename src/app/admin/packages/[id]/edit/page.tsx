@@ -73,6 +73,7 @@ export default async function EditPackagePage({ params }: Props) {
     bestseller: tour.bestseller,
     published: tour.published,
     formMode: tour.formMode,
+    hidePrice: tour.hidePrice,
     itinerary: parseItinerary(tour.itinerary),
     inclusions: parseStringList(tour.inclusions),
     exclusions: parseStringList(tour.exclusions),

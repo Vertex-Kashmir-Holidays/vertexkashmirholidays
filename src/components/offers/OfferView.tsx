@@ -170,6 +170,10 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
     dates: view.dates,
     occasionType: o.occasionType,
     ctaLabel: o.ctaLabel || defaultOfferCta(o.occasionType),
+    // Lead-qualification pre-fill: the trip's month ("YYYY-MM", from its
+    // UTC-midnight start date) and each plan's price for 2.
+    tripMonth: o.startDate ? o.startDate.toISOString().slice(0, 7) : null,
+    planPrices: Object.fromEntries(view.plans.map((p) => [p.name, p.priceForTwo])),
   };
 
   const kashmirCollection = collections.find((c) => c.slug === KASHMIR_COLLECTION_SLUG);
@@ -195,7 +199,12 @@ export async function OccasionOfferView({ slug }: { slug: string }) {
 
   return (
     <OfferSelectionProvider offer={offerInfo} defaultPlan={view.plans[0]?.name ?? null}>
-      <div className={`bg-background text-foreground ${ended ? "" : "pb-24 lg:pb-0"}`}>
+      {/* Offer context for lead qualification: forms and the WhatsApp modal
+          start from the chosen tier's band and the trip's month (OfferSelection). */}
+      <div
+        className={`bg-background text-foreground ${ended ? "" : "pb-24 lg:pb-0"}`}
+        data-wa-context="offer"
+      >
         <JsonLd
           data={buildBreadcrumbList([
             { name: "Home", url: SITE_URL },

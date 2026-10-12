@@ -17,6 +17,8 @@ const patchSchema = z.object({
   categoryId: z.string().min(1).optional(),
   status: z.nativeEnum(FaqStatus).optional(),
   featured: z.boolean().optional(),
+  // "About price" — hidden on price-on-request tours (Tour.hidePrice).
+  mentionsPrice: z.boolean().optional(),
   placements: z.array(z.nativeEnum(FaqPlacement)).optional(),
   sortOrder: z.coerce.number().int().optional(),
   lastReviewedAt: z.string().optional().nullable(),
