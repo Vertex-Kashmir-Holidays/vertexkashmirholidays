@@ -3,7 +3,12 @@ import { env } from "@/lib/env";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaStored: PrismaClient | undefined;
 };
+
+/** REQUEST_QUOTE=true — every tour is price-on-request, whatever its own
+ *  Tour.hidePrice says. */
+export const REQUEST_QUOTE_ALL = env.REQUEST_QUOTE === "true";
 
 // Neon's `-pooler` host already does connection pooling server-side (PgBouncer),
 // so Prisma's own client-side pool just needs to not be the bottleneck. Left
@@ -76,7 +81,7 @@ const RETRY_DELAYS_MS = [1000, 2000, 4000];
 // call sites (e.g. src/lib/bookings/customer.ts) type their `$transaction`
 // callback parameter as `Prisma.TransactionClient` — the un-extended type —
 // so the exported client's type must stay exactly what it was before.
-function createPrismaClient(): PrismaClient {
+function createStoredClient(): PrismaClient {
   const client = new PrismaClient({ datasourceUrl: datasourceUrl() });
   return client.$extends({
     query: {
@@ -96,6 +101,27 @@ function createPrismaClient(): PrismaClient {
   }) as unknown as PrismaClient;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+// The sitewide "Request Quote" switch lives here, on the one client every
+// page and API reads tours through: with REQUEST_QUOTE=true, Tour.hidePrice
+// reads as true wherever a query selects it (direct, nested or full-row), so
+// every existing hidePrice rule — cards, tour page, schema, checkout, leads —
+// applies to every tour and no listing can be missed. Nothing is written:
+// the stored flags are untouched and come back when the switch is turned off.
+function withRequestQuoteSwitch(stored: PrismaClient): PrismaClient {
+  if (!REQUEST_QUOTE_ALL) return stored;
+  return stored.$extends({
+    result: { tour: { hidePrice: { needs: { hidePrice: true }, compute: () => true } } },
+  }) as unknown as PrismaClient;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+/** Tours exactly as stored, ignoring the REQUEST_QUOTE switch — only for the
+ *  admin tour editor and its save route, which must show and keep each
+ *  tour's own hidePrice (the switched value must never be saved back). */
+export const prismaStored = globalForPrisma.prismaStored ?? createStoredClient();
+
+export const prisma = globalForPrisma.prisma ?? withRequestQuoteSwitch(prismaStored);
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaStored = prismaStored;
+}

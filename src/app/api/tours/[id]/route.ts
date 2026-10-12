@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, prismaStored } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { invalidateTour } from "@/lib/cache";
 import { applyPackageOptionRules } from "@/lib/tours/content";
@@ -99,7 +99,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
-  const existing = await prisma.tour.findUnique({
+  // prismaStored: `existing.hidePrice` below must be the tour's own flag, not
+  // the sitewide REQUEST_QUOTE switch, or every save would force INQUIRY_ONLY.
+  const existing = await prismaStored.tour.findUnique({
     where: { id },
     include: {
       destinations: { select: { destination: { select: { slug: true } } } },
