@@ -9,7 +9,11 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { CreateB2bItineraryButton } from "@/components/admin/b2b/CreateB2bItineraryButton";
 import { B2bConvertAction } from "@/components/admin/b2b/B2bConvertAction";
-import { B2B_STATUS_LABELS as STATUS_LABELS, type B2bRequestStatus } from "@/lib/b2b/requestStatus";
+import {
+  B2B_STATUS_LABELS as STATUS_LABELS,
+  isItinerarySent,
+  type B2bRequestStatus,
+} from "@/lib/b2b/requestStatus";
 
 export const metadata: Metadata = { title: "B2B Request — Admin" };
 export const dynamic = "force-dynamic";
@@ -22,7 +26,11 @@ const inr = new Intl.NumberFormat("en-IN", {
 
 function fmtDate(d: Date | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export default async function AdminB2bRequestDetailPage({
@@ -64,6 +72,7 @@ export default async function AdminB2bRequestDetailPage({
 
   const canManageItinerary = await can(role, "itinerary", "create");
   const canConvert = await can(role, "b2bRequests", "edit");
+  const itinerarySent = isItinerarySent(lead.itinerary?.status);
   const settings = canConvert ? await getSiteSettings() : null;
   const gstRates = parseGstRates(settings?.gstRates);
 
@@ -79,7 +88,9 @@ export default async function AdminB2bRequestDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">{lead.name}</h1>
+          <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
+            {lead.name}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {lead.b2bAgent?.agencyName ?? lead.b2bAgent?.name} · {lead.b2bAgent?.email}
           </p>
@@ -127,8 +138,8 @@ export default async function AdminB2bRequestDetailPage({
         {lead.itinerary ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Status: <span className="font-semibold text-foreground">{lead.itinerary.status}</span> ·
-              Last updated {fmtDate(lead.itinerary.updatedAt)}
+              Status: <span className="font-semibold text-foreground">{lead.itinerary.status}</span>{" "}
+              · Last updated {fmtDate(lead.itinerary.updatedAt)}
             </p>
             {canManageItinerary && (
               <Link
@@ -169,15 +180,17 @@ export default async function AdminB2bRequestDetailPage({
         ) : canConvert ? (
           <div className="mt-3">
             <p className="mb-3 text-sm text-muted-foreground">
-              {lead.itinerary
-                ? "Ready to convert once amounts are confirmed with the agent."
-                : "Generate an itinerary before this request can be converted."}
+              {!lead.itinerary
+                ? "Generate an itinerary before this request can be converted."
+                : itinerarySent
+                  ? "Ready to convert once amounts are confirmed with the agent."
+                  : "Send the itinerary to the agent (status Sent) before this request can be converted."}
             </p>
             <B2bConvertAction
               leadId={lead.id}
               guestName={lead.name}
               gstRates={gstRates}
-              hasItinerary={!!lead.itinerary}
+              itinerarySent={itinerarySent}
             />
           </div>
         ) : (

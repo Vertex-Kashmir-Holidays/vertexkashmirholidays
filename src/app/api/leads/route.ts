@@ -345,11 +345,18 @@ export async function POST(req: NextRequest) {
   // the tour's own price (never from the client) and flagged as derived; an
   // activity enquiry has no budget; any other form must answer both (an active
   // BudgetBand or "undecided"). The month is always required. Labels are the DB's.
-  const isTourContext = !!context?.tourId;
+  // The tour is named by id (tour page forms) or by slug (the "Request Quote"
+  // modal on listing cards, which only know the tour's URL).
+  const tourWhere = context?.tourId
+    ? { id: context.tourId }
+    : context?.tourSlug
+      ? { slug: context.tourSlug }
+      : null;
+  const isTourContext = !!tourWhere;
   const isActivityContext = !!context?.activitySlug || source === "activity-detail";
-  const tour = isTourContext
+  const tour = tourWhere
     ? await prisma.tour.findFirst({
-        where: { id: context!.tourId, published: true },
+        where: { ...tourWhere, published: true },
         select: { priceFrom: true, packageOptions: true, hidePrice: true },
       })
     : null;
@@ -458,9 +465,9 @@ export async function POST(req: NextRequest) {
   // an unknown/forged id is silently ignored, never a failed enquiry. The
   // package name is kept only if it matches one of that tour's published
   // options, so Lead.packageName is always a real package.
-  const leadTour = context?.tourId
+  const leadTour = tourWhere
     ? await prisma.tour.findFirst({
-        where: { id: context.tourId, published: true },
+        where: { ...tourWhere, published: true },
         select: { id: true, packageOptions: true },
       })
     : null;

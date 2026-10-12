@@ -7,6 +7,7 @@ import Image from "next/image";
 import { MapPin, Star, ArrowRight, Clock } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
 import { NewsletterSignupForm } from "@/components/blog/NewsletterSignupForm";
+import { RequestQuoteButton } from "@/components/leads/RequestQuoteButton";
 
 interface BlogPostSidebarProps {
   toc: Array<{ label: string; href: string }>;
@@ -86,9 +87,16 @@ export function BlogPostSidebar({ toc, author, relatedTour }: BlogPostSidebarPro
           <h3 className="mt-4 text-[16px] font-bold leading-snug">{relatedTour.name}</h3>
           <p className="text-[14px] font-semibold text-muted-foreground">{relatedTour.duration}</p>
           <p className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="text-[18px] font-extrabold">{relatedTour.price}</span>
-            {!relatedTour.priceHidden && (
-              <span className="text-[14px] text-muted-foreground">/ person</span>
+            {relatedTour.priceHidden ? (
+              <RequestQuoteButton
+                tourName={relatedTour.name}
+                tourSlug={relatedTour.href.match(/^\/tours\/([^/?#]+)/)?.[1]}
+              />
+            ) : (
+              <>
+                <span className="text-[18px] font-extrabold">{relatedTour.price}</span>
+                <span className="text-[14px] text-muted-foreground">/ person</span>
+              </>
             )}
             {relatedTour.oldPrice && (
               <span className="text-[14px] text-muted-foreground line-through">

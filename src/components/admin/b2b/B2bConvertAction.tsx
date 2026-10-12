@@ -10,7 +10,9 @@ interface Props {
   leadId: string;
   guestName: string;
   gstRates: number[];
-  hasItinerary: boolean;
+  /** The itinerary has gone to the agent (status SENT or CONFIRMED) — the
+   *  button stays disabled until then; the convert API enforces the same. */
+  itinerarySent: boolean;
 }
 
 const inputCls =
@@ -25,7 +27,7 @@ const inputCls =
  * the same resolveGst() the normal flow uses — this only makes the *input*
  * mandatory, not the business rule).
  */
-export function B2bConvertAction({ leadId, guestName, gstRates, hasItinerary }: Props) {
+export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [bookingAmount, setBookingAmount] = useState("");
@@ -67,13 +69,13 @@ export function B2bConvertAction({ leadId, guestName, gstRates, hasItinerary }: 
     })();
   }
 
-  if (!hasItinerary) return null;
-
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700"
+        disabled={!itinerarySent}
+        title={itinerarySent ? undefined : "Send the itinerary to the agent first"}
+        className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
       >
         <ReceiptText className="h-4 w-4" />
         Convert to Booking

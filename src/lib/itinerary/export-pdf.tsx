@@ -9,6 +9,7 @@ import type { ItineraryData } from "@/types/itinerary";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
 import type { B2bAgentInfo } from "@/components/admin/itinerary/B2bItineraryPdf";
+import { b2bCoverImage } from "@/lib/b2b/coverImage";
 
 function slugify(text: string): string {
   return (
@@ -183,6 +184,10 @@ export async function downloadB2bItineraryPdf(
     import("@/components/admin/itinerary/ItineraryPdf"),
   ]);
   const vertexIcon = whiteLabel ? undefined : await fetchAsDataUrl(LOGO_SRC).catch(() => undefined);
+  // Same cover treatment as the customer document: large, high quality JPEG.
+  // An unreadable image is skipped (plain navy cover), never a failed export.
+  const cover = b2bCoverImage(data.coverImage);
+  const coverImages = await compressMany([cover], { maxWidth: 900, maxHeight: 1300, quality: 0.85 });
 
   const blob = await pdf(
     <B2bItineraryPdf
@@ -193,6 +198,7 @@ export async function downloadB2bItineraryPdf(
       agent={agent}
       whiteLabel={whiteLabel}
       vertexIcon={vertexIcon}
+      coverImage={coverImages[cover]}
     />,
   ).toBlob();
 
@@ -202,7 +208,7 @@ export async function downloadB2bItineraryPdf(
   // No "vertex" in the filename either — an agent forwarding this file to
   // their own customer would otherwise leak the underlying provider even
   // though the document content itself is fully white-labeled.
-  a.download = `travel-proposal-${slugify(data.preparedFor)}-${new Date().toISOString().slice(0, 10)}.pdf`;
+  a.download = `travel-itinerary-${slugify(data.preparedFor)}-${new Date().toISOString().slice(0, 10)}.pdf`;
   document.body.appendChild(a);
   a.click();
   a.remove();

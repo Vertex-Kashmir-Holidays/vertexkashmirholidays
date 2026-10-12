@@ -12,6 +12,7 @@ import { hotelClassLabel } from "@/lib/tours/categories";
 import { trackWhatsappClick } from "@/lib/analytics";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { contextAttrs, trimTourTitle } from "@/lib/leads/qualification";
+import { RequestQuoteButton } from "@/components/leads/RequestQuoteButton";
 
 interface TourCardProps {
   tour: {
@@ -206,41 +207,46 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
 
             {/* Price Section */}
             {tour.priceHidden ? (
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-[12px] leading-snug text-muted-foreground">
+                  Price on request
+                  <br />
+                  for your dates
+                </span>
+                <RequestQuoteButton
+                  tourName={tour.t}
+                  tourSlug={detailHref.match(/^\/tours\/([^/?#]+)/)?.[1]}
+                />
+              </div>
+            ) : (
               <div className="mt-3 flex items-end justify-between">
-                <span className="text-[12px] text-muted-foreground">Price on request</span>
+                {tour.old ? (
+                  <span
+                    className={`text-[12px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"} line-through`}
+                  >
+                    {tour.old}
+                  </span>
+                ) : (
+                  <span className="text-[12px]">&nbsp;</span>
+                )}
                 <p
-                  className={`text-[18px] font-extrabold leading-tight ${isHome ? "text-primary" : "text-foreground"}`}
+                  className={`text-[22px] font-extrabold leading-tight ${isHome ? "text-primary" : "text-foreground"}`}
                 >
                   {tour.p}
                 </p>
-              </div>
-            ) : (
-            <div className="mt-3 flex items-end justify-between">
-              {tour.old ? (
-                <span
-                  className={`text-[12px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"} line-through`}
+                <p
+                  className={`text-[10px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
                 >
-                  {tour.old}
-                </span>
-              ) : (
-                <span className="text-[12px]">&nbsp;</span>
-              )}
-              <p
-                className={`text-[22px] font-extrabold leading-tight ${isHome ? "text-primary" : "text-foreground"}`}
-              >
-                {tour.p}
-              </p>
-              <p
-                className={`text-[10px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
-              >
-                {tour.priceSuffix ?? (
-                  <>
-                    per person
-                    {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
-                  </>
-                )}
-              </p>
-            </div>
+                  {tour.priceSuffix ?? (
+                    <>
+                      per person
+                      {tour.minPersons && tour.minPersons > 1
+                        ? ` (min ${tour.minPersons} pax)`
+                        : ""}
+                    </>
+                  )}
+                </p>
+              </div>
             )}
 
             {/* Customization Text */}

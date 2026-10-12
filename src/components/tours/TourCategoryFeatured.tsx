@@ -1,11 +1,11 @@
 "use client";
 
-import { REQUEST_QUOTE_LABEL } from "@/lib/tours/cards";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Star } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
+import { RequestQuoteButton } from "@/components/leads/RequestQuoteButton";
 
 // Same "Featured Story" treatment as BlogFeaturedStory — adapted for a tour
 // package instead of an article, so category landing pages read consistently
@@ -56,25 +56,27 @@ export function TourCategoryFeatured({ tour }: { tour: TourCategoryFeaturedData 
             </span>
           </div>
           {tour.hidePrice ? (
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-[20px] font-extrabold">{REQUEST_QUOTE_LABEL}</span>
-              <span className="text-[12px] text-muted-foreground">Price on request</span>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <RequestQuoteButton tourName={tour.title} tourSlug={tour.slug} size="md" />
+              <span className="text-[12px] text-muted-foreground">
+                Price on request, for your dates and group size
+              </span>
             </div>
           ) : (
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-[22px] font-extrabold">
-              ₹{tour.priceFrom.toLocaleString("en-IN")}
-            </span>
-            {tour.priceWas && (
-              <span className="text-[14px] font-semibold text-muted-foreground line-through">
-                ₹{tour.priceWas.toLocaleString("en-IN")}
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-[22px] font-extrabold">
+                ₹{tour.priceFrom.toLocaleString("en-IN")}
               </span>
-            )}
-            <span className="text-[12px] text-muted-foreground">
-              per person
-              {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
-            </span>
-          </div>
+              {tour.priceWas && (
+                <span className="text-[14px] font-semibold text-muted-foreground line-through">
+                  ₹{tour.priceWas.toLocaleString("en-IN")}
+                </span>
+              )}
+              <span className="text-[12px] text-muted-foreground">
+                per person
+                {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
+              </span>
+            </div>
           )}
           <Link
             href={`/tours/${tour.slug}`}

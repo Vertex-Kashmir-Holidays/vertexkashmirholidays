@@ -304,10 +304,12 @@ export function LeadForm({
 
       setSentName(String(data.name).trim().split(/\s+/)[0] || "there");
       setSent(true);
-      // A tour inquiry from the tour page, or from a category page's featured-tour sidebar.
-      const isTour =
-        source === "tour-detail" || (source === "tour-category" && !!context?.tourId);
       const isFlightTrainQuote = source === "flight-train-quote";
+      // A tour inquiry: the tour page's own forms, or any form opened for a
+      // specific tour (category sidebar, a card's "Request Quote" modal).
+      const isTour =
+        !isFlightTrainQuote &&
+        (source === "tour-detail" || !!context?.tourId || !!context?.tourSlug);
       // TripPlannerForm on the standalone page or on an origin-city page — both
       // are trip_planner_request leads; sourcePage (below) tells them apart.
       const isTripPlanner = source === "trip-planner" || source === "tour-origin-city";
@@ -328,8 +330,8 @@ export function LeadForm({
               : offer
                 ? "occasion_offer"
                 : source === "contact"
-                ? "contact"
-                : "itinerary",
+                  ? "contact"
+                  : "itinerary",
         isTour || isFlightTrainQuote ? context?.tourName : undefined,
         json.id,
         hasTripPlannerIntent || isFlightTrainQuote
@@ -502,9 +504,7 @@ export function LeadForm({
           />
         ) : (
           <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-foreground/80">
-            <span>
-              {askBudget ? `${budgetSummary} · ${monthSummary}` : monthSummary}
-            </span>
+            <span>{askBudget ? `${budgetSummary} · ${monthSummary}` : monthSummary}</span>
             <button
               type="button"
               onClick={() => setQualificationOpen(true)}
