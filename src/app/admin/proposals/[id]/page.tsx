@@ -31,6 +31,10 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
   const ownsCopy =
     canSave && record.ownerId === session!.user.id && (await can(role, "proposals", "delete"));
 
+  // Create the itinerary + list linkable leads (/api/itineraries/linkable needs edit).
+  const canConvert =
+    (await can(role, "itinerary", "create")) && (await can(role, "itinerary", "edit"));
+
   const parsed = proposalDataSchema.safeParse(record.data);
   const data = parsed.success ? parsed.data : DEFAULT_PROPOSAL_DATA;
 
@@ -46,6 +50,7 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
       initialStatus={record.status}
       canSave={canSave}
       ownsCopy={ownsCopy}
+      canConvert={canConvert}
       companyAddress={companyAddress}
       trustContent={trustContent}
       socialLinks={{
