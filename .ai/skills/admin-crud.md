@@ -31,7 +31,7 @@ Confirm:
 
 ## When to Use
 
-Use this Skill when adding a new first-class admin module — a new entity staff manage directly, with its own list, create, and edit pages (recent real examples: Tours, Destinations, Activities, Blogs, Banners, Galleries, FAQs, Campaigns, Users).
+Use this Skill when adding a new first-class admin module — a new entity staff manage directly, with its own list, create, and edit pages (recent real examples: Tours, Destinations, Activities, Blogs, Banners, Galleries, FAQs, Adventures, Users).
 
 Also use it when adding, to an existing module: Publish/Unpublish, a status change, or a bulk action.
 

@@ -30,7 +30,7 @@ export const LEAD_SOURCES = [
   "activity-detail",
   "about",
   "contact",
-  "campaign",
+  "adventure",
   "reviews",
   "tour-category",
   "faq",
@@ -155,6 +155,10 @@ export const leadContextSchema = z.object({
   // published activity and its DB name goes into the lead notes; activityName
   // is display-only (the WhatsApp text).
   activitySlug: z.string().max(160).optional(),
+  // Adventure pages (/adventures/[slug]) — adventureSlug is looked up server-side
+  // against a published adventure (→ Lead.adventureId); packageName above then
+  // carries the chosen pricing tier and must match one of that adventure's tiers.
+  adventureSlug: z.string().max(160).optional(),
   // Tour.hidePrice — the form asks the budget band (nothing to derive it
   // from). Display/UX only: the server re-checks the tour's own flag.
   priceHidden: z.boolean().optional(),

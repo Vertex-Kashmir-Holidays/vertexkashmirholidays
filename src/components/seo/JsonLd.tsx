@@ -253,7 +253,7 @@ export function buildProduct(tour: {
   };
 }
 
-export function buildCampaignProduct(campaign: {
+export function buildAdventureProduct(adventure: {
   name: string;
   slug: string;
   sub?: string | null;
@@ -264,8 +264,8 @@ export function buildCampaignProduct(campaign: {
   const parsePrice = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10);
 
   const offers =
-    campaign.tiers.length > 0
-      ? campaign.tiers.map((t) => {
+    adventure.tiers.length > 0
+      ? adventure.tiers.map((t) => {
           const price = parsePrice(t.price);
           return {
             "@type": "Offer",
@@ -275,10 +275,10 @@ export function buildCampaignProduct(campaign: {
             ...(isNaN(price) ? {} : { price }),
             availability: "https://schema.org/InStock",
             seller: { "@id": `${siteUrl}/#organization` },
-            ...(campaign.offerDeadline
-              ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+            ...(adventure.offerDeadline
+              ? { priceValidUntil: adventure.offerDeadline.split("T")[0] }
               : {}),
-            url: `${siteUrl}/adventures/${campaign.slug}`,
+            url: `${siteUrl}/adventures/${adventure.slug}`,
           };
         })
       : [
@@ -287,32 +287,32 @@ export function buildCampaignProduct(campaign: {
             priceCurrency: "INR",
             availability: "https://schema.org/InStock",
             seller: { "@id": `${siteUrl}/#organization` },
-            ...(campaign.offerDeadline
-              ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+            ...(adventure.offerDeadline
+              ? { priceValidUntil: adventure.offerDeadline.split("T")[0] }
               : {}),
-            url: `${siteUrl}/adventures/${campaign.slug}`,
+            url: `${siteUrl}/adventures/${adventure.slug}`,
           },
         ];
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: campaign.name,
-    description: campaign.sub ?? campaign.name,
-    image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
-    url: `${siteUrl}/adventures/${campaign.slug}`,
+    name: adventure.name,
+    description: adventure.sub ?? adventure.name,
+    image: adventure.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+    url: `${siteUrl}/adventures/${adventure.slug}`,
     brand: { "@type": "Brand", name: "Vertex Kashmir Holidays" },
     offers: offers.length === 1 ? offers[0] : offers,
   };
 }
 
-export function buildCampaignEvents(campaign: {
+export function buildDepartureEvents(adventure: {
   name: string;
   slug: string;
   heroImage?: string | null;
   batches: Array<{ date: string; seats: number; price: string; status: string }>;
 }) {
-  return campaign.batches
+  return adventure.batches
     .filter((b) => b.date)
     .map((b) => {
       const price = parseInt(b.price.replace(/[^0-9]/g, ""), 10);
@@ -325,7 +325,7 @@ export function buildCampaignEvents(campaign: {
       return {
         "@context": "https://schema.org",
         "@type": "Event",
-        name: campaign.name,
+        name: adventure.name,
         startDate: b.date,
         eventStatus: "https://schema.org/EventScheduled",
         eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
@@ -339,15 +339,15 @@ export function buildCampaignEvents(campaign: {
             addressCountry: "IN",
           },
         },
-        image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
-        url: `${siteUrl}/adventures/${campaign.slug}`,
+        image: adventure.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+        url: `${siteUrl}/adventures/${adventure.slug}`,
         organizer: { "@id": `${siteUrl}/#organization` },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",
           ...(isNaN(price) ? {} : { price }),
           availability,
-          url: `${siteUrl}/adventures/${campaign.slug}`,
+          url: `${siteUrl}/adventures/${adventure.slug}`,
         },
       };
     });

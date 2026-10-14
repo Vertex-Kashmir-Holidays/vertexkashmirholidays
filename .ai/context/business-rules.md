@@ -113,7 +113,7 @@ Verified formulas, from `src/lib/bookings/finance.ts` and `src/lib/payments/gst.
 
 Actual admin modules present today (`src/lib/rbac.ts` MODULES, mirrored by `src/app/admin/*`):
 
-Dashboard, Packages (Tours), Destinations, Activities, Bookings, Leads, Itineraries, Users, Vertex Connect (internal team chat/meetings), Galleries, Blogs, FAQs, Home/About/Contact/Legal page content, Adventures (Campaigns), Offline Conversions, Banners, Reviews, SEO & Pages, Settings, Roles & Permissions.
+Dashboard, Packages (Tours), Destinations, Activities, Bookings, Leads, Itineraries, Users, Vertex Connect (internal team chat/meetings), Galleries, Blogs, FAQs, Home/About/Contact/Legal page content, Adventures, Offline Conversions, Banners, Reviews, SEO & Pages, Settings, Roles & Permissions.
 
 - **Not implemented — do not assume they exist:** there is no **Vendors** module (no `Vendor` model in the schema at all) and no dedicated **Reports** module — reporting today is limited to the admin Dashboard's revenue chart, not a standalone reporting module with exports/scheduled reports.
 - **Roles:** `SUPERADMIN`, `ADMIN`, `DEVELOPER`, `SALES`, `EDITOR`, `CUSTOMER`. Note the `DEVELOPER` role exists in the schema — a separate technical-staff role in addition to the four documented in the tech-stack/CLAUDE.md role list.

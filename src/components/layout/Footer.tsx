@@ -60,7 +60,7 @@ export function Footer({
   /** First active ContactOffice row (admin-managed) — hidden entirely when none is set. */
   corporateOffice?: { name: string; address: string } | null;
   tourCategories?: TourCategory[];
-  /** Show the Adventures link — only while a campaign is published. */
+  /** Show the Adventures link — only while an adventure is published. */
   hasAdventures?: boolean;
 }) {
   const priorityCategoryLinks = PRIORITY_CATEGORIES.filter((c) => tourCategories.includes(c));

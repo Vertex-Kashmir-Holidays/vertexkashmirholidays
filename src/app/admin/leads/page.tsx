@@ -77,6 +77,7 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
         assignedTo: { select: { id: true, name: true, email: true } },
         packageName: true,
         occasionOffer: { select: { id: true, name: true } },
+        adventure: { select: { id: true, name: true } },
         budgetBandKey: true,
         budgetBandLabel: true,
         budgetBandDerived: true,

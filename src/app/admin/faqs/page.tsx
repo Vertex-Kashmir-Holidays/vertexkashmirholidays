@@ -36,7 +36,7 @@ export default async function AdminFaqsPage() {
             tours: true,
             destinations: true,
             blogs: true,
-            campaigns: true,
+            adventures: true,
             activities: true,
           },
         },

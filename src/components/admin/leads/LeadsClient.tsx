@@ -76,6 +76,8 @@ interface Lead {
   assignedTo: { id: string; name: string | null; email: string } | null;
   // Occasion Offer the lead came from (form, or a resolved WhatsApp reference).
   occasionOffer?: { id: string; name: string } | null;
+  // Adventure page (/adventures/[slug]) the lead came from.
+  adventure?: { id: string; name: string } | null;
   packageName?: string | null;
   // Lead qualification (null on leads captured before it existed).
   budgetBandKey?: string | null;
@@ -632,6 +634,14 @@ export function LeadsClient({
                           <p className="mt-1">
                             <span className="inline-block max-w-[200px] truncate rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                               🎉 {lead.occasionOffer.name}
+                              {lead.packageName ? ` · ${lead.packageName}` : ""}
+                            </span>
+                          </p>
+                        )}
+                        {lead.adventure && (
+                          <p className="mt-1">
+                            <span className="inline-block max-w-[200px] truncate rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-300">
+                              {lead.adventure.name}
                               {lead.packageName ? ` · ${lead.packageName}` : ""}
                             </span>
                           </p>

@@ -27,7 +27,7 @@ export default async function EditFaqPage({ params }: PageProps) {
   const role = session?.user?.role;
   if (!role || !(await can(role, "faqs", "edit"))) redirect("/admin/faqs");
 
-  const [faq, categories, tours, destinations, blogs, campaigns, activities, collections] =
+  const [faq, categories, tours, destinations, blogs, adventures, activities, collections] =
     await Promise.all([
       prisma.faq.findUnique({
         where: { id },
@@ -35,7 +35,7 @@ export default async function EditFaqPage({ params }: PageProps) {
           tours: { select: { id: true, title: true, slug: true } },
           destinations: { select: { id: true, name: true, slug: true } },
           blogs: { select: { id: true, title: true, slug: true } },
-          campaigns: { select: { id: true, name: true, slug: true } },
+          adventures: { select: { id: true, name: true, slug: true } },
           activities: { select: { id: true, name: true, slug: true } },
           collections: { select: { id: true, name: true, slug: true } },
         },
@@ -48,7 +48,7 @@ export default async function EditFaqPage({ params }: PageProps) {
       prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
       prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
       prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-      prisma.campaign.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.adventure.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
       prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
       prisma.tourCollection.findMany({
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -73,8 +73,8 @@ export default async function EditFaqPage({ params }: PageProps) {
       href: `${SITE_URL}/destinations/${d.slug}`,
     })),
     ...faq.blogs.map((b) => ({ label: `Blog: ${b.title}`, href: `${SITE_URL}/blog/${b.slug}` })),
-    ...faq.campaigns.map((c) => ({
-      label: `Campaign: ${c.name}`,
+    ...faq.adventures.map((c) => ({
+      label: `Adventure: ${c.name}`,
       href: `${SITE_URL}/adventures/${c.slug}`,
     })),
     ...faq.activities.map((a) => ({
@@ -120,7 +120,7 @@ export default async function EditFaqPage({ params }: PageProps) {
           tourIds: faq.tours.map((t) => t.id),
           destinationIds: faq.destinations.map((d) => d.id),
           blogIds: faq.blogs.map((b) => b.id),
-          campaignIds: faq.campaigns.map((c) => c.id),
+          adventureIds: faq.adventures.map((c) => c.id),
           activityIds: faq.activities.map((a) => a.id),
           collectionIds: faq.collections.map((c) => c.id),
           usedOn,
@@ -129,7 +129,7 @@ export default async function EditFaqPage({ params }: PageProps) {
         tourOptions={tours.map((t) => ({ id: t.id, label: t.title }))}
         destinationOptions={destinations.map((d) => ({ id: d.id, label: d.name }))}
         blogOptions={blogs.map((b) => ({ id: b.id, label: b.title }))}
-        campaignOptions={campaigns.map((c) => ({ id: c.id, label: c.name }))}
+        adventureOptions={adventures.map((c) => ({ id: c.id, label: c.name }))}
         activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
         collectionOptions={collections.map((c) => ({ id: c.id, label: c.name }))}
       />

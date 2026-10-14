@@ -1,6 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 
-// Inline HTML — campaign section headings, press logo names, etc.
+// Inline HTML — adventure section headings, press logo names, etc.
 // Allows formatting tags only; strips scripts, event handlers, javascript: URLs.
 const INLINE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["em", "strong", "b", "i", "u", "s", "br", "span"],

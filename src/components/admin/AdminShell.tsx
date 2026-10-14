@@ -97,7 +97,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   contact: Phone,
   tripPlanner: Compass,
   legal: ScrollText,
-  campaigns: Megaphone,
+  adventures: Megaphone,
   offlineConversions: Target,
   banners: Flag,
   reviews: Star,
@@ -138,7 +138,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
   { label: null, keys: ["dashboard", "connect"] },
   {
     label: "Catalog",
-    keys: ["destinations", "packages", "activities", "campaigns"],
+    keys: ["destinations", "packages", "activities", "adventures"],
     extra: [
       // Occasion Offer landing pages — tour merchandising, so gated by the
       // Packages permission (same as Tour Collections), no RBAC module of its own.

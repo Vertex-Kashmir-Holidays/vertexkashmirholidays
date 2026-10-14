@@ -112,9 +112,9 @@ UI never accesses Prisma directly — only Route Handlers and Server Components 
 - **`app/`** — routes, layouts, route handlers (`app/api/**`). Thin orchestrators only — fetch data, pass props, no business logic (see `coding-standards.md` → Next.js Standards).
 - **`components/`** — presentation, organized by domain (`bookings/`, `leads/`, `admin/`, `tours/`, …), plus `components/ui/` for shared primitives and `components/providers/` for the small set of Context providers.
 - **`lib/`** — the combined application + domain + infrastructure layer: cross-cutting utilities (`auth.ts`, `permissions.ts`, `rbac.ts`, `ratelimit.ts`, `prisma.ts`) alongside per-domain subfolders (`bookings/`, `leads/`, `payments/`, `tours/`, `security/`, `admin/`, `offlineConversion/`).
-- **`types/`** — shared TypeScript types, one file per domain (`tours.ts`, `campaign.ts`, `analytics.ts`, …) plus ambient module augmentation (`next-auth.d.ts`).
+- **`types/`** — shared TypeScript types, one file per domain (`tours.ts`, `adventure.ts`, `analytics.ts`, …) plus ambient module augmentation (`next-auth.d.ts`).
 - **`hooks/`** — not yet a real top-level directory. Target: shared custom hooks (e.g. the hydration-mount-guard pattern currently duplicated across several components) move here once extracted.
-- **`schemas/`** — intentionally not centralized as a separate top-level folder. A Zod schema lives beside the domain it validates (`lib/leads/schema.ts`, `lib/admin/campaignSchema.ts`, `lib/bookings/service-schema.ts`), or inline in the Route Handler for a simple, single-use shape. Do not introduce a top-level `schemas/` folder — it would fight the domain-oriented organization of `lib/`.
+- **`schemas/`** — intentionally not centralized as a separate top-level folder. A Zod schema lives beside the domain it validates (`lib/leads/schema.ts`, `lib/admin/adventureSchema.ts`, `lib/bookings/service-schema.ts`), or inline in the Route Handler for a simple, single-use shape. Do not introduce a top-level `schemas/` folder — it would fight the domain-oriented organization of `lib/`.
 - **`actions/`** — does not exist and is not planned. Server Actions are not adopted in this project (see `coding-standards.md` → Next.js Mutation Standard); introducing one would require an explicit architecture decision, not an incidental folder.
 
 ────────────────────────────────────
@@ -167,7 +167,7 @@ Every Route Handler:
 ## 12. Performance
 
 - **Lazy loading** — `next/dynamic` with `ssr: false` for heavy, rarely-needed client bundles. Applied to the admin revenue chart (Recharts, via the `RevenueChartLazy` client wrapper) and the client-side itinerary PDF export (`@react-pdf/renderer`, dynamically `import()`ed inside `downloadItineraryPdf`), both code-split out of initial JS as of VERTE-24. The Three.js hero mode (`HeroR3F`) is currently orphaned — not imported by any route, so it ships nowhere; wire it in behind the same `ssr: false` boundary if it is ever reintroduced.
-- **Image optimization** — `next/image` + `sharp`, project-wide on the public site; a handful of campaign marketing components still use a raw `<img>` (tracked gap).
+- **Image optimization** — `next/image` + `sharp`, project-wide on the public site; a handful of adventure page components still use a raw `<img>` (tracked gap).
 - **Bundle splitting** — `@next/bundle-analyzer`, already wired into `next.config.ts` (`ANALYZE=true yarn build`).
 - **Caching** — ISR (`revalidate = 300`) on published public content; `force-dynamic` on admin/account/booking pages that read session or real-time data (see `coding-standards.md` → Next.js Standards).
 - **Server rendering** — RSC by default; see Section 4.

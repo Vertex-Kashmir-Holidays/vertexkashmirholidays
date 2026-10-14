@@ -83,7 +83,7 @@ export default async function PublicLayout({ children }: { children: React.React
     tourCollections,
     occasionOffers,
     budgetBands,
-    publishedCampaigns,
+    publishedAdventures,
   ] = await Promise.all([
     getSiteSettings(),
     getActiveStrip(),
@@ -94,8 +94,8 @@ export default async function PublicLayout({ children }: { children: React.React
     getNavTourCollections(),
     getNavOccasionOffers(),
     getActiveBudgetBands(),
-    // The footer's Adventures link shows only while a campaign is published.
-    prisma.campaign.count({ where: { published: true } }),
+    // The footer's Adventures link shows only while an adventure is published.
+    prisma.adventure.count({ where: { published: true } }),
   ]);
   const tourCategories = categoryRows.filter((c) => c._count._all > 0).map((c) => c.category);
   // First active row (lowest sortOrder) is "the" Corporate Office shown in
@@ -210,7 +210,7 @@ export default async function PublicLayout({ children }: { children: React.React
             corporateOffice={corporateOffice}
             promoBanners={promoBanners}
             tourCategories={tourCategories}
-            hasAdventures={publishedCampaigns > 0}
+            hasAdventures={publishedAdventures > 0}
             tourCollections={tourCollections}
             occasionOffers={occasionOffers}
             strip={

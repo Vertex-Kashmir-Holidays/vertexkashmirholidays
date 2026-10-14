@@ -27,7 +27,7 @@ export const MEDIA_FOLDERS = [
   "blog",
   "about",
   "contact",
-  "campaigns",
+  "adventures",
   "itinerary",
   "general",
 ] as const;

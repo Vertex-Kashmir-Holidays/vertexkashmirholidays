@@ -40,7 +40,7 @@ Do not use this Skill for:
 
 Before writing a route, identify which of the four categories it falls into — each has a different auth shape:
 
-- **Public** (e.g. `GET /api/tours`, `GET /api/destinations`) — no guard, but any query on `Tour`/`Blog`/`Destination`/`Campaign` must filter `where: { published: true }`.
+- **Public** (e.g. `GET /api/tours`, `GET /api/destinations`) — no guard, but any query on `Tour`/`Blog`/`Destination`/`Adventure` must filter `where: { published: true }`.
 - **Admin/staff** (e.g. anything under a module like leads, bookings, users) — guarded with `requirePermission(module, action)` or `requireStaff()` for a non-module route.
 - **Customer/account** (e.g. `/api/account/**`) — guarded with `auth()`, scoped to `where: { userId: session.user.id }`; does **not** use `requirePermission` (that's staff-only).
 - **Webhook/callback** (e.g. the Razorpay webhook, the Connect retention cron target) — no session at all; verified instead by a signature (HMAC) or a shared secret, not by `requirePermission`.
@@ -110,8 +110,8 @@ Large
 
 ## Validation
 
-- Zod schemas: a `createSchema` per POST, a `patchSchema` per PATCH (same shape, made partial). Share a schema between the form and the route rather than re-declaring it in both places wherever one already exists for the domain (e.g. `src/lib/leads/schema.ts`, `src/lib/admin/campaignSchema.ts`).
-- `Tour`/`Campaign` JSON-string columns are validated as `z.string()` — the raw JSON string — not `z.array(...)`; see `../instructions/coding-standards.md` → JSON Columns.
+- Zod schemas: a `createSchema` per POST, a `patchSchema` per PATCH (same shape, made partial). Share a schema between the form and the route rather than re-declaring it in both places wherever one already exists for the domain (e.g. `src/lib/leads/schema.ts`, `src/lib/admin/adventureSchema.ts`).
+- `Tour`/`Adventure` JSON-string columns are validated as `z.string()` — the raw JSON string — not `z.array(...)`; see `../instructions/coding-standards.md` → JSON Columns.
 - Query-string and route-param values should be validated too, not just the body, where they drive a database query.
 
 ────────────────────────────────────

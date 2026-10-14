@@ -20,7 +20,7 @@ interface FaqPreviewListProps {
 }
 
 // Shared short-answer accordion — used on Homepage, Tour, Destination, About,
-// Contact and Blog/Campaign/Activity detail pages. Never renders the full
+// Contact and Blog/Adventure/Activity detail pages. Never renders the full
 // answer; that lives only on /faq (see Faq.shortAnswer's schema doc comment
 // for why — this keeps the FAQPage JSON-LD on every one of these pages
 // honest about what's actually visible). Collapsed by default, one open at a

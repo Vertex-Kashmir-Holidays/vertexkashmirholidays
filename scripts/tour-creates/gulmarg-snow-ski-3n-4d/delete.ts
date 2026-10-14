@@ -16,7 +16,7 @@ async function main() {
               tours: true,
               destinations: true,
               blogs: true,
-              campaigns: true,
+              adventures: true,
               activities: true,
               collections: true,
             },
@@ -37,7 +37,7 @@ async function main() {
       f._count.tours +
         f._count.destinations +
         f._count.blogs +
-        f._count.campaigns +
+        f._count.adventures +
         f._count.activities +
         f._count.collections >
       1,
