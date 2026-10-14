@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
+import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
 import { ItineraryIcon } from "../itinerary/icons";
@@ -50,6 +51,8 @@ interface ProposalEditorProps {
   trustContent?: PdfTrustContent;
   socialLinks?: PdfSocialLinks;
   apiBasePath?: string;
+  /** May create itineraries — shows "Convert to Itinerary". */
+  canConvert?: boolean;
 }
 
 export function ProposalEditor({
@@ -63,6 +66,7 @@ export function ProposalEditor({
   trustContent,
   socialLinks,
   apiBasePath = "/api/proposals",
+  canConvert = false,
 }: ProposalEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ProposalData>(initialData);
@@ -72,6 +76,8 @@ export function ProposalEditor({
   const [status, setStatus] = useState<ProposalStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
+  const [isConverting, setConverting] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
 
   /* ---------- top-level string fields ---------- */
   const updateField = (field: keyof ProposalData, value: string) =>
@@ -321,10 +327,11 @@ export function ProposalEditor({
     }));
 
   /* ---------- actions ---------- */
-  async function handleSave() {
+  /** Resolves true once the proposal is saved. */
+  async function handleSave(): Promise<boolean> {
     if (!data.preparedFor.trim()) {
       toast.error("Please enter the customer name (Prepared For).");
-      return;
+      return false;
     }
     setSaving(true);
     try {
@@ -342,10 +349,36 @@ export function ProposalEditor({
       } else {
         router.refresh();
       }
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Saves first (when allowed) so the itinerary is built from what's on screen.
+  async function handleConvert(tier: ProposalTierKey, leadId: string) {
+    if (!id) return;
+    setConverting(true);
+    if (canSave && !(await handleSave())) {
+      setConverting(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${apiBasePath}/${id}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, leadId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Conversion failed");
+      toast.success("Itinerary created and linked to the lead.");
+      router.push(`/admin/itinerary/${json.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Conversion failed");
+      setConverting(false);
     }
   }
 
@@ -410,6 +443,22 @@ export function ProposalEditor({
         isSaving={isSaving}
         isExporting={isExporting}
         canSave={canSave}
+        onConvert={id && canConvert ? () => setConvertOpen(true) : undefined}
+        isConverting={isConverting}
+      />
+      <ConvertToItineraryDialog
+        open={convertOpen}
+        onClose={() => setConvertOpen(false)}
+        onConvert={handleConvert}
+        options={
+          isMulti
+            ? TIER_ORDER.map((key) => ({
+                key,
+                label: [data.tiers[key].label, data.tiers[key].priceLabel].filter(Boolean).join(" · "),
+              }))
+            : []
+        }
+        isConverting={isConverting}
       />
       {id && initialTitle && (
         <UntouchedCopyGuard
