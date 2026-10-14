@@ -169,11 +169,11 @@ export function invalidateActivity(input: {
   for (const slug of input.destinationSlugs ?? []) revalidatePath(`/destinations/${slug}`);
 }
 
-// ── Campaign / Adventure ─────────────────────────────────────────────────
+// ── Adventure / Adventure ─────────────────────────────────────────────────
 // Affects only its own detail page, /adventures, and sitemap.xml — confirmed
-// Campaign has no Tour/Destination relation in the schema, and the homepage
-// renders no Campaign data at all (verified directly against its query list).
-export function invalidateCampaign(input: { slug: string; previousSlug?: string | null }) {
+// Adventure has no Tour/Destination relation in the schema, and the homepage
+// renders no Adventure data at all (verified directly against its query list).
+export function invalidateAdventure(input: { slug: string; previousSlug?: string | null }) {
   revalidatePath(`/adventures/${input.slug}`);
   if (input.previousSlug && input.previousSlug !== input.slug) {
     revalidatePath(`/adventures/${input.previousSlug}`);

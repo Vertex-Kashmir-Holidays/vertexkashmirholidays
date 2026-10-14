@@ -27,7 +27,7 @@ interface ListingHeroProps {
  * optional subtitle + optional stats + optional CTA button. Each optional
  * field renders only when the admin has actually set it — never a
  * placeholder. This replaced three near-identical, drifting copies
- * (ToursHeroSection, CampaignsHeroSection, and Activities' inline JSX), the
+ * (ToursHeroSection, AdventuresHeroSection, and Activities' inline JSX), the
  * last of which silently dropped kicker/CTA entirely.
  *
  * Destinations keeps its own bespoke hero (badges instead of stats) — not

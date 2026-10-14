@@ -12,7 +12,7 @@ const SCRIPT_TAG = /<script\b[^>]*\ssrc=["']([^"']+)["'][^>]*>\s*<\/script>/i;
 
 // Deliberately allows `id` — TripAdvisor's script locates its container by DOM
 // id, and this value is staff-entered admin content (Settings), same trust
-// level as the blog-body/campaign HTML already sanitized via src/lib/sanitize.ts.
+// level as the blog-body/adventure HTML already sanitized via src/lib/sanitize.ts.
 const WIDGET_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["div", "ul", "li", "a", "img", "span", "noscript"],
   allowedAttributes: {

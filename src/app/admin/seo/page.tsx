@@ -27,9 +27,9 @@ const SEO_SECTIONS = [
     color: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
   },
   {
-    title: "Campaign Pages",
-    description: "Edit meta title, description and OG image for landing-page campaigns.",
-    href: "/admin/campaigns",
+    title: "Adventure Pages",
+    description: "Edit meta title, description and OG image for landing-page adventures.",
+    href: "/admin/adventures",
     Icon: Megaphone,
     color: "bg-emerald-500/10 text-primary",
   },

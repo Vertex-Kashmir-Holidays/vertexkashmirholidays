@@ -89,7 +89,7 @@ export function RequestQuoteButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-[20px]">Get a free quote in 60 seconds</DialogTitle>
+            <DialogTitle className="text-[20px]">Get a free quote in 15 mins</DialogTitle>
           </DialogHeader>
           <DialogDescription className="text-[14px]">
             For <span className="font-semibold text-foreground">{tourName}</span> — quoted for your

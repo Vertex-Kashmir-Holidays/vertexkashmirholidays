@@ -11,7 +11,7 @@ import type { OfferDestinationView } from "@/lib/offers/view";
 // renders nothing when the offer has no content for it, so a sparse offer
 // never shows an empty heading.
 
-/** Campaign-style section shell: kicker, heading, optional intro, anchor offset
+/** Adventure-style section shell: kicker, heading, optional intro, anchor offset
  *  for the sticky header + section nav. */
 export function OfferSection({
   id,

@@ -51,7 +51,7 @@ export interface FaqFormDefaults {
   tourIds?: string[];
   destinationIds?: string[];
   blogIds?: string[];
-  campaignIds?: string[];
+  adventureIds?: string[];
   activityIds?: string[];
   collectionIds?: string[];
   slug?: string;
@@ -64,7 +64,7 @@ interface FaqFormProps {
   tourOptions: LinkOption[];
   destinationOptions: LinkOption[];
   blogOptions: LinkOption[];
-  campaignOptions: LinkOption[];
+  adventureOptions: LinkOption[];
   activityOptions: LinkOption[];
   collectionOptions: LinkOption[];
 }
@@ -92,7 +92,7 @@ export function FaqForm({
   tourOptions,
   destinationOptions,
   blogOptions,
-  campaignOptions,
+  adventureOptions,
   activityOptions,
   collectionOptions,
 }: FaqFormProps) {
@@ -102,7 +102,7 @@ export function FaqForm({
   const [tourIds, setTourIds] = useState<string[]>(defaults?.tourIds ?? []);
   const [destinationIds, setDestinationIds] = useState<string[]>(defaults?.destinationIds ?? []);
   const [blogIds, setBlogIds] = useState<string[]>(defaults?.blogIds ?? []);
-  const [campaignIds, setCampaignIds] = useState<string[]>(defaults?.campaignIds ?? []);
+  const [adventureIds, setAdventureIds] = useState<string[]>(defaults?.adventureIds ?? []);
   const [activityIds, setActivityIds] = useState<string[]>(defaults?.activityIds ?? []);
   const [collectionIds, setCollectionIds] = useState<string[]>(defaults?.collectionIds ?? []);
   const [placements, setPlacements] = useState<string[]>(defaults?.placements ?? []);
@@ -143,7 +143,7 @@ export function FaqForm({
       tourIds,
       destinationIds,
       blogIds,
-      campaignIds,
+      adventureIds,
       activityIds,
       collectionIds,
     };
@@ -220,7 +220,7 @@ export function FaqForm({
             <h3 className="font-bold text-foreground text-sm">Attach to specific records</h3>
             <p className="text-[12px] text-muted-foreground -mt-2">
               Optional. A FAQ can attach to any number of Tours, Destinations, Blog posts,
-              Campaigns, Activities, or Tour Collections — it still exists once and is shown
+              Adventures, Activities, or Tour Collections — it still exists once and is shown
               wherever it&apos;s attached, never duplicated.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -243,10 +243,10 @@ export function FaqForm({
                 onChange={setBlogIds}
               />
               <LinkChecklist
-                title="Campaigns"
-                options={campaignOptions}
-                value={campaignIds}
-                onChange={setCampaignIds}
+                title="Adventures"
+                options={adventureOptions}
+                value={adventureIds}
+                onChange={setAdventureIds}
               />
               <LinkChecklist
                 title="Activities"

@@ -11,7 +11,7 @@ import {
   buildTouristTrip,
   buildBreadcrumbList,
   buildFAQPage,
-  buildCampaignEvents,
+  buildDepartureEvents,
 } from "@/components/seo/JsonLd";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
@@ -355,7 +355,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
 
   const eventLds =
     batches.length > 0
-      ? buildCampaignEvents({
+      ? buildDepartureEvents({
           name: tour.title,
           slug: tour.slug,
           heroImage: tour.coverImage,

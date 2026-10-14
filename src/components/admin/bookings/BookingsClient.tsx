@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { isBookingCompleted } from "@/lib/bookings/finance";
+import { ConfirmDialog } from "@/components/admin/connect/ConfirmDialog";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
 type PaymentStatus = "PENDING" | "PARTIAL" | "FULL";
@@ -133,6 +134,8 @@ export function BookingsClient({
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  // Booking awaiting the "cancel this booking?" confirmation (Cancel or Refund).
+  const [confirmCancel, setConfirmCancel] = useState<Booking | null>(null);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [confirmMode, setConfirmMode] = useState<null | "soft" | "permanent">(null);
 
@@ -466,7 +469,7 @@ export function BookingsClient({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleStatusChange(b.id, "CANCELLED");
+                                setConfirmCancel(b);
                               }}
                               disabled={isPending}
                               title="Cancel booking (nothing paid yet)"
@@ -479,7 +482,7 @@ export function BookingsClient({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleStatusChange(b.id, "CANCELLED");
+                                setConfirmCancel(b);
                               }}
                               disabled={isPending}
                               title="Refund and cancel (record the actual refund amount on the Services page first)"
@@ -681,6 +684,29 @@ export function BookingsClient({
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmCancel}
+        destructive
+        title={
+          confirmCancel && confirmCancel.paidAmount > 0
+            ? `Refund and cancel ${confirmCancel.guestName}'s booking?`
+            : `Cancel ${confirmCancel?.guestName ?? "this"}'s booking?`
+        }
+        description={
+          confirmCancel && confirmCancel.paidAmount > 0
+            ? `${fmtINR(confirmCancel.paidAmount)} of ${fmtINR(confirmCancel.amount)} has been collected. This marks the booking as cancelled and reverses any unpaid commission on it. It does not send money back — record the actual refund on the Services page. A cancelled booking can't be reopened from this screen.`
+            : `Nothing has been paid on this ${fmtINR(confirmCancel?.amount ?? 0)} booking. This marks it as cancelled and reverses any unpaid commission on it. A cancelled booking can't be reopened from this screen.`
+        }
+        confirmLabel={
+          confirmCancel && confirmCancel.paidAmount > 0 ? "Refund & cancel" : "Cancel booking"
+        }
+        cancelLabel="Keep booking"
+        onConfirm={() => {
+          if (confirmCancel) handleStatusChange(confirmCancel.id, "CANCELLED");
+          setConfirmCancel(null);
+        }}
+        onCancel={() => setConfirmCancel(null)}
+      />
     </div>
   );
 }

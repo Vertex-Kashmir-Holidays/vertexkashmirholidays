@@ -30,6 +30,7 @@ import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
 import { deriveBandForPrice, resolveQualification } from "@/lib/leads/budgetBands.server";
+import { adventureTierChoices, parseAdventureTiers } from "@/lib/adventureTiers";
 
 export const dynamic = "force-dynamic";
 
@@ -131,6 +132,7 @@ export async function GET(req: NextRequest) {
         contactChannel: true,
         packageName: true,
         occasionOffer: { select: { id: true, name: true } },
+        adventure: { select: { id: true, name: true } },
         budgetBandKey: true,
         budgetBandLabel: true,
         budgetBandDerived: true,
@@ -210,6 +212,7 @@ function composeNotes(
         packageName?: string;
         offerName?: string;
         activityName?: string;
+        adventureName?: string;
       }
     | undefined,
 ): string | undefined {
@@ -251,6 +254,7 @@ function composeNotes(
   }
   if (context?.offerName) parts.push(`🎉 Offer: ${context.offerName}`);
   if (context?.activityName) parts.push(`🎯 Activity: ${context.activityName}`);
+  if (context?.adventureName) parts.push(`Adventure: ${context.adventureName}`);
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
   if (context?.packageName) parts.push(`Package: ${context.packageName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
@@ -259,7 +263,7 @@ function composeNotes(
 }
 
 // Public: create a lead from any inquiry/contact form.
-// No auth guard — called from hero, tour sidebar, contact page, and campaign pages.
+// No auth guard — called from hero, tour sidebar, contact page, and adventure pages.
 export async function POST(req: NextRequest) {
   // Reject cross-site scripted POSTs (CSRF) before doing any work.
   if (!isSameOrigin(req)) {
@@ -508,12 +512,26 @@ export async function POST(req: NextRequest) {
         select: { name: true },
       })
     : null;
+  // Adventure page — same rule: only a real, published adventure is linked, and
+  // the tier name is kept only if it's one that adventure's pricing can produce.
+  const leadAdventure = context?.adventureSlug
+    ? await prisma.adventure.findFirst({
+        where: { slug: context.adventureSlug, published: true },
+        select: { id: true, name: true, tiers: true },
+      })
+    : null;
   const packageName = !context?.packageName
     ? undefined
     : leadTour
       ? publishedPackageOptions(leadTour.packageOptions).find((o) => o.name === context.packageName)
           ?.name
-      : leadOffer?.packages.find((p) => p.name === context.packageName)?.name;
+      : leadOffer
+        ? leadOffer.packages.find((p) => p.name === context.packageName)?.name
+        : leadAdventure
+          ? parseAdventureTiers(leadAdventure.tiers)
+              .flatMap(adventureTierChoices)
+              .find((c) => c.name === context.packageName)?.name
+          : undefined;
 
   const lead = await prisma.lead.create({
     data: {
@@ -530,6 +548,7 @@ export async function POST(req: NextRequest) {
       // An offer lead is also tagged with the offer's hidden CRM tour.
       tourId: leadTour?.id ?? leadOffer?.crmTourId ?? undefined,
       occasionOfferId: leadOffer?.id,
+      adventureId: leadAdventure?.id,
       packageName,
       notes: composeNotes(
         message,
@@ -540,6 +559,7 @@ export async function POST(req: NextRequest) {
               packageName,
               offerName: leadOffer?.name,
               activityName: leadActivity?.name,
+              adventureName: leadAdventure?.name,
             }
           : undefined,
       ),

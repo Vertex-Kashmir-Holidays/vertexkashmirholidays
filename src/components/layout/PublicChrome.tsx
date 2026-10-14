@@ -21,7 +21,7 @@ interface PublicChromeProps {
   strip: StripBannerData | null;
   promoBanners: SlotBanner[];
   tourCategories: TourCategory[];
-  /** At least one published campaign — gates the footer's Adventures link. */
+  /** At least one published adventure — gates the footer's Adventures link. */
   hasAdventures: boolean;
   tourCollections: NavTourCollection[];
   occasionOffers: NavOccasionOffer[];

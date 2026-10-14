@@ -105,6 +105,8 @@ interface Lead {
   packageName: string | null;
   /** Occasion Offer the lead came from (offer form or resolved WhatsApp reference). */
   occasionOffer?: { id: string; name: string; slug: string } | null;
+  /** Adventure page (/adventures/[slug]) the lead came from. */
+  adventure?: { id: string; name: string; slug: string } | null;
   /** Lead qualification — null on leads captured before it existed. */
   budgetBandKey?: string | null;
   budgetBandLabel?: string | null;
@@ -277,7 +279,7 @@ const SOURCE_PAGE_LABELS: Record<string, string> = {
   "tour-origin-city": "Origin-city SEO page",
   "trip-planner": "Plan Your Kashmir Trip",
   contact: "Contact page",
-  campaign: "Campaign page",
+  adventure: "Adventure page",
   "tour-collection": "Tour Collection page",
 };
 
@@ -779,6 +781,24 @@ export function LeadDetail({
                   </p>
                 </div>
               ) : null}
+              {lead.adventure ? (
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Adventure</p>
+                  <p className="font-semibold text-foreground">
+                    <a
+                      href={`/adventures/${lead.adventure.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary hover:underline"
+                    >
+                      {lead.adventure.name}
+                    </a>
+                    {lead.packageName && !lead.tour && (
+                      <span className="text-primary"> — {lead.packageName}</span>
+                    )}
+                  </p>
+                </div>
+              ) : null}
               <div>
                 <p className="text-muted-foreground mb-0.5">Budget</p>
                 <p className="font-semibold text-foreground">
@@ -804,7 +824,7 @@ export function LeadDetail({
                 <p className="text-muted-foreground mb-0.5">Tour</p>
                 <p className="font-semibold text-foreground">
                   {lead.tour?.title ?? "Custom"}
-                  {lead.packageName && (lead.tour || !lead.occasionOffer) && (
+                  {lead.packageName && (lead.tour || (!lead.occasionOffer && !lead.adventure)) && (
                     <span className="text-primary"> — {lead.packageName} package</span>
                   )}
                 </p>

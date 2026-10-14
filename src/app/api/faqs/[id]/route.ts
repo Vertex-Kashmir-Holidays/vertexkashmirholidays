@@ -25,7 +25,7 @@ const patchSchema = z.object({
   tourIds: idArray,
   destinationIds: idArray,
   blogIds: idArray,
-  campaignIds: idArray,
+  adventureIds: idArray,
   activityIds: idArray,
   collectionIds: idArray,
 });
@@ -42,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         tours: { select: { id: true, title: true } },
         destinations: { select: { id: true, name: true } },
         blogs: { select: { id: true, title: true } },
-        campaigns: { select: { id: true, name: true } },
+        adventures: { select: { id: true, name: true } },
         activities: { select: { id: true, name: true } },
         collections: { select: { id: true, name: true } },
       },
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     tourIds,
     destinationIds,
     blogIds,
-    campaignIds,
+    adventureIds,
     activityIds,
     collectionIds,
     lastReviewedAt,
@@ -96,7 +96,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           ? { destinations: { set: destinationIds.map((did) => ({ id: did })) } }
           : {}),
         ...(blogIds ? { blogs: { set: blogIds.map((bid) => ({ id: bid })) } } : {}),
-        ...(campaignIds ? { campaigns: { set: campaignIds.map((cid) => ({ id: cid })) } } : {}),
+        ...(adventureIds ? { adventures: { set: adventureIds.map((cid) => ({ id: cid })) } } : {}),
         ...(activityIds ? { activities: { set: activityIds.map((aid) => ({ id: aid })) } } : {}),
         ...(collectionIds
           ? { collections: { set: collectionIds.map((cid) => ({ id: cid })) } }

@@ -207,11 +207,12 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
 
             {/* Price Section */}
             {tour.priceHidden ? (
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-[12px] leading-snug text-muted-foreground">
-                  Price on request
-                  <br />
-                  for your dates
+              // Phones (one card per row): caption and CTA share a row. From sm
+              // up (cards sit side by side, so they're narrower): caption on
+              // one line, CTA centred on the next.
+              <div className="mt-3 flex items-center justify-between gap-3 sm:flex-col sm:justify-center sm:gap-2 sm:text-center">
+                <span className="text-[12px] leading-snug text-muted-foreground sm:whitespace-nowrap">
+                  Price on request for your dates
                 </span>
                 <RequestQuoteButton
                   tourName={tour.t}
