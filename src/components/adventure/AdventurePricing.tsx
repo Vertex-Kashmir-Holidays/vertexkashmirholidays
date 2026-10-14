@@ -1,6 +1,7 @@
 // src/components/adventure/AdventurePricing.tsx
 "use client";
 
+import { adventureStartingPrice } from "@/lib/adventureTiers";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Tilt3D } from "@/components/ui/effects/3DTilt";
@@ -25,14 +26,8 @@ export function AdventurePricing({
   paymentNote,
   onChoose,
 }: AdventurePricingProps) {
-  // Cheapest tier price (tiers store prices as "₹28,999"-style strings) → EMI widget.
-  const minPrice = Math.min(
-    ...tiers
-      .flatMap((t) => [t.price, t.price2])
-      .map((p) => Number(String(p ?? "").replace(/[^\d]/g, "")))
-      .filter((n) => n > 0),
-  );
-  const emiAmount = Number.isFinite(minPrice) ? minPrice : 0;
+  // The adventure's starting price (per person, 2-sharing) → EMI widget.
+  const emiAmount = adventureStartingPrice(tiers).price ?? 0;
 
   return (
     <section className="relative z-[2] mx-auto max-w-[1300px] px-6 pt-20" id="pricing">

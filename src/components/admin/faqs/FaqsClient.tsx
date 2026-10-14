@@ -1,1660 +1,324 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Plus, Pencil, Trash2, CheckCircle2, Clock, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PAYMENT_METHODS, isCashMethod } from "@/lib/payments/gst";
-import {
-  Trash2,
-  Clock,
-  User,
-  ArrowRight,
-  MessageSquare,
-  Phone,
-  Mail,
-  Paperclip,
-  ChevronDown,
-  Loader2,
-  Link2,
-  FileText,
-  Lock,
-  Unlock,
-  Pencil,
-  Eye,
-  History,
-  Plus,
-  CheckCircle2,
-  type LucideIcon,
-} from "lucide-react";
-import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/atoms/tooltip";
+import { EmptyState } from "@/components/ui/molecules/empty-state";
+import { PageHeader } from "@/components/ui/molecules/page-header";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
 
-// IN_PROGRESS is a real LeadStatus value at the type level (it's a B2B-request
-// -only value — see prisma/schema.prisma), included here only so this type
-// structurally matches Prisma's Lead.status; this page excludes B2B rows
-// (see admin/leads/page.tsx, admin/leads/[id]/page.tsx) so it never actually
-// renders in practice.
-type LeadStatus =
-  | "NEW"
-  | "CONNECTED"
-  | "NOT_CONNECTED"
-  | "QUALIFIED"
-  | "NEGOTIATION"
-  | "ON_HOLD"
-  | "IN_PROGRESS"
-  | "CONVERTED"
-  | "REJECTED";
-type LeadSource = "WEBSITE" | "MANUAL" | "GOOGLE_ADS" | "META_ADS" | "THIRD_PARTY" | "REFERRAL";
-type LeadActivityType =
-  | "STATUS_CHANGE"
-  | "ASSIGNMENT_CHANGE"
-  | "NOTE_ADDED"
-  | "FOLLOW_UP_SCHEDULED"
-  | "ATTACHMENT_ADDED"
-  | "CALL_LOGGED"
-  | "EMAIL_SENT"
-  | "BOOKING_LINKED";
-
-interface Activity {
+interface FaqRow {
   id: string;
-  type: LeadActivityType;
-  note: string | null;
-  fromStatus: LeadStatus | null;
-  toStatus: LeadStatus | null;
-  fromAssigneeId: string | null;
-  toAssigneeId: string | null;
-  performedByName: string;
-  performedAt: Date | string;
-}
-
-interface LinkedBooking {
-  id: string;
+  question: string;
+  slug: string;
   status: string;
-  amount: number;
-  travelDate: Date | string;
-  guestName: string;
-}
-
-interface ByUser {
-  name: string | null;
-  email: string;
-}
-
-interface LeadItinerary {
-  id: string;
-  title: string;
-  status: string;
-  locked: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  owner: ByUser | null;
-  lastEditedBy: ByUser | null;
-  history: { id: string; title: string; editedByName: string; createdAt: Date | string }[];
-  _count: { history: number };
-}
-
-interface Lead {
-  id: string;
-  name: string;
-  phone: string;
-  email: string | null;
-  source: LeadSource;
-  tourId: string | null;
-  tour: { id: string; title: string } | null;
-  packageName: string | null;
-  /** Occasion Offer the lead came from (offer form or resolved WhatsApp reference). */
-  occasionOffer?: { id: string; name: string; slug: string } | null;
-  /** Adventure page (/adventures/[slug]) the lead came from. */
-  adventure?: { id: string; name: string; slug: string } | null;
-  /** Lead qualification — null on leads captured before it existed. */
-  budgetBandKey?: string | null;
-  budgetBandLabel?: string | null;
-  budgetBandDerived?: boolean;
-  travelMonth?: string | null;
-  adults: number;
-  children: number | null;
-  startDate: Date | string | null;
-  endDate: Date | string | null;
-  notes: string | null;
-  // JSON-string array — currently only ever populated by the B2B registration
-  // form's logo (see parseLogoAttachment() in src/app/api/leads/route.ts).
-  attachments: string;
-  followUpAt: Date | string | null;
-  status: LeadStatus;
-  locked: boolean;
-  ipAddress: string | null;
-  userAgent: string | null;
-  bookingId: string | null;
-  booking: LinkedBooking | null;
-  assignedToId: string | null;
-  assignedTo: { id: string; name: string | null; email: string } | null;
-  negotiatedAmount: number | null;
-  tokenAmount: number | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  activities: Activity[];
-  itinerary: LeadItinerary | null;
-  // Raw attribution signals — what deriveChannel() (src/lib/attribution.server.ts)
-  // actually classified `source` from. Shown so staff can self-diagnose an
-  // unexpected source (e.g. a stale first-touch cookie carrying an old test
-  // gclid) without needing database access.
-  utmSource: string | null;
-  utmMedium: string | null;
-  utmCampaign: string | null;
-  utmTerm: string | null;
-  utmContent: string | null;
-  gclid: string | null;
-  gbraid: string | null;
-  wbraid: string | null;
-  fbclid: string | null;
-  msclkid: string | null;
-  landingPage: string | null;
-  referrer: string | null;
-  // Trip Planner structured intent — WHAT they want, distinct from `source`
-  // (WHERE they came from) above. See prisma/schema.prisma's doc comment on
-  // Lead.requestedComponents. Null on any pre-Trip-Planner lead.
-  sourcePage: string | null;
-  contactChannel: "FORM" | "WHATSAPP" | "PHONE" | null;
-  requestedComponents: string | null;
-  transportModes: string | null;
-  fromCity: string | null;
-  toCity: string | null;
-}
-
-interface StaffUser {
-  id: string;
-  name: string | null;
-  email: string;
-}
-
-interface TourOption {
-  id: string;
-  title: string;
-  packageNames?: string[];
-}
-
-interface IpDuplicateLead {
-  id: string;
-  name: string;
-  createdAt: Date | string;
+  featured: boolean;
+  placements: string[];
+  sortOrder: number;
+  category: { name: string } | null;
+  _count: {
+    tours: number;
+    destinations: number;
+    blogs: number;
+    adventures: number;
+    activities: number;
+  };
 }
 
 interface Props {
-  lead: Lead;
-  staffUsers: StaffUser[];
-  tours: TourOption[];
-  canManageItinerary: boolean;
-  isAdmin: boolean;
-  canManage: boolean;
-  gstRates: number[];
-  ipDuplicates: IpDuplicateLead[];
+  initialFaqs: FaqRow[];
+  categoryOptions: { id: string; name: string }[];
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-const STATUS_STYLES: Record<LeadStatus, string> = {
-  NEW: "bg-link/10 text-link",
-  CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
-  NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-  QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  NEGOTIATION: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  ON_HOLD: "bg-muted text-muted-foreground",
-  // B2B-request-only value — never actually rendered here (see comment on the
-  // LeadStatus type above), present only so this Record type-checks.
-  IN_PROGRESS: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-  REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
-};
+const PAGE_SIZE = 50;
 
-const BOOKING_STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
-  PAID: "bg-green-500/15 text-green-700 dark:text-green-300",
-  FAILED: "bg-red-500/15 text-red-700 dark:text-red-300",
-  CANCELLED: "bg-muted text-muted-foreground",
-  REFUNDED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
-};
-
-const ACTIVITY_ICONS: Record<LeadActivityType, LucideIcon> = {
-  STATUS_CHANGE: ArrowRight,
-  ASSIGNMENT_CHANGE: User,
-  NOTE_ADDED: MessageSquare,
-  FOLLOW_UP_SCHEDULED: Clock,
-  CALL_LOGGED: Phone,
-  EMAIL_SENT: Mail,
-  ATTACHMENT_ADDED: Paperclip,
-  BOOKING_LINKED: Link2,
-};
-
-function fmtSource(s: LeadSource) {
-  return s.toLowerCase().replace(/_/g, " ");
-}
-
-function fmtDate(d: Date | string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function fmtDateTime(d: Date | string) {
-  return new Date(d).toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function activityLabel(a: Activity): string {
-  switch (a.type) {
-    case "STATUS_CHANGE":
-      return `Status: ${a.fromStatus?.replace(/_/g, " ")} → ${a.toStatus?.replace(/_/g, " ")}`;
-    case "ASSIGNMENT_CHANGE":
-      return a.toAssigneeId ? "Lead assigned" : "Lead unassigned";
-    case "NOTE_ADDED":
-      return "Note added";
-    case "FOLLOW_UP_SCHEDULED":
-      return "Follow-up scheduled";
-    case "CALL_LOGGED":
-      return "Call logged";
-    case "EMAIL_SENT":
-      return "Email sent";
-    case "ATTACHMENT_ADDED":
-      return "Attachment added";
-    case "BOOKING_LINKED":
-      return a.note?.startsWith("Linked") ? "Booking linked" : "Booking unlinked";
-  }
-}
-
-// Human-readable label for Lead.sourcePage — same values as LEAD_SOURCES in
-// src/lib/leads/schema.ts. Falls back to the raw value for anything not
-// listed (never blocks display on an unmapped/legacy value).
-const SOURCE_PAGE_LABELS: Record<string, string> = {
-  home: "Homepage",
-  tours: "Tours listing",
-  "tour-detail": "Tour detail page",
-  "flight-train-quote": "Transport assistance banner",
-  "tour-origin-city": "Origin-city SEO page",
-  "trip-planner": "Plan Your Kashmir Trip",
-  contact: "Contact page",
-  adventure: "Adventure page",
-  "tour-collection": "Tour Collection page",
-};
-
-const REQUESTED_COMPONENT_LABELS: Record<string, string> = {
-  TRANSPORT: "Transport",
-  TOUR: "Kashmir Tour",
-  HOTEL: "Hotel/Stay",
-  PLAN: "Help Me Plan",
-};
-
-const TRANSPORT_MODE_LABELS: Record<string, string> = {
-  FLIGHT: "Flight",
-  TRAIN: "Train",
-  BUS: "Bus",
-};
-
-function parseJsonArray(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-// Order mirrors deriveChannel()'s own precedence (click IDs first, then UTMs)
-// so the field staff most needs to check to explain a classification appears
-// first, not alphabetically.
-const ATTRIBUTION_DISPLAY_FIELDS: { key: keyof Lead; label: string }[] = [
-  { key: "gclid", label: "Google Click ID (gclid)" },
-  { key: "gbraid", label: "gbraid" },
-  { key: "wbraid", label: "wbraid" },
-  { key: "fbclid", label: "Meta Click ID (fbclid)" },
-  { key: "msclkid", label: "Microsoft Click ID (msclkid)" },
-  { key: "utmSource", label: "UTM Source" },
-  { key: "utmMedium", label: "UTM Medium" },
-  { key: "utmCampaign", label: "UTM Campaign" },
-  { key: "utmTerm", label: "UTM Term" },
-  { key: "utmContent", label: "UTM Content" },
-  { key: "referrer", label: "Referrer" },
-  { key: "landingPage", label: "Landing Page" },
-];
-
-interface LeadAttachment {
-  label: string;
-  dataUrl: string;
-}
-
-// Only ever populated today by the B2B registration form's company logo
-// (parseLogoAttachment() in src/app/api/leads/route.ts) — tolerant of
-// malformed/legacy JSON since this column has no schema-level guarantee.
-function parseAttachments(raw: string): LeadAttachment[] {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (a): a is LeadAttachment =>
-        !!a &&
-        typeof a === "object" &&
-        typeof a.label === "string" &&
-        typeof a.dataUrl === "string",
-    );
-  } catch {
-    return [];
-  }
-}
-
-const selectCls =
-  "w-full pl-3 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card appearance-none disabled:opacity-60";
-
-export function LeadDetail({
-  lead,
-  staffUsers,
-  tours,
-  canManageItinerary,
-  isAdmin,
-  canManage,
-  gstRates,
-  ipDuplicates,
-}: Props) {
+export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, canDelete }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const converted = lead.status === "CONVERTED";
-  const locked = lead.locked;
-  const itinerary = lead.itinerary;
-  const populatedAttribution = ATTRIBUTION_DISPLAY_FIELDS.filter(({ key }) => lead[key]);
-  const attachments = parseAttachments(lead.attachments);
-  const [showConvert, setShowConvert] = useState(false);
-  const [status, setStatus] = useState<LeadStatus>(lead.status);
-  const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
-  const [tourId, setTourId] = useState(lead.tourId ?? "");
-  const [packageName, setPackageName] = useState(lead.packageName ?? "");
-  const [notes, setNotes] = useState(lead.notes ?? "");
-  const [followUpAt, setFollowUpAt] = useState(
-    lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "",
-  );
-  const [bookingInput, setBookingInput] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  // Activity timeline is collapsed to the latest 3 entries by default.
-  const [showAllActivity, setShowAllActivity] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "DRAFT" | "PUBLISHED">("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  // Sync local state when RSC re-delivers fresh props after router.refresh().
-  useEffect(() => {
-    setStatus(lead.status);
-    setAssignedToId(lead.assignedToId ?? "");
-    setTourId(lead.tourId ?? "");
-    setPackageName(lead.packageName ?? "");
-    setNotes(lead.notes ?? "");
-    setFollowUpAt(lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "");
-  }, [lead.status, lead.assignedToId, lead.tourId, lead.packageName, lead.notes, lead.followUpAt]);
+  const filtered = useMemo(() => {
+    return initialFaqs.filter((f) => {
+      if (search && !f.question.toLowerCase().includes(search.toLowerCase())) return false;
+      if (statusFilter !== "ALL" && f.status !== statusFilter) return false;
+      if (categoryFilter !== "ALL" && f.category?.name !== categoryFilter) return false;
+      return true;
+    });
+  }, [initialFaqs, search, statusFilter, categoryFilter]);
 
-  // Clear the booking input when a booking is unlinked.
-  useEffect(() => {
-    if (!lead.booking) setBookingInput("");
-  }, [lead.booking]);
+  const visible = filtered.slice(0, visibleCount);
 
-  function patch(payload: Record<string, unknown>) {
-    if (locked) {
-      toast.error("This lead is locked. Ask an admin to unlock it before editing.");
-      return;
-    }
+  async function handleDelete(id: string) {
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/leads/${lead.id}`, {
+        const res = await fetch(`/api/faqs/${id}`, { method: "DELETE" });
+        if (res.status === 403) {
+          toast.error("You don't have permission to delete FAQs. Contact your administrator.");
+          return;
+        }
+        if (!res.ok) throw new Error();
+        toast.success("FAQ deleted.");
+        router.refresh();
+      } catch {
+        toast.error("Failed to delete FAQ.");
+      } finally {
+        setConfirmDelete(null);
+      }
+    });
+  }
+
+  async function handleToggleStatus(id: string, status: string) {
+    const next = status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/faqs/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ status: next }),
         });
-        if (!res.ok) {
-          const j = (await res.json()) as { error?: string | Record<string, unknown> };
-          const msg = typeof j.error === "string" ? j.error : "Update failed.";
-          toast.error(msg);
+        if (res.status === 403) {
+          toast.error("You don't have permission to change status. Contact your administrator.");
           return;
         }
-        toast.success("Saved.");
+        if (!res.ok) throw new Error();
+        toast.success(next === "PUBLISHED" ? "FAQ published!" : "FAQ unpublished.");
         router.refresh();
       } catch {
-        toast.error("An error occurred.");
-      }
-    });
-  }
-
-  function handleStatusChange(val: LeadStatus) {
-    setStatus(val);
-    patch({ status: val });
-  }
-
-  function handleConvert(
-    bookingAmount: number,
-    tokenAmount: number,
-    paymentMethod: string,
-    gstPercent: number | null,
-  ) {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/leads/${lead.id}/convert`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingAmount, tokenAmount, paymentMethod, gstPercent }),
-        });
-        const j = (await res.json().catch(() => ({}))) as { bookingId?: string; error?: string };
-        if (!res.ok || !j.bookingId) {
-          toast.error(j.error ?? "Conversion failed.");
-          return;
-        }
-        toast.success("Lead converted — booking created.");
-        router.push(`/admin/bookings/${j.bookingId}/services`);
-      } catch {
-        toast.error("An error occurred.");
-      }
-    });
-  }
-
-  function handleUnlock() {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/leads/${lead.id}/unlock`, { method: "POST" });
-        if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
-          toast.error(j.error ?? "Unlock failed.");
-          return;
-        }
-        toast.success("Lead unlocked — the itinerary and booking services can now be edited.");
-        router.refresh();
-      } catch {
-        toast.error("An error occurred.");
-      }
-    });
-  }
-
-  function handleLock() {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/leads/${lead.id}/lock`, { method: "POST" });
-        if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
-          toast.error(j.error ?? "Lock failed.");
-          return;
-        }
-        toast.success("Lead locked.");
-        router.refresh();
-      } catch {
-        toast.error("An error occurred.");
-      }
-    });
-  }
-
-  function handleAssignChange(val: string) {
-    setAssignedToId(val);
-    patch({ assignedToId: val || null });
-  }
-
-  function handleTourChange(val: string) {
-    setTourId(val);
-    // The server clears the package when the tour changes (it belongs to the old tour).
-    setPackageName("");
-    patch({ tourId: val || null });
-  }
-
-  function handlePackageChange(val: string) {
-    setPackageName(val);
-    patch({ packageName: val || null });
-  }
-
-  const selectedTourPackages = tours.find((t) => t.id === tourId)?.packageNames ?? [];
-
-  function handleDelete() {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
-        if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
-          toast.error(j.error ?? "Failed to delete lead.");
-          return;
-        }
-        toast.success("Lead deleted.");
-        router.push("/admin/leads");
-        router.refresh();
-      } catch {
-        toast.error("Failed to delete lead.");
-      }
-    });
-  }
-
-  function handleGenerateItinerary() {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/leads/${lead.id}/itinerary`, { method: "POST" });
-        const j = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-        if (!res.ok || !j.id) {
-          toast.error(j.error ?? "Failed to create itinerary.");
-          return;
-        }
-        router.push(`/admin/itinerary/${j.id}`);
-      } catch {
-        toast.error("An error occurred.");
+        toast.error("Failed to update status.");
       }
     });
   }
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <h2 className="font-display font-extrabold text-foreground text-xl break-words">{lead.name}</h2>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-            <span
-              className={cn(
-                "text-[12px] font-bold px-2 py-0.5 rounded-full",
-                STATUS_STYLES[status],
-              )}
+      <PageHeader
+        title="FAQs"
+        description={`Single source of truth for FAQ content sitewide — ${initialFaqs.length} total.`}
+        action={
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/admin/faq-categories"
+              className="flex items-center gap-2 border border-border hover:bg-muted text-foreground text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
             >
-              {status.replace(/_/g, " ")}
-            </span>
-            {locked && (
-              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400">
-                <Lock className="w-3 h-3" /> Locked
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground">
-              Added {fmtDateTime(lead.createdAt)}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
-          {confirmDelete ? (
-            <>
-              <button
-                onClick={handleDelete}
-                disabled={isPending}
-                className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
+              Manage Categories
+            </Link>
+            {canCreate && (
+              <Link
+                href="/admin/faqs/new"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25"
               >
-                {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                Confirm Delete
-              </button>
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl border border-border transition-colors"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              {/* Convert is offered only while the lead is in NEGOTIATION — not for
-                  any other status. The booking/token amounts are entered in the modal. */}
-              {status === "NEGOTIATION" && !locked && canManage && (
-                <button
-                  onClick={() => {
-                    // Mirror the server rule: itinerary is mandatory before conversion.
-                    if (!itinerary) {
-                      toast.error("Add an itinerary for this lead before converting.");
-                      return;
-                    }
-                    setShowConvert(true);
-                  }}
-                  disabled={isPending}
-                  title={
-                    itinerary ? undefined : "An itinerary is required before converting this lead."
-                  }
-                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Convert
-                </button>
-              )}
-              {locked && isAdmin && (
-                <button
-                  onClick={handleUnlock}
-                  disabled={isPending}
-                  className="flex items-center gap-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-60 px-3 py-2 rounded-xl transition-colors"
-                >
-                  {isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Unlock className="w-3.5 h-3.5" />
-                  )}
-                  Unlock
-                </button>
-              )}
-              {/* Re-lock — only meaningful for a converted lead an admin had
-                  previously unlocked for corrections. */}
-              {!locked && status === "CONVERTED" && isAdmin && (
-                <button
-                  onClick={handleLock}
-                  disabled={isPending}
-                  className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground border border-border hover:bg-muted px-3 py-2 rounded-xl transition-colors"
-                >
-                  {isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Lock className="w-3.5 h-3.5" />
-                  )}
-                  Lock
-                </button>
-              )}
-              {/* Assignee on an active lead edits; the assignee on a locked lead and
-                  any admin get a read-only "View Form" instead. */}
-              {canManage && !locked ? (
-                <Link
-                  href={`/admin/leads/${lead.id}/edit`}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/10 px-3 py-2 rounded-xl border border-border transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit
-                </Link>
-              ) : canManage || isAdmin ? (
-                <Link
-                  href={`/admin/leads/${lead.id}/edit`}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/10 px-3 py-2 rounded-xl border border-border transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  View Form
-                </Link>
-              ) : null}
-              <button
-                onClick={() => setConfirmDelete(true)}
-                disabled={converted}
-                title={converted ? "Converted leads cannot be deleted." : undefined}
-                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-3 py-2 rounded-xl border border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Locked (converted) lead — read-only notice for everyone. */}
-      {locked && (
-        <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="text-xs">
-            <p className="font-semibold text-amber-700 dark:text-amber-300">This lead is locked</p>
-            <p className="text-muted-foreground mt-0.5">
-              It has been converted to a booking, so its details are read-only.{" "}
-              {isAdmin
-                ? "Unlock the lead to make changes."
-                : "Ask an admin to unlock it before any changes can be made."}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
-        {/* LEFT: details + notes + activity */}
-        <div className="space-y-5">
-          {/* Lead info grid */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-foreground text-sm mb-4">Lead Details</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-4 text-xs [&>*]:min-w-0 [&>*]:break-words">
-              <div>
-                <p className="text-muted-foreground mb-0.5">Phone</p>
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  {lead.phone}
-                </a>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Email</p>
-                {lead.email ? (
-                  <a
-                    href={`mailto:${lead.email}`}
-                    className="font-semibold text-foreground hover:text-primary transition-colors truncate block max-w-full"
-                  >
-                    {lead.email}
-                  </a>
-                ) : (
-                  <p className="font-semibold text-foreground">—</p>
-                )}
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Source</p>
-                <p className="font-semibold text-foreground capitalize">{fmtSource(lead.source)}</p>
-              </div>
-              {lead.contactChannel && (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Channel</p>
-                  <p className="font-semibold text-foreground capitalize">
-                    {lead.contactChannel.toLowerCase()}
-                  </p>
-                </div>
-              )}
-              {lead.sourcePage && (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Source Page</p>
-                  <p className="font-semibold text-foreground">
-                    {SOURCE_PAGE_LABELS[lead.sourcePage] ?? lead.sourcePage}
-                  </p>
-                </div>
-              )}
-              {lead.ipAddress && (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">IP Address</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-foreground">
-                      {lead.ipAddress}
-                    </span>
-                    {ipDuplicates.length === 1 && (
-                      <Link
-                        href={`/admin/leads/${ipDuplicates[0].id}`}
-                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[12px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
-                      >
-                        maybe duplicate
-                      </Link>
-                    )}
-                    {ipDuplicates.length > 1 && (
-                      <Link
-                        href={`/admin/leads?ip=${encodeURIComponent(lead.ipAddress!)}`}
-                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[12px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
-                      >
-                        maybe duplicate ({ipDuplicates.length})
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              )}
-              {lead.occasionOffer ? (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Offer</p>
-                  <p className="font-semibold text-foreground">
-                    <a
-                      href={`/offers/${lead.occasionOffer.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-primary hover:underline"
-                    >
-                      🎉 {lead.occasionOffer.name}
-                    </a>
-                    {lead.packageName && !lead.tour && (
-                      <span className="text-primary"> — {lead.packageName} plan</span>
-                    )}
-                  </p>
-                </div>
-              ) : null}
-              {lead.adventure ? (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Adventure</p>
-                  <p className="font-semibold text-foreground">
-                    <a
-                      href={`/adventures/${lead.adventure.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-primary hover:underline"
-                    >
-                      {lead.adventure.name}
-                    </a>
-                    {lead.packageName && !lead.tour && (
-                      <span className="text-primary"> — {lead.packageName}</span>
-                    )}
-                  </p>
-                </div>
-              ) : null}
-              <div>
-                <p className="text-muted-foreground mb-0.5">Budget</p>
-                <p className="font-semibold text-foreground">
-                  {lead.budgetBandKey === UNDECIDED
-                    ? "Not sure yet"
-                    : (lead.budgetBandLabel ?? "Not asked")}
-                  {lead.budgetBandDerived && (
-                    <span className="ml-1 text-[12px] font-medium text-muted-foreground">
-                      (from tour price)
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Travel month</p>
-                <p className="font-semibold text-foreground">
-                  {lead.travelMonth
-                    ? travelMonthText(lead.travelMonth, new Date(lead.createdAt))
-                    : "Not asked"}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Tour</p>
-                <p className="font-semibold text-foreground">
-                  {lead.tour?.title ?? "Custom"}
-                  {lead.packageName && (lead.tour || (!lead.occasionOffer && !lead.adventure)) && (
-                    <span className="text-primary"> — {lead.packageName} package</span>
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Adults</p>
-                <p className="font-semibold text-foreground">{lead.adults}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Children</p>
-                <p className="font-semibold text-foreground">{lead.children ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Travel Start</p>
-                <p className="font-semibold text-foreground">{fmtDate(lead.startDate)}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Travel End</p>
-                <p className="font-semibold text-foreground">{fmtDate(lead.endDate)}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Assigned To</p>
-                <div>
-                  <p className="font-semibold text-foreground">{lead.assignedTo?.name ?? "—"}</p>
-                  {lead.assignedTo?.email && (
-                    <p className="text-[12px] text-muted-foreground">{lead.assignedTo.email}</p>
-                  )}
-                </div>
-              </div>
-              {/* Negotiated/token amounts are captured in the Convert modal, so they
-                  are not shown here before conversion — only after, once recorded. */}
-              {converted && lead.negotiatedAmount != null && (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Negotiated Amount</p>
-                  <p className="font-semibold text-foreground">
-                    ₹{lead.negotiatedAmount.toLocaleString("en-IN")}
-                  </p>
-                </div>
-              )}
-              {converted && lead.tokenAmount != null && (
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Token Amount</p>
-                  <p className="font-semibold text-foreground">
-                    ₹{lead.tokenAmount.toLocaleString("en-IN")}
-                  </p>
-                </div>
-              )}
-              {lead.booking && (
-                <div className="col-span-2 sm:col-span-3">
-                  <p className="text-muted-foreground mb-0.5">Linked Booking</p>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href="/admin/bookings"
-                      className="font-mono text-[12px] text-primary hover:underline"
-                    >
-                      {lead.booking.id}
-                    </Link>
-                    <span
-                      className={cn(
-                        "text-[12px] font-bold px-1.5 py-0.5 rounded-full",
-                        BOOKING_STATUS_STYLES[lead.booking.status] ??
-                          "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {lead.booking.status}
-                    </span>
-                  </div>
-                </div>
-              )}
-              <div>
-                <p className="text-muted-foreground mb-0.5">Follow-up</p>
-                {lead.followUpAt ? (
-                  <p
-                    className={cn(
-                      "font-semibold",
-                      new Date(lead.followUpAt) < new Date()
-                        ? "text-amber-600 dark:text-amber-400"
-                        : "text-foreground",
-                    )}
-                  >
-                    {fmtDate(lead.followUpAt)}
-                  </p>
-                ) : (
-                  <p className="font-semibold text-foreground">—</p>
-                )}
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Last Updated</p>
-                <p className="font-semibold text-foreground">{fmtDate(lead.updatedAt)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Attachments — currently only the B2B registration form's company logo. */}
-          {attachments.length > 0 && (
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-              <h3 className="font-bold text-foreground text-sm mb-4 flex items-center gap-2">
-                <Paperclip className="w-4 h-4" /> Attachments
-              </h3>
-              <div className="flex flex-wrap gap-4">
-                {attachments.map((a, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- tiny (<=5KB) stored data URI, not a remote asset next/image can optimize */}
-                    <img
-                      src={a.dataUrl}
-                      alt={a.label}
-                      className="h-12 w-12 rounded-lg border border-border object-contain bg-muted"
-                    />
-                    <span className="text-xs font-semibold text-foreground">{a.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Trip Planner request — WHAT the customer wants, distinct from the
-            Attribution card below (WHERE they came from). Renders nothing for
-            any pre-Trip-Planner lead (requestedComponents null). */}
-          {(() => {
-            const components = parseJsonArray(lead.requestedComponents);
-            if (components.length === 0) return null;
-            const modes = parseJsonArray(lead.transportModes);
-            return (
-              <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-                <h3 className="font-bold text-foreground text-sm mb-4">Trip Planner Request</h3>
-                <div className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4 [&>*]:min-w-0 [&>*]:break-words">
-                  <div>
-                    <p className="text-muted-foreground mb-0.5">Request</p>
-                    <p className="font-semibold text-foreground">
-                      {components.map((c) => REQUESTED_COMPONENT_LABELS[c] ?? c).join(" + ")}
-                    </p>
-                  </div>
-                  {modes.length > 0 && (
-                    <div>
-                      <p className="text-muted-foreground mb-0.5">Transport</p>
-                      <p className="font-semibold text-foreground">
-                        {modes.map((m) => TRANSPORT_MODE_LABELS[m] ?? m).join(", ")}
-                      </p>
-                    </div>
-                  )}
-                  {lead.fromCity && (
-                    <div>
-                      <p className="text-muted-foreground mb-0.5">From</p>
-                      <p className="font-semibold text-foreground">{lead.fromCity}</p>
-                    </div>
-                  )}
-                  {lead.toCity && (
-                    <div>
-                      <p className="text-muted-foreground mb-0.5">To</p>
-                      <p className="font-semibold text-foreground">{lead.toCity}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Attribution — the raw signals deriveChannel() classified `source` from. */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-foreground text-sm mb-4">Attribution</h3>
-            {populatedAttribution.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No click ID, UTM, or referrer data captured — this visit had no ad-platform or
-                campaign signal, consistent with the &quot;{fmtSource(lead.source)}&quot; source.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-xs">
-                {populatedAttribution.map(({ key, label }) => (
-                  <div
-                    key={key}
-                    className={
-                      key === "landingPage" || key === "referrer" ? "sm:col-span-2" : undefined
-                    }
-                  >
-                    <p className="text-muted-foreground mb-0.5">{label}</p>
-                    <p className="font-mono font-semibold text-foreground break-all">
-                      {lead[key] as string}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                <Plus className="w-4 h-4" />
+                New FAQ
+              </Link>
             )}
           </div>
+        }
+      />
 
-          {/* Itinerary */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Itinerary
-              </h3>
-              {itinerary?.locked && (
-                <span className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400">
-                  <Lock className="w-3 h-3" /> Locked
-                </span>
-              )}
-            </div>
-
-            {itinerary ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-foreground text-sm">{itinerary.title}</p>
-                  <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                    {itinerary.status}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3 text-xs [&>*]:min-w-0 [&>*]:break-words">
-                  <div>
-                    <p className="text-muted-foreground mb-0.5">Generated</p>
-                    <p className="font-semibold text-foreground">{fmtDate(itinerary.createdAt)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground mb-0.5">Last updated</p>
-                    <p className="font-semibold text-foreground">{fmtDate(itinerary.updatedAt)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground mb-0.5">Created by</p>
-                    <p className="font-semibold text-foreground">{itinerary.owner?.name ?? "—"}</p>
-                    {itinerary.owner?.email && (
-                      <p className="text-[12px] text-muted-foreground">{itinerary.owner.email}</p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground mb-0.5">Last updated by</p>
-                    <p className="font-semibold text-foreground">
-                      {(itinerary.lastEditedBy ?? itinerary.owner)?.name ?? "—"}
-                    </p>
-                    {(itinerary.lastEditedBy ?? itinerary.owner)?.email && (
-                      <p className="text-[12px] text-muted-foreground">
-                        {(itinerary.lastEditedBy ?? itinerary.owner)?.email}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {canManageItinerary && !converted && !itinerary.locked ? (
-                    <Link
-                      href={`/admin/itinerary/${itinerary.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Edit Itinerary
-                    </Link>
-                  ) : (
-                    <Link
-                      href={`/admin/itinerary/${itinerary.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold border border-border text-foreground hover:bg-muted px-4 py-2 rounded-xl transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> View Itinerary
-                    </Link>
-                  )}
-                </div>
-
-                {converted && (
-                  <p className="text-[12px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> Final itinerary for the converted lead — locked and
-                    no longer editable.
-                  </p>
-                )}
-
-                {itinerary.history.length > 0 && (
-                  <details className="pt-1">
-                    <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5">
-                      <History className="w-3.5 h-3.5" /> Edit history ({itinerary._count.history})
-                    </summary>
-                    <ol className="mt-2 space-y-2 border-l border-border pl-3">
-                      {itinerary.history.map((h) => (
-                        <li key={h.id} className="text-[12px]">
-                          <p className="font-semibold text-foreground">
-                            {fmtDateTime(h.createdAt)}
-                          </p>
-                          <p className="text-muted-foreground">by {h.editedByName}</p>
-                        </li>
-                      ))}
-                    </ol>
-                  </details>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-xs text-muted-foreground mb-3">
-                  No itinerary yet for this lead.
-                </p>
-                {canManageItinerary && !converted ? (
-                  <button
-                    onClick={handleGenerateItinerary}
-                    disabled={isPending}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
-                  >
-                    {isPending ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="w-3.5 h-3.5" />
-                    )}
-                    Generate Itinerary
-                  </button>
-                ) : (
-                  <p className="text-[12px] text-muted-foreground">
-                    {converted
-                      ? "Lead was converted without an itinerary."
-                      : "You don't have permission to manage this lead's itinerary."}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-foreground text-sm mb-3">Notes</h3>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-              disabled={!canManage || locked}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition resize-none disabled:opacity-60"
-              placeholder={
-                canManage ? "Add notes about this lead..." : "Only the assignee can add notes."
-              }
-            />
-            <div className="flex justify-end mt-2">
-              <button
-                onClick={() => patch({ notes })}
-                disabled={isPending || notes === (lead.notes ?? "") || !canManage || locked}
-                className="flex items-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
-              >
-                {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Save Notes
-              </button>
-            </div>
-          </div>
-
-          {/* Activity timeline */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-foreground text-sm mb-4">
-              Activity{lead.activities.length > 0 && ` (${lead.activities.length})`}
-            </h3>
-            {lead.activities.length === 0 ? (
-              <p className="text-muted-foreground text-xs py-4 text-center">
-                No activity recorded yet.
-              </p>
-            ) : (
-              <ol className="space-y-3">
-                {(showAllActivity ? lead.activities : lead.activities.slice(0, 3)).map((a) => {
-                  const Icon = ACTIVITY_ICONS[a.type];
-                  return (
-                    <li key={a.id} className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0 pb-3 border-b border-border last:border-0 last:pb-0">
-                        <p className="text-xs font-semibold text-foreground">{activityLabel(a)}</p>
-                        {a.note && (
-                          <p className="text-[12px] text-muted-foreground mt-0.5">{a.note}</p>
-                        )}
-                        <p className="text-[12px] text-muted-foreground mt-0.5">
-                          by {a.performedByName} · {fmtDateTime(a.performedAt)}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-            {lead.activities.length > 3 && (
-              <button
-                onClick={() => setShowAllActivity((v) => !v)}
-                className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-              >
-                {showAllActivity ? "View Less" : `View More (${lead.activities.length - 3} older)`}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT: quick-edit panel */}
-        <div className="space-y-4">
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground text-sm">Update Lead</h3>
-              {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
-            </div>
-
-            {!canManage && !locked && (
-              <p className="text-[12px] text-muted-foreground rounded-lg bg-muted px-2.5 py-2">
-                {isAdmin
-                  ? "As an admin you can reassign this lead. Status, itinerary, conversion and other updates are handled by its assignee."
-                  : "This lead is managed by its assignee."}
-              </p>
-            )}
-
-            {/* Status */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Status
-              </label>
-              <div className="relative">
-                <select
-                  value={status}
-                  onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
-                  disabled={isPending || locked || !canManage}
-                  className={selectCls}
-                >
-                  <option value="NEW">New</option>
-                  <option value="CONNECTED">Connected</option>
-                  <option value="NOT_CONNECTED">Not Connected</option>
-                  <option value="QUALIFIED">Qualified</option>
-                  <option value="NEGOTIATION">Negotiation</option>
-                  <option value="ON_HOLD">On Hold</option>
-                  {/* Conversion is a dedicated CTA, not a status choice — only shown when already converted. */}
-                  {converted && <option value="CONVERTED">Converted</option>}
-                  <option value="REJECTED">Rejected</option>
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Assigned To */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                Assigned To
-              </label>
-              <div className="relative">
-                <select
-                  value={assignedToId}
-                  onChange={(e) => handleAssignChange(e.target.value)}
-                  disabled={isPending || !isAdmin || locked}
-                  title={
-                    locked
-                      ? "Unlock the lead before reassigning."
-                      : isAdmin
-                        ? undefined
-                        : "Only an admin can change the assignee."
-                  }
-                  className={selectCls}
-                >
-                  <option value="">Unassigned</option>
-                  {staffUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name ?? u.email} ({u.email})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Tour */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1">Tour</label>
-              <div className="relative">
-                <select
-                  value={tourId}
-                  onChange={(e) => handleTourChange(e.target.value)}
-                  disabled={isPending || !canManage || locked}
-                  className={selectCls}
-                >
-                  <option value="">— Custom —</option>
-                  {tours.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.title}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Package — only for tours sold as package options */}
-            {selectedTourPackages.length > 0 && (
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Package
-                </label>
-                <div className="relative">
-                  <select
-                    value={packageName}
-                    onChange={(e) => handlePackageChange(e.target.value)}
-                    disabled={isPending || !canManage || locked}
-                    className={selectCls}
-                  >
-                    <option value="">— Not chosen —</option>
-                    {selectedTourPackages.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Booking Amounts — read-only, shown only after conversion when recorded.
-              Before conversion these are entered through the Convert modal, so this
-              section is intentionally hidden to avoid redundant/confusing entry. */}
-          {converted && (lead.negotiatedAmount != null || lead.tokenAmount != null) && (
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
-              <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Booking Amounts
-              </h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Negotiated</p>
-                  <p className="font-bold text-foreground">
-                    {lead.negotiatedAmount != null
-                      ? `₹${lead.negotiatedAmount.toLocaleString("en-IN")}`
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground mb-0.5">Token</p>
-                  <p className="font-bold text-foreground">
-                    {lead.tokenAmount != null
-                      ? `₹${lead.tokenAmount.toLocaleString("en-IN")}`
-                      : "—"}
-                  </p>
-                </div>
-              </div>
-              <p className="text-[12px] text-muted-foreground">
-                Locked at conversion. Manage further payments from the booking.
-              </p>
-            </div>
-          )}
-
-          {/* Follow-up */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground text-sm">Follow-up</h3>
-              {lead.followUpAt && canManage && !locked && (
-                <button
-                  onClick={() => {
-                    setFollowUpAt("");
-                    patch({ followUpAt: null });
-                  }}
-                  disabled={isPending}
-                  className="text-[12px] text-muted-foreground hover:text-red-500 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <input
-              type="datetime-local"
-              value={followUpAt}
-              onChange={(e) => setFollowUpAt(e.target.value)}
-              disabled={isPending || !canManage || locked}
-              className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-card disabled:opacity-60"
-            />
-            <button
-              onClick={() => patch({ followUpAt: followUpAt || null })}
-              disabled={
-                isPending ||
-                !canManage ||
-                locked ||
-                followUpAt ===
-                  (lead.followUpAt ? new Date(lead.followUpAt).toISOString().slice(0, 16) : "")
-              }
-              className="w-full flex items-center justify-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
-            >
-              {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              {followUpAt ? "Set Follow-up" : "Clear Follow-up"}
-            </button>
-          </div>
-
-          {/* Linked Booking */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground text-sm">Linked Booking</h3>
-              {lead.booking && canManage && !locked && (
-                <button
-                  onClick={() => patch({ bookingId: null })}
-                  disabled={isPending}
-                  className="text-[12px] text-muted-foreground hover:text-red-500 transition-colors"
-                >
-                  Unlink
-                </button>
-              )}
-            </div>
-
-            {lead.booking ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[12px] text-muted-foreground">
-                    ...{lead.booking.id.slice(-8)}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[12px] font-bold px-2 py-0.5 rounded-full",
-                      BOOKING_STATUS_STYLES[lead.booking.status] ??
-                        "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {lead.booking.status}
-                  </span>
-                </div>
-                <p className="text-xs font-semibold text-foreground">{lead.booking.guestName}</p>
-                <p className="text-[12px] text-muted-foreground">
-                  {fmtDate(lead.booking.travelDate)}
-                  {" · "}
-                  <span className="font-semibold text-foreground">
-                    ₹{lead.booking.amount.toLocaleString("en-IN")}
-                  </span>
-                </p>
-                <Link
-                  href={`/admin/bookings/${lead.booking.id}/services`}
-                  className="block w-full mt-1 text-center text-xs font-bold bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl transition-colors"
-                >
-                  Manage Booking Services →
-                </Link>
-              </div>
-            ) : (
-              <>
-                <p className="text-[12px] text-muted-foreground">
-                  {canManage
-                    ? "Paste a booking ID to link this lead to a booking."
-                    : "Only the assignee can link a booking."}
-                </p>
-                <input
-                  type="text"
-                  value={bookingInput}
-                  onChange={(e) => setBookingInput(e.target.value)}
-                  placeholder="Booking ID..."
-                  disabled={!canManage || locked}
-                  className="w-full px-3 py-2 text-xs font-mono border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition disabled:opacity-60"
-                />
-                <button
-                  onClick={() => patch({ bookingId: bookingInput.trim() })}
-                  disabled={isPending || !bookingInput.trim() || !canManage || locked}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors"
-                >
-                  {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Link Booking
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Lead ID */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Lead ID</p>
-            <p className="font-mono text-[12px] text-foreground break-all">{lead.id}</p>
-          </div>
-        </div>
-      </div>
-
-      {showConvert && (
-        <ConvertModal
-          leadName={lead.name}
-          defaultBookingAmount={lead.negotiatedAmount}
-          defaultTokenAmount={lead.tokenAmount}
-          gstRates={gstRates}
-          isPending={isPending}
-          onClose={() => setShowConvert(false)}
-          onConfirm={handleConvert}
-        />
-      )}
-    </div>
-  );
-}
-
-function ConvertModal({
-  leadName,
-  defaultBookingAmount,
-  defaultTokenAmount,
-  gstRates,
-  isPending,
-  onClose,
-  onConfirm,
-}: {
-  leadName: string;
-  defaultBookingAmount: number | null;
-  defaultTokenAmount: number | null;
-  gstRates: number[];
-  isPending: boolean;
-  onClose: () => void;
-  onConfirm: (
-    bookingAmount: number,
-    tokenAmount: number,
-    paymentMethod: string,
-    gstPercent: number | null,
-  ) => void;
-}) {
-  const [bookingAmount, setBookingAmount] = useState(
-    defaultBookingAmount != null ? String(defaultBookingAmount) : "",
-  );
-  const [tokenAmount, setTokenAmount] = useState(
-    defaultTokenAmount != null ? String(defaultTokenAmount) : "",
-  );
-  // Token is usually paid online, so default the mode to a non-cash method.
-  const [paymentMethod, setPaymentMethod] = useState<string>("Online");
-  const [gstPercent, setGstPercent] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
-
-  const gstEligible = !isCashMethod(paymentMethod);
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const b = parseFloat(bookingAmount);
-    const t = parseFloat(tokenAmount);
-    if (!b || b <= 0) return setError("Enter a valid booking amount.");
-    if (!t || t <= 0) return setError("Enter a valid token amount.");
-    if (t >= b) return setError("Token amount must be less than the booking amount.");
-    setError(null);
-    onConfirm(b, t, paymentMethod, gstEligible && gstPercent ? parseFloat(gstPercent) : null);
-  }
-
-  const inputCls =
-    "w-full px-3 py-2 text-sm border border-border rounded-xl bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={submit}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4"
-      >
-        <div>
-          <h3 className="font-display font-bold text-foreground">Convert lead</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Convert <span className="font-semibold text-foreground">{leadName}</span> into a
-            booking. This locks the lead and its itinerary.
+      <div className="bg-card rounded-2xl border border-border shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setVisibleCount(PAGE_SIZE);
+            }}
+            placeholder="Search questions..."
+            className="min-w-[200px] max-w-sm"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as typeof statusFilter);
+              setVisibleCount(PAGE_SIZE);
+            }}
+            className="text-sm border border-border rounded-xl px-3 py-2 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
+          >
+            <option value="ALL">All statuses</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="DRAFT">Draft</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setVisibleCount(PAGE_SIZE);
+            }}
+            className="text-sm border border-border rounded-xl px-3 py-2 bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
+          >
+            <option value="ALL">All categories</option>
+            {categoryOptions.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground shrink-0 ml-auto">
+            {filtered.length} of {initialFaqs.length}
           </p>
         </div>
 
-        <div className="space-y-3">
-          <label className="block">
-            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
-              Booking Amount (₹)
-            </span>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={bookingAmount}
-              onChange={(e) => setBookingAmount(e.target.value)}
-              placeholder="e.g. 45000"
-              className={`${inputCls} mt-1`}
-              autoFocus
-            />
-          </label>
-          <label className="block">
-            <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
-              Token / Advance Amount (₹)
-            </span>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={tokenAmount}
-              onChange={(e) => setTokenAmount(e.target.value)}
-              placeholder="e.g. 9000"
-              className={`${inputCls} mt-1`}
-            />
-            <span className="text-[12px] text-muted-foreground">
-              Recorded as the first payment. Must be less than the booking amount.
-            </span>
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
-                Payment Mode
-              </span>
-              <select
-                value={paymentMethod}
-                onChange={(e) => {
-                  setPaymentMethod(e.target.value);
-                  if (isCashMethod(e.target.value)) setGstPercent("");
-                }}
-                className={`${inputCls} mt-1`}
-              >
-                {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted border-t border-b border-border">
+                {["Question", "Category", "Attached To", "Status", "Actions"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[12px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wide">
-                GST
-              </span>
-              <select
-                value={gstPercent}
-                onChange={(e) => setGstPercent(e.target.value)}
-                disabled={!gstEligible}
-                title={gstEligible ? undefined : "GST does not apply to cash payments."}
-                className={`${inputCls} mt-1`}
-              >
-                <option value="">No GST</option>
-                {gstRates.map((r) => (
-                  <option key={r} value={r}>
-                    {r}%
-                  </option>
-                ))}
-              </select>
-            </label>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {visible.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState
+                      title={
+                        search || statusFilter !== "ALL" || categoryFilter !== "ALL"
+                          ? "No FAQs match your filters."
+                          : "No FAQs yet."
+                      }
+                    />
+                  </td>
+                </tr>
+              ) : (
+                visible.map((faq) => {
+                  const attachedCount =
+                    faq._count.tours +
+                    faq._count.destinations +
+                    faq._count.blogs +
+                    faq._count.adventures +
+                    faq._count.activities;
+                  return (
+                    <tr key={faq.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="min-w-0 flex items-center gap-1.5">
+                          {faq.featured && (
+                            <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-xs leading-tight truncate max-w-[280px]">
+                              {faq.question}
+                            </p>
+                            <p className="text-[12px] text-muted-foreground truncate">
+                              /faq#{faq.slug}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {faq.category?.name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {faq.placements.length > 0 &&
+                          `${faq.placements.length} page${faq.placements.length === 1 ? "" : "s"}`}
+                        {faq.placements.length > 0 && attachedCount > 0 && " · "}
+                        {attachedCount > 0 &&
+                          `${attachedCount} record${attachedCount === 1 ? "" : "s"}`}
+                        {faq.placements.length === 0 && attachedCount === 0 && "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => canEdit && handleToggleStatus(faq.id, faq.status)}
+                          disabled={isPending || !canEdit}
+                          className="focus:outline-none"
+                          title={
+                            !canEdit
+                              ? "No permission to change status"
+                              : faq.status === "PUBLISHED"
+                                ? "Click to unpublish"
+                                : "Click to publish"
+                          }
+                        >
+                          {faq.status === "PUBLISHED" ? (
+                            <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full hover:bg-green-500/15 transition-colors">
+                              <CheckCircle2 className="w-3 h-3" /> Published
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-[12px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full hover:bg-muted transition-colors">
+                              <Clock className="w-3 h-3" /> Draft
+                            </span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <InlineConfirmActions
+                          confirming={confirmDelete === faq.id}
+                          onConfirm={() => handleDelete(faq.id)}
+                          onCancel={() => setConfirmDelete(null)}
+                          pending={isPending}
+                        >
+                          {canEdit && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  href={`/admin/faqs/${faq.id}/edit`}
+                                  aria-label={`Edit FAQ: ${faq.question}`}
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {canDelete && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setConfirmDelete(faq.id)}
+                                  aria-label={`Delete FAQ: ${faq.question}`}
+                                  className={cn(
+                                    "w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors",
+                                  )}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {!canEdit && !canDelete && (
+                            <span className="text-[12px] text-muted-foreground italic">View only</span>
+                          )}
+                        </InlineConfirmActions>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {filtered.length > visible.length && (
+          <div className="p-4 flex justify-center border-t border-border">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Load {Math.min(PAGE_SIZE, filtered.length - visible.length)} more ({visible.length} of{" "}
+              {filtered.length})
+            </button>
           </div>
-          {!gstEligible && (
-            <p className="text-[12px] text-muted-foreground">
-              GST applies to non-cash payments only.
-            </p>
-          )}
-        </div>
-
-        {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
-
-        <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3 py-2 text-sm font-semibold rounded-xl border border-border text-foreground hover:bg-muted"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isPending}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Convert &amp; Create Booking
-          </button>
-        </div>
-      </form>
+        )}
+      </div>
     </div>
   );
 }

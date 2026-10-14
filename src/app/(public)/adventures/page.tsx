@@ -1,4 +1,5 @@
 // src/app/(public)/adventures/page.tsx
+import { adventureStartingPrice } from "@/lib/adventureTiers";
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
@@ -25,27 +26,6 @@ function parse<T>(value: string | null | undefined, fallback: T): T {
   } catch {
     return fallback;
   }
-}
-
-// Adventure tier prices are stored as display strings (e.g. "₹24,999"); pull the
-// first run of digits so we can sort/compare and drive the EMI estimate.
-function toNumber(price: string | null | undefined): number | null {
-  if (!price) return null;
-  const digits = price.replace(/[^\d]/g, '');
-  return digits ? Number(digits) : null;
-}
-
-// Cheapest tier drives the "from" price; its `old` (if higher) becomes the strike price.
-function priceFromTiers(tiers: AdventureTier[]): { priceFrom: number | null; priceWas: number | null } {
-  let best: { priceFrom: number; priceWas: number | null } | null = null;
-  for (const tier of tiers) {
-    const p = toNumber(tier.price);
-    if (p == null) continue;
-    if (!best || p < best.priceFrom) {
-      best = { priceFrom: p, priceWas: toNumber(tier.old) };
-    }
-  }
-  return best ?? { priceFrom: null, priceWas: null };
 }
 
 // Wrapped in React's cache() so generateMetadata() and the page component
@@ -89,7 +69,10 @@ export default async function AdventuresPage() {
   ]);
 
   const adventures: AdventureListItemData[] = rows.map((c) => {
-    const { priceFrom, priceWas } = priceFromTiers(parse<AdventureTier[]>(c.tiers, []));
+    // Per person on 2-sharing — see adventureStartingPrice.
+    const start = adventureStartingPrice(parse<AdventureTier[]>(c.tiers, []));
+    const priceFrom = start.price;
+    const priceWas = start.old;
     return {
       id: c.id,
       slug: c.slug,

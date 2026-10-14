@@ -1,10 +1,11 @@
-// Adds the EXTRA_HIGHLIGHTS / EXTRA_ACTIVITIES cards (./extras.ts) to an
-// already-created Gulmarg Ski Course adventure. Idempotent — cards whose
-// title is already present are skipped. DRY RUN unless APPLY=1.
-//   DATABASE_URL=… npx tsx scripts/adventure-creates/gulmarg-ski-course/add-cards.ts
-//   DATABASE_URL=… APPLY=1 npx tsx scripts/adventure-creates/gulmarg-ski-course/add-cards.ts
+// Brings an already-created Gulmarg Ski Course adventure up to date with
+// ./extras.ts: adds the extra highlight/activity cards and corrects the meta
+// description's starting price. Idempotent — anything already applied is
+// skipped. DRY RUN unless APPLY=1.
+//   DATABASE_URL=… npx tsx scripts/adventure-creates/gulmarg-ski-course/apply-updates.ts
+//   DATABASE_URL=… APPLY=1 npx tsx scripts/adventure-creates/gulmarg-ski-course/apply-updates.ts
 import { PrismaClient } from "@prisma/client";
-import { EXTRA_ACTIVITIES, EXTRA_HIGHLIGHTS } from "./extras";
+import { EXTRA_ACTIVITIES, EXTRA_HIGHLIGHTS, NEW_META_PRICE, OLD_META_PRICE } from "./extras";
 
 const prisma = new PrismaClient();
 const SLUG = "gulmarg-ski-course";
@@ -31,7 +32,7 @@ async function main() {
   const db = process.env.DATABASE_URL?.replace(/.*\/([^/?]+).*/, "$1");
   const a = await prisma.adventure.findUnique({
     where: { slug: SLUG },
-    select: { id: true, highlights: true, activities: true },
+    select: { id: true, highlights: true, activities: true, metaDesc: true },
   });
   if (!a) throw new Error(`No adventure "${SLUG}" in ${db}`);
 
@@ -52,7 +53,10 @@ async function main() {
   console.log(`DB ${db} — "${SLUG}"`);
   console.log(`  highlights: ${highlights.length} → ${highlights.length + newH.length}`, newH.map((h) => h.title));
   console.log(`  activities: ${activities.length} → ${activities.length + newA.length}`, newA.map((x) => x.title));
-  if (!newH.length && !newA.length) return console.log("Nothing to add.");
+  const fixMeta = !!a.metaDesc?.includes(OLD_META_PRICE);
+  const metaDesc = fixMeta ? a.metaDesc!.replace(OLD_META_PRICE, NEW_META_PRICE) : a.metaDesc;
+  console.log(`  meta description: ${fixMeta ? `→ "${metaDesc}"` : "already up to date"}`);
+  if (!newH.length && !newA.length && !fixMeta) return console.log("Nothing to change.");
   if (process.env.APPLY !== "1") return console.log("DRY RUN — nothing written.");
 
   await prisma.adventure.update({
@@ -60,6 +64,7 @@ async function main() {
     data: {
       highlights: JSON.stringify([...highlights, ...newH]),
       activities: JSON.stringify([...activities, ...newA]),
+      ...(fixMeta ? { metaDesc } : {}),
     },
   });
   console.log("Applied.");

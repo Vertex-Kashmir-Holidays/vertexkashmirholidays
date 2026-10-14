@@ -298,7 +298,7 @@ const adventure = {
     "Rolling start dates from December to March. Tell us your dates and we will confirm availability before you pay anything.",
   metaTitle: "Gulmarg Ski Course",
   metaDesc:
-    "Learn to ski in Gulmarg with max 3 students per coach. Five, seven and twelve-day courses from ₹27,999 — coach, gear, stay, meals and transfers included.",
+    "Learn to ski in Gulmarg with max 3 students per coach. Five, seven and twelve-day courses from ₹32,999 per person (twin sharing) — coach, gear, stay, meals and transfers included.",
 };
 
 const slugify = (q: string) =>

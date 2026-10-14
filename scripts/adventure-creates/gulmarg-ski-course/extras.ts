@@ -23,3 +23,8 @@ export const EXTRA_HIGHLIGHTS = [
   },
 ];
 export const EXTRA_ACTIVITIES = ["Boot fitting & gear check", "Drag lift runs"];
+
+// Meta description stated the 3-sharing price; the starting price is quoted
+// per person on twin (2-) sharing — see adventureStartingPrice.
+export const OLD_META_PRICE = "from ₹27,999 —";
+export const NEW_META_PRICE = "from ₹32,999 per person (twin sharing) —";
