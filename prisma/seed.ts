@@ -76,7 +76,7 @@ async function main() {
       contact: ALL,
       tripPlanner: ALL,
       legal: ALL,
-      campaigns: ALL,
+      adventures: ALL,
       offlineConversions: VIEW_EDIT,
       banners: ALL,
       reviews: ALL,
@@ -108,7 +108,7 @@ async function main() {
       contact: ALL,
       tripPlanner: ALL,
       legal: ALL,
-      campaigns: ALL,
+      adventures: ALL,
       offlineConversions: VIEW,
       banners: ALL,
       reviews: VIEW_EDIT,
@@ -140,7 +140,7 @@ async function main() {
       contact: NONE,
       tripPlanner: NONE,
       legal: NONE,
-      campaigns: NONE,
+      adventures: NONE,
       offlineConversions: VIEW,
       banners: VIEW_CREATE_EDIT,
       reviews: VIEW_EDIT,
@@ -172,7 +172,7 @@ async function main() {
       contact: ALL,
       tripPlanner: ALL,
       legal: ALL,
-      campaigns: ALL,
+      adventures: ALL,
       offlineConversions: VIEW,
       banners: VIEW_CREATE_EDIT,
       reviews: VIEW_EDIT,
@@ -1902,7 +1902,7 @@ async function main() {
       heroCtaSecondaryLabel: "Watch Film",
       heroCtaSecondaryHref: "#",
       formKicker: "PLAN YOUR KASHMIR TRIP",
-      formTitle: "Get a quote in 60 seconds",
+      formTitle: "Get a quote in 15 mins",
       formSubtitle: "Free, no spam — real human on WhatsApp.",
       formButtonLabel: "Request Free Itinerary →",
       formNote: "12,248+ planned their trip this month",
@@ -2395,10 +2395,10 @@ async function main() {
   });
   console.log("✓ ContactOffices");
 
-  // ── Campaign landing page ─────────────────────────────────────────────────
+  // ── Adventure landing page ─────────────────────────────────────────────────
   const img = (_seed: string, _w: number, _h: number) => PLACEHOLDER;
 
-  await prisma.campaign.upsert({
+  await prisma.adventure.upsert({
     where: { slug: "gulmarg-winter-ski-week" },
     update: {},
     create: {
@@ -2615,7 +2615,7 @@ async function main() {
     },
   });
 
-  await prisma.campaign.upsert({
+  await prisma.adventure.upsert({
     where: { slug: "tulip-spring-srinagar" },
     update: { published: true },
     create: {
@@ -2715,7 +2715,7 @@ async function main() {
     },
   });
 
-  await prisma.campaign.upsert({
+  await prisma.adventure.upsert({
     where: { slug: "ladakh-overland-expedition" },
     update: { published: true },
     create: {
@@ -2813,7 +2813,7 @@ async function main() {
       ogImage: img("camp-ladakh-hero", 1200, 630),
     },
   });
-  console.log("✓ Campaign");
+  console.log("✓ Adventure");
 
   // ── About page content ────────────────────────────────────────────────────
   // Title strings support mint accent markers (*text*) and \n line breaks.
@@ -3202,6 +3202,21 @@ async function main() {
     await prisma.lead.create({ data: lead });
   }
   console.log("✓ Seed leads (10)");
+
+  // Lead-qualification budget bands, per person (also seeded by the
+  // 20261008090000 migration, which retires the original "for 2" band1–4).
+  // Create-only: admin edits survive a re-seed.
+  const budgetBands = [
+    { key: "band5", label: "₹9,000 – ₹13,999", minAmount: 9000, maxAmount: 13999, sortOrder: 1 },
+    { key: "band6", label: "₹14,000 – ₹16,999", minAmount: 14000, maxAmount: 16999, sortOrder: 2 },
+    { key: "band7", label: "₹17,000 – ₹21,999", minAmount: 17000, maxAmount: 21999, sortOrder: 3 },
+    { key: "band8", label: "₹22,000 – ₹27,999", minAmount: 22000, maxAmount: 27999, sortOrder: 4 },
+    { key: "band9", label: "₹28,000+", minAmount: 28000, maxAmount: null, sortOrder: 5 },
+  ];
+  for (const band of budgetBands) {
+    await prisma.budgetBand.upsert({ where: { key: band.key }, update: {}, create: band });
+  }
+  console.log("✓ Budget bands (5)");
 
   console.log("\n🎉 Seed complete!");
 }

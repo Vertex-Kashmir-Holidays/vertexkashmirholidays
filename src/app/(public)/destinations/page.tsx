@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
-import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
+import { JsonLd, buildBreadcrumbList, buildItemList } from "@/components/seo/JsonLd";
 import { getLiveWeather } from "@/lib/weather";
 import { DestinationsBrowser } from "@/components/destinations/DestinationsBrowser";
 import { DestinationsCTABand } from "@/components/destinations/DestinationsCTABand";
@@ -83,10 +83,16 @@ export default async function DestinationsPage() {
     { name: "Home", url: SITE_URL },
     { name: "Destinations", url: `${SITE_URL}/destinations` },
   ]);
+  // Same order as the grid (admin sortOrder, then name).
+  const destinationsJsonLd = buildItemList(
+    destinations.map((d) => ({ name: d.name, url: `${SITE_URL}/destinations/${d.slug}` })),
+    "Kashmir & Ladakh Destinations",
+  );
 
   return (
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
+      {destinations.length > 0 && <JsonLd data={destinationsJsonLd} />}
       <DestinationsHero
         heading={{
           kicker: section?.kicker ?? null,

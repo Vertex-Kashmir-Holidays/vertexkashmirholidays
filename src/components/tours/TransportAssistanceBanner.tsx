@@ -146,8 +146,9 @@ export function TransportAssistanceBanner({
               Kolkata and other cities through our travel partners.
             </p>
             <p className="mt-1.5 text-[12px] italic text-muted-foreground/80">
-              Ticket fare is separate from this package and depends on your travel dates &amp;
-              availability.
+              {placement === "tour-detail"
+                ? "Ticket fare is separate from this package and depends on your travel dates & availability."
+                : "Ticket fares are quoted separately and depend on your travel dates & availability."}
             </p>
           </div>
           <button
@@ -189,8 +190,8 @@ export function TransportAssistanceBanner({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[14px] font-semibold">Flight / Train</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="mb-1.5 block text-[14px] font-semibold">Flight / Train / Bus</label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {MODES.map((m) => (
                   <button
                     key={m.value}

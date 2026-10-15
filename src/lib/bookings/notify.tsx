@@ -72,12 +72,22 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
         services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
         payments: { select: { amount: true, type: true } },
         user: { select: { name: true, email: true } },
+        // Lead-converted bookings: the assigned salesperson gets a copy.
+        leads: { take: 1, select: { assignedTo: { select: { email: true } } } },
       },
     });
     if (!booking) return { delivered: false };
 
     const to = booking.guestEmail ?? booking.user?.email ?? null;
     if (!to) return { delivered: false };
+
+    // Silent copies: the admin inbox plus, for a converted lead, its assigned
+    // salesperson — BCC so the customer never sees internal addresses.
+    // Direct/website and B2B bookings have no assignee, so admin only.
+    const salesEmail = booking.leads[0]?.assignedTo?.email ?? null;
+    const bcc =
+      [...new Set([internalBcc, salesEmail].filter((e): e is string => !!e))].join(", ") ||
+      undefined;
 
     const finance = computeBookingFinance({
       amount: booking.amount,
@@ -127,7 +137,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
 
     const res = await sendMail({
       to,
-      bcc: internalBcc,
+      bcc,
       subject: "Your Booking Summary — Vertex Kashmir Holidays",
       html: bookingInvoiceHtml(payload),
       text: bookingInvoiceText(payload),

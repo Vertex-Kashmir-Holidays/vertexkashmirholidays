@@ -44,6 +44,11 @@ export interface PlannerIntent {
   /** Occasion Offer page context — the offer and the plan the visitor chose. */
   offerId?: string;
   packageName?: string;
+  /** Lead qualification answered in the WhatsApp modal (src/lib/leads/qualification.ts). */
+  budgetBandKey?: string;
+  travelMonth?: string;
+  /** The band was derived from a tour's price, not chosen. */
+  budgetDerived?: boolean;
 }
 
 // Click IDs / UTM values are short tokens; landingPage/referrer are URLs.
@@ -429,6 +434,9 @@ function fingerprint(attribution: AttributionData, intent?: PlannerIntent): stri
           intent.toCity ?? "",
           intent.offerId ?? "",
           intent.packageName ?? "",
+          intent.budgetBandKey ?? "",
+          intent.travelMonth ?? "",
+          intent.budgetDerived ? "derived" : "",
         ]
       : null,
   ]);
@@ -470,7 +478,9 @@ function hasIntentData(intent: PlannerIntent | undefined): boolean {
     intent.transportModes?.length ||
     intent.fromCity ||
     intent.toCity ||
-    intent.offerId,
+    intent.offerId ||
+    intent.budgetBandKey ||
+    intent.travelMonth,
   );
 }
 
@@ -539,4 +549,31 @@ export function readWhatsAppAttributionTag(): string | undefined {
   if (typeof window === "undefined") return undefined;
   const cached = readWaTokenCache();
   return cached ? `${cached.prefix}-${cached.token}` : undefined;
+}
+
+/**
+ * Lead-qualification answers from the WhatsApp modal. With an existing token
+ * they're saved onto it (the Ref tag stays the same); without one, a token is
+ * minted carrying them, so an organic WhatsApp click is qualified too.
+ * `opened` marks that the visitor actually tapped "Open WhatsApp" — answers
+ * saved on chip-pick but never opened stay unflagged on the token.
+ */
+export function qualifyWhatsAppAttribution(
+  // budgetBandKey is absent in an activity context (no budget asked).
+  answers: { budgetBandKey?: string; travelMonth: string; budgetDerived?: boolean },
+  opened: boolean,
+): void {
+  if (typeof window === "undefined") return;
+  const cached = readWaTokenCache();
+  if (cached?.token) {
+    void fetch("/api/attribution/token/qualify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: cached.token, ...answers, opened }),
+      // Survives the tab handing off to WhatsApp right after "Open WhatsApp".
+      keepalive: true,
+    }).catch(() => {});
+    return;
+  }
+  if (!opened) ensureWhatsAppAttributionToken(answers);
 }

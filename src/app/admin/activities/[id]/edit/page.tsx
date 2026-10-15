@@ -66,6 +66,8 @@ export default async function EditActivityPage({ params }: Props) {
           icon: activity.icon ?? "",
           duration: activity.duration ?? "",
           price: activity.price != null ? String(activity.price) : "",
+          sortOrder: String(activity.sortOrder),
+          priceUnit: activity.priceUnit,
           coverImage: activity.coverImage ?? "",
           coverImageMobile: activity.coverImageMobile ?? "",
           images: activity.images ?? "[]",

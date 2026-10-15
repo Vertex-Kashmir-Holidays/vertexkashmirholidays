@@ -8,7 +8,7 @@ import { getLiveTourCollections } from "@/lib/tours/collectionQueries";
 import { getLiveOccasionOffers } from "@/lib/offers/queries";
 
 // 24h safety net — every content mutation (Tour/Destination/Activity/Blog/
-// Campaign/Career) invalidates /sitemap.xml directly (src/lib/cache.ts), and
+// Adventure/Career) invalidates /sitemap.xml directly (src/lib/cache.ts), and
 // search engines don't need sub-day freshness here regardless.
 export const revalidate = 86400;
 
@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     tours,
     destinations,
     blogs,
-    campaigns,
+    adventures,
     activities,
     jobs,
     tourCategoryRows,
@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
     }),
-    prisma.campaign.findMany({
+    prisma.adventure.findMany({
       where: { published: true },
       select: { slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
@@ -78,17 +78,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.85,
     },
-    {
-      url: `${SITE_URL}/adventures`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
+    // Listed only while an adventure is published (an empty listing isn't worth indexing).
+    ...(adventures.length > 0
+      ? [
+          {
+            url: `${SITE_URL}/adventures`,
+            lastModified: new Date(),
+            changeFrequency: "daily" as const,
+            priority: 0.8,
+          },
+        ]
+      : []),
     {
       url: `${SITE_URL}/destinations`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/plan-your-kashmir-trip`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/activities`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
     },
     { url: `${SITE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     {
@@ -163,7 +180,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const campaignRoutes: MetadataRoute.Sitemap = campaigns.map((c) => ({
+  const adventureRoutes: MetadataRoute.Sitemap = adventures.map((c) => ({
     url: `${SITE_URL}/adventures/${c.slug}`,
     lastModified: c.updatedAt,
     changeFrequency: "weekly",
@@ -239,7 +256,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...tourRoutes,
     ...tourCategoryRoutes,
     ...originCityRoutes,
-    ...campaignRoutes,
+    ...adventureRoutes,
     ...destinationRoutes,
     ...activityRoutes,
     ...blogRoutes,

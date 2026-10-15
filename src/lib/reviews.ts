@@ -33,7 +33,7 @@ export async function recomputeTourRating(tourId: string): Promise<void> {
 
 // Canonical shape for a customer review rendered as social proof. The admin
 // Review module (and customer self-service reviews) is the single source of
-// truth for testimonials across the whole site — home, contact and campaign
+// truth for testimonials across the whole site — home, contact and adventure
 // pages all read from here. Avatar resolves per-review → reviewer's profile
 // picture → null; location surfaces the reviewed tour's title.
 export type ReviewDisplay = {

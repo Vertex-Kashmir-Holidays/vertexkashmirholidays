@@ -11,8 +11,15 @@ export interface OfferNavItem {
 
 // Sticky in-page nav under the site header: only the sections this offer
 // actually has, the one in view highlighted, and the enquiry CTA always one
-// tap away on desktop. Scrolls horizontally on phones.
-export function OfferSectionNav({ items }: { items: OfferNavItem[] }) {
+// tap away on desktop (unless showEnquiry is false — an ended offer). Scrolls
+// horizontally on phones.
+export function OfferSectionNav({
+  items,
+  showEnquiry = true,
+}: {
+  items: OfferNavItem[];
+  showEnquiry?: boolean;
+}) {
   const { offer, openEnquiry } = useOfferSelection();
   const [active, setActive] = useState<string | null>(null);
 
@@ -54,13 +61,15 @@ export function OfferSectionNav({ items }: { items: OfferNavItem[] }) {
             </a>
           ))}
         </nav>
-        <button
-          type="button"
-          onClick={() => openEnquiry()}
-          className="hidden shrink-0 rounded-full bg-primary px-5 py-2 text-[14px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110 md:inline-flex"
-        >
-          {offer.ctaLabel}
-        </button>
+        {showEnquiry && (
+          <button
+            type="button"
+            onClick={() => openEnquiry()}
+            className="hidden shrink-0 rounded-full bg-primary px-5 py-2 text-[14px] font-bold text-primary-foreground shadow-glow transition hover:brightness-110 md:inline-flex"
+          >
+            {offer.ctaLabel}
+          </button>
+        )}
       </div>
     </div>
   );

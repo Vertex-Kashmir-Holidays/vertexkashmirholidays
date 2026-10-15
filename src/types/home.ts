@@ -61,6 +61,8 @@ export interface HomeTourData {
   id: string;
   slug: string;
   title: string;
+  /** TourCategory — picks the hotel label on the card. */
+  category?: string;
   badge: string | null;
   badgeColor: string | null;
   durationLabel: string;
@@ -70,6 +72,8 @@ export interface HomeTourData {
   reviewCount: number;
   priceFrom: number;
   priceWas: number | null;
+  /** Tour.hidePrice — the card shows "Request Quote" instead of a price. */
+  hidePrice: boolean;
   minPersons?: number;
 }
 

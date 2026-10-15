@@ -5,6 +5,7 @@ import Image from "next/image";
 import { renderAccents } from "@/lib/accents";
 import { imgSrc } from "@/lib/placeholder";
 import type { DestinationCardData, SectionHeading } from "@/types/home";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 interface DestinationsSectionProps {
   heading: SectionHeading;
@@ -35,13 +36,14 @@ export function DestinationsSection({ heading, destinations }: DestinationsSecti
           </h2>
         </div>
         {heading.ctaLabel && (
-          <Link
+          <CmsCtaLink
             href={heading.ctaHref ?? "#"}
+            source="home_section_cta"
             className="rv text-sm font-bold text-primary hover:underline"
             style={{ "--rd": "0.16s" } as React.CSSProperties}
           >
             {heading.ctaLabel}
-          </Link>
+          </CmsCtaLink>
         )}
       </div>
       <div className="mt-9 grid grid-cols-2 gap-4 md:grid-cols-4 md:grid-rows-2">

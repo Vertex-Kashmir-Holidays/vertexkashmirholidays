@@ -1,4 +1,5 @@
 // src/app/(public)/blog/[slug]/page.tsx
+import { REQUEST_QUOTE_LABEL, tourCardPricing } from "@/lib/tours/cards";
 
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -13,6 +14,7 @@ import {
   buildFAQPage,
 } from "@/components/seo/JsonLd";
 import { formatINR } from "@/lib/accents";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { imgSrc } from "@/lib/placeholder";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
@@ -22,6 +24,7 @@ import { BlogPostRelated } from "@/components/blog/BlogPostRelated";
 import { BlogPostSidebar } from "@/components/blog/BlogPostSidebar";
 import { TourDetailsRelatedTours } from "@/components/tours/TourDetailsRelatedTours";
 import { parseRelatedTours } from "@/lib/tours/content";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Blog mutations invalidate this exact page directly (src/lib/cache.ts).
 export const revalidate = 86400;
@@ -82,7 +85,7 @@ const getBlogPost = cache(async (slug: string) => {
       relatedFaqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   });
@@ -120,7 +123,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const post = await getBlogPost(slug);
   if (!post || !post.published) notFound();
 
-  const [relatedRaw, tour] = await Promise.all([
+  const [relatedRaw, sidebarTours] = await Promise.all([
     prisma.blog.findMany({
       where: {
         published: true,
@@ -130,13 +133,27 @@ export default async function BlogPostPage({ params }: PageProps) {
       orderBy: { publishedAt: "desc" },
       take: 4,
     }),
-    prisma.tour.findFirst({
+    prisma.tour.findMany({
       // Kashmir travel blog — its featured-tour card stays Kashmir/Ladakh.
       where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
-      orderBy: [{ bestseller: "desc" }, { rating: "desc" }],
       include: { destinations: { include: { destination: { select: { name: true } } } } },
     }),
   ]);
+
+  // Sidebar "Plan this trip with us" tour: the first tour (compareToursForCards
+  // order) whose TourCategory matches the post's blog category ("Honeymoon" →
+  // HONEYMOON, "Adventure" → ADVENTURE); else the post's first curated related
+  // tour that's published; else the first tour overall.
+  const postTourCategory = post.category?.trim().toUpperCase().replace(/\s+/g, "_");
+  const orderedTours = sidebarTours.sort(compareToursForCards);
+  const curatedTour = parseRelatedTours(post.relatedTours)
+    .map((entry) => orderedTours.find((t) => t.id === entry.tourId))
+    .find((t) => t !== undefined);
+  const tour =
+    orderedTours.find((t) => t.category === postTourCategory) ??
+    curatedTour ??
+    orderedTours[0] ??
+    null;
 
   // Fall back to most-recent posts if the category has fewer than 4 siblings.
   let related = relatedRaw;
@@ -151,7 +168,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const { html, toc } = withHeadingIds(post.body);
 
-  const faqs = post.relatedFaqs;
+  const faqs = post.relatedFaqs.map(toFaqPreview);
 
   // Curated related-tours (editorial pairings), same convention as Tour.relatedTours.
   const relatedTourEntries = parseRelatedTours(post.relatedTours);
@@ -174,6 +191,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
             ? (t.badgeColor as (typeof BADGE_COLORS)[number])
             : ("green" as const),
+          category: t.category,
           image: t.coverImage ?? undefined,
           detailHref: `/tours/${t.slug}`,
           bookHref: `/booking?tour=${t.slug}`,
@@ -182,8 +200,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           places: t.destinations.map((d) => d.destination.name).join(", "),
           r: t.rating.toFixed(1),
           n: String(t.reviewCount),
-          old: t.priceWas ? formatINR(t.priceWas) : undefined,
-          p: formatINR(t.priceFrom),
+          ...tourCardPricing(t),
         },
       };
     })
@@ -194,7 +211,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const fullToc = [
     ...toc,
     ...(faqs.length > 0 ? [{ label: "FAQs", href: "#faqs" }] : []),
-    ...(tour ? [{ label: "Related Tours", href: "#tourCard" }] : []),
+    ...(curatedRelatedTours.length > 0 ? [{ label: "Related Tours", href: "#related" }] : []),
   ];
 
   const breadcrumbJsonLd = buildBreadcrumbList([
@@ -222,6 +239,11 @@ export default async function BlogPostPage({ params }: PageProps) {
         author={{ name: post.author ?? "Vertex Kashmir Holidays", role: post.authorRole, avatar }}
         readTime={post.readTime ? `${post.readTime} min read` : null}
         date={longDate(post.publishedAt)}
+        updated={
+          longDate(post.contentUpdatedAt) !== longDate(post.publishedAt)
+            ? longDate(post.contentUpdatedAt)
+            : null
+        }
         crumbs={[
           { label: "Home", href: "/" },
           { label: "Blog", href: "/blog" },
@@ -235,7 +257,13 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="grid items-start gap-9 lg:grid-cols-[1fr_280px]">
           <article className="min-w-0">
             <BlogPostQuickAnswer html={post.quickAnswer} />
-            <BlogPostBody html={html} />
+            <BlogPostBody
+              html={html}
+              whatsapp={{
+                source: "blog_body",
+                defaultMessage: `Hi! I'm reading "${post.title}" on your blog and would like help planning my Kashmir trip.`,
+              }}
+            />
             {faqs.length > 0 && (
               <section
                 id="faqs"
@@ -285,13 +313,14 @@ export default async function BlogPostPage({ params }: PageProps) {
                     href: `/tours/${tour.slug}`,
                     name: tour.title,
                     duration: `${tour.duration - 1}N / ${tour.duration}D`,
-                    price: formatINR(tour.priceFrom),
-                    oldPrice: tour.priceWas ? formatINR(tour.priceWas) : undefined,
-                    off: tour.discountPct ? `${tour.discountPct}% OFF` : undefined,
+                    // Price-on-request tours: no figure, no discount badge.
+                    price: tour.hidePrice ? REQUEST_QUOTE_LABEL : formatINR(tour.priceFrom),
+                    priceHidden: tour.hidePrice,
+                    oldPrice: !tour.hidePrice && tour.priceWas ? formatINR(tour.priceWas) : undefined,
+                    off: !tour.hidePrice && tour.discountPct ? `${tour.discountPct}% OFF` : undefined,
                     route: tour.destinations.map((d) => d.destination.name).join(" · "),
                     rating: tour.rating.toFixed(1),
                     reviews: `${tour.reviewCount} reviews`,
-                    note: "Free cancellation up to 30 days",
                   }
                 : undefined
             }

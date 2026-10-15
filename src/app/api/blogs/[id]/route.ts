@@ -60,11 +60,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   const { publishedAt, published, ...rest } = parsed.data;
+  // Only a change to what readers see counts as a content update.
+  const contentChanged = (["title", "body", "quickAnswer", "excerpt"] as const).some(
+    (k) => k in rest && (rest[k] ?? "") !== (existing[k] ?? ""),
+  );
   try {
     const updated = await prisma.blog.update({
       where: { id },
       data: {
         ...rest,
+        ...(contentChanged ? { contentUpdatedAt: new Date() } : {}),
         ...(published !== undefined ? { published } : {}),
         ...(publishedAt !== undefined
           ? { publishedAt: publishedAt ? new Date(publishedAt) : null }

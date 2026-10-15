@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { lockBlockers } from "@/lib/bookings/service-schema";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { syncBookingCommission } from "@/lib/bookings/commissionSync";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import { sendBookingSummaryEmail } from "@/lib/bookings/notify";
+import { logPaymentAudit, wasServicesUnlocked } from "@/lib/bookings/audit";
 import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-/** Lock a booking's services and email the customer a summary/invoice. */
-export async function POST(_req: NextRequest, { params }: Params) {
+/** Lock a booking's services and email the customer a summary/invoice. On a
+ * re-lock (after an admin unlock) the email is optional: body { sendEmail: false }. */
+export async function POST(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("bookings", "edit");
   if (guard instanceof NextResponse) return guard;
   const role = guard.user.role as Role;
@@ -25,11 +28,26 @@ export async function POST(_req: NextRequest, { params }: Params) {
       services: true,
       payments: { select: { amount: true, type: true, gstAmount: true } },
       user: { select: { email: true } },
+      leads: { take: 1, select: { id: true, locked: true, status: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
     return NextResponse.json({ error: "Services are already locked." }, { status: 422 });
+  }
+
+  // Every service must be complete (pick & drop on cabs, nights/room on
+  // hotels, …) and there must be a hotel and a cab — see lockBlockers.
+  const blockers = lockBlockers(booking.services);
+  if (blockers.length) {
+    return NextResponse.json(
+      {
+        error: `Complete these before locking — ${blockers.join(" · ")}`,
+        code: "SERVICES_INCOMPLETE",
+        blockers,
+      },
+      { status: 422 },
+    );
   }
 
   // Invoice is sent to the customer's email, so an email is a hard precondition
@@ -65,12 +83,38 @@ export async function POST(_req: NextRequest, { params }: Params) {
     );
   }
 
+  // The first lock always emails the invoice; only a re-lock may skip it.
+  const body = (await req.json().catch(() => ({}))) as { sendEmail?: unknown };
+  const isRelock = await wasServicesUnlocked(id);
+  const sendEmail = !isRelock || body.sendEmail !== false;
+
   // Locking finalises the booking: lifecycle status moves Pending → Confirmed.
   // (Payment status is a separate, derived concept and is not touched here.)
-  await prisma.booking.update({
-    where: { id },
-    data: { servicesLocked: true, status: "CONFIRMED" },
-  });
+  // A lead-converted booking's itinerary is the lead's: locking the booking
+  // re-locks a lead an admin had unlocked for corrections (see unlock-services).
+  const lead = booking.leads[0];
+  const relockLead = !!lead && lead.status === "CONVERTED" && !lead.locked;
+  await prisma.$transaction([
+    prisma.booking.update({
+      where: { id },
+      data: { servicesLocked: true, status: "CONFIRMED" },
+    }),
+    ...(relockLead
+      ? [
+          prisma.lead.update({ where: { id: lead.id }, data: { locked: true } }),
+          prisma.itinerary.updateMany({ where: { leadId: lead.id }, data: { locked: true } }),
+          prisma.leadActivity.create({
+            data: {
+              leadId: lead.id,
+              type: "NOTE_ADDED",
+              note: "Lead re-locked (booking services locked).",
+              performedById: userId,
+              performedByName: (guard.user.name ?? guard.user.email) as string,
+            },
+          }),
+        ]
+      : []),
+  ]);
 
   // Service costs are now final — recompute the commission (if any) now that
   // profit is actually knowable.
@@ -78,7 +122,16 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   // Branded summary email + PDF (rich service detail, no per-line pricing). Email
   // presence is guaranteed by the precondition above; delivery is reported back.
-  const { delivered: emailed } = await sendBookingSummaryEmail(id);
+  const emailed = sendEmail ? (await sendBookingSummaryEmail(id)).delivered : false;
+
+  if (isRelock) {
+    await logPaymentAudit({
+      event: "SERVICES_RELOCKED",
+      bookingId: id,
+      status: "success",
+      detail: `Re-locked by ${guard.user.name ?? guard.user.email}${sendEmail ? "; summary emailed" : "; no email"}`,
+    });
+  }
 
   return NextResponse.json({ ok: true, emailed });
 }

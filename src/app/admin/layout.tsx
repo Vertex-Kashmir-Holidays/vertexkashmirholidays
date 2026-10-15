@@ -13,6 +13,7 @@ import { AccessDenied } from "@/components/admin/AccessDenied";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { TooltipProvider } from "@/components/ui/atoms/tooltip";
+import { DriverDueGate } from "@/components/admin/bookings/DriverDueGate";
 
 // Personal-utility routes every authenticated staff member must always be
 // able to reach, regardless of module permissions (they aren't "modules").
@@ -81,6 +82,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           >
             {allowed ? children : <AccessDenied moduleLabel={moduleLabel} />}
           </AdminShell>
+          <DriverDueGate />
           <Toaster richColors position="top-right" />
         </TooltipProvider>
       </ThemeProvider>

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext } from "react";
 import { buildWhatsAppHref, appendWhatsAppAttributionTag } from "@/lib/whatsapp";
 import { useWhatsAppAttributionTag } from "@/lib/useWhatsAppAttributionTag";
+import type { BudgetBandOption } from "@/lib/leads/qualification";
 
 export interface SiteSettingsValue {
   siteName: string;
@@ -12,6 +13,8 @@ export interface SiteSettingsValue {
   announcementMessage: string | null;
   /** Real customer photos used as social-proof avatars next to lead forms sitewide. */
   formAvatars: string[];
+  /** Active lead-qualification budget bands (admin-managed), in display order. */
+  budgetBands: BudgetBandOption[];
 }
 
 const DEFAULTS: SiteSettingsValue = {
@@ -21,6 +24,7 @@ const DEFAULTS: SiteSettingsValue = {
   showAnnouncementBanner: false,
   announcementMessage: null,
   formAvatars: [],
+  budgetBands: [],
 };
 
 const Ctx = createContext<SiteSettingsValue>(DEFAULTS);

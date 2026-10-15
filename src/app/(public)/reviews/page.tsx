@@ -6,7 +6,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
-import { JsonLd, buildBreadcrumbList, buildOrganizationReviews } from "@/components/seo/JsonLd";
+import { JsonLd, buildBreadcrumbList } from "@/components/seo/JsonLd";
 import { getApprovedReviewsPage, getReviewStats } from "@/lib/reviews";
 import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { ReviewsHero } from "@/components/reviews/ReviewsHero";
@@ -44,7 +44,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   return buildMetadata({
     title: "Customer Reviews & Ratings — Real Traveller Experiences",
     description:
-      "Read verified customer reviews and ratings for Vertex Kashmir Holidays — real feedback from travellers who booked honeymoon, family, adventure and luxury Kashmir tour packages with us.",
+      "Reviews and ratings from guests who travelled with Vertex Kashmir Holidays, including those they left on Google — honeymoon, family and group Kashmir tours.",
     canonical,
     ogImage: content?.ogImage ?? content?.heroImage ?? null,
   });
@@ -94,26 +94,10 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
     { name: "Reviews", url: `${SITE_URL}/reviews` },
   ]);
 
-  // Augments the same organization entity the public layout already declares
-  // (see buildOrganizationReviews) rather than redeclaring it — avoids two
-  // full TravelAgency blocks on one page.
-  const organizationReviewsJsonLd = buildOrganizationReviews({
-    aggregateRating:
-      stats.total > 0 ? { ratingValue: stats.average, reviewCount: stats.total } : null,
-    // A representative sample, not every review ever left — the page itself
-    // still lists everything via pagination.
-    reviews: items.slice(0, 20).map((r) => ({
-      author: r.name,
-      rating: r.rating,
-      body: r.body,
-      datePublished: r.createdAt.toISOString(),
-    })),
-  });
 
   return (
     <div className="bg-background text-foreground">
       <JsonLd data={breadcrumbJsonLd} />
-      <JsonLd data={organizationReviewsJsonLd} />
 
       <ReviewsHero
         data={{
@@ -121,7 +105,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
           title: heroContent?.heroTitle ?? "Customer Reviews & Ratings",
           subtitle:
             heroContent?.heroSubtitle ??
-            "Every review below is from a customer who actually booked and travelled with Vertex Kashmir Holidays — collected after their trip, published only once approved. Nothing here is written by us.",
+            "Reviews from guests who travelled with Vertex Kashmir Holidays, including those they left on Google.",
           image: heroContent?.heroImage ?? "/hero/lidder-reiver-lg.webp",
           imageMobile: heroContent?.heroImageMobile ?? "/hero/lidder-river.webp",
         }}

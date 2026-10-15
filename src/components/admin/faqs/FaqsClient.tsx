@@ -25,7 +25,7 @@ interface FaqRow {
     tours: number;
     destinations: number;
     blogs: number;
-    campaigns: number;
+    adventures: number;
     activities: number;
   };
 }
@@ -203,7 +203,7 @@ export function FaqsClient({ initialFaqs, categoryOptions, canCreate, canEdit, c
                     faq._count.tours +
                     faq._count.destinations +
                     faq._count.blogs +
-                    faq._count.campaigns +
+                    faq._count.adventures +
                     faq._count.activities;
                   return (
                     <tr key={faq.id} className="hover:bg-muted/50 transition-colors">

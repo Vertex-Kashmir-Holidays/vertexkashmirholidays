@@ -21,7 +21,7 @@ interface HeroLeadCardProps {
 export function HeroLeadCard({
   source,
   context,
-  title = "Get a free quote in 60 seconds",
+  title = "Get a free quote in 15 mins",
   subtitle = "Free, no spam — a real human replies on WhatsApp.",
   kicker = "Plan Your Kashmir Trip",
   buttonLabel,

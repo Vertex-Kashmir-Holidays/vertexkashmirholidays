@@ -77,6 +77,7 @@ export async function GET(request: Request) {
       coverImage: true,
       priceFrom: true,
       priceWas: true,
+      hidePrice: true,
       discountPct: true,
       bestseller: true,
       rating: true,
@@ -88,7 +89,11 @@ export async function GET(request: Request) {
   const page = hasMore ? items.slice(0, take) : items;
   const nextCursor = hasMore ? page[page.length - 1].id : null;
 
-  return NextResponse.json({ items: page, nextCursor, total: page.length });
+  // Price-on-request tours never expose their stored price publicly.
+  const items_ = page.map((t) =>
+    t.hidePrice ? { ...t, priceFrom: null, priceWas: null, discountPct: null } : t,
+  );
+  return NextResponse.json({ items: items_, nextCursor, total: page.length });
 }
 
 // ── Admin-only tour creation ───────────────────────────────────────────────────
@@ -124,6 +129,7 @@ const createSchema = z.object({
   bestseller: z.boolean().optional(),
   published: z.boolean().optional(),
   formMode: z.enum(["BOOKING_ONLY", "INQUIRY_ONLY", "BOTH"]).optional(),
+  hidePrice: z.boolean().optional(),
   batches: z.string().optional(),
   metaTitle: z.string().optional().nullable(),
   metaDesc: z.string().optional().nullable(),
@@ -188,6 +194,8 @@ export async function POST(request: Request) {
       data: {
         ...rest,
         ...packageRules.data,
+        // Price on request ⇒ enquiry-only (no Book tab / online advance).
+        ...(rest.hidePrice ? { formMode: "INQUIRY_ONLY" as const } : {}),
         category: category as TourCategory,
         activities: { create: activityIds.map((activityId) => ({ activityId })) },
         collections: { connect: collectionIds.map((cid) => ({ id: cid })) },

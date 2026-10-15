@@ -72,6 +72,10 @@ export function round2(n: number): number {
 export type PaymentOption = "ADVANCE" | "FULL";
 export const ADVANCE_PERCENT = 10;
 
+// A booking's travel date must be at least this many days away. One value for the
+// server (create-order), the /booking checkout and the tour-page date pickers.
+export const MIN_LEAD_DAYS = 4;
+
 export function isPaymentOption(v: unknown): v is PaymentOption {
   return v === "ADVANCE" || v === "FULL";
 }

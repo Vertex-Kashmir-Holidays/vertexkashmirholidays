@@ -26,6 +26,7 @@ const getLead = cache(async (id: string) =>
       assignedTo: { select: { id: true, name: true, email: true } },
       tour: { select: { id: true, title: true } },
       occasionOffer: { select: { id: true, name: true, slug: true } },
+      adventure: { select: { id: true, name: true, slug: true } },
       booking: {
         select: { id: true, status: true, amount: true, travelDate: true, guestName: true },
       },

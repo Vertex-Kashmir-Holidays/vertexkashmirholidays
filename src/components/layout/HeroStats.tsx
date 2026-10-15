@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { User, Users, Clock, Star, type LucideIcon } from "lucide-react";
 import type { SiteStatData } from "@/types/home";
+import { formatStatValue } from "@/lib/format";
 
 // Decorative icons cycled across the DB-driven stats.
 const statIcons: LucideIcon[] = [User, Users, Clock, Star];
@@ -33,7 +34,7 @@ export function HeroStats({ stats }: HeroStatsProps) {
             </motion.span>
             <div>
               <p className="text-[18px] font-bold leading-tight">
-                {/^\d+$/.test(stat.value) ? Number(stat.value).toLocaleString("en-IN") : stat.value}
+                {formatStatValue(stat.value)}
                 {stat.suffix}
               </p>
               <p className="text-[14px] text-white/70">{stat.label}</p>

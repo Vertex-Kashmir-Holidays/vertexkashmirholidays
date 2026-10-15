@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { resolveGst } from "@/lib/payments/gst";
 import { convertLeadToBooking, LeadAlreadyConvertedError } from "@/lib/bookings/convertLead";
+import { isItinerarySent } from "@/lib/b2b/requestStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -47,13 +48,23 @@ export async function POST(req: NextRequest, { params }: Params) {
   // request can be converted — it's the agreed plan the booking is built on.
   const itinerary = await prisma.itinerary.findUnique({
     where: { leadId: id },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!itinerary) {
     return NextResponse.json(
       {
         error: "Generate an itinerary for this request before converting.",
         code: "ITINERARY_REQUIRED",
+      },
+      { status: 422 },
+    );
+  }
+  // …and it must have gone to the agent first — a draft isn't an agreed plan.
+  if (!isItinerarySent(itinerary.status)) {
+    return NextResponse.json(
+      {
+        error: "Send the itinerary to the agent before converting this request.",
+        code: "ITINERARY_NOT_SENT",
       },
       { status: 422 },
     );

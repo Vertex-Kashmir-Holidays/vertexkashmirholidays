@@ -34,7 +34,6 @@ export default async function AdminProposalsPage() {
     <ProposalsClient
       initialItems={items}
       initialTotal={total}
-      showOwner={isAdmin}
       canCreate={canCreate}
       canEdit={canEdit}
       canDelete={canDelete}

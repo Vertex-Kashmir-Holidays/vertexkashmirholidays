@@ -1,7 +1,7 @@
 // src/components/contact/ContactForm.tsx
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,12 @@ import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import type { ContactFormContent } from "@/types/contact";
 import { trackLeadSubmit } from "@/lib/analytics";
 import { readAttributionForSubmit } from "@/lib/attribution";
+import { QualificationFields } from "@/components/leads/QualificationFields";
+import {
+  initialQualification,
+  writeSessionQualification,
+  type Qualification,
+} from "@/lib/leads/qualification";
 
 // Reuses the shared lead primitives (name sanitize + E.164 phone) so the
 // contact form validates identically to the rest of the site. Email is required
@@ -69,7 +75,21 @@ export function ContactForm({ content }: ContactFormProps) {
     setValue("phone", e164 ?? nextNational, { shouldValidate: true });
   }
 
+  // Lead qualification (budget for 2 + travel month) — mandatory; starts from
+  // this session's earlier answers.
+  const [qual, setQual] = useState<Partial<Qualification>>({});
+  const [qualTouched, setQualTouched] = useState(false);
+  useEffect(() => setQual(initialQualification()), []);
+  function changeQual(next: Partial<Qualification>) {
+    setQual(next);
+    writeSessionQualification(next);
+  }
+
   const onSubmit = async (data: FormValues) => {
+    if (!qual.budgetBandKey || !qual.travelMonth) {
+      setQualTouched(true);
+      return;
+    }
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
@@ -82,6 +102,8 @@ export function ContactForm({ content }: ContactFormProps) {
           agree: data.agree,
           source: "contact",
           attribution: readAttributionForSubmit(),
+          budgetBandKey: qual.budgetBandKey,
+          travelMonth: qual.travelMonth,
           [HONEYPOT_FIELD]: honeypotRef.current?.value ?? "",
           [TIMETRAP_FIELD]: renderedAt.current,
           turnstileToken: captchaToken ?? undefined,
@@ -103,7 +125,10 @@ export function ContactForm({ content }: ContactFormProps) {
         }
         throw new Error(j.error ?? "Request failed");
       }
-      trackLeadSubmit("contact");
+      trackLeadSubmit("contact", undefined, undefined, undefined, undefined, undefined, {
+        budgetBandKey: qual.budgetBandKey,
+        travelMonth: qual.travelMonth,
+      });
       toast.success("Message sent! We'll reply within 2 hours.");
       reset();
       setNational("");
@@ -207,6 +232,19 @@ export function ContactForm({ content }: ContactFormProps) {
             </span>
           ))}
         </div>
+
+        <QualificationFields
+          value={qual}
+          onChange={changeQual}
+          errors={
+            qualTouched
+              ? {
+                  budgetBandKey: qual.budgetBandKey ? undefined : "Choose your budget.",
+                  travelMonth: qual.travelMonth ? undefined : "Choose your travel month.",
+                }
+              : undefined
+          }
+        />
 
         <div>
           <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-muted-foreground">

@@ -106,6 +106,13 @@ const nextConfig: NextConfig = {
       },
       { source: "/campaign", destination: "/adventures", permanent: true },
       { source: "/campaign/:slug*", destination: "/adventures/:slug*", permanent: true },
+      // Admin module renamed Campaigns → Adventures — keep old bookmarks working.
+      { source: "/admin/campaigns", destination: "/admin/adventures", permanent: true },
+      {
+        source: "/admin/campaigns/:path*",
+        destination: "/admin/adventures/:path*",
+        permanent: true,
+      },
       // Canonical domain enforcement: Vercel's default *.vercel.app URL always
       // stays live alongside the custom domain. Without this, visitors (and
       // Google) can reach the site on either host — splitting SEO signals and,

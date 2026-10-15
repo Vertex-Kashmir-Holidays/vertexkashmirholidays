@@ -7,7 +7,7 @@ import { BadgeCheck, Headphones, ShieldCheck, CalendarCheck } from "lucide-react
 export function AuthTrustStrip() {
   const trustItems = [
     { t: "Best Price Guarantee", s: "Transparent pricing with no hidden costs.", Icon: BadgeCheck },
-    { t: "24×7 Support", s: "Real humans, real help. Always here for you.", Icon: Headphones },
+    { t: "Support 9 AM – 9 PM, Mon–Sat", s: "Your driver and ground team on call during your trip.", Icon: Headphones },
     { t: "Secure Payments", s: "100% safe & secure payments via Razorpay.", Icon: ShieldCheck },
     {
       t: "Flexible Bookings",

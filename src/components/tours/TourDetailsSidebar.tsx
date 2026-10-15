@@ -1,7 +1,7 @@
 // src/components/tours/TourDetailsSidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -12,15 +12,17 @@ import {
   Users,
   Car,
   BadgeCheck,
-  Clock,
   ArrowRight,
   Flame,
   type LucideIcon,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { PRICE_ON_REQUEST_BODY, PRICE_ON_REQUEST_TITLE } from "@/lib/tours/cards";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { trackWhatsappClick, trackTourInquiry, trackBookingStarted } from "@/lib/analytics";
+import { MIN_LEAD_DAYS } from "@/lib/bookings/finance";
+import { OPEN_TOUR_INQUIRY_EVENT, isDesktopLayout } from "@/lib/tourInquiry";
 
 interface TourDetailsSidebarProps {
   price: number;
@@ -46,6 +48,14 @@ interface TourDetailsSidebarProps {
   priceSuffix?: string;
   /** Shown before the price, e.g. "From". */
   pricePrefix?: string;
+  /** Tour.hidePrice — "Price on request" lines instead of the price (pass
+   *  price={0}); no discount/advance messaging; budget asked in the form. */
+  priceHidden?: boolean;
+  /** Lead.sourcePage for the inquiry form — the category pages reuse this sidebar. */
+  leadSource?: "tour-detail" | "tour-category";
+  /** Show the inquiry/booking forms below lg too — for pages without the
+   *  tour page's sticky BookingMobileBar (the category pages). */
+  inlineFormsOnMobile?: boolean;
 }
 
 // Online advance is 10% of the booking total (kept in sync with the server +
@@ -70,6 +80,9 @@ export function TourDetailsSidebar({
   helpPhone,
   priceSuffix,
   pricePrefix,
+  leadSource = "tour-detail",
+  inlineFormsOnMobile = false,
+  priceHidden = false,
 }: TourDetailsSidebarProps) {
   const router = useRouter();
   const showInquiry = formMode !== "BOOKING_ONLY";
@@ -77,12 +90,25 @@ export function TourDetailsSidebar({
   const [activeTab, setActiveTab] = useState<"inquiry" | "book">(showInquiry ? "inquiry" : "book");
   const [bookDate, setBookDate] = useState("");
   const [bookPax, setBookPax] = useState(String(Math.max(minPersons, 2)));
-  // Bookings need ≥7 days' lead time (server-enforced on /booking).
+  // Same lead time the server enforces on /booking.
   const minBookDate = (() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7);
+    d.setDate(d.getDate() + MIN_LEAD_DAYS);
     return d.toISOString().split("T")[0];
   })();
+  // Opened from elsewhere on the page (closing block "Enquire Now"): below lg the
+  // mobile bar handles it, from lg up this sidebar switches to its Inquiry tab.
+  useEffect(() => {
+    if (!showInquiry) return;
+    const open = () => {
+      if (!isDesktopLayout()) return;
+      setActiveTab("inquiry");
+      trackTourInquiry(tourName, tourId);
+    };
+    window.addEventListener(OPEN_TOUR_INQUIRY_EVENT, open);
+    return () => window.removeEventListener(OPEN_TOUR_INQUIRY_EVENT, open);
+  }, [showInquiry, tourName, tourId]);
+
   const advanceAmount = Math.round(price * (parseInt(bookPax, 10) || 2) * (ADVANCE_PCT / 100));
 
   function goToBooking() {
@@ -99,7 +125,6 @@ export function TourDetailsSidebar({
   const trustItems: { t: string; s?: string; Icon: LucideIcon }[] = [
     { t: "Transparent Pricing", s: "No hidden charges", Icon: BadgeCheck },
     { t: "Secure Payments", s: "Powered by Razorpay", Icon: Lock },
-    { t: "Free Cancellation", s: "T&C Apply", Icon: Clock },
   ];
 
   const isFilling = nextDeparture?.status === "filling" && nextDeparture.seats > 0;
@@ -119,6 +144,15 @@ export function TourDetailsSidebar({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {priceHidden ? (
+          <div>
+            <p className="text-[24px] font-extrabold leading-tight">{PRICE_ON_REQUEST_TITLE}</p>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
+              {PRICE_ON_REQUEST_BODY}
+            </p>
+          </div>
+        ) : (
+        <>
         {discountPct ? (
           <span className="rounded-md bg-badge-green px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-white">
             {discountPct}% OFF
@@ -140,26 +174,32 @@ export function TourDetailsSidebar({
             ₹{oldPrice.toLocaleString("en-IN")}
           </p>
         )}
+        </>
+        )}
 
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3">
-          <p className="flex items-center gap-1.5 text-[20px] font-extrabold">
-            {rating}
-            <Star className="h-5 w-5 text-amber-400" fill="currentColor" strokeWidth={0} />
-          </p>
-          <div className="leading-tight">
-            <p className="text-[14px] font-bold">Excellent</p>
-            <p className="text-[12px] text-muted-foreground">
-              {reviews.toLocaleString("en-IN")} reviews
+        {reviews > 0 && (
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3">
+            <p className="flex items-center gap-1.5 text-[20px] font-extrabold">
+              {rating}
+              <Star className="h-5 w-5 text-amber-400" fill="currentColor" strokeWidth={0} />
+            </p>
+            <div className="leading-tight">
+              <p className="text-[14px] font-bold">Excellent</p>
+              <p className="text-[12px] text-muted-foreground">
+                {reviews.toLocaleString("en-IN")} reviews
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!priceHidden && (
+          <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-primary/10 px-4 py-3 text-foreground">
+            <ShieldCheck className="h-5 w-5 shrink-0" strokeWidth={2} />
+            <p className="text-[14px] font-semibold leading-snug">
+              Book with {ADVANCE_PCT}% advance to lock your dates
             </p>
           </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-primary/10 px-4 py-3 text-foreground">
-          <ShieldCheck className="h-5 w-5 shrink-0" strokeWidth={2} />
-          <p className="text-[14px] font-semibold leading-snug">
-            Book with {ADVANCE_PCT}% advance to lock your dates
-          </p>
-        </div>
+        )}
 
         {isFilling && nextDeparture && (
           <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-orange-500/10 px-4 py-3 text-orange-700 dark:text-orange-400">
@@ -174,9 +214,10 @@ export function TourDetailsSidebar({
           </div>
         )}
 
-        {/* Forms area — hidden on mobile (the sticky BookingMobileBar + modal
-            handle phones); shown inline from lg up. */}
-        <div className="hidden lg:block">
+        {/* Forms area — on the tour page hidden on mobile (the sticky
+            BookingMobileBar + modal handle phones) and shown inline from lg up;
+            inlineFormsOnMobile shows it at every width. */}
+        <div className={inlineFormsOnMobile ? undefined : "hidden lg:block"}>
           {/* Tabs — only shown when both forms are enabled. */}
           {showInquiry && showBook && (
             <div className="mt-5 flex border-b border-border text-[16px] font-bold">
@@ -218,9 +259,9 @@ export function TourDetailsSidebar({
               style={{ display: activeTab === "inquiry" ? "block" : "none" }}
             >
               <LeadForm
-                source="tour-detail"
-                context={{ tourId, tourName }}
-                buttonLabel="Send Inquiry"
+                source={leadSource}
+                context={{ tourId, tourName, ...(priceHidden ? { priceHidden: true } : {}) }}
+                buttonLabel={priceHidden ? "Request Quote" : "Send Inquiry"}
               />
             </motion.div>
           )}

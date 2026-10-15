@@ -8,6 +8,8 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { wasServicesUnlocked } from "@/lib/bookings/audit";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
 import {
   BookingServicesClient,
@@ -19,7 +21,10 @@ import { BookingAdminPanel } from "@/components/admin/bookings/BookingAdminPanel
 export const metadata: Metadata = { title: "Booking Services — Admin" };
 export const dynamic = "force-dynamic";
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ addDriver?: string }>;
+};
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -30,8 +35,10 @@ function parseInclusions(raw: string): string[] {
   }
 }
 
-export default async function BookingServicesPage({ params }: PageProps) {
+export default async function BookingServicesPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  // Set by DriverDueGate's CTA — opens the Add Driver form straight away.
+  const { addDriver } = await searchParams;
   const guard = await requireModuleView("bookings");
   if (!guard.ok) return guard.page;
   const { role, userId } = guard;
@@ -41,6 +48,8 @@ export default async function BookingServicesPage({ params }: PageProps) {
     can(role, "itinerary", "create"),
   ]);
   const canViewProfit = role === "SUPERADMIN" || role === "ADMIN";
+  // Unlocking (services or the converted lead's itinerary) is an admin-only correction.
+  const canUnlock = canEdit && isAdminRole(role);
 
   const booking = await prisma.booking.findFirst({
     where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
@@ -58,6 +67,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
           email: true,
           endDate: true,
           b2bAgentId: true,
+          locked: true,
           assignedTo: { select: { name: true, email: true } },
           itinerary: { select: { id: true } },
         },
@@ -69,6 +79,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
   if (!booking) notFound();
 
   const lead = booking.leads[0] ?? null;
+  const isRelock = await wasServicesUnlocked(booking.id);
 
   const data = {
     id: booking.id,
@@ -154,7 +165,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
           </li>
         </ol>
       </nav>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div>
           <h2 className="font-display font-extrabold text-foreground text-xl">Booking Services</h2>
           <p className="text-muted-foreground text-xs mt-0.5">
@@ -175,6 +186,8 @@ export default async function BookingServicesPage({ params }: PageProps) {
             gstRates={gstRates}
             canEdit={canEdit}
             canViewProfit={canViewProfit}
+            canUnlock={canUnlock}
+            isRelock={isRelock}
           />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}
@@ -185,6 +198,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
             isLeadConverted={!!lead}
             isB2bLead={!!lead?.b2bAgentId}
             leadItineraryId={lead?.itinerary?.id ?? null}
+            leadLocked={lead?.locked ?? false}
             itinerary={booking.itinerary ?? null}
             canCreate={canCreateItinerary}
           />
@@ -215,6 +229,7 @@ export default async function BookingServicesPage({ params }: PageProps) {
               travelDate={data.travelDate}
               initialDriver={data.driver}
               canEdit={canEdit}
+              autoOpen={addDriver === "1"}
             />
           )}
         </div>

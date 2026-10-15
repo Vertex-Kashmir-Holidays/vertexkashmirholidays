@@ -1,10 +1,22 @@
 "use client";
+import { comparePrice } from "@/lib/tours/cards";
 
 import { useMemo, useState } from "react";
-import { Heart, Users, Mountain, Crown, type LucideIcon } from "lucide-react";
+import {
+  Heart,
+  Users,
+  UsersRound,
+  Mountain,
+  Crown,
+  Wallet,
+  Landmark,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import type { TourCategory } from "@prisma/client";
 import { ToursFiltersSidebar } from "@/components/tours/ToursFiltersSidebar";
 import { ToursGridSection } from "@/components/tours/ToursGridSection";
+import { TOUR_CATEGORY_META } from "@/lib/tours/categories";
 import { TourCollectionsCard } from "@/components/tours/TourCollectionsCard";
 import type { TourCollectionLinkData } from "@/components/tours/TourCollectionLinks";
 import type { TourListItemData, TourSortOption } from "@/types/tours";
@@ -16,11 +28,17 @@ interface ToursPageClientProps {
   collections: TourCollectionLinkData[];
 }
 
-const CATEGORY_META: Record<string, { label: string; Icon: LucideIcon }> = {
-  HONEYMOON: { label: "Honeymoon", Icon: Heart },
-  FAMILY: { label: "Family", Icon: Users },
-  ADVENTURE: { label: "Adventure", Icon: Mountain },
-  LUXURY: { label: "Luxury", Icon: Crown },
+// Filter icons per category; labels come from TOUR_CATEGORY_META. Only categories
+// that have a published tour in the current region tab are offered (see `categories`).
+const CATEGORY_ICONS: Record<TourCategory, LucideIcon> = {
+  HONEYMOON: Heart,
+  FAMILY: Users,
+  ADVENTURE: Mountain,
+  LUXURY: Crown,
+  BUDGET: Wallet,
+  GROUP: UsersRound,
+  PILGRIMAGE: Landmark,
+  PREMIUM: Sparkles,
 };
 
 const DURATION_BUCKETS = [
@@ -59,11 +77,14 @@ export function ToursPageClient({ tours, browseCategories, collections }: ToursP
 
   const categories = useMemo(
     () =>
-      Object.entries(CATEGORY_META).map(([id, meta]) => ({
-        id,
-        ...meta,
-        count: regionFiltered.filter((t) => t.category === id).length,
-      })),
+      (Object.keys(CATEGORY_ICONS) as TourCategory[])
+        .map((id) => ({
+          id,
+          label: TOUR_CATEGORY_META[id].shortLabel,
+          Icon: CATEGORY_ICONS[id],
+          count: regionFiltered.filter((t) => t.category === id).length,
+        }))
+        .filter((c) => c.count > 0),
     [regionFiltered],
   );
 
@@ -80,8 +101,9 @@ export function ToursPageClient({ tours, browseCategories, collections }: ToursP
 
   // Slider bounds snapped to the ₹1000 step so the handles land on clean values.
   const priceBounds = useMemo(() => {
-    if (regionFiltered.length === 0) return { min: 0, max: 0 };
-    const prices = regionFiltered.map((t) => t.priceFrom);
+    // Price-on-request tours have no price to bound the slider with.
+    const prices = regionFiltered.filter((t) => !t.hidePrice).map((t) => t.priceFrom);
+    if (prices.length === 0) return { min: 0, max: 0 };
     return {
       min: Math.floor(Math.min(...prices) / PRICE_STEP) * PRICE_STEP,
       max: Math.ceil(Math.max(...prices) / PRICE_STEP) * PRICE_STEP,
@@ -105,13 +127,14 @@ export function ToursPageClient({ tours, browseCategories, collections }: ToursP
           (b) =>
             selectedDurations.includes(b.id) && t.durationDays >= b.min && t.durationDays <= b.max,
         );
-      const priceMatch = t.priceFrom >= lo && t.priceFrom <= hi;
+      // Price-on-request tours stay listed whatever the slider says.
+      const priceMatch = t.hidePrice || (t.priceFrom >= lo && t.priceFrom <= hi);
       return searchMatch && categoryMatch && durationMatch && priceMatch;
     });
 
     // "popular" keeps the server order (bestseller first, then rating)
-    if (sort === "price-asc") result.sort((a, b) => a.priceFrom - b.priceFrom);
-    if (sort === "price-desc") result.sort((a, b) => b.priceFrom - a.priceFrom);
+    if (sort === "price-asc") result.sort(comparePrice("asc"));
+    if (sort === "price-desc") result.sort(comparePrice("desc"));
     if (sort === "rating") result.sort((a, b) => b.rating - a.rating);
     return result;
   }, [

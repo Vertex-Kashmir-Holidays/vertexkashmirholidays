@@ -48,6 +48,7 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
     canEdit,
     canDelete,
     offers,
+    budgetBands,
   ] = await Promise.all([
     prisma.lead.findMany({
       where: { ...scopeWhere, ...ipWhere },
@@ -76,6 +77,11 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
         assignedTo: { select: { id: true, name: true, email: true } },
         packageName: true,
         occasionOffer: { select: { id: true, name: true } },
+        adventure: { select: { id: true, name: true } },
+        budgetBandKey: true,
+        budgetBandLabel: true,
+        budgetBandDerived: true,
+        travelMonth: true,
         createdAt: true,
       },
     }),
@@ -95,6 +101,12 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: { id: true, name: true },
     }),
+    // Every band (inactive too — old leads still carry them) for the Budget
+    // filter: active bands first, the retired ones below.
+    prisma.budgetBand.findMany({
+      orderBy: [{ isActive: "desc" }, { sortOrder: "asc" }, { minAmount: "asc" }],
+      select: { key: true, label: true, isActive: true },
+    }),
   ]);
 
   const stats = { total, todayFollowUps, converted };
@@ -111,6 +123,7 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
       isAdmin={isAdminOrSuper}
       initialIpFilter={ipFilter}
       offers={offers}
+      budgetBands={budgetBands}
     />
   );
 }

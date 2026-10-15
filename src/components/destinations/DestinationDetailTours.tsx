@@ -1,6 +1,7 @@
 // src/components/sections/DestinationDetailTours.tsx
 "use client";
 
+import Link from "next/link";
 import { TourCard } from "@/components/ui/organisms/TourCard";
 import { motion } from "framer-motion";
 
@@ -11,6 +12,7 @@ export interface DestinationTour {
   image?: string;
   bookHref?: string;
   whatsappHref?: string;
+  category?: string;
   t: string;
   d: string;
   places: string;
@@ -30,9 +32,11 @@ export interface DestinationTour {
 interface DestinationDetailToursProps {
   name: string;
   tours: DestinationTour[];
+  /** Overrides the default "Featured Tours in {name}" heading. */
+  title?: string;
 }
 
-export function DestinationDetailTours({ name, tours }: DestinationDetailToursProps) {
+export function DestinationDetailTours({ name, tours, title }: DestinationDetailToursProps) {
   const scroll = (direction: "prev" | "next") => {
     const row = document.getElementById("tourRow");
     if (!row) return;
@@ -50,11 +54,11 @@ export function DestinationDetailTours({ name, tours }: DestinationDetailToursPr
       transition={{ duration: 0.5 }}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-bold">Featured Tours in {name}</h2>
+        <h2 className="text-[22px] font-bold">{title ?? `Featured Tours in ${name}`}</h2>
         <div className="flex items-center gap-3">
-          <a href="/tours" className="text-[14px] font-bold text-primary hover:underline">
+          <Link href="/tours" className="text-[14px] font-bold text-primary hover:underline">
             View full tours
-          </a>
+          </Link>
           <motion.button
             onClick={() => scroll("prev")}
             aria-label="Previous tours"

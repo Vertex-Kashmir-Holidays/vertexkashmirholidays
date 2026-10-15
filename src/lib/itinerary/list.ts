@@ -108,7 +108,7 @@ export function itineraryQuotedCost(data: Prisma.JsonValue | undefined): string 
 function customerFrom(
   data: Prisma.JsonValue,
   fallbackPhone: string,
-): { customerName: string; customerPhone: string; totalCost: string } {
+): { customerName: string; customerPhone: string; travelDates: string; totalCost: string } {
   const d = (data && typeof data === "object" && !Array.isArray(data) ? data : {}) as Record<
     string,
     unknown
@@ -117,6 +117,7 @@ function customerFrom(
   return {
     customerName: str(d.preparedFor),
     customerPhone: str(d.customerPhone) || fallbackPhone.trim(),
+    travelDates: str(d.travelDates),
     totalCost: itineraryQuotedCost(data),
   };
 }

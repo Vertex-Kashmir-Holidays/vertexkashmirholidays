@@ -18,3 +18,10 @@ export const B2B_STATUS_STYLES: Record<B2bRequestStatus, string> = {
   CONVERTED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
 };
+
+/** A B2B request can be converted only once its itinerary has gone to the
+ *  agent: status SENT, or CONFIRMED (which comes after it). Shared by the
+ *  Convert button and the convert API so the two can't disagree. */
+export function isItinerarySent(status: string | null | undefined): boolean {
+  return status === "SENT" || status === "CONFIRMED";
+}

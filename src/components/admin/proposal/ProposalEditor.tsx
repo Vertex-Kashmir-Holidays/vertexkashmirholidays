@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { Toolbar } from "./Toolbar";
+import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
+import { PriceActivitySection } from "../itinerary/PriceActivitySection";
 import { ItineraryIcon } from "../itinerary/icons";
 import { DEFAULT_PROPOSAL_DATA, DEFAULT_SINGLE_PROPOSAL_DATA } from "./default-data";
 import { downloadProposalPdf } from "@/lib/proposal/export-pdf";
@@ -20,6 +22,8 @@ import {
   type ProposalData,
   type ProposalDay,
   type StayPlanRow,
+  type TransportRow,
+  type ComparisonRow,
   type ProposalDocType,
   type ProposalStatus,
   type ProposalTier,
@@ -28,6 +32,9 @@ import {
   SINGLE_TIER_KEY,
   COMPARISON_DASH,
   COMPARISON_CHECK,
+  stayHotelField,
+  transportVehicleField,
+  deriveStayPlan,
 } from "@/types/proposal";
 
 type ListKey = "pay";
@@ -45,6 +52,8 @@ interface ProposalEditorProps {
   trustContent?: PdfTrustContent;
   socialLinks?: PdfSocialLinks;
   apiBasePath?: string;
+  /** May create itineraries — shows "Convert to Itinerary". */
+  canConvert?: boolean;
 }
 
 export function ProposalEditor({
@@ -58,43 +67,46 @@ export function ProposalEditor({
   trustContent,
   socialLinks,
   apiBasePath = "/api/proposals",
+  canConvert = false,
 }: ProposalEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ProposalData>(initialData);
   // "<customer> - <duration> - <phone>" from the cover; the API derives the
   // same string on save, so this is what the list will show.
-  const title =
-    initialTitle && data === initialData ? initialTitle : buildDocumentTitle(data);
+  const title = initialTitle && data === initialData ? initialTitle : buildDocumentTitle(data);
   const [status, setStatus] = useState<ProposalStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
+  const [isConverting, setConverting] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
 
   /* ---------- top-level string fields ---------- */
   const updateField = (field: keyof ProposalData, value: string) =>
     setData((p) => ({ ...p, [field]: value }));
 
   /* ---------- doc type (Multi-package / Single-package) ---------- */
-  // Switching in either direction only sets `docType` — content for both
-  // shapes (cover, days, whyChoose, closing, etc.) lives in the same `data`
-  // object and is never discarded. The one exception: the single-package-only
-  // fields (stayPlan/transport) are lazily seeded from the sample document
-  // the first time a proposal is switched to "single" and hasn't been
-  // populated yet — so re-toggling back and forth never clobbers edits.
+  // Switching in either direction only sets `docType` — both shapes read the
+  // same `data` (days, stay plan, transport, activities…), and the single
+  // doc's values are the multi doc's Premium column (SINGLE_TIER_KEY), so
+  // nothing is discarded. Only EMPTY fields are filled: the Stay Plan from
+  // the days' stay labels (so it matches the day plan), and the multi-only
+  // comparison rows / footnote / mixing tip from the multi sample (the single
+  // doc leaves those blank) so staff see what belongs there.
   const handleDocTypeChange = (docType: ProposalDocType) =>
     setData((p) => {
       if (p.docType === docType) return p;
-      if (docType === "single" && p.stayPlan.length === 0 && p.transport.length === 0) {
-        return {
-          ...p,
-          docType,
-          days: p.days.some((d) => d.mealsLabel) ? p.days : DEFAULT_SINGLE_PROPOSAL_DATA.days,
-          stayPlan: DEFAULT_SINGLE_PROPOSAL_DATA.stayPlan,
-          stayPlanNote: p.stayPlanNote || DEFAULT_SINGLE_PROPOSAL_DATA.stayPlanNote,
-          transport: DEFAULT_SINGLE_PROPOSAL_DATA.transport,
-          transportNote: p.transportNote || DEFAULT_SINGLE_PROPOSAL_DATA.transportNote,
-        };
-      }
-      return { ...p, docType };
+      const stayPlan = p.stayPlan.length ? p.stayPlan : deriveStayPlan(p.days, genId);
+      if (docType === "single") return { ...p, docType, stayPlan };
+      return {
+        ...p,
+        docType,
+        stayPlan,
+        comparisonRows: p.comparisonRows.length
+          ? p.comparisonRows
+          : DEFAULT_PROPOSAL_DATA.comparisonRows,
+        comparisonFootnote: p.comparisonFootnote || DEFAULT_PROPOSAL_DATA.comparisonFootnote,
+        tipText: p.tipText || DEFAULT_PROPOSAL_DATA.tipText,
+      };
     });
 
   /* ---------- tiers ---------- */
@@ -102,7 +114,8 @@ export function ProposalEditor({
     key: ProposalTierKey,
     field: "label" | "title" | "priceLabel" | "coverNote" | "description" | "badgeLabel",
     value: string,
-  ) => setData((p) => ({ ...p, tiers: { ...p.tiers, [key]: { ...p.tiers[key], [field]: value } } }));
+  ) =>
+    setData((p) => ({ ...p, tiers: { ...p.tiers, [key]: { ...p.tiers[key], [field]: value } } }));
 
   const addTierTag = (key: ProposalTierKey) =>
     setData((p) => ({
@@ -120,7 +133,10 @@ export function ProposalEditor({
   const removeTierTag = (key: ProposalTierKey, idx: number) =>
     setData((p) => ({
       ...p,
-      tiers: { ...p.tiers, [key]: { ...p.tiers[key], tags: p.tiers[key].tags.filter((_, i) => i !== idx) } },
+      tiers: {
+        ...p.tiers,
+        [key]: { ...p.tiers[key], tags: p.tiers[key].tags.filter((_, i) => i !== idx) },
+      },
     }));
 
   /* ---------- comparison table ---------- */
@@ -129,7 +145,13 @@ export function ProposalEditor({
       ...p,
       comparisonRows: [
         ...p.comparisonRows,
-        { id: genId("cmp"), label: "New row", budget: COMPARISON_DASH, premium: COMPARISON_DASH, luxury: COMPARISON_DASH },
+        {
+          id: genId("cmp"),
+          label: "New row",
+          budget: COMPARISON_DASH,
+          premium: COMPARISON_DASH,
+          luxury: COMPARISON_DASH,
+        },
       ],
     }));
   const updateComparisonRow = (
@@ -149,7 +171,11 @@ export function ProposalEditor({
     dayId: string,
     field: "title" | "dateLabel" | "body" | "stayLabel" | "highlightsLine" | "mealsLabel",
     value: string,
-  ) => setData((p) => ({ ...p, days: p.days.map((d) => (d.id === dayId ? { ...d, [field]: value } : d)) }));
+  ) =>
+    setData((p) => ({
+      ...p,
+      days: p.days.map((d) => (d.id === dayId ? { ...d, [field]: value } : d)),
+    }));
   const addDay = () =>
     setData((p) => ({
       ...p,
@@ -166,7 +192,8 @@ export function ProposalEditor({
         },
       ],
     }));
-  const removeDay = (dayId: string) => setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
+  const removeDay = (dayId: string) =>
+    setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
   const reorderDays = (next: ProposalDay[]) =>
     setData((p) => ({ ...p, days: keepDateLabelsInSlots(p.days, next) }));
 
@@ -181,6 +208,8 @@ export function ProposalEditor({
           destination: "",
           nights: "",
           hotelName: "",
+          hotelBudget: "",
+          hotelLuxury: "",
           roomType: "Double Sharing",
           rooms: "1",
         },
@@ -188,7 +217,7 @@ export function ProposalEditor({
     }));
   const updateStayPlanRow = (
     rowId: string,
-    field: "destination" | "nights" | "hotelName" | "roomType" | "rooms",
+    field: Exclude<keyof StayPlanRow, "id">,
     value: string,
   ) =>
     setData((p) => ({
@@ -199,15 +228,26 @@ export function ProposalEditor({
     setData((p) => ({ ...p, stayPlan: p.stayPlan.filter((r) => r.id !== rowId) }));
   const reorderStayPlan = (next: StayPlanRow[]) => setData((p) => ({ ...p, stayPlan: next }));
 
-  /* ---------- transportation (single-package only) ---------- */
+  /* ---------- transportation ---------- */
   const addTransportRow = () =>
     setData((p) => ({
       ...p,
-      transport: [...p.transport, { id: genId("tr"), vehicle: "", seating: "", usedFor: "", duration: "" }],
+      transport: [
+        ...p.transport,
+        {
+          id: genId("tr"),
+          vehicle: "",
+          vehicleBudget: "",
+          vehicleLuxury: "",
+          seating: "",
+          usedFor: "",
+          duration: "",
+        },
+      ],
     }));
   const updateTransportRow = (
     rowId: string,
-    field: "vehicle" | "seating" | "usedFor" | "duration",
+    field: Exclude<keyof TransportRow, "id">,
     value: string,
   ) =>
     setData((p) => ({
@@ -216,6 +256,56 @@ export function ProposalEditor({
     }));
   const removeTransportRow = (rowId: string) =>
     setData((p) => ({ ...p, transport: p.transport.filter((r) => r.id !== rowId) }));
+
+  /* ---------- activities (same per-option cells as comparisonRows) ---------- */
+  const addActivity = () =>
+    setData((p) => ({
+      ...p,
+      activities: [
+        ...p.activities,
+        {
+          id: genId("act"),
+          label: "",
+          budget: COMPARISON_DASH,
+          premium: COMPARISON_CHECK,
+          luxury: COMPARISON_CHECK,
+        },
+      ],
+    }));
+  const updateActivity = (
+    rowId: string,
+    field: Exclude<keyof ComparisonRow, "id">,
+    value: string,
+  ) =>
+    setData((p) => ({
+      ...p,
+      activities: p.activities.map((r) => (r.id === rowId ? { ...r, [field]: value } : r)),
+    }));
+  const removeActivity = (rowId: string) =>
+    setData((p) => ({ ...p, activities: p.activities.filter((r) => r.id !== rowId) }));
+
+  /* ---------- optional "available on the day" activities ---------- */
+  const addOptionalActivity = () =>
+    setData((p) => ({
+      ...p,
+      optionalActivities: [
+        ...p.optionalActivities,
+        { id: genId("pa"), name: "New Item", place: "", day: "", note: "", price: "" },
+      ],
+    }));
+  const updateOptionalActivity = (
+    rowId: string,
+    field: "name" | "place" | "day" | "note" | "price",
+    value: string,
+  ) =>
+    setData((p) => ({
+      ...p,
+      optionalActivities: p.optionalActivities.map((a) =>
+        a.id === rowId ? { ...a, [field]: value } : a,
+      ),
+    }));
+  const removeOptionalActivity = (rowId: string) =>
+    setData((p) => ({ ...p, optionalActivities: p.optionalActivities.filter((a) => a.id !== rowId) }));
 
   /* ---------- pay tags / plain string[] lists ---------- */
   const addListItem = (key: ListKey, item: string) =>
@@ -228,7 +318,12 @@ export function ProposalEditor({
   /* ---------- inclusions/exclusions (category + text rows) ---------- */
   const addListItemRow = (key: "inc" | "exc") =>
     setData((p) => ({ ...p, [key]: [...p[key], { id: genId("li"), category: "", text: "" }] }));
-  const updateListItemRow = (key: "inc" | "exc", rowId: string, field: "category" | "text", value: string) =>
+  const updateListItemRow = (
+    key: "inc" | "exc",
+    rowId: string,
+    field: "category" | "text",
+    value: string,
+  ) =>
     setData((p) => ({
       ...p,
       [key]: p[key].map((v) => (v.id === rowId ? { ...v, [field]: value } : v)),
@@ -256,10 +351,11 @@ export function ProposalEditor({
     }));
 
   /* ---------- actions ---------- */
-  async function handleSave() {
+  /** Resolves true once the proposal is saved. */
+  async function handleSave(): Promise<boolean> {
     if (!data.preparedFor.trim()) {
       toast.error("Please enter the customer name (Prepared For).");
-      return;
+      return false;
     }
     setSaving(true);
     try {
@@ -277,10 +373,36 @@ export function ProposalEditor({
       } else {
         router.refresh();
       }
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Saves first (when allowed) so the itinerary is built from what's on screen.
+  async function handleConvert(tier: ProposalTierKey, leadId: string) {
+    if (!id) return;
+    setConverting(true);
+    if (canSave && !(await handleSave())) {
+      setConverting(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${apiBasePath}/${id}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, leadId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Conversion failed");
+      toast.success("Itinerary created and linked to the lead.");
+      router.push(`/admin/itinerary/${json.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Conversion failed");
+      setConverting(false);
     }
   }
 
@@ -290,7 +412,9 @@ export function ProposalEditor({
       const { bytes } = await downloadProposalPdf(data, companyAddress, trustContent, socialLinks);
       const kb = Math.round(bytes / 1024);
       if (bytes > 1024 * 1024) {
-        toast.warning(`PDF generated (${(bytes / 1048576).toFixed(2)} MB) — above the 1 MB target.`);
+        toast.warning(
+          `PDF generated (${(bytes / 1048576).toFixed(2)} MB) — above the 1 MB target.`,
+        );
       } else {
         toast.success(`PDF downloaded (${kb} KB).`);
       }
@@ -318,6 +442,7 @@ export function ProposalEditor({
     }
   }
 
+  const isMulti = data.docType === "multi";
   const greenHead = "font-serif text-2xl font-bold text-[hsl(156_40%_21%)] dark:text-primary";
   const pageCard =
     "page rounded-xl border border-[hsl(40_14%_87%)] bg-white p-5 shadow-page dark:border-mute/20 dark:bg-card sm:p-8 md:p-12";
@@ -325,6 +450,8 @@ export function ProposalEditor({
     "addbtn mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[hsl(156_40%_21%)]/40 px-3 py-1.5 text-xs font-bold text-[hsl(156_40%_21%)] transition hover:bg-[hsl(150_28%_92%)]/60 dark:border-primary/40 dark:text-primary dark:hover:bg-primary/10 no-print";
   const fieldLabel =
     "block text-[11px] font-semibold uppercase tracking-wide text-mute dark:text-muted-foreground mb-1";
+  // Shown only on phones, where table-style column headings are hidden.
+  const mobileLabel = `${fieldLabel} sm:hidden`;
 
   return (
     <div className="pb-8">
@@ -340,6 +467,22 @@ export function ProposalEditor({
         isSaving={isSaving}
         isExporting={isExporting}
         canSave={canSave}
+        onConvert={id && canConvert ? () => setConvertOpen(true) : undefined}
+        isConverting={isConverting}
+      />
+      <ConvertToItineraryDialog
+        open={convertOpen}
+        onClose={() => setConvertOpen(false)}
+        onConvert={handleConvert}
+        options={
+          isMulti
+            ? TIER_ORDER.map((key) => ({
+                key,
+                label: [data.tiers[key].label, data.tiers[key].priceLabel].filter(Boolean).join(" · "),
+              }))
+            : []
+        }
+        isConverting={isConverting}
       />
       {id && initialTitle && (
         <UntouchedCopyGuard
@@ -357,19 +500,31 @@ export function ProposalEditor({
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
               <div>
                 <label className={fieldLabel}>Quote Number</label>
-                <EditableField value={data.quoteNumber} onValueChange={(v) => updateField("quoteNumber", v)} />
+                <EditableField
+                  value={data.quoteNumber}
+                  onValueChange={(v) => updateField("quoteNumber", v)}
+                />
               </div>
               <div>
                 <label className={fieldLabel}>Duration</label>
-                <EditableField value={data.duration} onValueChange={(v) => updateField("duration", v)} />
+                <EditableField
+                  value={data.duration}
+                  onValueChange={(v) => updateField("duration", v)}
+                />
               </div>
               <div>
                 <label className={fieldLabel}>Travel Dates</label>
-                <EditableField value={data.travelDates} onValueChange={(v) => updateField("travelDates", v)} />
+                <EditableField
+                  value={data.travelDates}
+                  onValueChange={(v) => updateField("travelDates", v)}
+                />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared For</label>
-                <EditableField value={data.preparedFor} onValueChange={(v) => updateField("preparedFor", v)} />
+                <EditableField
+                  value={data.preparedFor}
+                  onValueChange={(v) => updateField("preparedFor", v)}
+                />
               </div>
               <div>
                 <label className={fieldLabel}>Customer Phone</label>
@@ -381,7 +536,10 @@ export function ProposalEditor({
               </div>
               <div>
                 <label className={fieldLabel}>Travellers</label>
-                <EditableField value={data.travelers} onValueChange={(v) => updateField("travelers", v)} />
+                <EditableField
+                  value={data.travelers}
+                  onValueChange={(v) => updateField("travelers", v)}
+                />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared By</label>
@@ -432,7 +590,9 @@ export function ProposalEditor({
               tier-card editor, just for one fixed slot (SINGLE_TIER_KEY)
               instead of looping over all three. */}
           <article className={pageCard}>
-            <h2 className={greenHead}>{data.docType === "multi" ? "Your Three Options" : "Package & Price"}</h2>
+            <h2 className={greenHead}>
+              {data.docType === "multi" ? "Your Three Options" : "Package & Price"}
+            </h2>
             <div className="mt-6 space-y-5">
               {(data.docType === "multi" ? TIER_ORDER : [SINGLE_TIER_KEY]).map((key) => {
                 const tier: ProposalTier = data.tiers[key];
@@ -444,11 +604,17 @@ export function ProposalEditor({
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                       <div>
                         <label className={fieldLabel}>Label</label>
-                        <EditableField value={tier.label} onValueChange={(v) => updateTier(key, "label", v)} />
+                        <EditableField
+                          value={tier.label}
+                          onValueChange={(v) => updateTier(key, "label", v)}
+                        />
                       </div>
                       <div>
                         <label className={fieldLabel}>Card Title</label>
-                        <EditableField value={tier.title} onValueChange={(v) => updateTier(key, "title", v)} />
+                        <EditableField
+                          value={tier.title}
+                          onValueChange={(v) => updateTier(key, "title", v)}
+                        />
                       </div>
                       <div>
                         <label className={fieldLabel}>Price</label>
@@ -460,7 +626,10 @@ export function ProposalEditor({
                       </div>
                       <div>
                         <label className={fieldLabel}>Cover Note</label>
-                        <EditableField value={tier.coverNote} onValueChange={(v) => updateTier(key, "coverNote", v)} />
+                        <EditableField
+                          value={tier.coverNote}
+                          onValueChange={(v) => updateTier(key, "coverNote", v)}
+                        />
                       </div>
                     </div>
                     <div className="mt-3">
@@ -472,7 +641,9 @@ export function ProposalEditor({
                       />
                     </div>
                     <div className="mt-3">
-                      <label className={fieldLabel}>Badge (e.g. &quot;MOST CHOSEN&quot;, blank = none)</label>
+                      <label className={fieldLabel}>
+                        Badge (e.g. &quot;MOST CHOSEN&quot;, blank = none)
+                      </label>
                       <EditableField
                         value={tier.badgeLabel}
                         onValueChange={(v) => updateTier(key, "badgeLabel", v)}
@@ -491,7 +662,7 @@ export function ProposalEditor({
                           <button
                             onClick={() => removeTierTag(key, idx)}
                             aria-label={`Remove tag ${tag}`}
-                            className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print"
+                            className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
                           >
                             ×
                           </button>
@@ -508,7 +679,11 @@ export function ProposalEditor({
             {data.docType === "multi" ? (
               <div className="mt-6">
                 <label className={fieldLabel}>Mixing Tip (below the option cards)</label>
-                <EditableField value={data.tipText} onValueChange={(v) => updateField("tipText", v)} rows={2} />
+                <EditableField
+                  value={data.tipText}
+                  onValueChange={(v) => updateField("tipText", v)}
+                  rows={2}
+                />
               </div>
             ) : null}
           </article>
@@ -516,83 +691,73 @@ export function ProposalEditor({
           {/* Comparison table — multi-package only; the single-package doc
               has only one option, nothing to compare. */}
           {data.docType !== "multi" ? null : (
-          <article className={pageCard}>
-            <h2 className={greenHead}>What Actually Differs</h2>
-            {/* Static column headings — the rows below have no labels of
+            <article className={pageCard}>
+              <h2 className={greenHead}>What Actually Differs</h2>
+              <p className="mt-2 text-xs text-mute dark:text-muted-foreground">
+                Hotels, vehicles and activities are compared automatically from the Stay Plan,
+                Transportation and Activities sections — add only other differences here (meals,
+                support…).
+              </p>
+              {/* Static column headings — the rows below have no labels of
                 their own on each cell, so this is the only thing telling
                 staff which column is which. */}
-            <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
-              <span className={fieldLabel}>Feature</span>
-              <span className={fieldLabel}>Budget</span>
-              <span className={fieldLabel}>Premium</span>
-              <span className={fieldLabel}>Luxury</span>
-            </div>
-            <div className="mt-2 space-y-3">
-              {data.comparisonRows.map((row) => (
-                <div
-                  key={row.id}
-                  className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
-                >
-                  <EditableField
-                    value={row.label}
-                    onValueChange={(v) => updateComparisonRow(row.id, "label", v)}
-                    placeholder="Feature"
-                    className="text-sm font-bold sm:col-span-1"
-                  />
-                  {(["budget", "premium", "luxury"] as const).map((tk) => (
-                    <div key={tk} className="flex items-center gap-1">
-                      <EditableField
-                        value={row[tk]}
-                        onValueChange={(v) => updateComparisonRow(row.id, tk, v)}
-                        className="min-w-0 flex-1 text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => updateComparisonRow(row.id, tk, COMPARISON_CHECK)}
-                        aria-label={`Set ${tk} to included`}
-                        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-[hsl(156_40%_21%)] no-print"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateComparisonRow(row.id, tk, COMPARISON_DASH)}
-                        aria-label={`Set ${tk} to not included`}
-                        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-mute no-print"
-                      >
-                        –
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => removeComparisonRow(row.id)}
-                    aria-label={`Remove row ${row.label}`}
-                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
+              <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
+                <span className={fieldLabel}>Feature</span>
+                <span className={fieldLabel}>Budget</span>
+                <span className={fieldLabel}>Premium</span>
+                <span className={fieldLabel}>Luxury</span>
+              </div>
+              <div className="mt-2 space-y-3">
+                {data.comparisonRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button onClick={addComparisonRow} className={addBtn}>
-              <Plus className="h-3 w-3" /> Add row
-            </button>
-            <div className="mt-5">
-              <label className={fieldLabel}>Footnote</label>
-              <EditableField
-                value={data.comparisonFootnote}
-                onValueChange={(v) => updateField("comparisonFootnote", v)}
-                rows={2}
-              />
-            </div>
-          </article>
+                    <EditableField
+                      value={row.label}
+                      onValueChange={(v) => updateComparisonRow(row.id, "label", v)}
+                      placeholder="Feature"
+                      className="text-sm font-bold sm:col-span-1"
+                    />
+                    {TIER_ORDER.map((tk) => (
+                      <OptionCell
+                        key={tk}
+                        tierKey={tk}
+                        value={row[tk]}
+                        onChange={(v) => updateComparisonRow(row.id, tk, v)}
+                      />
+                    ))}
+                    <button
+                      onClick={() => removeComparisonRow(row.id)}
+                      aria-label={`Remove row ${row.label}`}
+                      className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={addComparisonRow} className={addBtn}>
+                <Plus className="h-3 w-3" /> Add row
+              </button>
+              <div className="mt-5">
+                <label className={fieldLabel}>Footnote</label>
+                <EditableField
+                  value={data.comparisonFootnote}
+                  onValueChange={(v) => updateField("comparisonFootnote", v)}
+                  rows={2}
+                />
+              </div>
+            </article>
           )}
 
           {/* Days — the single-package doc's "Day Plan at a Glance" table
               reads the same `days` array, plus its Meals column (blank/unused
               in multi-package). */}
           <article className={pageCard}>
-            <h2 className={greenHead}>{data.docType === "multi" ? "Your Six Days" : "Day Plan at a Glance"}</h2>
+            <h2 className={greenHead}>
+              {data.docType === "multi" ? "Your Six Days" : "Day Plan at a Glance"}
+            </h2>
             <ReorderableList
               items={data.days}
               onReorder={reorderDays}
@@ -600,30 +765,32 @@ export function ProposalEditor({
               className="mt-6 space-y-3"
             >
               {(day, dayIdx) => (
-                <div
-                  className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-4 dark:border-mute/20"
-                >
+                <div className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-4 dark:border-mute/20">
                   <button
                     onClick={() => removeDay(day.id)}
                     aria-label={`Remove day ${dayIdx + 1}`}
-                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print"
+                    className="absolute -left-2 -top-2 z-20 hidden h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 transition-opacity group-hover:flex group-hover:opacity-100 no-print [@media(hover:none)]:flex [@media(hover:none)]:opacity-100"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
-                  <div className="flex items-baseline gap-3">
-                    <span className="shrink-0 font-serif text-xl font-bold text-[#B8D4C4]">
-                      {String(dayIdx + 1).padStart(2, "0")}
-                    </span>
-                    <EditableField
-                      value={day.title}
-                      onValueChange={(v) => updateDay(day.id, "title", v)}
-                      className="min-w-0 flex-1 text-sm font-bold"
-                    />
+                  {/* Phones: title, then the date on its own line under it
+                      (same as ItineraryEditor). sm+: date on the right. */}
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
+                    <div className="flex min-w-0 flex-1 items-baseline gap-3">
+                      <span className="w-8 shrink-0 font-serif text-xl font-bold text-[#B8D4C4] sm:w-auto">
+                        {String(dayIdx + 1).padStart(2, "0")}
+                      </span>
+                      <EditableField
+                        value={day.title}
+                        onValueChange={(v) => updateDay(day.id, "title", v)}
+                        className="min-w-0 flex-1 text-sm font-bold"
+                      />
+                    </div>
                     <EditableField
                       value={day.dateLabel}
                       onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
                       placeholder="Wed 10 Jun"
-                      className="w-24 shrink-0 text-right text-xs text-mute dark:text-muted-foreground"
+                      className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
                     />
                   </div>
                   <EditableField
@@ -663,144 +830,304 @@ export function ProposalEditor({
             </button>
           </article>
 
-          {data.docType === "single" ? (
-            <>
-              {/* Stay Plan */}
-              <article className={pageCard}>
-                <h2 className={greenHead}>Stay Plan</h2>
-                <div className="mt-6 hidden grid-cols-5 gap-x-3 px-3 sm:grid">
-                  <span className={fieldLabel}>Destination</span>
-                  <span className={fieldLabel}>Nights</span>
-                  <span className={fieldLabel}>Hotel Name</span>
-                  <span className={fieldLabel}>Room Type</span>
-                  <span className={fieldLabel}>No. of Rooms</span>
-                </div>
-                <ReorderableList
-                  items={data.stayPlan}
-                  onReorder={reorderStayPlan}
-                  noun="stay plan row"
-                  className="mt-2 space-y-3"
-                >
-                  {(row) => (
-                    <div
-                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-5"
-                    >
+          {/* Stay Plan — both docs. Single: one hotel per row. Multi: one
+              hotel per option (Premium = the single doc's hotel), printed as
+              the comparison table's "Stays" section. */}
+          <article className={pageCard}>
+            <h2 className={greenHead}>{isMulti ? "Stay Plan — Hotel per Option" : "Stay Plan"}</h2>
+            <div
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-5"}`}
+            >
+              <span className={fieldLabel}>Destination</span>
+              <span className={fieldLabel}>Nights</span>
+              {isMulti ? null : <span className={fieldLabel}>Hotel Name</span>}
+              {isMulti ? null : <span className={fieldLabel}>Room Type</span>}
+              <span className={fieldLabel}>No. of Rooms</span>
+            </div>
+            <ReorderableList
+              items={data.stayPlan}
+              onReorder={reorderStayPlan}
+              noun="stay plan row"
+              className="mt-2 space-y-3"
+            >
+              {(row) => (
+                <div className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20">
+                  {/* Phones: the column headings above are hidden, so each
+                      field carries its own label (mobileLabel) and the order
+                      is Destination / Nights + Rooms / Hotel / Room Type.
+                      sm+: one row under the headings, labels hidden. */}
+                  <div
+                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-5"}`}
+                  >
+                    <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                      <span className={mobileLabel}>Destination</span>
                       <EditableField
                         value={row.destination}
                         onValueChange={(v) => updateStayPlanRow(row.id, "destination", v)}
                         placeholder="Destination"
                         className="text-sm font-bold"
                       />
+                    </div>
+                    <div className="order-2 sm:order-none">
+                      <span className={mobileLabel}>Nights</span>
                       <EditableField
                         value={row.nights}
                         onValueChange={(v) => updateStayPlanRow(row.id, "nights", v)}
                         placeholder="Nights"
                         className="text-xs"
                       />
-                      <EditableField
-                        value={row.hotelName}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
-                        placeholder="Hotel Name / Similar"
-                        className="text-xs sm:col-span-1"
-                      />
-                      <EditableField
-                        value={row.roomType}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
-                        placeholder="Room Type"
-                        className="text-xs"
-                      />
+                    </div>
+                    {isMulti ? null : (
+                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Hotel Name</span>
+                        <EditableField
+                          value={row.hotelName}
+                          onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
+                          placeholder="Hotel Name / Similar"
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                    {/* Multi compares room class per option in the
+                        comparison rows ("Room category") instead. */}
+                    {isMulti ? null : (
+                      <div className="order-5 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Room Type</span>
+                        <EditableField
+                          value={row.roomType}
+                          onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
+                          placeholder="Room Type"
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                    <div className="order-3 sm:order-none">
+                      <span className={mobileLabel}>No. of Rooms</span>
                       <EditableField
                         value={row.rooms}
                         onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
                         placeholder="1"
                         className="text-xs"
                       />
-                      <button
-                        onClick={() => removeStayPlanRow(row.id)}
-                        aria-label={`Remove stay plan row ${row.destination}`}
-                        className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
-                  )}
-                </ReorderableList>
-                <button onClick={addStayPlanRow} className={addBtn}>
-                  <Plus className="h-3 w-3" /> Add row
-                </button>
-                <div className="mt-5">
-                  <label className={fieldLabel}>Note</label>
-                  <EditableField
-                    value={data.stayPlanNote}
-                    onValueChange={(v) => updateField("stayPlanNote", v)}
-                    rows={2}
-                  />
+                  </div>
+                  {isMulti ? (
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {TIER_ORDER.map((tk) => (
+                        <div key={tk}>
+                          <label className={fieldLabel}>{data.tiers[tk].label} hotel</label>
+                          <EditableField
+                            value={row[stayHotelField(tk)]}
+                            onValueChange={(v) => updateStayPlanRow(row.id, stayHotelField(tk), v)}
+                            placeholder="Hotel Name / Similar"
+                            className="text-xs"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <button
+                    onClick={() => removeStayPlanRow(row.id)}
+                    aria-label={`Remove stay plan row ${row.destination}`}
+                    className="absolute right-2 top-3 hidden text-rose-500 hover:text-rose-600 group-hover:block no-print sm:top-1/2 sm:-translate-y-1/2 [@media(hover:none)]:block"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-              </article>
+              )}
+            </ReorderableList>
+            <button onClick={addStayPlanRow} className={addBtn}>
+              <Plus className="h-3 w-3" /> Add row
+            </button>
+            <div className="mt-5">
+              <label className={fieldLabel}>Note</label>
+              <EditableField
+                value={data.stayPlanNote}
+                onValueChange={(v) => updateField("stayPlanNote", v)}
+                rows={2}
+              />
+            </div>
+          </article>
 
-              {/* Transportation */}
-              <article className={pageCard}>
-                <h2 className={greenHead}>Transportation</h2>
-                <div className="mt-6 hidden grid-cols-4 gap-x-3 px-3 sm:grid">
-                  <span className={fieldLabel}>Vehicle</span>
-                  <span className={fieldLabel}>Seating</span>
-                  <span className={fieldLabel}>Used For</span>
-                  <span className={fieldLabel}>Duration</span>
-                </div>
-                <div className="mt-2 space-y-3">
-                  {data.transport.map((row) => (
-                    <div
-                      key={row.id}
-                      className="group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 sm:grid-cols-4"
-                    >
-                      <EditableField
-                        value={row.vehicle}
-                        onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
-                        placeholder="Sedan"
-                        className="text-sm font-bold"
-                      />
+          {/* Transportation — same single/multi split as Stay Plan. */}
+          <article className={pageCard}>
+            <h2 className={greenHead}>
+              {isMulti ? "Transportation — Vehicle per Option" : "Transportation"}
+            </h2>
+            <div
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-4"}`}
+            >
+              <span className={fieldLabel}>{isMulti ? "Used For" : "Vehicle"}</span>
+              <span className={fieldLabel}>Seating</span>
+              {isMulti ? null : <span className={fieldLabel}>Used For</span>}
+              <span className={fieldLabel}>Duration</span>
+            </div>
+            <div className="mt-2 space-y-3">
+              {data.transport.map((row) => (
+                <div
+                  key={row.id}
+                  className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20"
+                >
+                  {/* Phones: labelled fields (mobileLabel), ordered Vehicle
+                      or Used For / Seating + Duration / Used For (single).
+                      sm+: one row under the column headings. */}
+                  <div
+                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-4"}`}
+                  >
+                    {isMulti ? null : (
+                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Vehicle</span>
+                        <EditableField
+                          value={row.vehicle}
+                          onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
+                          placeholder="Sedan"
+                          className="text-sm font-bold"
+                        />
+                      </div>
+                    )}
+                    {isMulti ? (
+                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Used For</span>
+                        <EditableField
+                          value={row.usedFor}
+                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          placeholder="Used for"
+                          className="text-sm font-bold"
+                        />
+                      </div>
+                    ) : null}
+                    <div className="order-2 sm:order-none">
+                      <span className={mobileLabel}>Seating</span>
                       <EditableField
                         value={row.seating}
                         onValueChange={(v) => updateTransportRow(row.id, "seating", v)}
                         placeholder="04 + driver"
                         className="text-xs"
                       />
-                      <EditableField
-                        value={row.usedFor}
-                        onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
-                        placeholder="Used for"
-                        className="text-xs"
-                      />
+                    </div>
+                    {isMulti ? null : (
+                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                        <span className={mobileLabel}>Used For</span>
+                        <EditableField
+                          value={row.usedFor}
+                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          placeholder="Used for"
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                    <div className="order-3 sm:order-none">
+                      <span className={mobileLabel}>Duration</span>
                       <EditableField
                         value={row.duration}
                         onValueChange={(v) => updateTransportRow(row.id, "duration", v)}
                         placeholder="06 Days"
                         className="text-xs"
                       />
-                      <button
-                        onClick={() => removeTransportRow(row.id)}
-                        aria-label={`Remove transport row ${row.vehicle}`}
-                        className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
-                  ))}
+                  </div>
+                  {isMulti ? (
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {TIER_ORDER.map((tk) => (
+                        <div key={tk}>
+                          <label className={fieldLabel}>{data.tiers[tk].label} vehicle</label>
+                          <OptionCell
+                            tierKey={tk}
+                            value={row[transportVehicleField(tk)]}
+                            onChange={(v) =>
+                              updateTransportRow(row.id, transportVehicleField(tk), v)
+                            }
+                            placeholder="Sedan"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <button
+                    onClick={() => removeTransportRow(row.id)}
+                    aria-label={`Remove transport row ${row.vehicle}`}
+                    className="absolute right-2 top-3 hidden text-rose-500 hover:text-rose-600 group-hover:block no-print sm:top-1/2 sm:-translate-y-1/2 [@media(hover:none)]:block"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={addTransportRow} className={addBtn}>
-                  <Plus className="h-3 w-3" /> Add row
-                </button>
-                <div className="mt-5">
-                  <label className={fieldLabel}>Note</label>
+              ))}
+            </div>
+            <button onClick={addTransportRow} className={addBtn}>
+              <Plus className="h-3 w-3" /> Add row
+            </button>
+            <div className="mt-5">
+              <label className={fieldLabel}>Note</label>
+              <EditableField
+                value={data.transportNote}
+                onValueChange={(v) => updateField("transportNote", v)}
+                rows={2}
+              />
+            </div>
+          </article>
+
+          {/* Activities — multi: one cell per option (✓ / – / text), printed
+              as the comparison's "Activities" section. Single: the Premium
+              cell is the detail; a dash leaves the activity out of the PDF. */}
+          <article className={pageCard}>
+            <h2 className={greenHead}>
+              {isMulti ? "Activities — per Option" : "Activities Included"}
+            </h2>
+            <div
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-4" : "grid-cols-2"}`}
+            >
+              <span className={fieldLabel}>Activity</span>
+              {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
+                <span key={tk} className={fieldLabel}>
+                  {isMulti ? data.tiers[tk].label : "Details (✓ = included)"}
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 space-y-3">
+              {data.activities.map((row) => (
+                <div
+                  key={row.id}
+                  className={`group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 ${isMulti ? "sm:grid-cols-4" : ""}`}
+                >
                   <EditableField
-                    value={data.transportNote}
-                    onValueChange={(v) => updateField("transportNote", v)}
-                    rows={2}
+                    value={row.label}
+                    onValueChange={(v) => updateActivity(row.id, "label", v)}
+                    placeholder="Shikara ride"
+                    className="text-sm font-bold"
                   />
+                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
+                    <OptionCell
+                      key={tk}
+                      tierKey={tk}
+                      value={row[tk]}
+                      onChange={(v) => updateActivity(row.id, tk, v)}
+                    />
+                  ))}
+                  <button
+                    onClick={() => removeActivity(row.id)}
+                    aria-label={`Remove activity ${row.label}`}
+                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-              </article>
-            </>
-          ) : null}
+              ))}
+            </div>
+            <button onClick={addActivity} className={addBtn}>
+              <Plus className="h-3 w-3" /> Add activity
+            </button>
+
+            {/* "Available on the day" — paid locally, not in any option's
+                price. Can be emptied; the PDF then omits it. */}
+            <PriceActivitySection
+              title="Available on the Day"
+              items={data.optionalActivities}
+              onUpdate={updateOptionalActivity}
+              onRemove={removeOptionalActivity}
+              onAdd={addOptionalActivity}
+              addLabel="Add Activity"
+            />
+          </article>
 
           {/* What's Covered */}
           <article className={pageCard}>
@@ -829,7 +1156,11 @@ export function ProposalEditor({
             </div>
             <div className="mt-8">
               <label className={fieldLabel}>Policy Note (snow/road closure)</label>
-              <EditableField value={data.policyNote} onValueChange={(v) => updateField("policyNote", v)} rows={2} />
+              <EditableField
+                value={data.policyNote}
+                onValueChange={(v) => updateField("policyNote", v)}
+                rows={2}
+              />
             </div>
           </article>
 
@@ -895,7 +1226,7 @@ export function ProposalEditor({
                         <button
                           onClick={() => removeListItem("pay", idx)}
                           aria-label={`Remove tag ${tag}`}
-                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print"
+                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
                         >
                           ×
                         </button>
@@ -942,14 +1273,16 @@ export function ProposalEditor({
                         }))
                       }
                       aria-label={`Remove note ${note}`}
-                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/note:flex no-print"
+                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/note:flex no-print [@media(hover:none)]:flex"
                     >
                       ×
                     </button>
                   </span>
                 ))}
                 <button
-                  onClick={() => setData((p) => ({ ...p, cancelNotes: [...p.cancelNotes, "New note"] }))}
+                  onClick={() =>
+                    setData((p) => ({ ...p, cancelNotes: [...p.cancelNotes, "New note"] }))
+                  }
                   className={addBtn}
                 >
                   <Plus className="h-2.5 w-2.5" /> note
@@ -1033,6 +1366,47 @@ export function ProposalEditor({
   );
 }
 
+/** One option's cell — free text plus ✓ / – shortcuts (the comparison
+ *  sentinels, see src/types/proposal.ts). */
+function OptionCell({
+  tierKey,
+  value,
+  onChange,
+  placeholder,
+}: {
+  tierKey: ProposalTierKey;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <EditableField
+        value={value}
+        onValueChange={onChange}
+        placeholder={placeholder ?? "✓ / – / details"}
+        className="min-w-0 flex-1 text-xs"
+      />
+      <button
+        type="button"
+        onClick={() => onChange(COMPARISON_CHECK)}
+        aria-label={`Set ${tierKey} to included`}
+        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-[hsl(156_40%_21%)] no-print"
+      >
+        ✓
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(COMPARISON_DASH)}
+        aria-label={`Set ${tierKey} to not included`}
+        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-mute no-print"
+      >
+        –
+      </button>
+    </div>
+  );
+}
+
 function ListColumn({
   title,
   items,
@@ -1054,7 +1428,9 @@ function ListColumn({
 }) {
   return (
     <div>
-      <h3 className="font-serif text-[22px] font-bold text-[hsl(156_40%_21%)] dark:text-primary">{title}</h3>
+      <h3 className="font-serif text-[22px] font-bold text-[hsl(156_40%_21%)] dark:text-primary">
+        {title}
+      </h3>
       <ul className="mt-5 space-y-3 text-sm text-ink/85 dark:text-muted-foreground">
         {items.map((item) => (
           <li key={item.id} className="group relative flex items-start gap-2.5 pr-6">
@@ -1080,12 +1456,16 @@ function ListColumn({
                 placeholder="Category"
                 className="inline-block rounded bg-[#E8F2EB] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#145C3E] dark:bg-primary/10 dark:text-primary"
               />
-              <EditableField value={item.text} onValueChange={(v) => onUpdateText(item.id, v)} className="mt-1" />
+              <EditableField
+                value={item.text}
+                onValueChange={(v) => onUpdateText(item.id, v)}
+                className="mt-1"
+              />
             </div>
             <button
               onClick={() => onRemove(item.id)}
               aria-label={`Remove item from ${title}`}
-              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
+              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -1147,7 +1527,7 @@ function CancelTierCard({
               <button
                 onClick={() => onRemove(item.id)}
                 aria-label="Remove cancellation tier"
-                className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print"
+                className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
               >
                 <Trash2 className="h-3 w-3" />
               </button>

@@ -14,7 +14,7 @@ export default async function NewFaqPage() {
   const role = session?.user?.role;
   if (!role || !(await can(role, "faqs", "create"))) redirect("/admin/faqs");
 
-  const [categories, tours, destinations, blogs, campaigns, activities, collections] =
+  const [categories, tours, destinations, blogs, adventures, activities, collections] =
     await Promise.all([
       prisma.faqCategory.findMany({
         where: { isActive: true },
@@ -24,7 +24,7 @@ export default async function NewFaqPage() {
       prisma.tour.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
       prisma.destination.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
       prisma.blog.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
-      prisma.campaign.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.adventure.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
       prisma.activity.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
       prisma.tourCollection.findMany({
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -53,7 +53,7 @@ export default async function NewFaqPage() {
         tourOptions={tours.map((t) => ({ id: t.id, label: t.title }))}
         destinationOptions={destinations.map((d) => ({ id: d.id, label: d.name }))}
         blogOptions={blogs.map((b) => ({ id: b.id, label: b.title }))}
-        campaignOptions={campaigns.map((c) => ({ id: c.id, label: c.name }))}
+        adventureOptions={adventures.map((c) => ({ id: c.id, label: c.name }))}
         activityOptions={activities.map((a) => ({ id: a.id, label: a.name }))}
         collectionOptions={collections.map((c) => ({ id: c.id, label: c.name }))}
       />

@@ -35,6 +35,11 @@ export interface TransportRoute {
   durationRange: string;
   /** Full sentence(s) rendered on-page — the single place this fact is authored. */
   notes: string;
+  /** AIR: the hub(s) one-stop flights connect through, e.g. "Delhi or Mumbai". */
+  connectsVia?: string;
+  /** RAIL: the leg before the Srinagar-bound Vande Bharat, e.g. "a long-distance
+   *  train to Jammu Tawi (roughly 24–30 hours)". Lets the FAQ answer differ from `notes`. */
+  firstLeg?: string;
   /** ISO date this route's facts were last checked against public sources. */
   lastVerified: string;
   active: boolean;
@@ -58,7 +63,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "RAIL",
     destination: "Srinagar",
     connectivity: "connecting",
-    durationRange: "around 12 hours with one change",
+    durationRange: "around 12 hours",
+    firstLeg: "the New Delhi–Katra Vande Bharat Express (around 8 hours 20 minutes)",
     notes:
       "Since June 2025 the Kashmir Valley has had its own rail link, with the Vande Bharat Express running between Jammu Tawi/Katra and Srinagar in around 3 hours 10 minutes. From Delhi, that means taking the New Delhi–Katra Vande Bharat Express (around 8 hours 20 minutes) and changing onto the Srinagar-bound service — there's no single through-train yet, but the journey no longer needs a road transfer either.",
     lastVerified: "2026-08-29",
@@ -72,6 +78,7 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     destination: "Srinagar",
     connectivity: "direct",
     durationRange: "around 2h45m–3h",
+    connectsVia: "Delhi",
     notes:
       "Direct Mumbai–Srinagar flights operate on this route, typically taking around 2 hours 45 minutes to 3 hours; one-stop options via Delhi are also common. Airlines and schedules change by season, so we confirm live availability when you enquire.",
     lastVerified: "2026-08-29",
@@ -82,7 +89,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "RAIL",
     destination: "Srinagar",
     connectivity: "multi-leg",
-    durationRange: "roughly 28–33 hours, two legs",
+    durationRange: "roughly 28–33 hours",
+    firstLeg: "a long-distance train to Jammu Tawi (roughly 24–30 hours)",
     notes:
       "There's no direct train from Mumbai into the Kashmir Valley. The route involves a long-distance train to Jammu Tawi (roughly 24–30 hours), followed by the Jammu Tawi/Katra–Srinagar Vande Bharat Express (around 3 hours 10 minutes) — a multi-day option some travellers still choose over flying.",
     lastVerified: "2026-08-29",
@@ -95,7 +103,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "AIR",
     destination: "Srinagar",
     connectivity: "connecting",
-    durationRange: "roughly 5–6 hours, one stop",
+    durationRange: "roughly 5–6 hours",
+    connectsVia: "Delhi or Mumbai",
     notes:
       "Most Kashmir-bound air travel from Bengaluru connects through Delhi or Mumbai, with a total journey of roughly 5 to 6 hours including the layover. Direct or near-direct seasonal flights have appeared on this route before, so it's worth checking current options when you enquire.",
     lastVerified: "2026-08-29",
@@ -106,7 +115,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "RAIL",
     destination: "Srinagar",
     connectivity: "multi-leg",
-    durationRange: "roughly 39–40 hours, two legs",
+    durationRange: "roughly 39–40 hours",
+    firstLeg: "a long-distance train to Jammu Tawi (typically 36-plus hours)",
     notes:
       "By rail it's a long journey — typically 36-plus hours to Jammu Tawi, followed by the Jammu Tawi/Katra–Srinagar Vande Bharat Express (around 3 hours 10 minutes). Most Bengaluru travellers fly and treat the final Kashmir Valley rail leg as an optional scenic add-on.",
     lastVerified: "2026-08-29",
@@ -119,7 +129,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "AIR",
     destination: "Srinagar",
     connectivity: "connecting",
-    durationRange: "roughly 4–5 hours, one stop",
+    durationRange: "around 4–5 hours",
+    connectsVia: "Delhi",
     notes:
       "Most Kashmir-bound flights from Hyderabad connect through Delhi, with a total journey typically around 4 to 5 hours including the layover. Low-frequency direct options have run seasonally, so it's worth confirming what's currently live for your dates.",
     lastVerified: "2026-08-29",
@@ -130,7 +141,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "RAIL",
     destination: "Srinagar",
     connectivity: "multi-leg",
-    durationRange: "roughly 33–34 hours, two legs",
+    durationRange: "roughly 33–34 hours",
+    firstLeg: "a long-distance train to Jammu Tawi (roughly 30-plus hours)",
     notes:
       "By rail, Hyderabad to Jammu Tawi is roughly 30-plus hours, followed by the Jammu Tawi/Katra–Srinagar Vande Bharat Express (around 3 hours 10 minutes) — a long option most travellers reserve for experiencing the route rather than saving time.",
     lastVerified: "2026-08-29",
@@ -144,6 +156,7 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     destination: "Srinagar",
     connectivity: "seasonal-direct",
     durationRange: "around 2.5h direct, or 4–4.5h via a stop",
+    connectsVia: "Delhi",
     notes:
       "IndiGo has operated direct Kolkata–Srinagar flights; connecting options via Delhi are also available when direct seats aren't. Total journey time is typically around 2.5 hours direct, or 4 to 4.5 hours with a connection — we confirm what's currently live when you enquire.",
     lastVerified: "2026-08-29",
@@ -154,7 +167,8 @@ export const TRANSPORT_ROUTES: TransportRoute[] = [
     mode: "RAIL",
     destination: "Srinagar",
     connectivity: "multi-leg",
-    durationRange: "roughly 33–34 hours, two legs",
+    durationRange: "roughly 33–34 hours",
+    firstLeg: "a long-distance train to Jammu Tawi (roughly 30-plus hours)",
     notes:
       "By rail, Kolkata to Jammu Tawi is roughly 30-plus hours, followed by the Jammu Tawi/Katra–Srinagar Vande Bharat Express (around 3 hours 10 minutes) — most Kolkata travellers fly and consider the train only for the scenic Kashmir Valley leg.",
     lastVerified: "2026-08-29",
@@ -191,10 +205,23 @@ export interface TransportFaq {
 const FALLBACK_NOTE =
   "Routes and schedules change, so we check current flight and train options for this city when you request a quote.";
 
+// FAQ answer from the route's own connectivity/hub/duration — never a generic
+// hub phrase, which contradicted cities that only connect via Delhi.
+function directFlightAnswer(cityName: string, air: TransportRoute): string {
+  const via = air.connectsVia ? ` via ${air.connectsVia}` : "";
+  switch (air.connectivity) {
+    case "direct":
+      return `Yes — direct flights run between ${cityName} and Srinagar, taking ${air.durationRange}.${air.connectsVia ? ` One-stop options via ${air.connectsVia} are also available.` : ""}`;
+    case "seasonal-direct":
+      return `Sometimes — direct flights have operated between ${cityName} and Srinagar, and flights connect${via} when they aren't running: ${air.durationRange}.`;
+    default:
+      return `Not usually — most flights from ${cityName} connect${via}, taking ${air.durationRange} in total including the layover.`;
+  }
+}
+
 // Generates the two fact-driven FAQs from the route data (never hand-authored
-// per city — that's exactly the duplication this file exists to prevent) plus
-// two generic ones that only need the city name. Origin-city pages can still
-// add their own editorial FAQs alongside these if genuinely useful.
+// per city — that's exactly the duplication this file exists to prevent).
+// Origin-city pages add their own editorial FAQs after these (OriginCity.faqs).
 export function buildTransportFaqs(
   cityName: string,
   routes: { air?: TransportRoute; rail?: TransportRoute },
@@ -203,23 +230,17 @@ export function buildTransportFaqs(
   return [
     {
       question: `Is there a direct flight from ${cityName} to Srinagar?`,
-      answer: air
-        ? `${air.connectivity === "direct" ? "Yes — direct" : air.connectivity === "seasonal-direct" ? "Sometimes — direct" : "Usually one-stop:"} flights ${air.connectivity === "connecting" ? "connect via Delhi or Mumbai" : "operate on this route"}, taking ${air.durationRange}. ${FALLBACK_NOTE}`
-        : FALLBACK_NOTE,
+      answer: air ? `${directFlightAnswer(cityName, air)} ${FALLBACK_NOTE}` : FALLBACK_NOTE,
     },
     {
       question: `How long does it take to reach Kashmir from ${cityName} by train?`,
+      // Built from firstLeg rather than `notes`, which the page's "By Train"
+      // card already shows word for word.
       answer: rail
-        ? `${rail.notes} Overall, budget ${rail.durationRange}.`
+        ? rail.firstLeg
+          ? `Plan on ${rail.durationRange} in total. There's no through-train from ${cityName} to Srinagar yet: take ${rail.firstLeg}, then change onto the Srinagar-bound Vande Bharat Express (around 3 hours 10 minutes).`
+          : `${rail.notes} Overall, budget ${rail.durationRange}.`
         : FALLBACK_NOTE,
-    },
-    {
-      question: `Can I book a Kashmir package from ${cityName} without flights included?`,
-      answer: `Yes — every package price on this page covers your Kashmir stay and ground experience only. Flights or train tickets from ${cityName} are arranged separately once you request a quote.`,
-    },
-    {
-      question: `Does Vertex Kashmir Holidays arrange train tickets from ${cityName} too?`,
-      answer: `Yes. Our team puts together the best combination of flights or trains for your dates — including any connections — and shares the full plan with you before you decide.`,
     },
   ];
 }

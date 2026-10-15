@@ -6,6 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { trackThingsToDoClick } from "@/lib/analytics";
 
 export interface ShowcaseActivity {
   id: string;
@@ -22,13 +23,15 @@ interface Props {
   items: ShowcaseActivity[];
   /** Optional "See all" link to the activities listing. */
   seeAllHref?: string;
+  /** Page type reported with click events (e.g. "tour_detail"); no tracking when omitted. */
+  trackPlacement?: string;
 }
 
 // Shared "Things to Do" carousel, driven by the Activities module. Used by both
 // the destination and tour detail pages (kept in a neutral tree so neither
 // public section cross-imports the other). Same 3-visible carousel mechanics
 // as BlogPostRelated.
-export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
+export function ActivitiesShowcase({ title, items, seeAllHref, trackPlacement }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
 
@@ -72,6 +75,9 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
           {seeAllHref && (
             <Link
               href={seeAllHref}
+              onClick={() =>
+                trackPlacement && trackThingsToDoClick(trackPlacement, "see_all", seeAllHref)
+              }
               className="inline-flex items-center gap-1 text-[14px] font-semibold text-primary transition hover:gap-1.5"
             >
               See All <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -113,7 +119,15 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
             transition={{ duration: 0.3 }}
           >
             {visibleItems.map((thing, i) => (
-              <CardShell key={thing.id} href={thing.href}>
+              <CardShell
+                key={thing.id}
+                href={thing.href}
+                onClick={
+                  trackPlacement && thing.href
+                    ? () => trackThingsToDoClick(trackPlacement, "card", thing.href!)
+                    : undefined
+                }
+              >
                 <motion.article
                   className="group/card flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-soft transition hover:-translate-y-1 hover:shadow-card"
                   initial={{ opacity: 0, y: 10 }}
@@ -178,10 +192,18 @@ export function ActivitiesShowcase({ title, items, seeAllHref }: Props) {
 
 // Wraps a card in a Link to the activity detail page when an href is provided;
 // otherwise renders a plain container (e.g. legacy "things to do" with no slug).
-function CardShell({ href, children }: { href?: string; children: React.ReactNode }) {
+function CardShell({
+  href,
+  onClick,
+  children,
+}: {
+  href?: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
   if (href) {
     return (
-      <Link href={href} className="block h-full">
+      <Link href={href} onClick={onClick} className="block h-full">
         {children}
       </Link>
     );

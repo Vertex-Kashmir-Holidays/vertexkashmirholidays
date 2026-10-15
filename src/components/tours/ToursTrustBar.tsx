@@ -7,7 +7,7 @@ import { ShieldCheck, Headphones, PenLine, Lock } from "lucide-react";
 export function ToursTrustBar() {
   const trustItems = [
     { t: "Best Price Guarantee", s: "No hidden charges", Icon: ShieldCheck },
-    { t: "24/7 On-ground Support", s: "We're with you always", Icon: Headphones },
+    { t: "Support 9 AM – 9 PM, Mon–Sat", s: "Driver and ground team on call during your trip", Icon: Headphones },
     { t: "Customised Itineraries", s: "Made just for you", Icon: PenLine },
     { t: "Secure Payments", s: "Powered by Razorpay", Icon: Lock },
   ];

@@ -31,6 +31,7 @@ import { PageHeader } from "@/components/ui/molecules/page-header";
 import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
+import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
 
 // IN_PROGRESS is a real LeadStatus value at the type level (B2B-request-only —
 // see prisma/schema.prisma), included so this type structurally matches
@@ -75,7 +76,14 @@ interface Lead {
   assignedTo: { id: string; name: string | null; email: string } | null;
   // Occasion Offer the lead came from (form, or a resolved WhatsApp reference).
   occasionOffer?: { id: string; name: string } | null;
+  // Adventure page (/adventures/[slug]) the lead came from.
+  adventure?: { id: string; name: string } | null;
   packageName?: string | null;
+  // Lead qualification (null on leads captured before it existed).
+  budgetBandKey?: string | null;
+  budgetBandLabel?: string | null;
+  budgetBandDerived?: boolean;
+  travelMonth?: string | null;
   createdAt: Date | string;
 }
 
@@ -134,6 +142,8 @@ interface Props {
   initialIpFilter?: string;
   /** Occasion Offers for the Offer filter. */
   offers?: { id: string; name: string }[];
+  /** Budget bands (inactive included) for the Budget filter. */
+  budgetBands?: { key: string; label: string; isActive: boolean }[];
 }
 
 const STATUS_STYLES: Record<LeadStatus, string> = {
@@ -170,6 +180,7 @@ export function LeadsClient({
   isAdmin,
   initialIpFilter,
   offers = [],
+  budgetBands = [],
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -182,6 +193,8 @@ export function LeadsClient({
   // customer wants, orthogonal to sourceFilter (where they came from).
   const [requestFilter, setRequestFilter] = useState("ALL");
   const [offerFilter, setOfferFilter] = useState("ALL");
+  // Lead-qualification budget filter: a band key, "undecided" or "NONE" (not asked).
+  const [budgetFilter, setBudgetFilter] = useState("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // The IP-investigation view (?ip=...) is a rare, narrow fraud-check lookup:
@@ -202,6 +215,11 @@ export function LeadsClient({
     if (offerFilter === "ANY" && !l.occasionOffer) return false;
     if (offerFilter !== "ALL" && offerFilter !== "ANY" && l.occasionOffer?.id !== offerFilter) {
       return false;
+    }
+    if (budgetFilter !== "ALL") {
+      if (budgetFilter === "NONE" ? !!l.budgetBandKey : l.budgetBandKey !== budgetFilter) {
+        return false;
+      }
     }
     if (search) {
       const q = search.toLowerCase();
@@ -244,7 +262,15 @@ export function LeadsClient({
     if (isIpMode) return;
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, statusFilter, sourceFilter, assigneeFilter, requestFilter, offerFilter]);
+  }, [
+    debouncedSearch,
+    statusFilter,
+    sourceFilter,
+    assigneeFilter,
+    requestFilter,
+    offerFilter,
+    budgetFilter,
+  ]);
 
   async function fetchLeads() {
     setLoading(true);
@@ -255,6 +281,7 @@ export function LeadsClient({
       if (isAdmin && assigneeFilter !== "ALL") params.set("assignedToId", assigneeFilter);
       if (requestFilter !== "ALL") params.set("requestedComponent", requestFilter);
       if (offerFilter !== "ALL") params.set("offer", offerFilter);
+      if (budgetFilter !== "ALL") params.set("budgetBand", budgetFilter);
       if (debouncedSearch) params.set("search", debouncedSearch);
       const res = await fetch(`/api/leads?${params.toString()}`);
       if (!res.ok) throw new Error();
@@ -286,6 +313,7 @@ export function LeadsClient({
     assigneeFilter,
     requestFilter,
     offerFilter,
+    budgetFilter,
     debouncedSearch,
   ]);
 
@@ -347,15 +375,25 @@ export function LeadsClient({
         title="Leads"
         description={`${totalCount} total leads`}
         action={
-          canCreate && (
-            <Link
-              href="/admin/leads/new"
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              New Lead
-            </Link>
-          )
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link
+                href="/admin/leads/budget-bands"
+                className="rounded-xl border border-border px-3 py-2.5 text-sm font-semibold text-foreground hover:bg-muted shrink-0"
+              >
+                Budget bands
+              </Link>
+            )}
+            {canCreate && (
+              <Link
+                href="/admin/leads/new"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                New Lead
+              </Link>
+            )}
+          </div>
         }
       />
 
@@ -471,6 +509,25 @@ export function LeadsClient({
             </Select>
           )}
 
+          {budgetBands.length > 0 && (
+            <Select value={budgetFilter} onValueChange={setBudgetFilter}>
+              <SelectTrigger className="w-auto min-w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Budgets</SelectItem>
+                {budgetBands.map((b) => (
+                  <SelectItem key={b.key} value={b.key}>
+                    {b.label}
+                    {b.isActive ? "" : " (inactive)"}
+                  </SelectItem>
+                ))}
+                <SelectItem value={UNDECIDED}>Not sure yet</SelectItem>
+                <SelectItem value="NONE">Not asked</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+
           {isAdmin && (
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
               <SelectTrigger className="w-auto min-w-[150px]">
@@ -534,7 +591,8 @@ export function LeadsClient({
                     statusFilter !== "ALL" ||
                     sourceFilter !== "ALL" ||
                     requestFilter !== "ALL" ||
-                    offerFilter !== "ALL"
+                    offerFilter !== "ALL" ||
+                    budgetFilter !== "ALL"
                       ? "No leads match your filters."
                       : "No leads yet. Create your first one!"}
                   </td>
@@ -577,6 +635,29 @@ export function LeadsClient({
                             <span className="inline-block max-w-[200px] truncate rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                               🎉 {lead.occasionOffer.name}
                               {lead.packageName ? ` · ${lead.packageName}` : ""}
+                            </span>
+                          </p>
+                        )}
+                        {lead.adventure && (
+                          <p className="mt-1">
+                            <span className="inline-block max-w-[200px] truncate rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-300">
+                              {lead.adventure.name}
+                              {lead.packageName ? ` · ${lead.packageName}` : ""}
+                            </span>
+                          </p>
+                        )}
+                        {/* Lead qualification — budget for 2 + travel month. */}
+                        {(lead.budgetBandLabel || lead.travelMonth) && (
+                          <p className="mt-1">
+                            <span className="inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                              {lead.budgetBandKey === UNDECIDED
+                                ? "Budget: not sure"
+                                : (lead.budgetBandLabel ?? "Budget: —")}
+                              {lead.budgetBandDerived ? " (from tour price)" : ""}
+                              {" · "}
+                              {lead.travelMonth
+                                ? travelMonthText(lead.travelMonth, new Date(lead.createdAt))
+                                : "Month: —"}
                             </span>
                           </p>
                         )}

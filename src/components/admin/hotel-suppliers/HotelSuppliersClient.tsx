@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Check,
   Download,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
@@ -131,6 +132,21 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [emailFilter, setEmailFilter] = useState<TriState>("ALL");
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("category");
+  // Phones only: the dropdowns + price slider stay folded behind the filter
+  // icon. From md up they're always shown and this flag is ignored.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // Phones: locations are one swipeable row — keep the chosen one in view.
+  const locationTabsRef = useRef<HTMLDivElement>(null);
+  const tabsMounted = useRef(false);
+  useEffect(() => {
+    if (!tabsMounted.current) {
+      tabsMounted.current = true;
+      return;
+    }
+    locationTabsRef.current
+      ?.querySelector<HTMLElement>('[data-state="active"]')
+      ?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [activeTab]);
   const [pageSize, setPageSize] = useState<PageSize>(20);
   const [page, setPage] = useState(1);
   const [editingHotel, setEditingHotel] = useState<HotelSupplierRecord | null>(null);
@@ -260,6 +276,12 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [priceLo, priceHi] = priceRange ?? [priceBounds.min, priceBounds.max];
   const effectivePriceRange: [number, number] = [priceLo, priceHi];
 
+  // Badge on the mobile filter icon — sort and page size aren't filters.
+  const activeFilterCount =
+    [categoryFilter, recommendedFilter, roomCategoryFilter, sentFilter, emailFilter].filter(
+      (f) => f !== "ALL",
+    ).length + (priceLo > priceBounds.min || priceHi < priceBounds.max ? 1 : 0);
+
   const rows = useMemo(() => {
     const filtered = initialHotels.filter((h) => {
       if (h.destination !== activeTab) return false;
@@ -388,7 +410,12 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex-wrap gap-2 border-none px-0">
+        {/* One swipeable row on phones (10 locations would otherwise wrap into
+            4–5 rows above the list); wraps as before from md up. */}
+        <TabsList
+          ref={locationTabsRef}
+          className="snap-x snap-mandatory flex-nowrap gap-2 border-none px-0 pb-1 md:snap-none md:flex-wrap md:pb-0"
+        >
           {HOTEL_DESTINATIONS.map((d) => {
             const count = initialHotels.filter((h) => h.destination === d).length;
             return (
@@ -396,7 +423,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                 key={d}
                 value={d}
                 className={cn(
-                  "rounded-xl border px-4 py-2 text-[13px] font-bold whitespace-nowrap transition-colors",
+                  "shrink-0 snap-start rounded-xl border px-3 py-1.5 text-[12px] font-bold whitespace-nowrap transition-colors md:px-4 md:py-2 md:text-[13px]",
                   "border-border text-muted-foreground hover:text-foreground hover:border-primary/40",
                   "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:border-primary data-[state=active]:shadow-sm data-[state=active]:shadow-primary/25",
                 )}
@@ -422,11 +449,35 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             />
           </div>
 
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            aria-label={filtersOpen ? "Hide filters" : "Show filters"}
+            className={cn(
+              "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border transition md:hidden",
+              filtersOpen ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground",
+            )}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground ring-2 ring-card">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          <div
+            className={cn(
+              "grid w-full grid-cols-2 gap-2 md:contents",
+              !filtersOpen && "hidden",
+            )}
+          >
           <Select
             value={categoryFilter}
             onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}
           >
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -443,7 +494,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             value={recommendedFilter}
             onValueChange={(v) => setRecommendedFilter(v as TriState)}
           >
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue placeholder="Recommended" />
             </SelectTrigger>
             <SelectContent>
@@ -457,7 +508,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             value={roomCategoryFilter}
             onValueChange={(v) => setRoomCategoryFilter(v as "ALL" | RoomCategoryValue)}
           >
-            <SelectTrigger className="w-[190px]">
+            <SelectTrigger className="w-full md:w-[190px]">
               <SelectValue placeholder="Room category" />
             </SelectTrigger>
             <SelectContent>
@@ -471,7 +522,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </Select>
 
           <Select value={sentFilter} onValueChange={(v) => setSentFilter(v as TriState)}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full md:w-[160px]">
               <SelectValue placeholder="Rate request" />
             </SelectTrigger>
             <SelectContent>
@@ -482,7 +533,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </Select>
 
           <Select value={emailFilter} onValueChange={(v) => setEmailFilter(v as TriState)}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue placeholder="Email" />
             </SelectTrigger>
             <SelectContent>
@@ -493,7 +544,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </Select>
 
           <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
-            <SelectTrigger className="w-[170px]">
+            <SelectTrigger className="w-full md:w-[170px]">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>
@@ -507,7 +558,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             value={String(pageSize)}
             onValueChange={(v) => setPageSize(v === "ALL" ? "ALL" : (Number(v) as PageSize))}
           >
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="w-full md:w-[120px]">
               <SelectValue placeholder="Page size" />
             </SelectTrigger>
             <SelectContent>
@@ -518,6 +569,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
               ))}
             </SelectContent>
           </Select>
+          </div>
 
           <p className="text-xs text-muted-foreground shrink-0 ml-auto">
             {rows.length} hotel{rows.length === 1 ? "" : "s"} in {activeTab}
@@ -525,7 +577,9 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         </div>
 
         {priceBounds.max > priceBounds.min && (
-          <div className="border-t border-border px-4 py-3.5">
+          <div
+            className={cn("border-t border-border px-4 py-3.5", !filtersOpen && "hidden md:block")}
+          >
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
               Price Range{" "}
               <span className="font-normal normal-case">(cheapest room&apos;s MAP)</span>

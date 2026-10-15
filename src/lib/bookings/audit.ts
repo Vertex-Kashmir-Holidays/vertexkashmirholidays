@@ -13,7 +13,10 @@ export type PaymentAuditEvent =
   | "RECONCILED"
   | "CREDENTIALS_RESENT"
   | "EMAILS_RESENT"
-  | "TOKEN_LINK_CREATED";
+  | "TOKEN_LINK_CREATED"
+  // Admin services-lock corrections (unlock-services / re-lock via lock-services).
+  | "SERVICES_UNLOCKED"
+  | "SERVICES_RELOCKED";
 
 export interface PaymentAuditInput {
   event: PaymentAuditEvent;
@@ -44,4 +47,14 @@ export async function logPaymentAudit(input: PaymentAuditInput): Promise<void> {
     // Audit logging is non-critical — never let it break the payment flow.
     console.error("[payment-audit] write failed:", input.event, err);
   }
+}
+
+/** True once an admin has unlocked this booking's services at least once —
+ *  the next lock is then a re-lock (customer email becomes optional). */
+export async function wasServicesUnlocked(bookingId: string): Promise<boolean> {
+  const row = await prisma.paymentAudit.findFirst({
+    where: { bookingId, event: "SERVICES_UNLOCKED" },
+    select: { id: true },
+  });
+  return row !== null;
 }

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { isStaff } from "@/lib/rbac";
 import { AuthScreen } from "@/components/auth/AuthScreen";
+import { getReviewStats } from "@/lib/reviews";
 
 export const dynamic = "force-dynamic";
 
@@ -19,5 +20,8 @@ export default async function LoginPage() {
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
-  return <AuthScreen nonce={nonce} />;
+  // Live approved-review rating for the side panel — never a typed figure.
+  const { average, total } = await getReviewStats();
+
+  return <AuthScreen nonce={nonce} rating={total > 0 ? { average, total } : null} />;
 }

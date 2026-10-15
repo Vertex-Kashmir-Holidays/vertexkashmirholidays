@@ -76,6 +76,7 @@ export function trackLeadSubmit(
   tripPlanner?: TripPlannerAnalyticsExtra,
   packageOption?: string,
   offer?: OfferAnalyticsContext,
+  qualification?: { budgetBandKey?: string | null; travelMonth: string; budgetDerived?: boolean },
 ): void {
   push({
     event: "lead_submit",
@@ -85,6 +86,30 @@ export function trackLeadSubmit(
     ...tripPlannerParams(tripPlanner),
     ...(packageOption ? { package_option: packageOption } : {}),
     ...offerParams(offer),
+    ...(qualification
+      ? {
+          travel_month: qualification.travelMonth,
+          ...(qualification.budgetBandKey
+            ? {
+                budget_band: qualification.budgetBandKey,
+                budget_derived: !!qualification.budgetDerived,
+              }
+            : {}),
+        }
+      : {}),
+  });
+}
+
+/** Fire when the WhatsApp modal's "Open WhatsApp" is tapped (answers given). */
+export function trackWhatsappOpen(
+  budgetBandKey: string | undefined,
+  travelMonth: string,
+  budgetDerived: boolean,
+): void {
+  push({
+    event: "whatsapp_open",
+    ...(budgetBandKey ? { budget_band: budgetBandKey, budget_derived: budgetDerived } : {}),
+    travel_month: travelMonth,
   });
 }
 
@@ -104,6 +129,15 @@ export function trackWhatsappClick(
     ...offerParams(offer),
     ...(offer?.packageOption ? { package_option: offer.packageOption } : {}),
   });
+}
+
+/** Fire when a "Things to Do" card or its "See All" link is clicked. */
+export function trackThingsToDoClick(
+  placement: string,
+  target: "card" | "see_all",
+  href: string,
+): void {
+  push({ event: "things_to_do_click", placement, target, href });
 }
 
 /** Fire once when an Occasion Offer page loads. */

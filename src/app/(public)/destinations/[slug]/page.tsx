@@ -1,4 +1,5 @@
 // src/app/(public)/destinations/[slug]/page.tsx
+import { tourCardPricing } from "@/lib/tours/cards";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
@@ -12,7 +13,7 @@ import {
   buildTouristDestination,
   buildFAQPage,
 } from "@/components/seo/JsonLd";
-import { formatINR } from "@/lib/accents";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import {
   parseStringList,
   parseTopAttractions,
@@ -43,6 +44,7 @@ import { DestinationRelatedBlogs } from "@/components/destinations/DestinationRe
 import { DestinationNearby } from "@/components/destinations/DestinationNearby";
 import { TrustSection } from "@/components/common/TrustSection";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // 24h safety net — Destination mutations invalidate this exact page directly
 // (src/lib/cache.ts), as do Tour/Activity mutations that touch a linked record.
@@ -100,6 +102,8 @@ const getDestination = cache(async (slug: string) => {
               id: true,
               slug: true,
               title: true,
+              category: true,
+              bestseller: true,
               badge: true,
               badgeColor: true,
               duration: true,
@@ -108,6 +112,7 @@ const getDestination = cache(async (slug: string) => {
               reviewCount: true,
               priceFrom: true,
               priceWas: true,
+              hidePrice: true,
               minPersons: true,
               destinations: { select: { destination: { select: { name: true } } } },
             },
@@ -134,7 +139,7 @@ const getDestination = cache(async (slug: string) => {
       relatedFaqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   });
@@ -265,7 +270,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
       ? await getLiveWeather(dest.latitude, dest.longitude)
       : null;
 
-  const tours = dest.tours.map((td) => td.tour);
+  const tours = dest.tours.map((td) => td.tour).sort(compareToursForCards);
   const totalReviews = tours.reduce((sum, t) => sum + t.reviewCount, 0);
   const avgRating = tours.length ? tours.reduce((sum, t) => sum + t.rating, 0) / tours.length : 4.8;
 
@@ -305,6 +310,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
       ? (t.badgeColor as (typeof BADGE_COLORS)[number])
       : "green",
+    category: t.category,
     seed: t.id,
     image: t.coverImage ?? undefined,
     bookHref: `/tours/${t.slug}`,
@@ -314,9 +320,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
     places: t.destinations.map((d) => d.destination.name).join(", "),
     r: t.rating.toFixed(1),
     n: String(t.reviewCount),
-    old: t.priceWas ? formatINR(t.priceWas) : undefined,
-    p: formatINR(t.priceFrom),
-    minPersons: t.minPersons,
+    ...tourCardPricing(t),
   }));
 
   // Things to Do — driven by the Activities module (published, linked to this
@@ -365,7 +369,7 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   const localFood = parseFoodOrShop(dest.localFood);
   const shopping = parseFoodOrShop(dest.shopping);
   const travelTips = parseStringList(dest.travelTips);
-  const faqs = dest.relatedFaqs;
+  const faqs = dest.relatedFaqs.map(toFaqPreview);
 
   // ── Structured data (JSON-LD) ─────────────────────────────────────────────
   const breadcrumbJsonLd = buildBreadcrumbList([
@@ -404,7 +408,16 @@ export default async function DestinationDetailPage({ params }: PageProps) {
         weather={liveWeather}
       />
 
-      <DestinationDetailTabs sections={TABS} />
+      {/* A tab whose section renders nothing (no tours, activities or images)
+          would scroll nowhere, so it's left out. */}
+      <DestinationDetailTabs
+        sections={TABS.filter(
+          (t) =>
+            (t.id !== "things" || things.length > 0) &&
+            (t.id !== "tours" || destinationTours.length > 0) &&
+            (t.id !== "gallery" || gallery.length > 0),
+        )}
+      />
 
       <main className="relative z-10 bg-background pb-16">
         <div className="mx-auto max-w-[1300px] px-3 sm:px-6 pt-8">

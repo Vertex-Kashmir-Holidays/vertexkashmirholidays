@@ -169,11 +169,11 @@ export function invalidateActivity(input: {
   for (const slug of input.destinationSlugs ?? []) revalidatePath(`/destinations/${slug}`);
 }
 
-// ── Campaign / Adventure ─────────────────────────────────────────────────
+// ── Adventure / Adventure ─────────────────────────────────────────────────
 // Affects only its own detail page, /adventures, and sitemap.xml — confirmed
-// Campaign has no Tour/Destination relation in the schema, and the homepage
-// renders no Campaign data at all (verified directly against its query list).
-export function invalidateCampaign(input: { slug: string; previousSlug?: string | null }) {
+// Adventure has no Tour/Destination relation in the schema, and the homepage
+// renders no Adventure data at all (verified directly against its query list).
+export function invalidateAdventure(input: { slug: string; previousSlug?: string | null }) {
   revalidatePath(`/adventures/${input.slug}`);
   if (input.previousSlug && input.previousSlug !== input.slug) {
     revalidatePath(`/adventures/${input.previousSlug}`);
@@ -183,9 +183,9 @@ export function invalidateCampaign(input: { slug: string; previousSlug?: string 
 }
 
 // ── Occasion Offer ───────────────────────────────────────────────────────
-// Affects its own /offers/[slug] page (+ previous slug), the /offers hub,
-// sitemap.xml and the navbar's "Offers" dropdown (name, slug, published and
-// sortOrder show there). Price/package edits go through the same save, so the
+// Affects its own /offers/[slug] page (+ previous slug), the /offers hub, the
+// homepage (its "offers" section), sitemap.xml and the navbar's "Offers"
+// dropdown (name, slug, published and sortOrder show there). Price/package edits go through the same save, so the
 // public price updates as soon as the admin saves.
 export function invalidateOccasionOffer(input: { slug: string; previousSlug?: string | null }) {
   revalidatePath(`/offers/${input.slug}`);
@@ -193,8 +193,26 @@ export function invalidateOccasionOffer(input: { slug: string; previousSlug?: st
     revalidatePath(`/offers/${input.previousSlug}`);
   }
   revalidatePath("/offers");
+  revalidatePath("/");
   revalidatePath("/sitemap.xml");
   revalidateTag("occasion-offers-nav", "max");
+}
+
+// ── Listing-page heroes (HomeSection keys toursHero / destinationsHero /
+// activitiesHero / adventuresHero) ───────────────────────────────────────
+// Each row's title, subtitle, CTA, hero images and meta title/description render
+// only on its own listing page. They're saved through the generic
+// /api/pages/homeSections route, which doesn't revalidate anything on its own.
+const LISTING_HERO_PATHS: Record<string, string> = {
+  toursHero: "/tours",
+  destinationsHero: "/destinations",
+  activitiesHero: "/activities",
+  adventuresHero: "/adventures",
+};
+
+export function invalidateListingHero(key: string) {
+  const path = LISTING_HERO_PATHS[key];
+  if (path) revalidatePath(path);
 }
 
 // ── Blog ─────────────────────────────────────────────────────────────────

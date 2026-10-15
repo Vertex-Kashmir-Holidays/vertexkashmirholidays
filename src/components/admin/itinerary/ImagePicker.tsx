@@ -138,7 +138,7 @@ export function ImagePicker({
             aria-modal="true"
           >
             <div className="absolute inset-0 bg-black/50" onClick={close} />
-            <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-2xl">
+            <div className="relative z-10 w-full max-w-6xl rounded-2xl border border-border bg-card p-5 shadow-2xl">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground">Choose an image</h3>
                 <button
@@ -156,7 +156,7 @@ export function ImagePicker({
               </div>
 
               {tab === "stock" ? (
-                <div className="mt-4 grid max-h-[55vh] grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4">
+                <div className="mt-4 grid max-h-[68vh] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
                   {STOCK_IMAGES.map((img) => (
                     <button
                       key={img.src}
@@ -173,7 +173,7 @@ export function ImagePicker({
                       <img
                         src={img.src}
                         alt={img.label}
-                        className="h-20 w-full object-cover"
+                        className="aspect-[4/3] w-full object-cover"
                         loading="lazy"
                         onLoad={(e) => {
                           const { naturalWidth, naturalHeight } = e.currentTarget;
@@ -190,14 +190,14 @@ export function ImagePicker({
                           className="absolute top-1 right-1"
                         />
                       )}
-                      <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-2 py-1 text-[12px] font-semibold text-white">
                         {img.label}
                       </span>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 max-h-[55vh] overflow-y-auto">
+                <div className="mt-4 max-h-[68vh] overflow-y-auto">
                   {/* Source filter tabs */}
                   <div className="mb-3 flex items-center gap-1.5 overflow-x-auto">
                     {(
@@ -233,7 +233,7 @@ export function ImagePicker({
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                         {galleryItems
                           .filter(
                             (i) => gallerySource === "ALL" || assetSource(i) === gallerySource,
@@ -255,7 +255,7 @@ export function ImagePicker({
                               <img
                                 src={item.url}
                                 alt={item.alt ?? ""}
-                                className="h-20 w-full object-cover"
+                                className="aspect-[4/3] w-full object-cover"
                                 loading="lazy"
                                 onLoad={(e) => {
                                   const { naturalWidth, naturalHeight } = e.currentTarget;
@@ -273,7 +273,7 @@ export function ImagePicker({
                                 />
                               )}
                               {item.category && (
-                                <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-2 py-1 text-[12px] font-semibold text-white">
                                   {item.category}
                                 </span>
                               )}
