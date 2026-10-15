@@ -1,9 +1,10 @@
 // Builds a standalone itinerary document from an accepted proposal ("Convert to
 // Itinerary"), so the final itinerary starts pre-filled instead of from the
 // sample template. Copied: cover facts, day plan, the accepted option's
-// hotels/vehicle/activities/price, inclusions, payment and cancellation.
-// Everything the proposal has no equivalent for (images, trust strip, optional
-// activities, transport tags) falls back to the standard itinerary template.
+// hotels/vehicle/activities/price, "available on the day" activities,
+// inclusions, payment and cancellation.
+// Everything the proposal has no equivalent for (images, trust strip,
+// transport tags) falls back to the standard itinerary template.
 
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { STOCK_IMAGES, genId, type ItineraryData } from "@/types/itinerary";
@@ -123,6 +124,7 @@ export function proposalToItineraryData(
     days: days.length ? days : base.days,
     hotels,
     activities,
+    optionalActivities: proposal.optionalActivities,
     ...(firstVehicle
       ? {
           transportType: vehicles.map((r) => cell(r[vehicleField])).join(" + "),

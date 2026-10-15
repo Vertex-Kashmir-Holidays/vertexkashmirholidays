@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { listItemSchema, cancelTierSchema, trustSchema } from "@/types/itinerary";
+import {
+  listItemSchema,
+  cancelTierSchema,
+  trustSchema,
+  priceActivitySchema,
+  DEFAULT_OPTIONAL_ACTIVITIES,
+} from "@/types/itinerary";
 
 // Two document shapes share this one schema/editor/PDF: "multi" is the
 // existing 3-tier comparison document (tiers/comparisonRows below), "single"
@@ -218,6 +224,12 @@ export const proposalDataSchema = z.object({
   // comparison table's "Activities" section; single-package lists the ones
   // its Premium column includes.
   activities: z.array(comparisonRowSchema).default([]),
+
+  // "Available on the day" — paid-locally extras, not part of any option's
+  // price; same rows as itineraryDataSchema.optionalActivities. The default
+  // only fills proposals saved before this field existed (sample row for
+  // reference) — a list staff emptied saves as [] and stays empty.
+  optionalActivities: z.array(priceActivitySchema).default(DEFAULT_OPTIONAL_ACTIVITIES),
 
   // Page 5 — what's covered + payment & cancellation (reused shapes)
   inc: z.array(listItemSchema).default([]),

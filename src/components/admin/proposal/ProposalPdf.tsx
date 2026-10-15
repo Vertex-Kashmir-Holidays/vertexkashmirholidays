@@ -487,6 +487,32 @@ const s = StyleSheet.create({
   dayMetaText: { fontSize: 9, color: C.muted },
   dayMetaDivider: { width: 1, height: 10, backgroundColor: C.border },
 
+  // ── "Available on the day" price grid (same tiles as ItineraryPdf.tsx) ──
+  priceGridHead: { fontSize: 11.5, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 2 },
+  priceGridSub: { fontSize: 9, color: C.muted, marginBottom: SP.sm + 2, lineHeight: 1.5 },
+  priceGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
+  priceTile: { width: "33.33%", paddingHorizontal: 5, marginBottom: SP.sm + 2 },
+  priceTileCard: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: C.border,
+    borderRadius: 9,
+    overflow: "hidden",
+  },
+  priceTileBody: { padding: SP.sm + 2 },
+  priceTileName: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: C.ink },
+  priceTileSub: { fontSize: 8.5, color: C.muted, marginTop: 3, marginBottom: 7 },
+  priceTileFootRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: C.borderLight,
+  },
+  priceTileNote: { fontSize: 8, color: C.muted },
+  priceTileAmount: { fontSize: 9.5, color: C.green },
+
   // ── What's Covered + Payment & Cancellation (page 5, shared w/ ItineraryPdf) ─
   twoCol: { flexDirection: "row", gap: SP.lg },
   coveredCard: { flex: 1, borderWidth: 1, borderRadius: 10, overflow: "hidden" },
@@ -1510,6 +1536,44 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
             </View>
           </>
         )}
+
+        {/* AVAILABLE ON THE DAY — same price grid as ItineraryPdf.tsx;
+            omitted when staff emptied the list. */}
+        {data.optionalActivities.length > 0 ? (
+          <View style={s.sectionGap} wrap={false}>
+            <Text style={s.priceGridHead}>Available on the day</Text>
+            <Text style={s.priceGridSub}>
+              Not part of your package. Pay the operator directly if you decide to do them. Prices are
+              indicative and set locally.
+            </Text>
+            <View style={s.priceGrid}>
+              {data.optionalActivities.map((a) => (
+                <View
+                  key={a.id}
+                  style={[
+                    s.priceTile,
+                    { width: `${100 / Math.min(data.optionalActivities.length, 3)}%` },
+                  ]}
+                  wrap={false}
+                >
+                  <View style={s.priceTileCard}>
+                    <View style={s.priceTileBody}>
+                      <Text style={s.priceTileName}>{a.name}</Text>
+                      <Text style={s.priceTileSub}>
+                        {a.place}
+                        {a.day ? ` · ${a.day}` : ""}
+                      </Text>
+                      <View style={s.priceTileFootRow}>
+                        <Text style={s.priceTileNote}>{a.note}</Text>
+                        <Text style={s.priceTileAmount}>{a.price}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {/* WHAT'S COVERED */}
         <View style={s.sectionGap} wrap={false}>
