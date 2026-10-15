@@ -8,6 +8,7 @@ import { Toolbar } from "./Toolbar";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
+import { PriceActivitySection } from "../itinerary/PriceActivitySection";
 import { ItineraryIcon } from "../itinerary/icons";
 import { DEFAULT_PROPOSAL_DATA, DEFAULT_SINGLE_PROPOSAL_DATA } from "./default-data";
 import { downloadProposalPdf } from "@/lib/proposal/export-pdf";
@@ -282,6 +283,29 @@ export function ProposalEditor({
     }));
   const removeActivity = (rowId: string) =>
     setData((p) => ({ ...p, activities: p.activities.filter((r) => r.id !== rowId) }));
+
+  /* ---------- optional "available on the day" activities ---------- */
+  const addOptionalActivity = () =>
+    setData((p) => ({
+      ...p,
+      optionalActivities: [
+        ...p.optionalActivities,
+        { id: genId("pa"), name: "New Item", place: "", day: "", note: "", price: "" },
+      ],
+    }));
+  const updateOptionalActivity = (
+    rowId: string,
+    field: "name" | "place" | "day" | "note" | "price",
+    value: string,
+  ) =>
+    setData((p) => ({
+      ...p,
+      optionalActivities: p.optionalActivities.map((a) =>
+        a.id === rowId ? { ...a, [field]: value } : a,
+      ),
+    }));
+  const removeOptionalActivity = (rowId: string) =>
+    setData((p) => ({ ...p, optionalActivities: p.optionalActivities.filter((a) => a.id !== rowId) }));
 
   /* ---------- pay tags / plain string[] lists ---------- */
   const addListItem = (key: ListKey, item: string) =>
@@ -1092,6 +1116,17 @@ export function ProposalEditor({
             <button onClick={addActivity} className={addBtn}>
               <Plus className="h-3 w-3" /> Add activity
             </button>
+
+            {/* "Available on the day" — paid locally, not in any option's
+                price. Can be emptied; the PDF then omits it. */}
+            <PriceActivitySection
+              title="Available on the Day"
+              items={data.optionalActivities}
+              onUpdate={updateOptionalActivity}
+              onRemove={removeOptionalActivity}
+              onAdd={addOptionalActivity}
+              addLabel="Add Activity"
+            />
           </article>
 
           {/* What's Covered */}

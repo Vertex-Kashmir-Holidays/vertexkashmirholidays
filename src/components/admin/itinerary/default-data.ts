@@ -1,4 +1,4 @@
-import { DEFAULT_HOTEL_IMAGES, ItineraryData } from "@/types/itinerary";
+import { DEFAULT_HOTEL_IMAGES, DEFAULT_OPTIONAL_ACTIVITIES, ItineraryData } from "@/types/itinerary";
 
 // Stable ids for the seed document. New rows added in the editor get runtime ids
 // via genId(); these fixed ids keep the default deterministic.
@@ -170,16 +170,7 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   // "Available on the day" — paid-locally activities, indicative pricing set
   // by the local operator, not part of the package cost. One starting row
   // (not a fabricated full set) — staff add more per itinerary as needed.
-  optionalActivities: [
-    {
-      id: "oa-1",
-      name: "Gondola Ride",
-      place: "Gulmarg",
-      day: "Day 02",
-      note: "Phase 1",
-      price: "Rs. 840 pp",
-    },
-  ],
+  optionalActivities: DEFAULT_OPTIONAL_ACTIVITIES,
 
   trust: [
     { id: "t-1", title: "Handpicked Hotels", subtitle: "Comfortable & Well Located", icon: "home" },

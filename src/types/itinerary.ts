@@ -131,6 +131,12 @@ export const priceActivitySchema = z.object({
   price: z.string(),
 });
 
+// Starting "Available on the day" row for new itineraries and proposals — a
+// reference example for staff, removable per document.
+export const DEFAULT_OPTIONAL_ACTIVITIES: z.infer<typeof priceActivitySchema>[] = [
+  { id: "oa-1", name: "Gondola Ride", place: "Gulmarg", day: "Day 02", note: "Phase 1", price: "Rs. 840 pp" },
+];
+
 // Inclusions/Exclusions — grouped by `category` in the PDF (a new heading
 // renders whenever it differs from the previous row); `category: ""` just
 // renders with no heading. A legacy itinerary's plain `string[]` is migrated

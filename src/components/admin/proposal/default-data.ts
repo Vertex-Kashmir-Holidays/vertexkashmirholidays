@@ -1,4 +1,5 @@
 import { ProposalData } from "@/types/proposal";
+import { DEFAULT_OPTIONAL_ACTIVITIES } from "@/types/itinerary";
 
 // Stable ids for the seed document — new rows added in the editor get
 // runtime ids instead, same convention as itinerary/default-data.ts.
@@ -257,6 +258,8 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     },
   ],
 
+  optionalActivities: DEFAULT_OPTIONAL_ACTIVITIES,
+
   inc: [
     { id: "pinc-1", category: "Stay", text: "5 nights with all hotel taxes paid" },
     { id: "pinc-2", category: "Transport", text: "Private vehicle for all 6 days" },
@@ -494,6 +497,8 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
   activities: [
     { id: "sact-1", label: "Shikara ride on Dal Lake", budget: "", premium: "1 hour", luxury: "" },
   ],
+
+  optionalActivities: DEFAULT_OPTIONAL_ACTIVITIES,
 
   inc: [
     { id: "sinc-1", category: "", text: "Hotel stay for 5 nights as per plan" },
