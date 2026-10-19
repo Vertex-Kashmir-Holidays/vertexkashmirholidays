@@ -142,7 +142,8 @@ export function WhatsAppQualificationGate() {
   return (
     <Dialog open={pendingHref !== null} onOpenChange={(o) => !o && setPendingHref(null)}>
       <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
-        <DialogHeader>
+        {/* Heading on one line, description below — the shared header is a row. */}
+        <DialogHeader className="flex-col items-start gap-1 pr-8">
           <DialogTitle className="text-[18px]">Before we chat on WhatsApp</DialogTitle>
           <DialogDescription>
             {asksBudget
