@@ -54,11 +54,14 @@ export function Footer({
   settings,
   corporateOffice = null,
   tourCategories = [],
+  hasAdventures = false,
 }: {
   settings?: FooterSettings | null;
   /** First active ContactOffice row (admin-managed) — hidden entirely when none is set. */
   corporateOffice?: { name: string; address: string } | null;
   tourCategories?: TourCategory[];
+  /** Show the Adventures link — only while an adventure is published. */
+  hasAdventures?: boolean;
 }) {
   const priorityCategoryLinks = PRIORITY_CATEGORIES.filter((c) => tourCategories.includes(c));
   const siteName = settings?.siteName ?? "Vertex Kashmir Holidays";
@@ -365,11 +368,13 @@ export function Footer({
                   Travel Stories
                 </Link>
               </li>
-              <li>
-                <Link href="/adventures" className="transition hover:text-primary">
-                  Adventures
-                </Link>
-              </li>
+              {hasAdventures && (
+                <li>
+                  <Link href="/adventures" className="transition hover:text-primary">
+                    Adventures
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/careers" className="transition hover:text-primary">
                   Careers

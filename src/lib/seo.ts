@@ -19,6 +19,20 @@ function truncateForSeo(str: string, maxLength: number): string {
   return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
 }
 
+// A stored title may already end with the brand ("… | Vertex Kashmir",
+// "… | Vertex Kashmir Holidays"). Strip that, then always return title.absolute
+// (so the layout template never appends a second brand): title + brand when it
+// fits in MAX_TITLE_LENGTH, otherwise the title alone, cut on a word boundary
+// only if it is itself longer than that.
+const BRAND_PIPE_TAIL = /\s*\|\s*Vertex Kashmir(?:\s+Holidays)?\s*$/i;
+
+function buildTitle(title: string): Metadata["title"] {
+  const t = title.replace(/\s+/g, " ").trim().replace(BRAND_PIPE_TAIL, "");
+  const withBrand = t + TITLE_SUFFIX;
+  if (withBrand.length <= MAX_TITLE_LENGTH) return { absolute: withBrand };
+  return { absolute: truncateForSeo(t, MAX_TITLE_LENGTH) };
+}
+
 interface BuildMetadataOptions {
   title: string;
   description: string;
@@ -55,7 +69,7 @@ export function buildMetadata({
 
   // <title>/<meta description> are length-capped for SEO; OG/Twitter previews
   // keep the full, untruncated copy since they have their own conventions.
-  const finalTitle = truncateForSeo(title, MAX_TITLE_LENGTH - TITLE_SUFFIX.length);
+  const finalTitle = buildTitle(title);
   const finalDescription = truncateForSeo(description, MAX_DESCRIPTION_LENGTH);
 
   return {

@@ -18,12 +18,16 @@ import {
 import { trackTourInquiry, trackWhatsappClick } from "@/lib/analytics";
 import { fadeUpLg, viewportOnce } from "@/lib/motion";
 import type { TourPackageOption } from "@/types/tours";
+import { REQUEST_QUOTE_LABEL } from "@/lib/tours/cards";
 
 interface TourPackageCardsProps {
   tourId: string;
   tourName: string;
   /** Published options only, in admin-defined order. */
   options: TourPackageOption[];
+  /** Tour.hidePrice — "Request Quote" instead of prices (options arrive with
+   *  priceForTwo zeroed) and the enquiry asks the budget. */
+  priceHidden?: boolean;
 }
 
 // "Choose Your Package" section on a tour detail page — one card per
@@ -65,7 +69,12 @@ function SelectedPackageFromUrl({
   return null;
 }
 
-export function TourPackageCards({ tourId, tourName, options }: TourPackageCardsProps) {
+export function TourPackageCards({
+  tourId,
+  tourName,
+  options,
+  priceHidden = false,
+}: TourPackageCardsProps) {
   const wa = useWhatsAppLink();
   const [enquiring, setEnquiring] = useState<TourPackageOption | null>(null);
   // Package chosen from a listing card (/tours or a Tour Collection page),
@@ -81,8 +90,9 @@ export function TourPackageCards({ tourId, tourName, options }: TourPackageCards
       </Suspense>
       <h2 className="text-[18px] font-bold">Choose Your Package</h2>
       <p className="mt-1 text-[14px] text-muted-foreground">
-        Same itinerary, your choice of stay and services. Prices shown are for 2 persons — for other
-        group sizes, our team will share a quote on request.
+        {priceHidden
+          ? "Same itinerary, your choice of stay and services. Each package is quoted for your dates and group size."
+          : "Same itinerary, your choice of stay and services. Prices shown are for 2 persons — for other group sizes, our team will share a quote on request."}
       </p>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -165,12 +175,23 @@ export function TourPackageCards({ tourId, tourName, options }: TourPackageCards
               )}
 
               <div className="mt-auto pt-4">
-                <p className="flex items-baseline gap-1.5 border-t border-border pt-3">
-                  <span className="text-[24px] font-extrabold leading-none text-foreground">
-                    ₹{o.priceForTwo.toLocaleString("en-IN")}
-                  </span>
-                  <span className="text-[14px] font-medium text-muted-foreground">/ 2 persons</span>
-                </p>
+                {priceHidden ? (
+                  <p className="flex items-baseline gap-1.5 border-t border-border pt-3">
+                    <span className="text-[20px] font-extrabold leading-none text-foreground">
+                      {REQUEST_QUOTE_LABEL}
+                    </span>
+                    <span className="text-[14px] font-medium text-muted-foreground">
+                      Price on request
+                    </span>
+                  </p>
+                ) : (
+                  <p className="flex items-baseline gap-1.5 border-t border-border pt-3">
+                    <span className="text-[24px] font-extrabold leading-none text-foreground">
+                      ₹{o.priceForTwo.toLocaleString("en-IN")}
+                    </span>
+                    <span className="text-[14px] font-medium text-muted-foreground">/ 2 persons</span>
+                  </p>
+                )}
 
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <a
@@ -221,8 +242,13 @@ export function TourPackageCards({ tourId, tourName, options }: TourPackageCards
             <LeadForm
               key={enquiring.id}
               source="tour-detail"
-              context={{ tourId, tourName, packageName: enquiring.name }}
-              buttonLabel="Send Enquiry"
+              context={{
+                tourId,
+                tourName,
+                packageName: enquiring.name,
+                ...(priceHidden ? { priceHidden: true } : {}),
+              }}
+              buttonLabel={priceHidden ? "Request Quote" : "Send Enquiry"}
             />
           )}
         </DialogContent>

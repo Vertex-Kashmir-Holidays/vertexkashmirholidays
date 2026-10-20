@@ -4,8 +4,11 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Share2, Star } from "lucide-react";
+import { Share2, Star } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
+
+// "5 Nights 6 Days", "4N/5D", "3 Days / 2 Nights" … anywhere in the title.
+const TITLE_HAS_DURATION = /\d+\s*(nights?|days?|n\s*\/\s*\d+\s*d)\b/i;
 
 interface TourDetailsHeroProps {
   tourName: string;
@@ -241,14 +244,6 @@ export function TourDetailsHero({
           </nav>
           <div className="flex shrink-0 items-center gap-2.5">
             <motion.button
-              aria-label="Save to wishlist"
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/40 text-white backdrop-blur transition hover:bg-white hover:text-rose-500"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Heart className="h-[18px] w-[18px]" strokeWidth={2} />
-            </motion.button>
-            <motion.button
               onClick={handleShare}
               className="flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[14px] font-semibold text-brand-ink shadow-card transition hover:brightness-95"
               whileHover={{ scale: 1.02 }}
@@ -273,8 +268,13 @@ export function TourDetailsHero({
             style={{ "--hr-y": "20px", "--hr-delay": "0.1s" } as React.CSSProperties}
           >
             {tourName}
-            <br />
-            {duration}
+            {/* Most titles already carry "5 Nights 6 Days"; only append the N / D label when they don't. */}
+            {!TITLE_HAS_DURATION.test(tourName) && (
+              <>
+                <br />
+                {duration}
+              </>
+            )}
           </h1>
           {tagline && (
             <p
@@ -288,13 +288,15 @@ export function TourDetailsHero({
             className="hero-reveal mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] font-semibold text-white"
             style={{ "--hr-delay": "0.3s" } as React.CSSProperties}
           >
-            <span className="flex items-center gap-1.5">
-              <Star className="h-4 w-4 text-amber-400" fill="currentColor" strokeWidth={0} />
-              {rating} ({reviews.toLocaleString("en-IN")} reviews)
-            </span>
+            {reviews > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Star className="h-4 w-4 text-amber-400" fill="currentColor" strokeWidth={0} />
+                {rating} ({reviews.toLocaleString("en-IN")} reviews)
+              </span>
+            )}
             {happyLabel && (
               <>
-                <span className="text-white/40">|</span>
+                {reviews > 0 && <span className="text-white/40">|</span>}
                 <span>{happyLabel}</span>
               </>
             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SafeImage } from "@/components/ui/atoms/SafeImage";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,10 +24,20 @@ import {
 } from "@/lib/leads/schema";
 import { trackLeadSubmit, trackTourInquiry, trackWhatsappClick } from "@/lib/analytics";
 import { readAttributionForSubmit } from "@/lib/attribution";
-import { useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { NEXT_PUBLIC_TURNSTILE_SITE_KEY } from "@/lib/env.public";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
+import { QualificationFields } from "@/components/leads/QualificationFields";
+import {
+  initialQualification,
+  shortMonthLabel,
+  writeSessionQualification,
+  LATER,
+  UNDECIDED,
+  type Qualification,
+} from "@/lib/leads/qualification";
+import { requestWhatsAppOpen } from "@/lib/leads/whatsappGate";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -94,8 +104,60 @@ export function LeadForm({
   } = useForm<LeadInput>({
     resolver: zodResolver(leadInputSchema),
     mode: "onChange",
-    defaultValues: { name: "", phone: "", email: "", agree: false, source, context },
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      agree: false,
+      source,
+      context,
+      budgetBandKey: "",
+      travelMonth: "",
+    },
   });
+
+  // ── Lead qualification (budget per person + travel month) ─────────────────
+  // By context: a tour enquiry asks the month only (the server derives the
+  // band from the tour's price); an activity enquiry asks the month only with
+  // no budget; every other form asks both. Starts from this session's earlier
+  // answers (or an offer page's tier/date); when everything asked is already
+  // known it shows as one summary line with "Change".
+  // A price-on-request tour has no price to derive the band from — ask it.
+  const askBudget =
+    (!context?.tourId || !!context?.priceHidden) &&
+    !context?.activitySlug &&
+    source !== "activity-detail";
+  const { budgetBands } = useSiteSettings();
+  const [qualificationOpen, setQualificationOpen] = useState(true);
+  const budgetBandKey = watch("budgetBandKey");
+  const travelMonth = watch("travelMonth");
+  function applyQualification(next: Partial<Qualification>) {
+    if (askBudget && next.budgetBandKey)
+      setValue("budgetBandKey", next.budgetBandKey, { shouldValidate: true });
+    if (next.travelMonth) setValue("travelMonth", next.travelMonth, { shouldValidate: true });
+  }
+  useEffect(() => {
+    const start = initialQualification();
+    applyQualification(start);
+    if (start.travelMonth && (!askBudget || start.budgetBandKey)) setQualificationOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount
+  }, []);
+  function changeQualification(next: Partial<Qualification>) {
+    applyQualification(next);
+    writeSessionQualification(askBudget ? next : { travelMonth: next.travelMonth });
+  }
+  const budgetSummary =
+    budgetBandKey === UNDECIDED
+      ? "Budget not sure yet"
+      : (budgetBands.find((b) => b.key === budgetBandKey)?.label ?? "");
+  const monthSummary =
+    travelMonth === UNDECIDED
+      ? "dates not sure yet"
+      : travelMonth === LATER
+        ? "travelling later"
+        : travelMonth
+          ? `travelling ${shortMonthLabel(travelMonth)}`
+          : "";
 
   // Build a WhatsApp pre-fill message from current form values + context.
   const watchedName = watch("name");
@@ -140,6 +202,9 @@ export function LeadForm({
       const pkg = context.packageName ? ` — ${context.packageName} package` : "";
       return `${greeting}I'm interested in the ${context.offerName}${dates}${pkg}. Please share details.`;
     }
+    // Activity detail page — name the activity being viewed.
+    if (context?.activityName)
+      return `${greeting}I'd like to book ${context.activityName}. Can you help with availability and rates?`;
     // Package-option enquiry (Tour.packageOptions) — name the chosen package.
     if (context?.tourName && context.packageName)
       return `${greeting}I'm interested in the "${context.tourName}" — ${context.packageName} package. Please share details and availability.`;
@@ -178,6 +243,8 @@ export function LeadForm({
           source,
           context,
           attribution: readAttributionForSubmit(),
+          budgetBandKey: askBudget ? data.budgetBandKey : undefined,
+          travelMonth: data.travelMonth,
           // Anti-bot signals (honeypot must be empty; render time for time-trap).
           [HONEYPOT_FIELD]: honeypotRef.current?.value ?? "",
           [TIMETRAP_FIELD]: renderedAt.current,
@@ -189,8 +256,12 @@ export function LeadForm({
         error?: string;
         blocked?: boolean;
         whatsapp?: string;
+        offerEnded?: boolean;
+        offersHref?: string;
         fieldErrors?: Record<string, string[] | undefined>;
         id?: string;
+        budgetBandKey?: string | null;
+        budgetBandDerived?: boolean;
       };
 
       if (!res.ok) {
@@ -199,13 +270,29 @@ export function LeadForm({
           const wa = json.whatsapp;
           toast.error(json.error || "Your query is already in progress.", {
             duration: 8000,
-            action: { label: "WhatsApp", onClick: () => window.open(wa, "_blank") },
+            action: { label: "WhatsApp", onClick: () => requestWhatsAppOpen(wa) },
+          });
+          return;
+        }
+        // Ended Occasion Offer (410) — point to the current offers.
+        if (json.offerEnded && json.offersHref) {
+          const href = json.offersHref;
+          toast.error(json.error || "This offer has ended.", {
+            duration: 8000,
+            action: { label: "See current offers", onClick: () => (window.location.href = href) },
           });
           return;
         }
         // Validation failure → surface each issue inline on its field.
         if (json.fieldErrors) {
-          for (const key of ["name", "phone", "email", "agree"] as const) {
+          for (const key of [
+            "name",
+            "phone",
+            "email",
+            "agree",
+            "budgetBandKey",
+            "travelMonth",
+          ] as const) {
             const msg = json.fieldErrors[key]?.[0];
             if (msg) setError(key, { type: "server", message: msg });
           }
@@ -217,13 +304,17 @@ export function LeadForm({
 
       setSentName(String(data.name).trim().split(/\s+/)[0] || "there");
       setSent(true);
-      const isTour = source === "tour-detail";
       const isFlightTrainQuote = source === "flight-train-quote";
-      const isTripPlanner = source === "trip-planner";
-      // Broader than isTripPlanner: also true for TripPlannerForm rendered on
-      // an origin-city page (source="tour-origin-city" there), which carries
-      // the same requestedComponents context but keeps its own lead_type/
-      // sourcePage classification below — only the extra intent params piggyback.
+      // A tour inquiry: the tour page's own forms, or any form opened for a
+      // specific tour (category sidebar, a card's "Request Quote" modal).
+      const isTour =
+        !isFlightTrainQuote &&
+        (source === "tour-detail" || !!context?.tourId || !!context?.tourSlug);
+      // TripPlannerForm on the standalone page or on an origin-city page — both
+      // are trip_planner_request leads; sourcePage (below) tells them apart.
+      const isTripPlanner = source === "trip-planner" || source === "tour-origin-city";
+      // Broader than isTripPlanner: any form carrying requestedComponents
+      // (e.g. the flight/train quote banner) sends the extra intent params.
       const hasTripPlannerIntent = context?.requestedComponents !== undefined;
       const offer =
         context?.offerId && context.offerSlug
@@ -239,8 +330,8 @@ export function LeadForm({
               : offer
                 ? "occasion_offer"
                 : source === "contact"
-                ? "contact"
-                : "itinerary",
+                  ? "contact"
+                  : "itinerary",
         isTour || isFlightTrainQuote ? context?.tourName : undefined,
         json.id,
         hasTripPlannerIntent || isFlightTrainQuote
@@ -251,13 +342,23 @@ export function LeadForm({
               hasTourInterest: context?.requestedComponents?.includes("TOUR"),
               hasHotelInterest: context?.requestedComponents?.includes("HOTEL"),
             }
-          : undefined,
+          : // Every other form still reports which page it was on (source_page),
+            // so e.g. category vs collection hero quotes can be told apart.
+            { sourcePage: source },
         context?.packageName,
         offer,
+        // The band the server stored — derived from the tour's price on a tour page.
+        {
+          budgetBandKey: json.budgetBandKey,
+          travelMonth: data.travelMonth,
+          budgetDerived: json.budgetBandDerived,
+        },
       );
       if (isTour) trackTourInquiry(context?.tourName, context?.tourId, context?.packageName);
       reset();
       setNational("");
+      // Keep the answers for this session's next form / WhatsApp click.
+      applyQualification({ budgetBandKey: data.budgetBandKey, travelMonth: data.travelMonth });
     } catch {
       toast.error("Network error. Please check your connection and try again.");
     }
@@ -390,6 +491,30 @@ export function LeadForm({
 
         {extraFields}
 
+        {/* Lead qualification — mandatory ("Not sure yet" counts). */}
+        {qualificationOpen ? (
+          <QualificationFields
+            value={{ budgetBandKey, travelMonth }}
+            showBudget={askBudget}
+            onChange={changeQualification}
+            errors={{
+              budgetBandKey: errors.budgetBandKey?.message,
+              travelMonth: errors.travelMonth?.message,
+            }}
+          />
+        ) : (
+          <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-foreground/80">
+            <span>{askBudget ? `${budgetSummary} · ${monthSummary}` : monthSummary}</span>
+            <button
+              type="button"
+              onClick={() => setQualificationOpen(true)}
+              className="font-semibold text-primary hover:underline"
+            >
+              Change
+            </button>
+          </p>
+        )}
+
         {/* Consent */}
         <div>
           <label className="flex items-start gap-2.5 text-[12px] leading-relaxed text-muted-foreground">
@@ -443,7 +568,12 @@ export function LeadForm({
         {/* Submit */}
         <button
           type="submit"
-          disabled={isSubmitting || !isValid || (!!siteKey && (!isOnline || !captchaToken))}
+          disabled={
+            isSubmitting ||
+            !isValid ||
+            (askBudget && !budgetBandKey) ||
+            (!!siteKey && (!isOnline || !captchaToken))
+          }
           className="sweep flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[16px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
         >
           {isSubmitting ? (

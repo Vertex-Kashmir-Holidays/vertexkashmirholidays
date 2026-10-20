@@ -58,7 +58,7 @@ export const MODULES = [
   { key: "contact", label: "Contact Page", href: "/admin/contact" },
   { key: "tripPlanner", label: "Trip Planner Page", href: "/admin/trip-planner" },
   { key: "legal", label: "Legal Pages", href: "/admin/legal" },
-  { key: "campaigns", label: "Adventures", href: "/admin/campaigns" },
+  { key: "adventures", label: "Adventures", href: "/admin/adventures" },
   { key: "offlineConversions", label: "Offline Conversions", href: "/admin/offline-conversions" },
   { key: "banners", label: "Banners", href: "/admin/banners" },
   { key: "reviews", label: "Reviews", href: "/admin/reviews" },

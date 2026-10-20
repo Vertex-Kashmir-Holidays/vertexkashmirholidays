@@ -1,11 +1,12 @@
 "use client";
+import { tourCardPricing } from "@/lib/tours/cards";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { TourCard } from "@/components/ui/organisms/TourCard";
-import { formatINR, renderAccents } from "@/lib/accents";
+import { renderAccents } from "@/lib/accents";
 import { fadeUp, fadeUpLg, fadeIn, fadeRight, viewportOnce } from "@/lib/motion";
 import type { HomeTourData, SectionHeading } from "@/types/home";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 interface PackagesSectionProps {
   heading: SectionHeading;
@@ -77,12 +78,13 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
             viewport={viewportOnce}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link
+            <CmsCtaLink
               href={heading.ctaHref ?? "#"}
+              source="home_section_cta"
               className="rv inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
             >
               {heading.ctaLabel}
-            </Link>
+            </CmsCtaLink>
           </motion.div>
         )}
       </div>
@@ -102,6 +104,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
               bc: (badgeColors as readonly string[]).includes(tour.badgeColor ?? "")
                 ? (tour.badgeColor as "orange" | "blue" | "green")
                 : "green",
+              category: tour.category,
               image: tour.image ?? undefined,
               detailHref: `/tours/${tour.slug}`,
               bookHref: `/booking?tour=${tour.slug}`,
@@ -110,9 +113,7 @@ export function PackagesSection({ heading, tours }: PackagesSectionProps) {
               places: tour.places,
               r: tour.rating.toFixed(1),
               n: String(tour.reviewCount),
-              old: tour.priceWas ? formatINR(tour.priceWas) : undefined,
-              p: formatINR(tour.priceFrom),
-              minPersons: tour.minPersons,
+              ...tourCardPricing(tour),
             }}
             index={i}
             variant="home"

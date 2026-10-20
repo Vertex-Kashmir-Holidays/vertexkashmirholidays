@@ -2,12 +2,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { Play } from "lucide-react";
 import { renderMint } from "@/lib/accents";
 import { SecondaryHero } from "@/components/layout/SecondaryHero";
 import { HeroLeadCard } from "@/components/leads/HeroLeadCard";
 import type { AboutHeroData } from "@/types/about";
+import { CmsCtaLink } from "@/components/common/CmsCtaLink";
 
 interface AboutHeroProps {
   data: AboutHeroData;
@@ -47,23 +47,25 @@ export function AboutHero({ data }: AboutHeroProps) {
         transition={{ duration: 0.6, delay: 0.3 }}
       >
         {data.ctaPrimaryLabel && (
-          <Link
+          <CmsCtaLink
             href={data.ctaPrimaryHref ?? "#"}
+            source="about_hero"
             className="inline-flex items-center gap-2.5 rounded-full bg-brand-bright px-6 py-3 text-[14px] font-bold text-white shadow-card transition hover:brightness-110"
           >
             <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20">
               <Play className="h-3 w-3" fill="currentColor" strokeWidth={0} />
             </span>
             {data.ctaPrimaryLabel}
-          </Link>
+          </CmsCtaLink>
         )}
         {data.ctaSecondaryLabel && (
-          <Link
+          <CmsCtaLink
             href={data.ctaSecondaryHref ?? "#"}
+            source="about_hero"
             className="rounded-full border border-white/55 px-6 py-3 text-[14px] font-semibold text-white backdrop-blur transition hover:bg-white hover:text-brand-ink"
           >
             {data.ctaSecondaryLabel}
-          </Link>
+          </CmsCtaLink>
         )}
       </motion.div>
     </SecondaryHero>

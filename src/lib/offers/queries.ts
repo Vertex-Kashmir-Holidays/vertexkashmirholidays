@@ -2,6 +2,7 @@
 // navbar.
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { isOfferCurrent } from "@/lib/offers/content";
 
 /**
  * A published offer with its published packages (admin order) and published
@@ -29,8 +30,10 @@ export const getOfferPage = cache(async (slug: string) =>
 export type OfferPageData = NonNullable<Awaited<ReturnType<typeof getOfferPage>>>;
 
 /**
- * Every published offer, in admin order — the /offers hub, build-time static
- * params, the sitemap and the navbar's Offers menu.
+ * Every published offer whose end date hasn't passed (isOfferCurrent), in admin
+ * order — the homepage offers section, the /offers hub, build-time static
+ * params, the sitemap, the navbar's Offers menu and the "More Seasonal Offers"
+ * strip. Expired offers keep their own page (see OfferView's ended state).
  */
 export const getLiveOccasionOffers = cache(async () => {
   const offers = await prisma.occasionOffer.findMany({
@@ -50,10 +53,12 @@ export const getLiveOccasionOffers = cache(async () => {
       packages: { where: { published: true }, select: { priceForTwo: true } },
     },
   });
-  return offers.map(({ packages, ...o }) => ({
-    ...o,
-    fromPrice: packages.length ? Math.min(...packages.map((p) => p.priceForTwo)) : null,
-  }));
+  return offers
+    .filter((o) => isOfferCurrent(o.endDate))
+    .map(({ packages, ...o }) => ({
+      ...o,
+      fromPrice: packages.length ? Math.min(...packages.map((p) => p.priceForTwo)) : null,
+    }));
 });
 
 /** Name, photo and link data for the destinations an offer's days/stays reference. */

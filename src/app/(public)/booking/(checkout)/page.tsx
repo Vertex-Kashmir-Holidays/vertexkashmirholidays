@@ -42,6 +42,7 @@ export default async function BookingPage({
         reviewCount: true,
         batches: true,
         formMode: true,
+        hidePrice: true,
       },
     }),
     getSiteSettings(),
@@ -57,7 +58,8 @@ export default async function BookingPage({
   if (!tour) redirect("/tours");
   // Inquiry-only tours can't be bought online — send the visitor back to the
   // tour page's enquiry form (create-order enforces this server-side too).
-  if (tour.formMode === "INQUIRY_ONLY") redirect(`/tours/${tour.slug}`);
+  // Price-on-request tours are enquiry-only too (whatever formMode says).
+  if (tour.formMode === "INQUIRY_ONLY" || tour.hidePrice) redirect(`/tours/${tour.slug}`);
 
   // For logged-in customers, compute the earliest they can book based on their
   // last active booking's end date + 15 days gap.

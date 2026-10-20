@@ -1,4 +1,5 @@
 "use client";
+import { comparePrice } from "@/lib/tours/cards";
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -65,7 +66,9 @@ export function TourCollectionGrid({
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
 
   const bounds = useMemo(() => {
-    const prices = items.map((i) => i.priceFrom);
+    // Price-on-request tours have no price to bound the slider with.
+    const prices = items.filter((i) => !i.card.priceHidden).map((i) => i.priceFrom);
+    if (prices.length === 0) return { min: 0, max: 0 };
     return {
       min: Math.floor(Math.min(...prices) / PRICE_STEP) * PRICE_STEP,
       max: Math.ceil(Math.max(...prices) / PRICE_STEP) * PRICE_STEP,
@@ -78,10 +81,18 @@ export function TourCollectionGrid({
 
   const shown = useMemo(() => {
     const [lo, hi] = range;
-    const result = items.filter((i) => i.priceFrom >= lo && i.priceFrom <= hi);
+    // Price-on-request tours stay listed whatever the slider says, and sort last.
+    const result = items.filter(
+      (i) => i.card.priceHidden || (i.priceFrom >= lo && i.priceFrom <= hi),
+    );
+    const keyed = (dir: "asc" | "desc") => (a: TourCollectionGridItem, b: TourCollectionGridItem) =>
+      comparePrice(dir)(
+        { priceFrom: a.priceFrom, hidePrice: a.card.priceHidden },
+        { priceFrom: b.priceFrom, hidePrice: b.card.priceHidden },
+      );
     // "popular" keeps the server order (bestseller, then rating)
-    if (sort === "price-asc") result.sort((a, b) => a.priceFrom - b.priceFrom);
-    if (sort === "price-desc") result.sort((a, b) => b.priceFrom - a.priceFrom);
+    if (sort === "price-asc") result.sort(keyed("asc"));
+    if (sort === "price-desc") result.sort(keyed("desc"));
     if (sort === "rating") result.sort((a, b) => b.rating - a.rating);
     return result;
   }, [items, range, sort]);

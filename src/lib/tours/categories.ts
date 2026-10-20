@@ -48,9 +48,9 @@ export const TOUR_CATEGORY_META: Record<TourCategory, TourCategoryMeta> = {
     pageTitle: "Adventure Tour Packages",
     emoji: "🏔",
     cardDescription:
-      "For trekking, skiing and outdoor enthusiasts chasing Kashmir's mountain trails.",
+      "Offbeat road trips to Gurez Valley, Nubra and Pangong, with private transport and acclimatisation built in.",
     metaDescription:
-      "Thrilling Kashmir adventure tour packages featuring trekking, skiing, river rafting, and guided mountain expeditions for outdoor enthusiasts.",
+      "Offbeat Kashmir and Ladakh road trips — Gurez Valley, Nubra and Pangong — with private transport, acclimatisation built in and transparent pricing.",
   },
   LUXURY: {
     slug: "luxury-tour-packages",
@@ -78,9 +78,9 @@ export const TOUR_CATEGORY_META: Record<TourCategory, TourCategoryMeta> = {
     pageTitle: "Group Tour Packages",
     emoji: "👥",
     cardDescription:
-      "Affordable shared departures with fixed itineraries, great for friends and colleagues.",
+      "Private trips for your own group, with group-friendly hotels — great for friends and colleagues.",
     metaDescription:
-      "Affordable Kashmir group tour packages with fixed departures, guided sightseeing, quality hotels, and seamless travel planning.",
+      "Private Kashmir group tour packages — your own vehicle and driver, group-friendly hotels, your dates, and one transparent per-person price.",
   },
   PILGRIMAGE: {
     slug: "pilgrimage-tour-packages",
@@ -110,3 +110,19 @@ export function getCategoryBySlug(slug: string): TourCategory | null {
   );
   return match ? match[0] : null;
 }
+
+// Hotel class shown on tour cards. Tour has no star-rating field, so this follows
+// the hotel class each category's own page copy promises; anything else (Adventure,
+// no category, non-Kashmir regions) reads plain "Hotel" rather than claiming a star.
+const HOTEL_CLASS_BY_CATEGORY: Partial<Record<TourCategory, string>> = {
+  BUDGET: "Standard",
+  FAMILY: "Deluxe",
+  GROUP: "Deluxe",
+  PILGRIMAGE: "Deluxe",
+  PREMIUM: "Premium",
+  LUXURY: "Premium",
+  HONEYMOON: "Boutique",
+};
+
+export const hotelClassLabel = (category?: string | null): string =>
+  (category && HOTEL_CLASS_BY_CATEGORY[category as TourCategory]) || "Hotel";

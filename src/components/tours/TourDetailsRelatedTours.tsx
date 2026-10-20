@@ -5,6 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { TourCard } from "@/components/ui/organisms/TourCard";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { trackWhatsappClick } from "@/lib/analytics";
+import { openTourInquiry } from "@/lib/tourInquiry";
 
 interface RelatedTourCard {
   tour: React.ComponentProps<typeof TourCard>["tour"];
@@ -18,6 +20,9 @@ interface TourDetailsRelatedToursProps {
   ctaBody?: string;
   tourName: string;
   tourSlug: string;
+  formMode?: "BOOKING_ONLY" | "INQUIRY_ONLY" | "BOTH";
+  /** Tour.hidePrice — the closing CTA reads "Request Quote" (label only). */
+  priceHidden?: boolean;
 }
 
 export function TourDetailsRelatedTours({
@@ -27,6 +32,8 @@ export function TourDetailsRelatedTours({
   ctaBody,
   tourName,
   tourSlug,
+  formMode = "BOTH",
+  priceHidden = false,
 }: TourDetailsRelatedToursProps) {
   const { siteName } = useSiteSettings();
   const wa = useWhatsAppLink();
@@ -90,16 +97,28 @@ export function TourDetailsRelatedTours({
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackWhatsappClick("tour_closing_cta")}
               className="rounded-lg border border-primary/30 bg-primary/10 px-5 py-2.5 text-[14px] font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
             >
               WhatsApp Us
             </Link>
-            <Link
-              href={`/booking?tour=${tourSlug}`}
-              className="rounded-lg bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground transition hover:brightness-110"
-            >
-              Enquire Now
-            </Link>
+            {/* Opens the inquiry form (sidebar / mobile sheet); a booking-only tour has none, so it goes to checkout. */}
+            {formMode === "BOOKING_ONLY" ? (
+              <Link
+                href={`/booking?tour=${tourSlug}`}
+                className="rounded-lg bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground transition hover:brightness-110"
+              >
+                Book Now
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={openTourInquiry}
+                className="rounded-lg bg-primary px-5 py-2.5 text-[14px] font-semibold text-primary-foreground transition hover:brightness-110"
+              >
+                {priceHidden ? "Request Quote" : "Enquire Now"}
+              </button>
+            )}
           </div>
         </motion.section>
       )}

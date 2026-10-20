@@ -59,5 +59,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
     attribution: resolved.attribution,
     channel: resolved.channel,
     offer: offer ? { name: offer.name, packageName: resolved.intent?.packageName ?? null } : null,
+    // WhatsApp-modal answers, and whether WhatsApp was actually opened.
+    qualification: resolved.qualification
+      ? {
+          budgetBandLabel: resolved.qualification.budgetBandLabel,
+          budgetBandDerived: resolved.qualification.budgetBandDerived,
+          travelMonth: resolved.qualification.travelMonth,
+          opened: resolved.qualification.openedAt !== null,
+        }
+      : null,
   });
 }

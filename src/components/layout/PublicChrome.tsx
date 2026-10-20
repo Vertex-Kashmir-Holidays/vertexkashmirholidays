@@ -21,6 +21,8 @@ interface PublicChromeProps {
   strip: StripBannerData | null;
   promoBanners: SlotBanner[];
   tourCategories: TourCategory[];
+  /** At least one published adventure — gates the footer's Adventures link. */
+  hasAdventures: boolean;
   tourCollections: NavTourCollection[];
   occasionOffers: NavOccasionOffer[];
 }
@@ -32,6 +34,7 @@ export function PublicChrome({
   strip,
   promoBanners,
   tourCategories,
+  hasAdventures,
   tourCollections,
   occasionOffers,
 }: PublicChromeProps) {
@@ -68,6 +71,7 @@ export function PublicChrome({
         settings={settings}
         corporateOffice={corporateOffice}
         tourCategories={tourCategories}
+        hasAdventures={hasAdventures}
       />
     </>
   );

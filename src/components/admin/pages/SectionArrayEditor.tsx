@@ -5,7 +5,7 @@ import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import { ImageField } from "@/components/admin/pages/ImageField";
 
 // ──────────────────────────────────────────────────────────────────────────
-// Generic structured editor for the campaign "advanced section" JSON arrays.
+// Generic structured editor for the adventure "advanced section" JSON arrays.
 // Each section is a JSON-string array; this renders it as add/remove/reorder
 // rows with proper inputs (text/textarea/number/image/feature-list) instead of
 // a raw JSON textarea. Image fields are wired to the media gallery + upload via
@@ -13,13 +13,14 @@ import { ImageField } from "@/components/admin/pages/ImageField";
 // existing save/validation path is untouched.
 // ──────────────────────────────────────────────────────────────────────────
 
-type FieldType = "text" | "textarea" | "number" | "image" | "stringList";
+type FieldType = "text" | "textarea" | "number" | "image" | "stringList" | "select";
 
 export interface ItemField {
   key: string;
   label: string;
   type?: FieldType; // default "text"
   placeholder?: string;
+  options?: { value: string; label: string }[]; // "select" only
 }
 
 export type ItemSpec =
@@ -59,7 +60,14 @@ function emptyItem(spec: ItemSpec): Row {
   if (spec.kind === "tuple") return spec.fields.map(() => "");
   const obj: Record<string, unknown> = {};
   for (const f of spec.fields)
-    obj[f.key] = f.type === "stringList" ? [] : f.type === "number" ? 0 : "";
+    obj[f.key] =
+      f.type === "stringList"
+        ? []
+        : f.type === "number"
+          ? 0
+          : f.type === "select"
+            ? (f.options?.[0]?.value ?? "")
+            : "";
   return obj;
 }
 
@@ -69,7 +77,7 @@ export function SectionArrayEditor({
   value,
   onChange,
   spec,
-  folder = "campaigns",
+  folder = "adventures",
   disabled,
 }: Props) {
   const rows = useMemo(() => parse(value), [value]);
@@ -259,6 +267,25 @@ function RowFields({
                 onChange={(e) => set(f.key, e.target.value === "" ? 0 : Number(e.target.value))}
                 className={inputCls}
               />
+            ) : type === "select" ? (
+              <select
+                value={String(obj[f.key] ?? "")}
+                disabled={disabled}
+                onChange={(e) => set(f.key, e.target.value)}
+                className={inputCls}
+              >
+                {/* A saved value outside the options (legacy free text) stays visible until changed. */}
+                {!f.options?.some((o) => o.value === String(obj[f.key] ?? "")) && (
+                  <option value={String(obj[f.key] ?? "")}>
+                    {String(obj[f.key] ?? "") || "Select…"} (invalid)
+                  </option>
+                )}
+                {f.options?.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             ) : type === "stringList" ? (
               <textarea
                 rows={3}

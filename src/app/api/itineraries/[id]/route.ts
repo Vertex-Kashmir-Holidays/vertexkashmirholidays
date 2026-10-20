@@ -20,7 +20,7 @@ const ACCESS_SELECT = {
   locked: true,
   title: true,
   data: true,
-  lead: { select: { assignedToId: true, locked: true, b2bAgentId: true } },
+  lead: { select: { assignedToId: true, locked: true, status: true, b2bAgentId: true } },
   booking: { select: { servicesLocked: true } },
 } as const;
 
@@ -46,7 +46,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     where: { id },
     include: {
       owner: { select: { name: true, email: true } },
-      lead: { select: { id: true, assignedToId: true, locked: true, b2bAgentId: true } },
+      lead: {
+        select: { id: true, assignedToId: true, locked: true, status: true, b2bAgentId: true },
+      },
       booking: { select: { servicesLocked: true } },
     },
   });

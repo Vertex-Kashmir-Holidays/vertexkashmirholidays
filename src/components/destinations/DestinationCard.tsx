@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Heart, Thermometer, Calendar } from "lucide-react";
+import { Thermometer, Calendar } from "lucide-react";
 import { Tilt3D } from "@/components/ui/effects/3DTilt";
 import { imgSrc } from "@/lib/placeholder";
 import type { DestinationCardData } from "@/components/destinations/DestinationsGrid";
@@ -36,18 +35,6 @@ export function DestinationCard({ dest }: DestinationCardProps) {
             <span className="absolute left-3 top-3 rounded-md bg-brand-dark/80 px-2.5 py-1 text-[12px] font-bold text-white backdrop-blur">
               {dest.tours} {dest.tours === 1 ? "Tour" : "Tours"}
             </span>
-            <motion.button
-              aria-label={`Save ${dest.name}`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/25 text-white backdrop-blur transition hover:bg-white hover:text-rose-500"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Heart className="h-4 w-4" strokeWidth={2} />
-            </motion.button>
           </div>
           <div className="flex flex-1 flex-col p-4">
             <h3 className="text-[18px] font-bold">{dest.name}</h3>

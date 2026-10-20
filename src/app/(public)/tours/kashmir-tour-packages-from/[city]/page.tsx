@@ -1,4 +1,5 @@
 // src/app/(public)/tours/kashmir-tour-packages-from/[city]/page.tsx
+import { tourCardPricing } from "@/lib/tours/cards";
 //
 // SEO discovery layer for origin-city searches ("Kashmir tour packages from
 // Mumbai" etc.) — see .ai docs / conversation history for the product
@@ -14,8 +15,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
+import { compareToursForCards } from "@/lib/tours/ordering";
 import { buildMetadata, SITE_URL } from "@/lib/seo";
-import { formatINR } from "@/lib/accents";
 import {
   JsonLd,
   buildBreadcrumbList,
@@ -29,7 +30,7 @@ import { CityOriginHero } from "@/components/tours/CityOriginHero";
 import { TourCard } from "@/components/ui/organisms/TourCard";
 import { TransportAssistanceBanner } from "@/components/tours/TransportAssistanceBanner";
 import { TrustSection } from "@/components/common/TrustSection";
-import { Plane, TrainFront } from "lucide-react";
+import { CheckCircle2, Plane, TrainFront } from "lucide-react";
 
 // 24h safety net — every Tour mutation busts all city pages directly, since
 // they all show the same sitewide top-6 (src/lib/cache.ts).
@@ -49,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!city) return buildMetadata({ title: "Not Found", description: "", noindex: true });
 
   return buildMetadata({
-    title: `Kashmir Tour Packages from ${city.name}`,
+    title: city.metaTitle,
     description: city.metaDescription,
     canonical: `${SITE_URL}/tours/kashmir-tour-packages-from/${city.slug}`,
   });
@@ -60,18 +61,22 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
   const city = getOriginCityBySlug(slug);
   if (!city) notFound();
 
-  const tours = await prisma.tour.findMany({
-    where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
-    include: { destinations: { include: { destination: { select: { name: true } } } } },
-    orderBy: [{ bestseller: "desc" }, { rating: "desc" }, { reviewCount: "desc" }],
-    take: 6,
-  });
+  // Same deterministic order as /tours and the homepage (src/lib/tours/ordering.ts).
+  const tours = (
+    await prisma.tour.findMany({
+      where: { published: true, region: { in: KASHMIR_SITE_REGIONS } },
+      include: { destinations: { include: { destination: { select: { name: true } } } } },
+    })
+  )
+    .sort(compareToursForCards)
+    .slice(0, 6);
   if (tours.length === 0) notFound();
 
   // Factual flight/train data comes from the single central source — never
   // hardcode a duration/route fact directly in this page.
   const transportRoutes = getCityTransportRoutes(city.slug);
-  const cityFaqs = buildTransportFaqs(city.name, transportRoutes);
+  // Two route FAQs generated from the transport data, then the city's own.
+  const cityFaqs = [...buildTransportFaqs(city.name, transportRoutes), ...city.faqs];
 
   const pageUrl = `${SITE_URL}/tours/kashmir-tour-packages-from/${city.slug}`;
 
@@ -80,6 +85,7 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
     bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
       ? (t.badgeColor as (typeof BADGE_COLORS)[number])
       : ("green" as const),
+    category: t.category,
     image: t.coverImage ?? undefined,
     detailHref: `/tours/${t.slug}`,
     bookHref: `/booking?tour=${t.slug}`,
@@ -88,9 +94,7 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
     places: t.destinations.map((d) => d.destination.name).join(", "),
     r: t.rating.toFixed(1),
     n: String(t.reviewCount),
-    old: t.priceWas ? formatINR(t.priceWas) : undefined,
-    p: formatINR(t.priceFrom),
-    minPersons: t.minPersons,
+    ...tourCardPricing(t),
   }));
 
   const breadcrumbJsonLd = buildBreadcrumbList([
@@ -121,6 +125,7 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
       <CityOriginHero
         cityName={city.akaName ? `${city.name} (${city.akaName})` : city.name}
         originCity={city.name}
+        subtitle={city.heroSubtitle}
       />
 
       <main className="mx-auto max-w-[1300px] px-4 py-10 sm:px-6 sm:py-14">
@@ -130,6 +135,11 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
             Travelling to Kashmir from {city.name}
             {city.akaName ? ` (${city.akaName})` : ""}
           </h2>
+          {city.introParagraph && (
+            <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-muted-foreground">
+              {city.introParagraph}
+            </p>
+          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="flex gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -185,6 +195,34 @@ export default async function KashmirFromCityPage({ params }: PageProps) {
             </Link>
           </div>
         </section>
+
+        {(city.whyFromThisCity.length > 0 || city.bestTimeNote) && (
+          <section className="mt-10 rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-6">
+            <h2 className="text-[18px] font-bold">Planning Kashmir from {city.name}</h2>
+            {city.whyFromThisCity.length > 0 && (
+              <ul className="mt-4 space-y-2.5">
+                {city.whyFromThisCity.map((point) => (
+                  <li
+                    key={point}
+                    className="flex gap-2.5 text-[14px] leading-relaxed text-muted-foreground"
+                  >
+                    <CheckCircle2
+                      className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                      strokeWidth={2}
+                    />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {city.bestTimeNote && (
+              <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+                <span className="font-bold text-foreground">Best time to go: </span>
+                {city.bestTimeNote}
+              </p>
+            )}
+          </section>
+        )}
 
         {/* City-specific FAQs. */}
         <section className="mt-10 rounded-2xl border border-border bg-card p-3 sm:p-6 shadow-soft">

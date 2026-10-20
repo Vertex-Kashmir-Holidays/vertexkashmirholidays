@@ -17,6 +17,7 @@ import {
   FileText,
   Star,
   Globe,
+  ExternalLink,
   Settings,
   ShieldCheck,
   Inbox,
@@ -58,6 +59,7 @@ import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { ChatInbox } from "@/components/admin/ChatInbox";
+import { FlushCacheButton } from "@/components/admin/settings/FlushCacheButton";
 import { PackageCalculator } from "@/components/admin/calculator/PackageCalculator";
 import { NotificationsProvider } from "@/components/admin/NotificationsProvider";
 import { MobileBottomTabs } from "@/components/admin/MobileBottomTabs";
@@ -66,6 +68,9 @@ import { PresenceHeartbeat } from "@/components/admin/connect/PresenceHeartbeat"
 import { cn } from "@/lib/utils";
 import { MODULES, type ModuleKey, type PermissionMap, type Role } from "@/lib/rbac";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/atoms/avatar";
+
+const headerCtaClass =
+  "hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted hover:text-primary disabled:opacity-60";
 
 const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -92,7 +97,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   contact: Phone,
   tripPlanner: Compass,
   legal: ScrollText,
-  campaigns: Megaphone,
+  adventures: Megaphone,
   offlineConversions: Target,
   banners: Flag,
   reviews: Star,
@@ -133,7 +138,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
   { label: null, keys: ["dashboard", "connect"] },
   {
     label: "Catalog",
-    keys: ["destinations", "packages", "activities", "campaigns"],
+    keys: ["destinations", "packages", "activities", "adventures"],
     extra: [
       // Occasion Offer landing pages — tour merchandising, so gated by the
       // Packages permission (same as Tour Collections), no RBAC module of its own.
@@ -437,11 +442,9 @@ export function AdminShell({
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3">
-                <Link
-                  href="/"
-                  target="_blank"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors hidden sm:inline"
-                >
+                <FlushCacheButton className={headerCtaClass} />
+                <Link href="/" target="_blank" className={headerCtaClass}>
+                  <ExternalLink className="h-3.5 w-3.5" />
                   View Site
                 </Link>
                 <ThemeToggle />

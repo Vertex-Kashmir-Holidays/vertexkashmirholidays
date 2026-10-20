@@ -1,12 +1,30 @@
 // src/components/blog/BlogPostBody.tsx
 
 import sanitizeHtml from "sanitize-html";
+import { WhatsAppLinkScope } from "@/components/common/WhatsAppLinkScope";
+import type { WhatsAppSource } from "@/types/analytics";
 
 // Renders a blog post's stored HTML body with theme-aware, prose-like styling.
 // (The project has no @tailwindcss/typography, so styles are hand-rolled via
 // arbitrary child selectors.)
 interface BlogPostBodyProps {
   html: string;
+  /** When set, wa.me links in the body are rebuilt client-side with the live
+   *  number + attribution tag and tracked under `source` (WhatsAppLinkScope). */
+  whatsapp?: { source: WhatsAppSource; defaultMessage: string };
+}
+
+// The `?text=` message of a wa.me / api.whatsapp.com link ("" if it has
+// none), or null for any other link.
+function whatsAppMessage(href: string | undefined): string | null {
+  if (!href) return null;
+  try {
+    const url = new URL(href);
+    if (url.hostname !== "wa.me" && url.hostname !== "api.whatsapp.com") return null;
+    return url.searchParams.get("text") ?? "";
+  } catch {
+    return null;
+  }
 }
 
 // Allow the formatting tags the editor produces (headings, lists, links,
@@ -50,22 +68,33 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     "td",
   ],
   allowedAttributes: {
-    a: ["href", "name", "target", "rel"],
+    a: ["href", "name", "target", "rel", "data-wa-message"],
     img: ["src", "alt", "title", "width", "height", "loading"],
     "*": ["class"],
   },
   allowedSchemes: ["http", "https", "mailto", "tel"],
-  // Force safe link behaviour for any target=_blank links.
+  // Force safe link behaviour for any target=_blank links (keeping href and
+  // target), and mark WhatsApp links for WhatsAppLinkScope.
   transformTags: {
-    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, false),
+    a: (tagName, attribs) => {
+      const message = whatsAppMessage(attribs.href);
+      return {
+        tagName,
+        attribs: {
+          ...attribs,
+          rel: "noopener noreferrer",
+          ...(message !== null ? { "data-wa-message": message } : {}),
+        },
+      };
+    },
   },
 };
 
-export function BlogPostBody({ html }: BlogPostBodyProps) {
+export function BlogPostBody({ html, whatsapp }: BlogPostBodyProps) {
   // Admin-authored HTML is sanitized before injection so a stored <script>,
   // onerror=, javascript: URL, etc. can never execute in a visitor's browser.
   const clean = sanitizeHtml(html, SANITIZE_OPTIONS);
-  return (
+  const body = (
     <div
       className="
         max-w-none text-[16px] leading-[1.8] text-foreground/85
@@ -88,5 +117,12 @@ export function BlogPostBody({ html }: BlogPostBodyProps) {
       "
       dangerouslySetInnerHTML={{ __html: clean }}
     />
+  );
+  return whatsapp ? (
+    <WhatsAppLinkScope source={whatsapp.source} defaultMessage={whatsapp.defaultMessage}>
+      {body}
+    </WhatsAppLinkScope>
+  ) : (
+    body
   );
 }

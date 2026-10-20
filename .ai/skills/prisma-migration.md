@@ -47,7 +47,7 @@ Use this Skill whenever a task involves:
 - Adding a new value to `LeadStatus`, `BookingStatus`, `ItineraryStatus`, or `Role`.
 - Changing a column read by a public page, account page, or admin page.
 - Adding a new model that needs to be reachable from the admin CMS (this always implies RBAC module registration — see Engineering Rules).
-- Modifying any field on `Tour` or `Campaign` that stores JSON inside a `String` column.
+- Modifying any field on `Tour` or `Adventure` that stores JSON inside a `String` column.
 - Adding an index needed by a `where`/`orderBy` in an existing API route.
 
 ────────────────────────────────────
@@ -97,11 +97,11 @@ Before touching `schema.prisma`:
 - Keep each migration focused on one logical schema change.
 - Review the generated SQL before applying it, especially for a column type change or a dropped column.
 - Prefer additive changes (new nullable column, new table) over destructive ones (drop column, narrow a type) — a destructive change needs explicit approval, not just a passing test suite.
-- String-encoded JSON columns (`gallery`, `itinerary`, `inclusions`, `exclusions`, `highlights` on `Tour`; the equivalent set on `Campaign` — see `../instructions/coding-standards.md` → JSON Columns for the full list) are declared `String`, never Prisma's `Json` type — this is a deliberate, repository-wide convention, not an oversight to "fix." `faqs` is **not** one of these — it's a real `Faq[]` relation on both models. `Itinerary.data` is the one model that genuinely uses `Json` — don't generalize from it.
+- String-encoded JSON columns (`gallery`, `itinerary`, `inclusions`, `exclusions`, `highlights` on `Tour`; the equivalent set on `Adventure` — see `../instructions/coding-standards.md` → JSON Columns for the full list) are declared `String`, never Prisma's `Json` type — this is a deliberate, repository-wide convention, not an oversight to "fix." `faqs` is **not** one of these — it's a real `Faq[]` relation on both models. `Itinerary.data` is the one model that genuinely uses `Json` — don't generalize from it.
 
 **Downstream consumers to check after any schema change:**
 
-- **Public pages** (`src/app/(public)/`) — any `findMany`/`findFirst` on `Tour`, `Blog`, `Destination`, or `Campaign` must keep `where: { published: true }`.
+- **Public pages** (`src/app/(public)/`) — any `findMany`/`findFirst` on `Tour`, `Blog`, `Destination`, or `Adventure` must keep `where: { published: true }`.
 - **Account pages** (`src/app/account/`) — every query stays scoped to `where: { userId: session.user.id }`; a new field must never expose another user's data.
 - **Admin pages** (`src/app/admin/`) — update the RSC's `select` projection and the corresponding `*Client.tsx` component's TypeScript interface.
 - **JSON-string columns** — add or update the `parseJson` call (with fallback) at every read site for a changed column shape.
@@ -132,7 +132,7 @@ Observed failure modes in this repository's actual patterns — not generic Pris
 
 - **Non-nullable column with no default added to a populated table** — blocks `db:push`/`migrate`. Always nullable or `@default(...)` for new columns on existing models.
 - **Forgetting to update `patchSchema`** — a field added to the Prisma model but missing from the PATCH route's Zod schema means the admin UI appears to save the field, but the value is silently never written.
-- **Declaring a JSON-holding column as `Json` instead of `String`** — breaks the `JSON.parse`/`JSON.stringify`-with-fallback convention every `Tour`/`Campaign` consumer expects.
+- **Declaring a JSON-holding column as `Json` instead of `String`** — breaks the `JSON.parse`/`JSON.stringify`-with-fallback convention every `Tour`/`Adventure` consumer expects.
 - **A new enum value not reflected in an admin status-display map** — admin Client components hardcode status badge colors and allowed-transition buttons; a new `LeadStatus`/`BookingStatus`/`ItineraryStatus` value renders unstyled or silently drops out of the transition UI until those maps are updated too.
 - **Overwriting admin-edited singleton content via seed** — some content singletons intentionally use an empty `update: {}` block in their `upsert` so re-running the seed never clobbers what staff have edited in the CMS. Don't "fix" this into a populated update block without deliberately deciding that's what you want.
 - **A new public-facing query missing `published: true`** — the single most consequential mistake this convention exists to prevent; it leaks draft content to anonymous visitors.

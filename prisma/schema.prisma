@@ -300,7 +300,7 @@ model RolePermission {
 // curated reference list Admin maintains. `data` holds the property contact
 // info and the variable-shape rate list (room type × season × validity ×
 // CP/MAP/AP + extra bed) as real Json, matching the Itinerary.data precedent
-// — not the String-encoded-JSON convention used for Tour/Campaign fields.
+// — not the String-encoded-JSON convention used for Tour/Adventure fields.
 // destination/category/isActive stay relational columns because they're the
 // fields Sales actually filters/searches by; everything else nests in `data`.
 model HotelSupplier {
@@ -416,6 +416,14 @@ model Destination {
 
 // Things to do — a first-class admin entity linked many-to-many to destinations
 // and tours. Public listing/detail pages are planned but not built yet.
+enum ActivityPriceUnit {
+  PER_PERSON
+  PER_BOAT
+  PER_VEHICLE
+  PER_HOUR
+  PER_GROUP
+}
+
 model Activity {
   id                 String                @id @default(cuid())
   name               String
@@ -428,6 +436,8 @@ model Activity {
   icon               String? // emoji or short icon label
   duration           String? // e.g. "2 hours", "Half day"
   price              Float?
+  // What `price` is charged per — shown after it on cards and quick facts.
+  priceUnit          ActivityPriceUnit     @default(PER_PERSON)
   published          Boolean               @default(false)
   sortOrder          Int                   @default(0)
   // HTML — richer "Why Experience This" blurb; `description` above stays as the short Overview text.
@@ -506,6 +516,11 @@ model Tour {
   published          Boolean           @default(false)
   // Which lead-capture forms render on the public tour-detail page.
   formMode           TourFormMode      @default(BOTH)
+  // Price on request: public pages never show priceFrom/package prices for
+  // this tour (cards say "Request Quote"), it's enquiry-only (formMode is
+  // forced to INQUIRY_ONLY on save) and enquiries ASK the budget band instead
+  // of deriving it from the price. The price stays stored for Sales.
+  hidePrice          Boolean           @default(false)
   metaTitle          String?
   metaDesc           String?
   ogImage            String?
@@ -994,6 +1009,16 @@ model Lead {
   transportModes      String?
   fromCity            String?
   toCity              String?
+  // Lead qualification (lead forms + the WhatsApp modal). budgetBandKey is a
+  // BudgetBand.key ("band1"…) or "undecided"; budgetBandLabel snapshots the
+  // text the visitor saw, so re-pricing a band never rewrites old leads.
+  // travelMonth is "YYYY-MM", "later" or "undecided".
+  budgetBandKey       String?
+  budgetBandLabel     String?
+  travelMonth         String?
+  // True when the band was derived from the tour's price (tour pages / tour
+  // cards) rather than chosen by the visitor.
+  budgetBandDerived   Boolean             @default(false)
   // HOW the customer actually contacted us (this submission/creation) — set
   // server-side only, never client-supplied. FORM for anything created via
   // POST /api/leads; WHATSAPP/PHONE for staff-created leads logged from a
@@ -1007,6 +1032,11 @@ model Lead {
   // delete an offer that has leads).
   occasionOfferId     String?
   occasionOffer       OccasionOffer?      @relation(fields: [occasionOfferId], references: [id], onDelete: SetNull)
+  // Adventure page (/adventures/[slug]) the enquiry came from. The chosen
+  // pricing tier's name is stored in packageName above. SetNull so deleting
+  // an adventure never takes its leads with it.
+  adventureId         String?
+  adventure           Adventure?          @relation(fields: [adventureId], references: [id], onDelete: SetNull)
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   activities          LeadActivity[]
@@ -1018,6 +1048,7 @@ model Lead {
   @@index([category])
   @@index([tourId])
   @@index([assignedToId])
+  @@index([budgetBandKey])
   @@index([createdAt])
   @@index([followUpAt])
   @@index([assignedToId, createdAt])
@@ -1030,6 +1061,7 @@ model Lead {
   // Agent's-own-requests + CRM B2B-requests-listing queries.
   @@index([b2bAgentId])
   @@index([occasionOfferId])
+  @@index([adventureId])
 }
 
 // HOW the customer contacted us for a given Lead — see Lead.contactChannel.
@@ -1046,6 +1078,20 @@ enum LeadContactChannel {
 // fields when a salesperson manually creates the CRM Lead from that chat.
 // Deliberately standalone — no relation to Lead, since the Lead doesn't exist
 // yet when the token is minted.
+// Lead-qualification budget bands ("What's your budget for 2 persons?"),
+// admin-editable. Deactivate, never delete — old leads reference `key`.
+model BudgetBand {
+  id        String   @id @default(cuid())
+  key       String   @unique // band1, band2, … — fixed once created
+  label     String // generated from the range for active bands, e.g. "₹17,000 – ₹21,999"
+  minAmount Int // per person, in ₹ (the retired band1–4 were "for 2")
+  maxAmount Int? // next active band's start − 1; null = open-ended ("₹28,000+")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model WhatsAppAttributionToken {
   id                  String    @id @default(cuid())
   token               String    @unique
@@ -1075,6 +1121,15 @@ model WhatsAppAttributionToken {
   // token outlives nothing important and must never block an offer delete.
   occasionOfferId     String?
   packageName         String?
+  // Lead qualification answered in the WhatsApp modal (same meaning as the
+  // Lead columns) — copied onto the Lead when staff create it from this ref.
+  budgetBandKey       String?
+  budgetBandLabel     String?
+  travelMonth         String?
+  budgetBandDerived   Boolean   @default(false)
+  // Set only when the visitor actually tapped "Open WhatsApp" — answers saved
+  // on chip-pick but never opened (an abandoned modal) leave this null.
+  waOpenedAt          DateTime?
   createdAt           DateTime  @default(now())
   expiresAt           DateTime
   consumedAt          DateTime?
@@ -1159,7 +1214,7 @@ model AuditLog {
   // Genuinely variable shape per action (role change: {fromRole,toRole};
   // permission edit: {module,from,to}) — real Json, matching the precedent
   // set by Itinerary.data, not the String-encoded-JSON convention used for
-  // the specific enumerated Tour/Campaign fields.
+  // the specific enumerated Tour/Adventure fields.
   metadata        Json?
   createdAt       DateTime    @default(now())
 
@@ -1207,6 +1262,10 @@ model Blog {
   ogImage          String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  // Last real content edit (title, body, Quick Answer or excerpt) — set by the
+  // admin PATCH route only, so scripts touching the row don't move it. Drives
+  // BlogPosting.dateModified and the post hero's "Updated" line.
+  contentUpdatedAt DateTime?
   authorImage      String?
   featured         Boolean   @default(false)
   trending         Boolean   @default(false)
@@ -1331,6 +1390,9 @@ model Gallery {
 model AdminDocument {
   id             String   @id @default(cuid())
   title          String
+  // One line on what the document is for — shown under the title to B2B
+  // agents, so they don't have to guess from a file name.
+  description    String   @default("")
   category       String
   url            String
   publicId       String? // Cloudinary public_id — null for local-disk uploads
@@ -1418,7 +1480,7 @@ model HomeSection {
   // SEO overrides for the listing page's <title>/<meta name="description">.
   // Deliberately separate from title/subtitle above (which drive the on-page
   // H1/hero copy) — same metaTitle/metaDescription-distinct-from-heading
-  // pattern already used for Tour/Destination/Blog/Campaign. Null = the page
+  // pattern already used for Tour/Destination/Blog/Adventure. Null = the page
   // keeps its hardcoded default copy.
   metaTitle       String?
   metaDescription String?
@@ -1774,7 +1836,7 @@ enum FaqStatus {
 }
 
 // Fixed, singleton site sections a FAQ can be pinned to — distinct from the
-// many-to-many entity relations below (Tour/Destination/Blog/Campaign/Activity),
+// many-to-many entity relations below (Tour/Destination/Blog/Adventure/Activity),
 // which cover "attached to one or more specific records" rather than "shown on
 // one specific page." FAQ = also listed in the main /faq browse index — the
 // single knowledge-base page where every published FAQ's full answer lives,
@@ -1804,7 +1866,7 @@ model FaqCategory {
 
 // Single source of truth for all FAQ content sitewide. Placement on fixed
 // sections is the `placements` array; placement on specific Tours/Destinations/
-// Blogs/Campaigns/Activities is a real many-to-many relation — a FAQ exists
+// Blogs/Adventures/Activities is a real many-to-many relation — a FAQ exists
 // exactly once and is referenced everywhere it's relevant, never duplicated.
 model Faq {
   id             String         @id @default(cuid())
@@ -1821,6 +1883,9 @@ model Faq {
   category       FaqCategory    @relation(fields: [categoryId], references: [id])
   status         FaqStatus      @default(DRAFT)
   featured       Boolean        @default(false)
+  // "About price" — hidden on hidePrice tours (page + FAQPage schema), since
+  // those tours don't show a price for the answer to refer to.
+  mentionsPrice  Boolean        @default(false)
   placements     FaqPlacement[]
   sortOrder      Int            @default(0)
   // Freshness/trust signal — several answers reference time-sensitive facts
@@ -1837,7 +1902,7 @@ model Faq {
   tours        Tour[]
   destinations Destination[]
   blogs        Blog[]
-  campaigns    Campaign[]
+  adventures   Adventure[]
   activities   Activity[]
   collections  TourCollection[]
 
@@ -1880,7 +1945,7 @@ model OccasionOffer {
   // Lead-form CTA, e.g. "Get My Diwali Package" — null derives one from occasionType.
   ctaLabel         String?
   overview         String? // HTML body (sanitized on render)
-  // JSON-string arrays, same convention as Tour/Campaign content columns:
+  // JSON-string arrays, same convention as Tour/Adventure content columns:
   whyThisOffer     String                 @default("[]") // [{ title, text }]
   // One per day: [{ destination (Destination slug), title, description, highlights[], image }]
   itinerary        String                 @default("[]")
@@ -1972,7 +2037,7 @@ model ContactOffice {
   @@index([isActive, sortOrder])
 }
 
-model Campaign {
+model Adventure {
   id              String    @id @default(cuid())
   slug            String    @unique
   published       Boolean   @default(false)
@@ -2024,6 +2089,13 @@ model Campaign {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   heroImageMobile String?
+  // Per-adventure wording — null falls back to the built-in default text
+  // (see AdventurePricing / AdventureHero).
+  paymentNote     String?
+  pricingKicker   String?
+  pricingTitle    String?
+  formCta         String?
+  leads           Lead[]
 
   // slug already has a unique index via @unique above — no separate @@index needed.
   @@index([published])

@@ -5,10 +5,14 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { fadeUpLg, viewportOnce } from "@/lib/motion";
 import { Tilt3D } from "../effects/3DTilt";
-import { Heart, Car, Hotel, Utensils, Sailboat, Calendar } from "lucide-react";
+import { Car, Hotel, Utensils, Sailboat, ArrowRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
+import { hotelClassLabel } from "@/lib/tours/categories";
+import { trackWhatsappClick } from "@/lib/analytics";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import { contextAttrs, trimTourTitle } from "@/lib/leads/qualification";
+import { RequestQuoteButton } from "@/components/leads/RequestQuoteButton";
 
 interface TourCardProps {
   tour: {
@@ -19,6 +23,8 @@ interface TourCardProps {
     detailHref?: string;
     bookHref?: string;
     whatsappHref?: string;
+    /** TourCategory — drives the hotel label when `inclusions.hotel` isn't set. */
+    category?: string;
     t: string;
     d: string;
     places: string;
@@ -30,6 +36,9 @@ interface TourCardProps {
     // Replaces the default "per person (min N pax)" label — e.g. "/ 2 persons"
     // for tours sold as package options (see Tour.packageOptions).
     priceSuffix?: string;
+    /** Tour.hidePrice — `p` is "Request Quote" (see tourCardPricing); no
+     *  old price / per-person line, and WhatsApp asks the budget. */
+    priceHidden?: boolean;
     inclusions?: {
       transfers?: boolean;
       hotel?: string;
@@ -53,10 +62,10 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
   // Default inclusions if not provided
   const inclusions = tour.inclusions || {
     transfers: true,
-    hotel: "3★",
     meals: true,
     shikara: true,
   };
+  const hotelLabel = inclusions.hotel || hotelClassLabel(tour.category);
 
   // Clicking the card (image, title or primary CTA) opens the tour detail page.
   const detailHref = tour.detailHref || tour.bookHref || "#";
@@ -72,6 +81,19 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
       `Hi ${siteName}! I'm interested in the "${tour.t}" package. Could you share details and availability?`,
     );
 
+  // Lead-qualification context for this card's WhatsApp button: a tour, priced
+  // per person. Every caller formats `p` with formatINR from a number, and a
+  // package-option card (priceSuffix "/ 2 persons") shows the price for 2.
+  // A price-on-request tour carries no price at all — generic context, so
+  // the WhatsApp gate asks the budget (and nothing leaks into the HTML).
+  const shownPrice = tour.priceHidden ? 0 : Number(tour.p.replace(/[^\d]/g, ""));
+  const pricePerPerson = /2 persons/.test(tour.priceSuffix ?? "") ? shownPrice / 2 : shownPrice;
+  const waContext = tour.priceHidden
+    ? contextAttrs({ kind: "generic" })
+    : pricePerPerson > 0
+      ? contextAttrs({ kind: "tour", pricePerPerson, name: trimTourTitle(tour.t) })
+      : {};
+
   return (
     <motion.div
       variants={fadeUpLg}
@@ -79,6 +101,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
       whileInView="visible"
       viewport={viewportOnce}
       transition={{ duration: 0.5, delay: index * 0.05 }}
+      {...waContext}
     >
       <Tilt3D intensity={isHome ? 8 : 6}>
         <article
@@ -107,18 +130,6 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
             >
               {tour.badge}
             </motion.span>
-            <motion.button
-              aria-label="Save to wishlist"
-              className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full backdrop-blur transition-all duration-300 hover:scale-110 ${
-                isHome
-                  ? "glass text-foreground hover:bg-foreground/20"
-                  : "bg-white/25 text-white hover:bg-white hover:text-rose-500"
-              }`}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Heart className="h-4 w-4" strokeWidth={2} />
-            </motion.button>
           </div>
 
           {/* Content Section */}
@@ -165,7 +176,7 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                 <span
                   className={`text-[10px] font-medium ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
                 >
-                  {inclusions.hotel || "3★"}
+                  {hotelLabel}
                 </span>
               </div>
 
@@ -195,32 +206,49 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
             </div>
 
             {/* Price Section */}
-            <div className="mt-3 flex items-end justify-between">
-              {tour.old ? (
-                <span
-                  className={`text-[12px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"} line-through`}
-                >
-                  {tour.old}
+            {tour.priceHidden ? (
+              // Phones (one card per row): caption and CTA share a row. From sm
+              // up (cards sit side by side, so they're narrower): caption on
+              // one line, CTA centred on the next.
+              <div className="mt-3 flex items-center justify-between gap-3 sm:flex-col sm:justify-center sm:gap-2 sm:text-center">
+                <span className="text-[12px] leading-snug text-muted-foreground sm:whitespace-nowrap">
+                  Price on request for your dates
                 </span>
-              ) : (
-                <span className="text-[12px]">&nbsp;</span>
-              )}
-              <p
-                className={`text-[22px] font-extrabold leading-tight ${isHome ? "text-primary" : "text-foreground"}`}
-              >
-                {tour.p}
-              </p>
-              <p
-                className={`text-[10px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
-              >
-                {tour.priceSuffix ?? (
-                  <>
-                    per person
-                    {tour.minPersons && tour.minPersons > 1 ? ` (min ${tour.minPersons} pax)` : ""}
-                  </>
+                <RequestQuoteButton
+                  tourName={tour.t}
+                  tourSlug={detailHref.match(/^\/tours\/([^/?#]+)/)?.[1]}
+                />
+              </div>
+            ) : (
+              <div className="mt-3 flex items-end justify-between">
+                {tour.old ? (
+                  <span
+                    className={`text-[12px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"} line-through`}
+                  >
+                    {tour.old}
+                  </span>
+                ) : (
+                  <span className="text-[12px]">&nbsp;</span>
                 )}
-              </p>
-            </div>
+                <p
+                  className={`text-[22px] font-extrabold leading-tight ${isHome ? "text-primary" : "text-foreground"}`}
+                >
+                  {tour.p}
+                </p>
+                <p
+                  className={`text-[10px] ${isHome ? "text-muted-foreground" : "text-muted-foreground"}`}
+                >
+                  {tour.priceSuffix ?? (
+                    <>
+                      per person
+                      {tour.minPersons && tour.minPersons > 1
+                        ? ` (min ${tour.minPersons} pax)`
+                        : ""}
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
 
             {/* Customization Text */}
             <p
@@ -238,7 +266,10 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    trackWhatsappClick("tours_card");
+                  }}
                   className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-[14px] font-semibold transition-all duration-300 ${
                     isHome
                       ? "border border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-glow"
@@ -259,8 +290,8 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
                       : "bg-primary text-primary-foreground hover:brightness-110 hover:shadow-md"
                   }`}
                 >
-                  <Calendar className="h-3.5 w-3.5" strokeWidth={2.2} />
-                  Book Now
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.2} />
+                  View Details
                 </Link>
               </motion.div>
             </div>

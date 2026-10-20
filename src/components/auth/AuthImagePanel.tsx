@@ -9,9 +9,10 @@ import { Logo } from "@/components/brand/Logo";
 
 interface AuthImagePanelProps {
   view: "login" | "register";
+  rating: { average: number; total: number } | null;
 }
 
-export function AuthImagePanel({ view }: AuthImagePanelProps) {
+export function AuthImagePanel({ view, rating }: AuthImagePanelProps) {
   const [testimonialIndex, setTestimonialIndex] = useState(0);
 
   const testimonials = [
@@ -94,23 +95,29 @@ export function AuthImagePanel({ view }: AuthImagePanelProps) {
           {/* Stats */}
           <div className="flex flex-wrap gap-x-8 gap-y-4 text-white">
             <div>
-              <p className="text-[18px] font-extrabold leading-tight">15+</p>
-              <p className="text-[12px] text-white/70">Years on ground</p>
+              <p className="text-[18px] font-extrabold leading-tight">2022</p>
+              <p className="text-[12px] text-white/70">Operating since</p>
             </div>
             <div>
-              <p className="text-[18px] font-extrabold leading-tight">12,000+</p>
+              <p className="text-[18px] font-extrabold leading-tight">1,100+</p>
               <p className="text-[12px] text-white/70">Happy travellers</p>
             </div>
-            <div>
-              <p className="text-[18px] font-extrabold leading-tight">4.9/5</p>
-              <p className="text-[12px] text-white/70">Average rating</p>
-            </div>
+            {rating && (
+              <div>
+                <p className="text-[18px] font-extrabold leading-tight">
+                  {rating.average.toFixed(1)}/5
+                </p>
+                <p className="text-[12px] text-white/70">
+                  from {rating.total} review{rating.total === 1 ? "" : "s"}
+                </p>
+              </div>
+            )}
             <div>
               <p className="flex items-center gap-1.5 text-[18px] font-extrabold leading-tight">
                 <Clock className="h-4 w-4" strokeWidth={2} />
-                24×7
+                9 AM – 9 PM
               </p>
-              <p className="text-[12px] text-white/70">WhatsApp support</p>
+              <p className="text-[12px] text-white/70">Support, Mon–Sat</p>
             </div>
           </div>
 

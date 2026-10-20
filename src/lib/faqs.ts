@@ -34,23 +34,55 @@ export interface FaqPreviewItem {
   question: string;
   shortAnswer: string;
   slug: string;
+  /** /faq shows a longer answer for this question — gates "Read Full Answer". */
+  hasFullAnswer?: boolean;
+}
+
+// Every FAQ preview list selects this. `answer` and `placements` are read only
+// to compute hasFullAnswer in toFaqPreview — the full text never reaches the page.
+export const FAQ_PREVIEW_SELECT = {
+  id: true,
+  question: true,
+  shortAnswer: true,
+  slug: true,
+  answer: true,
+  placements: true,
+} as const;
+
+/** A preview row links to /faq#<slug> only when that question is actually on
+ *  /faq (FAQ placement) and its full answer says more than the short one. */
+export function toFaqPreview(f: {
+  id: string;
+  question: string;
+  shortAnswer: string;
+  slug: string;
+  answer: string;
+  placements: string[];
+}): FaqPreviewItem {
+  return {
+    id: f.id,
+    question: f.question,
+    shortAnswer: f.shortAnswer,
+    slug: f.slug,
+    hasFullAnswer: f.placements.includes("FAQ") && f.answer.trim() !== f.shortAnswer.trim(),
+  };
 }
 
 // Short-answer preview list for Homepage/Tour/Destination/About/Contact — the
 // same query shape everywhere, only the placement/relation filter changes.
-// Never returns `answer` (the full text) — those pages must only ever render
-// and schema-mark the short answer (see Faq.shortAnswer's doc comment).
+// Those pages only ever render and schema-mark the short answer (see
+// Faq.shortAnswer's doc comment).
 export async function getFaqsForPlacement(
   placement: FaqPlacement,
   limit = 6,
 ): Promise<FaqPreviewItem[]> {
   const faqs = await prisma.faq.findMany({
     where: { status: "PUBLISHED", placements: { has: placement } },
-    select: { id: true, question: true, shortAnswer: true, slug: true },
+    select: FAQ_PREVIEW_SELECT,
     orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
     take: limit,
   });
-  return faqs;
+  return faqs.map(toFaqPreview);
 }
 
 export interface FaqIndexItem extends FaqPreviewItem {

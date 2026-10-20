@@ -1703,6 +1703,145 @@ ${detailRow("Temporary Password", data.tempPassword)}
   });
 }
 
+// ── B2B partner updates ──────────────────────────────────────────────────────
+// Two notices to B2B agents, both in the standard emailShell card:
+//  • a new document in the partner documents area (sent when staff upload a
+//    file under the "B2B" docs category), and
+//  • a message staff write themselves from Admin → B2B Agents.
+// Each agent gets their own copy — recipients never see each other.
+
+function b2bPortalUrl(): string {
+  return `${siteUrl()}/account/profile`;
+}
+
+interface B2bDocumentUpdateData {
+  contactName: string;
+  agencyName: string;
+  docTitle: string;
+  /** The one-line "what this document is for" from the upload form — may be blank. */
+  docDescription: string;
+}
+
+export function b2bDocumentUpdateSubject(docTitle: string): string {
+  return `New partner document: ${docTitle}`;
+}
+
+export function b2bDocumentUpdateText(data: B2bDocumentUpdateData): string {
+  return [
+    `New partner document: ${data.docTitle}`,
+    "",
+    `Dear ${data.contactName},`,
+    "",
+    `We have added a new document for our B2B partners: ${data.docTitle}.`,
+    ...(data.docDescription ? ["", data.docDescription] : []),
+    "",
+    "Please sign in to your partner account to view or download it, and use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.",
+    "",
+    `Partner documents: ${b2bPortalUrl()}`,
+    "",
+    "Regards,",
+    "B2B Partnerships Team",
+    "Vertex Kashmir Holidays",
+  ].join("\n");
+}
+
+export function b2bDocumentUpdateHtml(data: B2bDocumentUpdateData): string {
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">New partner document</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.contactName)}, we have added a new document for our B2B partners.</p>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:8px 28px 4px;font-family:Arial,Helvetica,sans-serif">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid #e6e9ee;border-radius:10px">
+               <tr>
+                 <td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif">
+                   <p style="margin:0;color:#111111;font-size:15px;font-weight:700;line-height:1.4">${escapeHtml(data.docTitle)}</p>${
+                     data.docDescription
+                       ? `
+                   <p style="margin:6px 0 0;color:#555555;font-size:13px;line-height:1.6">${escapeHtml(data.docDescription)}</p>`
+                       : ""
+                   }
+                 </td>
+               </tr>
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:18px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <a href="${b2bPortalUrl()}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">View partner documents</a>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">Please use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.</p>
+             <p style="margin:14px 0 0;color:#444444;font-size:13px;line-height:1.6">Regards,<br /><strong>B2B Partnerships Team</strong><br />Vertex Kashmir Holidays</p>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: b2bDocumentUpdateSubject(data.docTitle),
+    preheader: `${escapeHtml(data.docTitle)} is now available in your partner account.`,
+    contentHtml: content,
+    maxWidth: 520,
+  });
+}
+
+interface B2bAnnouncementData {
+  contactName: string;
+  subject: string;
+  /** Plain text typed by staff — blank lines separate paragraphs. */
+  message: string;
+}
+
+export function b2bAnnouncementText(data: B2bAnnouncementData): string {
+  return [
+    `Dear ${data.contactName},`,
+    "",
+    data.message.trim(),
+    "",
+    "Regards,",
+    "B2B Partnerships Team",
+    "Vertex Kashmir Holidays",
+    "",
+    `Partner account: ${b2bPortalUrl()}`,
+  ].join("\n");
+}
+
+export function b2bAnnouncementHtml(data: B2bAnnouncementData): string {
+  // Escaped first, then paragraphs/line breaks rebuilt — staff text is never
+  // treated as HTML.
+  const paragraphs = data.message
+    .trim()
+    .split(/\n\s*\n/)
+    .map(
+      (para) =>
+        `<p style="margin:0 0 12px;color:#444444;font-size:14px;line-height:1.65">${escapeHtml(para.trim()).replace(/\n/g, "<br />")}</p>`,
+    )
+    .join("\n             ");
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 14px;color:${BRAND};font-size:20px;font-weight:700">${escapeHtml(data.subject)}</h1>
+             <p style="margin:0 0 12px;color:#444444;font-size:14px;line-height:1.65">Dear ${escapeHtml(data.contactName)},</p>
+             ${paragraphs}
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:4px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             <p style="margin:0 0 16px;color:#444444;font-size:13px;line-height:1.6">Regards,<br /><strong>B2B Partnerships Team</strong><br />Vertex Kashmir Holidays</p>
+             <a href="${b2bPortalUrl()}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">Open your partner account</a>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: data.subject,
+    preheader: escapeHtml(data.message.trim().replace(/\s+/g, " ").slice(0, 120)),
+    contentHtml: content,
+    maxWidth: 520,
+  });
+}
+
 // ── Hotel supplier rate request (B2B outbound) ───────────────────────────────
 // Sent from the Hotel Rates admin page to a supplier property whose MAP rate
 // is missing or has expired. Deliberately NOT built on the shared emailShell()

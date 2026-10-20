@@ -62,53 +62,6 @@ export function buildTravelAgency(opts?: {
   };
 }
 
-// Augments the SAME organization entity buildTravelAgency() declares (matching
-// @id — JSON-LD graph nodes with an identical @id are merged by Google's
-// parser across separate <script> blocks on one page) rather than redeclaring
-// the whole entity a second time. The public layout already injects the base
-// buildTravelAgency() on every page; only /reviews — the one page where
-// reviews are actually visible on-page, a requirement of this markup, not
-// just a nicety — adds this supplement.
-//
-// TravelAgency is a LocalBusiness subtype, one of the types Google's
-// structured-data guidelines treat as eligible for aggregateRating/review
-// markup (unlike a bare Organization, which their "self-serving reviews"
-// policy restricts).
-export function buildOrganizationReviews(opts: {
-  aggregateRating?: { ratingValue: number; reviewCount: number } | null;
-  reviews?: { author: string; rating: number; body: string; datePublished: string }[];
-}) {
-  return {
-    "@context": "https://schema.org",
-    "@id": `${siteUrl}/#organization`,
-    ...(opts.aggregateRating && opts.aggregateRating.reviewCount > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: opts.aggregateRating.ratingValue,
-            reviewCount: opts.aggregateRating.reviewCount,
-          },
-        }
-      : {}),
-    ...(opts.reviews && opts.reviews.length > 0
-      ? {
-          review: opts.reviews.map((r) => ({
-            "@type": "Review",
-            author: { "@type": "Person", name: r.author },
-            reviewRating: {
-              "@type": "Rating",
-              ratingValue: r.rating,
-              bestRating: 5,
-              worstRating: 1,
-            },
-            reviewBody: r.body,
-            datePublished: r.datePublished,
-          })),
-        }
-      : {}),
-  };
-}
-
 const SCHEMA_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // Formats Google Places' "HHMM" time strings (e.g. "0900") into schema.org's
@@ -117,9 +70,10 @@ function formatSchemaTime(hhmm: string) {
   return `${hhmm.slice(0, 2)}:${hhmm.slice(2)}`;
 }
 
-// Same "augment the existing @id, never redeclare" pattern as
-// buildOrganizationReviews above — only added on /contact, the one page
-// where the office location and hours are actually visible.
+// Augments the SAME organization entity buildTravelAgency() declares (matching
+// @id — JSON-LD nodes with an identical @id are merged by Google's parser)
+// rather than redeclaring it — only added on /contact, the one page where the
+// office location and hours are actually visible.
 export function buildOrganizationLocation(opts: {
   geo?: { lat: number; lng: number } | null;
   openingHours?: { day: number; open: string; close: string }[];
@@ -223,7 +177,8 @@ export function buildTouristTrip(tour: {
   description?: string | null;
   coverImage?: string | null;
   duration: number;
-  priceFrom: number;
+  /** null = price on request (Tour.hidePrice) — no `offers` block. */
+  priceFrom: number | null;
   touristType?: string | string[];
   itineraryItems?: { position: number; name: string }[];
 }) {
@@ -249,14 +204,18 @@ export function buildTouristTrip(tour: {
         : {}),
     },
     provider: { "@id": `${siteUrl}/#organization` },
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "INR",
-      price: tour.priceFrom,
-      availability: "https://schema.org/InStock",
-      seller: { "@id": `${siteUrl}/#organization` },
-      url: `${siteUrl}/tours/${tour.slug}`,
-    },
+    ...(tour.priceFrom === null
+      ? {}
+      : {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "INR",
+            price: tour.priceFrom,
+            availability: "https://schema.org/InStock",
+            seller: { "@id": `${siteUrl}/#organization` },
+            url: `${siteUrl}/tours/${tour.slug}`,
+          },
+        }),
   };
 }
 
@@ -265,10 +224,12 @@ export function buildProduct(tour: {
   slug: string;
   description?: string | null;
   coverImage?: string | null;
-  priceFrom: number;
-  rating?: number;
-  reviews?: Array<{ name: string; rating: number; body: string; createdAt: Date }>;
+  /** null = price on request (Tour.hidePrice) — no `offers` block. */
+  priceFrom: number | null;
 }) {
+  // No aggregateRating/review here: the tour reviews are taken from Google,
+  // and Google's guidelines exclude reviews copied from other sites from
+  // review markup. The reviews stay visible on the page.
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -277,48 +238,22 @@ export function buildProduct(tour: {
     image: tour.coverImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
     url: `${siteUrl}/tours/${tour.slug}`,
     brand: { "@type": "Brand", name: "Vertex Kashmir Holidays" },
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "INR",
-      price: tour.priceFrom,
-      availability: "https://schema.org/InStock",
-      seller: { "@id": `${siteUrl}/#organization` },
-      url: `${siteUrl}/tours/${tour.slug}`,
-    },
-    // aggregateRating count always matches tour.reviews.length — the same
-    // array rendered in the visible Reviews section on this page — so the
-    // schema can never claim more reviews than are actually shown.
-    ...(tour.reviews && tour.reviews.length > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: tour.rating ?? 4.5,
-            reviewCount: tour.reviews.length,
-            bestRating: 5,
-            worstRating: 1,
+    ...(tour.priceFrom === null
+      ? {}
+      : {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "INR",
+            price: tour.priceFrom,
+            availability: "https://schema.org/InStock",
+            seller: { "@id": `${siteUrl}/#organization` },
+            url: `${siteUrl}/tours/${tour.slug}`,
           },
-        }
-      : {}),
-    ...(tour.reviews && tour.reviews.length > 0
-      ? {
-          review: tour.reviews.slice(0, 5).map((r) => ({
-            "@type": "Review",
-            reviewRating: {
-              "@type": "Rating",
-              ratingValue: r.rating,
-              bestRating: 5,
-              worstRating: 1,
-            },
-            author: { "@type": "Person", name: r.name },
-            reviewBody: r.body,
-            datePublished: r.createdAt.toISOString().split("T")[0],
-          })),
-        }
-      : {}),
+        }),
   };
 }
 
-export function buildCampaignProduct(campaign: {
+export function buildAdventureProduct(adventure: {
   name: string;
   slug: string;
   sub?: string | null;
@@ -329,8 +264,8 @@ export function buildCampaignProduct(campaign: {
   const parsePrice = (s: string) => parseInt(s.replace(/[^0-9]/g, ""), 10);
 
   const offers =
-    campaign.tiers.length > 0
-      ? campaign.tiers.map((t) => {
+    adventure.tiers.length > 0
+      ? adventure.tiers.map((t) => {
           const price = parsePrice(t.price);
           return {
             "@type": "Offer",
@@ -340,10 +275,10 @@ export function buildCampaignProduct(campaign: {
             ...(isNaN(price) ? {} : { price }),
             availability: "https://schema.org/InStock",
             seller: { "@id": `${siteUrl}/#organization` },
-            ...(campaign.offerDeadline
-              ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+            ...(adventure.offerDeadline
+              ? { priceValidUntil: adventure.offerDeadline.split("T")[0] }
               : {}),
-            url: `${siteUrl}/adventures/${campaign.slug}`,
+            url: `${siteUrl}/adventures/${adventure.slug}`,
           };
         })
       : [
@@ -352,32 +287,32 @@ export function buildCampaignProduct(campaign: {
             priceCurrency: "INR",
             availability: "https://schema.org/InStock",
             seller: { "@id": `${siteUrl}/#organization` },
-            ...(campaign.offerDeadline
-              ? { priceValidUntil: campaign.offerDeadline.split("T")[0] }
+            ...(adventure.offerDeadline
+              ? { priceValidUntil: adventure.offerDeadline.split("T")[0] }
               : {}),
-            url: `${siteUrl}/adventures/${campaign.slug}`,
+            url: `${siteUrl}/adventures/${adventure.slug}`,
           },
         ];
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: campaign.name,
-    description: campaign.sub ?? campaign.name,
-    image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
-    url: `${siteUrl}/adventures/${campaign.slug}`,
+    name: adventure.name,
+    description: adventure.sub ?? adventure.name,
+    image: adventure.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+    url: `${siteUrl}/adventures/${adventure.slug}`,
     brand: { "@type": "Brand", name: "Vertex Kashmir Holidays" },
     offers: offers.length === 1 ? offers[0] : offers,
   };
 }
 
-export function buildCampaignEvents(campaign: {
+export function buildDepartureEvents(adventure: {
   name: string;
   slug: string;
   heroImage?: string | null;
   batches: Array<{ date: string; seats: number; price: string; status: string }>;
 }) {
-  return campaign.batches
+  return adventure.batches
     .filter((b) => b.date)
     .map((b) => {
       const price = parseInt(b.price.replace(/[^0-9]/g, ""), 10);
@@ -390,7 +325,7 @@ export function buildCampaignEvents(campaign: {
       return {
         "@context": "https://schema.org",
         "@type": "Event",
-        name: campaign.name,
+        name: adventure.name,
         startDate: b.date,
         eventStatus: "https://schema.org/EventScheduled",
         eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
@@ -404,15 +339,15 @@ export function buildCampaignEvents(campaign: {
             addressCountry: "IN",
           },
         },
-        image: campaign.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
-        url: `${siteUrl}/adventures/${campaign.slug}`,
+        image: adventure.heroImage ?? `${siteUrl}/brand/social/vertex-og-1200x630.png`,
+        url: `${siteUrl}/adventures/${adventure.slug}`,
         organizer: { "@id": `${siteUrl}/#organization` },
         offers: {
           "@type": "Offer",
           priceCurrency: "INR",
           ...(isNaN(price) ? {} : { price }),
           availability,
-          url: `${siteUrl}/adventures/${campaign.slug}`,
+          url: `${siteUrl}/adventures/${adventure.slug}`,
         },
       };
     });
@@ -535,7 +470,7 @@ export function buildBlogPosting(post: {
   coverImage?: string | null;
   author?: string | null;
   publishedAt?: Date | null;
-  updatedAt?: Date;
+  contentUpdatedAt?: Date | null;
 }) {
   return {
     "@context": "https://schema.org",
@@ -552,7 +487,29 @@ export function buildBlogPosting(post: {
     // (public)/layout.tsx, instead of inlining a duplicate Organization object.
     publisher: { "@id": `${siteUrl}/#organization` },
     datePublished: post.publishedAt?.toISOString(),
-    dateModified: post.updatedAt?.toISOString(),
+    // Last real content edit (not updatedAt, which any script write bumps).
+    dateModified: (post.contentUpdatedAt ?? post.publishedAt)?.toISOString(),
+  };
+}
+
+// /blog listing — the Blog itself, with each published post as a blogPost.
+export function buildBlog(opts: {
+  name: string;
+  posts: { title: string; slug: string; publishedAt?: Date | null }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${siteUrl}/blog#blog`,
+    name: opts.name,
+    url: `${siteUrl}/blog`,
+    publisher: { "@id": `${siteUrl}/#organization` },
+    blogPost: opts.posts.map((p) => ({
+      "@type": "BlogPosting",
+      headline: p.title,
+      url: `${siteUrl}/blog/${p.slug}`,
+      ...(p.publishedAt ? { datePublished: p.publishedAt.toISOString() } : {}),
+    })),
   };
 }
 

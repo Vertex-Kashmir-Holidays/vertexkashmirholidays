@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Lock, Calendar, ArrowRight, MessageSquare } from "lucide-react";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { trackTourInquiry, trackBookingStarted } from "@/lib/analytics";
+import { MIN_LEAD_DAYS } from "@/lib/bookings/finance";
+import { OPEN_TOUR_INQUIRY_EVENT, isDesktopLayout } from "@/lib/tourInquiry";
 
 interface BookingMobileBarProps {
   formMode?: "BOOKING_ONLY" | "INQUIRY_ONLY" | "BOTH";
@@ -18,6 +20,8 @@ interface BookingMobileBarProps {
   discountPct?: number;
   /** Minimum travellers required to book this tour — see Tour.minPersons. */
   minPersons?: number;
+  /** Tour.hidePrice — "Request Quote" CTA; the form asks the budget. */
+  priceHidden?: boolean;
 }
 
 // Online advance is 10% of the booking total (kept in sync with the server +
@@ -38,6 +42,7 @@ export function BookingMobileBar({
   oldPrice,
   discountPct,
   minPersons = 1,
+  priceHidden = false,
 }: BookingMobileBarProps) {
   const router = useRouter();
   const showInquiry = formMode !== "BOOKING_ONLY";
@@ -48,9 +53,22 @@ export function BookingMobileBar({
   const [bookPax, setBookPax] = useState(String(Math.max(minPersons, 2)));
   const minBookDate = (() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7);
+    d.setDate(d.getDate() + MIN_LEAD_DAYS);
     return d.toISOString().split("T")[0];
   })();
+  // Opened from elsewhere on the page (closing block "Enquire Now"). From lg up the
+  // sidebar handles it instead.
+  useEffect(() => {
+    if (!showInquiry) return;
+    const openInquiry = () => {
+      if (isDesktopLayout()) return;
+      setOpen("inquiry");
+      trackTourInquiry(tourName, tourId);
+    };
+    window.addEventListener(OPEN_TOUR_INQUIRY_EVENT, openInquiry);
+    return () => window.removeEventListener(OPEN_TOUR_INQUIRY_EVENT, openInquiry);
+  }, [showInquiry, tourName, tourId]);
+
   const pax = parseInt(bookPax, 10) || 2;
   const totalAmount = price * pax;
   const advanceAmount = Math.round(totalAmount * (ADVANCE_PCT / 100));
@@ -75,7 +93,7 @@ export function BookingMobileBar({
             }}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border-[1.5px] border-primary py-3 text-[16px] font-bold text-primary"
           >
-            <MessageSquare className="h-4 w-4" /> Inquiry
+            <MessageSquare className="h-4 w-4" /> {priceHidden ? "Request Quote" : "Inquiry"}
           </button>
         )}
         {showBook && (
@@ -113,7 +131,11 @@ export function BookingMobileBar({
               <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-border" />
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-[18px] font-bold text-foreground">
-                  {open === "inquiry" ? "Send an Inquiry" : "Book This Tour"}
+                  {open === "inquiry"
+                    ? priceHidden
+                      ? "Request a Quote"
+                      : "Send an Inquiry"
+                    : "Book This Tour"}
                 </h3>
                 <button
                   type="button"
@@ -128,8 +150,8 @@ export function BookingMobileBar({
               {open === "inquiry" ? (
                 <LeadForm
                   source="tour-detail"
-                  context={{ tourId, tourName }}
-                  buttonLabel="Send Inquiry"
+                  context={{ tourId, tourName, ...(priceHidden ? { priceHidden: true } : {}) }}
+                  buttonLabel={priceHidden ? "Request Quote" : "Send Inquiry"}
                 />
               ) : (
                 <div className="space-y-3.5">

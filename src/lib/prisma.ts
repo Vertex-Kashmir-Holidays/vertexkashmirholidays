@@ -3,7 +3,12 @@ import { env } from "@/lib/env";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaStored: PrismaClient | undefined;
 };
+
+/** REQUEST_QUOTE=true — every tour is price-on-request, whatever its own
+ *  Tour.hidePrice says. */
+export const REQUEST_QUOTE_ALL = env.REQUEST_QUOTE === "true";
 
 // Neon's `-pooler` host already does connection pooling server-side (PgBouncer),
 // so Prisma's own client-side pool just needs to not be the bottleneck. Left
@@ -22,11 +27,27 @@ const globalForPrisma = globalThis as unknown as {
 // typical cold-start window without slowing down the (much more common)
 // already-warm case.
 //
+// Local development must never read or write production: `next dev` runs with
+// NODE_ENV=development, so refuse to start when DATABASE_URL names the live
+// database. Deployed builds/servers run as production and are unaffected.
+// const LIVE_DATABASE_NAME = "vertex";
+
+// function assertNotLiveInDevelopment(url: URL): void {
+//   const databaseName = decodeURIComponent(url.pathname.replace(/^\//, ""));
+//   if (process.env.NODE_ENV === "development" && databaseName === LIVE_DATABASE_NAME) {
+//     throw new Error(
+//       `Refusing to start: DATABASE_URL points at the live "${LIVE_DATABASE_NAME}" database in development. ` +
+//         `Point .env / .env.local at vertex_dev instead.`,
+//     );
+//   }
+// 
+
 // DATABASE_URL is guaranteed set by this point — importing `env` above
 // throws a clear error at module load if it's missing, before Prisma ever
 // gets a chance to fail with its own opaque schema-validation error.
 function datasourceUrl(): string {
   const url = new URL(env.DATABASE_URL);
+  // assertNotLiveInDevelopment(url);
   if (!url.searchParams.has("connection_limit")) url.searchParams.set("connection_limit", "10");
   if (!url.searchParams.has("pool_timeout")) url.searchParams.set("pool_timeout", "30");
   if (!url.searchParams.has("connect_timeout")) url.searchParams.set("connect_timeout", "15");
@@ -60,7 +81,7 @@ const RETRY_DELAYS_MS = [1000, 2000, 4000];
 // call sites (e.g. src/lib/bookings/customer.ts) type their `$transaction`
 // callback parameter as `Prisma.TransactionClient` — the un-extended type —
 // so the exported client's type must stay exactly what it was before.
-function createPrismaClient(): PrismaClient {
+function createStoredClient(): PrismaClient {
   const client = new PrismaClient({ datasourceUrl: datasourceUrl() });
   return client.$extends({
     query: {
@@ -80,6 +101,27 @@ function createPrismaClient(): PrismaClient {
   }) as unknown as PrismaClient;
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+// The sitewide "Request Quote" switch lives here, on the one client every
+// page and API reads tours through: with REQUEST_QUOTE=true, Tour.hidePrice
+// reads as true wherever a query selects it (direct, nested or full-row), so
+// every existing hidePrice rule — cards, tour page, schema, checkout, leads —
+// applies to every tour and no listing can be missed. Nothing is written:
+// the stored flags are untouched and come back when the switch is turned off.
+function withRequestQuoteSwitch(stored: PrismaClient): PrismaClient {
+  if (!REQUEST_QUOTE_ALL) return stored;
+  return stored.$extends({
+    result: { tour: { hidePrice: { needs: { hidePrice: true }, compute: () => true } } },
+  }) as unknown as PrismaClient;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+/** Tours exactly as stored, ignoring the REQUEST_QUOTE switch — only for the
+ *  admin tour editor and its save route, which must show and keep each
+ *  tour's own hidePrice (the switched value must never be saved back). */
+export const prismaStored = globalForPrisma.prismaStored ?? createStoredClient();
+
+export const prisma = globalForPrisma.prisma ?? withRequestQuoteSwitch(prismaStored);
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaStored = prismaStored;
+}

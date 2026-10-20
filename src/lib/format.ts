@@ -28,3 +28,11 @@ export function formatMonthLabel(month: string): string {
   if (!y || !m) return month;
   return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
+
+/** Stat-strip value: plain integers get Indian digit grouping ("1100" →
+ *  "1,100"), except a calendar year ("2022"), which is shown as written.
+ *  Anything else ("24/7", "5.0★") is returned unchanged. */
+export function formatStatValue(value: string): string {
+  if (!/^\d+$/.test(value) || /^(19|20)\d\d$/.test(value)) return value;
+  return Number(value).toLocaleString("en-IN");
+}

@@ -19,7 +19,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   const lead = await prisma.lead.findUnique({
     where: { id },
-    select: { id: true, locked: true, status: true, b2bAgentId: true },
+    select: {
+      id: true,
+      locked: true,
+      status: true,
+      b2bAgentId: true,
+      booking: { select: { servicesLocked: true } },
+    },
   });
   // B2B requests are managed exclusively via /api/admin/b2b-requests.
   if (!lead || lead.b2bAgentId !== null) {
@@ -29,6 +35,18 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Only a converted lead can be locked." }, { status: 422 });
   }
   if (lead.locked) return NextResponse.json({ ok: true });
+  // Unlocked booking services must be re-locked from the booking's Services
+  // page — that lock validates the services, re-syncs commission and can
+  // email the updated summary, and it re-locks this lead + itinerary too.
+  if (lead.booking && !lead.booking.servicesLocked) {
+    return NextResponse.json(
+      {
+        error:
+          "This booking's services are unlocked — re-lock them from the booking's Services page (that also locks this lead and its itinerary).",
+      },
+      { status: 422 },
+    );
+  }
 
   await prisma.$transaction([
     prisma.lead.update({ where: { id }, data: { locked: true } }),

@@ -55,7 +55,7 @@ export async function listProposalSummaries({
         createdAt: true,
         updatedAt: true,
         owner: { select: { name: true } },
-        // Only two short strings are read from it, but Prisma can't select
+        // Only a few short strings are read from it, but Prisma can't select
         // JSON sub-paths — acceptable at this list's page size.
         data: true,
       },
@@ -81,6 +81,7 @@ export async function listProposalSummaries({
 function customerFrom(data: Prisma.JsonValue): {
   customerName: string;
   customerPhone: string;
+  travelDates: string;
   packageCosts: { label: string; price: string }[];
 } {
   const obj = (v: unknown) =>
@@ -93,7 +94,12 @@ function customerFrom(data: Prisma.JsonValue): {
   const packageCosts = keys
     .map((k) => ({ label: str(obj(tiers[k]).label), price: str(obj(tiers[k]).priceLabel) }))
     .filter((c) => c.price);
-  return { customerName: str(d.preparedFor), customerPhone: str(d.customerPhone), packageCosts };
+  return {
+    customerName: str(d.preparedFor),
+    customerPhone: str(d.customerPhone),
+    travelDates: str(d.travelDates),
+    packageCosts,
+  };
 }
 
 // Deliberately global (not per-owner): two staff quoting the same customer the

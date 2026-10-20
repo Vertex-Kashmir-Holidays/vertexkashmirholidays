@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { listItemSchema, cancelTierSchema, trustSchema } from "@/types/itinerary";
+import {
+  listItemSchema,
+  cancelTierSchema,
+  trustSchema,
+  priceActivitySchema,
+  DEFAULT_OPTIONAL_ACTIVITIES,
+} from "@/types/itinerary";
 
 // Two document shapes share this one schema/editor/PDF: "multi" is the
 // existing 3-tier comparison document (tiers/comparisonRows below), "single"
@@ -83,27 +89,90 @@ export const proposalDaySchema = z.object({
 });
 export type ProposalDay = z.infer<typeof proposalDaySchema>;
 
-// Single-package doc's "Stay Plan" table — destination/nights/hotel/room.
+// "Stay Plan" table — destination/nights/hotel/room. Shared by both docs:
+// `hotelName` is the SINGLE_TIER_KEY (Premium) hotel, so a single-package
+// proposal's hotels land in the Premium column when switched to multi;
+// hotelBudget/hotelLuxury are only used by the multi-package doc. Read the
+// per-option value through stayHotel() rather than these fields directly.
 export const stayPlanRowSchema = z.object({
   id: z.string(),
   destination: z.string(),
   nights: z.string(),
   hotelName: z.string(),
+  hotelBudget: z.string().default(""),
+  hotelLuxury: z.string().default(""),
   roomType: z.string(),
   // Defaulted so proposals saved before this field existed load as one room.
   rooms: z.string().default("1"),
 });
 export type StayPlanRow = z.infer<typeof stayPlanRowSchema>;
 
-// Single-package doc's "Transportation" table — one row per vehicle.
+// "Transportation" table — one row per vehicle. Same per-option convention
+// as stayPlanRowSchema: `vehicle` is the Premium/single value.
 export const transportRowSchema = z.object({
   id: z.string(),
   vehicle: z.string(),
+  vehicleBudget: z.string().default(""),
+  vehicleLuxury: z.string().default(""),
   seating: z.string(),
   usedFor: z.string(),
   duration: z.string(),
 });
 export type TransportRow = z.infer<typeof transportRowSchema>;
+
+const STAY_HOTEL_FIELD = {
+  budget: "hotelBudget",
+  premium: "hotelName",
+  luxury: "hotelLuxury",
+} as const;
+const TRANSPORT_VEHICLE_FIELD = {
+  budget: "vehicleBudget",
+  premium: "vehicle",
+  luxury: "vehicleLuxury",
+} as const;
+export const stayHotelField = (key: ProposalTierKey) => STAY_HOTEL_FIELD[key];
+export const transportVehicleField = (key: ProposalTierKey) => TRANSPORT_VEHICLE_FIELD[key];
+
+/** Blank / "-" / "–" — the comparison "not included" sentinel. */
+export const isComparisonDash = (v: string) => {
+  const t = v.trim();
+  return t === "" || t === "-" || t === COMPARISON_DASH;
+};
+
+/** Stay Plan rows from the days' stay labels — consecutive nights in the same
+ *  place become one row. Used to seed an empty Stay Plan so it starts in sync
+ *  with the day plan instead of with unrelated sample hotels. */
+export function deriveStayPlan(
+  days: ProposalDay[],
+  genId: (prefix: string) => string,
+): StayPlanRow[] {
+  const rows: StayPlanRow[] = [];
+  let prev = "";
+  for (const day of days) {
+    const place = day.stayLabel.trim();
+    if (!place) {
+      prev = "";
+      continue;
+    }
+    const last = rows[rows.length - 1];
+    if (place === prev && last) {
+      last.nights = String(Number(last.nights) + 1).padStart(2, "0");
+    } else {
+      rows.push({
+        id: genId("sp"),
+        destination: place,
+        nights: "01",
+        hotelName: "",
+        hotelBudget: "",
+        hotelLuxury: "",
+        roomType: "Double Sharing",
+        rooms: "1",
+      });
+    }
+    prev = place;
+  }
+  return rows;
+}
 
 export const proposalDataSchema = z.object({
   // Which document this is — see proposalDocTypeSchema above. Defaulted to
@@ -140,13 +209,27 @@ export const proposalDataSchema = z.object({
   // document's "Day Plan at a Glance" table ("single") — same underlying data.
   days: z.array(proposalDaySchema).default([]),
 
-  // Single-package only — "Stay Plan" table + the note below it.
+  // "Stay Plan" table + the note below it. Single-package prints it as its
+  // own table; multi-package prints its per-option hotels as the comparison
+  // table's "Stays" section.
   stayPlan: z.array(stayPlanRowSchema).default([]),
   stayPlanNote: z.string().default(""),
 
-  // Single-package only — "Transportation" table + the note below it.
+  // "Transportation" table + note — same single/multi split as stayPlan.
   transport: z.array(transportRowSchema).default([]),
   transportNote: z.string().default(""),
+
+  // Activities, one value per option in the same cell convention as
+  // comparisonRows (✓ / – / free text). Multi-package prints them as the
+  // comparison table's "Activities" section; single-package lists the ones
+  // its Premium column includes.
+  activities: z.array(comparisonRowSchema).default([]),
+
+  // "Available on the day" — paid-locally extras, not part of any option's
+  // price; same rows as itineraryDataSchema.optionalActivities. The default
+  // only fills proposals saved before this field existed (sample row for
+  // reference) — a list staff emptied saves as [] and stays empty.
+  optionalActivities: z.array(priceActivitySchema).default(DEFAULT_OPTIONAL_ACTIVITIES),
 
   // Page 5 — what's covered + payment & cancellation (reused shapes)
   inc: z.array(listItemSchema).default([]),
@@ -191,6 +274,8 @@ export interface ProposalSummary {
   /** From `data` — who the proposal is for, and their phone (follow-ups). */
   customerName?: string;
   customerPhone?: string;
+  /** From `data.travelDates`, as typed on the cover. */
+  travelDates?: string;
   /** Package cost(s) from `data.tiers` — one for a single-package proposal,
    *  one per option (in TIER_ORDER) for a multi-option one. */
   packageCosts?: { label: string; price: string }[];

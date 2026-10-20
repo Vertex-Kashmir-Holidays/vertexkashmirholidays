@@ -26,7 +26,8 @@ export const getPublicHeroStats = unstable_cache(
     ]);
 
     const travellers = adminStats.find((s) => s.label === "Travellers");
-    const years = adminStats.find((s) => s.label === "Years");
+    // The founding year ("2022"), shown as "2022 · Operating Since".
+    const years = adminStats.find((s) => s.label === "Operating Since");
 
     const stats: SiteStatData[] = [];
     if (travellers) {
@@ -39,7 +40,12 @@ export const getPublicHeroStats = unstable_cache(
       stats.push({ label: years.label, value: years.value, suffix: years.suffix });
     }
     if (ratingAgg._count > 0 && ratingAgg._avg.rating != null) {
-      stats.push({ label: "Rating", value: `${ratingAgg._avg.rating.toFixed(1)}★`, suffix: null });
+      // With its count — "5.0★ from 12 reviews" is checkable, a bare 5.0 isn't.
+      stats.push({
+        label: `from ${ratingAgg._count} review${ratingAgg._count === 1 ? "" : "s"}`,
+        value: `${ratingAgg._avg.rating.toFixed(1)}★`,
+        suffix: null,
+      });
     }
 
     return stats;

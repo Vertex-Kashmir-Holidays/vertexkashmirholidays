@@ -50,6 +50,12 @@ const schema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional(),
   CLOUDINARY_FOLDER: z.string().optional(),
 
+  // ── Pricing display ─────────────────────────────────────────────────────
+  // "true" = every tour is price-on-request sitewide ("Request Quote", no
+  // prices, enquiry-only) — the same behaviour as Tour.hidePrice, switched on
+  // for all tours at once (see src/lib/prisma.ts). Anything else = per tour.
+  REQUEST_QUOTE: z.string().optional(),
+
   // ── Cron ──────────────────────────────────────────────────────────────
   CRON_SECRET: z.string().optional(),
 

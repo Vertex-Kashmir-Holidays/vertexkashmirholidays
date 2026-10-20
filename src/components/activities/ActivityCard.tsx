@@ -8,7 +8,10 @@ import { MapPin, Clock, ArrowRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import { imgSrc } from "@/lib/placeholder";
 import { formatINR } from "@/lib/accents";
+import { trackWhatsappClick } from "@/lib/analytics";
+import { PRICE_UNIT_LABELS } from "@/lib/activities/priceUnit";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
+import type { ActivityPriceUnit } from "@prisma/client";
 
 export interface ActivityCardData {
   id: string;
@@ -17,6 +20,7 @@ export interface ActivityCardData {
   location: string | null;
   duration: string | null;
   price: number | null;
+  priceUnit: ActivityPriceUnit;
   image: string | null;
 }
 
@@ -44,7 +48,10 @@ export function ActivityCard({
       transition={{ duration: 0.5, delay: index * 0.05 }}
     >
       <Tilt3D intensity={6}>
-        <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/10">
+        <article
+          data-wa-context="activity"
+          className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/10"
+        >
           {/* Image */}
           <div className="relative h-44 overflow-hidden">
             <Link
@@ -91,7 +98,9 @@ export function ActivityCard({
               <p className="text-[22px] font-extrabold leading-tight text-foreground">
                 {activity.price != null ? formatINR(activity.price) : "On request"}
               </p>
-              <span className="text-[10px] text-muted-foreground">per person</span>
+              <span className="text-[10px] text-muted-foreground">
+                {PRICE_UNIT_LABELS[activity.priceUnit]}
+              </span>
             </div>
 
             {/* CTAs */}
@@ -101,6 +110,7 @@ export function ActivityCard({
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackWhatsappClick("activities_card")}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 py-2.5 text-[14px] font-semibold text-primary transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:shadow-md"
                 >
                   <WhatsAppIcon className="h-3.5 w-3.5" />

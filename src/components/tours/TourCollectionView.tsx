@@ -28,6 +28,7 @@ import { TourCollectionLinks } from "@/components/tours/TourCollectionLinks";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
 import { FaqPreviewList } from "@/components/faqs/FaqPreviewList";
 import { TrustSection } from "@/components/common/TrustSection";
+import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
 
 // A Tour Collection landing page (/kashmir-tour-packages, /himachal-tour-packages,
 // …), served by the shared top-level (public)/[slug] route. Lists every
@@ -50,6 +51,7 @@ export const getTourCollectionPage = cache(async (slug: string) => {
           id: true,
           slug: true,
           title: true,
+          category: true,
           badge: true,
           badgeColor: true,
           duration: true,
@@ -58,6 +60,7 @@ export const getTourCollectionPage = cache(async (slug: string) => {
           reviewCount: true,
           priceFrom: true,
           priceWas: true,
+          hidePrice: true,
           minPersons: true,
           region: true,
           packageOptions: true,
@@ -67,7 +70,7 @@ export const getTourCollectionPage = cache(async (slug: string) => {
       faqs: {
         where: { status: "PUBLISHED" },
         orderBy: [{ featured: "desc" }, { sortOrder: "asc" }],
-        select: { id: true, question: true, shortAnswer: true, slug: true },
+        select: FAQ_PREVIEW_SELECT,
       },
     },
   });
@@ -105,6 +108,7 @@ export async function TourCollectionView({ slug }: { slug: string }) {
     getBannersForPage("tour-collection-after-all"),
   ]);
   const otherCollections = allCollections.filter((x) => x.slug !== c.slug);
+  const faqs = c.faqs.map(toFaqPreview);
 
   const url = `${SITE_URL}/${c.slug}`;
   const intro =
@@ -114,6 +118,7 @@ export async function TourCollectionView({ slug }: { slug: string }) {
   // published option (each deep-linking to that option on the tour page).
   const items = c.tours.flatMap((t) => {
     const common = {
+      category: t.category,
       bc: (BADGE_COLORS as readonly string[]).includes(t.badgeColor ?? "")
         ? (t.badgeColor as (typeof BADGE_COLORS)[number])
         : ("green" as const),
@@ -124,7 +129,7 @@ export async function TourCollectionView({ slug }: { slug: string }) {
     return tourCardOptions(t.packageOptions).map((option) => {
       if (!option) {
         return {
-          priceFrom: t.priceFrom,
+          priceFrom: t.hidePrice ? 0 : t.priceFrom,
           rating: t.rating,
           card: {
             ...common,
@@ -141,7 +146,7 @@ export async function TourCollectionView({ slug }: { slug: string }) {
       }
       const pkg = packageOptionCard(t, option);
       return {
-        priceFrom: pkg.priceFrom,
+        priceFrom: t.hidePrice ? 0 : pkg.priceFrom,
         rating: t.rating,
         card: {
           ...common,
@@ -175,9 +180,9 @@ export async function TourCollectionView({ slug }: { slug: string }) {
         )}
       />
       {/* Short answer only — matches what's rendered on this page. */}
-      {c.faqs.length > 0 && (
+      {faqs.length > 0 && (
         <JsonLd
-          data={buildFAQPage(c.faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))}
+          data={buildFAQPage(faqs.map((f) => ({ question: f.question, answer: f.shortAnswer })))}
         />
       )}
 
@@ -213,13 +218,13 @@ export async function TourCollectionView({ slug }: { slug: string }) {
 
         <TourCategoryHubWhyChoose variant={isKashmirCollection ? "kashmir" : "general"} />
 
-        {c.faqs.length > 0 && (
+        {faqs.length > 0 && (
           <section className="rounded-2xl border border-border bg-card p-3 shadow-soft sm:p-6">
             <h2 className="h-display text-[22px] font-bold text-foreground sm:text-[26px]">
               {c.name} — FAQs
             </h2>
             <div className="mt-4">
-              <FaqPreviewList faqs={c.faqs} />
+              <FaqPreviewList faqs={faqs} />
             </div>
           </section>
         )}

@@ -25,7 +25,11 @@ const WHY_CHOOSE_ITEMS = [
     s: "Your own vehicle and driver for the whole trip",
     Icon: CarFront,
   },
-  { t: "24×7 Support", s: "On-ground help whenever you need it, day or night", Icon: Headphones },
+  {
+    t: "Support 9 AM – 9 PM, Mon–Sat",
+    s: "Once your trip has started, your driver and ground team are reachable any time",
+    Icon: Headphones,
+  },
   {
     t: "Customized Itineraries",
     s: "Every package can be adjusted to fit how you want to travel",

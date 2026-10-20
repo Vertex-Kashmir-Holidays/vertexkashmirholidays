@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/atoms/button";
-import { RefreshCw, Download, Save, Loader2, ArrowLeft } from "lucide-react";
+import { RefreshCw, Download, Save, Loader2, ArrowLeft, FileOutput } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import type { ProposalDocType, ProposalStatus } from "@/types/proposal";
 
@@ -25,6 +25,9 @@ interface ToolbarProps {
   isSaving?: boolean;
   isExporting?: boolean;
   canSave?: boolean;
+  /** Opens the convert dialog. Omitted when the proposal isn't saved yet or the user can't create itineraries. */
+  onConvert?: () => void;
+  isConverting?: boolean;
 }
 
 export function Toolbar({
@@ -39,6 +42,8 @@ export function Toolbar({
   isSaving,
   isExporting,
   canSave = true,
+  onConvert,
+  isConverting,
 }: ToolbarProps) {
   return (
     <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 no-print">
@@ -109,6 +114,17 @@ export function Toolbar({
             )}
             PDF
           </Button>
+
+          {onConvert && (
+            <Button variant="outline" size="sm" onClick={onConvert} disabled={isConverting || isSaving}>
+              {isConverting ? (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileOutput className="mr-1 h-3.5 w-3.5" />
+              )}
+              Convert to Itinerary
+            </Button>
+          )}
 
           <Button size="sm" onClick={onSave} disabled={isSaving || !canSave}>
             {isSaving ? (

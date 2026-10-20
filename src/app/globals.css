@@ -475,7 +475,7 @@ body {
   );
 }
 /* For cards that are always dark regardless of the site theme (e.g. the
-   campaign hero's navy reserve-form card) — forces the light-theme streak too. */
+   adventure hero's navy reserve-form card) — forces the light-theme streak too. */
 .sweep-on-dark::after {
   background: linear-gradient(
     90deg,
@@ -582,37 +582,37 @@ body {
   animation-delay: var(--hr-delay, 0s);
 }
 
-/* Campaign accent — driven by per-campaign --camp-accent / --camp-accent2
-   (set inline on the campaign wrapper), with sensible cyan/teal fallbacks. */
+/* Adventure accent — driven by per-adventure --adventure-accent / --adventure-accent2
+   (set inline on the adventure wrapper), with sensible cyan/teal fallbacks. */
 .bg-accent-grad {
   background-image: linear-gradient(
     120deg,
-    var(--camp-accent, hsl(214 88% 34%)),
-    var(--camp-accent2, hsl(151 70% 40%))
+    var(--adventure-accent, hsl(214 88% 34%)),
+    var(--adventure-accent2, hsl(151 70% 40%))
   );
 }
 .grad-accent-text {
   background-image: linear-gradient(
     120deg,
-    var(--camp-accent, hsl(214 88% 34%)),
-    var(--camp-accent2, hsl(151 70% 40%))
+    var(--adventure-accent, hsl(214 88% 34%)),
+    var(--adventure-accent2, hsl(151 70% 40%))
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.text-camp-accent {
-  color: var(--camp-accent, hsl(214 88% 34%));
+.text-adventure-accent {
+  color: var(--adventure-accent, hsl(214 88% 34%));
 }
 .tl-line {
   background-image: linear-gradient(
     to bottom,
-    var(--camp-accent, hsl(214 88% 34%)),
-    var(--camp-accent2, hsl(151 70% 40%))
+    var(--adventure-accent, hsl(214 88% 34%)),
+    var(--adventure-accent2, hsl(151 70% 40%))
   );
 }
 
-/* Campaign marquee tracks (gallery + strip) */
+/* Adventure marquee tracks (gallery + strip) */
 .mq-track {
   display: flex;
   gap: 3.5rem;

@@ -35,6 +35,9 @@ interface OfferHeroProps {
   heroImageMobile: string | null;
   plans: OfferHeroPlan[];
   stats?: SiteStatData[];
+  // The trip's dates have passed — the CTAs give way to a "this offer ran"
+  // notice pointing at current offers and tours.
+  ended?: boolean;
 }
 
 // Festive particles per occasion, using the same global .ember/.flake CSS the
@@ -87,6 +90,7 @@ export function OfferHero({
   heroImageMobile,
   plans,
   stats,
+  ended = false,
 }: OfferHeroProps) {
   const { offer, selected, view, openEnquiry } = useOfferSelection();
   const wa = useWhatsAppLink();
@@ -176,49 +180,82 @@ export function OfferHero({
                 <MapPin className="h-4 w-4 text-primary" /> {routeLabel}
               </li>
             )}
-            <li className="glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5">
-              <Users className="h-4 w-4 text-primary" /> Prices for 2 adults
-            </li>
+            {!ended && (
+              <li className="glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5">
+                <Users className="h-4 w-4 text-primary" /> Prices for 2 adults
+              </li>
+            )}
           </ul>
 
-          <div
-            className="hero-reveal mt-7 flex flex-col gap-4 sm:flex-row sm:items-center"
-            style={reveal("0.3s")}
-          >
-            {fromPrice !== null && (
-              <p className="text-white sm:mr-3">
-                <span className="block text-[12px] uppercase tracking-[0.14em] text-white/65">
-                  From · 2 adults
-                </span>
-                <span className="text-[32px] font-bold leading-none">{formatINR(fromPrice)}</span>
+          {ended ? (
+            <div
+              role="status"
+              className="hero-reveal glass mt-7 max-w-xl rounded-2xl p-5 text-white"
+              style={reveal("0.3s")}
+            >
+              <p className="text-[18px] font-bold">
+                {offer.dates ? `This offer ran ${offer.dates}` : "This offer has ended"}
               </p>
-            )}
-            <button
-              type="button"
-              onClick={() => openEnquiry()}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-[15px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
+              <p className="mt-1 text-[14px] leading-relaxed text-white/75">
+                Bookings for these dates are closed. The itinerary below shows what the trip
+                included.
+              </p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/offers"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-[15px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
+                >
+                  See current offers
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
+                </Link>
+                <Link
+                  href="/tours"
+                  className="glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-[15px] font-bold text-white transition hover:bg-white/15"
+                >
+                  Browse tour packages
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="hero-reveal mt-7 flex flex-col gap-4 sm:flex-row sm:items-center"
+              style={reveal("0.3s")}
             >
-              {offer.ctaLabel}
-              <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
-            </button>
-            <a
-              href={wa(offerWhatsAppMessage(offer, selected))}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() =>
-                trackWhatsappClick(
-                  "offer_hero",
-                  undefined,
-                  undefined,
-                  offerClickParams(offer, selected),
-                )
-              }
-              className="glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-bold text-white transition hover:bg-white/15"
-            >
-              <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
-              Ask on WhatsApp
-            </a>
-          </div>
+              {fromPrice !== null && (
+                <p className="text-white sm:mr-3">
+                  <span className="block text-[12px] uppercase tracking-[0.14em] text-white/65">
+                    From · 2 adults
+                  </span>
+                  <span className="text-[32px] font-bold leading-none">{formatINR(fromPrice)}</span>
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => openEnquiry()}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-[15px] font-bold text-primary-foreground shadow-glow ring-inner transition hover:brightness-110"
+              >
+                {offer.ctaLabel}
+                <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
+              </button>
+              <a
+                href={wa(offerWhatsAppMessage(offer, selected))}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackWhatsappClick(
+                    "offer_hero",
+                    undefined,
+                    undefined,
+                    offerClickParams(offer, selected),
+                  )
+                }
+                className="glass inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-bold text-white transition hover:bg-white/15"
+              >
+                <WhatsAppIcon className="h-4 w-4 text-[#25D366]" />
+                Ask on WhatsApp
+              </a>
+            </div>
+          )}
 
           {stats && <HeroStats stats={stats} />}
         </div>

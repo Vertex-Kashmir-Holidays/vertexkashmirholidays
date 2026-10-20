@@ -20,11 +20,7 @@ export function DestinationsBrowser({ destinations }: DestinationsBrowserProps) 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return destinations.filter((d) => {
-      const chipMatch =
-        chip === "All" ||
-        d.name === chip ||
-        d.region === chip ||
-        (chip === "Other States" && d.region !== "Kashmir Valley" && d.region !== "Ladakh");
+      const chipMatch = chip === "All" || d.name === chip || d.region === chip;
       const searchMatch =
         !q || d.name.toLowerCase().includes(q) || (d.tagline ?? "").toLowerCase().includes(q);
       return chipMatch && searchMatch;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidE164Strict } from "@/lib/auth/phoneStrict.server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
@@ -24,9 +25,12 @@ import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
 import { publishedPackageOptions } from "@/lib/tours/content";
+import { isOfferCurrent } from "@/lib/offers/content";
 import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
 import type { Prisma } from "@prisma/client";
+import { deriveBandForPrice, resolveQualification } from "@/lib/leads/budgetBands.server";
+import { adventureTierChoices, parseAdventureTiers } from "@/lib/adventureTiers";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +75,9 @@ export async function GET(req: NextRequest) {
   const requestedComponent = searchParams.get("requestedComponent")?.trim();
   // Occasion Offer filter: an offer id, or "ANY" for leads from any offer.
   const offer = searchParams.get("offer")?.trim();
+  // Lead-qualification budget filter: a BudgetBand key, "undecided", or "NONE"
+  // (leads captured before qualification existed / never answered).
+  const budgetBand = searchParams.get("budgetBand")?.trim();
   const search = searchParams.get("search")?.trim() ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const take = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "30")));
@@ -93,6 +100,9 @@ export async function GET(req: NextRequest) {
   }
   if (offer && offer !== "ALL") {
     where.occasionOfferId = offer === "ANY" ? { not: null } : offer;
+  }
+  if (budgetBand && budgetBand !== "ALL") {
+    where.budgetBandKey = budgetBand === "NONE" ? null : budgetBand;
   }
   if (search) {
     where.OR = [
@@ -122,6 +132,11 @@ export async function GET(req: NextRequest) {
         contactChannel: true,
         packageName: true,
         occasionOffer: { select: { id: true, name: true } },
+        adventure: { select: { id: true, name: true } },
+        budgetBandKey: true,
+        budgetBandLabel: true,
+        budgetBandDerived: true,
+        travelMonth: true,
         requestedComponents: true,
         transportModes: true,
         fromCity: true,
@@ -196,6 +211,8 @@ function composeNotes(
         transportModes?: string[];
         packageName?: string;
         offerName?: string;
+        activityName?: string;
+        adventureName?: string;
       }
     | undefined,
 ): string | undefined {
@@ -236,6 +253,8 @@ function composeNotes(
       parts.push(`Requested from: ${PLACEMENT_LABEL[context.placement] ?? context.placement}`);
   }
   if (context?.offerName) parts.push(`🎉 Offer: ${context.offerName}`);
+  if (context?.activityName) parts.push(`🎯 Activity: ${context.activityName}`);
+  if (context?.adventureName) parts.push(`Adventure: ${context.adventureName}`);
   if (context?.tourName) parts.push(`Tour: ${context.tourName}`);
   if (context?.packageName) parts.push(`Package: ${context.packageName}`);
   if (context?.destinationName) parts.push(`Destination: ${context.destinationName}`);
@@ -244,7 +263,7 @@ function composeNotes(
 }
 
 // Public: create a lead from any inquiry/contact form.
-// No auth guard — called from hero, tour sidebar, contact page, and campaign pages.
+// No auth guard — called from hero, tour sidebar, contact page, and adventure pages.
 export async function POST(req: NextRequest) {
   // Reject cross-site scripted POSTs (CSRF) before doing any work.
   if (!isSameOrigin(req)) {
@@ -313,6 +332,82 @@ export async function POST(req: NextRequest) {
   const { name, phone, email, message, source, context, travelDate, travellers, attribution } =
     parsed.data;
 
+  // Strict phone ranges (server-only full metadata) — the shared schema's
+  // lightweight check lets through fake numbers like +91 15067145376.
+  if (!isValidE164Strict(phone)) {
+    console.warn(`[leads] invalid phone range phone=${maskPhone(phone)} ip=${ip}`);
+    return NextResponse.json(
+      {
+        error: "Please check the highlighted fields and try again.",
+        fieldErrors: { phone: ["Please enter a valid phone number."] },
+      },
+      { status: 400 },
+    );
+  }
+
+  // Lead qualification, by context. A tour enquiry's band is derived here from
+  // the tour's own price (never from the client) and flagged as derived; an
+  // activity enquiry has no budget; any other form must answer both (an active
+  // BudgetBand or "undecided"). The month is always required. Labels are the DB's.
+  // The tour is named by id (tour page forms) or by slug (the "Request Quote"
+  // modal on listing cards, which only know the tour's URL).
+  const tourWhere = context?.tourId
+    ? { id: context.tourId }
+    : context?.tourSlug
+      ? { slug: context.tourSlug }
+      : null;
+  const isTourContext = !!tourWhere;
+  const isActivityContext = !!context?.activitySlug || source === "activity-detail";
+  const tour = tourWhere
+    ? await prisma.tour.findFirst({
+        where: { ...tourWhere, published: true },
+        select: { priceFrom: true, packageOptions: true, hidePrice: true },
+      })
+    : null;
+  // A price-on-request tour (Tour.hidePrice) shows no price, so its band is
+  // never derived from priceFrom — the visitor's own answer is used instead.
+  // The tour's flag is read here, never taken from the client.
+  const priceHiddenTour = !!tour?.hidePrice;
+  const derivesBudget = !!tour && !priceHiddenTour;
+  const answered = await resolveQualification({
+    budgetBandKey:
+      (isTourContext && !priceHiddenTour) || isActivityContext
+        ? undefined
+        : parsed.data.budgetBandKey,
+    travelMonth: parsed.data.travelMonth,
+  });
+  let derivedBand: { budgetBandKey: string; budgetBandLabel: string } | null = null;
+  if (derivesBudget) {
+    const option = context?.packageName
+      ? publishedPackageOptions(tour!.packageOptions).find((o) => o.name === context.packageName)
+      : undefined;
+    derivedBand = await deriveBandForPrice(option ? option.priceForTwo / 2 : tour!.priceFrom);
+  }
+  const qualification = {
+    budgetBandKey: derivedBand?.budgetBandKey ?? answered.budgetBandKey,
+    budgetBandLabel: derivedBand?.budgetBandLabel ?? answered.budgetBandLabel,
+    budgetBandDerived: !!derivedBand,
+    travelMonth: answered.travelMonth,
+  };
+  // A tour/activity visitor was never asked the budget — never block them on
+  // it. Exception: a price-on-request tour's enquiry form asks it (it sends
+  // context.priceHidden), so it's required there; other forms that merely
+  // carry the tourId (e.g. the flight/train quote) still aren't blocked.
+  const budgetRequired =
+    (!isTourContext && !isActivityContext) || (priceHiddenTour && !!context?.priceHidden);
+  if ((budgetRequired && !qualification.budgetBandKey) || !qualification.travelMonth) {
+    return NextResponse.json(
+      {
+        error: "Please choose your budget and travel month (or “Not sure yet”).",
+        fieldErrors: {
+          ...(qualification.budgetBandKey ? {} : { budgetBandKey: ["Choose your budget."] }),
+          ...(qualification.travelMonth ? {} : { travelMonth: ["Choose your travel month."] }),
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   // Context-supplied date/travellers fill in when the top-level fields are absent.
   const effectiveDate = travelDate ?? context?.travelDate;
   const effectiveTravellers = travellers ?? context?.travellers;
@@ -374,9 +469,9 @@ export async function POST(req: NextRequest) {
   // an unknown/forged id is silently ignored, never a failed enquiry. The
   // package name is kept only if it matches one of that tour's published
   // options, so Lead.packageName is always a real package.
-  const leadTour = context?.tourId
+  const leadTour = tourWhere
     ? await prisma.tour.findFirst({
-        where: { id: context.tourId, published: true },
+        where: { ...tourWhere, published: true },
         select: { id: true, packageOptions: true },
       })
     : null;
@@ -390,8 +485,39 @@ export async function POST(req: NextRequest) {
           id: true,
           name: true,
           crmTourId: true,
+          endDate: true,
           packages: { where: { published: true }, select: { name: true } },
         },
+      })
+    : null;
+  // An ended offer's page hides its enquiry form, but a page loaded before the
+  // end date can still submit — refuse it rather than take a lead for dates
+  // that have passed (same IST cut-off as the public listings).
+  if (leadOffer && !isOfferCurrent(leadOffer.endDate)) {
+    return NextResponse.json(
+      {
+        error:
+          "Sorry — this offer has ended and is no longer taking bookings. Please see our current offers at /offers.",
+        offerEnded: true,
+        offersHref: "/offers",
+      },
+      { status: 410 },
+    );
+  }
+  // Activity detail page — same rule: only a real, published activity is
+  // named in the notes, by its DB name (never the client-sent display copy).
+  const leadActivity = context?.activitySlug
+    ? await prisma.activity.findFirst({
+        where: { slug: context.activitySlug, published: true },
+        select: { name: true },
+      })
+    : null;
+  // Adventure page — same rule: only a real, published adventure is linked, and
+  // the tier name is kept only if it's one that adventure's pricing can produce.
+  const leadAdventure = context?.adventureSlug
+    ? await prisma.adventure.findFirst({
+        where: { slug: context.adventureSlug, published: true },
+        select: { id: true, name: true, tiers: true },
       })
     : null;
   const packageName = !context?.packageName
@@ -399,7 +525,13 @@ export async function POST(req: NextRequest) {
     : leadTour
       ? publishedPackageOptions(leadTour.packageOptions).find((o) => o.name === context.packageName)
           ?.name
-      : leadOffer?.packages.find((p) => p.name === context.packageName)?.name;
+      : leadOffer
+        ? leadOffer.packages.find((p) => p.name === context.packageName)?.name
+        : leadAdventure
+          ? parseAdventureTiers(leadAdventure.tiers)
+              .flatMap(adventureTierChoices)
+              .find((c) => c.name === context.packageName)?.name
+          : undefined;
 
   const lead = await prisma.lead.create({
     data: {
@@ -416,16 +548,29 @@ export async function POST(req: NextRequest) {
       // An offer lead is also tagged with the offer's hidden CRM tour.
       tourId: leadTour?.id ?? leadOffer?.crmTourId ?? undefined,
       occasionOfferId: leadOffer?.id,
+      adventureId: leadAdventure?.id,
       packageName,
       notes: composeNotes(
         message,
         // offerName from the DB, never the client-sent display copy.
-        context ? { ...context, packageName, offerName: leadOffer?.name } : undefined,
+        context
+          ? {
+              ...context,
+              packageName,
+              offerName: leadOffer?.name,
+              activityName: leadActivity?.name,
+              adventureName: leadAdventure?.name,
+            }
+          : undefined,
       ),
       // Trip Planner structured intent — WHAT the customer wants, separate
       // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
       // when nothing was selected, so this stays indistinguishable from an
       // old pre-Trip-Planner lead at read time.
+      budgetBandKey: qualification.budgetBandKey,
+      budgetBandLabel: qualification.budgetBandLabel,
+      budgetBandDerived: qualification.budgetBandDerived,
+      travelMonth: qualification.travelMonth,
       requestedComponents: context?.requestedComponents?.length
         ? JSON.stringify(context.requestedComponents)
         : undefined,
@@ -522,5 +667,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
+  // The stored band (incl. a derived one) goes back for lead_submit analytics.
+  return NextResponse.json(
+    {
+      success: true,
+      id: lead.id,
+      budgetBandKey: qualification.budgetBandKey,
+      budgetBandDerived: qualification.budgetBandDerived,
+    },
+    { status: 201 },
+  );
 }

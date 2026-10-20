@@ -11,6 +11,8 @@ interface CityOriginHeroProps {
   /** Clean city name (no parenthetical) — prefills the Trip Planner form's
    *  "Travelling from" field. Falls back to `cityName` if not given. */
   originCity?: string;
+  /** Line under the H1 — per city, from OriginCity.heroSubtitle. */
+  subtitle: string;
 }
 
 // Same SecondaryHero shell used by every other listing page (Tours,
@@ -20,7 +22,7 @@ interface CityOriginHeroProps {
 // /plan-your-kashmir-trip page uses (source="tour-origin-city" so these leads
 // keep reporting under this page's own tag), with the origin pre-filled —
 // one form, one lead pipeline, not a separate one per page.
-export function CityOriginHero({ cityName, originCity }: CityOriginHeroProps) {
+export function CityOriginHero({ cityName, originCity, subtitle }: CityOriginHeroProps) {
   return (
     <SecondaryHero
       image="/hero/gulmarg-lg.webp"
@@ -66,8 +68,7 @@ export function CityOriginHero({ cityName, originCity }: CityOriginHeroProps) {
           className="hero-reveal mt-3 max-w-md text-[16px] text-white/85"
           style={{ "--hr-delay": "0.2s" } as React.CSSProperties}
         >
-          Handpicked Kashmir holidays, curated by local experts — and if you need it, we can also
-          arrange your flight or train tickets from {cityName}.
+          {subtitle}
         </p>
       </div>
     </SecondaryHero>

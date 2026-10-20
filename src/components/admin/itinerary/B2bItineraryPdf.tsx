@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/alt-text */
-// B2B itinerary PDF — the travel proposal a B2B partner forwards to their OWN
-// customer. Same @react-pdf/renderer tooling and ItineraryData shape as the
+// B2B itinerary PDF — the FINAL itinerary a B2B partner forwards to their OWN
+// customer (proposals are a separate document, ProposalPdf.tsx, shared by
+// direct and B2B customers — nothing here should read as a proposal). Same
+// @react-pdf/renderer tooling and ItineraryData shape as the
 // normal customer document (ItineraryPdf.tsx), laid out close to the
 // proposal PDF (ProposalPdf.tsx): a full-bleed cover, one flowing body with
 // section headings, and a closing page — in navy rather than the proposal's
@@ -18,6 +20,7 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { ItineraryData, ItineraryStatus } from "@/types/itinerary";
 import { PdfIcon } from "./ItineraryPdf";
+import { formatStayDate } from "@/lib/itinerary/stayDate";
 
 export interface B2bAgentInfo {
   agencyName: string | null;
@@ -47,8 +50,8 @@ const BG_SUBTLE = "#f5f7fa";
 const WHITE = "#ffffff";
 
 const STATUS_LABEL: Record<ItineraryStatus, string> = {
-  DRAFT: "TRAVEL PROPOSAL",
-  SENT: "TRAVEL PROPOSAL",
+  DRAFT: "TRAVEL ITINERARY",
+  SENT: "TRAVEL ITINERARY",
   CONFIRMED: "CONFIRMED ITINERARY",
 };
 
@@ -58,7 +61,18 @@ const s = StyleSheet.create({
 
   // ── Cover ────────────────────────────────────────────────────────────────
   cover: { backgroundColor: NAVY, padding: 0 },
-  coverContent: { padding: 40, height: "100%" },
+  // Full-bleed cover photo under a navy wash, so the white/gold cover text
+  // stays readable on any picture. Without a photo the cover is plain navy.
+  coverImg: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" },
+  coverShade: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(11,32,60,0.62)",
+  },
+  coverContent: { position: "relative", padding: 40, height: "100%" },
   coverBrandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   // White badge behind the agent's logo so any logo colour stays visible on navy.
   coverLogoChip: {
@@ -110,17 +124,6 @@ const s = StyleSheet.create({
   coverPriceLabel: { fontSize: 8, color: GOLD, letterSpacing: 1.4 },
   coverPriceNote: { fontSize: 8, color: SKY, marginTop: 4 },
   coverPriceValue: { fontSize: 22, color: WHITE, fontFamily: "Helvetica-Bold" },
-  coverNote: {
-    marginTop: 14,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(159,182,211,0.35)",
-    backgroundColor: "rgba(159,182,211,0.08)",
-  },
-  coverNoteTitle: { fontSize: 7.5, letterSpacing: 1.4, color: GOLD, fontFamily: "Helvetica-Bold" },
-  coverNoteText: { fontSize: 8.5, color: "#C9D6E6", lineHeight: 1.5, marginTop: 4 },
   coverFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -192,6 +195,7 @@ const s = StyleSheet.create({
   tCell: { fontSize: 9, color: BODY, lineHeight: 1.45, paddingVertical: 9, paddingHorizontal: 9 },
   tCellStrong: { fontSize: 9.3, color: INK, fontFamily: "Helvetica-Bold", lineHeight: 1.4 },
   dayNum: { fontSize: 13, fontFamily: "Helvetica-Bold", color: GOLD },
+  dayDate: { fontSize: 7.5, color: BODY, marginTop: 2 },
   dayBody: { fontSize: 8.7, color: BODY, lineHeight: 1.45, marginTop: 2 },
   tableNote: { fontSize: 8, color: MUTED, marginTop: 7, lineHeight: 1.5, fontStyle: "italic" },
 
@@ -376,7 +380,7 @@ function AgentMark({ agent, variant }: { agent?: B2bAgentInfo | null; variant: "
   }
   return (
     <Text style={variant === "cover" ? s.coverAgency : s.headerAgency}>
-      {agent?.agencyName ?? "Travel Proposal"}
+      {agent?.agencyName ?? "Travel Itinerary"}
     </Text>
   );
 }
@@ -458,12 +462,15 @@ interface Props {
   quoteRef: string;
   /** Issue timestamp, shown as "Issued". */
   updatedAt: string | Date;
-  /** The travel company this proposal is for — brands the cover, header, footer, closing page and PDF metadata. */
+  /** The travel company this itinerary is for — brands the cover, header, footer, closing page and PDF metadata. */
   agent?: B2bAgentInfo | null;
   /** False until the agency has earned full white-label (see WHITE_LABEL_MIN_BOOKINGS) — adds a small "Powered by Vertex Kashmir Holidays" credit. */
   whiteLabel?: boolean;
   /** Vertex's small square icon mark, as a data: URI — only needed (and only fetched by the caller) when `whiteLabel` is false. */
   vertexIcon?: string | null;
+  /** The cover photo as a JPEG data: URI (compressed by the caller — the PDF
+   *  renderer can't read WebP). Omitted → plain navy cover. */
+  coverImage?: string;
 }
 
 export function B2bItineraryPdf({
@@ -474,19 +481,27 @@ export function B2bItineraryPdf({
   agent,
   whiteLabel = true,
   vertexIcon,
+  coverImage,
 }: Props) {
   const issued = fmtDate(updatedAt);
-  const isProposal = status !== "CONFIRMED";
+  const confirmed = status === "CONFIRMED";
   const hasTransport = !!(data.transportType || data.transportDesc);
+  const stayDates = data.hotels.some((h) => h.checkIn || h.checkOut);
+  const dayDates = data.days.some((d) => d.dateLabel);
   const contactLine = [agent?.phone, agent?.email].filter(Boolean).join("   ·   ");
 
   return (
     <Document
-      title={`${isProposal ? "Travel Proposal" : "Itinerary"} - ${data.preparedFor}`}
+      title={`Itinerary - ${data.preparedFor}`}
       author={agent?.agencyName ?? undefined}
     >
       {/* ── COVER ─────────────────────────────────────────────────────────── */}
       <Page size="A4" style={[s.page, s.cover]}>
+        {/* `fixed` (as on the customer document's cover) keeps these out of
+            the page flow — without it the photo takes the page to itself and
+            pushes the cover content onto a second page. */}
+        {coverImage ? <Image src={coverImage} style={s.coverImg} fixed /> : null}
+        {coverImage ? <View style={s.coverShade} fixed /> : null}
         <View style={s.coverContent}>
           <View style={s.coverBrandRow}>
             <AgentMark agent={agent} variant="cover" />
@@ -532,25 +547,11 @@ export function B2bItineraryPdf({
               <View style={s.coverPriceBox}>
                 <View>
                   <Text style={s.coverPriceLabel}>TOTAL PACKAGE COST</Text>
-                  <Text style={s.coverPriceNote}>For the full party · subject to availability</Text>
+                  <Text style={s.coverPriceNote}>For the full party</Text>
                 </View>
                 <Text style={s.coverPriceValue}>{data.totalCost}</Text>
               </View>
             ) : null}
-
-            {isProposal && (
-              <View style={s.coverNote} wrap={false}>
-                <Text style={s.coverNoteTitle}>
-                  PLEASE NOTE — THIS IS A PROPOSAL, NOT YOUR FINAL ITINERARY
-                </Text>
-                <Text style={s.coverNoteText}>
-                  This proposal is shared to help you review and choose your trip; hotels, vehicles
-                  and prices are indicative and subject to availability. Once you confirm with the
-                  token payment, we will send your final detailed itinerary with confirmed hotels,
-                  vehicle details, a day-by-day plan, inclusions and all booking information.
-                </Text>
-              </View>
-            )}
 
             <View style={s.coverFooter}>
               <Text style={s.coverFooterText}>
@@ -572,7 +573,7 @@ export function B2bItineraryPdf({
               <SectionHead title="Your Journey, Day by Day" tag={data.duration} />
               <View style={s.table}>
                 <View style={s.tHeadRow} wrap={false}>
-                  <Text style={[s.tHeadCell, { width: 44 }]}>DAY</Text>
+                  <Text style={[s.tHeadCell, { width: dayDates ? 60 : 44 }]}>DAY</Text>
                   <Text style={[s.tHeadCell, { flex: 1 }]}>PLAN</Text>
                   <Text style={[s.tHeadCell, { width: 96 }]}>NIGHT STAY</Text>
                   <Text style={[s.tHeadCell, { width: 96 }]}>MEALS</Text>
@@ -582,8 +583,13 @@ export function B2bItineraryPdf({
                   const meals = day.meta.find((m) => m.label.trim().toLowerCase() === "meals");
                   return (
                     <View key={day.id} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]} wrap={false}>
-                      <View style={[s.tCell, { width: 44 }]}>
+                      <View style={[s.tCell, { width: dayDates ? 60 : 44 }]}>
                         <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
+                        {day.dateLabel ? (
+                          <Text style={s.dayDate}>
+                            {formatStayDate(day.dateLabel, { year: false })}
+                          </Text>
+                        ) : null}
                       </View>
                       <View style={[s.tCell, { flex: 1 }]}>
                         <Text style={s.tCellStrong}>{day.title}</Text>
@@ -604,28 +610,43 @@ export function B2bItineraryPdf({
             <View>
               <SectionHead title="Where You'll Stay" tag="Stay plan" />
               <View style={s.table}>
+                {/* Check-in / Check-out columns appear once any hotel has a
+                    date; Destination and Room Type narrow to make room. */}
                 <View style={s.tHeadRow}>
-                  <Text style={[s.tHeadCell, { width: 104 }]}>DESTINATION</Text>
+                  <Text style={[s.tHeadCell, { width: stayDates ? 84 : 104 }]}>DESTINATION</Text>
                   <Text style={[s.tHeadCell, { width: 52 }]}>NIGHTS</Text>
+                  {stayDates && <Text style={[s.tHeadCell, { width: 72 }]}>CHECK-IN</Text>}
+                  {stayDates && <Text style={[s.tHeadCell, { width: 72 }]}>CHECK-OUT</Text>}
                   <Text style={[s.tHeadCell, { flex: 1 }]}>HOTEL</Text>
-                  <Text style={[s.tHeadCell, { width: 88 }]}>ROOM TYPE</Text>
+                  <Text style={[s.tHeadCell, { width: stayDates ? 76 : 88 }]}>ROOM TYPE</Text>
                   <Text style={[s.tHeadCell, { width: 50 }]}>ROOMS</Text>
                 </View>
                 {data.hotels.map((h, i) => (
                   <View key={h.id} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]} wrap={false}>
-                    <Text style={[s.tCell, { width: 104, fontFamily: "Helvetica-Bold", color: INK }]}>
+                    <Text
+                      style={[
+                        s.tCell,
+                        { width: stayDates ? 84 : 104, fontFamily: "Helvetica-Bold", color: INK },
+                      ]}
+                    >
                       {h.destination}
                     </Text>
                     <Text style={[s.tCell, { width: 52 }]}>{h.nights}</Text>
+                    {stayDates && (
+                      <Text style={[s.tCell, { width: 72 }]}>{formatStayDate(h.checkIn) || "—"}</Text>
+                    )}
+                    {stayDates && (
+                      <Text style={[s.tCell, { width: 72 }]}>{formatStayDate(h.checkOut) || "—"}</Text>
+                    )}
                     <Text style={[s.tCell, { flex: 1 }]}>{h.hotelDetails}</Text>
-                    <Text style={[s.tCell, { width: 88 }]}>{h.roomType}</Text>
+                    <Text style={[s.tCell, { width: stayDates ? 76 : 88 }]}>{h.roomType}</Text>
                     <Text style={[s.tCell, { width: 50 }]}>{h.rooms}</Text>
                   </View>
                 ))}
               </View>
               <Text style={s.tableNote}>
-                Hotels shown are proposed properties (or similar), subject to availability at the
-                time of confirmation.
+                Hotels are confirmed at the time of booking. If a listed property is unavailable we
+                substitute one of the same category and tell you before you pay the balance.
               </Text>
             </View>
           )}
@@ -675,9 +696,7 @@ export function B2bItineraryPdf({
             <View style={s.priceCard} wrap={false}>
               <View>
                 <Text style={s.priceLabel}>TOTAL PACKAGE COST</Text>
-                <Text style={s.priceCaption}>
-                  For the full party · final amount confirmed at booking
-                </Text>
+                <Text style={s.priceCaption}>For the full party</Text>
               </View>
               <Text style={s.priceValue}>{data.totalCost}</Text>
             </View>
@@ -787,33 +806,35 @@ export function B2bItineraryPdf({
         <RunningFooter agent={agent} whiteLabel={whiteLabel} vertexIcon={vertexIcon} />
         <View style={s.body}>
           <View style={s.closingTop} wrap={false}>
-            <Text style={s.closingKicker}>{isProposal ? "READY WHEN YOU ARE" : "YOU'RE ALL SET"}</Text>
-            <Text style={s.closingHeadline}>
-              {isProposal
-                ? "Happy to adjust anything — hotels, route or budget."
-                : "Your trip is confirmed — we look forward to hosting you."}
+            <Text style={s.closingKicker}>
+              {confirmed ? "YOU'RE ALL SET" : "CONFIRM YOUR BOOKING"}
             </Text>
-            {isProposal && (
+            <Text style={s.closingHeadline}>
+              {confirmed
+                ? "Your trip is confirmed — we look forward to hosting you."
+                : "This is your itinerary — pay the token amount to confirm it."}
+            </Text>
+            {!confirmed && (
               <View style={s.stepsRow}>
                 <View style={s.stepCol}>
                   <Text style={s.stepBadge}>1</Text>
-                  <Text style={s.stepTitle}>Review & tell us</Text>
+                  <Text style={s.stepTitle}>Check the details</Text>
                   <Text style={s.stepDesc}>
-                    Share any changes to dates, hotels or the route — we&apos;ll update the plan.
+                    Dates, hotels and the route — tell us straight away if anything is wrong.
                   </Text>
                 </View>
                 <View style={s.stepColMid}>
                   <Text style={s.stepBadge}>2</Text>
-                  <Text style={s.stepTitle}>Confirm your trip</Text>
+                  <Text style={s.stepTitle}>Pay the token amount</Text>
                   <Text style={s.stepDesc}>
-                    Pay the token amount to lock in your hotels and vehicle.
+                    This confirms your trip and locks in your hotels and vehicle.
                   </Text>
                 </View>
                 <View style={[s.stepColMid, { paddingRight: 0 }]}>
                   <Text style={s.stepBadge}>3</Text>
-                  <Text style={s.stepTitle}>Get your final itinerary</Text>
+                  <Text style={s.stepTitle}>Get your confirmation</Text>
                   <Text style={s.stepDesc}>
-                    We send the detailed itinerary with all confirmed bookings.
+                    We send your booking confirmation once the token is received.
                   </Text>
                 </View>
               </View>

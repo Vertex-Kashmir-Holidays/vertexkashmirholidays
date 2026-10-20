@@ -12,7 +12,7 @@
 // the read, it doesn't change what happens when a value is missing.
 
 export const NEXT_PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL; // consumed via src/lib/seo.ts → SITE_URL, which applies the default
-export const NEXT_PUBLIC_TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY; // AuthFormPanel, CampaignHero, ContactForm, LeadForm
+export const NEXT_PUBLIC_TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY; // AuthFormPanel, AdventureHero, ContactForm, LeadForm
 export const NEXT_PUBLIC_GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID; // GoogleOneTap
 export const NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY; // ContactOfficeMap
 export const NEXT_PUBLIC_RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID; // AffordabilityWidget

@@ -4,6 +4,7 @@ import { docDownloadFilename } from "@/lib/docs/categories";
 export interface AgencyDocItem {
   id: string;
   title: string;
+  description: string;
   category: string;
   mimeType: string;
 }
@@ -30,12 +31,19 @@ export function AgencyDocsCard({ docs }: { docs: AgencyDocItem[] }) {
               <a
                 href={`/api/docs/${doc.id}/download`}
                 download={docDownloadFilename(doc.title, doc.mimeType)}
-                className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5 transition hover:border-primary/40 hover:bg-primary/5"
+                className="flex items-start gap-3 rounded-xl border border-border px-3 py-2.5 transition hover:border-primary/40 hover:bg-primary/5"
               >
-                <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
-                  {doc.title}
-                </p>
-                <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                {/* Full title (wrapped, never cut off) + what it's for —
+                    agents choose by purpose, not by file name. */}
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-semibold text-foreground">{doc.title}</p>
+                  {doc.description && (
+                    <p className="mt-0.5 break-words text-[12px] leading-snug text-muted-foreground">
+                      {doc.description}
+                    </p>
+                  )}
+                </div>
+                <Download className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               </a>
             </li>
           ))}

@@ -1,8 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { saveUpload } from "@/lib/storage";
-import { DOC_CATEGORIES, isDocCategory, DOC_EXT_BY_MIME } from "@/lib/docs/categories";
+import {
+  B2B_VISIBLE_DOC_CATEGORIES,
+  DOC_CATEGORIES,
+  isDocCategory,
+  DOC_EXT_BY_MIME,
+} from "@/lib/docs/categories";
+import { notifyB2bAgentsOfDocument } from "@/lib/b2b/notify";
+import { docMetaSchema } from "@/lib/docs/docSchema";
 
 export const dynamic = "force-dynamic";
 
@@ -39,14 +46,17 @@ export async function POST(req: NextRequest) {
   }
 
   const file = formData.get("file");
-  const title = formData.get("title");
+  const meta = docMetaSchema.safeParse({
+    title: formData.get("title") ?? "",
+    description: formData.get("description") ?? "",
+  });
   const category = formData.get("category");
 
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "Please choose a file to upload." }, { status: 400 });
   }
-  if (typeof title !== "string" || !title.trim()) {
-    return NextResponse.json({ error: "Title is required." }, { status: 400 });
+  if (!meta.success) {
+    return NextResponse.json({ error: meta.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
   if (!isDocCategory(category)) {
     return NextResponse.json(
@@ -88,7 +98,7 @@ export async function POST(req: NextRequest) {
 
   const created = await prisma.adminDocument.create({
     data: {
-      title: title.trim(),
+      ...meta.data,
       category,
       url,
       publicId,
@@ -98,5 +108,18 @@ export async function POST(req: NextRequest) {
       uploadedByName: (guard.user.name ?? guard.user.email) as string,
     },
   });
-  return NextResponse.json(created, { status: 201 });
+  // A document agents can see → tell every active agent it's there. Sent
+  // after the response, so the upload doesn't wait on the mail server;
+  // `notifiedAgents` is how many are being emailed (0 for other categories).
+  let notifiedAgents = 0;
+  if (B2B_VISIBLE_DOC_CATEGORIES.includes(category)) {
+    notifiedAgents = await prisma.user.count({ where: { agencyStatus: "ACTIVE" } });
+    if (notifiedAgents > 0) {
+      after(async () => {
+        const result = await notifyB2bAgentsOfDocument(created);
+        console.log("[admin/docs] B2B document notice", { doc: created.title, ...result });
+      });
+    }
+  }
+  return NextResponse.json({ ...created, notifiedAgents }, { status: 201 });
 }

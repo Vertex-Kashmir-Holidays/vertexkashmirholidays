@@ -1,6 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 
-// Inline HTML — campaign section headings, press logo names, etc.
+// Inline HTML — adventure section headings, press logo names, etc.
 // Allows formatting tags only; strips scripts, event handlers, javascript: URLs.
 const INLINE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["em", "strong", "b", "i", "u", "s", "br", "span"],
@@ -53,7 +53,8 @@ const RICH_OPTIONS: sanitizeHtml.IOptions = {
   },
   allowedSchemes: ["http", "https", "mailto", "tel"],
   transformTags: {
-    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, false),
+    // merge=true keeps href/target; false would replace them with just `rel`.
+    a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, true),
   },
 };
 

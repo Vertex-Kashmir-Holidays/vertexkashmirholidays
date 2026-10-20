@@ -16,6 +16,7 @@ import {
   type PlannerIntent,
 } from "@/lib/attribution";
 import { deriveChannel } from "@/lib/attribution.server";
+import { resolveQualification } from "@/lib/leads/budgetBands.server";
 
 // A WhatsApp attribution token bridges "visitor sends a WhatsApp message" to
 // "salesperson creates the CRM Lead" — a human sales-response process, not the
@@ -98,6 +99,16 @@ export async function createWhatsAppAttributionToken(
   // Occasion Offer page context (offer + chosen plan).
   if (intent?.offerId) data.occasionOfferId = intent.offerId;
   if (intent?.packageName) data.packageName = intent.packageName;
+  // Lead qualification (WhatsApp modal) — validated, label snapshotted from the DB.
+  if (intent?.budgetBandKey || intent?.travelMonth) {
+    const q = await resolveQualification(intent);
+    if (q.budgetBandKey) {
+      data.budgetBandKey = q.budgetBandKey;
+      data.budgetBandLabel = q.budgetBandLabel;
+      data.budgetBandDerived = !!intent.budgetDerived;
+    }
+    if (q.travelMonth) data.travelMonth = q.travelMonth;
+  }
 
   for (let attempt = 0; attempt < MAX_GENERATE_ATTEMPTS; attempt++) {
     const token = generateToken();
@@ -148,6 +159,15 @@ export interface ResolvedWhatsAppAttribution {
   /** Trip Planner intent / Occasion Offer context (offerId + packageName),
    *  present only when the token was minted from one of those pages. */
   intent?: PlannerIntent;
+  /** Lead qualification from the WhatsApp modal, when answered. `openedAt` is
+   *  set only if the visitor actually tapped "Open WhatsApp". */
+  qualification?: {
+    budgetBandKey: string | null;
+    budgetBandLabel: string | null;
+    budgetBandDerived: boolean;
+    travelMonth: string | null;
+    openedAt: Date | null;
+  };
 }
 
 /**
@@ -197,5 +217,15 @@ export async function resolveWhatsAppAttributionToken(
     attribution,
     channel: deriveChannel(attribution),
     intent: hasIntent ? intent : undefined,
+    qualification:
+      row.budgetBandKey || row.travelMonth
+        ? {
+            budgetBandKey: row.budgetBandKey,
+            budgetBandLabel: row.budgetBandLabel,
+            budgetBandDerived: row.budgetBandDerived,
+            travelMonth: row.travelMonth,
+            openedAt: row.waOpenedAt,
+          }
+        : undefined,
   };
 }

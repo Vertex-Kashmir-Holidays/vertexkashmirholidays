@@ -95,7 +95,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-card p-5 shadow-xl">
+      <div className="relative z-10 flex max-h-[92vh] w-full max-w-6xl flex-col rounded-2xl bg-card p-5 shadow-xl">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h4 className="font-display text-base font-bold text-foreground">
             {title ??
@@ -160,7 +160,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {filtered.map((item) => (
                 <button
                   key={item.id}
@@ -169,7 +169,7 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                     onSelect(item.url, item.alt);
                     onClose();
                   }}
-                  className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-muted transition hover:ring-2 hover:ring-primary"
+                  className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted transition hover:ring-4 hover:ring-primary"
                   title={item.alt ?? item.url}
                 >
                   {item.type === "VIDEO" ? (
@@ -198,6 +198,12 @@ export function GalleryPicker({ open, type, title, onSelect, onClose }: Props) {
                   {item.type === "VIDEO" && (
                     <span className="absolute left-1 top-1 rounded bg-black/60 px-1 py-0.5 text-[10px] font-bold text-white">
                       VIDEO
+                    </span>
+                  )}
+                  {/* Name strip so similar-looking images can be told apart. */}
+                  {item.alt && (
+                    <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/75 to-transparent px-2 pb-1.5 pt-5 text-left text-[11px] font-semibold text-white">
+                      {item.alt}
                     </span>
                   )}
                   {item.type !== "VIDEO" && dims[item.id] && (
