@@ -112,6 +112,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Includes deleted accounts — their phone stays taken, same as their email.
+  if (data.phone) {
+    const existingPhone = await prisma.user.findFirst({ where: { phone: data.phone } });
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: "An account with this phone number already exists" },
+        { status: 409 },
+      );
+    }
+  }
+
   try {
     const passwordHash = await bcrypt.hash(data.password, 12);
     const created = await prisma.user.create({

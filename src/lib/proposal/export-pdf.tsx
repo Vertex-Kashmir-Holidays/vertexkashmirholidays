@@ -4,6 +4,7 @@
 // dynamically inside downloadProposalPdf (below), same as
 // src/lib/itinerary/export-pdf.tsx, so the heavy PDF renderer only loads when
 // the user actually exports.
+import { compressMany } from "@/lib/itinerary/compress-image";
 import type { ProposalData } from "@/types/proposal";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
@@ -39,9 +40,8 @@ export interface ExportResult {
 }
 
 /**
- * Render the PDF to a Blob and trigger a browser download. No image
- * compression step here (unlike downloadItineraryPdf) — the proposal document
- * has no photo fields anywhere, see src/types/proposal.ts.
+ * Compress the cover + day photos (same settings as downloadItineraryPdf),
+ * render the PDF to a Blob and trigger a browser download.
  *
  * `trustContent`: the real review-rating + Why Choose Vertex copy, resolved by
  * the caller (this function has no server/DB access) — same as the itinerary
@@ -62,17 +62,29 @@ export async function downloadProposalPdf(
     import("@/components/admin/proposal/ProposalPdf"),
   ]);
 
-  // Only the brand icon mark needs embedding (used for the watermarks + the
-  // closing logo) — no per-tier/per-day photos exist in this schema.
-  const logos = await Promise.all(
-    LOGO_ASSETS.map((src) =>
-      fetchAsDataUrl(src).catch((err) => {
-        console.warn(`[proposal-pdf] Failed to embed brand asset "${src}" — it will be omitted.`, err);
-        return "";
-      }),
+  // Brand assets embed losslessly (PNG transparency); photos go through the
+  // JPEG compression path — the cover larger, day photos as small thumbnails.
+  const daySrcs = data.days.map((d) => d.image).filter((src) => src && src !== data.coverImage);
+  const [coverImages, dayImages, logos] = await Promise.all([
+    compressMany([data.coverImage].filter(Boolean), {
+      maxWidth: 900,
+      maxHeight: 1300,
+      quality: 0.85,
+    }),
+    compressMany(daySrcs, { maxWidth: 640, maxHeight: 480, quality: 0.8 }),
+    Promise.all(
+      LOGO_ASSETS.map((src) =>
+        fetchAsDataUrl(src).catch((err) => {
+          console.warn(
+            `[proposal-pdf] Failed to embed brand asset "${src}" — it will be omitted.`,
+            err,
+          );
+          return "";
+        }),
+      ),
     ),
-  );
-  const images: Record<string, string> = {};
+  ]);
+  const images: Record<string, string> = { ...dayImages, ...coverImages };
   LOGO_ASSETS.forEach((src, i) => {
     if (logos[i]) images[src] = logos[i];
   });

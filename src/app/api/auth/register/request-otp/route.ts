@@ -84,6 +84,11 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
+    // Includes deleted/suspended accounts — their phone stays taken.
+    const existingPhone = await prisma.user.findFirst({ where: { phone } });
+    if (existingPhone) {
+      return NextResponse.json({ error: "An account with this phone number already exists." }, { status: 409 });
+    }
 
     await cleanupExpiredOtps();
 

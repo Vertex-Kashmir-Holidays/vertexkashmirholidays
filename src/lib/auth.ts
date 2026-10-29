@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import { isStaff } from "@/lib/rbac";
 import { isAllowedCustomerEmailDomain } from "@/lib/auth/validation";
+import { isAccountBlocked } from "@/lib/auth/accountAccess";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { env } from "@/lib/env";
@@ -29,7 +30,7 @@ async function resolveGoogleCustomer(email: string, name?: string | null) {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    if (existing.deletedAt || isStaff(existing.role)) return null;
+    if (isAccountBlocked(existing) || isStaff(existing.role)) return null;
     await prisma.user.update({ where: { id: existing.id }, data: { lastLoginAt: new Date() } });
     return {
       id: existing.id,
@@ -80,6 +81,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     ...authConfig.callbacks,
+
+    // JWT sessions are self-contained, so without this a user deleted or
+    // suspended after signing in would keep working until the token expired.
+    // Re-checks the account on every session read (server auth(), API routes,
+    // /api/auth/session) — returning null makes Auth.js clear the session
+    // cookie, logging them out. Node-only: the edge proxy uses the plain
+    // authConfig callback, and the admin/account layouts call this auth().
+    async jwt(params) {
+      const token = await authConfig.callbacks.jwt(params);
+      if (params.user || typeof token.id !== "string") return token;
+
+      const account = await prisma.user.findUnique({
+        where: { id: token.id },
+        select: { deletedAt: true, agencyStatus: true },
+      });
+      if (!account || isAccountBlocked(account)) return null;
+      return token;
+    },
 
     // Google is a customer-only convenience login — never a staff auth path.
     // Credentials sign-in (both the password provider and google-one-tap
@@ -176,8 +195,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Soft-deleted accounts cannot sign in.
-        if (user.deletedAt) {
+        // Deleted accounts and suspended B2B agents cannot sign in.
+        if (isAccountBlocked(user)) {
           return null;
         }
 

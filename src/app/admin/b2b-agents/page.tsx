@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminB2bAgentsPage() {
   const agents = await prisma.user.findMany({
-    where: { agencyStatus: { not: null } },
+    where: { agencyStatus: { not: null }, deletedAt: null },
     orderBy: { createdAt: "desc" },
     take: 200,
     select: {

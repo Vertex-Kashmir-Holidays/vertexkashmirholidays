@@ -71,7 +71,7 @@ export const comparisonRowSchema = z.object({
 export type ComparisonRow = z.infer<typeof comparisonRowSchema>;
 
 // The route/day-by-day plan is identical across all three tiers — simpler
-// than itineraryDataSchema's daySchema: no image, no meta[] array. Day number
+// than itineraryDataSchema's daySchema: no meta[] array. Day number
 // comes from the array index at render time, same convention ItineraryPdf.tsx
 // already uses for its own day cards.
 export const proposalDaySchema = z.object({
@@ -86,6 +86,9 @@ export const proposalDaySchema = z.object({
   // Glance" table has a Meals column; unused (blank) in the multi-package
   // document, so defaulted rather than required.
   mealsLabel: z.string().default(""),
+  // Optional day photo (same sources as itinerary images). Blank = no photo,
+  // so proposals saved before this field existed print exactly as before.
+  image: z.string().default(""),
 });
 export type ProposalDay = z.infer<typeof proposalDaySchema>;
 
@@ -181,6 +184,8 @@ export const proposalDataSchema = z.object({
   docType: proposalDocTypeSchema.default("multi"),
 
   // Cover
+  // Optional full-bleed cover photo. Blank = the plain green cover.
+  coverImage: z.string().default(""),
   quoteNumber: z.string().default(""),
   coverTitle: z.string(), // "Kashmir,"
   coverSubtitle: z.string().default(""), // "three ways"

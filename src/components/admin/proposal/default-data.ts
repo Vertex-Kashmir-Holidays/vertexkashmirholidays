@@ -5,6 +5,7 @@ import { DEFAULT_OPTIONAL_ACTIVITIES } from "@/types/itinerary";
 // runtime ids instead, same convention as itinerary/default-data.ts.
 export const DEFAULT_PROPOSAL_DATA: ProposalData = {
   docType: "multi",
+  coverImage: "/itinerary/hero.webp",
   quoteNumber: "VKH-2026-0418",
   coverTitle: "Kashmir,",
   coverSubtitle: "three ways",
@@ -120,6 +121,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Srinagar",
       highlightsLine: "Mughal Gardens · Hazratbal · Dal Lake",
       mealsLabel: "",
+      image: "/itinerary/srinagar.webp",
     },
     {
       id: "pday-2",
@@ -129,6 +131,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Srinagar",
       highlightsLine: "Gondola · Strawberry Valley",
       mealsLabel: "",
+      image: "/itinerary/gulmarg.webp",
     },
     {
       id: "pday-3",
@@ -138,6 +141,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Srinagar",
       highlightsLine: "Thajiwas Glacier · Sindh Valley",
       mealsLabel: "",
+      image: "/itinerary/sonamarg.webp",
     },
     {
       id: "pday-4",
@@ -147,6 +151,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Pahalgam",
       highlightsLine: "Aru · Betaab · Lidder",
       mealsLabel: "",
+      image: "/itinerary/pahalgam.webp",
     },
     {
       id: "pday-5",
@@ -156,6 +161,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Srinagar",
       highlightsLine: "Pari Mahal · Shikara · Bazaars",
       mealsLabel: "",
+      image: "/itinerary/shikara.webp",
     },
     {
       id: "pday-6",
@@ -168,6 +174,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       stayLabel: "",
       highlightsLine: "Drop at Srinagar Airport",
       mealsLabel: "",
+      image: "/itinerary/hero.webp",
     },
   ],
 
@@ -397,6 +404,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Pahalgam",
       highlightsLine: "",
       mealsLabel: "Dinner",
+      image: "/itinerary/pahalgam.webp",
     },
     {
       id: "sday-2",
@@ -406,6 +414,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Pahalgam",
       highlightsLine: "",
       mealsLabel: "Breakfast, Dinner",
+      image: "/itinerary/pahalgam2.webp",
     },
     {
       id: "sday-3",
@@ -415,6 +424,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Srinagar",
       highlightsLine: "",
       mealsLabel: "Breakfast, Dinner",
+      image: "/itinerary/srinagar.webp",
     },
     {
       id: "sday-4",
@@ -424,6 +434,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Gulmarg",
       highlightsLine: "",
       mealsLabel: "Breakfast, Dinner",
+      image: "/itinerary/gulmarg-winter.webp",
     },
     {
       id: "sday-5",
@@ -433,6 +444,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       stayLabel: "Srinagar",
       highlightsLine: "",
       mealsLabel: "Breakfast, Dinner",
+      image: "/itinerary/sonamarg.webp",
     },
     {
       id: "sday-6",
@@ -442,6 +454,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       stayLabel: "",
       highlightsLine: "",
       mealsLabel: "Breakfast",
+      image: "/itinerary/shikara.webp",
     },
   ],
 

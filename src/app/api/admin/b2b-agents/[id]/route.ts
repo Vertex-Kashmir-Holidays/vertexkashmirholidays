@@ -110,3 +110,44 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   return NextResponse.json(updated);
 }
+
+/**
+ * Delete a SUSPENDED B2B agent. Soft delete (sets deletedAt), same as the
+ * staff Users screen's default — their Leads (onDelete: Restrict), Bookings
+ * and commissions stay intact for history, the agent drops off the B2B Agents
+ * list, and auth.ts already refuses logins for deleted users. Only suspended
+ * agents can be deleted, so an active agent always has to be suspended first.
+ */
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const guard = await requirePermission("b2bAgents", "delete");
+  if (guard instanceof NextResponse) return guard;
+  const { id } = await params;
+
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing || existing.agencyStatus === null || existing.deletedAt) {
+    return NextResponse.json({ error: "B2B agent not found" }, { status: 404 });
+  }
+  if (existing.agencyStatus !== "SUSPENDED") {
+    return NextResponse.json(
+      { error: "Only a suspended agent can be deleted" },
+      { status: 422 },
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id }, data: { deletedAt: new Date() } });
+    await tx.auditLog.create({
+      data: {
+        action: "USER_SOFT_DELETE",
+        targetUserId: id,
+        targetUserName: existing.name,
+        targetUserEmail: existing.email,
+        performedById: guard.user.id as string,
+        performedByName: (guard.user.name ?? guard.user.email) as string,
+        metadata: { targetRole: existing.role, b2bAgent: true, agencyName: existing.agencyName },
+      },
+    });
+  });
+
+  return NextResponse.json({ ok: true });
+}

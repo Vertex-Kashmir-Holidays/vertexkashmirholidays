@@ -8,6 +8,7 @@ import { Toolbar } from "./Toolbar";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
+import { ImagePicker } from "../itinerary/ImagePicker";
 import { PriceActivitySection } from "../itinerary/PriceActivitySection";
 import { ItineraryIcon } from "../itinerary/icons";
 import { DEFAULT_PROPOSAL_DATA, DEFAULT_SINGLE_PROPOSAL_DATA } from "./default-data";
@@ -169,7 +170,7 @@ export function ProposalEditor({
   /* ---------- days ---------- */
   const updateDay = (
     dayId: string,
-    field: "title" | "dateLabel" | "body" | "stayLabel" | "highlightsLine" | "mealsLabel",
+    field: "title" | "dateLabel" | "body" | "stayLabel" | "highlightsLine" | "mealsLabel" | "image",
     value: string,
   ) =>
     setData((p) => ({
@@ -189,6 +190,7 @@ export function ProposalEditor({
           stayLabel: "",
           highlightsLine: "",
           mealsLabel: "",
+          image: "",
         },
       ],
     }));
@@ -584,6 +586,14 @@ export function ProposalEditor({
                 rows={2}
               />
             </div>
+            <div className="mt-5">
+              <label className={fieldLabel}>Cover Image</label>
+              <ProposalImageSlot
+                src={data.coverImage}
+                onChange={(src) => updateField("coverImage", src)}
+                className="h-40"
+              />
+            </div>
           </article>
 
           {/* Pricing Tiers — the single-package doc reuses this exact same
@@ -775,52 +785,61 @@ export function ProposalEditor({
                   </button>
                   {/* Phones: title, then the date on its own line under it
                       (same as ItineraryEditor). sm+: date on the right. */}
-                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-                    <div className="flex min-w-0 flex-1 items-baseline gap-3">
-                      <span className="w-8 shrink-0 font-serif text-xl font-bold text-[#B8D4C4] sm:w-auto">
-                        {String(dayIdx + 1).padStart(2, "0")}
-                      </span>
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
+                        <div className="flex min-w-0 flex-1 items-baseline gap-3">
+                          <span className="w-8 shrink-0 font-serif text-xl font-bold text-[#B8D4C4] sm:w-auto">
+                            {String(dayIdx + 1).padStart(2, "0")}
+                          </span>
+                          <EditableField
+                            value={day.title}
+                            onValueChange={(v) => updateDay(day.id, "title", v)}
+                            className="min-w-0 flex-1 text-sm font-bold"
+                          />
+                        </div>
+                        <EditableField
+                          value={day.dateLabel}
+                          onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
+                          placeholder="Wed 10 Jun"
+                          className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                        />
+                      </div>
                       <EditableField
-                        value={day.title}
-                        onValueChange={(v) => updateDay(day.id, "title", v)}
-                        className="min-w-0 flex-1 text-sm font-bold"
+                        value={day.body}
+                        onValueChange={(v) => updateDay(day.id, "body", v)}
+                        rows={2}
+                        className="mt-2 block text-sm"
                       />
+                      <div className="mt-2 grid grid-cols-2 gap-3">
+                        <EditableField
+                          value={day.stayLabel}
+                          onValueChange={(v) => updateDay(day.id, "stayLabel", v)}
+                          placeholder="Stay (blank on departure day)"
+                          className="text-xs text-mute dark:text-muted-foreground"
+                        />
+                        {data.docType === "multi" ? (
+                          <EditableField
+                            value={day.highlightsLine}
+                            onValueChange={(v) => updateDay(day.id, "highlightsLine", v)}
+                            placeholder="Highlights"
+                            className="text-xs text-mute dark:text-muted-foreground"
+                          />
+                        ) : (
+                          <EditableField
+                            value={day.mealsLabel}
+                            onValueChange={(v) => updateDay(day.id, "mealsLabel", v)}
+                            placeholder="Meals (e.g. Breakfast, Dinner)"
+                            className="text-xs text-mute dark:text-muted-foreground"
+                          />
+                        )}
+                      </div>
                     </div>
-                    <EditableField
-                      value={day.dateLabel}
-                      onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
-                      placeholder="Wed 10 Jun"
-                      className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                    <ProposalImageSlot
+                      src={day.image}
+                      onChange={(src) => updateDay(day.id, "image", src)}
+                      className="h-32 sm:h-auto sm:min-h-28 sm:w-40 sm:shrink-0"
                     />
-                  </div>
-                  <EditableField
-                    value={day.body}
-                    onValueChange={(v) => updateDay(day.id, "body", v)}
-                    rows={2}
-                    className="mt-2 block text-sm"
-                  />
-                  <div className="mt-2 grid grid-cols-2 gap-3">
-                    <EditableField
-                      value={day.stayLabel}
-                      onValueChange={(v) => updateDay(day.id, "stayLabel", v)}
-                      placeholder="Stay (blank on departure day)"
-                      className="text-xs text-mute dark:text-muted-foreground"
-                    />
-                    {data.docType === "multi" ? (
-                      <EditableField
-                        value={day.highlightsLine}
-                        onValueChange={(v) => updateDay(day.id, "highlightsLine", v)}
-                        placeholder="Highlights"
-                        className="text-xs text-mute dark:text-muted-foreground"
-                      />
-                    ) : (
-                      <EditableField
-                        value={day.mealsLabel}
-                        onValueChange={(v) => updateDay(day.id, "mealsLabel", v)}
-                        placeholder="Meals (e.g. Breakfast, Dinner)"
-                        className="text-xs text-mute dark:text-muted-foreground"
-                      />
-                    )}
                   </div>
                 </div>
               )}
@@ -1368,6 +1387,46 @@ export function ProposalEditor({
 
 /** One option's cell — free text plus ✓ / – shortcuts (the comparison
  *  sentinels, see src/types/proposal.ts). */
+/** Optional photo slot (cover / day) — blank shows a placeholder; the PDF
+ *  simply leaves the photo out. */
+function ProposalImageSlot({
+  src,
+  onChange,
+  className,
+}: {
+  src: string;
+  onChange: (src: string) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-lg border border-dashed border-[hsl(40_14%_80%)] bg-[hsl(40_20%_96%)] dark:border-mute/30 dark:bg-mute/10 ${className ?? ""}`}
+    >
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center text-xs text-mute dark:text-muted-foreground">
+          No image
+        </span>
+      )}
+      <div className="absolute right-2 top-2 z-10 flex gap-1.5">
+        <ImagePicker value={src} onChange={onChange} label={src ? "Replace" : "Add image"} />
+        {src ? (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            aria-label="Remove image"
+            className="inline-flex items-center rounded-lg bg-black/55 px-2 py-1 text-white backdrop-blur transition hover:bg-black/70 no-print"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function OptionCell({
   tierKey,
   value,

@@ -16,6 +16,7 @@ import {
   CalendarCheck2,
   Building2,
   Mail,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
@@ -24,6 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { LogoUploadField } from "@/components/b2b/LogoUploadField";
 import { NewB2bRequestForAgentButton } from "./NewB2bRequestForAgentButton";
 import { EmailB2bAgentsDialog } from "./EmailB2bAgentsDialog";
+import { ConfirmDialog } from "@/components/admin/connect/ConfirmDialog";
 
 type AgencyStatus = "PENDING" | "ACTIVE" | "SUSPENDED";
 
@@ -91,6 +93,8 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   // Agents ticked for "Email agents" — kept across search and pages.
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [emailing, setEmailing] = useState(false);
+  const [confirmSuspend, setConfirmSuspend] = useState<AgentRow | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AgentRow | null>(null);
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -146,7 +150,7 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   }
 
   function handleSuspend(a: AgentRow) {
-    if (!confirm(`Suspend B2B access for ${a.agencyName ?? a.name}? They keep their account.`)) return;
+    setConfirmSuspend(null);
     runAction("Suspend", () =>
       fetch(`/api/admin/b2b-agents/${a.id}`, {
         method: "PATCH",
@@ -154,6 +158,11 @@ export function B2bAgentsClient({ initialAgents }: Props) {
         body: JSON.stringify({ agencyStatus: "SUSPENDED" }),
       }),
     );
+  }
+
+  function handleDelete(a: AgentRow) {
+    setConfirmDelete(null);
+    runAction("Delete", () => fetch(`/api/admin/b2b-agents/${a.id}`, { method: "DELETE" }));
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -338,13 +347,26 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSuspend(a);
+                              setConfirmSuspend(a);
                             }}
                             disabled={isPending}
                             title="Suspend"
                             className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-40"
                           >
                             <Ban className="w-3.5 h-3.5" /> Suspend
+                          </button>
+                        )}
+                        {a.agencyStatus === "SUSPENDED" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDelete(a);
+                            }}
+                            disabled={isPending}
+                            title="Delete"
+                            className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
                           </button>
                         )}
                       </div>
@@ -570,6 +592,26 @@ export function B2bAgentsClient({ initialAgents }: Props) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmSuspend}
+        destructive
+        title={`Suspend ${confirmSuspend?.agencyName ?? confirmSuspend?.name ?? "this agent"}?`}
+        description="They'll be logged out and can't sign in until reactivated. Their account and history are kept."
+        confirmLabel="Suspend"
+        onConfirm={() => confirmSuspend && handleSuspend(confirmSuspend)}
+        onCancel={() => setConfirmSuspend(null)}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        destructive
+        title={`Delete ${confirmDelete?.agencyName ?? confirmDelete?.name ?? "this agent"}?`}
+        description="They'll be removed from this list and can no longer log in. Their past B2B requests and bookings are kept."
+        confirmLabel="Delete"
+        onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }
