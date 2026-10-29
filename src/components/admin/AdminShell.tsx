@@ -44,6 +44,7 @@ import {
   Wallet,
   CalendarOff,
   BedDouble,
+  Tags,
   Handshake,
   ClipboardList,
   CalendarCheck2,
@@ -82,6 +83,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
   itinerary: Map,
   proposals: Layers,
   hotelSuppliers: BedDouble,
+  rateCards: Tags,
   users: Users,
   b2bAgents: Handshake,
   b2bRequests: ClipboardList,
@@ -147,7 +149,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
   },
   {
     label: "CRM",
-    keys: ["leads", "itinerary", "proposals", "hotelSuppliers", "bookings", "users"],
+    keys: ["leads", "itinerary", "proposals", "hotelSuppliers", "rateCards", "bookings", "users"],
   },
   {
     label: "B2B",

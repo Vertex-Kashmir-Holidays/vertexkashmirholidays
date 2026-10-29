@@ -41,6 +41,7 @@ export const MODULES = [
   { key: "itinerary", label: "Itineraries", href: "/admin/itinerary" },
   { key: "proposals", label: "Proposals", href: "/admin/proposals" },
   { key: "hotelSuppliers", label: "Hotel Rates", href: "/admin/hotel-suppliers" },
+  { key: "rateCards", label: "Rate Cards", href: "/admin/rate-cards" },
   { key: "users", label: "Customers", href: "/admin/users" },
   { key: "b2bAgents", label: "B2B Agents", href: "/admin/b2b-agents" },
   { key: "b2bRequests", label: "B2B Requests", href: "/admin/b2b-requests" },

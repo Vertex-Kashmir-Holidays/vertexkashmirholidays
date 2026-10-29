@@ -3,8 +3,9 @@
 // sample template. Copied: cover facts, day plan, the accepted option's
 // hotels/vehicle/activities/price, "available on the day" activities,
 // inclusions, payment and cancellation.
-// Everything the proposal has no equivalent for (images, trust strip,
-// transport tags) falls back to the standard itinerary template.
+// Cover and day photos carry over when the proposal has them; everything else
+// it has no equivalent for (hotel/activity images, trust strip, transport
+// tags) falls back to the standard itinerary template.
 
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { STOCK_IMAGES, genId, type ItineraryData } from "@/types/itinerary";
@@ -48,7 +49,7 @@ export function proposalToItineraryData(
     title: d.title,
     body: d.body,
     dateLabel: d.dateLabel,
-    image: stockImageFor(`${d.title} ${d.stayLabel}`),
+    image: d.image || stockImageFor(`${d.title} ${d.stayLabel}`),
     meta: [
       { label: "Meals", value: d.mealsLabel },
       { label: "Stay", value: d.stayLabel },
@@ -104,6 +105,7 @@ export function proposalToItineraryData(
 
   return {
     ...base,
+    coverImage: proposal.coverImage || base.coverImage,
     duration: proposal.duration,
     preparedFor: proposal.preparedFor,
     customerPhone: proposal.customerPhone,

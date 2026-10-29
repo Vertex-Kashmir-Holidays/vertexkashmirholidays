@@ -95,6 +95,13 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
+    if (record.phone) {
+      const existingPhone = await prisma.user.findFirst({ where: { phone: record.phone } });
+      if (existingPhone) {
+        await prisma.emailOtp.delete({ where: { email } });
+        return NextResponse.json({ error: "An account with this phone number already exists." }, { status: 409 });
+      }
+    }
 
     // A REGISTER row always has passwordHash set by request-otp — this guard is
     // purely for the type (the column is nullable because RESET rows don't use it).

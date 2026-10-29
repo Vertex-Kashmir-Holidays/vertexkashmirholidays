@@ -93,6 +93,9 @@ model User {
   // ── Finance / Expenses ───────────────────────────────────────────────────
   expensesAsEmployee       Expense[]            @relation("ExpenseEmployee")
   expensesCreated          Expense[]            @relation("ExpenseCreatedBy")
+  // ── Season Rate Cards ────────────────────────────────────────────────────
+  rateCardsUpdated         RateCard[]           @relation("RateCardUpdatedBy")
+  rateCardRevisions        RateCardRevision[]   @relation("RateCardRevisionCreatedBy")
 
   // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
@@ -351,6 +354,56 @@ model HotelSupplier {
   @@index([isActive])
   @@index([recommended])
   @@index([showOnWebsite])
+}
+
+// Internal season rate card — the sales team's package-price lookup (tier
+// hotels, B2B/customer package prices, union cabs, vehicles). Deliberately a
+// self-contained snapshot in `data` (shape + Zod schema in
+// src/lib/rateCards/schema.ts), NOT linked to HotelSupplier or any public
+// Tour pricing: a season's card must not change when a supplier's live rate
+// does. Never public. Only one card is ACTIVE at a time (enforced in the
+// activate route); every save snapshots the previous `data` into
+// RateCardRevision and bumps `version`.
+model RateCard {
+  id          String             @id @default(cuid())
+  name        String // "Winter 2026–27"
+  seasonLabel String // "NOV – FEB"
+  startDate   DateTime
+  endDate     DateTime
+  status      RateCardStatus     @default(DRAFT)
+  data        Json
+  notes       String?
+  version     Int                @default(1)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  updatedById String?
+  updatedBy   User?              @relation("RateCardUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  revisions   RateCardRevision[]
+
+  @@index([status])
+}
+
+// Append-only: `data` is the card's data BEFORE the save that created this
+// row, and `version` is the version that data belonged to. Restoring an old
+// revision is itself a new save (new version), never a rewrite.
+model RateCardRevision {
+  id          String   @id @default(cuid())
+  rateCardId  String
+  rateCard    RateCard @relation(fields: [rateCardId], references: [id], onDelete: Cascade)
+  version     Int
+  data        Json
+  changeNote  String?
+  createdAt   DateTime @default(now())
+  createdById String?
+  createdBy   User?    @relation("RateCardRevisionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([rateCardId, version])
+}
+
+enum RateCardStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
 }
 
 enum HotelCategory {

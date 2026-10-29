@@ -5,10 +5,10 @@
 // Payment & Cancellation steps/table, closing office/social footer) wherever
 // the mockup's own sections are structurally identical to it.
 //
-// No per-tier/per-day photo fields anywhere (unlike the Itinerary PDF) — this
-// document is otherwise typography/icon/color driven. `images` is used only
-// to embed the one real brand asset (the icon mark) behind the watermarks and
-// the closing logo, same lossless data-URL technique as ItineraryPdf.tsx.
+// Photos are optional and limited to the cover and one per day — the document
+// is otherwise typography/icon/color driven. `images` maps each src to its
+// embedded data URL: brand assets (watermarks, logos) lossless, photos
+// compressed — same technique as ItineraryPdf.tsx.
 
 import {
   Document,
@@ -70,6 +70,9 @@ const C = {
 };
 
 const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
+
+// Keeps words whole instead of react-pdf's default "Af-ter" / "holi-day" splits.
+const noHyphenation = (word: string) => [word];
 
 const CONTACT = {
   ...PDF_CONTACT,
@@ -183,6 +186,24 @@ const s = StyleSheet.create({
 
   // ── Cover (page 1) ────────────────────────────────────────────────────────
   cover: { padding: 0, backgroundColor: C.greenDeep },
+  // Optional full-bleed photo, darkened enough that the cover's dense white
+  // text (title, stats, price boxes, note) stays readable on any image.
+  coverImg: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  coverOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(11,44,29,0.72)",
+  },
   coverWatermark: {
     position: "absolute",
     right: -60,
@@ -443,6 +464,51 @@ const s = StyleSheet.create({
     lineHeight: 1.4,
   },
   simpleTableDate: { fontSize: 8, color: C.muted, marginTop: 2, lineHeight: 1.3 },
+  // Day Plan at a Glance rows — title on its own line above the body, with a
+  // small "DAY" label over the number and light striping between days.
+  dayPlanRowAlt: { backgroundColor: C.bgSubtle },
+  dayPlanDayLabel: {
+    fontSize: 6.5,
+    color: C.muted,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  dayPlanDayNum: { fontSize: 14, fontFamily: "Helvetica-Bold", color: C.green, lineHeight: 1.2 },
+  dayPlanTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.ink, lineHeight: 1.35 },
+  dayPlanBody: { fontSize: 8.75, color: C.body, lineHeight: 1.6, marginTop: SP.xs },
+  // Photo-card version of the same rows (used once any day has a photo):
+  // photo fills the card's left edge (absolute-fill, see dayImgCol) with the
+  // day badge on it; stay/meals move to an icon row under the text.
+  dayPlanCard: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: SP.sm + 2,
+  },
+  dayPlanCardImgCol: {
+    width: 150,
+    minHeight: 104,
+    flexShrink: 0,
+    position: "relative",
+    backgroundColor: C.green,
+  },
+  dayPlanCardBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: C.white,
+    letterSpacing: 1,
+    backgroundColor: C.greenDeep,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 4,
+  },
+  dayPlanCardBody: { flex: 1, paddingVertical: SP.md, paddingHorizontal: SP.md + 2 },
+  dayPlanCardText: { fontSize: 9, color: C.body, lineHeight: 1.6, marginBottom: SP.sm },
   simpleTableNote: {
     fontSize: 8,
     color: C.muted,
@@ -458,12 +524,20 @@ const s = StyleSheet.create({
   railLine: { flex: 1, width: 2, backgroundColor: C.border, marginTop: 3, marginBottom: 3 },
   dayCard: {
     flex: 1,
+    flexDirection: "row",
     borderWidth: 1,
     borderColor: C.border,
     borderRadius: 10,
-    padding: SP.md + 1,
+    overflow: "hidden",
     marginBottom: SP.md,
   },
+  dayCardBody: { flex: 1, padding: SP.md + 1 },
+  // Optional day photo on the card's right — no explicit height: the
+  // absolute-fill image takes the text column's height (same trick and
+  // reasoning as ItineraryPdf.tsx's dayImgCol), minHeight keeps short days
+  // from getting a sliver.
+  dayImgCol: { width: 120, minHeight: 84, flexShrink: 0, position: "relative" },
+  dayImgFull: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, objectFit: "cover" },
   dayHeadRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1019,7 +1093,7 @@ function TierOptionCard({ tierKey, tier }: { tierKey: ProposalTierKey; tier: Pro
 
 interface Props {
   data: ProposalData;
-  /** original src -> embedded data URL (only the brand icon mark, see LOGO_ASSETS above) */
+  /** original src -> embedded data URL (brand assets, see LOGO_ASSETS above, plus cover/day photos) */
   images?: Record<string, string>;
   /** Resolved Corporate Office (or Registered Office fallback). */
   address?: string;
@@ -1041,6 +1115,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
   // The Day column only widens when a date is present, so proposals without
   // day dates lay out exactly as they always did.
   const hasDayDates = data.days.some((d) => d.dateLabel.trim() !== "");
+  const hasDayImages = data.days.some((d) => img(d.image));
   // Multi-package "What Actually Differs" — grouped like the offer pages'
   // Compare Plans: hotels, vehicles and activities come from their own
   // tables (one value per option), comparisonRows are whatever else differs.
@@ -1083,6 +1158,12 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
     <Document title={`Proposal - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
       {/* COVER */}
       <Page size="A4" style={[s.page, s.cover]}>
+        {img(data.coverImage) ? (
+          <>
+            <Image src={img(data.coverImage)} style={s.coverImg} fixed />
+            <View style={s.coverOverlay} fixed />
+          </>
+        ) : null}
         {img(LOGO_SRC) ? (
           <View style={s.coverWatermark}>
             <Image src={img(LOGO_SRC)} style={s.watermarkImg} />
@@ -1307,32 +1388,39 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                       {i < data.days.length - 1 ? <View style={s.railLine} /> : null}
                     </View>
                     <View style={s.dayCard}>
-                      <View style={s.dayHeadRow}>
-                        <View style={s.dayNumTitle}>
-                          <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
-                          <Text style={s.dayTitle}>{day.title}</Text>
+                      <View style={s.dayCardBody}>
+                        <View style={s.dayHeadRow}>
+                          <View style={s.dayNumTitle}>
+                            <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
+                            <Text style={s.dayTitle}>{day.title}</Text>
+                          </View>
+                          {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
                         </View>
-                        {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
+                        {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
+                        {day.stayLabel || day.highlightsLine ? (
+                          <View style={s.dayMetaRow}>
+                            {day.stayLabel ? (
+                              <View style={s.dayMetaItem}>
+                                <PdfIcon icon="stay" size={11} color={C.green} />
+                                <Text style={s.dayMetaText}>{day.stayLabel}</Text>
+                              </View>
+                            ) : (
+                              <View style={s.dayMetaItem}>
+                                <PdfIcon icon="plane" size={11} color={C.green} />
+                              </View>
+                            )}
+                            {day.stayLabel && day.highlightsLine ? (
+                              <View style={s.dayMetaDivider} />
+                            ) : null}
+                            {day.highlightsLine ? (
+                              <Text style={s.dayMetaText}>{day.highlightsLine}</Text>
+                            ) : null}
+                          </View>
+                        ) : null}
                       </View>
-                      {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
-                      {day.stayLabel || day.highlightsLine ? (
-                        <View style={s.dayMetaRow}>
-                          {day.stayLabel ? (
-                            <View style={s.dayMetaItem}>
-                              <PdfIcon icon="stay" size={11} color={C.green} />
-                              <Text style={s.dayMetaText}>{day.stayLabel}</Text>
-                            </View>
-                          ) : (
-                            <View style={s.dayMetaItem}>
-                              <PdfIcon icon="plane" size={11} color={C.green} />
-                            </View>
-                          )}
-                          {day.stayLabel && day.highlightsLine ? (
-                            <View style={s.dayMetaDivider} />
-                          ) : null}
-                          {day.highlightsLine ? (
-                            <Text style={s.dayMetaText}>{day.highlightsLine}</Text>
-                          ) : null}
+                      {img(day.image) ? (
+                        <View style={s.dayImgCol}>
+                          <Image src={img(day.image)} style={s.dayImgFull} />
                         </View>
                       ) : null}
                     </View>
@@ -1343,8 +1431,63 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
           </>
         ) : (
           <>
-            {/* DAY PLAN AT A GLANCE */}
-            {data.days.length > 0 ? (
+            {/* DAY PLAN AT A GLANCE — photo cards once any day has a photo
+                (a thumbnail squeezed into the table's Plan column left the
+                text a narrow strip); the plain table otherwise. */}
+            {data.days.length > 0 && hasDayImages ? (
+              <View>
+                <SectionHead
+                  title="Day Plan at a Glance"
+                  tag={data.duration}
+                  minPresenceAhead={120}
+                />
+                {data.days.map((day, i) => (
+                  <View key={day.id} style={s.dayPlanCard} wrap={false}>
+                    <View style={s.dayPlanCardImgCol}>
+                      {img(day.image) ? <Image src={img(day.image)} style={s.dayImgFull} /> : null}
+                      <Text style={s.dayPlanCardBadge}>DAY {String(i + 1).padStart(2, "0")}</Text>
+                    </View>
+                    <View style={s.dayPlanCardBody}>
+                      <View style={s.dayHeadRow}>
+                        <Text
+                          style={[s.dayPlanTitle, { flex: 1 }]}
+                          hyphenationCallback={noHyphenation}
+                        >
+                          {day.title}
+                        </Text>
+                        {day.dateLabel.trim() ? (
+                          <Text style={s.dayDate}>{day.dateLabel}</Text>
+                        ) : null}
+                      </View>
+                      {day.body ? (
+                        <Text style={s.dayPlanCardText} hyphenationCallback={noHyphenation}>
+                          {day.body}
+                        </Text>
+                      ) : null}
+                      {day.stayLabel || day.mealsLabel ? (
+                        <View style={s.dayMetaRow}>
+                          {day.stayLabel ? (
+                            <View style={s.dayMetaItem}>
+                              <PdfIcon icon="stay" size={11} color={C.green} />
+                              <Text style={s.dayMetaText}>{day.stayLabel}</Text>
+                            </View>
+                          ) : null}
+                          {day.stayLabel && day.mealsLabel ? (
+                            <View style={s.dayMetaDivider} />
+                          ) : null}
+                          {day.mealsLabel ? (
+                            <View style={s.dayMetaItem}>
+                              <PdfIcon icon="meals" size={11} color={C.green} />
+                              <Text style={s.dayMetaText}>{day.mealsLabel}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : data.days.length > 0 ? (
               <View>
                 <SectionHead title="Day Plan at a Glance" tag={data.duration} />
                 <View style={s.simpleTable}>
@@ -1375,29 +1518,38 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                     </Text>
                   </View>
                   {data.days.map((day, i) => (
-                    <View key={day.id} style={s.simpleTableRow} wrap={false}>
+                    <View
+                      key={day.id}
+                      style={[s.simpleTableRow, i % 2 === 1 ? s.dayPlanRowAlt : {}]}
+                      wrap={false}
+                    >
                       <View style={[s.simpleTableCell, { flex: hasDayDates ? 0.95 : 0.5 }]}>
-                        <Text style={s.simpleTableCellStrong}>
-                          {String(i + 1).padStart(2, "0")}
-                        </Text>
+                        <Text style={s.dayPlanDayLabel}>Day</Text>
+                        <Text style={s.dayPlanDayNum}>{String(i + 1).padStart(2, "0")}</Text>
                         {day.dateLabel.trim() ? (
                           <Text style={s.simpleTableDate}>{day.dateLabel}</Text>
                         ) : null}
                       </View>
+                      <View style={[s.simpleTableCell, { flex: hasDayDates ? 2.55 : 3 }]}>
+                        <Text style={s.dayPlanTitle} hyphenationCallback={noHyphenation}>
+                          {day.title}
+                        </Text>
+                        {day.body ? (
+                          <Text style={s.dayPlanBody} hyphenationCallback={noHyphenation}>
+                            {day.body}
+                          </Text>
+                        ) : null}
+                      </View>
                       <Text
-                        style={[
-                          s.simpleTableCell,
-                          s.simpleTableCellText,
-                          { flex: hasDayDates ? 2.55 : 3 },
-                        ]}
+                        style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}
+                        hyphenationCallback={noHyphenation}
                       >
-                        <Text style={s.simpleTableCellStrong}>{day.title}</Text>
-                        {day.body ? ` – ${day.body}` : ""}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
                         {day.stayLabel || COMPARISON_DASH}
                       </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1.1 }]}>
+                      <Text
+                        style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1.1 }]}
+                        hyphenationCallback={noHyphenation}
+                      >
                         {day.mealsLabel || COMPARISON_DASH}
                       </Text>
                     </View>
