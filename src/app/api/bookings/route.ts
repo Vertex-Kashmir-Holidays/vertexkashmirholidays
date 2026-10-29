@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const where: Prisma.BookingWhereInput = {
     deletedAt: null,
-    ...bookingWhereForUser(role, userId),
+    ...(await bookingWhereForUser(role, userId)),
     ...(status ? { status } : {}),
     ...(search
       ? {

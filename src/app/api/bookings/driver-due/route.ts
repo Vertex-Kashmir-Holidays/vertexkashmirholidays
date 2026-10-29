@@ -28,7 +28,7 @@ export async function GET() {
       // AND, not a spread — the staff scope is itself an OR clause.
       AND: [
         { OR: [{ driverName: null }, { driverName: "" }] },
-        bookingWhereForUser(role, session.user.id as string),
+        await bookingWhereForUser(role, session.user.id as string),
       ],
     },
     orderBy: { travelDate: "asc" },

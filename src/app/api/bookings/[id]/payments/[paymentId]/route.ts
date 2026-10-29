@@ -25,7 +25,7 @@ const schema = z.object({
 
 async function loadBooking(id: string, role: Role, userId: string) {
   return prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     select: {
       id: true,
       amount: true,
@@ -124,7 +124,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id, paymentId } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     select: { id: true, payments: { where: { id: paymentId }, select: { id: true } } },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });

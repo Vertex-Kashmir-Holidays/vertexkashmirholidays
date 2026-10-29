@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const userId = guard.user.id as string;
   const { id } = await params;
   const booking = await prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     include: {
       tour: { select: { title: true, slug: true, coverImage: true, priceFrom: true } },
       user: { select: { name: true, email: true } },
@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const userId = guard.user.id as string;
   const { id } = await params;
   const existing = await prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     select: {
       id: true,
       servicesLocked: true,
@@ -208,7 +208,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { id } = await params;
 
   const existing = await prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     select: { id: true, deletedAt: true },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id, serviceId } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     select: {
       id: true,
       amount: true,
@@ -95,7 +95,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id, serviceId } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id, ...bookingWhereForUser(role, userId) },
+    where: { id, ...(await bookingWhereForUser(role, userId)) },
     select: { id: true, servicesLocked: true, services: { select: { id: true } } },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });

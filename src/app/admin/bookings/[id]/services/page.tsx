@@ -52,7 +52,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
   const canUnlock = canEdit && isAdminRole(role);
 
   const booking = await prisma.booking.findFirst({
-    where: { id, deletedAt: null, ...bookingWhereForUser(role, userId) },
+    where: { id, deletedAt: null, ...(await bookingWhereForUser(role, userId)) },
     include: {
       tour: { select: { title: true } },
       user: { select: { name: true, email: true, mustChangePassword: true } },

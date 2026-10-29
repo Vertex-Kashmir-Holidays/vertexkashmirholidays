@@ -25,7 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
-import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { bookingWhereForUser, canSeeB2bBookings } from "@/lib/bookings/scope";
 import { RevenueChart } from "@/components/admin/RevenueChartLazy";
 import { computeBookingFinance, round2, type PaymentStatus } from "@/lib/bookings/finance";
 
@@ -163,7 +163,11 @@ export default async function AdminDashboard() {
   // SALES) only ever sees bookings converted from a lead assigned to them
   // and leads assigned to them — same ownership rule as the Bookings and
   // Leads pages, applied here too so the dashboard isn't an org-wide leak.
-  const bookingScope: Prisma.BookingWhereInput = { deletedAt: null, ...bookingWhereForUser(role, userId) };
+  const bookingScope: Prisma.BookingWhereInput = {
+    deletedAt: null,
+    ...(await bookingWhereForUser(role, userId)),
+  };
+  const seesB2b = await canSeeB2bBookings(role);
   // B2B requests (b2bAgentId set) are tracked separately (see /admin/b2b-requests)
   // and excluded from normal-lead dashboard stats.
   const leadScope: Prisma.LeadWhereInput = {
@@ -188,13 +192,13 @@ export default async function AdminDashboard() {
   // Booking-visibility scope (see bookingWhereForUser) re-expressed as a SQL
   // fragment for the raw aggregations below — ADMIN/SUPERADMIN see every
   // booking; every other role only sees bookings converted from a lead
-  // assigned to them, or any B2B-converted booking (no per-agent assignee).
+  // assigned to them, plus B2B-converted bookings only if their role may see B2B.
   const scopeSql = isAdmin
     ? Prisma.sql`TRUE`
     : Prisma.sql`EXISTS (
         SELECT 1 FROM "Lead" l
         WHERE l."bookingId" = b.id
-          AND (l."assignedToId" = ${userId} OR l."b2bAgentId" IS NOT NULL)
+          AND (l."assignedToId" = ${userId} ${seesB2b ? Prisma.sql`OR l."b2bAgentId" IS NOT NULL` : Prisma.empty})
       )`;
 
   // Last 6 calendar months (oldest first) — same boundaries the chart always

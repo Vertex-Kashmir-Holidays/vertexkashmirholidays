@@ -64,7 +64,7 @@ function summarize(rows: RowForSummary[]) {
 export async function getBookingCardStats(role: Role, userId: string): Promise<BookingCardStats> {
   const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
   const start = monthStart();
-  const scope = { deletedAt: null, ...bookingWhereForUser(role, userId) };
+  const scope = { deletedAt: null, ...(await bookingWhereForUser(role, userId)) };
 
   const [activeRows, cancelledAll, cancelledMonth] = await Promise.all([
     // CANCELLED + REFUNDED are both inactive for sales/commission purposes — a

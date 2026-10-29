@@ -20,7 +20,7 @@ export default async function AdminBookingsPage() {
   // Cancellation/refund are admin-only business actions (server-enforced too).
   const isAdmin = role === "ADMIN" || role === "SUPERADMIN";
 
-  const where: Prisma.BookingWhereInput = { deletedAt: null, ...bookingWhereForUser(role, userId) };
+  const where: Prisma.BookingWhereInput = { deletedAt: null, ...(await bookingWhereForUser(role, userId)) };
 
   // Only the first page (matching BookingsClient's default page size) is
   // fetched server-side for a fast initial paint — every subsequent
