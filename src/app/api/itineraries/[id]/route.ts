@@ -6,6 +6,7 @@ import { itineraryDataSchema } from "@/types/itinerary";
 import { resolveItineraryAccess } from "@/lib/itinerary/access";
 import { itineraryTitleExists, uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { buildDocumentTitle, duplicateTitleMessage } from "@/lib/itinerary/documentTitle";
+import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -23,19 +24,6 @@ const ACCESS_SELECT = {
   lead: { select: { assignedToId: true, locked: true, status: true, b2bAgentId: true } },
   booking: { select: { servicesLocked: true } },
 } as const;
-
-/**
- * Extract a numeric amount from the itinerary's free-form "total cost" string
- * (e.g. "Rs 30,500/-" → 30500). Returns null when no positive number is present.
- * Used to keep the lead's negotiated amount in sync with the proposed price.
- */
-function parseProposedAmount(raw: unknown): number | null {
-  if (typeof raw !== "string") return null;
-  const digits = raw.replace(/[^0-9.]/g, "");
-  if (!digits) return null;
-  const n = parseFloat(digits);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
-}
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("itinerary", "view");
@@ -175,6 +163,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Lead-only: sync the proposed package cost into the lead's negotiated amount
     // (tentative until conversion). Only while the lead is unlocked; the Convert
     // modal then prefills its Booking Amount from this. No-op if no positive number.
+    // A converted lead is only unlocked while an admin corrects its booking —
+    // then the booking amount follows the new price too.
     if (existing.leadId && !existing.lead?.locked) {
       const proposed = parseProposedAmount(parsed.data.data.totalCost);
       if (proposed != null) {
@@ -184,6 +174,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             data: { negotiatedAmount: proposed },
           }),
         );
+        if (existing.lead?.status === "CONVERTED") {
+          const sync = await convertedBookingAmountUpdate(existing.leadId, proposed);
+          if (sync.error) return NextResponse.json({ error: sync.error }, { status: 422 });
+          if (sync.op) ops.push(sync.op);
+        }
       }
     }
   }

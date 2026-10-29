@@ -70,7 +70,7 @@ export async function resolveTokenPaymentLink(itineraryId: string): Promise<Reso
       // Authoritative total: Booking.amount post-conversion, else the lead's
       // negotiated amount (kept in sync from the itinerary's own total-cost
       // field on every save — see parseProposedAmount in
-      // src/app/api/itineraries/[id]/route.ts). Never parsed from PDF content
+      // src/lib/bookings/syncBookingAmount.ts). Never parsed from PDF content
       // here directly, and never trusted from any client input.
       const total = itinerary.booking?.amount ?? itinerary.lead?.negotiatedAmount ?? null;
       const amountRupees =

@@ -6,6 +6,7 @@ import { itineraryDataSchema } from "@/types/itinerary";
 import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import type { Prisma } from "@prisma/client";
 import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
+import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +127,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         },
       }),
     );
+
+    // Converted request unlocked for corrections: its booking follows the new price.
+    const proposed = parseProposedAmount(parsed.data.data.totalCost);
+    if (proposed != null && existing.lead?.status === "CONVERTED") {
+      const sync = await convertedBookingAmountUpdate(existing.lead.id, proposed);
+      if (sync.error) return NextResponse.json({ error: sync.error }, { status: 422 });
+      if (sync.op) {
+        ops.push(
+          sync.op,
+          prisma.lead.update({ where: { id: existing.lead.id }, data: { negotiatedAmount: proposed } }),
+        );
+      }
+    }
   }
 
   const [updated] = await prisma.$transaction(ops);
