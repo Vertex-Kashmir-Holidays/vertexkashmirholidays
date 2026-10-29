@@ -332,9 +332,10 @@ export function RateCardEditor(props: RateCardEditorProps) {
         </div>
         <div className="rounded-xl border border-dashed border-border p-3">
           <p className="text-xs font-bold text-foreground">
-            Minimum profit <span className="ml-1 font-medium text-muted-foreground">internal — never shown to sales</span>
+            Minimum profit &amp; GST{" "}
+            <span className="ml-1 font-medium text-muted-foreground">internal — never shown to sales</span>
           </p>
-          <div className="mt-2 grid max-w-md gap-3 sm:grid-cols-2">
+          <div className="mt-2 grid max-w-xl gap-3 sm:grid-cols-3">
             <div>
               <label className={labelCls}>B2B, per package</label>
               <AmountInput
@@ -347,6 +348,13 @@ export function RateCardEditor(props: RateCardEditorProps) {
               <AmountInput
                 value={data.minProfit.customer}
                 onChange={(v) => setData((d) => ({ ...d, minProfit: { ...d.minProfit, customer: v ?? 0 } }))}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>GST % (in B2B &amp; customer prices)</label>
+              <AmountInput
+                value={data.gstPercent}
+                onChange={(v) => setData((d) => ({ ...d, gstPercent: Math.min(v ?? 0, 28) }))}
               />
             </div>
           </div>
@@ -362,6 +370,7 @@ export function RateCardEditor(props: RateCardEditorProps) {
               index={i}
               count={data.tiers.length}
               minProfit={data.minProfit}
+              gstPercent={data.gstPercent}
               warningCount={warnings.filter((w) => w.tierKey === tier.key).length}
               open={openTier === tier.key}
               onToggle={() => setOpenTier((k) => (k === tier.key ? null : tier.key))}

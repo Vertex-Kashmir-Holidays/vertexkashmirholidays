@@ -4,24 +4,26 @@
 // admin-only. Mirrors the ownership pattern already used for leads
 // (src/app/api/leads/route.ts: `if (!isAdminOrSuper) where.assignedToId = userId`).
 //
-// B2B-converted bookings are the one exception: a B2B Lead never has
-// assignedToId set (that field is the sales-pipeline concept; B2B has no
-// per-agent assignee), so without this OR branch a non-admin staff member
-// could never see ANY B2B booking's services/details page — a 404 on every
-// visit, regardless of the "bookings" permission they'd been granted. This
-// matches the "any staff with the right permission, no per-staff ownership"
-// rule already applied throughout the B2B module (e.g. B2B itineraries —
-// see .../api/admin/b2b-itineraries/[id]).
+// B2B-converted bookings: a B2B Lead never has assignedToId set (B2B has no
+// per-agent assignee), so the ownership rule above never matches them. They
+// are visible only to roles authorised for B2B — see canSeeB2bBookings.
 
 import type { Prisma } from "@prisma/client";
 import type { Role } from "@/lib/rbac";
+import { can } from "@/lib/permissions";
 
-export function bookingWhereForUser(role: Role, userId: string): Prisma.BookingWhereInput {
+/** B2B bookings are admin business: SUPERADMIN/ADMIN always, any other role
+ *  only when granted "B2B Requests → View" in Roles & Permissions. */
+export async function canSeeB2bBookings(role: Role): Promise<boolean> {
+  return role === "SUPERADMIN" || role === "ADMIN" || (await can(role, "b2bRequests", "view"));
+}
+
+export async function bookingWhereForUser(
+  role: Role,
+  userId: string,
+): Promise<Prisma.BookingWhereInput> {
   if (role === "SUPERADMIN" || role === "ADMIN") return {};
-  return {
-    OR: [
-      { leads: { some: { assignedToId: userId } } },
-      { leads: { some: { b2bAgentId: { not: null } } } },
-    ],
-  };
+  const own: Prisma.BookingWhereInput = { leads: { some: { assignedToId: userId } } };
+  if (!(await canSeeB2bBookings(role))) return own;
+  return { OR: [own, { leads: { some: { b2bAgentId: { not: null } } } }] };
 }

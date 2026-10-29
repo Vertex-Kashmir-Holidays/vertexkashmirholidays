@@ -1,7 +1,7 @@
 // Rate card checks, shared by the editor (live, as you type) and the API
 // (authoritative). Warnings never block a save; activation blockers block
 // making a card ACTIVE — and saving a card that is already ACTIVE.
-import { PACKAGE_COLUMNS, formatInr, type RateCardData } from "./schema";
+import { PACKAGE_COLUMNS, formatInr, profitOf, type RateCardData } from "./schema";
 
 export interface RateCardWarning {
   tierKey?: string;
@@ -33,12 +33,14 @@ export function getRateCardWarnings(data: RateCardData): RateCardWarning[] {
         w(`customer ${label} (${formatInr(customer)}) is not above B2B (${formatInr(b2b)}).`);
       }
       if (cost > 0) {
-        if (b2b - cost < minProfit.b2b) {
-          w(`B2B ${label} leaves ${formatInr(b2b - cost)} profit, below the ${formatInr(minProfit.b2b)} minimum.`);
+        const b2bProfit = profitOf(b2b, cost, data.gstPercent);
+        const customerProfit = profitOf(customer, cost, data.gstPercent);
+        if (b2bProfit < minProfit.b2b) {
+          w(`B2B ${label} leaves ${formatInr(b2bProfit)} profit after GST, below the ${formatInr(minProfit.b2b)} minimum.`);
         }
-        if (customer - cost < minProfit.customer) {
+        if (customerProfit < minProfit.customer) {
           w(
-            `customer ${label} leaves ${formatInr(customer - cost)} profit, below the ${formatInr(minProfit.customer)} minimum.`,
+            `customer ${label} leaves ${formatInr(customerProfit)} profit after GST, below the ${formatInr(minProfit.customer)} minimum.`,
           );
         }
       }

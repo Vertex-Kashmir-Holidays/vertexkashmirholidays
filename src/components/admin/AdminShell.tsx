@@ -135,6 +135,9 @@ interface ExtraNavItem {
   label: string;
   Icon: LucideIcon;
   permKey: ModuleKey;
+  /** B2B-only data — also needs SUPERADMIN/ADMIN or "B2B Requests → View"
+   *  (same rule as canSeeB2bBookings in src/lib/bookings/scope.ts). */
+  b2bOnly?: boolean;
 }
 const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavItem[] }[] = [
   { label: null, keys: ["dashboard", "connect"] },
@@ -160,6 +163,7 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
         label: "B2B Bookings",
         Icon: CalendarCheck2,
         permKey: "bookings",
+        b2bOnly: true,
       },
     ],
   },
@@ -332,6 +336,7 @@ export function AdminShell({
   userName,
   userEmail,
   userImage,
+  role,
   permissions,
 }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -368,7 +373,14 @@ export function AdminShell({
           return { href: mod.href, label: mod.label, Icon: MODULE_ICONS[key] };
         }),
       ...(group.extra ?? [])
-        .filter((item) => permissions[item.permKey]?.view)
+        .filter(
+          (item) =>
+            permissions[item.permKey]?.view &&
+            (!item.b2bOnly ||
+              role === "SUPERADMIN" ||
+              role === "ADMIN" ||
+              permissions.b2bRequests?.view),
+        )
         .map((item) => ({ href: item.href, label: item.label, Icon: item.Icon })),
     ],
   })).filter((group) => group.items.length > 0);

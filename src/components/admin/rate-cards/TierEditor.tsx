@@ -1,10 +1,13 @@
 "use client";
 
+import { Fragment } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   PACKAGE_COLUMNS,
   formatInr,
+  gstIn,
+  profitOf,
   type PackageSet,
   type RateCardData,
   type RateCardTier,
@@ -19,6 +22,7 @@ interface Props {
   index: number;
   count: number;
   minProfit: RateCardData["minProfit"];
+  gstPercent: number;
   warningCount: number;
   open: boolean;
   onToggle: () => void;
@@ -32,6 +36,7 @@ export function TierEditor({
   index,
   count,
   minProfit,
+  gstPercent,
   warningCount,
   open,
   onToggle,
@@ -85,21 +90,7 @@ export function TierEditor({
                 </tr>
               </thead>
               <tbody>
-                {(["b2b", "customer"] as const).map((row) => (
-                  <tr key={row}>
-                    <td className="py-1 pr-2 font-semibold text-foreground">{row === "b2b" ? "B2B" : "Customer"}</td>
-                    {PACKAGE_COLUMNS.map((c) => (
-                      <td key={c.key} className="px-1 py-1">
-                        <AmountInput
-                          ariaLabel={`${row} ${c.label}`}
-                          value={tier.packages[row][c.key]}
-                          onChange={(v) => setPackage(row, c.key, v ?? 0)}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                <tr className="border-t border-dashed border-border">
+                <tr>
                   <td className="py-1 pr-2 text-foreground">
                     <span className="font-semibold">Cost</span>
                     <span className="ml-1.5 text-[11px] text-muted-foreground">internal</span>
@@ -115,30 +106,57 @@ export function TierEditor({
                     </td>
                   ))}
                 </tr>
-                {(["b2b", "customer"] as const).map((row) => (
-                  <tr key={`profit-${row}`} className="text-[12px]">
-                    <td className="py-1 pr-2 text-muted-foreground">
-                      {row === "b2b" ? "B2B" : "Customer"} profit
-                      <span className="ml-1">(min {formatInr(minProfit[row])})</span>
-                    </td>
-                    {PACKAGE_COLUMNS.map((c) => {
-                      const cost = tier.cost[c.key];
-                      const profit = tier.packages[row][c.key] - cost;
-                      const low = cost > 0 && profit < minProfit[row];
-                      return (
-                        <td
-                          key={c.key}
-                          className={cn(
-                            "px-3 py-1 text-right tabular-nums",
-                            cost === 0 ? "text-muted-foreground" : low ? "font-bold text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-300",
-                          )}
-                        >
-                          {cost === 0 ? "—" : formatInr(profit)}
+                {(["b2b", "customer"] as const).map((row) => {
+                  const rowLabel = row === "b2b" ? "B2B" : "Customer";
+                  return (
+                    <Fragment key={row}>
+                      <tr className="border-t border-dashed border-border">
+                        <td className="pt-2 pb-1 pr-2 font-semibold text-foreground">{rowLabel} price</td>
+                        {PACKAGE_COLUMNS.map((c) => (
+                          <td key={c.key} className="px-1 pt-2 pb-1">
+                            <AmountInput
+                              ariaLabel={`${row} ${c.label}`}
+                              value={tier.packages[row][c.key]}
+                              onChange={(v) => setPackage(row, c.key, v ?? 0)}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                      <tr className="text-[12px]">
+                        <td className="py-1 pr-2 text-muted-foreground">
+                          {rowLabel} GST ({gstPercent}%, included)
                         </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                        {PACKAGE_COLUMNS.map((c) => (
+                          <td key={c.key} className="px-3 py-1 text-right tabular-nums text-muted-foreground">
+                            {formatInr(gstIn(tier.packages[row][c.key], gstPercent))}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr className="text-[12px]">
+                        <td className="py-1 pr-2 text-muted-foreground">
+                          {rowLabel} profit
+                          <span className="ml-1">(min {formatInr(minProfit[row])})</span>
+                        </td>
+                        {PACKAGE_COLUMNS.map((c) => {
+                          const cost = tier.cost[c.key];
+                          const profit = profitOf(tier.packages[row][c.key], cost, gstPercent);
+                          const low = cost > 0 && profit < minProfit[row];
+                          return (
+                            <td
+                              key={c.key}
+                              className={cn(
+                                "px-3 py-1 text-right tabular-nums",
+                                cost === 0 ? "text-muted-foreground" : low ? "font-bold text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-300",
+                              )}
+                            >
+                              {cost === 0 ? "—" : formatInr(profit)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
