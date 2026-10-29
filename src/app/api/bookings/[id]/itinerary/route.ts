@@ -24,7 +24,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const { id: bookingId } = await params;
 
   const booking = await prisma.booking.findFirst({
-    where: { id: bookingId, deletedAt: null, ...bookingWhereForUser(role, userId) },
+    where: { id: bookingId, deletedAt: null, ...(await bookingWhereForUser(role, userId)) },
     select: {
       id: true,
       guestName: true,

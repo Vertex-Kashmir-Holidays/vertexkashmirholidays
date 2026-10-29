@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
+import { AccessDenied } from "@/components/admin/AccessDenied";
+import { canSeeB2bBookings } from "@/lib/bookings/scope";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { B2bBookingsClient } from "@/components/admin/b2b/B2bBookingsClient";
 
@@ -11,9 +13,9 @@ export const dynamic = "force-dynamic";
  * Bookings converted from a B2B request (Lead.b2bAgentId set) — a filtered
  * view of the same Booking data the main Bookings module manages, not a
  * separate resource, so this reuses the "bookings" permission (see
- * MODULE_PATH_ALIASES in moduleGuard.tsx) rather than a new RBAC module.
- * Any staff with bookings view access sees every B2B booking, matching
- * B2B Agents/Requests' own "no per-staff ownership" access pattern.
+ * MODULE_PATH_ALIASES in moduleGuard.tsx) rather than a new RBAC module —
+ * plus the B2B gate: SUPERADMIN/ADMIN, or "B2B Requests → View" (see
+ * canSeeB2bBookings). Sales with plain bookings access never see these.
  */
 export default async function AdminB2bBookingsPage({
   searchParams,
@@ -22,6 +24,7 @@ export default async function AdminB2bBookingsPage({
 }) {
   const guard = await requireModuleView("bookings");
   if (!guard.ok) return guard.page;
+  if (!(await canSeeB2bBookings(guard.role))) return <AccessDenied moduleLabel="B2B Bookings" />;
   const { agent } = await searchParams;
 
   const rows = await prisma.booking.findMany({
