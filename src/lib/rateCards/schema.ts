@@ -61,6 +61,9 @@ export const rateCardDataSchema = z.object({
   unionCabIncluded: z.array(z.string().trim().min(1).max(120)),
   // Internal: the minimum profit every package must leave over its cost.
   minProfit: z.object({ b2b: amount, customer: amount }),
+  // GST % included in every package price, B2B and customer alike. Defaulted
+  // so cards saved before this field existed still parse.
+  gstPercent: z.number().int().min(0).max(28).default(5),
   tiers: z.array(rateCardTierSchema),
   unionCabs: z.array(
     z.object({
@@ -118,6 +121,16 @@ export const RATE_CARD_STATUS_STYLES: Record<"DRAFT" | "ACTIVE" | "ARCHIVED", st
   ACTIVE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   ARCHIVED: "bg-muted text-muted-foreground",
 };
+
+/** GST contained in a GST-inclusive price, e.g. 5% of ₹52,500 → ₹2,500. */
+export function gstIn(price: number, gstPercent: number): number {
+  return Math.round((price * gstPercent) / (100 + gstPercent));
+}
+
+/** What a GST-inclusive price leaves over cost once GST is paid. */
+export function profitOf(price: number, cost: number, gstPercent: number): number {
+  return price - gstIn(price, gstPercent) - cost;
+}
 
 export function formatInr(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;

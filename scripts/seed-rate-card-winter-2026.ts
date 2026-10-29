@@ -67,6 +67,7 @@ const data: RateCardData = {
   activitiesIncluded: ["Gulmarg Gondola ride", "Shikara ride on Dal Lake"],
   unionCabIncluded: ["ABC Union Pahalgam (Aru, Betaab, Chandanwari)"],
   minProfit: { b2b: 5000, customer: 7000 },
+  gstPercent: 5,
   tiers: [
     {
       key: "deluxe",
