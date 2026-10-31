@@ -11,6 +11,7 @@ import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 import { phoneField } from "@/lib/leads/schema";
+import { convertedBookingAmountUpdate } from "@/lib/bookings/syncBookingAmount";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -301,6 +302,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
+  // Converted lead unlocked for corrections: its booking follows the new price.
+  let bookingAmountOp: Prisma.PrismaPromise<unknown> | null = null;
+  if (negotiatedAmount != null && existing.status === LeadStatus.CONVERTED) {
+    const sync = await convertedBookingAmountUpdate(id, negotiatedAmount);
+    if (sync.error) return NextResponse.json({ error: sync.error }, { status: 422 });
+    bookingAmountOp = sync.op;
+  }
+
   const [updated] = await prisma.$transaction([
     prisma.lead.update({
       where: { id },
@@ -400,6 +409,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       : []),
     // Sync lead trip facts into the linked itinerary's cover fields.
     ...itinerarySyncOps,
+    ...(bookingAmountOp ? [bookingAmountOp] : []),
   ]);
 
   // Post-commit, best-effort: notify the affected staff (in-app + email). On a

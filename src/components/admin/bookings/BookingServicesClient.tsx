@@ -222,8 +222,8 @@ export function BookingServicesClient({
   // but this lets hasHotel/hasTransport below see it without waiting for a
   // page refresh to re-fetch `booking.services`.
   const [savedDraftIds, setSavedDraftIds] = useState<Set<string>>(new Set());
-  // Live amounts lifted from rows on blur (keyed by row id, drafts included), so
-  // totals recalc as soon as an amount field is edited. Each row also persists
+  // Live amounts lifted from rows as they are typed (keyed by row id, drafts included), so
+  // totals recalc on every keystroke. Each row persists
   // itself on blur (auto-save) — there is no per-row manual Save step.
   const [liveAmounts, setLiveAmounts] = useState<Record<string, number>>({});
   const [payments, setPayments] = useState<Payment[]>(booking.payments);
@@ -275,12 +275,10 @@ export function BookingServicesClient({
   // Company profit — effectivePayable minus services cost minus recorded GST.
   // Mirrors the server-side commission ledger (src/lib/bookings/commission.ts)
   // so the figure shown here never drifts from what's used for commissions.
-  const profit = useMemo(
-    () => computeBookingProfit(finance, computeGstDeduction(payments)),
-    [finance, payments],
-  );
+  const gstPaid = useMemo(() => computeGstDeduction(payments), [payments]);
+  const profit = useMemo(() => computeBookingProfit(finance, gstPaid), [finance, gstPaid]);
 
-  // Record a row's amount on blur so totals react immediately.
+  // Record a row's amount as it is typed so totals react immediately.
   function setLiveAmount(id: string, amount: number) {
     setLiveAmounts((prev) => (prev[id] === amount ? prev : { ...prev, [id]: amount }));
   }
@@ -600,7 +598,7 @@ export function BookingServicesClient({
                   canEdit={canEdit}
                   capError={capError}
                   showRequired={lockAttempted}
-                  onAmountBlur={setLiveAmount}
+                  onAmountChange={setLiveAmount}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
               ))}
@@ -615,7 +613,7 @@ export function BookingServicesClient({
                   canEdit={canEdit}
                   capError={capError}
                   showRequired={lockAttempted}
-                  onAmountBlur={setLiveAmount}
+                  onAmountChange={setLiveAmount}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                   onSaved={() => markDraftSaved(svc.id)}
                 />
@@ -724,7 +722,10 @@ export function BookingServicesClient({
           )}
           {canViewProfit && (
             <div className="border-t border-border pt-3 mt-auto">
-              <dl className="text-sm">
+              <dl className="space-y-1.5 text-sm">
+                <Row label="Effective Payable" value={inr(finance.effectivePayable)} muted />
+                <Row label="Services Total" value={`– ${inr(finance.servicesTotal)}`} muted />
+                <Row label="GST Paid" value={`– ${inr(gstPaid)}`} muted />
                 <Row label="Profit" value={inr(profit)} strong />
               </dl>
             </div>
@@ -739,6 +740,7 @@ export function BookingServicesClient({
             <Row label="Discount" value={`– ${inr(finance.discountAmount)}`} />
             <Row label="Effective Payable" value={inr(finance.effectivePayable)} strong />
             <Row label="Paid Amount" value={inr(finance.paidAmount)} />
+            <Row label="GST Paid (incl. in payments)" value={inr(gstPaid)} muted />
             <div className="border-t border-border pt-1.5 mt-1.5">
               <Row label="Net Balance" value={inr(finance.balance)} strong />
             </div>
@@ -1665,7 +1667,7 @@ function ServiceRow({
   canEdit,
   capError,
   showRequired = false,
-  onAmountBlur,
+  onAmountChange,
   onRemoved,
   onSaved,
 }: {
@@ -1678,7 +1680,7 @@ function ServiceRow({
   capError: (amount: number, excludeId: string | null) => string | null;
   /** Outline empty required fields even on unsaved drafts (after a refused lock). */
   showRequired?: boolean;
-  onAmountBlur: (id: string, amount: number) => void;
+  onAmountChange: (id: string, amount: number) => void;
   onRemoved: () => void;
   onSaved?: () => void;
 }) {
@@ -1823,12 +1825,13 @@ function ServiceRow({
           <input
             type={f.type}
             value={form[f.key]}
-            onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
-            onBlur={() => {
-              if (f.key === "amount")
-                onAmountBlur(record.id, form.amount ? parseFloat(form.amount) || 0 : 0);
-              autoSave();
+            onChange={(e) => {
+              const value = e.target.value;
+              setForm((p) => ({ ...p, [f.key]: value }));
+              // Totals follow every keystroke; the row itself still saves on blur.
+              if (f.key === "amount") onAmountChange(record.id, parseFloat(value) || 0);
             }}
+            onBlur={autoSave}
             disabled={locked || !canEdit}
             aria-invalid={missing || undefined}
             className={cn(inputCls, "mt-0.5", missing && "border-red-500 focus:border-red-500 focus:ring-red-500/25")}
