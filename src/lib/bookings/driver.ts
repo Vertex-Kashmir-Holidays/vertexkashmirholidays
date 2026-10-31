@@ -31,7 +31,6 @@ export interface DriverDueBooking {
   id: string;
   guestName: string;
   travelDate: string;
-  servicesLocked: boolean;
 }
 
 export interface DriverDetails {
