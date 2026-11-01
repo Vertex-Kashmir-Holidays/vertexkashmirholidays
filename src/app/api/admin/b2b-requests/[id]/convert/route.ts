@@ -19,6 +19,10 @@ const schema = z.object({
   tokenAmount: z.coerce.number().positive("Token amount must be greater than zero."),
   paymentMethod: z.string().trim().max(40).nullable().optional(),
   gstPercent: z.coerce.number().min(0).max(100),
+  // Travel dates ("YYYY-MM-DD") — a request's dates are only set when it's
+  // created, so the convert dialog confirms/supplies them (prefilled).
+  startDate: z.iso.date("Enter the travel start date."),
+  endDate: z.iso.date().nullable().optional(),
 });
 
 /**
@@ -84,6 +88,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
   const { bookingAmount, tokenAmount, paymentMethod, gstPercent } = parsed.data;
+  const startDate = new Date(`${parsed.data.startDate}T00:00:00.000Z`);
+  const endDate = parsed.data.endDate ? new Date(`${parsed.data.endDate}T00:00:00.000Z`) : null;
+  if (endDate && endDate < startDate) {
+    return NextResponse.json(
+      { error: "Travel end date can't be before the start date." },
+      { status: 422 },
+    );
+  }
 
   const tokenGst = resolveGst(tokenAmount, gstPercent, paymentMethod);
 
@@ -102,7 +114,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     ({ bookingId } = await prisma.$transaction((tx) =>
       convertLeadToBooking({
         tx,
-        lead,
+        lead: { ...lead, startDate, endDate },
         // The agent IS the customer/account — never resolved or created via
         // email/phone matching, unlike the normal lead path.
         customerId: lead.b2bAgentId,

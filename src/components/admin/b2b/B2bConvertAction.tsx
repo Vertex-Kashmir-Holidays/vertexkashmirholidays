@@ -13,6 +13,9 @@ interface Props {
   /** The itinerary has gone to the agent (status SENT or CONFIRMED) — the
    *  button stays disabled until then; the convert API enforces the same. */
   itinerarySent: boolean;
+  /** The request's travel dates ("YYYY-MM-DD"), prefilled; a start date is required. */
+  initialStartDate: string;
+  initialEndDate: string;
 }
 
 const inputCls =
@@ -27,13 +30,22 @@ const inputCls =
  * the same resolveGst() the normal flow uses — this only makes the *input*
  * mandatory, not the business rule).
  */
-export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }: Props) {
+export function B2bConvertAction({
+  leadId,
+  guestName,
+  gstRates,
+  itinerarySent,
+  initialStartDate,
+  initialEndDate,
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [bookingAmount, setBookingAmount] = useState("");
   const [tokenAmount, setTokenAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("Online");
   const [gstPercent, setGstPercent] = useState<string>(String(gstRates[0] ?? ""));
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,6 +62,8 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
       );
     }
     if (!gstPercent || Number.isNaN(g)) return setError("Select a GST rate.");
+    if (!startDate) return setError("Enter the travel start date.");
+    if (endDate && endDate < startDate) return setError("Travel end date can't be before the start date.");
     setError(null);
     setSubmitting(true);
 
@@ -58,7 +72,14 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
         const res = await fetch(`/api/admin/b2b-requests/${leadId}/convert`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingAmount: b, tokenAmount: t, paymentMethod, gstPercent: g }),
+          body: JSON.stringify({
+            bookingAmount: b,
+            tokenAmount: t,
+            paymentMethod,
+            gstPercent: g,
+            startDate,
+            endDate: endDate || null,
+          }),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok || !json.bookingId) {
@@ -99,11 +120,36 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
               <h3 className="font-display font-bold text-foreground">Convert B2B Request</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Convert <span className="font-semibold text-foreground">{guestName}</span> into a
-                booking under the agent&apos;s account. This locks the request and its itinerary.
+                booking under the agent&apos;s account. The itinerary stays editable until the booking&apos;s services are locked.
               </p>
             </div>
 
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Travel Start *
+                  </span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className={`${inputCls} mt-1`}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Travel End
+                  </span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className={`${inputCls} mt-1`}
+                  />
+                </label>
+              </div>
               <label className="block">
                 <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
                   Total Amount (₹) *

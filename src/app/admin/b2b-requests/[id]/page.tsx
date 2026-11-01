@@ -201,6 +201,8 @@ export default async function AdminB2bRequestDetailPage({
               guestName={lead.name}
               gstRates={gstRates}
               itinerarySent={itinerarySent}
+              initialStartDate={lead.startDate?.toISOString().slice(0, 10) ?? ""}
+              initialEndDate={lead.endDate?.toISOString().slice(0, 10) ?? ""}
             />
           </div>
         ) : (
