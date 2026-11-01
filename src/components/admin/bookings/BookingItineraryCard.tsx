@@ -76,8 +76,8 @@ export function BookingItineraryCard({
               </>
             ) : (
               <>
-                It is <strong className="text-amber-600 dark:text-amber-400">unlocked</strong> for
-                corrections — re-lock the booking&apos;s services when the changes are done.
+                It is <strong className="text-amber-600 dark:text-amber-400">unlocked</strong> —
+                editable until this booking&apos;s services are locked.
               </>
             )}
           </p>
