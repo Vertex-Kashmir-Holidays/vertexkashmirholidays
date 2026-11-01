@@ -20,7 +20,17 @@ type Params = { params: Promise<{ id: string }> };
 async function loadB2bItinerary(id: string) {
   const record = await prisma.itinerary.findUnique({
     where: { id },
-    include: { lead: { select: { id: true, b2bAgentId: true, locked: true, status: true } } },
+    include: {
+      lead: {
+        select: {
+          id: true,
+          b2bAgentId: true,
+          locked: true,
+          status: true,
+          booking: { select: { servicesLocked: true } },
+        },
+      },
+    },
   });
   if (!record || record.lead?.b2bAgentId == null) return null;
   return record;
@@ -64,8 +74,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const existing = await loadB2bItinerary(id);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Converted → locked with its booking; editable again only by an admin while
-  // the booking is unlocked for changes (same rule as a customer's itinerary).
+  // Converted → editable only by an admin, and only while the booking's
+  // services are unlocked (see resolveB2bItineraryAccess).
   const access = resolveB2bItineraryAccess(
     { locked: existing.locked, lead: existing.lead! },
     { role: guard.user.role, canEditItineraries: true },

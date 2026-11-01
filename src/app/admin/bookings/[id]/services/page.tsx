@@ -198,7 +198,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             isLeadConverted={!!lead}
             isB2bLead={!!lead?.b2bAgentId}
             leadItineraryId={lead?.itinerary?.id ?? null}
-            leadLocked={lead?.locked ?? false}
+            // A B2B request's itinerary follows the services lock (resolveB2bItineraryAccess).
+            leadLocked={lead?.b2bAgentId ? booking.servicesLocked : (lead?.locked ?? false)}
             itinerary={booking.itinerary ?? null}
             canCreate={canCreateItinerary}
           />

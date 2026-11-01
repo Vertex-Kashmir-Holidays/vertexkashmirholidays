@@ -7,6 +7,7 @@ import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
+import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { CreateB2bItineraryButton } from "@/components/admin/b2b/CreateB2bItineraryButton";
 import { B2bConvertAction } from "@/components/admin/b2b/B2bConvertAction";
 import {
@@ -67,6 +68,7 @@ export default async function AdminB2bRequestDetailPage({
       b2bAgent: { select: { id: true, name: true, email: true, agencyName: true } },
       locked: true,
       itinerary: { select: { id: true, status: true, updatedAt: true, locked: true } },
+      booking: { select: { servicesLocked: true } },
     },
   });
   if (!lead || lead.b2bAgentId === null) notFound();
@@ -74,8 +76,13 @@ export default async function AdminB2bRequestDetailPage({
   const canManageItinerary = await can(role, "itinerary", "create");
   const canConvert = await can(role, "b2bRequests", "edit");
   const itinerarySent = isItinerarySent(lead.itinerary?.status);
-  // Converted → locked with the booking, until an admin unlocks it for changes.
-  const itineraryLocked = lead.locked || !!lead.itinerary?.locked;
+  // Converted → locked while the booking's services are (resolveB2bItineraryAccess).
+  const itineraryLocked = lead.itinerary
+    ? resolveB2bItineraryAccess(
+        { locked: lead.itinerary.locked, lead },
+        { role, canEditItineraries: canManageItinerary },
+      ).locked
+    : lead.locked;
   const settings = canConvert ? await getSiteSettings() : null;
   const gstRates = parseGstRates(settings?.gstRates);
 
