@@ -99,7 +99,7 @@ export function B2bConvertAction({
       <button
         onClick={() => setOpen(true)}
         disabled={!itinerarySent}
-        title={itinerarySent ? undefined : "Send the itinerary to the agent first"}
+        title={itinerarySent ? undefined : "Publish the itinerary to the agent first"}
         className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
       >
         <ReceiptText className="h-4 w-4" />

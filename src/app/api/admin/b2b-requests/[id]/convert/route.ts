@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // request can be converted — it's the agreed plan the booking is built on.
   const itinerary = await prisma.itinerary.findUnique({
     where: { leadId: id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, publishedAt: true },
   });
   if (!itinerary) {
     return NextResponse.json(
@@ -64,10 +64,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
   // …and it must have gone to the agent first — a draft isn't an agreed plan.
-  if (!isItinerarySent(itinerary.status)) {
+  // "Gone" means published: the agent sees nothing until it is.
+  if (!isItinerarySent(itinerary.status) || !itinerary.publishedAt) {
     return NextResponse.json(
       {
-        error: "Send the itinerary to the agent before converting this request.",
+        error: "Publish the itinerary to the agent before converting this request.",
         code: "ITINERARY_NOT_SENT",
       },
       { status: 422 },

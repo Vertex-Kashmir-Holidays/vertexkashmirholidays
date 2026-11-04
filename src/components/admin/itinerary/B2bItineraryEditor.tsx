@@ -30,6 +30,7 @@ import { ReorderableList } from "./ReorderableList";
 import { addDaysToStayDate, stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { B2B_DEFAULT_COVER, b2bCoverImage } from "@/lib/b2b/coverImage";
 import { ImagePicker } from "./ImagePicker";
+import { PublishBar, publishTo, type PublishState } from "./PublishBar";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -63,6 +64,10 @@ interface Props {
   agent?: B2bAgentInfo | null;
   /** False until the agency has earned full white-label — see WHITE_LABEL_MIN_BOOKINGS. */
   whiteLabel: boolean;
+  /** When the agent-visible copy was last published (ISO), or null — see src/lib/itinerary/publish.ts. */
+  initialPublishedAt: string | null;
+  /** Last server save (ISO). */
+  initialUpdatedAt: string;
 }
 
 export function B2bItineraryEditor({
@@ -74,6 +79,8 @@ export function B2bItineraryEditor({
   apiBasePath,
   agent,
   whiteLabel,
+  initialPublishedAt,
+  initialUpdatedAt,
 }: Props) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -83,6 +90,36 @@ export function B2bItineraryEditor({
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Agent visibility: agents only see the published snapshot (publish.ts).
+  const [savedData, setSavedData] = useState<ItineraryData>(initialData);
+  const [savedAt, setSavedAt] = useState<string>(initialUpdatedAt);
+  const [publishedAt, setPublishedAt] = useState<string | null>(initialPublishedAt);
+  const publishState: PublishState = !publishedAt
+    ? "never"
+    : new Date(savedAt) > new Date(publishedAt)
+      ? "stale"
+      : "current";
+  const publishUrl = `${apiBasePath}/${id}/publish`;
+
+  /** After a save/download: nudge staff that the agent can't see this yet. */
+  function promptPublish(message: string) {
+    if (!canSave) return;
+    toast.info(message, {
+      duration: 10000,
+      action: {
+        label: "Publish to agent",
+        onClick: async () => {
+          const at = await publishTo(publishUrl);
+          if (!at) return;
+          setPublishedAt(at);
+          setSavedAt(at);
+          toast.success("Published — the agent now sees this version.");
+          router.refresh();
+        },
+      },
+    });
+  }
 
   function update<K extends keyof ItineraryData>(field: K, value: ItineraryData[K]) {
     setData((p) => ({ ...p, [field]: value }));
@@ -255,7 +292,7 @@ export function B2bItineraryEditor({
     }));
   }
 
-  async function handleSave() {
+  async function handleSave(opts: { promptPublish?: boolean } = { promptPublish: true }): Promise<boolean> {
     setSaving(true);
     try {
       const res = await fetch(`${apiBasePath}/${id}`, {
@@ -265,10 +302,22 @@ export function B2bItineraryEditor({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Save failed");
-      toast.success("Quotation saved.");
+      setSavedData(data);
+      setSavedAt(json.updatedAt ?? new Date().toISOString());
+      if (opts.promptPublish) {
+        promptPublish(
+          publishedAt
+            ? "Saved. The agent still sees the previously published version."
+            : "Saved. The agent can't see this quotation until you publish it.",
+        );
+      } else {
+        toast.success("Quotation saved.");
+      }
       router.refresh();
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -279,18 +328,16 @@ export function B2bItineraryEditor({
     try {
       const { bytes } = await downloadB2bItineraryPdf(data, status, id, agent, whiteLabel);
       toast.success(`PDF downloaded (${Math.round(bytes / 1024)} KB).`);
-      // Downloading means it's being shared with the agent — bump a
-      // still-draft quotation out of DRAFT, same rule as the normal editor.
-      if (status === "DRAFT") {
-        const res = await fetch(`${apiBasePath}/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "SENT" }),
-        });
-        if (res.ok) {
-          setStatus("SENT");
-          router.refresh();
-        }
+      // Downloading no longer shares it automatically — the agent's account
+      // only shows what's explicitly published. Nudge when theirs is behind.
+      if (data !== savedData) {
+        toast.info("This PDF includes unsaved changes — save and publish to update the agent's account.");
+      } else if (publishState !== "current") {
+        promptPublish(
+          publishedAt
+            ? "The agent's account still shows the older published version."
+            : "The agent can't see this quotation in their account until you publish it.",
+        );
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PDF export failed");
@@ -345,7 +392,7 @@ export function B2bItineraryEditor({
           </button>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             disabled={saving || !canSave}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -354,6 +401,20 @@ export function B2bItineraryEditor({
           </button>
         </div>
       </div>
+
+      <PublishBar
+        publishUrl={publishUrl}
+        audience="agent"
+        state={publishState}
+        publishedAt={publishedAt}
+        dirty={data !== savedData}
+        onSave={() => handleSave({ promptPublish: false })}
+        canPublish={canSave}
+        onPublished={(at) => {
+          setPublishedAt(at);
+          setSavedAt(at);
+        }}
+      />
 
       {/* Trip details — maps to B2bItineraryPdf's title + info bar + destinations */}
       <div className={card}>

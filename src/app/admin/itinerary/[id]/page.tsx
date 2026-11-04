@@ -186,6 +186,8 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         initialData={data}
         initialTitle={record.title}
         initialStatus={record.status}
+        initialPublishedAt={record.publishedAt?.toISOString() ?? null}
+        initialUpdatedAt={record.updatedAt.toISOString()}
         canSave={canSave}
         ownsCopy={ownsCopy}
         leadSync={leadSync}

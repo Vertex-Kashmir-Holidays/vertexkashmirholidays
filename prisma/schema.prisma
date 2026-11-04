@@ -160,9 +160,17 @@ model Itinerary {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
+  // ── Client-visible copy (see src/lib/itinerary/publish.ts) ──
+  // Customers and B2B agents only ever see this snapshot, never the live
+  // `data` staff are still editing. Set by an explicit "Publish" in the
+  // editor; null = never shared, so the client sees nothing yet.
+  publishedTitle String?
+  publishedData  Json?
+  publishedAt    DateTime?
+
   // ── Booking-token Razorpay Payment Link (see src/lib/itinerary/tokenPaymentLink.ts) ──
-  // The single CURRENT active/most-recent fixed-amount (₹2,000, or the tour total
-  // if lower) token Payment Link embedded as a QR in this itinerary's PDF. Kept on
+  // The single CURRENT active/most-recent token Payment Link (10% of the package
+  // total, rounded up to ₹500) embedded as a QR in this itinerary's PDF. Kept on
   // Itinerary (not Booking) because a link can be minted while the itinerary is
   // still only Lead-linked, before conversion — Booking may not exist yet. Only
   // ever one row of "current" link state; a superseded (expired/replaced) link is

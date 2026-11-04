@@ -4,13 +4,14 @@ import Link from "next/link";
 import {
   LayoutDashboard,
   Package,
+  Layers,
   Inbox,
   CalendarDays,
   MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ModuleKey, PermissionMap } from "@/lib/rbac";
+import type { ModuleKey, PermissionMap, Role } from "@/lib/rbac";
 
 interface TabDef {
   key: ModuleKey;
@@ -31,14 +32,26 @@ const TABS: TabDef[] = [
   { key: "connect", href: "/admin/connect", label: "Chats", Icon: MessageSquare },
 ];
 
+// Sales staff send proposals far more often than they edit packages, so for
+// SALES the Packages slot shows Proposals instead (same Layers icon as the sidebar).
+const PROPOSALS_TAB: TabDef = {
+  key: "proposals",
+  href: "/admin/proposals",
+  label: "Proposals",
+  Icon: Layers,
+};
+
 interface Props {
   pathname: string;
   permissions: PermissionMap;
+  role: Role;
 }
 
 /** Bottom tab bar for admin on small screens — hidden at lg (desktop keeps the sidebar only). */
-export function MobileBottomTabs({ pathname, permissions }: Props) {
-  const visibleTabs = TABS.filter((t) => permissions[t.key]?.view);
+export function MobileBottomTabs({ pathname, permissions, role }: Props) {
+  const tabs =
+    role === "SALES" ? TABS.map((t) => (t.key === "packages" ? PROPOSALS_TAB : t)) : TABS;
+  const visibleTabs = tabs.filter((t) => permissions[t.key]?.view);
   if (visibleTabs.length === 0) return null;
 
   return (

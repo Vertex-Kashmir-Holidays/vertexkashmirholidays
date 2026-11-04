@@ -124,6 +124,8 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
         initialData={data}
         initialTitle={record.title}
         initialStatus={record.status}
+        initialPublishedAt={record.publishedAt?.toISOString() ?? null}
+        initialUpdatedAt={record.updatedAt.toISOString()}
         canSave={canSave}
         apiBasePath="/api/admin/b2b-itineraries"
         agent={record.lead.b2bAgent}

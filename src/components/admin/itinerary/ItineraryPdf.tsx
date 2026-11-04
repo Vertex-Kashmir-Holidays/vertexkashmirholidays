@@ -800,8 +800,10 @@ interface Props {
    * below), not filled with a generic fallback QR.
    */
   tokenQrDataUrl?: string;
-  /** The fixed token amount that QR collects, in rupees — drives the "Pay ₹X only" caption. */
+  /** The token amount that QR collects, in rupees — drives the "Pay ₹X only" caption. */
   tokenAmountRupees?: number;
+  /** Package total the 10% token was calculated from — shown as "10% of ₹X". */
+  tokenTotalRupees?: number;
   /**
    * Real review-rating badge, sourced server-side from the live site's own
    * HomeContent.aboutRatingTitle/Subtitle (see
@@ -820,6 +822,7 @@ export function ItineraryPdf({
   address,
   tokenQrDataUrl,
   tokenAmountRupees,
+  tokenTotalRupees,
   trustContent,
   socialLinks,
 }: Props) {
@@ -1469,6 +1472,11 @@ export function ItineraryPdf({
                   ? `Scan to pay ${inr(tokenAmountRupees)}/- and confirm your booking`
                   : "Scan to pay your advance"}
               </Text>
+              {tokenAmountRupees != null && tokenTotalRupees != null ? (
+                <Text style={s.qrSubCaption}>
+                  {`Booking token: 10% of your package total ${inr(tokenTotalRupees)}, rounded up to ${inr(tokenAmountRupees)}`}
+                </Text>
+              ) : null}
               <Text style={s.qrSubCaption}>Open your phone camera or any UPI app</Text>
             </>
           ) : null}
