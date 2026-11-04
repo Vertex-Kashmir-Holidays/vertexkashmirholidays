@@ -477,7 +477,7 @@ export function AdminShell({
           </div>
 
           {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
-          <MobileBottomTabs pathname={pathname} permissions={permissions} />
+          <MobileBottomTabs pathname={pathname} permissions={permissions} role={role} />
 
           {/* Global incoming call notification — rings from any page in the admin */}
           <Suspense>

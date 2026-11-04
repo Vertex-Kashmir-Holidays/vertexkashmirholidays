@@ -67,7 +67,7 @@ export default async function AdminB2bRequestDetailPage({
       bookingId: true,
       b2bAgent: { select: { id: true, name: true, email: true, agencyName: true } },
       locked: true,
-      itinerary: { select: { id: true, status: true, updatedAt: true, locked: true } },
+      itinerary: { select: { id: true, status: true, updatedAt: true, locked: true, publishedAt: true } },
       booking: { select: { servicesLocked: true } },
     },
   });
@@ -75,7 +75,8 @@ export default async function AdminB2bRequestDetailPage({
 
   const canManageItinerary = await can(role, "itinerary", "create");
   const canConvert = await can(role, "b2bRequests", "edit");
-  const itinerarySent = isItinerarySent(lead.itinerary?.status);
+  // Matches the convert route: "sent" = published to the agent.
+  const itinerarySent = isItinerarySent(lead.itinerary?.status) && !!lead.itinerary?.publishedAt;
   // Converted → locked while the booking's services are (resolveB2bItineraryAccess).
   const itineraryLocked = lead.itinerary
     ? resolveB2bItineraryAccess(
@@ -194,13 +195,15 @@ export default async function AdminB2bRequestDetailPage({
                 ? "Generate an itinerary before this request can be converted."
                 : itinerarySent
                   ? "Ready to convert once amounts are confirmed with the agent."
-                  : "Send the itinerary to the agent (status Sent) before this request can be converted."}
+                  : "Publish the itinerary to the agent (Publish button in the itinerary editor) before this request can be converted."}
             </p>
             <B2bConvertAction
               leadId={lead.id}
               guestName={lead.name}
               gstRates={gstRates}
               itinerarySent={itinerarySent}
+              initialStartDate={lead.startDate?.toISOString().slice(0, 10) ?? ""}
+              initialEndDate={lead.endDate?.toISOString().slice(0, 10) ?? ""}
             />
           </div>
         ) : (

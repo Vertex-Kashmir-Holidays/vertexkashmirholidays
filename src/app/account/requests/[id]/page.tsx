@@ -62,13 +62,13 @@ export default async function AccountRequestDetailPage({
       bookingId: true,
       locked: true,
       createdAt: true,
-      itinerary: { select: { status: true, updatedAt: true } },
+      itinerary: { select: { publishedAt: true } },
     },
   });
   if (!request) notFound();
 
   const status = request.status as B2bRequestStatus;
-  const itineraryReady = !!request.itinerary && request.itinerary.status !== "DRAFT";
+  const itineraryReady = !!request.itinerary?.publishedAt;
 
   return (
     <div className="space-y-5">
@@ -136,7 +136,7 @@ export default async function AccountRequestDetailPage({
         {itineraryReady ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              Updated {fmtDate(request.itinerary!.updatedAt)}
+              Updated {fmtDate(request.itinerary!.publishedAt!)}
             </p>
             <B2bItineraryDownloadButton requestId={request.id} />
           </div>

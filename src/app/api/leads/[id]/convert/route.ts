@@ -51,6 +51,15 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "This lead is already converted." }, { status: 422 });
   }
 
+  // The booking's travel date comes from the lead — without it the booking
+  // would have no real trip date (and its edit window would close at once).
+  if (!lead.startDate) {
+    return NextResponse.json(
+      { error: "Add the travel start date to this lead before converting.", code: "TRAVEL_DATE_REQUIRED" },
+      { status: 422 },
+    );
+  }
+
   // Business rule: an itinerary must be prepared and linked to the lead before it
   // can be converted — the itinerary is the agreed plan the booking is built on.
   // This is the authoritative check (the UI mirrors it for a smoother prompt).

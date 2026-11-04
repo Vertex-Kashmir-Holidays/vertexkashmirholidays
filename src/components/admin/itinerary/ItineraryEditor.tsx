@@ -17,6 +17,7 @@ import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf, type TokenPaymentLink } from "@/lib/itinerary/export-pdf";
 import { buildDocumentTitle, isCopyTitle } from "@/lib/itinerary/documentTitle";
 import { UntouchedCopyGuard } from "./UntouchedCopyGuard";
+import { PublishBar, publishTo, type PublishState } from "./PublishBar";
 import { applyDayOrder } from "@/lib/itinerary/dayReorder";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
@@ -82,6 +83,10 @@ interface ItineraryEditorProps {
    * token-Payment-Link QR mint on export rather than relying on it to fail.
    */
   disableTokenPaymentLink?: boolean;
+  /** When the client-visible copy was last published (ISO), or null if never — see src/lib/itinerary/publish.ts. */
+  initialPublishedAt?: string | null;
+  /** Last server save (ISO) — compared with initialPublishedAt for "unpublished changes". */
+  initialUpdatedAt?: string;
 }
 
 export function ItineraryEditor({
@@ -99,6 +104,8 @@ export function ItineraryEditor({
   socialLinks,
   apiBasePath = "/api/itineraries",
   disableTokenPaymentLink = false,
+  initialPublishedAt = null,
+  initialUpdatedAt,
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -109,6 +116,37 @@ export function ItineraryEditor({
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
+
+  // Client visibility: customers only see the published snapshot. `savedData`
+  // is the last server-saved content, so `data !== savedData` = unsaved edits.
+  const [savedData, setSavedData] = useState<ItineraryData>(initialData);
+  const [savedAt, setSavedAt] = useState<string | undefined>(initialUpdatedAt);
+  const [publishedAt, setPublishedAt] = useState<string | null>(initialPublishedAt);
+  const publishState: PublishState = !publishedAt
+    ? "never"
+    : savedAt && new Date(savedAt) > new Date(publishedAt)
+      ? "stale"
+      : "current";
+  const publishUrl = id ? `${apiBasePath}/${id}/publish` : null;
+
+  /** After a save/download: nudge staff that the customer can't see this yet. */
+  function promptPublish(message: string) {
+    if (!publishUrl || !canSave) return;
+    toast.info(message, {
+      duration: 10000,
+      action: {
+        label: "Publish to customer",
+        onClick: async () => {
+          const at = await publishTo(publishUrl);
+          if (!at) return;
+          setPublishedAt(at);
+          setSavedAt(at);
+          toast.success("Published — the customer now sees this version.");
+          router.refresh();
+        },
+      },
+    });
+  }
 
   /* ---------- cover ---------- */
   const updateCover = (field: keyof ItineraryData, value: string) =>
@@ -377,10 +415,10 @@ export function ItineraryEditor({
     setData((p) => ({ ...p, cancel: p.cancel.filter((v) => v.id !== id) }));
 
   /* ---------- actions ---------- */
-  async function handleSave() {
+  async function handleSave(opts: { promptPublish?: boolean } = { promptPublish: true }): Promise<boolean> {
     if (!data.preparedFor.trim()) {
       toast.error("Please enter the customer name (Prepared For).");
-      return;
+      return false;
     }
     setSaving(true);
     try {
@@ -392,14 +430,27 @@ export function ItineraryEditor({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Save failed");
-      toast.success("Itinerary saved.");
+      setSavedData(data);
+      setSavedAt(json.updatedAt ?? new Date().toISOString());
       if (!id && json.id) {
+        toast.success("Itinerary saved.");
         router.replace(`/admin/itinerary/${json.id}`);
       } else {
+        if (opts.promptPublish) {
+          promptPublish(
+            publishedAt
+              ? "Saved. The customer still sees the previously published version."
+              : "Saved. The customer can't see this itinerary until you publish it.",
+          );
+        } else {
+          toast.success("Itinerary saved.");
+        }
         router.refresh();
       }
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -417,7 +468,7 @@ export function ItineraryEditor({
           const res = await fetch(`${apiBasePath}/${id}/token-payment-link`, { method: "POST" });
           const json = await res.json().catch(() => ({}));
           if (res.ok) {
-            tokenPaymentLink = { shortUrl: json.shortUrl, amountRupees: json.amountRupees };
+            tokenPaymentLink = { shortUrl: json.shortUrl, amountRupees: json.amountRupees, totalRupees: json.totalRupees };
           } else {
             toast.warning(json.error ?? "Could not generate the payment QR — exporting without it.");
           }
@@ -441,21 +492,17 @@ export function ItineraryEditor({
       } else {
         toast.success(`PDF downloaded (${kb} KB).`);
       }
-      // Downloading the PDF means it's being shared with the customer — bump a
-      // still-draft itinerary out of DRAFT so it becomes visible in their
-      // account (DRAFT is hidden there — see itineraryVisible in
-      // account/bookings/[id]/page.tsx). Never downgrades an already
-      // SENT/CONFIRMED itinerary.
-      if (id && status === "DRAFT") {
-        const res = await fetch(`${apiBasePath}/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "SENT" }),
-        });
-        if (res.ok) {
-          setStatus("SENT");
-          router.refresh();
-        }
+      // Downloading no longer shares it automatically — the customer's account
+      // only shows what's explicitly published (src/lib/itinerary/publish.ts).
+      // Nudge instead when their copy is missing or behind.
+      if (data !== savedData) {
+        toast.info("This PDF includes unsaved changes — save and publish to update the customer's account.");
+      } else if (publishState !== "current") {
+        promptPublish(
+          publishedAt
+            ? "The customer's account still shows the older published version."
+            : "The customer can't see this itinerary in their account until you publish it.",
+        );
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PDF export failed");
@@ -488,13 +535,28 @@ export function ItineraryEditor({
         title={displayTitle}
         status={status}
         onStatusChange={setStatus}
-        onSave={handleSave}
+        onSave={() => void handleSave()}
         onExport={handleExport}
         onReset={handleReset}
         isSaving={isSaving}
         isExporting={isExporting}
         canSave={canSave}
       />
+      {publishUrl && (
+        <PublishBar
+          publishUrl={publishUrl}
+          audience="customer"
+          state={publishState}
+          publishedAt={publishedAt}
+          dirty={data !== savedData}
+          onSave={() => handleSave({ promptPublish: false })}
+          canPublish={canSave}
+          onPublished={(at) => {
+            setPublishedAt(at);
+            setSavedAt(at);
+          }}
+        />
+      )}
       {id && (
         <UntouchedCopyGuard
           active={ownsCopy && isCopyTitle(initialTitle)}
@@ -1388,7 +1450,7 @@ export function ItineraryEditor({
                 </div>
                 <div className="flex flex-col items-center">
                   {/* No image picker here anymore — the QR is a live,
-                     itinerary-specific Razorpay Payment Link (fixed token
+                     itinerary-specific Razorpay Payment Link (10% token
                      amount, never a staff-uploaded image), generated fresh
                      each time the PDF is exported. See
                      src/lib/itinerary/tokenPaymentLink.ts. */}
