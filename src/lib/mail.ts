@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
-import { groupServiceTables } from "@/lib/bookings/serviceDisplay";
+import { receiptGstLine } from "@/lib/payments/gst";
+import {
+  groupServiceTables,
+  SHOW_SUMMARY_NOTE,
+  GST_INCLUDED_NOTE,
+  type DisplayService,
+} from "@/lib/bookings/serviceDisplay";
 import { env } from "@/lib/env";
 import { NEXT_PUBLIC_SITE_URL } from "@/lib/env.public";
 import { SITE_URL } from "@/lib/seo";
@@ -486,7 +492,7 @@ export function bookingRequestReceivedText(data: BookingRequestReceivedData): st
     `Tour: ${data.tourTitle}`,
     `Travel Date: ${data.travelDate}`,
     `Travellers: ${data.travellers}`,
-    `Total Amount: ${inr(data.totalAmount)}`,
+    `Total Amount (incl. GST): ${inr(data.totalAmount)}`,
     `Payment Option: ${data.paymentOptionLabel}`,
     `Payable Now: ${inr(data.payableNow)}`,
     "",
@@ -521,7 +527,7 @@ export function bookingRequestReceivedHtml(data: BookingRequestReceivedData): st
 ${detailRow("Tour", data.tourTitle)}
 ${detailRow("Travel Date", data.travelDate)}
 ${detailRow("Travellers", String(data.travellers))}
-${detailRow("Total Amount", inr(data.totalAmount))}
+${detailRow("Total Amount (incl. GST)", inr(data.totalAmount))}
 ${detailRow("Payment Option", data.paymentOptionLabel)}
 ${detailRow("Payable Now", inr(data.payableNow))}
              </table>
@@ -685,16 +691,7 @@ ${detailRow("Payment Option", data.paymentOption)}
   });
 }
 
-export interface InvoiceService {
-  kind: "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
-  name: string;
-  location?: string | null;
-  nights?: number | null;
-  roomType?: string | null;
-  pickup?: string | null;
-  dropoff?: string | null;
-  timing?: string | null;
-}
+export type InvoiceService = DisplayService;
 
 interface BookingInvoiceData {
   guestName: string;
@@ -738,14 +735,16 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
   }
   lines.push(
     "",
-    `Total Booking Amount: ${inr(data.bookingAmount)}`,
+    `Total Booking Amount (incl. GST): ${inr(data.bookingAmount)}`,
     `Discount: ${inr(data.discountAmount)}`,
     `Payable: ${inr(data.totalAmount)}`,
     `Paid: ${inr(data.paidAmount)}`,
     `Remaining Balance: ${inr(data.remainingBalance)}`,
     `Status: ${data.status}`,
+    GST_INCLUDED_NOTE,
     "",
     "A detailed PDF summary is attached to this email.",
+    SHOW_SUMMARY_NOTE,
     `WhatsApp us: ${waText}`,
   );
   if (data.bookingId) lines.push(bookingPortalSectionText(data.bookingId));
@@ -811,9 +810,9 @@ ${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
          </tr>
          <tr>
            <td class="vk-px" style="padding:12px 28px 4px">
-             <h2 style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;color:${BRAND};font-size:14px">Price Summary</h2>
+             <h2 style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;color:${BRAND};font-size:14px">Price Summary <span style="color:#7a7a72;font-size:11px;font-weight:400">· ${escapeHtml(GST_INCLUDED_NOTE)}</span></h2>
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
-${detailRow("Total Booking Amount", inr(data.bookingAmount))}
+${detailRow("Total Booking Amount (incl. GST)", inr(data.bookingAmount))}
 ${data.discountAmount > 0 ? detailRow("Discount", `– ${inr(data.discountAmount)}`) : ""}
 ${detailRow("Payable", inr(data.totalAmount))}
 ${detailRow("Paid", inr(data.paidAmount))}
@@ -825,6 +824,7 @@ ${detailRow("Status", data.status)}
          <tr>
            <td class="vk-px" style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0;color:#666666;font-size:12px;line-height:1.6">📎 A professionally formatted PDF summary is attached for your records.</p>
+             <p style="margin:10px 0 0;padding:10px 12px;border-radius:8px;background:#E8F2EB;color:${BRAND};font-size:12px;font-weight:700;line-height:1.6">${escapeHtml(SHOW_SUMMARY_NOTE)}</p>
            </td>
          </tr>
          <tr>
@@ -855,6 +855,9 @@ interface PaymentInvoiceData {
   totalPaid: number;
   remainingBalance: number;
   status: string;
+  /** As recorded on this payment — null/absent when it carried no GST. */
+  gstPercent?: number | null;
+  gstAmount?: number | null;
   whatsappNumber?: string | null;
   bookingId?: string;
 }
@@ -872,6 +875,8 @@ export function paymentInvoiceText(data: PaymentInvoiceData): string {
     `Payment Type: ${data.type}`,
   ];
   if (data.method) lines.push(`Method: ${data.method}`);
+  const gst = receiptGstLine(data.gstPercent, data.gstAmount);
+  if (gst) lines.push(`${gst.label} (included): ${inr(gst.amount)}`);
   lines.push(
     `Payment Date: ${data.paymentDate}`,
     "",
@@ -888,6 +893,7 @@ export function paymentInvoiceText(data: PaymentInvoiceData): string {
 
 export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
+  const gst = receiptGstLine(data.gstPercent, data.gstAmount);
 
   const content = `          <tr>
            <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
@@ -902,6 +908,7 @@ export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
                  <td align="center" style="padding:16px 30px;border-radius:12px;background:${BRAND}">
                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.75)">AMOUNT RECEIVED</div>
                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:700;color:#ffffff;margin-top:4px">${inr(data.amount)}</div>
+${gst ? `                   <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px">Inclusive of ${escapeHtml(gst.label)}</div>` : ""}
                  </td>
                </tr>
              </table>
@@ -917,6 +924,7 @@ ${detailRow("Payment Date", data.paymentDate)}
 ${detailRow("Total Paid To Date", inr(data.totalPaid))}
 ${detailRow("Remaining Balance", inr(data.remainingBalance))}
 ${detailRow("Status", data.status)}
+${gst ? detailRow(`${gst.label} (included)`, inr(gst.amount)) : ""}
              </table>
            </td>
          </tr>

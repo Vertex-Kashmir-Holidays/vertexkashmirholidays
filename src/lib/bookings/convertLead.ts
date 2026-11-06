@@ -2,6 +2,7 @@ import type { Lead, Prisma } from "@prisma/client";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { computeGstDeduction, computeBookingProfit, computeCommission } from "@/lib/bookings/commission";
 import { buildServicesFromItinerary } from "@/lib/bookings/itineraryToServices";
+import { matchHotelSupplierIds } from "@/lib/bookings/hotelLink";
 import { pickAttribution } from "@/lib/attribution";
 import { itineraryDataSchema } from "@/types/itinerary";
 
@@ -185,8 +186,18 @@ export async function convertLeadToBooking(
     if (parsedItinerary.success) {
       const services = buildServicesFromItinerary(parsedItinerary.data);
       if (services.length > 0) {
+        const hotelIds = await matchHotelSupplierIds(
+          tx,
+          services.filter((s) => s.kind === "HOTEL").map((s) => s.name),
+        );
         await tx.bookingService.createMany({
-          data: services.map((s, i) => ({ ...s, bookingId: booking.id, sortOrder: i })),
+          data: services.map((s, i) => ({
+            ...s,
+            bookingId: booking.id,
+            sortOrder: i,
+            hotelSupplierId:
+              s.kind === "HOTEL" ? (hotelIds.get(s.name.trim().toLowerCase()) ?? null) : null,
+          })),
         });
       }
     }

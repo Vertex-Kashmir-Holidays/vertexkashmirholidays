@@ -315,20 +315,20 @@ model RolePermission {
 // destination/category/isActive stay relational columns because they're the
 // fields Sales actually filters/searches by; everything else nests in `data`.
 model HotelSupplier {
-  id                    String        @id @default(cuid())
+  id                    String           @id @default(cuid())
   hotelName             String
   destination           String
   category              HotelCategory
-  isActive              Boolean       @default(true)
+  isActive              Boolean          @default(true)
   // Sales-curated "push this property first" flag — separate from `category`
   // (which is auto-derived from rate) since recommendation is a judgment call.
-  recommended           Boolean       @default(false)
+  recommended           Boolean          @default(false)
   // Staff-ticked: the hotel has a family room set (for family enquiries).
-  hasFamilyRoom         Boolean       @default(false)
-  // Manual tally of bookings sent to this hotel — staff-entered (not derived
-  // from any Booking relation; HotelSupplier is a supplier reference, not
-  // bookable inventory, per the module's own design — see schema.ts).
-  bookingsCount         Int           @default(0)
+  hasFamilyRoom         Boolean          @default(false)
+  // Legacy manual tally — no longer shown or editable; bookings given to a
+  // hotel are counted only from linked, confirmed BookingService stays (see
+  // getConfirmedStayStats). Kept so old tallies aren't deleted.
+  bookingsCount         Int              @default(0)
   // Stamped by POST /api/hotel-suppliers/[id]/request-rates after a successful
   // send — never set any other way. Null means no request has been sent yet.
   lastRateRequestSentAt DateTime?
@@ -342,7 +342,7 @@ model HotelSupplier {
   // sortOrder column — see src/lib/hotelSuppliers/stats.ts.
   coverImageUrl         String?
   roomImageUrl          String?
-  showOnWebsite         Boolean       @default(false)
+  showOnWebsite         Boolean          @default(false)
   // The public "View on Google" CTA reuses data.property.mapUrl (already
   // admin-configured, already inline-editable in the Hotel Rates table) —
   // confirmed against real rows that it's already a proper Google listing
@@ -353,9 +353,10 @@ model HotelSupplier {
   // POST /api/hotel-suppliers/[id]/like — never tied to a Lead or a specific
   // visitor's identity. Read-only in the admin UI; only the like route
   // writes it.
-  publicLikeCount       Int           @default(0)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  publicLikeCount       Int              @default(0)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  bookingServices       BookingService[]
 
   @@index([destination])
   @@index([category])
@@ -793,22 +794,43 @@ model BookingPayment {
 // A line item in a booking's services sheet. One table covers all kinds; only
 // the columns relevant to a kind are populated (others stay null).
 model BookingService {
-  id        String      @id @default(cuid())
-  bookingId String
-  booking   Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  kind      ServiceKind
-  name      String // Hotel name / Cab name / Activity name / Other name
-  amount    Float       @default(0)
-  location  String? // hotel + activity
-  nights    Int? // hotel
-  roomType  String? // hotel — e.g. "1 room", "1 room + 1 extra bed", "Family room"
-  pickup    String? // transport
-  dropoff   String? // transport
-  timing    String? // activity
-  sortOrder Int         @default(0)
-  createdAt DateTime    @default(now())
+  id                String             @id @default(cuid())
+  bookingId         String
+  booking           Booking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind              ServiceKind
+  name              String // Hotel name / Cab name / Activity name / Other name
+  amount            Float              @default(0)
+  location          String? // hotel + activity
+  nights            Int? // hotel
+  roomType          String? // hotel — e.g. "1 room", "1 room + 1 extra bed", "Family room"
+  // Hotel booking facts printed on the customer's booking summary so they can
+  // show it at the hotel. Nullable: services created before these existed stay blank.
+  rooms             Int? // hotel — number of rooms
+  checkIn           DateTime?          @db.Date // hotel
+  checkOut          DateTime?          @db.Date // hotel
+  // Hotel only. Optional link to the hotel list; `name` stays the snapshot shown
+  // everywhere, so renaming/deleting a HotelSupplier never rewrites a booking.
+  hotelSupplierId   String?
+  hotelSupplier     HotelSupplier?     @relation(fields: [hotelSupplierId], references: [id], onDelete: SetNull)
+  // Whether the stay is confirmed with the hotel (null = not yet tracked, shown
+  // as Pending). hotelConfirmedAt is stamped server-side on → CONFIRMED.
+  hotelConfirmation HotelConfirmation?
+  hotelConfirmedAt  DateTime?
+  pickup            String? // transport
+  dropoff           String? // transport
+  timing            String? // activity
+  sortOrder         Int                @default(0)
+  createdAt         DateTime           @default(now())
 
   @@index([bookingId])
+  @@index([hotelSupplierId])
+}
+
+enum HotelConfirmation {
+  PENDING
+  REQUESTED
+  CONFIRMED
+  CANCELLED
 }
 
 // One row per lead-converted booking, tracking the salesperson's commission
@@ -2561,4 +2583,31 @@ enum BannerLayout {
 enum BannerType {
   STRIP // thin full-width bar above navbar — one visible at a time
   PROMO // rich image+text card placed within page content areas
+}
+
+// Destinations Library — ready-written day headings + descriptions per route
+// ("Srinagar → Gulmarg"), several versions per route. Picking one copies only
+// the heading and description into a proposal day (the rest of the day is
+// untouched, and editing the copy never changes the library). Managed under
+// the Itineraries permission. from == to = a local day.
+model DayPlan {
+  id          String        @id @default(cuid())
+  fromPlace   String
+  toPlace     String
+  title       String
+  body        String
+  season      DayPlanSeason @default(ALL_YEAR)
+  isActive    Boolean       @default(true)
+  sortOrder   Int           @default(0)
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([fromPlace, toPlace])
+}
+
+enum DayPlanSeason {
+  ALL_YEAR
+  SUMMER
+  WINTER
 }

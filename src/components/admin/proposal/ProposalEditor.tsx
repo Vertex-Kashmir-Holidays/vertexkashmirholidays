@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Sparkles, BookmarkPlus } from "lucide-react";
+import { DayPlanPicker } from "../day-plans/DayPlanPicker";
+import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
+import { guessRoute, toProposalDay, type DayPlanRecord } from "@/lib/dayPlans/schema";
 import { Toolbar } from "./Toolbar";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
@@ -55,6 +58,8 @@ interface ProposalEditorProps {
   apiBasePath?: string;
   /** May create itineraries — shows "Convert to Itinerary". */
   canConvert?: boolean;
+  /** Day Plans library access: pick plans into days / save a day as a new plan. */
+  dayPlans?: { canPick: boolean; canSave: boolean };
 }
 
 export function ProposalEditor({
@@ -69,6 +74,7 @@ export function ProposalEditor({
   socialLinks,
   apiBasePath = "/api/proposals",
   canConvert = false,
+  dayPlans = { canPick: false, canSave: false },
 }: ProposalEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ProposalData>(initialData);
@@ -196,6 +202,18 @@ export function ProposalEditor({
     }));
   const removeDay = (dayId: string) =>
     setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
+  // A picked library plan replaces ONLY the day's heading and description —
+  // stay, meals, highlights, photo and date are untouched. The copy is the
+  // proposal's own (editable); it never changes the library.
+  const [pickForDay, setPickForDay] = useState<string | null>(null);
+  const [saveDay, setSaveDay] = useState<ProposalDay | null>(null);
+  const applyDayPlan = (dayId: string, plan: DayPlanRecord) =>
+    setData((p) => ({
+      ...p,
+      days: p.days.map((d) => {
+        return d.id === dayId ? { ...d, ...toProposalDay(plan) } : d;
+      }),
+    }));
   const reorderDays = (next: ProposalDay[]) =>
     setData((p) => ({ ...p, days: keepDateLabelsInSlots(p.days, next) }));
 
@@ -841,9 +859,54 @@ export function ProposalEditor({
                       className="h-32 sm:h-auto sm:min-h-28 sm:w-40 sm:shrink-0"
                     />
                   </div>
+                  {(dayPlans.canPick || dayPlans.canSave) && (
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-dashed border-[hsl(40_14%_87%)] pt-2.5 no-print dark:border-mute/20">
+                      {!dayPlans.canPick && <span />}
+                      {dayPlans.canPick && (
+                        <button
+                          type="button"
+                          onClick={() => setPickForDay(day.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[hsl(156_40%_21%)] px-2.5 py-1 text-xs font-bold text-white hover:brightness-110 dark:bg-primary dark:text-primary-foreground"
+                        >
+                          <Sparkles className="h-3 w-3" /> Pick from library
+                        </button>
+                      )}
+                      {dayPlans.canSave && (
+                        <button
+                          type="button"
+                          onClick={() => setSaveDay(day)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[hsl(40_14%_87%)] px-2.5 py-1 text-xs font-bold text-mute hover:text-foreground dark:border-mute/20 dark:text-muted-foreground"
+                        >
+                          <BookmarkPlus className="h-3 w-3" /> Save to library
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </ReorderableList>
+            {pickForDay && (
+              <DayPlanPicker
+                open
+                onOpenChange={(o) => !o && setPickForDay(null)}
+                dayNumber={data.days.findIndex((d) => d.id === pickForDay) + 1}
+                onPick={(plan) => applyDayPlan(pickForDay, plan)}
+              />
+            )}
+            {saveDay && (
+              <DayPlanFormDialog
+                open
+                onOpenChange={(o) => !o && setSaveDay(null)}
+                title="Save this day to the library"
+                initial={{
+                  ...EMPTY_DAY_PLAN,
+                  ...guessRoute(saveDay.title),
+                  title: saveDay.title,
+                  body: saveDay.body,
+                }}
+                onSaved={() => {}}
+              />
+            )}
             <button onClick={addDay} className={addBtn}>
               <Plus className="h-3 w-3" /> Add day
             </button>

@@ -1,7 +1,8 @@
 "use client";
 
 // Sales lookup view of a rate card — view only, no edit controls. Receives
-// toSalesData() output, so cost and profit rules never reach this component.
+// toSalesData() output: prices with the GST and profit each contains — the raw
+// cost and the profit settings never reach this component.
 // Plain placeholder layout: the final design is still to come.
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
@@ -80,7 +81,7 @@ export function RateCardSalesView({ data }: { data: RateCardSalesData }) {
           {tier ? (
             <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
-                <div className="grid grid-cols-[auto_repeat(3,minmax(0,1fr))] gap-1.5 text-sm">
+                <div className="grid grid-cols-[auto_repeat(3,minmax(0,1fr))] gap-x-2 gap-y-5 text-sm">
                   <div />
                   {PACKAGE_COLUMNS.map((c) => (
                     <div key={c.key} className="text-center text-[11px] font-semibold text-muted-foreground">
@@ -89,25 +90,46 @@ export function RateCardSalesView({ data }: { data: RateCardSalesData }) {
                   ))}
                   {PACKAGE_ROWS.map((row) => (
                     <div key={row.key} className="contents">
-                      <div className="self-center pr-1 text-xs font-bold text-foreground">{row.label}</div>
+                      <div className="self-start pr-1 pt-3 text-xs font-bold text-foreground">{row.label}</div>
                       {PACKAGE_COLUMNS.map((c) => {
                         const price = tier.packages[row.key][c.key];
                         const id = `${row.key}-${c.key}`;
+                        const b = tier.breakdown[row.key][c.key];
                         return (
-                          <button
-                            key={c.key}
-                            type="button"
-                            onClick={() => copy(id, quoteLine(tier, data, c, price))}
-                            title="Copy for WhatsApp"
-                            className="flex items-center justify-center gap-1 rounded-xl border border-border px-1 py-2.5 font-bold tabular-nums text-foreground hover:bg-muted"
-                          >
-                            {formatInr(price)}
-                            {copied === id ? (
-                              <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                            ) : (
-                              <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
-                            )}
-                          </button>
+                          <div key={c.key} className="flex flex-col gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => copy(id, quoteLine(tier, data, c, price))}
+                              title="Copy for WhatsApp"
+                              className="flex items-center justify-center gap-1 rounded-xl border border-border px-1 py-2.5 font-bold tabular-nums text-foreground hover:bg-muted"
+                            >
+                              {formatInr(price)}
+                              {copied === id ? (
+                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                              ) : (
+                                <Copy className="h-3 w-3 shrink-0 text-muted-foreground" />
+                              )}
+                            </button>
+                            {/* Internal — for sales only, never copied into the quote. */}
+                            <dl className="space-y-1 rounded-lg bg-muted/40 px-2.5 py-1.5 text-[11px] tabular-nums">
+                              <div className="flex items-center justify-between gap-2">
+                                <dt className="text-muted-foreground">GST</dt>
+                                <dd className="font-medium text-foreground/80">{formatInr(b.gst)}</dd>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <dt className="text-muted-foreground">Profit</dt>
+                                <dd
+                                  className={
+                                    b.profit == null
+                                      ? "text-muted-foreground"
+                                      : "font-semibold text-emerald-700 dark:text-emerald-300"
+                                  }
+                                >
+                                  {b.profit == null ? "—" : formatInr(b.profit)}
+                                </dd>
+                              </div>
+                            </dl>
+                          </div>
                         );
                       })}
                     </div>
@@ -136,6 +158,7 @@ export function RateCardSalesView({ data }: { data: RateCardSalesData }) {
                           <span className="shrink-0 tabular-nums text-muted-foreground">
                             {formatInr(h.perNight)}
                             {h.extraBed != null ? ` · EB ${formatInr(h.extraBed)}` : ""}
+                            {h.childNoBed != null ? ` · CNB ${formatInr(h.childNoBed)}` : ""}
                           </span>
                         </li>
                       ))}

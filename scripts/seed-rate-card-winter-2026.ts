@@ -33,6 +33,7 @@ const hotels = (rows: HotelRow[]): RateCardHotel[] =>
     name,
     perNight,
     extraBed,
+    childNoBed: null,
     familyRoom,
   }));
 
@@ -57,6 +58,26 @@ const FOUR_STAR_HOTELS: [string, string][] = [
   ["Dal Lake", "Wangnoo"],
 ];
 
+// 5N/6D night splits (houseboat always the last night), from the Winter
+// 5N6D B2B sheets — editable per tier in the editor.
+const STAY_3STAR = [
+  { location: "Srinagar", nights: 3 },
+  { location: "Pahalgam", nights: 1 },
+  { location: "Dal Lake", nights: 1 },
+];
+const STAY_4STAR = [
+  { location: "Srinagar", nights: 2 },
+  { location: "Pahalgam", nights: 1 },
+  { location: "Gulmarg", nights: 1 },
+  { location: "Dal Lake", nights: 1 },
+];
+// 4 Star Deluxe lists no Pahalgam hotel, so its Pahalgam night sits in Srinagar.
+const STAY_4SD = [
+  { location: "Srinagar", nights: 3 },
+  { location: "Gulmarg", nights: 1 },
+  { location: "Dal Lake", nights: 1 },
+];
+
 const data: RateCardData = {
   basis: {
     nights: 5,
@@ -66,8 +87,9 @@ const data: RateCardData = {
   },
   activitiesIncluded: ["Gulmarg Gondola ride", "Shikara ride on Dal Lake"],
   unionCabIncluded: ["ABC Union Pahalgam (Aru, Betaab, Chandanwari)"],
-  minProfit: { b2b: 5000, customer: 7000 },
+  minProfit: { b2b: 7000, customer: 10000 },
   gstPercent: 5,
+  costBuild: { vehicle: "Sedan", activities: 4680, unionCab: 3500 },
   tiers: [
     {
       key: "deluxe",
@@ -84,6 +106,7 @@ const data: RateCardData = {
       ]),
       packages: { b2b: pkg(25000, 29500, 33000), customer: pkg(27000, 31500, 35000) },
       cost: NO_COST,
+      stay: STAY_3STAR,
     },
     {
       key: "3-star-premium",
@@ -102,6 +125,7 @@ const data: RateCardData = {
       ]),
       packages: { b2b: pkg(28500, 33000, 36000), customer: pkg(30500, 35000, 38000) },
       cost: NO_COST,
+      stay: STAY_3STAR,
     },
     {
       key: "3-star-luxury",
@@ -124,6 +148,7 @@ const data: RateCardData = {
       ),
       packages: { b2b: pkg(31000, 35000, 38000), customer: pkg(33000, 37000, 38000) },
       cost: NO_COST,
+      stay: STAY_3STAR,
     },
     {
       key: "4-star-deluxe",
@@ -137,6 +162,7 @@ const data: RateCardData = {
       ]),
       packages: { b2b: pkg(39000, 44000, 47500), customer: pkg(41000, 46000, 49500) },
       cost: NO_COST,
+      stay: STAY_4SD,
     },
     {
       key: "4-star-premium",
@@ -152,6 +178,7 @@ const data: RateCardData = {
       ),
       packages: { b2b: pkg(47000, 51000, 55000), customer: pkg(49000, 53000, 57000) },
       cost: NO_COST,
+      stay: STAY_4STAR,
     },
     {
       key: "4-star-luxury",
@@ -160,6 +187,7 @@ const data: RateCardData = {
       hotels: hotels(FOUR_STAR_HOTELS.map(([location, name]): HotelRow => [location, name, 10000, 3500])),
       packages: { b2b: pkg(68000, 72000, 76000), customer: pkg(70000, 74000, 78000) },
       cost: NO_COST,
+      stay: STAY_4STAR,
     },
   ],
   unionCabs: [

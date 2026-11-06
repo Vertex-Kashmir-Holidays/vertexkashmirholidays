@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus, QrCode } from "lucide-react";
+import { Trash2, Plus, QrCode, Sparkles, BookmarkPlus } from "lucide-react";
+import { DayPlanPicker } from "../day-plans/DayPlanPicker";
+import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
+import { guessRoute } from "@/lib/dayPlans/schema";
 import { Toolbar } from "./Toolbar";
 import { ItineraryCover } from "./ItineraryCover";
 import { LeadTripSync, LinkItineraryPanel } from "./LeadTripSync";
@@ -34,6 +37,8 @@ import {
 } from "@/types/itinerary";
 
 type ListKey = "pay";
+/** Category + text row lists (same ListItem shape, same editor component). */
+type CategoryListKey = "inc" | "exc" | "checklist";
 
 // Must match MAX_HIGHLIGHTS in ItineraryPdf.tsx — that's what the PDF export
 // actually renders/truncates to, so the editor enforces the same cap up
@@ -87,6 +92,8 @@ interface ItineraryEditorProps {
   initialPublishedAt?: string | null;
   /** Last server save (ISO) — compared with initialPublishedAt for "unpublished changes". */
   initialUpdatedAt?: string;
+  /** Destinations Library access: pick a day heading/description / save a day to the library. */
+  dayPlans?: { canPick: boolean; canSave: boolean };
 }
 
 export function ItineraryEditor({
@@ -106,6 +113,7 @@ export function ItineraryEditor({
   disableTokenPaymentLink = false,
   initialPublishedAt = null,
   initialUpdatedAt,
+  dayPlans = { canPick: false, canSave: false },
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -193,6 +201,12 @@ export function ItineraryEditor({
   const removeDay = (dayId: string) =>
     setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
   const reorderDays = (next: ItineraryDay[]) => setData((p) => applyDayOrder(p, next));
+
+  // Destinations Library — a picked plan replaces ONLY the day's heading and
+  // description (meals, stay, highlights, photo and date untouched); the copy
+  // is this itinerary's own and never changes the library. Same as proposals.
+  const [pickForDay, setPickForDay] = useState<string | null>(null);
+  const [saveDay, setSaveDay] = useState<ItineraryDay | null>(null);
 
   const addMeta = (dayId: string) =>
     setData((p) => ({
@@ -387,11 +401,11 @@ export function ItineraryEditor({
   const removeListItem = (key: ListKey, idx: number) =>
     setData((p) => ({ ...p, [key]: p[key].filter((_, i) => i !== idx) }));
 
-  /* ---------- inclusions/exclusions (category + text rows) ---------- */
-  const addListItemRow = (key: "inc" | "exc") =>
+  /* ---------- inclusions/exclusions/check list (category + text rows) ---------- */
+  const addListItemRow = (key: CategoryListKey) =>
     setData((p) => ({ ...p, [key]: [...p[key], { id: genId("li"), category: "", text: "" }] }));
   const updateListItemRow = (
-    key: "inc" | "exc",
+    key: CategoryListKey,
     id: string,
     field: "category" | "text",
     value: string,
@@ -400,7 +414,7 @@ export function ItineraryEditor({
       ...p,
       [key]: p[key].map((v) => (v.id === id ? { ...v, [field]: value } : v)),
     }));
-  const removeListItemRow = (key: "inc" | "exc", id: string) =>
+  const removeListItemRow = (key: CategoryListKey, id: string) =>
     setData((p) => ({ ...p, [key]: p[key].filter((v) => v.id !== id) }));
 
   /* ---------- cancellation tiers (label + charge rows) ---------- */
@@ -750,6 +764,30 @@ export function ItineraryEditor({
                         <Plus className="h-3 w-3" /> detail
                       </button>
                     </div>
+                    {(dayPlans.canPick || dayPlans.canSave) && (
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#EDF3EF] pt-3 no-print dark:border-mute/20">
+                        {dayPlans.canPick ? (
+                          <button
+                            type="button"
+                            onClick={() => setPickForDay(day.id)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#145C3E] px-2.5 py-1 text-[12px] font-bold text-white hover:brightness-110 dark:bg-primary dark:text-primary-foreground"
+                          >
+                            <Sparkles className="h-3 w-3" /> Pick from library
+                          </button>
+                        ) : (
+                          <span />
+                        )}
+                        {dayPlans.canSave && (
+                          <button
+                            type="button"
+                            onClick={() => setSaveDay(day)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#145C3E]/30 px-2.5 py-1 text-[12px] font-bold text-[#145C3E] hover:bg-[#E8F2EB] dark:border-primary/30 dark:text-primary dark:hover:bg-primary/10"
+                          >
+                            <BookmarkPlus className="h-3 w-3" /> Save to library
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="relative h-[200px] shrink-0 overflow-hidden rounded-b-xl sm:h-auto sm:w-[150px] sm:rounded-bl-none sm:rounded-r-xl">
@@ -782,6 +820,23 @@ export function ItineraryEditor({
                 </div>
               )}
             </ReorderableList>
+            {pickForDay && (
+              <DayPlanPicker
+                open
+                onOpenChange={(o) => !o && setPickForDay(null)}
+                dayNumber={data.days.findIndex((d) => d.id === pickForDay) + 1}
+                onPick={(plan) => updateDay(pickForDay, { title: plan.title, body: plan.body })}
+              />
+            )}
+            {saveDay && (
+              <DayPlanFormDialog
+                open
+                onOpenChange={(o) => !o && setSaveDay(null)}
+                title="Save this day to the library"
+                initial={{ ...EMPTY_DAY_PLAN, ...guessRoute(saveDay.title), title: saveDay.title, body: saveDay.body }}
+                onSaved={() => {}}
+              />
+            )}
 
             <button
               onClick={addDay}
@@ -1244,6 +1299,16 @@ export function ItineraryEditor({
                 onAdd={() => addListItemRow("exc")}
                 addLabel="Add exclusion"
               />
+              <ListColumn
+                title="Travel Check List"
+                items={data.checklist}
+                tone="check"
+                onUpdateCategory={(id, v) => updateListItemRow("checklist", id, "category", v)}
+                onUpdateText={(id, v) => updateListItemRow("checklist", id, "text", v)}
+                onRemove={(id) => removeListItemRow("checklist", id)}
+                onAdd={() => addListItemRow("checklist")}
+                addLabel="Add check list item"
+              />
             </div>
 
             <Footer />
@@ -1548,7 +1613,7 @@ function ListColumn({
 }: {
   title: string;
   items: ListItem[];
-  tone: "inc" | "exc";
+  tone: "inc" | "exc" | "check";
   onUpdateCategory: (id: string, v: string) => void;
   onUpdateText: (id: string, v: string) => void;
   onRemove: (id: string) => void;
@@ -1564,7 +1629,7 @@ function ListColumn({
         {items.map((item) => (
           <li key={item.id} className="listrow group relative flex items-start gap-2.5 pr-6">
             <span
-              className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}
+              className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center text-white ${tone === "check" ? "rounded bg-[hsl(38_70%_45%)]" : tone === "inc" ? "rounded-full bg-[hsl(156_40%_21%)] dark:bg-primary" : "rounded-full bg-rose-500"}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1575,7 +1640,7 @@ function ListColumn({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                {tone === "inc" ? <path d="M20 6 9 17l-5-5" /> : <path d="M18 6 6 18M6 6l12 12" />}
+                {tone === "exc" ? <path d="M18 6 6 18M6 6l12 12" /> : <path d="M20 6 9 17l-5-5" />}
               </svg>
             </span>
             <div className="min-w-0 flex-1">

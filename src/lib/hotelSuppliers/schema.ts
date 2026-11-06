@@ -271,10 +271,6 @@ export const createHotelSupplierSchema = z.object({
   isActive: z.boolean().default(true),
   recommended: z.boolean().default(false),
   hasFamilyRoom: z.boolean().default(false),
-  // Manual tally of bookings sent to this hotel — staff-entered, not derived
-  // from any Booking relation (HotelSupplier is a supplier reference, not
-  // bookable inventory — see the module comment at the top of this file).
-  bookingsCount: z.coerce.number().int().min(0).default(0),
   data: hotelDataSchema,
   coverImageUrl: nullableUrl.optional(),
   roomImageUrl: nullableUrl.optional(),
@@ -289,7 +285,6 @@ export const patchHotelSupplierSchema = z.object({
   isActive: z.boolean().optional(),
   recommended: z.boolean().optional(),
   hasFamilyRoom: z.boolean().optional(),
-  bookingsCount: z.coerce.number().int().min(0).optional(),
   data: hotelDataSchema.optional(),
   coverImageUrl: nullableUrl.optional(),
   roomImageUrl: nullableUrl.optional(),

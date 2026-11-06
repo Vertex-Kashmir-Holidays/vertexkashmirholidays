@@ -45,10 +45,50 @@ interface Service {
   location: string | null;
   nights: number | null;
   roomType: string | null;
+  rooms: number | null;
+  /** "YYYY-MM-DD" (hotel only) */
+  checkIn: string | null;
+  checkOut: string | null;
+  /** Hotel only — link to the hotel list + confirmation with the hotel. */
+  hotelSupplierId: string | null;
+  hotelConfirmation: HotelConfirmationValue | null;
   pickup: string | null;
   dropoff: string | null;
   timing: string | null;
   sortOrder: number;
+}
+
+type HotelConfirmationValue = "PENDING" | "REQUESTED" | "CONFIRMED" | "CANCELLED";
+
+const CONFIRMATION_OPTIONS: { value: HotelConfirmationValue; label: string }[] = [
+  { value: "PENDING", label: "Pending" },
+  { value: "REQUESTED", label: "Requested" },
+  { value: "CONFIRMED", label: "Confirmed" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
+
+const CONFIRMATION_PILL: Record<HotelConfirmationValue, string> = {
+  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  REQUESTED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  CONFIRMED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  CANCELLED: "bg-red-500/15 text-red-700 dark:text-red-300",
+};
+
+// Hotel card: two rows of four equal columns (Hotel Name · Location · Room
+// Type · Rooms / Check-in · Check-out · Nights · Confirmation), with Amount in
+// its own column on the right, divided off and spanning both rows.
+
+/** A hotel from the hotel list, offered as a pick in the Hotel Name field. */
+export interface HotelOption {
+  id: string;
+  name: string;
+  destination: string;
+}
+
+/** Exact (case/space-insensitive) match of a typed hotel name in the hotel list. */
+function matchHotel(options: HotelOption[], name: string): HotelOption | undefined {
+  const key = name.trim().toLowerCase();
+  return key ? options.find((o) => o.name.trim().toLowerCase() === key) : undefined;
 }
 
 interface Payment {
@@ -96,11 +136,22 @@ interface BookingData {
 }
 
 type FieldKey =
-  "name" | "location" | "nights" | "roomType" | "pickup" | "dropoff" | "timing" | "amount";
+  | "name"
+  | "location"
+  | "nights"
+  | "roomType"
+  | "rooms"
+  | "checkIn"
+  | "checkOut"
+  | "hotelConfirmation"
+  | "pickup"
+  | "dropoff"
+  | "timing"
+  | "amount";
 interface FieldDef {
   key: FieldKey;
   label: string;
-  type: "text" | "number";
+  type: "text" | "number" | "date" | "confirmation";
 }
 
 const SECTIONS: {
@@ -119,7 +170,11 @@ const SECTIONS: {
       { key: "name", label: "Hotel Name", type: "text" },
       { key: "location", label: "Location", type: "text" },
       { key: "roomType", label: "Room Type", type: "text" },
+      { key: "rooms", label: "Rooms", type: "number" },
+      { key: "checkIn", label: "Check-in", type: "date" },
+      { key: "checkOut", label: "Check-out", type: "date" },
       { key: "nights", label: "Nights", type: "number" },
+      { key: "hotelConfirmation", label: "Hotel Confirmation", type: "confirmation" },
       { key: "amount", label: "Amount", type: "number" },
     ],
   },
@@ -189,6 +244,8 @@ function canEditDetails(travelDate: string): boolean {
   return (travel.getTime() - today.getTime()) / (1000 * 60 * 60 * 24) >= 2;
 }
 
+const HOTEL_DATALIST_ID = "booking-hotel-options";
+
 const inputCls =
   "w-full px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary disabled:opacity-60";
 
@@ -201,9 +258,12 @@ export function BookingServicesClient({
   canViewProfit,
   canUnlock,
   isRelock,
+  hotelOptions = [],
 }: {
   booking: BookingData;
   gstRates: number[];
+  /** Active hotels from the hotel list — picks for the Hotel Name field. */
+  hotelOptions?: HotelOption[];
   /** `bookings:edit` permission — distinct from the time-based edit window below. */
   canEdit: boolean;
   /** Admin/Superadmin only — company profit margin is not shown to Sales. */
@@ -304,6 +364,11 @@ export function BookingServicesClient({
         location: null,
         nights: null,
         roomType: null,
+        rooms: null,
+        checkIn: null,
+        checkOut: null,
+        hotelSupplierId: null,
+        hotelConfirmation: null,
         pickup: null,
         dropoff: null,
         timing: null,
@@ -483,6 +548,13 @@ export function BookingServicesClient({
 
   return (
     <div className="space-y-5">
+      <datalist id={HOTEL_DATALIST_ID}>
+        {hotelOptions.map((h) => (
+          <option key={h.id} value={h.name}>
+            {h.destination}
+          </option>
+        ))}
+      </datalist>
       {/* Summary */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -599,6 +671,7 @@ export function BookingServicesClient({
                   capError={capError}
                   showRequired={lockAttempted}
                   onAmountChange={setLiveAmount}
+                  hotelOptions={hotelOptions}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
               ))}
@@ -614,6 +687,7 @@ export function BookingServicesClient({
                   capError={capError}
                   showRequired={lockAttempted}
                   onAmountChange={setLiveAmount}
+                  hotelOptions={hotelOptions}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                   onSaved={() => markDraftSaved(svc.id)}
                 />
@@ -1630,11 +1704,24 @@ function Row({
   );
 }
 
+/** Whole nights from check-in to check-out ("YYYY-MM-DD"), or null if not after check-in. */
+function nightsBetween(checkIn: string, checkOut: string): number | null {
+  const n = Math.round(
+    (Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86_400_000,
+  );
+  return Number.isFinite(n) && n >= 1 ? n : null;
+}
+
 interface RowForm {
   name: string;
   location: string;
   nights: string;
   roomType: string;
+  rooms: string;
+  checkIn: string;
+  checkOut: string;
+  hotelSupplierId: string;
+  hotelConfirmation: string;
   pickup: string;
   dropoff: string;
   timing: string;
@@ -1651,6 +1738,15 @@ function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
     location: form.location.trim() || null,
     nights: form.nights === "" ? null : parseInt(form.nights, 10),
     roomType: form.roomType.trim() || null,
+    rooms: form.rooms === "" ? null : parseInt(form.rooms, 10),
+    checkIn: form.checkIn || null,
+    checkOut: form.checkOut || null,
+    ...(kind === "HOTEL"
+      ? {
+          hotelSupplierId: form.hotelSupplierId || null,
+          hotelConfirmation: (form.hotelConfirmation || null) as HotelConfirmationValue | null,
+        }
+      : {}),
     pickup: form.pickup.trim() || null,
     dropoff: form.dropoff.trim() || null,
     timing: form.timing.trim() || null,
@@ -1670,6 +1766,7 @@ function ServiceRow({
   onAmountChange,
   onRemoved,
   onSaved,
+  hotelOptions = [],
 }: {
   bookingId: string;
   record: Service;
@@ -1683,12 +1780,19 @@ function ServiceRow({
   onAmountChange: (id: string, amount: number) => void;
   onRemoved: () => void;
   onSaved?: () => void;
+  /** Hotel list, offered as picks in a HOTEL row's name field. */
+  hotelOptions?: HotelOption[];
 }) {
   const [form, setForm] = useState<RowForm>({
     name: record.name,
     location: record.location ?? "",
     nights: record.nights != null ? String(record.nights) : "",
     roomType: record.roomType ?? "",
+    rooms: record.rooms != null ? String(record.rooms) : "",
+    checkIn: record.checkIn ?? "",
+    checkOut: record.checkOut ?? "",
+    hotelSupplierId: record.hotelSupplierId ?? "",
+    hotelConfirmation: record.hotelConfirmation ?? "",
     pickup: record.pickup ?? "",
     dropoff: record.dropoff ?? "",
     timing: record.timing ?? "",
@@ -1706,6 +1810,11 @@ function ServiceRow({
           location: record.location ?? "",
           nights: record.nights != null ? String(record.nights) : "",
           roomType: record.roomType ?? "",
+          rooms: record.rooms != null ? String(record.rooms) : "",
+          checkIn: record.checkIn ?? "",
+          checkOut: record.checkOut ?? "",
+          hotelSupplierId: record.hotelSupplierId ?? "",
+          hotelConfirmation: record.hotelConfirmation ?? "",
           pickup: record.pickup ?? "",
           dropoff: record.dropoff ?? "",
           timing: record.timing ?? "",
@@ -1727,6 +1836,12 @@ function ServiceRow({
     if (!form.name.trim()) return; // nothing meaningful to persist yet
     const snapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
     if (snapshot === savedSnapshot) return; // unchanged since last save
+    if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
+      const msg = "Check-out must be after check-in.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
 
     const payload = buildPayload(record.kind, record.sortOrder, form);
     const err = capError(payload.amount, record.id);
@@ -1800,45 +1915,99 @@ function ServiceRow({
     });
   }
 
-  return (
-    <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
-      {fields.map((f) => {
-        const required = (REQUIRED_SERVICE_FIELDS[record.kind] as FieldKey[]).includes(f.key);
-        // Saved rows always show their gaps; a fresh draft only after a refused lock.
-        const missing =
-          required &&
-          !locked &&
-          (!!serverId || showRequired) &&
-          !isServiceFieldFilled(f.key as RequiredServiceField, form[f.key]);
-        return (
-        <label
-          key={f.key}
-          className={cn(
-            "block",
-            f.key === "amount" || f.key === "nights" ? "w-24" : "flex-1 min-w-[120px]",
-          )}
-        >
-          <span className="text-[12px] font-semibold text-muted-foreground">
-            {f.label}
-            {required && !locked && <span className="text-red-500"> *</span>}
-          </span>
+  // Hotel stays get a structured two-line card (identity, then stay facts);
+  // other kinds keep the compact single wrapping row.
+  const isHotel = record.kind === "HOTEL";
+  const renderField = (f: FieldDef) => {
+    const required = (REQUIRED_SERVICE_FIELDS[record.kind] as FieldKey[]).includes(f.key);
+    // Saved rows always show their gaps; a fresh draft only after a refused lock.
+    const missing =
+      required &&
+      !locked &&
+      (!!serverId || showRequired) &&
+      !isServiceFieldFilled(f.key as RequiredServiceField, form[f.key]);
+    return (
+      <label
+        key={f.key}
+        className={cn(
+          "block min-w-0",
+          isHotel
+            ? ""
+            : f.key === "amount" || f.key === "nights" || f.key === "rooms"
+              ? "w-24"
+              : f.type === "date" || f.type === "confirmation"
+                ? "w-36"
+                : "flex-1 min-w-[120px]",
+        )}
+      >
+        <span className="block truncate text-[12px] font-semibold text-muted-foreground">
+          {f.label}
+          {required && !locked && <span className="text-red-500"> *</span>}
+        </span>
+        {f.type === "confirmation" ? (
+          <select
+            value={form.hotelConfirmation}
+            onChange={(e) => {
+              const value = e.target.value;
+              setForm((p) => ({ ...p, hotelConfirmation: value }));
+            }}
+            onBlur={autoSave}
+            disabled={locked || !canEdit}
+            className={cn(inputCls, "mt-0.5")}
+          >
+            <option value="">Pending</option>
+            {CONFIRMATION_OPTIONS.filter((o) => o.value !== "PENDING").map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        ) : (
           <input
             type={f.type}
+            list={record.kind === "HOTEL" && f.key === "name" ? HOTEL_DATALIST_ID : undefined}
             value={form[f.key]}
             onChange={(e) => {
               const value = e.target.value;
-              setForm((p) => ({ ...p, [f.key]: value }));
+              setForm((p) => {
+                const next = { ...p, [f.key]: value };
+                // Hotel name picked from (or typed exactly as) the hotel list →
+                // link it and fill an empty location from the hotel's destination.
+                if (record.kind === "HOTEL" && f.key === "name") {
+                  const hit = matchHotel(hotelOptions, value);
+                  next.hotelSupplierId = hit?.id ?? "";
+                  if (hit && !next.location.trim()) next.location = hit.destination;
+                }
+                // Both hotel dates set → Nights follows them (still editable).
+                if (
+                  (f.key === "checkIn" || f.key === "checkOut") &&
+                  next.checkIn &&
+                  next.checkOut
+                ) {
+                  const n = nightsBetween(next.checkIn, next.checkOut);
+                  if (n != null) next.nights = String(n);
+                }
+                return next;
+              });
               // Totals follow every keystroke; the row itself still saves on blur.
               if (f.key === "amount") onAmountChange(record.id, parseFloat(value) || 0);
             }}
             onBlur={autoSave}
+            min={f.key === "checkOut" ? form.checkIn || undefined : undefined}
             disabled={locked || !canEdit}
             aria-invalid={missing || undefined}
-            className={cn(inputCls, "mt-0.5", missing && "border-red-500 focus:border-red-500 focus:ring-red-500/25")}
+            className={cn(
+              inputCls,
+              "mt-0.5",
+              missing && "border-red-500 focus:border-red-500 focus:ring-red-500/25",
+            )}
           />
-        </label>
-        );
-      })}
+        )}
+      </label>
+    );
+  };
+  const actionsEl = (
+    <>
       {!locked && canEdit && (
         <div className="flex items-center gap-1">
           <span
@@ -1873,6 +2042,55 @@ function ServiceRow({
           </button>
         </div>
       )}
+    </>
+  );
+
+  if (isHotel) {
+    const status = (form.hotelConfirmation || "PENDING") as HotelConfirmationValue;
+    return (
+      <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Hotel className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate text-sm font-bold text-foreground">
+              {form.name.trim() || "New hotel"}
+            </span>
+            {form.hotelSupplierId ? (
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                ✓ In hotel list
+              </span>
+            ) : form.name.trim() ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
+                Not in hotel list
+              </span>
+            ) : null}
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                CONFIRMATION_PILL[status],
+              )}
+            >
+              {CONFIRMATION_OPTIONS.find((o) => o.value === status)?.label}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">{actionsEl}</div>
+        </div>
+        <div className="flex flex-col gap-3 p-3 md:flex-row">
+          <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
+            {fields.filter((f) => f.key !== "amount").map(renderField)}
+          </div>
+          <div className="flex items-center border-t border-border pt-3 md:w-40 md:border-l md:border-t-0 md:pl-3 md:pt-0">
+            <div className="w-full">{fields.filter((f) => f.key === "amount").map(renderField)}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
+      {fields.map(renderField)}
+      {actionsEl}
     </div>
   );
 }

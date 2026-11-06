@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { dayPlanAccess } from "@/lib/dayPlans/access";
 import { prisma } from "@/lib/prisma";
 import { ProposalEditor } from "@/components/admin/proposal/ProposalEditor";
 import { DEFAULT_SINGLE_PROPOSAL_DATA } from "@/components/admin/proposal/default-data";
@@ -21,6 +22,7 @@ export default async function NewProposalPage() {
   const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
   const { address: companyAddress } = await resolvePrimaryOffice(settings);
   const trustContent = await getPdfTrustContent();
+  const dayPlans = await dayPlanAccess(role);
 
   // Seed the cover's "Prepared By" byline with the creating staff member's own
   // contact details — still freely editable in the editor afterwards, same
@@ -42,6 +44,7 @@ export default async function NewProposalPage() {
       initialData={initialData}
       initialStatus="DRAFT"
       canSave
+      dayPlans={dayPlans}
       companyAddress={companyAddress}
       trustContent={trustContent}
       socialLinks={{
