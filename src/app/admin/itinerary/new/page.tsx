@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { dayPlanAccess } from "@/lib/dayPlans/access";
 import { prisma } from "@/lib/prisma";
 import { ItineraryEditor } from "@/components/admin/itinerary/ItineraryEditor";
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
@@ -34,12 +35,15 @@ export default async function NewItineraryPage() {
     preparedByPhone: currentUser?.phone ?? "",
   };
 
+  const dayPlans = await dayPlanAccess(role);
+
   return (
     <ItineraryEditor
       initialData={initialData}
       initialTitle="Kashmir Escape Itinerary"
       initialStatus="DRAFT"
       canSave
+      dayPlans={dayPlans}
       companyAddress={companyAddress}
       trustContent={trustContent}
       socialLinks={{

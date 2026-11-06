@@ -18,6 +18,9 @@ export interface ItineraryServiceInput {
   location: string | null;
   nights: number | null;
   roomType: string | null;
+  // Hotel only. The itinerary's check-in/out are free-text labels ("Wed 10 Jun",
+  // no year), so they are not carried over — staff set the real dates.
+  rooms?: number | null;
   pickup: string | null;
   dropoff: string | null;
   timing: string | null;
@@ -30,6 +33,7 @@ export function buildServicesFromItinerary(data: ItineraryData): ItineraryServic
     const name = h.hotelDetails.trim() || h.destination.trim();
     if (!name) continue;
     const nights = parseInt(h.nights, 10);
+    const rooms = parseInt(h.rooms, 10);
     services.push({
       kind: "HOTEL",
       name,
@@ -37,6 +41,7 @@ export function buildServicesFromItinerary(data: ItineraryData): ItineraryServic
       location: h.destination.trim() || null,
       nights: Number.isFinite(nights) && nights > 0 ? nights : null,
       roomType: h.roomType.trim() || null,
+      rooms: Number.isFinite(rooms) && rooms > 0 ? rooms : null,
       pickup: null,
       dropoff: null,
       timing: null,

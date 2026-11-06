@@ -14,8 +14,9 @@ export const dynamic = "force-dynamic";
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-// Sales lookup: the ACTIVE card only, read-only. Cost and profit rules are
-// stripped server-side (toSalesData) so they never reach the browser.
+// Sales lookup: the ACTIVE card only, read-only. Each price comes with the GST
+// and profit it contains; the raw cost and profit settings are stripped
+// server-side (toSalesData) so they never reach the browser.
 export default async function RateCardsPage() {
   const session = await auth();
   const [card, canEdit] = await Promise.all([

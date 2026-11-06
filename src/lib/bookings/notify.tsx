@@ -29,6 +29,7 @@ import {
   bookingRef,
 } from "@/lib/bookings/invoice-pdf";
 import { enqueueForBooking } from "@/lib/offlineConversion/service";
+import { toDisplayService } from "@/lib/bookings/serviceDisplay";
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -97,16 +98,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
       services: booking.services,
     });
 
-    const services = booking.services.map((s) => ({
-      kind: s.kind,
-      name: s.name,
-      location: s.location,
-      nights: s.nights,
-      roomType: s.roomType,
-      pickup: s.pickup,
-      dropoff: s.dropoff,
-      timing: s.timing,
-    }));
+    const services = booking.services.map(toDisplayService);
     const inclusions = parseInclusions(booking.inclusions);
     const ref = bookingRef(booking.id);
     const guestName = booking.guestName || booking.user?.name || "Guest";
@@ -334,6 +326,8 @@ export async function sendPaymentInvoiceEmail(
       totalPaid: finance.paidAmount,
       remainingBalance: finance.balance,
       status: statusLabel,
+      gstPercent: payment.gstPercent,
+      gstAmount: payment.gstAmount,
       whatsappNumber: wa,
       bookingId: booking.id,
     };

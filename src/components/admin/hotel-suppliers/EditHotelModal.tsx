@@ -1,7 +1,7 @@
 "use client";
 
-// Everything EXCEPT name/map-link/phone/email/rating/bookingsCount (those
-// stay inline-editable in the table) is edited here: destination, location,
+// Everything EXCEPT name/map-link/phone/email/rating (those stay
+// inline-editable on the hotel page) is edited here: destination, location,
 // contact person, the room-rate table, services, and the recommended/active
 // flags. One Save
 // = one PATCH with the full merged `data` blob, matching how every other

@@ -20,6 +20,8 @@ import { customerBookingWhere } from "@/lib/account/bookingScope";
 import {
   groupServiceTables,
   parseInclusions,
+  SHOW_SUMMARY_NOTE,
+  GST_INCLUDED_NOTE,
   type ServiceKind,
 } from "@/lib/bookings/serviceDisplay";
 import { ItineraryDownloadButton } from "@/components/account/ItineraryDownloadButton";
@@ -299,8 +301,9 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       {/* Price summary */}
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display font-bold text-foreground">Price Summary</h2>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">{GST_INCLUDED_NOTE}</p>
         <dl className="mt-4 space-y-2 text-sm">
-          <Row label="Total Booking Amount" value={inr.format(finance.bookingAmount)} />
+          <Row label="Total Booking Amount (incl. GST)" value={inr.format(finance.bookingAmount)} />
           {finance.discountAmount > 0 && (
             <Row label="Discount" value={`– ${inr.format(finance.discountAmount)}`} />
           )}
@@ -325,6 +328,11 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
             </a>
           )}
         </div>
+        {invoiceAvailable && (
+          <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-[12px] font-semibold text-primary">
+            {SHOW_SUMMARY_NOTE}
+          </p>
+        )}
       </div>
 
       {/* Payment history for this booking */}
