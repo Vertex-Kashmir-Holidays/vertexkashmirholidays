@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { CountryCode } from "libphonenumber-js";
 import { WhatsAppIcon } from "@/components/icons/brand";
 import {
   Dialog,
@@ -10,9 +11,15 @@ import {
   DialogTitle,
 } from "@/components/ui/organisms/dialog";
 import { QualificationFields } from "@/components/leads/QualificationFields";
+import { PhoneInput } from "@/components/auth/PhoneInput";
+import { toE164 } from "@/lib/auth/validation";
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
-import { qualifyWhatsAppAttribution, readWhatsAppAttributionTag } from "@/lib/attribution";
-import { trackWhatsappOpen } from "@/lib/analytics";
+import {
+  qualifyWhatsAppAttribution,
+  readWhatsAppAttributionTag,
+  sendWhatsAppPopupLead,
+} from "@/lib/attribution";
+import { trackLeadSubmit, trackWhatsappOpen } from "@/lib/analytics";
 import {
   bandForPrice,
   budgetText,
@@ -37,11 +44,17 @@ import { isWhatsAppHref, setWhatsAppGateHandler } from "@/lib/leads/whatsappGate
 // tag, and saved onto the visitor's attribution token; "Open WhatsApp" also
 // stamps the token as opened, so an abandoned modal never looks like a lead.
 // Chosen (not derived) answers are remembered for the session.
+// The phone number is required too: on "Open WhatsApp" it is sent as a CRM
+// lead in the background (sendWhatsAppPopupLead), so the enquiry is captured
+// even if the visitor never sends the WhatsApp message.
 export function WhatsAppQualificationGate() {
   const { budgetBands } = useSiteSettings();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [context, setContext] = useState<QualificationContext>({ kind: "generic" });
   const [answers, setAnswers] = useState<Partial<Qualification>>({});
+  const [country, setCountry] = useState<CountryCode>("IN");
+  const [national, setNational] = useState("");
+  const phone = toE164(national, country);
 
   // A tour's price-derived band (null when the price fits no band — then the
   // budget is asked as on a generic page).
@@ -119,10 +132,10 @@ export function WhatsAppQualificationGate() {
 
   const resolved = resolve(context, answers);
   const complete =
-    !!resolved.travelMonth && (context.kind === "activity" || !!resolved.budgetBandKey);
+    !!phone && !!resolved.travelMonth && (context.kind === "activity" || !!resolved.budgetBandKey);
 
   function openWhatsApp() {
-    if (!pendingHref || !complete || !resolved.travelMonth) return;
+    if (!pendingHref || !complete || !phone || !resolved.travelMonth) return;
     const url = withQualificationLines(
       pendingHref,
       qualificationLines(
@@ -135,6 +148,27 @@ export function WhatsAppQualificationGate() {
     );
     save(context, answers, true);
     trackWhatsappOpen(resolved.budgetBandKey, resolved.travelMonth, resolved.budgetDerived);
+    // Background lead — never awaited, so WhatsApp opens straight away (an
+    // awaited window.open gets popup-blocked). lead_submit fires only when a
+    // new lead was actually created (not for a duplicate of an open one).
+    const qualification = {
+      budgetBandKey: resolved.budgetBandKey,
+      travelMonth: resolved.travelMonth,
+      budgetDerived: resolved.budgetDerived,
+    };
+    const tourName = context.kind === "tour" ? context.name : undefined;
+    void sendWhatsAppPopupLead({ phone, ...qualification, tourName }).then((id) => {
+      if (id)
+        trackLeadSubmit(
+          "whatsapp_popup",
+          tourName,
+          id,
+          undefined,
+          undefined,
+          undefined,
+          qualification,
+        );
+    });
     window.open(url, "_blank", "noopener,noreferrer");
     setPendingHref(null);
   }
@@ -147,10 +181,29 @@ export function WhatsAppQualificationGate() {
           <DialogTitle className="text-[18px]">Before we chat on WhatsApp</DialogTitle>
           <DialogDescription>
             {asksBudget
-              ? "Two quick answers help us send the right options straight away."
-              : "One quick answer helps us send the right options straight away."}
+              ? "Your number and two quick answers help us send the right options straight away."
+              : "Your number and one quick answer help us send the right options straight away."}
           </DialogDescription>
         </DialogHeader>
+        <div>
+          <label
+            htmlFor="wa-gate-phone"
+            className="mb-1.5 block text-[14px] font-semibold text-foreground/90"
+          >
+            WhatsApp number <span className="text-primary">*</span>
+          </label>
+          <PhoneInput
+            id="wa-gate-phone"
+            country={country}
+            onCountryChange={setCountry}
+            value={national}
+            onChange={setNational}
+            invalid={national.trim().length >= 6 && !phone}
+          />
+          <p className="mt-1 text-[12px] text-foreground/60">
+            We&apos;ll reply on this number if your message doesn&apos;t reach us.
+          </p>
+        </div>
         <QualificationFields
           value={answers}
           onChange={change}
