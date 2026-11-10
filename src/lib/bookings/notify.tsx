@@ -4,7 +4,6 @@
 // break the underlying business action (locking services, recording a payment).
 
 import { prisma } from "@/lib/prisma";
-import { env } from "@/lib/env";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
@@ -22,6 +21,7 @@ import {
   driverDetailsHtml,
   driverDetailsText,
   type InvoiceService,
+  ADMIN_COPY,
 } from "@/lib/mail";
 import {
   renderBookingSummaryPdf,
@@ -58,8 +58,8 @@ async function whatsappNumber(): Promise<string | null> {
 // Silent internal copy of invoice/confirmation-carrying customer emails (booking
 // summary, payment receipt, booking confirmation, driver details) — lets staff
 // confirm delivery without the customer ever seeing the internal address.
-// Deliberately not applied to credentials/OTP emails.
-const internalBcc = env.MAIL_TO_ADMIN;
+// Also applied to the customer account-credentials email; never to OTP/reset.
+const internalBcc = ADMIN_COPY;
 
 /**
  * Booking summary email + branded PDF attachment. Sent when services are locked.
@@ -161,6 +161,7 @@ export async function sendCustomerCredentialsEmail(
     const res = await sendMail({
       to: email,
       subject: "Your Vertex Kashmir Holidays account",
+      bcc: internalBcc,
       html: customerCredentialsHtml({ name, email, tempPassword }),
       text: customerCredentialsText({ name, email, tempPassword }),
     });

@@ -67,6 +67,18 @@ export interface SendMailResult {
   skipped?: boolean;
 }
 
+// Silent office copy for booking and account emails (booking/payment emails,
+// customer + B2B account credentials) so staff can confirm they went out.
+// Callers opt in via `bcc: ADMIN_COPY` — never OTP or password-reset mail.
+export const ADMIN_COPY = env.MAIL_TO_ADMIN ?? "admin@vertexkashmirholidays.com";
+
+function splitEmails(list: string | undefined): string[] {
+  return (list ?? "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
+
 // Normalises nodemailer's Address[] | string[] result into plain emails.
 function toEmails(list: unknown): string[] {
   if (!Array.isArray(list)) return [];
@@ -115,7 +127,11 @@ export async function sendMail(options: MailOptions): Promise<SendMailResult> {
 
   const accepted = toEmails(info.accepted);
   const rejected = toEmails(info.rejected);
-  const delivered = accepted.length > 0 && rejected.length === 0;
+  // Judge delivery on the real recipients only — a BCC copy (admin, sales)
+  // being accepted or rejected must not change whether the customer got it.
+  const toList = splitEmails(options.to).map((e) => e.toLowerCase());
+  const acceptedLower = accepted.map((e) => e.toLowerCase());
+  const delivered = toList.length > 0 && toList.every((e) => acceptedLower.includes(e));
 
   console.log("[mail] send result", {
     to: options.to,

@@ -11,6 +11,7 @@ import {
   b2bDocumentUpdateHtml,
   b2bDocumentUpdateSubject,
   b2bDocumentUpdateText,
+  ADMIN_COPY,
 } from "@/lib/mail";
 
 /**
@@ -29,6 +30,7 @@ export async function sendB2bAgentActivationEmail(
     const res = await sendMail({
       to: email,
       subject: "Your Vertex Kashmir Holidays B2B Partner account is active",
+      bcc: ADMIN_COPY,
       html: b2bAgentActivationHtml({ contactName, agencyName, email, tempPassword }),
       text: b2bAgentActivationText({ contactName, agencyName, email, tempPassword }),
     });
