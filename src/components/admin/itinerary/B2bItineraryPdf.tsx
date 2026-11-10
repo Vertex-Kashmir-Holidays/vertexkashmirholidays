@@ -194,9 +194,14 @@ const s = StyleSheet.create({
   tRowAlt: { backgroundColor: BG_SUBTLE },
   tCell: { fontSize: 9, color: BODY, lineHeight: 1.45, paddingVertical: 9, paddingHorizontal: 9 },
   tCellStrong: { fontSize: 9.3, color: INK, fontFamily: "Helvetica-Bold", lineHeight: 1.4 },
-  dayNum: { fontSize: 13, fontFamily: "Helvetica-Bold", color: GOLD },
-  dayDate: { fontSize: 7.5, color: BODY, marginTop: 2 },
-  dayBody: { fontSize: 8.7, color: BODY, lineHeight: 1.45, marginTop: 2 },
+  dayBlock: { borderTopWidth: 1, borderTopColor: BORDER },
+  dayStrip: { flexDirection: "row", backgroundColor: BG_SUBTLE, borderBottomWidth: 1, borderBottomColor: BORDER_LIGHT },
+  dayStripCell: { fontSize: 9, color: BODY, paddingVertical: 6, paddingHorizontal: 9 },
+  dayStripStrong: { fontFamily: "Helvetica-Bold", color: INK },
+  dayPlan: { paddingVertical: 8, paddingHorizontal: 9 },
+  dayNum: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: GOLD },
+  dayDate: { fontSize: 9, color: BODY },
+  dayBody: { fontSize: 8.7, color: BODY, lineHeight: 1.45, marginTop: 3 },
   tableNote: { fontSize: 8, color: MUTED, marginTop: 7, lineHeight: 1.5, fontStyle: "italic" },
 
   // ── Activities ───────────────────────────────────────────────────────────
@@ -487,7 +492,6 @@ export function B2bItineraryPdf({
   const confirmed = status === "CONFIRMED";
   const hasTransport = !!(data.transportType || data.transportDesc);
   const stayDates = data.hotels.some((h) => h.checkIn || h.checkOut);
-  const dayDates = data.days.some((d) => d.dateLabel);
   const contactLine = [agent?.phone, agent?.email].filter(Boolean).join("   ·   ");
 
   return (
@@ -573,32 +577,36 @@ export function B2bItineraryPdf({
               <SectionHead title="Your Journey, Day by Day" tag={data.duration} />
               <View style={s.table}>
                 <View style={s.tHeadRow} wrap={false}>
-                  <Text style={[s.tHeadCell, { width: dayDates ? 60 : 44 }]}>DAY</Text>
-                  <Text style={[s.tHeadCell, { flex: 1 }]}>PLAN</Text>
-                  <Text style={[s.tHeadCell, { width: 96 }]}>NIGHT STAY</Text>
-                  <Text style={[s.tHeadCell, { width: 96 }]}>MEALS</Text>
+                  <Text style={[s.tHeadCell, { flex: 1 }]}>DAY</Text>
+                  <Text style={[s.tHeadCell, { width: 150 }]}>NIGHT STAY</Text>
+                  <Text style={[s.tHeadCell, { width: 150 }]}>MEALS</Text>
                 </View>
                 {data.days.map((day, i) => {
                   const stay = day.meta.find((m) => m.label.trim().toLowerCase() === "stay");
                   const meals = day.meta.find((m) => m.label.trim().toLowerCase() === "meals");
                   return (
-                    <View key={day.id} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]} wrap={false}>
-                      <View style={[s.tCell, { width: dayDates ? 60 : 44 }]}>
-                        <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
-                        {day.dateLabel ? (
-                          <Text style={s.dayDate}>
-                            {formatStayDate(day.dateLabel, { year: false })}
-                          </Text>
-                        ) : null}
+                    <View key={day.id} style={i > 0 ? s.dayBlock : {}} wrap={false}>
+                      {/* Row 1: day/date | night stay | meals */}
+                      <View style={s.dayStrip}>
+                        <View style={[s.dayStripCell, { flex: 1, flexDirection: "row", alignItems: "baseline" }]}>
+                          <Text style={s.dayNum}>Day {String(i + 1).padStart(2, "0")}</Text>
+                          {day.dateLabel ? (
+                            <Text style={s.dayDate}>
+                              {"  ·  "}
+                              {formatStayDate(day.dateLabel, { year: false })}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text style={[s.dayStripCell, s.dayStripStrong, { width: 150 }]}>
+                          {stay?.value || "—"}
+                        </Text>
+                        <Text style={[s.dayStripCell, { width: 150 }]}>{meals?.value || "—"}</Text>
                       </View>
-                      <View style={[s.tCell, { flex: 1 }]}>
+                      {/* Row 2: plan, full width */}
+                      <View style={s.dayPlan}>
                         <Text style={s.tCellStrong}>{day.title}</Text>
                         {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
                       </View>
-                      <Text style={[s.tCell, { width: 96, fontFamily: "Helvetica-Bold", color: INK }]}>
-                        {stay?.value || "—"}
-                      </Text>
-                      <Text style={[s.tCell, { width: 96 }]}>{meals?.value || "—"}</Text>
                     </View>
                   );
                 })}
