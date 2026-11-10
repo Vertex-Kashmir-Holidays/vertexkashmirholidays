@@ -17,6 +17,7 @@ import {
   Building2,
   Mail,
   Trash2,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
@@ -95,6 +96,7 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const [emailing, setEmailing] = useState(false);
   const [confirmSuspend, setConfirmSuspend] = useState<AgentRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AgentRow | null>(null);
+  const [confirmResend, setConfirmResend] = useState<AgentRow | null>(null);
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -119,7 +121,12 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } =
     usePagination(filtered);
 
-  function runAction(label: string, fn: () => Promise<Response>) {
+  // `onOk` lets an action replace the generic success toast based on the response.
+  function runAction(
+    label: string,
+    fn: () => Promise<Response>,
+    onOk?: (data: Record<string, unknown>) => void,
+  ) {
     startTransition(async () => {
       try {
         const res = await fn();
@@ -131,7 +138,8 @@ export function B2bAgentsClient({ initialAgents }: Props) {
               : data.error?.formErrors?.[0] ?? `${label} failed.`;
           throw new Error(message);
         }
-        toast.success(`${label} succeeded.`);
+        if (onOk) onOk(await res.json().catch(() => ({})));
+        else toast.success(`${label} succeeded.`);
         router.refresh();
       } catch (err) {
         toast.error(err instanceof Error && err.message ? err.message : `${label} failed.`);
@@ -146,6 +154,24 @@ export function B2bAgentsClient({ initialAgents }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agencyStatus: "ACTIVE" }),
       }),
+      (data) => {
+        if (data.emailDelivered === false) {
+          toast.warning(
+            `Approved, but the login email to ${a.email} failed. Use "Resend credentials" to try again.`,
+          );
+        } else {
+          toast.success("Approval succeeded — login credentials emailed.");
+        }
+      },
+    );
+  }
+
+  function handleResendCredentials(a: AgentRow) {
+    setConfirmResend(null);
+    runAction(
+      "Resend credentials",
+      () => fetch(`/api/admin/b2b-agents/${a.id}/resend-credentials`, { method: "POST" }),
+      () => toast.success(`New login credentials emailed to ${a.email}.`),
     );
   }
 
@@ -341,6 +367,19 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             {a.agencyStatus === "SUSPENDED" ? "Reactivate" : "Approve"}
+                          </button>
+                        )}
+                        {a.agencyStatus === "ACTIVE" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmResend(a);
+                            }}
+                            disabled={isPending}
+                            title="Email a new temporary password"
+                            className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" /> Resend credentials
                           </button>
                         )}
                         {a.agencyStatus === "ACTIVE" && (
@@ -593,6 +632,14 @@ export function B2bAgentsClient({ initialAgents }: Props) {
         </DialogContent>
       </Dialog>
 
+      <ConfirmDialog
+        open={!!confirmResend}
+        title={`Resend login credentials to ${confirmResend?.agencyName ?? confirmResend?.name ?? "this agent"}?`}
+        description={`A new temporary password will be emailed to ${confirmResend?.email ?? "the agent"}. Their current password stops working once it's sent.`}
+        confirmLabel="Resend"
+        onConfirm={() => confirmResend && handleResendCredentials(confirmResend)}
+        onCancel={() => setConfirmResend(null)}
+      />
       <ConfirmDialog
         open={!!confirmSuspend}
         destructive

@@ -98,17 +98,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return agent;
   });
 
-  // Best-effort — never blocks/fails the status change itself.
+  // Best-effort — never blocks/fails the status change itself, but the result
+  // is returned so the UI can say when the credentials email didn't go out.
+  let emailDelivered: boolean | null = null;
   if (tempPassword) {
-    await sendB2bAgentActivationEmail(
+    ({ delivered: emailDelivered } = await sendB2bAgentActivationEmail(
       updated.email,
       updated.name ?? "",
       updated.agencyName ?? updated.name ?? "",
       tempPassword,
-    );
+    ));
   }
 
-  return NextResponse.json(updated);
+  return NextResponse.json({ ...updated, emailDelivered });
 }
 
 /**
