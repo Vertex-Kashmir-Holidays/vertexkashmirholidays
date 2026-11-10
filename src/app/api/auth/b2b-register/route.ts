@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   if (!agencyLogoUrl) {
     return NextResponse.json(
       {
-        error: "Logo must be a PNG image under 500KB.",
+        error: "Logo must be a PNG or WebP image under 500KB.",
         fieldErrors: { agencyLogoDataUrl: ["Invalid logo file."] },
       },
       { status: 400 },

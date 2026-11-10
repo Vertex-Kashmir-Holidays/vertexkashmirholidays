@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   const agencyLogoUrl = parseAgencyLogo(data.agencyLogoDataUrl);
   if (!agencyLogoUrl) {
     return NextResponse.json(
-      { error: { fieldErrors: { agencyLogoDataUrl: ["Logo must be a PNG image under 500KB."] } } },
+      { error: { fieldErrors: { agencyLogoDataUrl: ["Logo must be a PNG or WebP image under 500KB."] } } },
       { status: 422 },
     );
   }
