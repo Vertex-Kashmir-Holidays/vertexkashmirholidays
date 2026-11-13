@@ -54,9 +54,9 @@ export async function leadFactsItineraryOps(
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-/** "12 NOV 2026" → UTC midnight, matching how lead dates are stored. */
+/** "12 NOV 2026" → UTC midnight, matching how lead dates are stored. en-IN writes September as "SEPT". */
 function parseDay(d: string, mon: string, y: string): Date | null {
-  const m = MONTHS.indexOf(mon.toUpperCase());
+  const m = MONTHS.indexOf(mon.toUpperCase().slice(0, 3));
   return m < 0 ? null : new Date(Date.UTC(Number(y), m, Number(d)));
 }
 
@@ -79,7 +79,7 @@ export function leadFactsFromItinerary(data: ItineraryData): ItineraryLeadFacts 
 
   const dates = data.travelDates
     .trim()
-    .match(/^(\d{1,2}) ([A-Za-z]{3}) (\d{4})(?: - (\d{1,2}) ([A-Za-z]{3}) (\d{4}))?$/);
+    .match(/^(\d{1,2}) ([A-Za-z]{3,4}) (\d{4})(?: - (\d{1,2}) ([A-Za-z]{3,4}) (\d{4}))?$/);
   if (dates) {
     const start = parseDay(dates[1], dates[2], dates[3]);
     const end = dates[4] ? parseDay(dates[4], dates[5], dates[6]) : null;

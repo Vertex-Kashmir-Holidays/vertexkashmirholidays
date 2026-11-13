@@ -29,7 +29,9 @@ export function EditB2bRequestButton({ requestId, initial }: Props) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return b2bRequestError(data, "Could not update request.");
-    toast.success("Request updated.");
+    toast.success(
+      data.itinerarySynced ? "Request updated — its itinerary was updated to match." : "Request updated.",
+    );
     setOpen(false);
     router.refresh();
     return null;

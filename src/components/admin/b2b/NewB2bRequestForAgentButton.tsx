@@ -9,6 +9,7 @@ import {
   EMPTY_B2B_REQUEST_FORM,
   b2bRequestError,
   b2bRequestPayload,
+  type B2bRequestForm,
 } from "./B2bRequestFormDialog";
 
 interface Props {
@@ -24,7 +25,7 @@ export function NewB2bRequestForAgentButton({ agentId, agentLabel }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  async function handleCreate(form: typeof EMPTY_B2B_REQUEST_FORM): Promise<string | null> {
+  async function handleCreate(form: B2bRequestForm): Promise<string | null> {
     const res = await fetch("/api/admin/b2b-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
