@@ -800,8 +800,10 @@ interface Props {
    * below), not filled with a generic fallback QR.
    */
   tokenQrDataUrl?: string;
-  /** The fixed token amount that QR collects, in rupees — drives the "Pay ₹X only" caption. */
+  /** The token amount that QR collects, in rupees — drives the "Pay ₹X only" caption. */
   tokenAmountRupees?: number;
+  /** Package total the 10% token was calculated from — shown as "10% of ₹X". */
+  tokenTotalRupees?: number;
   /**
    * Real review-rating badge, sourced server-side from the live site's own
    * HomeContent.aboutRatingTitle/Subtitle (see
@@ -820,6 +822,7 @@ export function ItineraryPdf({
   address,
   tokenQrDataUrl,
   tokenAmountRupees,
+  tokenTotalRupees,
   trustContent,
   socialLinks,
 }: Props) {
@@ -836,6 +839,7 @@ export function ItineraryPdf({
   // item, which .map() alone doesn't expose cleanly.
   const incRuns = withCategoryRuns(data.inc);
   const excRuns = withCategoryRuns(data.exc);
+  const checklistColumns = splitIntoColumns(withCategoryRuns(data.checklist));
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -1348,6 +1352,34 @@ export function ItineraryPdf({
           </Text>
         </View>
 
+        {/* TRAVEL CHECK LIST — what to carry, grouped by category and split
+            into two balanced columns; omitted entirely when the list is empty. */}
+        {checklistColumns.length > 0 ? (
+          <View style={s.sectionGap} wrap={false}>
+            <SectionHead title="Travel Check List" tag="Pack these" />
+            <View style={[s.coveredCard, { borderColor: C.border }]}>
+              <View style={[s.coveredCardHead, { backgroundColor: C.green }]}>
+                <PdfIcon icon="check" size={12} color={C.mintPale} />
+                <Text style={s.coveredCardHeadText}>Carry these for a comfortable trip</Text>
+              </View>
+              <View style={[s.coveredCardBody, { flexDirection: "row", gap: SP.md }]}>
+                {checklistColumns.map((col, ci) => (
+                  <View key={ci} style={{ flex: 1 }}>
+                    {col.map((row) => (
+                      <View key={row.id}>
+                        {row.showCategory ? (
+                          <Text style={[s.coveredCategory, { color: C.green }]}>{row.category}</Text>
+                        ) : null}
+                        <Text style={s.coveredText}>• {row.text}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        ) : null}
+
         {/* PAYMENT & CANCELLATION */}
         <View style={s.sectionGap} wrap={false}>
           <SectionHead title="Payment & Cancellation" tag="Terms & Policies" />
@@ -1469,6 +1501,11 @@ export function ItineraryPdf({
                   ? `Scan to pay ${inr(tokenAmountRupees)}/- and confirm your booking`
                   : "Scan to pay your advance"}
               </Text>
+              {tokenAmountRupees != null && tokenTotalRupees != null ? (
+                <Text style={s.qrSubCaption}>
+                  {`Booking token: 10% of your package total ${inr(tokenTotalRupees)}, rounded up to ${inr(tokenAmountRupees)}`}
+                </Text>
+              ) : null}
               <Text style={s.qrSubCaption}>Open your phone camera or any UPI app</Text>
             </>
           ) : null}
@@ -1548,6 +1585,22 @@ function withCategoryRuns<T extends { id: string; category: string; text: string
     ...item,
     showCategory: !!item.category && item.category !== items[i - 1]?.category,
   }));
+}
+
+/**
+ * Split category runs into two columns at a category boundary nearest the
+ * halfway point, so a category never straddles both columns. A single
+ * category (or ≤ 4 rows) stays in one column. Empty input → no columns.
+ */
+function splitIntoColumns<T extends { showCategory: boolean }>(rows: T[]): T[][] {
+  if (rows.length === 0) return [];
+  if (rows.length <= 4) return [rows];
+  let best = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i].showCategory) continue;
+    if (best === -1 || Math.abs(i - rows.length / 2) < Math.abs(best - rows.length / 2)) best = i;
+  }
+  return best === -1 ? [rows] : [rows.slice(0, best), rows.slice(best)];
 }
 
 // Icons whose path geometry is a single closed silhouette (verified by

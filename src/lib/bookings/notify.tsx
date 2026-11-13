@@ -4,7 +4,6 @@
 // break the underlying business action (locking services, recording a payment).
 
 import { prisma } from "@/lib/prisma";
-import { env } from "@/lib/env";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
@@ -22,6 +21,7 @@ import {
   driverDetailsHtml,
   driverDetailsText,
   type InvoiceService,
+  ADMIN_COPY,
 } from "@/lib/mail";
 import {
   renderBookingSummaryPdf,
@@ -29,6 +29,7 @@ import {
   bookingRef,
 } from "@/lib/bookings/invoice-pdf";
 import { enqueueForBooking } from "@/lib/offlineConversion/service";
+import { toDisplayService } from "@/lib/bookings/serviceDisplay";
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -57,8 +58,8 @@ async function whatsappNumber(): Promise<string | null> {
 // Silent internal copy of invoice/confirmation-carrying customer emails (booking
 // summary, payment receipt, booking confirmation, driver details) — lets staff
 // confirm delivery without the customer ever seeing the internal address.
-// Deliberately not applied to credentials/OTP emails.
-const internalBcc = env.MAIL_TO_ADMIN;
+// Also applied to the customer account-credentials email; never to OTP/reset.
+const internalBcc = ADMIN_COPY;
 
 /**
  * Booking summary email + branded PDF attachment. Sent when services are locked.
@@ -97,16 +98,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
       services: booking.services,
     });
 
-    const services = booking.services.map((s) => ({
-      kind: s.kind,
-      name: s.name,
-      location: s.location,
-      nights: s.nights,
-      roomType: s.roomType,
-      pickup: s.pickup,
-      dropoff: s.dropoff,
-      timing: s.timing,
-    }));
+    const services = booking.services.map(toDisplayService);
     const inclusions = parseInclusions(booking.inclusions);
     const ref = bookingRef(booking.id);
     const guestName = booking.guestName || booking.user?.name || "Guest";
@@ -169,6 +161,7 @@ export async function sendCustomerCredentialsEmail(
     const res = await sendMail({
       to: email,
       subject: "Your Vertex Kashmir Holidays account",
+      bcc: internalBcc,
       html: customerCredentialsHtml({ name, email, tempPassword }),
       text: customerCredentialsText({ name, email, tempPassword }),
     });
@@ -334,6 +327,8 @@ export async function sendPaymentInvoiceEmail(
       totalPaid: finance.paidAmount,
       remainingBalance: finance.balance,
       status: statusLabel,
+      gstPercent: payment.gstPercent,
+      gstAmount: payment.gstAmount,
       whatsappNumber: wa,
       bookingId: booking.id,
     };

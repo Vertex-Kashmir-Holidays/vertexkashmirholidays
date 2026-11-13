@@ -7,7 +7,8 @@ export type LeadType =
   | "tour_inquiry"
   | "flight_train_quote"
   | "trip_planner_request"
-  | "occasion_offer";
+  | "occasion_offer"
+  | "whatsapp_popup";
 
 export type WhatsAppSource =
   | "header"

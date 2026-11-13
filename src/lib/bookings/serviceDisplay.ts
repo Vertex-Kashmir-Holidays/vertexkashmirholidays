@@ -9,10 +9,60 @@ export interface DisplayService {
   location?: string | null;
   nights?: number | null;
   roomType?: string | null;
+  rooms?: number | null;
+  checkIn?: Date | string | null;
+  checkOut?: Date | string | null;
   pickup?: string | null;
   dropoff?: string | null;
   timing?: string | null;
 }
+
+/** Pick only the customer-safe display fields from a BookingService row (never `amount`). */
+export function toDisplayService(s: DisplayService): DisplayService {
+  return {
+    kind: s.kind,
+    name: s.name,
+    location: s.location,
+    nights: s.nights,
+    roomType: s.roomType,
+    rooms: s.rooms,
+    checkIn: s.checkIn,
+    checkOut: s.checkOut,
+    pickup: s.pickup,
+    dropoff: s.dropoff,
+    timing: s.timing,
+  };
+}
+
+// Hotel check-in/out are stored as a plain DATE (UTC midnight), so they are
+// always read and formatted in UTC — a local-time read would shift the day.
+function toDate(v: Date | string): Date {
+  return typeof v === "string" ? new Date(v.length === 10 ? `${v}T00:00:00Z` : v) : v;
+}
+
+/** "YYYY-MM-DD" for an <input type="date">, or null when unset. */
+export function toDateInputValue(v: Date | string | null | undefined): string | null {
+  return v ? toDate(v).toISOString().slice(0, 10) : null;
+}
+
+/** e.g. "12 Dec 2026", or null when unset. */
+export function formatServiceDate(v: Date | string | null | undefined): string | null {
+  return v
+    ? toDate(v).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    : null;
+}
+
+/** Every customer-facing price is GST-inclusive — stated on all invoices (PDFs + emails). */
+export const GST_INCLUDED_NOTE = "All amounts are inclusive of GST.";
+
+/** Shown wherever the customer gets the booking summary (account, email, PDF). */
+export const SHOW_SUMMARY_NOTE =
+  "Please keep this booking summary handy and show it at hotel check-in, to your driver, or to anyone who asks for your booking details during the trip.";
 
 export const SERVICE_KIND_LABELS: Record<ServiceKind, string> = {
   HOTEL: "Accommodation",
@@ -41,6 +91,10 @@ export function serviceFields(s: DisplayService): ServiceField[] {
     case "HOTEL":
       if (s.location) fields.push({ label: "Location", value: s.location });
       if (s.roomType) fields.push({ label: "Room Type", value: s.roomType });
+      if (s.rooms != null)
+        fields.push({ label: "Rooms", value: `${s.rooms} room${s.rooms === 1 ? "" : "s"}` });
+      if (s.checkIn) fields.push({ label: "Check-in", value: formatServiceDate(s.checkIn)! });
+      if (s.checkOut) fields.push({ label: "Check-out", value: formatServiceDate(s.checkOut)! });
       if (s.nights != null)
         fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
       break;
@@ -80,7 +134,7 @@ export function groupServices<T extends DisplayService>(services: T[]) {
 // Column headers per kind, mirroring the admin services UI. Used to render the
 // same table layout in the customer account, the booking email, and the PDF.
 export const SERVICE_COLUMNS: Record<ServiceKind, string[]> = {
-  HOTEL: ["Hotel Name", "Location", "Room Type", "Nights"],
+  HOTEL: ["Hotel Name", "Location", "Room Type", "Rooms", "Check-in", "Check-out", "Nights"],
   TRANSPORT: ["Cab Name", "Pickup", "Drop"],
   ACTIVITY: ["Activity", "Duration", "Location"],
   OTHER: ["Item"],
@@ -96,6 +150,9 @@ export function serviceRow(s: DisplayService): string[] {
         s.name,
         s.location || DASH,
         s.roomType || DASH,
+        s.rooms != null ? String(s.rooms) : DASH,
+        formatServiceDate(s.checkIn) ?? DASH,
+        formatServiceDate(s.checkOut) ?? DASH,
         s.nights != null ? String(s.nights) : DASH,
       ];
     case "TRANSPORT":

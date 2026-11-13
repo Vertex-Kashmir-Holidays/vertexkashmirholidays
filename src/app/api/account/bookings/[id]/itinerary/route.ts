@@ -10,20 +10,21 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
+// Published snapshot only — never the live `data` staff may still be editing
+// (see src/lib/itinerary/publish.ts).
 const ITINERARY_SELECT = {
   id: true,
-  title: true,
   status: true,
-  updatedAt: true,
-  data: true,
+  publishedTitle: true,
+  publishedData: true,
+  publishedAt: true,
 } as const;
 
 /**
  * Customer read of their booking's latest itinerary — direct-booking
  * itineraries live on the booking itself, lead-converted ones on the
- * originating lead (see business-rules.md → Itinerary Rules). Only itineraries
- * staff have marked SENT or CONFIRMED are exposed here; a DRAFT is still a
- * work-in-progress the customer shouldn't see yet.
+ * originating lead (see business-rules.md → Itinerary Rules). Only the version
+ * staff last PUBLISHED is exposed here — unpublished edits stay internal.
  */
 export async function GET(_req: Request, { params }: Params) {
   const session = await auth();
@@ -40,19 +41,19 @@ export async function GET(_req: Request, { params }: Params) {
   if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const itinerary = booking.itinerary ?? booking.leads[0]?.itinerary ?? null;
-  if (!itinerary || itinerary.status === "DRAFT") {
+  if (!itinerary || !itinerary.publishedAt) {
     return NextResponse.json({ error: "Itinerary is not available yet." }, { status: 404 });
   }
 
-  const parsed = itineraryDataSchema.safeParse(itinerary.data);
+  const parsed = itineraryDataSchema.safeParse(itinerary.publishedData);
   const data = parsed.success ? parsed.data : DEFAULT_ITINERARY_DATA;
   const trustContent = await getPdfTrustContent();
 
   return NextResponse.json({
     id: itinerary.id,
-    title: itinerary.title,
+    title: itinerary.publishedTitle,
     status: itinerary.status,
-    updatedAt: itinerary.updatedAt,
+    updatedAt: itinerary.publishedAt,
     data,
     trustContent,
   });

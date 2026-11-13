@@ -8,6 +8,15 @@ export const serviceBodySchema = z.object({
   location: z.string().trim().max(200).nullable().optional(),
   nights: z.coerce.number().int().min(0).nullable().optional(),
   roomType: z.string().trim().max(120).nullable().optional(),
+  // Hotel only, all optional (not lock-blocking) — staff fill them when known.
+  // Dates arrive as "YYYY-MM-DD" and are stored as a plain DATE (UTC midnight).
+  rooms: z.coerce.number().int().min(1, "Rooms must be at least 1").nullable().optional(),
+  checkIn: z.coerce.date().nullable().optional(),
+  checkOut: z.coerce.date().nullable().optional(),
+  // Hotel only: link to the hotel list + confirmation with the hotel. Not
+  // lock-blocking; like every service field, editable only while unlocked.
+  hotelSupplierId: z.string().trim().min(1).nullable().optional(),
+  hotelConfirmation: z.enum(["PENDING", "REQUESTED", "CONFIRMED", "CANCELLED"]).nullable().optional(),
   pickup: z.string().trim().max(200).nullable().optional(),
   dropoff: z.string().trim().max(200).nullable().optional(),
   timing: z.string().trim().max(200).nullable().optional(),

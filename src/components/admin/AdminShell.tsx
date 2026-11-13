@@ -54,6 +54,8 @@ import {
   Receipt,
   BarChart3,
   PartyPopper,
+  Plane,
+  CalendarRange,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -138,6 +140,8 @@ interface ExtraNavItem {
   /** B2B-only data — also needs SUPERADMIN/ADMIN or "B2B Requests → View"
    *  (same rule as canSeeB2bBookings in src/lib/bookings/scope.ts). */
   b2bOnly?: boolean;
+  /** Place this item just before that module's entry (default: after the group's modules). */
+  before?: ModuleKey;
 }
 const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavItem[] }[] = [
   { label: null, keys: ["dashboard", "connect"] },
@@ -152,7 +156,28 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
   },
   {
     label: "CRM",
-    keys: ["leads", "itinerary", "proposals", "hotelSuppliers", "rateCards", "bookings", "users"],
+    keys: ["leads", "itinerary", "bookings", "users"],
+    extra: [
+      // Trips board + Hotel stays — a view over bookings, so gated by the
+      // Bookings permission (same visibility rules), no RBAC module of its own.
+      { href: "/admin/trips", label: "Upcoming Trips", Icon: Plane, permKey: "bookings" },
+    ],
+  },
+  {
+    // Everything sales uses to price and pitch a trip.
+    label: "Sales Toolkit",
+    keys: ["hotelSuppliers", "rateCards", "proposals"],
+    extra: [
+      // Destinations Library — reusable day headings/descriptions per route
+      // (DayPlan table), picked into proposal days; Itineraries permission.
+      {
+        href: "/admin/day-plans",
+        label: "Destinations Library",
+        Icon: CalendarRange,
+        permKey: "itinerary",
+        before: "proposals",
+      },
+    ],
   },
   {
     label: "B2B",
@@ -363,27 +388,26 @@ export function AdminShell({
 
   // Only show modules the current role may view, grouped into sidebar sections.
   // A group is dropped entirely if none of its modules are visible to this role.
-  const navGroups: NavGroup[] = NAV_GROUPS.map((group) => ({
-    label: group.label,
-    items: [
-      ...group.keys
-        .filter((key) => permissions[key]?.view)
-        .map((key) => {
-          const mod = MODULES.find((m) => m.key === key)!;
-          return { href: mod.href, label: mod.label, Icon: MODULE_ICONS[key] };
-        }),
-      ...(group.extra ?? [])
-        .filter(
-          (item) =>
-            permissions[item.permKey]?.view &&
-            (!item.b2bOnly ||
-              role === "SUPERADMIN" ||
-              role === "ADMIN" ||
-              permissions.b2bRequests?.view),
-        )
-        .map((item) => ({ href: item.href, label: item.label, Icon: item.Icon })),
-    ],
-  })).filter((group) => group.items.length > 0);
+  const navGroups: NavGroup[] = NAV_GROUPS.map((group) => {
+    const items: NavGroup["items"] = group.keys
+      .filter((key) => permissions[key]?.view)
+      .map((key) => {
+        const mod = MODULES.find((m) => m.key === key)!;
+        return { href: mod.href, label: mod.label, Icon: MODULE_ICONS[key] };
+      });
+    for (const item of group.extra ?? []) {
+      const visible =
+        permissions[item.permKey]?.view &&
+        (!item.b2bOnly || role === "SUPERADMIN" || role === "ADMIN" || permissions.b2bRequests?.view);
+      if (!visible) continue;
+      const entry = { href: item.href, label: item.label, Icon: item.Icon };
+      const beforeHref = item.before && MODULES.find((m) => m.key === item.before)?.href;
+      const at = beforeHref ? items.findIndex((i) => i.href === beforeHref) : -1;
+      if (at >= 0) items.splice(at, 0, entry);
+      else items.push(entry);
+    }
+    return { label: group.label, items };
+  }).filter((group) => group.items.length > 0);
 
   return (
     <NotificationsProvider>
@@ -477,7 +501,7 @@ export function AdminShell({
           </div>
 
           {/* Mobile bottom tab bar — quick access to the handful of sections staff need on a phone */}
-          <MobileBottomTabs pathname={pathname} permissions={permissions} />
+          <MobileBottomTabs pathname={pathname} permissions={permissions} role={role} />
 
           {/* Global incoming call notification — rings from any page in the admin */}
           <Suspense>

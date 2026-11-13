@@ -17,6 +17,8 @@ import {
   Building2,
   Mail,
   Trash2,
+  KeyRound,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
@@ -88,6 +90,8 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // Agent being edited — reuses the create form/dialog, pre-filled.
+  const [editing, setEditing] = useState<AgentRow | null>(null);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   // Agents ticked for "Email agents" — kept across search and pages.
@@ -95,6 +99,7 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const [emailing, setEmailing] = useState(false);
   const [confirmSuspend, setConfirmSuspend] = useState<AgentRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AgentRow | null>(null);
+  const [confirmResend, setConfirmResend] = useState<AgentRow | null>(null);
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -119,7 +124,12 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } =
     usePagination(filtered);
 
-  function runAction(label: string, fn: () => Promise<Response>) {
+  // `onOk` lets an action replace the generic success toast based on the response.
+  function runAction(
+    label: string,
+    fn: () => Promise<Response>,
+    onOk?: (data: Record<string, unknown>) => void,
+  ) {
     startTransition(async () => {
       try {
         const res = await fn();
@@ -131,7 +141,8 @@ export function B2bAgentsClient({ initialAgents }: Props) {
               : data.error?.formErrors?.[0] ?? `${label} failed.`;
           throw new Error(message);
         }
-        toast.success(`${label} succeeded.`);
+        if (onOk) onOk(await res.json().catch(() => ({})));
+        else toast.success(`${label} succeeded.`);
         router.refresh();
       } catch (err) {
         toast.error(err instanceof Error && err.message ? err.message : `${label} failed.`);
@@ -146,6 +157,24 @@ export function B2bAgentsClient({ initialAgents }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agencyStatus: "ACTIVE" }),
       }),
+      (data) => {
+        if (data.emailDelivered === false) {
+          toast.warning(
+            `Approved, but the login email to ${a.email} failed. Use "Resend credentials" to try again.`,
+          );
+        } else {
+          toast.success("Approval succeeded — login credentials emailed.");
+        }
+      },
+    );
+  }
+
+  function handleResendCredentials(a: AgentRow) {
+    setConfirmResend(null);
+    runAction(
+      "Resend credentials",
+      () => fetch(`/api/admin/b2b-agents/${a.id}/resend-credentials`, { method: "POST" }),
+      () => toast.success(`New login credentials emailed to ${a.email}.`),
     );
   }
 
@@ -165,13 +194,34 @@ export function B2bAgentsClient({ initialAgents }: Props) {
     runAction("Delete", () => fetch(`/api/admin/b2b-agents/${a.id}`, { method: "DELETE" }));
   }
 
+  function openEdit(a: AgentRow) {
+    setForm({
+      name: a.name ?? "",
+      email: a.email,
+      phone: a.phone ?? "",
+      agencyName: a.agencyName ?? "",
+      agencyState: a.agencyState ?? "",
+      agencyLogoDataUrl: "",
+      agencyWebsite: a.agencyWebsite ?? "",
+      agencyRegistrationNumber: a.agencyRegistrationNumber ?? "",
+      agencyGstin: a.agencyGstin ?? "",
+    });
+    setFormError(null);
+    setEditing(a);
+  }
+
+  function closeForm() {
+    setCreating(false);
+    setEditing(null);
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/admin/b2b-agents", {
-          method: "POST",
+        const res = await fetch(editing ? `/api/admin/b2b-agents/${editing.id}` : "/api/admin/b2b-agents", {
+          method: editing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
@@ -182,15 +232,23 @@ export function B2bAgentsClient({ initialAgents }: Props) {
               ? data.error
               : data.error?.fieldErrors
                 ? Object.values(data.error.fieldErrors).flat()[0] as string
-                : "Could not create B2B agent.",
+                : editing
+                  ? "Could not update B2B agent."
+                  : "Could not create B2B agent.",
           );
         }
-        toast.success("B2B agent created — PENDING approval. Login credentials are emailed once approved.");
-        setCreating(false);
+        toast.success(
+          editing
+            ? "Agent details updated."
+            : "B2B agent created — PENDING approval. Login credentials are emailed once approved.",
+        );
+        closeForm();
         setForm(EMPTY_FORM);
         router.refresh();
       } catch (err) {
-        setFormError(err instanceof Error ? err.message : "Could not create B2B agent.");
+        setFormError(
+          err instanceof Error ? err.message : editing ? "Could not update B2B agent." : "Could not create B2B agent.",
+        );
       }
     });
   }
@@ -347,6 +405,19 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              setConfirmResend(a);
+                            }}
+                            disabled={isPending}
+                            title="Email a new temporary password"
+                            className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-40"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" /> Resend credentials
+                          </button>
+                        )}
+                        {a.agencyStatus === "ACTIVE" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setConfirmSuspend(a);
                             }}
                             disabled={isPending}
@@ -418,6 +489,14 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                                 <CalendarCheck2 className="h-3.5 w-3.5 text-muted-foreground" />
                                 {a._count.bookings} Bookings
                               </Link>
+                              <button
+                                type="button"
+                                onClick={() => openEdit(a)}
+                                className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                Edit details
+                              </button>
                               <NewB2bRequestForAgentButton
                                 agentId={a.id}
                                 agentLabel={a.agencyName ?? a.name ?? a.email}
@@ -491,10 +570,10 @@ export function B2bAgentsClient({ initialAgents }: Props) {
         activeCount={initialAgents.filter((a) => a.agencyStatus === "ACTIVE").length}
       />
 
-      <Dialog open={creating} onOpenChange={setCreating}>
+      <Dialog open={creating || !!editing} onOpenChange={(open) => !open && closeForm()}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>New B2B Agent</DialogTitle>
+            <DialogTitle>{editing ? `Edit ${editing.agencyName ?? "B2B Agent"}` : "New B2B Agent"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-3">
             {formError && (
@@ -541,6 +620,23 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                 />
               </div>
               <div className="col-span-2">
+                {editing?.agencyLogoUrl && (
+                  <div className="mb-2 flex items-center gap-3">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                      <Image
+                        src={editing.agencyLogoUrl}
+                        alt="Current logo"
+                        fill
+                        sizes="40px"
+                        className="object-contain p-1"
+                        unoptimized
+                      />
+                    </div>
+                    <p className="text-[12px] text-muted-foreground">
+                      Current logo — upload a new one below only to replace it.
+                    </p>
+                  </div>
+                )}
                 <LogoUploadField
                   onChange={(dataUrl) => setForm((f) => ({ ...f, agencyLogoDataUrl: dataUrl ?? "" }))}
                 />
@@ -580,19 +676,29 @@ export function B2bAgentsClient({ initialAgents }: Props) {
               </div>
             </div>
             <p className="text-[12px] text-muted-foreground">
-              Starts as PENDING. Login credentials are emailed to the agent once you approve them.
+              {editing
+                ? "Changing the email also changes the email they log in with. Their password stays the same."
+                : "Starts as PENDING. Login credentials are emailed to the agent once you approve them."}
             </p>
             <button
               type="submit"
               disabled={isPending}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Create Agent
+              {editing ? "Save Changes" : "Create Agent"}
             </button>
           </form>
         </DialogContent>
       </Dialog>
 
+      <ConfirmDialog
+        open={!!confirmResend}
+        title={`Resend login credentials to ${confirmResend?.agencyName ?? confirmResend?.name ?? "this agent"}?`}
+        description={`A new temporary password will be emailed to ${confirmResend?.email ?? "the agent"}. Their current password stops working once it's sent.`}
+        confirmLabel="Resend"
+        onConfirm={() => confirmResend && handleResendCredentials(confirmResend)}
+        onCancel={() => setConfirmResend(null)}
+      />
       <ConfirmDialog
         open={!!confirmSuspend}
         destructive

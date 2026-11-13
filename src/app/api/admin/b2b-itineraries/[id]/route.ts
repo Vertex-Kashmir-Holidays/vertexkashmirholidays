@@ -7,6 +7,7 @@ import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import type { Prisma } from "@prisma/client";
 import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
+import { leadFactsFromItinerary } from "@/lib/itinerary/leadFactsSync";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,17 @@ type Params = { params: Promise<{ id: string }> };
 async function loadB2bItinerary(id: string) {
   const record = await prisma.itinerary.findUnique({
     where: { id },
-    include: { lead: { select: { id: true, b2bAgentId: true, locked: true, status: true } } },
+    include: {
+      lead: {
+        select: {
+          id: true,
+          b2bAgentId: true,
+          locked: true,
+          status: true,
+          booking: { select: { servicesLocked: true } },
+        },
+      },
+    },
   });
   if (!record || record.lead?.b2bAgentId == null) return null;
   return record;
@@ -64,8 +75,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const existing = await loadB2bItinerary(id);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Converted → locked with its booking; editable again only by an admin while
-  // the booking is unlocked for changes (same rule as a customer's itinerary).
+  // Converted → editable only by an admin, and only while the booking's
+  // services are unlocked (see resolveB2bItineraryAccess).
   const access = resolveB2bItineraryAccess(
     { locked: existing.locked, lead: existing.lead! },
     { role: guard.user.role, canEditItineraries: true },
@@ -127,6 +138,31 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         },
       }),
     );
+
+    // Itinerary → request: guest name, phone, dates and travellers edited on
+    // the cover flow back to the B2B request while it's still open (see
+    // leadFactsSync.ts — only values in the standard format are read back).
+    if (existing.lead && existing.lead.status !== "CONVERTED" && !existing.lead.locked) {
+      const f = leadFactsFromItinerary(parsed.data.data);
+      const days =
+        f.startDate && f.endDate
+          ? Math.round((f.endDate.getTime() - f.startDate.getTime()) / 86_400_000) + 1
+          : undefined;
+      if (Object.keys(f).length > 0) {
+        ops.push(
+          prisma.lead.update({
+            where: { id: existing.lead.id },
+            data: {
+              ...(f.name !== undefined ? { name: f.name } : {}),
+              ...(f.phone !== undefined ? { phone: f.phone } : {}),
+              ...(f.startDate !== undefined ? { startDate: f.startDate, endDate: f.endDate ?? null } : {}),
+              ...(days !== undefined && days > 0 ? { days } : {}),
+              ...(f.adults !== undefined ? { adults: f.adults, children: f.children ?? null } : {}),
+            },
+          }),
+        );
+      }
+    }
 
     // Converted request unlocked for corrections: its booking follows the new price.
     const proposed = parseProposedAmount(parsed.data.data.totalCost);

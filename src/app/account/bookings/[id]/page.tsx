@@ -20,6 +20,8 @@ import { customerBookingWhere } from "@/lib/account/bookingScope";
 import {
   groupServiceTables,
   parseInclusions,
+  SHOW_SUMMARY_NOTE,
+  GST_INCLUDED_NOTE,
   type ServiceKind,
 } from "@/lib/bookings/serviceDisplay";
 import { ItineraryDownloadButton } from "@/components/account/ItineraryDownloadButton";
@@ -74,13 +76,13 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       tour: { select: { title: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       payments: { orderBy: { createdAt: "asc" } },
-      itinerary: { select: { title: true, status: true, updatedAt: true } },
+      itinerary: { select: { publishedTitle: true, publishedAt: true } },
       leads: {
         take: 1,
         select: {
           id: true,
           b2bAgentId: true,
-          itinerary: { select: { title: true, status: true, updatedAt: true } },
+          itinerary: { select: { publishedTitle: true, publishedAt: true } },
         },
       },
     },
@@ -88,11 +90,11 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
   if (!booking) notFound();
 
   // Lead-converted bookings have no itinerary of their own — they use the
-  // originating lead's (see business-rules.md → Itinerary Rules). Only a
-  // SENT/CONFIRMED itinerary is shown; a DRAFT is still a staff work-in-progress.
+  // originating lead's (see business-rules.md → Itinerary Rules). Only the
+  // version staff last PUBLISHED is shown — see src/lib/itinerary/publish.ts.
   const originatingLead = booking.leads[0] ?? null;
   const itinerary = booking.itinerary ?? originatingLead?.itinerary ?? null;
-  const itineraryVisible = !!itinerary && itinerary.status !== "DRAFT";
+  const itineraryVisible = !!itinerary?.publishedAt;
   // A B2B-converted booking downloads the agent-branded quotation PDF (see
   // B2bItineraryPdf.tsx), never the normal photo-heavy customer document —
   // this page is shared by both, so the two download paths must diverge here.
@@ -172,14 +174,14 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       </div>
 
       {/* Trip itinerary */}
-      {itineraryVisible && itinerary && (
+      {itineraryVisible && itinerary?.publishedAt && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display font-bold text-foreground">Your Itinerary</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                {itinerary.title} · Updated{" "}
-                {itinerary.updatedAt.toLocaleDateString("en-IN", {
+                {itinerary.publishedTitle} · Updated{" "}
+                {itinerary.publishedAt.toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
@@ -299,8 +301,9 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       {/* Price summary */}
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display font-bold text-foreground">Price Summary</h2>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">{GST_INCLUDED_NOTE}</p>
         <dl className="mt-4 space-y-2 text-sm">
-          <Row label="Total Booking Amount" value={inr.format(finance.bookingAmount)} />
+          <Row label="Total Booking Amount (incl. GST)" value={inr.format(finance.bookingAmount)} />
           {finance.discountAmount > 0 && (
             <Row label="Discount" value={`– ${inr.format(finance.discountAmount)}`} />
           )}
@@ -325,6 +328,11 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
             </a>
           )}
         </div>
+        {invoiceAvailable && (
+          <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-[12px] font-semibold text-primary">
+            {SHOW_SUMMARY_NOTE}
+          </p>
+        )}
       </div>
 
       {/* Payment history for this booking */}

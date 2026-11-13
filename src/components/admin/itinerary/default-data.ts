@@ -254,6 +254,25 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
     { id: "exc-7", category: "Cover", text: "Travel insurance and medical expenses" },
   ],
 
+  // Winter-first starting list (most trips run Nov–Mar) — staff edit/remove
+  // per itinerary, e.g. swap the clothing rows for light woollens in summer.
+  // Same-category rows adjacent, same grouping rule as inc/exc.
+  checklist: [
+    { id: "chk-1", category: "Documents", text: "Government photo ID for every traveller (Aadhaar, passport or driving licence)" },
+    { id: "chk-2", category: "Documents", text: "This itinerary and your booking summary, printed or on your phone" },
+    { id: "chk-3", category: "Warm Clothing", text: "Thermal inner wear for every day of the trip" },
+    { id: "chk-4", category: "Warm Clothing", text: "Heavy jacket or down coat and woollen sweaters" },
+    { id: "chk-5", category: "Warm Clothing", text: "Woollen cap, gloves, muffler and woollen socks" },
+    { id: "chk-6", category: "Warm Clothing", text: "Waterproof shoes or snow boots with a good grip" },
+    { id: "chk-7", category: "Health & Comfort", text: "Thermos flask for hot drinking water" },
+    { id: "chk-8", category: "Health & Comfort", text: "Personal medicines and a small first-aid kit" },
+    { id: "chk-9", category: "Health & Comfort", text: "Moisturiser, lip balm and cold cream for the dry, cold air" },
+    { id: "chk-10", category: "Health & Comfort", text: "Sunscreen and sunglasses — snow glare is strong" },
+    { id: "chk-11", category: "Good to Know", text: "Carry a postpaid SIM — prepaid SIMs from outside J&K usually do not work in Kashmir" },
+    { id: "chk-12", category: "Good to Know", text: "Keep some cash — ATMs are limited in Gulmarg, Pahalgam and Sonamarg" },
+    { id: "chk-13", category: "Good to Know", text: "Power bank — phone batteries drain faster in the cold" },
+  ],
+
   // Short tag pills shown under the "how payment works" card — the steps
   // themselves are payStep1/2 below.
   pay: ["GST included", "No card fee", "No UPI fee"],

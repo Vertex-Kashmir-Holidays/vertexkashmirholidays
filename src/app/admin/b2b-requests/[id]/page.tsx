@@ -7,8 +7,10 @@ import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
+import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { CreateB2bItineraryButton } from "@/components/admin/b2b/CreateB2bItineraryButton";
 import { B2bConvertAction } from "@/components/admin/b2b/B2bConvertAction";
+import { EditB2bRequestButton } from "@/components/admin/b2b/EditB2bRequestButton";
 import {
   B2B_STATUS_LABELS as STATUS_LABELS,
   isItinerarySent,
@@ -66,16 +68,26 @@ export default async function AdminB2bRequestDetailPage({
       bookingId: true,
       b2bAgent: { select: { id: true, name: true, email: true, agencyName: true } },
       locked: true,
-      itinerary: { select: { id: true, status: true, updatedAt: true, locked: true } },
+      itinerary: { select: { id: true, status: true, updatedAt: true, locked: true, publishedAt: true } },
+      booking: { select: { servicesLocked: true } },
     },
   });
   if (!lead || lead.b2bAgentId === null) notFound();
 
   const canManageItinerary = await can(role, "itinerary", "create");
   const canConvert = await can(role, "b2bRequests", "edit");
-  const itinerarySent = isItinerarySent(lead.itinerary?.status);
-  // Converted → locked with the booking, until an admin unlocks it for changes.
-  const itineraryLocked = lead.locked || !!lead.itinerary?.locked;
+  // Same rule as PATCH /api/admin/b2b-requests/[id]: frozen once converted.
+  const canEditRequest = canConvert && lead.status !== "CONVERTED" && !lead.locked;
+  const ymd = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
+  // Matches the convert route: "sent" = published to the agent.
+  const itinerarySent = isItinerarySent(lead.itinerary?.status) && !!lead.itinerary?.publishedAt;
+  // Converted → locked while the booking's services are (resolveB2bItineraryAccess).
+  const itineraryLocked = lead.itinerary
+    ? resolveB2bItineraryAccess(
+        { locked: lead.itinerary.locked, lead },
+        { role, canEditItineraries: canManageItinerary },
+      ).locked
+    : lead.locked;
   const settings = canConvert ? await getSiteSettings() : null;
   const gstRates = parseGstRates(settings?.gstRates);
 
@@ -98,9 +110,28 @@ export default async function AdminB2bRequestDetailPage({
             {lead.b2bAgent?.agencyName ?? lead.b2bAgent?.name} · {lead.b2bAgent?.email}
           </p>
         </div>
-        <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300">
-          {STATUS_LABELS[lead.status as B2bRequestStatus] ?? lead.status}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {canEditRequest && (
+            <EditB2bRequestButton
+              requestId={lead.id}
+              initial={{
+                guestName: lead.name,
+                guestPhone: lead.phone,
+                days: lead.days?.toString() ?? "",
+                pax: lead.adults.toString(),
+                children: lead.children?.toString() ?? "",
+                rooms: lead.rooms?.toString() ?? "",
+                budget: lead.budget?.toString() ?? "",
+                startDate: ymd(lead.startDate),
+                endDate: ymd(lead.endDate),
+                notes: lead.notes ?? "",
+              }}
+            />
+          )}
+          <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300">
+            {STATUS_LABELS[lead.status as B2bRequestStatus] ?? lead.status}
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -187,13 +218,15 @@ export default async function AdminB2bRequestDetailPage({
                 ? "Generate an itinerary before this request can be converted."
                 : itinerarySent
                   ? "Ready to convert once amounts are confirmed with the agent."
-                  : "Send the itinerary to the agent (status Sent) before this request can be converted."}
+                  : "Publish the itinerary to the agent (Publish button in the itinerary editor) before this request can be converted."}
             </p>
             <B2bConvertAction
               leadId={lead.id}
               guestName={lead.name}
               gstRates={gstRates}
               itinerarySent={itinerarySent}
+              initialStartDate={lead.startDate?.toISOString().slice(0, 10) ?? ""}
+              initialEndDate={lead.endDate?.toISOString().slice(0, 10) ?? ""}
             />
           </div>
         ) : (

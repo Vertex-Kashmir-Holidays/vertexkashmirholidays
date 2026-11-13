@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus, QrCode } from "lucide-react";
+import { Trash2, Plus, QrCode, Sparkles, BookmarkPlus } from "lucide-react";
+import { DayPlanPicker } from "../day-plans/DayPlanPicker";
+import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
+import { guessRoute } from "@/lib/dayPlans/schema";
 import { Toolbar } from "./Toolbar";
 import { ItineraryCover } from "./ItineraryCover";
 import { LeadTripSync, LinkItineraryPanel } from "./LeadTripSync";
@@ -17,6 +20,7 @@ import { DEFAULT_ITINERARY_DATA } from "./default-data";
 import { downloadItineraryPdf, type TokenPaymentLink } from "@/lib/itinerary/export-pdf";
 import { buildDocumentTitle, isCopyTitle } from "@/lib/itinerary/documentTitle";
 import { UntouchedCopyGuard } from "./UntouchedCopyGuard";
+import { PublishBar, publishTo, type PublishState } from "./PublishBar";
 import { applyDayOrder } from "@/lib/itinerary/dayReorder";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import type { PdfSocialLinks } from "@/lib/pdf/contact";
@@ -33,6 +37,8 @@ import {
 } from "@/types/itinerary";
 
 type ListKey = "pay";
+/** Category + text row lists (same ListItem shape, same editor component). */
+type CategoryListKey = "inc" | "exc" | "checklist";
 
 // Must match MAX_HIGHLIGHTS in ItineraryPdf.tsx — that's what the PDF export
 // actually renders/truncates to, so the editor enforces the same cap up
@@ -82,6 +88,12 @@ interface ItineraryEditorProps {
    * token-Payment-Link QR mint on export rather than relying on it to fail.
    */
   disableTokenPaymentLink?: boolean;
+  /** When the client-visible copy was last published (ISO), or null if never — see src/lib/itinerary/publish.ts. */
+  initialPublishedAt?: string | null;
+  /** Last server save (ISO) — compared with initialPublishedAt for "unpublished changes". */
+  initialUpdatedAt?: string;
+  /** Destinations Library access: pick a day heading/description / save a day to the library. */
+  dayPlans?: { canPick: boolean; canSave: boolean };
 }
 
 export function ItineraryEditor({
@@ -99,6 +111,9 @@ export function ItineraryEditor({
   socialLinks,
   apiBasePath = "/api/itineraries",
   disableTokenPaymentLink = false,
+  initialPublishedAt = null,
+  initialUpdatedAt,
+  dayPlans = { canPick: false, canSave: false },
 }: ItineraryEditorProps) {
   const router = useRouter();
   const [data, setData] = useState<ItineraryData>(initialData);
@@ -109,6 +124,37 @@ export function ItineraryEditor({
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setExporting] = useState(false);
+
+  // Client visibility: customers only see the published snapshot. `savedData`
+  // is the last server-saved content, so `data !== savedData` = unsaved edits.
+  const [savedData, setSavedData] = useState<ItineraryData>(initialData);
+  const [savedAt, setSavedAt] = useState<string | undefined>(initialUpdatedAt);
+  const [publishedAt, setPublishedAt] = useState<string | null>(initialPublishedAt);
+  const publishState: PublishState = !publishedAt
+    ? "never"
+    : savedAt && new Date(savedAt) > new Date(publishedAt)
+      ? "stale"
+      : "current";
+  const publishUrl = id ? `${apiBasePath}/${id}/publish` : null;
+
+  /** After a save/download: nudge staff that the customer can't see this yet. */
+  function promptPublish(message: string) {
+    if (!publishUrl || !canSave) return;
+    toast.info(message, {
+      duration: 10000,
+      action: {
+        label: "Publish to customer",
+        onClick: async () => {
+          const at = await publishTo(publishUrl);
+          if (!at) return;
+          setPublishedAt(at);
+          setSavedAt(at);
+          toast.success("Published — the customer now sees this version.");
+          router.refresh();
+        },
+      },
+    });
+  }
 
   /* ---------- cover ---------- */
   const updateCover = (field: keyof ItineraryData, value: string) =>
@@ -155,6 +201,12 @@ export function ItineraryEditor({
   const removeDay = (dayId: string) =>
     setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
   const reorderDays = (next: ItineraryDay[]) => setData((p) => applyDayOrder(p, next));
+
+  // Destinations Library — a picked plan replaces ONLY the day's heading and
+  // description (meals, stay, highlights, photo and date untouched); the copy
+  // is this itinerary's own and never changes the library. Same as proposals.
+  const [pickForDay, setPickForDay] = useState<string | null>(null);
+  const [saveDay, setSaveDay] = useState<ItineraryDay | null>(null);
 
   const addMeta = (dayId: string) =>
     setData((p) => ({
@@ -349,11 +401,11 @@ export function ItineraryEditor({
   const removeListItem = (key: ListKey, idx: number) =>
     setData((p) => ({ ...p, [key]: p[key].filter((_, i) => i !== idx) }));
 
-  /* ---------- inclusions/exclusions (category + text rows) ---------- */
-  const addListItemRow = (key: "inc" | "exc") =>
+  /* ---------- inclusions/exclusions/check list (category + text rows) ---------- */
+  const addListItemRow = (key: CategoryListKey) =>
     setData((p) => ({ ...p, [key]: [...p[key], { id: genId("li"), category: "", text: "" }] }));
   const updateListItemRow = (
-    key: "inc" | "exc",
+    key: CategoryListKey,
     id: string,
     field: "category" | "text",
     value: string,
@@ -362,7 +414,7 @@ export function ItineraryEditor({
       ...p,
       [key]: p[key].map((v) => (v.id === id ? { ...v, [field]: value } : v)),
     }));
-  const removeListItemRow = (key: "inc" | "exc", id: string) =>
+  const removeListItemRow = (key: CategoryListKey, id: string) =>
     setData((p) => ({ ...p, [key]: p[key].filter((v) => v.id !== id) }));
 
   /* ---------- cancellation tiers (label + charge rows) ---------- */
@@ -377,10 +429,10 @@ export function ItineraryEditor({
     setData((p) => ({ ...p, cancel: p.cancel.filter((v) => v.id !== id) }));
 
   /* ---------- actions ---------- */
-  async function handleSave() {
+  async function handleSave(opts: { promptPublish?: boolean } = { promptPublish: true }): Promise<boolean> {
     if (!data.preparedFor.trim()) {
       toast.error("Please enter the customer name (Prepared For).");
-      return;
+      return false;
     }
     setSaving(true);
     try {
@@ -392,14 +444,27 @@ export function ItineraryEditor({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Save failed");
-      toast.success("Itinerary saved.");
+      setSavedData(data);
+      setSavedAt(json.updatedAt ?? new Date().toISOString());
       if (!id && json.id) {
+        toast.success("Itinerary saved.");
         router.replace(`/admin/itinerary/${json.id}`);
       } else {
+        if (opts.promptPublish) {
+          promptPublish(
+            publishedAt
+              ? "Saved. The customer still sees the previously published version."
+              : "Saved. The customer can't see this itinerary until you publish it.",
+          );
+        } else {
+          toast.success("Itinerary saved.");
+        }
         router.refresh();
       }
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -417,7 +482,7 @@ export function ItineraryEditor({
           const res = await fetch(`${apiBasePath}/${id}/token-payment-link`, { method: "POST" });
           const json = await res.json().catch(() => ({}));
           if (res.ok) {
-            tokenPaymentLink = { shortUrl: json.shortUrl, amountRupees: json.amountRupees };
+            tokenPaymentLink = { shortUrl: json.shortUrl, amountRupees: json.amountRupees, totalRupees: json.totalRupees };
           } else {
             toast.warning(json.error ?? "Could not generate the payment QR — exporting without it.");
           }
@@ -441,21 +506,17 @@ export function ItineraryEditor({
       } else {
         toast.success(`PDF downloaded (${kb} KB).`);
       }
-      // Downloading the PDF means it's being shared with the customer — bump a
-      // still-draft itinerary out of DRAFT so it becomes visible in their
-      // account (DRAFT is hidden there — see itineraryVisible in
-      // account/bookings/[id]/page.tsx). Never downgrades an already
-      // SENT/CONFIRMED itinerary.
-      if (id && status === "DRAFT") {
-        const res = await fetch(`${apiBasePath}/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "SENT" }),
-        });
-        if (res.ok) {
-          setStatus("SENT");
-          router.refresh();
-        }
+      // Downloading no longer shares it automatically — the customer's account
+      // only shows what's explicitly published (src/lib/itinerary/publish.ts).
+      // Nudge instead when their copy is missing or behind.
+      if (data !== savedData) {
+        toast.info("This PDF includes unsaved changes — save and publish to update the customer's account.");
+      } else if (publishState !== "current") {
+        promptPublish(
+          publishedAt
+            ? "The customer's account still shows the older published version."
+            : "The customer can't see this itinerary in their account until you publish it.",
+        );
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PDF export failed");
@@ -488,13 +549,28 @@ export function ItineraryEditor({
         title={displayTitle}
         status={status}
         onStatusChange={setStatus}
-        onSave={handleSave}
+        onSave={() => void handleSave()}
         onExport={handleExport}
         onReset={handleReset}
         isSaving={isSaving}
         isExporting={isExporting}
         canSave={canSave}
       />
+      {publishUrl && (
+        <PublishBar
+          publishUrl={publishUrl}
+          audience="customer"
+          state={publishState}
+          publishedAt={publishedAt}
+          dirty={data !== savedData}
+          onSave={() => handleSave({ promptPublish: false })}
+          canPublish={canSave}
+          onPublished={(at) => {
+            setPublishedAt(at);
+            setSavedAt(at);
+          }}
+        />
+      )}
       {id && (
         <UntouchedCopyGuard
           active={ownsCopy && isCopyTitle(initialTitle)}
@@ -688,6 +764,30 @@ export function ItineraryEditor({
                         <Plus className="h-3 w-3" /> detail
                       </button>
                     </div>
+                    {(dayPlans.canPick || dayPlans.canSave) && (
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#EDF3EF] pt-3 no-print dark:border-mute/20">
+                        {dayPlans.canPick ? (
+                          <button
+                            type="button"
+                            onClick={() => setPickForDay(day.id)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#145C3E] px-2.5 py-1 text-[12px] font-bold text-white hover:brightness-110 dark:bg-primary dark:text-primary-foreground"
+                          >
+                            <Sparkles className="h-3 w-3" /> Pick from library
+                          </button>
+                        ) : (
+                          <span />
+                        )}
+                        {dayPlans.canSave && (
+                          <button
+                            type="button"
+                            onClick={() => setSaveDay(day)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#145C3E]/30 px-2.5 py-1 text-[12px] font-bold text-[#145C3E] hover:bg-[#E8F2EB] dark:border-primary/30 dark:text-primary dark:hover:bg-primary/10"
+                          >
+                            <BookmarkPlus className="h-3 w-3" /> Save to library
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="relative h-[200px] shrink-0 overflow-hidden rounded-b-xl sm:h-auto sm:w-[150px] sm:rounded-bl-none sm:rounded-r-xl">
@@ -720,6 +820,23 @@ export function ItineraryEditor({
                 </div>
               )}
             </ReorderableList>
+            {pickForDay && (
+              <DayPlanPicker
+                open
+                onOpenChange={(o) => !o && setPickForDay(null)}
+                dayNumber={data.days.findIndex((d) => d.id === pickForDay) + 1}
+                onPick={(plan) => updateDay(pickForDay, { title: plan.title, body: plan.body })}
+              />
+            )}
+            {saveDay && (
+              <DayPlanFormDialog
+                open
+                onOpenChange={(o) => !o && setSaveDay(null)}
+                title="Save this day to the library"
+                initial={{ ...EMPTY_DAY_PLAN, ...guessRoute(saveDay.title), title: saveDay.title, body: saveDay.body }}
+                onSaved={() => {}}
+              />
+            )}
 
             <button
               onClick={addDay}
@@ -1182,6 +1299,16 @@ export function ItineraryEditor({
                 onAdd={() => addListItemRow("exc")}
                 addLabel="Add exclusion"
               />
+              <ListColumn
+                title="Travel Check List"
+                items={data.checklist}
+                tone="check"
+                onUpdateCategory={(id, v) => updateListItemRow("checklist", id, "category", v)}
+                onUpdateText={(id, v) => updateListItemRow("checklist", id, "text", v)}
+                onRemove={(id) => removeListItemRow("checklist", id)}
+                onAdd={() => addListItemRow("checklist")}
+                addLabel="Add check list item"
+              />
             </div>
 
             <Footer />
@@ -1388,7 +1515,7 @@ export function ItineraryEditor({
                 </div>
                 <div className="flex flex-col items-center">
                   {/* No image picker here anymore — the QR is a live,
-                     itinerary-specific Razorpay Payment Link (fixed token
+                     itinerary-specific Razorpay Payment Link (10% token
                      amount, never a staff-uploaded image), generated fresh
                      each time the PDF is exported. See
                      src/lib/itinerary/tokenPaymentLink.ts. */}
@@ -1486,7 +1613,7 @@ function ListColumn({
 }: {
   title: string;
   items: ListItem[];
-  tone: "inc" | "exc";
+  tone: "inc" | "exc" | "check";
   onUpdateCategory: (id: string, v: string) => void;
   onUpdateText: (id: string, v: string) => void;
   onRemove: (id: string) => void;
@@ -1502,7 +1629,7 @@ function ListColumn({
         {items.map((item) => (
           <li key={item.id} className="listrow group relative flex items-start gap-2.5 pr-6">
             <span
-              className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}
+              className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center text-white ${tone === "check" ? "rounded bg-[hsl(38_70%_45%)]" : tone === "inc" ? "rounded-full bg-[hsl(156_40%_21%)] dark:bg-primary" : "rounded-full bg-rose-500"}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1513,7 +1640,7 @@ function ListColumn({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                {tone === "inc" ? <path d="M20 6 9 17l-5-5" /> : <path d="M18 6 6 18M6 6l12 12" />}
+                {tone === "exc" ? <path d="M18 6 6 18M6 6l12 12" /> : <path d="M20 6 9 17l-5-5" />}
               </svg>
             </span>
             <div className="min-w-0 flex-1">

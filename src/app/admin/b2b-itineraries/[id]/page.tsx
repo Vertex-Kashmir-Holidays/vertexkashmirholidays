@@ -38,6 +38,7 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
           locked: true,
           status: true,
           bookingId: true,
+          booking: { select: { servicesLocked: true } },
           b2bAgent: { select: { agencyName: true, agencyLogoUrl: true, phone: true, email: true } },
         },
       },
@@ -48,9 +49,8 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
   const parsed = itineraryDataSchema.safeParse(record.data);
   let data: ItineraryData = parsed.success ? parsed.data : DEFAULT_ITINERARY_DATA;
 
-  // Converted → locked with its booking; an admin may edit again while the
-  // booking is unlocked for changes (resolveB2bItineraryAccess — the save API
-  // enforces the same rule).
+  // Converted → an admin may edit while the booking's services are unlocked
+  // (resolveB2bItineraryAccess — the save API enforces the same rule).
   const access = resolveB2bItineraryAccess(
     { locked: record.locked, lead: record.lead },
     { role, canEditItineraries: await can(role, "itinerary", "edit") },
@@ -100,11 +100,11 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
             </>
           ) : access.canEdit ? (
             <>
-              <strong>Unlocked for corrections.</strong> Save your changes, then re-lock the
-              services on{" "}
+              <strong>Editable until the booking&rsquo;s services are locked.</strong> Save your
+              changes, then lock the services on{" "}
             </>
           ) : (
-            <>Unlocked for corrections — only an admin can edit it. See </>
+            <>Editable until the booking&rsquo;s services are locked — only an admin can edit it. See </>
           )}
           {record.lead.bookingId ? (
             <Link
@@ -124,6 +124,8 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
         initialData={data}
         initialTitle={record.title}
         initialStatus={record.status}
+        initialPublishedAt={record.publishedAt?.toISOString() ?? null}
+        initialUpdatedAt={record.updatedAt.toISOString()}
         canSave={canSave}
         apiBasePath="/api/admin/b2b-itineraries"
         agent={record.lead.b2bAgent}

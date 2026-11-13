@@ -251,6 +251,12 @@ export const itineraryDataSchema = z.object({
   // itinerary saved before this shape existed still loads.
   inc: z.preprocess(migrateLegacyListItems, z.array(listItemSchema)).default([]),
   exc: z.preprocess(migrateLegacyListItems, z.array(listItemSchema)).default([]),
+  // Check List — what to carry (warm clothes, ID, hot water flask…), same
+  // category + text rows as inc/exc and grouped the same way in the PDF.
+  // Defaulted so itineraries saved before it existed still parse;
+  // src/app/admin/itinerary/[id]/page.tsx seeds the default list on load only
+  // when the key is absent, so a list staff deliberately emptied stays empty.
+  checklist: z.array(listItemSchema).default([]),
   // Short tag pills shown under the "how payment works" card (e.g. "GST
   // included"), not a bulleted list — see payStep1/2 below for the actual steps.
   pay: z.array(z.string()),

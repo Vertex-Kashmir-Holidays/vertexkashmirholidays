@@ -9,6 +9,7 @@ import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import { wasServicesUnlocked } from "@/lib/bookings/audit";
+import { toDateInputValue } from "@/lib/bookings/serviceDisplay";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
 import {
@@ -50,6 +51,16 @@ export default async function BookingServicesPage({ params, searchParams }: Page
   const canViewProfit = role === "SUPERADMIN" || role === "ADMIN";
   // Unlocking (services or the converted lead's itinerary) is an admin-only correction.
   const canUnlock = canEdit && isAdminRole(role);
+
+  // Active hotels offered as picks in the Hotel Name field (links the stay
+  // to the hotel list for the Trips board's hotel view).
+  const hotelOptions = (
+    await prisma.hotelSupplier.findMany({
+      where: { isActive: true },
+      orderBy: { hotelName: "asc" },
+      select: { id: true, hotelName: true, destination: true },
+    })
+  ).map((h) => ({ id: h.id, name: h.hotelName, destination: h.destination }));
 
   const booking = await prisma.booking.findFirst({
     where: { id, deletedAt: null, ...(await bookingWhereForUser(role, userId)) },
@@ -118,6 +129,11 @@ export default async function BookingServicesPage({ params, searchParams }: Page
       location: s.location,
       nights: s.nights,
       roomType: s.roomType,
+      rooms: s.rooms,
+      checkIn: toDateInputValue(s.checkIn),
+      checkOut: toDateInputValue(s.checkOut),
+      hotelSupplierId: s.hotelSupplierId,
+      hotelConfirmation: s.hotelConfirmation,
       pickup: s.pickup,
       dropoff: s.dropoff,
       timing: s.timing,
@@ -188,6 +204,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             canViewProfit={canViewProfit}
             canUnlock={canUnlock}
             isRelock={isRelock}
+            hotelOptions={hotelOptions}
           />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}
@@ -198,7 +215,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             isLeadConverted={!!lead}
             isB2bLead={!!lead?.b2bAgentId}
             leadItineraryId={lead?.itinerary?.id ?? null}
-            leadLocked={lead?.locked ?? false}
+            // A B2B request's itinerary follows the services lock (resolveB2bItineraryAccess).
+            leadLocked={lead?.b2bAgentId ? booking.servicesLocked : (lead?.locked ?? false)}
             itinerary={booking.itinerary ?? null}
             canCreate={canCreateItinerary}
           />

@@ -23,11 +23,16 @@ export function ItineraryDownloadButton({ bookingId }: Props) {
 
       // Resolve (reuse or mint) the same token Payment Link staff would see —
       // best-effort: a failure here shouldn't block the download, just the QR.
-      let tokenPaymentLink: { shortUrl: string; amountRupees: number } | undefined;
+      let tokenPaymentLink: { shortUrl: string; amountRupees: number; totalRupees?: number } | undefined;
       try {
         const linkRes = await fetch(`/api/account/bookings/${bookingId}/token-payment-link`);
         const linkJson = await linkRes.json().catch(() => ({}));
-        if (linkRes.ok) tokenPaymentLink = { shortUrl: linkJson.shortUrl, amountRupees: linkJson.amountRupees };
+        if (linkRes.ok)
+          tokenPaymentLink = {
+            shortUrl: linkJson.shortUrl,
+            amountRupees: linkJson.amountRupees,
+            totalRupees: linkJson.totalRupees,
+          };
       } catch {
         // ignore — export proceeds without a QR
       }

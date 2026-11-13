@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { dayPlanAccess } from "@/lib/dayPlans/access";
 import { prisma } from "@/lib/prisma";
 import { ProposalEditor } from "@/components/admin/proposal/ProposalEditor";
 import { DEFAULT_PROPOSAL_DATA } from "@/components/admin/proposal/default-data";
@@ -41,6 +42,8 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
   const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
   const { address: companyAddress } = await resolvePrimaryOffice(settings);
   const trustContent = await getPdfTrustContent();
+  // Picking only fills the editor — saving the proposal still needs canSave.
+  const dayPlans = await dayPlanAccess(role);
 
   return (
     <ProposalEditor
@@ -51,6 +54,7 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
       canSave={canSave}
       ownsCopy={ownsCopy}
       canConvert={canConvert}
+      dayPlans={{ canPick: canSave && dayPlans.canPick, canSave: dayPlans.canSave }}
       companyAddress={companyAddress}
       trustContent={trustContent}
       socialLinks={{

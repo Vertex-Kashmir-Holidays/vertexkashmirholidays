@@ -9,8 +9,8 @@ import { driverDueTravelDateRange, type DriverDueBooking } from "@/lib/bookings/
 export const dynamic = "force-dynamic";
 
 /**
- * Bookings the signed-in staff member can see that start tomorrow or today
- * and still have no driver — feeds the blocking DriverDueGate. Staff who
+ * Locked bookings the signed-in staff member can see that start tomorrow or
+ * today and still have no driver — feeds the DriverDueGate reminder. Staff who
  * can't edit bookings get an empty list (they couldn't add a driver anyway).
  */
 export async function GET() {
@@ -23,6 +23,8 @@ export async function GET() {
   const rows = await prisma.booking.findMany({
     where: {
       deletedAt: null,
+      // A driver can only be added once services are locked (DriverSection).
+      servicesLocked: true,
       status: { notIn: ["CANCELLED", "FAILED", "REFUNDED"] },
       travelDate: driverDueTravelDateRange(),
       // AND, not a spread — the staff scope is itself an OR clause.
@@ -32,7 +34,7 @@ export async function GET() {
       ],
     },
     orderBy: { travelDate: "asc" },
-    select: { id: true, guestName: true, travelDate: true, servicesLocked: true },
+    select: { id: true, guestName: true, travelDate: true },
   });
 
   const bookings: DriverDueBooking[] = rows.map((b) => ({

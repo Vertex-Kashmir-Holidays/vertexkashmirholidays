@@ -7,6 +7,7 @@ import { syncBookingCommission } from "@/lib/bookings/commissionSync";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import type { Role } from "@/lib/rbac";
 import type { ServiceKind } from "@prisma/client";
+import { hotelLinkData } from "@/lib/bookings/hotelLink";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
+  const link = d.kind === "HOTEL" ? await hotelLinkData(d) : { data: {} };
+  if ("error" in link) return NextResponse.json({ error: link.error }, { status: 422 });
+
   const created = await prisma.bookingService.create({
     data: {
       bookingId: id,
@@ -72,10 +76,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       location: d.location ?? null,
       nights: d.nights ?? null,
       roomType: d.roomType ?? null,
+      rooms: d.rooms ?? null,
+      checkIn: d.checkIn ?? null,
+      checkOut: d.checkOut ?? null,
       pickup: d.pickup ?? null,
       dropoff: d.dropoff ?? null,
       timing: d.timing ?? null,
       sortOrder: d.sortOrder ?? 0,
+      ...link.data,
     },
   });
   await syncBookingCommission(prisma, id);

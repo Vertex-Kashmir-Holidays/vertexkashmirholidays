@@ -2,6 +2,7 @@ import type { Lead, Prisma } from "@prisma/client";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { computeGstDeduction, computeBookingProfit, computeCommission } from "@/lib/bookings/commission";
 import { buildServicesFromItinerary } from "@/lib/bookings/itineraryToServices";
+import { matchHotelSupplierIds } from "@/lib/bookings/hotelLink";
 import { pickAttribution } from "@/lib/attribution";
 import { itineraryDataSchema } from "@/types/itinerary";
 
@@ -87,13 +88,15 @@ export async function convertLeadToBooking(
     throw new LeadAlreadyConvertedError();
   }
 
+  // Both convert routes require a start date before calling in.
+  if (!lead.startDate) throw new Error("A travel start date is required to convert.");
   const travellers = lead.adults + (lead.children ?? 0);
   const booking = await tx.booking.create({
     data: {
       userId: customerId,
       amount: bookingAmount,
       status: "PENDING",
-      travelDate: lead.startDate ?? new Date(),
+      travelDate: lead.startDate,
       travelEndDate: lead.endDate ?? null,
       travellers: travellers > 0 ? travellers : 1,
       guestName: lead.name,
@@ -155,6 +158,9 @@ export async function convertLeadToBooking(
     where: { id: lead.id },
     data: {
       status: "CONVERTED",
+      // Persist dates confirmed at conversion (the B2B dialog can supply them).
+      startDate: lead.startDate,
+      endDate: lead.endDate,
       negotiatedAmount: bookingAmount,
       tokenAmount,
       booking: { connect: { id: booking.id } },
@@ -180,8 +186,18 @@ export async function convertLeadToBooking(
     if (parsedItinerary.success) {
       const services = buildServicesFromItinerary(parsedItinerary.data);
       if (services.length > 0) {
+        const hotelIds = await matchHotelSupplierIds(
+          tx,
+          services.filter((s) => s.kind === "HOTEL").map((s) => s.name),
+        );
         await tx.bookingService.createMany({
-          data: services.map((s, i) => ({ ...s, bookingId: booking.id, sortOrder: i })),
+          data: services.map((s, i) => ({
+            ...s,
+            bookingId: booking.id,
+            sortOrder: i,
+            hotelSupplierId:
+              s.kind === "HOTEL" ? (hotelIds.get(s.name.trim().toLowerCase()) ?? null) : null,
+          })),
         });
       }
     }
