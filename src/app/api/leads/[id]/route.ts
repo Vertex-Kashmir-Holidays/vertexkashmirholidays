@@ -5,9 +5,7 @@ import { parsePackageOptions } from "@/lib/tours/content";
 import { requirePermission } from "@/lib/permissions";
 import { LeadStatus, LeadSource, LeadActivityType } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
-import { itineraryDataSchema } from "@/types/itinerary";
-import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
-import { uniqueItineraryTitle } from "@/lib/itinerary/list";
+import { leadFactsItineraryOps } from "@/lib/itinerary/leadFactsSync";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 import { phoneField } from "@/lib/leads/schema";
@@ -257,50 +255,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     startDate !== undefined ||
     endDate !== undefined;
 
-  const itinerarySyncOps: Prisma.PrismaPromise<unknown>[] = [];
-  if (itin && !itin.locked && tripFactsTouched) {
-    const parsedItin = itineraryDataSchema.safeParse(itin.data);
-    if (parsedItin.success) {
-      const facts = {
-        name: rest.name ?? existing.name,
-        phone: rest.phone ?? existing.phone,
-        tourTitle: tourId !== undefined ? (nextTourTitle ?? null) : (existing.tour?.title ?? null),
-        adults: rest.adults ?? existing.adults,
-        children: rest.children !== undefined ? rest.children : existing.children,
-        startDate:
-          startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
-        endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
-      };
-      const nextData = applyLeadFactsToItinerary(parsedItin.data, facts);
-      const changed =
-        nextData.preparedFor !== parsedItin.data.preparedFor ||
-        nextData.travelDates !== parsedItin.data.travelDates ||
-        nextData.duration !== parsedItin.data.duration ||
-        nextData.travelers !== parsedItin.data.travelers ||
-        nextData.packageType !== parsedItin.data.packageType ||
-        nextData.customerPhone !== parsedItin.data.customerPhone;
-      if (changed) {
-        const jsonData = nextData as unknown as Prisma.InputJsonValue;
-        // The standard name (name - duration - phone) follows the synced facts.
-        const title = await uniqueItineraryTitle(nextData, itin.id);
-        itinerarySyncOps.push(
-          prisma.itinerary.update({
-            where: { id: itin.id },
-            data: { title, data: jsonData, lastEditedById: performedById },
-          }),
-          prisma.itineraryHistory.create({
-            data: {
-              itineraryId: itin.id,
-              title,
-              data: jsonData,
-              editedById: performedById,
-              editedByName: performedByName,
-            },
-          }),
-        );
-      }
-    }
-  }
+  const itinerarySyncOps: Prisma.PrismaPromise<unknown>[] =
+    itin && tripFactsTouched
+      ? await leadFactsItineraryOps(
+          itin,
+          {
+            name: rest.name ?? existing.name,
+            phone: rest.phone ?? existing.phone,
+            tourTitle: tourId !== undefined ? (nextTourTitle ?? null) : (existing.tour?.title ?? null),
+            adults: rest.adults ?? existing.adults,
+            children: rest.children !== undefined ? rest.children : existing.children,
+            startDate:
+              startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
+            endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
+          },
+          { id: performedById, name: performedByName },
+        )
+      : [];
 
   // Converted lead unlocked for corrections: its booking follows the new price.
   let bookingAmountOp: Prisma.PrismaPromise<unknown> | null = null;
