@@ -18,6 +18,7 @@ import {
   Mail,
   Trash2,
   KeyRound,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
@@ -89,6 +90,8 @@ export function B2bAgentsClient({ initialAgents }: Props) {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // Agent being edited — reuses the create form/dialog, pre-filled.
+  const [editing, setEditing] = useState<AgentRow | null>(null);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   // Agents ticked for "Email agents" — kept across search and pages.
@@ -191,13 +194,34 @@ export function B2bAgentsClient({ initialAgents }: Props) {
     runAction("Delete", () => fetch(`/api/admin/b2b-agents/${a.id}`, { method: "DELETE" }));
   }
 
+  function openEdit(a: AgentRow) {
+    setForm({
+      name: a.name ?? "",
+      email: a.email,
+      phone: a.phone ?? "",
+      agencyName: a.agencyName ?? "",
+      agencyState: a.agencyState ?? "",
+      agencyLogoDataUrl: "",
+      agencyWebsite: a.agencyWebsite ?? "",
+      agencyRegistrationNumber: a.agencyRegistrationNumber ?? "",
+      agencyGstin: a.agencyGstin ?? "",
+    });
+    setFormError(null);
+    setEditing(a);
+  }
+
+  function closeForm() {
+    setCreating(false);
+    setEditing(null);
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/admin/b2b-agents", {
-          method: "POST",
+        const res = await fetch(editing ? `/api/admin/b2b-agents/${editing.id}` : "/api/admin/b2b-agents", {
+          method: editing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
@@ -208,15 +232,23 @@ export function B2bAgentsClient({ initialAgents }: Props) {
               ? data.error
               : data.error?.fieldErrors
                 ? Object.values(data.error.fieldErrors).flat()[0] as string
-                : "Could not create B2B agent.",
+                : editing
+                  ? "Could not update B2B agent."
+                  : "Could not create B2B agent.",
           );
         }
-        toast.success("B2B agent created — PENDING approval. Login credentials are emailed once approved.");
-        setCreating(false);
+        toast.success(
+          editing
+            ? "Agent details updated."
+            : "B2B agent created — PENDING approval. Login credentials are emailed once approved.",
+        );
+        closeForm();
         setForm(EMPTY_FORM);
         router.refresh();
       } catch (err) {
-        setFormError(err instanceof Error ? err.message : "Could not create B2B agent.");
+        setFormError(
+          err instanceof Error ? err.message : editing ? "Could not update B2B agent." : "Could not create B2B agent.",
+        );
       }
     });
   }
@@ -457,6 +489,14 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                                 <CalendarCheck2 className="h-3.5 w-3.5 text-muted-foreground" />
                                 {a._count.bookings} Bookings
                               </Link>
+                              <button
+                                type="button"
+                                onClick={() => openEdit(a)}
+                                className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                Edit details
+                              </button>
                               <NewB2bRequestForAgentButton
                                 agentId={a.id}
                                 agentLabel={a.agencyName ?? a.name ?? a.email}
@@ -530,10 +570,10 @@ export function B2bAgentsClient({ initialAgents }: Props) {
         activeCount={initialAgents.filter((a) => a.agencyStatus === "ACTIVE").length}
       />
 
-      <Dialog open={creating} onOpenChange={setCreating}>
+      <Dialog open={creating || !!editing} onOpenChange={(open) => !open && closeForm()}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>New B2B Agent</DialogTitle>
+            <DialogTitle>{editing ? `Edit ${editing.agencyName ?? "B2B Agent"}` : "New B2B Agent"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-3">
             {formError && (
@@ -580,6 +620,23 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                 />
               </div>
               <div className="col-span-2">
+                {editing?.agencyLogoUrl && (
+                  <div className="mb-2 flex items-center gap-3">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                      <Image
+                        src={editing.agencyLogoUrl}
+                        alt="Current logo"
+                        fill
+                        sizes="40px"
+                        className="object-contain p-1"
+                        unoptimized
+                      />
+                    </div>
+                    <p className="text-[12px] text-muted-foreground">
+                      Current logo — upload a new one below only to replace it.
+                    </p>
+                  </div>
+                )}
                 <LogoUploadField
                   onChange={(dataUrl) => setForm((f) => ({ ...f, agencyLogoDataUrl: dataUrl ?? "" }))}
                 />
@@ -619,14 +676,16 @@ export function B2bAgentsClient({ initialAgents }: Props) {
               </div>
             </div>
             <p className="text-[12px] text-muted-foreground">
-              Starts as PENDING. Login credentials are emailed to the agent once you approve them.
+              {editing
+                ? "Changing the email also changes the email they log in with. Their password stays the same."
+                : "Starts as PENDING. Login credentials are emailed to the agent once you approve them."}
             </p>
             <button
               type="submit"
               disabled={isPending}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Create Agent
+              {editing ? "Save Changes" : "Create Agent"}
             </button>
           </form>
         </DialogContent>
