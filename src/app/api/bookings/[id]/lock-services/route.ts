@@ -124,14 +124,12 @@ export async function POST(req: NextRequest, { params }: Params) {
   // presence is guaranteed by the precondition above; delivery is reported back.
   const emailed = sendEmail ? (await sendBookingSummaryEmail(id)).delivered : false;
 
-  if (isRelock) {
-    await logPaymentAudit({
-      event: "SERVICES_RELOCKED",
-      bookingId: id,
-      status: "success",
-      detail: `Re-locked by ${guard.user.name ?? guard.user.email}${sendEmail ? "; summary emailed" : "; no email"}`,
-    });
-  }
+  await logPaymentAudit({
+    event: isRelock ? "SERVICES_RELOCKED" : "SERVICES_LOCKED",
+    bookingId: id,
+    status: "success",
+    detail: `${isRelock ? "Re-locked" : "Locked (confirmed)"} by ${guard.user.name ?? guard.user.email}${sendEmail ? "; summary emailed" : "; no email"}`,
+  });
 
   return NextResponse.json({ ok: true, emailed });
 }

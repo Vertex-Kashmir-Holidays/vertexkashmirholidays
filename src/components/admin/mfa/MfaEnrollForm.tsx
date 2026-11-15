@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,10 +33,15 @@ export function MfaEnrollForm() {
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const codeFormRef = useRef<HTMLFormElement>(null);
+  // The last code auto-submitted, so a complete code is sent once, not on every keystroke.
+  const autoSubmitted = useRef("");
 
   const {
     register: registerCode,
     handleSubmit: handleCodeSubmit,
+    setValue: setCodeValue,
+    resetField: resetCodeField,
     formState: { isValid: codeValid },
   } = useForm<CodeValues>({ resolver: zodResolver(codeSchema), mode: "onChange" });
 
@@ -76,6 +81,8 @@ export function MfaEnrollForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error ?? "Incorrect code. Please try again.");
+        resetCodeField("code", { defaultValue: "" });
+        autoSubmitted.current = "";
         return;
       }
       setRecoveryCodes(data.recoveryCodes);
@@ -116,7 +123,7 @@ export function MfaEnrollForm() {
 
   if (step === "scan") {
     return (
-      <form onSubmit={handleCodeSubmit(handleVerify)} className="space-y-5">
+      <form ref={codeFormRef} onSubmit={handleCodeSubmit(handleVerify)} className="space-y-5">
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center gap-2 text-primary">
             <ShieldCheck className="h-5 w-5" />
@@ -159,7 +166,14 @@ export function MfaEnrollForm() {
               autoFocus
               {...registerCode("code", {
                 onChange: (e) => {
-                  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  e.target.value = value;
+                  setCodeValue("code", value, { shouldValidate: true });
+                  // A full 6-digit code submits itself (typed or pasted).
+                  if (value.length === 6 && autoSubmitted.current !== value) {
+                    autoSubmitted.current = value;
+                    setTimeout(() => codeFormRef.current?.requestSubmit());
+                  }
                 },
               })}
             />

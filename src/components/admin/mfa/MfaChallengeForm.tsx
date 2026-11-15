@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,9 @@ export function MfaChallengeForm() {
   const { update } = useSession();
   const [useRecoveryCode, setUseRecoveryCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  // The last code auto-submitted, so a complete code is sent once, not on every keystroke.
+  const autoSubmitted = useRef("");
 
   const schema = useMemo(
     () => z.object({ code: useRecoveryCode ? recoveryCodeSchema : totpCodeSchema }),
@@ -27,6 +30,7 @@ export function MfaChallengeForm() {
     register,
     handleSubmit,
     resetField,
+    setValue,
     formState: { isValid },
   } = useForm<Values>({ resolver: zodResolver(schema), mode: "onChange" });
 
@@ -42,6 +46,8 @@ export function MfaChallengeForm() {
       if (!res.ok) {
         toast.error(data.error ?? "Incorrect code. Please try again.");
         setVerifying(false);
+        resetField("code", { defaultValue: "" });
+        autoSubmitted.current = "";
         return;
       }
 
@@ -56,7 +62,7 @@ export function MfaChallengeForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2 text-primary">
           <ShieldCheck className="h-5 w-5" />
@@ -78,9 +84,16 @@ export function MfaChallengeForm() {
             autoFocus
             {...register("code", {
               onChange: (e) => {
-                e.target.value = useRecoveryCode
+                const value = useRecoveryCode
                   ? e.target.value.toUpperCase().slice(0, 14)
                   : e.target.value.replace(/\D/g, "").slice(0, 6);
+                e.target.value = value;
+                setValue("code", value, { shouldValidate: true });
+                // A full 6-digit code submits itself (typed or pasted).
+                if (!useRecoveryCode && value.length === 6 && autoSubmitted.current !== value) {
+                  autoSubmitted.current = value;
+                  setTimeout(() => formRef.current?.requestSubmit());
+                }
               },
             })}
           />

@@ -96,6 +96,8 @@ model User {
   // ── Season Rate Cards ────────────────────────────────────────────────────
   rateCardsUpdated         RateCard[]           @relation("RateCardUpdatedBy")
   rateCardRevisions        RateCardRevision[]   @relation("RateCardRevisionCreatedBy")
+  offerLetters             OfferLetter[]        @relation("OfferLetterEmployee")
+  offerLettersCreated      OfferLetter[]        @relation("OfferLetterCreatedBy")
 
   // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
@@ -407,6 +409,27 @@ model RateCardRevision {
   createdBy   User?    @relation("RateCardRevisionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@unique([rateCardId, version])
+}
+
+// Offer cum Appointment Letter issued to an employee (/admin/employees/[id]/offer-letter).
+// `data` is the full snapshot of what the letter prints (validated by
+// src/lib/offerLetters/schema.ts), so a letter re-downloads exactly as issued
+// even after the employee's profile changes. Editable until it is emailed
+// (sentAt set); after that a correction is a new letter with a new refNo.
+model OfferLetter {
+  id          String    @id @default(cuid())
+  refNo       String    @unique
+  employeeId  String
+  employee    User      @relation("OfferLetterEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  data        Json
+  sentAt      DateTime?
+  sentTo      String?
+  createdById String?
+  createdBy   User?     @relation("OfferLetterCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([employeeId])
 }
 
 enum RateCardStatus {

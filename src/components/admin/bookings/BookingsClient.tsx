@@ -260,7 +260,7 @@ export function BookingsClient({
       </div>
 
       {cardStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${cardStats.isAdmin ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
           <StatCard
             label={cardStats.isAdmin ? "Bookings" : "My Bookings"}
             value={cardStats.bookingsCount.all}
@@ -275,9 +275,9 @@ export function BookingsClient({
             icon={IndianRupee}
             accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
           />
-          {cardStats.isAdmin && cardStats.bookingsProfit && (
+          {cardStats.bookingsProfit && (
             <StatCard
-              label="Booking Profit"
+              label={cardStats.isAdmin ? "Booking Profit" : "My Booking Profit"}
               value={fmtINR(cardStats.bookingsProfit.all)}
               sub={`${fmtINR(cardStats.bookingsProfit.month)} this month`}
               icon={TrendingUp}

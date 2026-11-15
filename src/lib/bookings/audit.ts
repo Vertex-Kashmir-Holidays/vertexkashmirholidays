@@ -14,6 +14,8 @@ export type PaymentAuditEvent =
   | "CREDENTIALS_RESENT"
   | "EMAILS_RESENT"
   | "TOKEN_LINK_CREATED"
+  // First services lock = booking confirmed (dashboard activity feed).
+  | "SERVICES_LOCKED"
   // Admin services-lock corrections (unlock-services / re-lock via lock-services).
   | "SERVICES_UNLOCKED"
   | "SERVICES_RELOCKED";
