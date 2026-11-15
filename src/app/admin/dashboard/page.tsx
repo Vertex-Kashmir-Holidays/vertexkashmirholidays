@@ -1,765 +1,352 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import {
-  TrendingUp,
-  TrendingDown,
-  IndianRupee,
-  CalendarDays,
-  MessageSquare,
-  BarChart3,
-  CreditCard,
-  Star,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Plus,
-  MapPin,
+  BellRing,
+  BookOpen,
+  CalendarCheck2,
   FileText,
-  ExternalLink,
-  Download,
-  Settings,
+  Filter,
+  IndianRupee,
+  Map,
+  Plane,
+  Plus,
+  Send,
+  Star,
+  Tags,
+  UserPlus,
+  Users,
+  Zap,
+  CheckCircle2,
+  type LucideIcon,
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
-import { bookingWhereForUser, canSeeB2bBookings } from "@/lib/bookings/scope";
+import type { ModuleKey } from "@/lib/rbac";
 import { RevenueChart } from "@/components/admin/RevenueChartLazy";
-import { computeBookingFinance, round2, type PaymentStatus } from "@/lib/bookings/finance";
+import {
+  getBookingKpi,
+  getLeadKpis,
+  getPendingReviews,
+  getPipeline,
+  getRecentBookings,
+  getRecentLeads,
+  getRevenueByMonth,
+  getUpcomingTrips,
+  getActivity,
+  type DashboardUser,
+} from "@/lib/dashboard/data";
+import { KpiCard, Panel } from "@/components/admin/dashboard/parts";
+import { Pipeline } from "@/components/admin/dashboard/Pipeline";
+import {
+  AlertsList,
+  RecentBookingsTable,
+  RecentLeadsTable,
+  TripsTable,
+  type Alert,
+} from "@/components/admin/dashboard/Lists";
 
 export const metadata: Metadata = { title: "Dashboard — Admin" };
 export const dynamic = "force-dynamic";
 
-const PLACEHOLDER =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMGYyNjVjIi8+PC9zdmc+";
+// Role-aware dashboard: every widget is shown only when the signed-in role
+// can view the module behind it (Roles & Permissions), and its data is scoped
+// like that module's own page — admins see the whole company, sales see their
+// own leads and trips. Data loaders: src/lib/dashboard/data.ts.
 
-function pctChange(current: number, previous: number) {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 1000) / 10;
-}
-
-function fmtINR(n: number) {
-  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(2)} L`;
-  if (n >= 1000) return `₹${(Math.round(n / 100) * 100).toLocaleString("en-IN")}`;
-  return `₹${n.toLocaleString("en-IN")}`;
-}
-
-function fmtDate(d: Date) {
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
-const STATUS_STYLES: Record<
-  string,
-  { label: string; className: string; Icon: typeof CheckCircle2 }
-> = {
-  PAID: {
-    label: "Paid",
-    className: "bg-green-500/15 text-green-700 dark:text-green-300",
-    Icon: CheckCircle2,
-  },
-  PENDING: {
-    label: "Pending",
-    className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
-    Icon: Clock,
-  },
-  FAILED: {
-    label: "Failed",
-    className: "bg-red-500/15 text-red-700 dark:text-red-300",
-    Icon: XCircle,
-  },
-  CANCELLED: { label: "Cancelled", className: "bg-muted text-muted-foreground", Icon: XCircle },
-  REFUNDED: {
-    label: "Refunded",
-    className: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-    Icon: AlertCircle,
-  },
-  // CONFIRMED was missing here, so every confirmed booking silently fell
-  // through to the PENDING fallback below — a booking can be CONFIRMED
-  // (going ahead) independent of how much has actually been paid, see
-  // PAYMENT_STATUS_STYLES for the money-received signal shown alongside it.
-  CONFIRMED: {
-    label: "Confirmed",
-    className: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
-    Icon: CheckCircle2,
-  },
-};
-
-// Derived "how much has actually been paid" — kept separate from the booking
-// lifecycle status above, same as src/lib/bookings/finance.ts's own
-// PaymentStatus type (never stored, always computed from the payment ledger).
-const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
-  FULL: "bg-green-500/15 text-green-700 dark:text-green-300",
-  PARTIAL: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  PENDING: "bg-muted text-muted-foreground",
-};
-const PAYMENT_STATUS_LABELS_SHORT: Record<PaymentStatus, string> = {
-  FULL: "Paid in full",
-  PARTIAL: "Partially paid",
-  PENDING: "Unpaid",
-};
-
-const LEAD_STATUS_STYLES: Record<string, string> = {
-  NEW: "bg-link/10 text-link",
-  CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
-  NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-  QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  NEGOTIATION: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  ON_HOLD: "bg-muted text-muted-foreground",
-  CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-  REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
-};
-
-const QUICK_ACTIONS = [
-  {
-    label: "New Package",
-    Icon: Plus,
-    href: "/admin/packages/new",
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    label: "Add Destination",
-    Icon: MapPin,
-    href: "/admin/destinations/new",
-    color: "bg-link/10 text-link",
-  },
-  {
-    label: "Add Blog Post",
-    Icon: FileText,
-    href: "/admin/blogs/new",
-    color: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
-  },
-  {
-    label: "View Bookings",
-    Icon: CalendarDays,
-    href: "/admin/bookings",
-    color: "bg-accent/10 text-accent",
-  },
-  { label: "Export Report", Icon: Download, href: "#", color: "bg-muted text-muted-foreground" },
-  {
-    label: "Site Settings",
-    Icon: Settings,
-    href: "/admin/settings",
-    color: "bg-primary/10 text-foreground",
-  },
+const QUICK_ACTIONS: {
+  label: string;
+  href: string;
+  Icon: LucideIcon;
+  module: ModuleKey;
+  action: "view" | "create";
+  className: string;
+}[] = [
+  { label: "Add Lead", href: "/admin/leads/new", Icon: UserPlus, module: "leads", action: "create", className: "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:text-blue-300" },
+  { label: "Create Proposal", href: "/admin/proposals/new", Icon: FileText, module: "proposals", action: "create", className: "bg-violet-500/10 text-violet-700 hover:bg-violet-500/20 dark:text-violet-300" },
+  { label: "Create Itinerary", href: "/admin/itinerary/new", Icon: Map, module: "itinerary", action: "create", className: "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300" },
+  { label: "View Trips", href: "/admin/trips", Icon: Plane, module: "bookings", action: "view", className: "bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300" },
+  { label: "Rate Cards", href: "/admin/rate-cards", Icon: Tags, module: "rateCards", action: "view", className: "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300" },
+  { label: "New Package", href: "/admin/packages/new", Icon: Plus, module: "packages", action: "create", className: "bg-primary/10 text-primary hover:bg-primary/20" },
+  { label: "Add Blog Post", href: "/admin/blogs/new", Icon: BookOpen, module: "blogs", action: "create", className: "bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 dark:text-sky-300" },
 ];
+const MAX_QUICK_ACTIONS = 5;
+
+/** "5m ago", "3h ago", "Yesterday", "2d ago". */
+function timeAgo(at: Date, now: Date): string {
+  const mins = Math.max(0, Math.round((now.getTime() - at.getTime()) / 60_000));
+  if (mins < 60) return mins <= 1 ? "Just now" : `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return hours < 48 ? "Yesterday" : `${Math.round(hours / 24)}d ago`;
+}
+
+const fmtINR = (n: number) =>
+  n >= 100000 ? `₹${(n / 100000).toFixed(2)} L` : `₹${Math.round(n).toLocaleString("en-IN")}`;
 
 export default async function AdminDashboard() {
   const guard = await requireModuleView("dashboard");
   if (!guard.ok) return guard.page;
   const { role, userId } = guard;
   const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
+  const u: DashboardUser = { role, userId, isAdmin };
 
-  const session = await auth();
-  const firstName = session?.user?.name?.split(" ")[0] || "there";
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-  // Admin/Superadmin see org-wide figures; every other role (in practice
-  // SALES) only ever sees bookings converted from a lead assigned to them
-  // and leads assigned to them — same ownership rule as the Bookings and
-  // Leads pages, applied here too so the dashboard isn't an org-wide leak.
-  const bookingScope: Prisma.BookingWhereInput = {
-    deletedAt: null,
-    ...(await bookingWhereForUser(role, userId)),
-  };
-  const seesB2b = await canSeeB2bBookings(role);
-  // B2B requests (b2bAgentId set) are tracked separately (see /admin/b2b-requests)
-  // and excluded from normal-lead dashboard stats.
-  const leadScope: Prisma.LeadWhereInput = {
-    b2bAgentId: null,
-    ...(isAdmin ? {} : { assignedToId: userId }),
-  };
-
-  // Revenue must reflect money actually collected, not the lifecycle `status`
-  // field — `status: PAID` is set only by the Razorpay webhook/reconcile path
-  // (see src/lib/bookings/online-payment.ts) and never by manually-recorded
-  // offline/cash payments, so a fully-paid booking can legitimately sit at
-  // CONFIRMED forever. Every other booking-money view in this app (admin/
-  // bookings list, invoices) already derives the real figure from the payment
-  // ledger via computeBookingFinance() — and per that helper's own doc
-  // comment, "money actually collected" for a booking is just the net of its
-  // payments (non-REFUND minus REFUND), independent of amount/discount. That
-  // means it can be summed directly in Postgres (SUM/GROUP BY) below instead
-  // of loading every in-scope booking's full payments array into memory and
-  // reducing it in JavaScript, which is what this page used to do for every
-  // booking ever made.
-  const netPaidExpr = Prisma.sql`CASE WHEN p."type" = 'REFUND' THEN -p."amount" ELSE p."amount" END`;
-  // Booking-visibility scope (see bookingWhereForUser) re-expressed as a SQL
-  // fragment for the raw aggregations below — ADMIN/SUPERADMIN see every
-  // booking; every other role only sees bookings converted from a lead
-  // assigned to them, plus B2B-converted bookings only if their role may see B2B.
-  const scopeSql = isAdmin
-    ? Prisma.sql`TRUE`
-    : Prisma.sql`EXISTS (
-        SELECT 1 FROM "Lead" l
-        WHERE l."bookingId" = b.id
-          AND (l."assignedToId" = ${userId} ${seesB2b ? Prisma.sql`OR l."b2bAgentId" IS NOT NULL` : Prisma.empty})
-      )`;
-
-  // Last 6 calendar months (oldest first) — same boundaries the chart always
-  // used, computed here so the raw query below can bound its scan to exactly
-  // this window instead of scanning every booking ever made.
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const start = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-    const label =
-      start.toLocaleString("en-IN", { month: "short" }) + " '" + String(start.getFullYear()).slice(2);
-    return { start, end, label };
-  });
-  const monthBucketCase = Prisma.join(
-    months.map(
-      (m, i) => Prisma.sql`WHEN b."createdAt" >= ${m.start} AND b."createdAt" < ${m.end} THEN ${i}`,
+  const [session, canLeads, canBookings, canReviews, quickActions] = await Promise.all([
+    auth(),
+    can(role, "leads", "view"),
+    can(role, "bookings", "view"),
+    can(role, "reviews", "edit"),
+    Promise.all(QUICK_ACTIONS.map(async (a) => ((await can(role, a.module, a.action)) ? a : null))).then(
+      (list) => list.filter((a) => a !== null).slice(0, MAX_QUICK_ACTIONS),
     ),
-    " ",
-  );
-
-  const [
-    totalBookings,
-    thisMonthBookings,
-    lastMonthBookings,
-    totalLeads,
-    thisMonthLeads,
-    lastMonthLeads,
-    recentBookingsRaw,
-    recentLeads,
-    pendingReviews,
-    revenueByMonthRaw,
-    totalsRaw,
-    topToursRaw,
-  ] = await Promise.all([
-    prisma.booking.count({ where: bookingScope }),
-    prisma.booking.count({ where: { ...bookingScope, createdAt: { gte: startOfMonth } } }),
-    prisma.booking.count({
-      where: { ...bookingScope, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
-    }),
-    prisma.lead.count({ where: leadScope }),
-    prisma.lead.count({ where: { ...leadScope, createdAt: { gte: startOfMonth } } }),
-    prisma.lead.count({
-      where: { ...leadScope, createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
-    }),
-    prisma.booking.findMany({
-      where: bookingScope,
-      take: 8,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        status: true,
-        amount: true,
-        createdAt: true,
-        tour: { select: { title: true, coverImage: true, slug: true } },
-        payments: { select: { amount: true, type: true } },
-      },
-    }),
-    prisma.lead.findMany({
-      where: leadScope,
-      take: 8,
-      orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, phone: true, source: true, startDate: true, status: true },
-    }),
-    prisma.review.findMany({
-      where: { approved: false },
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        rating: true,
-        body: true,
-        tour: { select: { title: true } },
-      },
-    }),
-    // Bounded to the 6-month window — only the rows the chart can show.
-    prisma.$queryRaw<{ bucket: number; revenue: number }[]>(Prisma.sql`
-      SELECT (CASE ${monthBucketCase} END)::int AS bucket,
-             COALESCE(SUM(${netPaidExpr}), 0)::float8 AS revenue
-      FROM "Booking" b
-      LEFT JOIN "BookingPayment" p ON p."bookingId" = b.id
-      WHERE b."deletedAt" IS NULL
-        AND b."createdAt" >= ${months[0].start}
-        AND b."createdAt" < ${months[5].end}
-        AND ${scopeSql}
-      GROUP BY 1
-    `),
-    // All-time total revenue + count of paid bookings — a single aggregated
-    // row instead of every in-scope booking loaded and reduced in JS.
-    prisma.$queryRaw<{ totalRevenue: number; paidCount: number }[]>(Prisma.sql`
-      SELECT COALESCE(SUM(net), 0)::float8 AS "totalRevenue",
-             COUNT(*) FILTER (WHERE net > 0)::int AS "paidCount"
-      FROM (
-        SELECT b.id, COALESCE(SUM(${netPaidExpr}), 0) AS net
-        FROM "Booking" b
-        LEFT JOIN "BookingPayment" p ON p."bookingId" = b.id
-        WHERE b."deletedAt" IS NULL AND ${scopeSql}
-        GROUP BY b.id
-      ) t
-    `),
-    // Top 5 tours by all-time net revenue — ranked and limited in the
-    // database; only the winning 5 rows ever leave Postgres.
-    prisma.$queryRaw<{ tourId: string; revenue: number; bookingCount: number }[]>(Prisma.sql`
-      SELECT b."tourId" AS "tourId",
-             SUM(${netPaidExpr})::float8 AS revenue,
-             COUNT(DISTINCT b.id)::int AS "bookingCount"
-      FROM "Booking" b
-      JOIN "BookingPayment" p ON p."bookingId" = b.id
-      WHERE b."deletedAt" IS NULL AND b."tourId" IS NOT NULL AND ${scopeSql}
-      GROUP BY b."tourId"
-      HAVING SUM(${netPaidExpr}) > 0
-      ORDER BY revenue DESC
-      LIMIT 5
-    `),
   ]);
+  const firstName = session?.user?.name?.split(" ")[0] || "there";
+  const now = new Date();
 
-  const recentBookings = recentBookingsRaw.map((b) => ({
-    ...b,
-    paymentStatus: computeBookingFinance({ amount: b.amount, payments: b.payments, services: [] })
-      .paymentStatus,
-  }));
+  const [leadKpis, bookingKpi, pipeline, trips, recentLeads, recentBookings, revenue, reviews, activity] =
+    await Promise.all([
+      canLeads ? getLeadKpis(u) : null,
+      canBookings ? getBookingKpi(u) : null,
+      canLeads ? getPipeline(u) : null,
+      canBookings ? getUpcomingTrips(u) : null,
+      canLeads ? getRecentLeads(u) : null,
+      canBookings ? getRecentBookings(u) : null,
+      isAdmin ? getRevenueByMonth() : null,
+      canReviews ? getPendingReviews() : null,
+      canLeads || canBookings ? getActivity(u, { leads: canLeads, bookings: canBookings }) : [],
+    ]);
 
-  // Revenue by month — bucketed in Postgres above; fill in any month with no
-  // matching rows as 0, same as the previous in-memory reduce.
-  const revenueByMonth = months.map((m, i) => ({
-    month: m.label,
-    revenue: round2(revenueByMonthRaw.find((r) => r.bucket === i)?.revenue ?? 0),
-  }));
-
-  // Top tours — already ranked and limited to 5 by the database.
-  const tourRevMap: Record<string, { revenue: number; count: number }> = {};
-  for (const r of topToursRaw) {
-    tourRevMap[r.tourId] = { revenue: round2(r.revenue), count: r.bookingCount };
-  }
-  const topTourIds = topToursRaw.map((r) => r.tourId);
-
-  const topTourDetails = topTourIds.length
-    ? await prisma.tour.findMany({
-        where: { id: { in: topTourIds } },
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          coverImage: true,
-          rating: true,
-          reviewCount: true,
-        },
-      })
-    : await prisma.tour.findMany({
-        where: { published: true },
-        take: 5,
-        orderBy: { rating: "desc" },
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          coverImage: true,
-          rating: true,
-          reviewCount: true,
-        },
-      });
-
-  const topTours = topTourIds.length
-    ? topTourIds.map((id) => {
-        const detail = topTourDetails.find((d) => d.id === id)!;
-        return { ...detail, bookingCount: tourRevMap[id]!.count, revenue: tourRevMap[id]!.revenue };
-      })
-    : topTourDetails.map((t) => ({ ...t, bookingCount: 0, revenue: 0 }));
-
-  const totalRevenue = round2(totalsRaw[0]?.totalRevenue ?? 0);
-  const paidCount = totalsRaw[0]?.paidCount ?? 0;
-  // The 6-month chart's last two buckets are exactly "this month" and "last
-  // month" by construction (see `months` above) — reused here instead of a
-  // separate all-bookings scan.
-  const thisMonthRev = revenueByMonth[5].revenue;
-  const lastMonthRev = revenueByMonth[4].revenue;
-  const conversionRate = totalLeads > 0 ? Math.round((paidCount / totalLeads) * 1000) / 10 : 0;
-  const avgBooking = paidCount > 0 ? Math.round(totalRevenue / paidCount) : 0;
-
-  const KPI = [
-    {
-      label: "Total Revenue",
-      value: fmtINR(totalRevenue),
-      change: pctChange(thisMonthRev, lastMonthRev),
-      sub: "vs last month",
-      Icon: IndianRupee,
-      color: "text-primary",
-      bg: "bg-primary/10",
-    },
-    {
-      label: "Total Bookings",
-      value: totalBookings.toString(),
-      change: pctChange(thisMonthBookings, lastMonthBookings),
-      sub: "vs last month",
-      Icon: CalendarDays,
-      color: "text-link",
-      bg: "bg-link/10",
-    },
-    {
-      label: "Total Leads",
-      value: totalLeads.toString(),
-      change: pctChange(thisMonthLeads, lastMonthLeads),
-      sub: "vs last month",
-      Icon: MessageSquare,
-      color: "text-accent",
-      bg: "bg-accent/10",
-    },
-    {
-      label: "Conversion Rate",
-      value: `${conversionRate}%`,
-      change: null,
-      sub: "leads → bookings",
-      Icon: BarChart3,
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-500/15",
-    },
-    {
-      label: "Avg Booking",
-      value: fmtINR(avgBooking),
-      change: null,
-      sub: "per paid booking",
-      Icon: CreditCard,
-      color: "text-foreground",
-      bg: "bg-primary/10",
-    },
+  // Alerts & Reminders — "Needs attention": trips in the next 7 days (with
+  // what's left to do, or just a heads-up when they're ready), most urgent
+  // first. "Recent activity": the last 72 hours.
+  const weekTrips = (trips ?? []).filter((t) => t.bucket !== "upcoming");
+  const tripWhen = (t: (typeof weekTrips)[number]) =>
+    t.bucket === "onTour" ? "On tour" : t.daysLeft <= 0 ? "Today" : t.daysLeft === 1 ? "Tomorrow" : `In ${t.daysLeft} days`;
+  const tripAlerts: Alert[] = weekTrips
+    .filter((t) => t.tasks.length > 0 || t.bucket !== "onTour")
+    .map((t) =>
+      t.tasks.length > 0
+        ? {
+            key: `trip-${t.id}`,
+            kind: "trip",
+            title: `Prepare trip — ${t.guestName}`,
+            detail: t.tasks.map((x) => x.label).join(" · "),
+            when: tripWhen(t),
+            tone: t.daysLeft <= 1 ? "red" : "amber",
+            href: `/admin/bookings/${t.id}/services`,
+          }
+        : {
+            key: `upcoming-${t.id}`,
+            kind: "upcoming",
+            title: `Upcoming trip — ${t.guestName}`,
+            detail: `${t.tourTitle ?? "Kashmir trip"} · ${t.travellers} traveller${t.travellers === 1 ? "" : "s"} · all set`,
+            when: tripWhen(t),
+            tone: "blue",
+            href: `/admin/bookings/${t.id}/services`,
+          },
+    );
+  const reminders: Alert[] = [
+    ...tripAlerts.filter((a) => a.tone === "red"),
+    ...tripAlerts.filter((a) => a.tone !== "red"),
   ];
+  const activityAlerts: Alert[] = activity.map((a) => ({
+    ...a,
+    when: timeAgo(a.at, now),
+    tone: a.kind === "payment" || a.kind === "confirmed" ? "green" : "muted",
+  }));
+  const alertCount = reminders.length + activityAlerts.length;
+
+  const kpis = [
+    leadKpis && {
+      label: "Leads",
+      value: leadKpis.leads.value,
+      Icon: Users,
+      tone: "blue" as const,
+      series: leadKpis.leads.series,
+      change: leadKpis.leads.change,
+      sub: "this month vs last",
+      href: "/admin/leads",
+    },
+    leadKpis && {
+      label: "Quotations Sent",
+      value: leadKpis.quotations.value,
+      Icon: Send,
+      tone: "green" as const,
+      series: leadKpis.quotations.series,
+      change: leadKpis.quotations.change,
+      sub: "this month vs last",
+      href: "/admin/itinerary",
+    },
+    bookingKpi && {
+      label: "Bookings Confirmed",
+      value: bookingKpi.value,
+      Icon: CalendarCheck2,
+      tone: "violet" as const,
+      series: bookingKpi.series,
+      change: bookingKpi.change,
+      sub: "this month vs last",
+      href: "/admin/bookings",
+    },
+  ].filter((k) => !!k);
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-display font-extrabold text-foreground text-xl">
-            Welcome back, <span className="text-primary">{firstName}</span> 👋
-          </h2>
-          <p className="text-muted-foreground text-xs mt-0.5">
-            {now.toLocaleDateString("en-IN", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
-        </div>
-        <Link
-          href="/admin/packages/new"
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-primary/25"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          New Package
-        </Link>
+    <div className="space-y-5">
+      <div>
+        <h2 className="font-display text-xl font-extrabold text-foreground">
+          Welcome back, <span className="text-primary">{firstName}</span> 👋
+        </h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {now.toLocaleDateString("en-IN", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            timeZone: "Asia/Kolkata",
+          })}
+          {!isAdmin && canLeads ? " · showing your leads and trips" : ""}
+        </p>
       </div>
 
-      {/* ── KPI cards ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {KPI.map(({ label, value, change, sub, Icon, color, bg }) => (
-          <div key={label} className="bg-card rounded-2xl border border-border p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground">{label}</p>
-              <div className={`w-8 h-8 rounded-xl ${bg} flex items-center justify-center`}>
-                <Icon className={`w-4 h-4 ${color}`} />
-              </div>
-            </div>
-            <p className="font-display font-extrabold text-foreground text-xl leading-none mb-1.5">
-              {value}
-            </p>
-            <div className="flex items-center gap-1">
-              {change !== null ? (
-                <>
-                  {change >= 0 ? (
-                    <TrendingUp className="w-3 h-3 text-green-500" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 text-red-400" />
-                  )}
-                  <span
-                    className={`text-[12px] font-semibold ${change >= 0 ? "text-green-500" : "text-red-400"}`}
-                  >
-                    {change >= 0 ? "+" : ""}
-                    {change}%
-                  </span>
-                  <span className="text-[12px] text-muted-foreground">{sub}</span>
-                </>
-              ) : (
-                <span className="text-[12px] text-muted-foreground">{sub}</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Revenue chart + Recent Bookings ───────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
-        {/* Chart */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">
-                ● Revenue Overview
-              </p>
-              <p className="font-display font-bold text-foreground text-base">Last 6 Months</p>
-            </div>
-            <span className="text-xs text-muted-foreground bg-muted border border-border px-3 py-1 rounded-lg">
-              {fmtINR(totalRevenue)} total
-            </span>
-          </div>
-          <RevenueChart data={revenueByMonth} />
-        </div>
-
-        {/* Recent Bookings */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-display font-bold text-foreground text-sm">Recent Bookings</p>
-            <Link
-              href="/admin/bookings"
-              className="text-primary text-xs font-semibold hover:underline flex items-center gap-1"
-            >
-              View all <ExternalLink className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentBookings.length === 0 ? (
-              <p className="text-muted-foreground text-xs py-8 text-center">No bookings yet.</p>
-            ) : (
-              recentBookings.map((b) => {
-                const s = STATUS_STYLES[b.status] ?? STATUS_STYLES.PENDING!;
-                return (
-                  <div key={b.id} className="flex items-center gap-3">
-                    <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0">
-                      <Image
-                        src={b.tour?.coverImage ?? PLACEHOLDER}
-                        alt={b.tour?.title ?? "Booking"}
-                        fill
-                        sizes="36px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate leading-tight">
-                        {b.tour?.title ?? "Custom booking"}
-                      </p>
-                      <p className="text-[12px] text-muted-foreground">{fmtDate(b.createdAt)}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-foreground">{fmtINR(b.amount)}</p>
-                      <div className="flex items-center justify-end gap-1">
-                        <span
-                          className={`text-[12px] font-semibold px-1.5 py-0.5 rounded-md ${s.className}`}
-                        >
-                          {s.label}
-                        </span>
-                        <span
-                          className={`text-[12px] font-semibold px-1.5 py-0.5 rounded-md ${PAYMENT_STATUS_STYLES[b.paymentStatus]}`}
-                        >
-                          {PAYMENT_STATUS_LABELS_SHORT[b.paymentStatus]}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Recent Leads ──────────────────────────────────────────────── */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <p className="font-display font-bold text-foreground text-sm">Recent Leads</p>
-          <Link href="/admin/leads" className="text-xs font-semibold text-primary hover:underline">
-            View all ({totalLeads})
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-muted border-b border-border">
-                {["Name", "Phone", "Source", "Travel Date", "Status", "Action"].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wide text-[12px]"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {recentLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No leads yet.
-                  </td>
-                </tr>
-              ) : (
-                recentLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">{lead.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{lead.phone}</td>
-                    <td className="px-4 py-3">
-                      <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-md capitalize">
-                        {lead.source.toLowerCase().replace(/_/g, " ")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {lead.startDate ? fmtDate(lead.startDate) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-md font-semibold text-[12px] ${LEAD_STATUS_STYLES[lead.status] ?? "bg-muted text-muted-foreground"}`}
-                      >
-                        {lead.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href="/admin/leads"
-                        className="text-primary font-semibold hover:underline"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ── Top Tours + Pending Reviews ───────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Top Performing Tours */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-display font-bold text-foreground text-sm">Top Performing Tours</p>
-            <Link
-              href="/admin/packages"
-              className="text-primary text-xs font-semibold hover:underline"
-            >
-              Manage
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {topTours.length === 0 ? (
-              <p className="text-muted-foreground text-xs py-6 text-center">No tour data yet.</p>
-            ) : (
-              topTours.map((tour, i) => (
-                <div key={tour.id} className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-muted-foreground/60 w-4 shrink-0">
-                    {i + 1}
-                  </span>
-                  <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0">
-                    <Image
-                      src={tour.coverImage ?? PLACEHOLDER}
-                      alt={tour.title ?? ""}
-                      fill
-                      sizes="36px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate leading-tight">
-                      {tour.title}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[12px] text-muted-foreground">
-                        {tour.bookingCount} booking{tour.bookingCount !== 1 ? "s" : ""}
-                      </span>
-                      {(tour.rating ?? 0) > 0 && (
-                        <span className="flex items-center gap-0.5 text-[12px] text-yellow-500">
-                          <Star className="w-2.5 h-2.5 fill-yellow-400" />
-                          {tour.rating?.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-xs font-bold text-foreground shrink-0">
-                    {fmtINR(tour.revenue)}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Reviews Awaiting Approval */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <p className="font-display font-bold text-foreground text-sm">
-                Reviews Awaiting Approval
-              </p>
-              {pendingReviews.length > 0 && (
-                <span className="bg-accent text-white text-[12px] font-bold px-1.5 py-0.5 rounded-full">
-                  {pendingReviews.length}
-                </span>
-              )}
-            </div>
-            <Link
-              href="/admin/reviews"
-              className="text-primary text-xs font-semibold hover:underline"
-            >
-              Manage
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {pendingReviews.length === 0 ? (
-              <div className="text-center py-6">
-                <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <p className="text-muted-foreground text-xs">All caught up! No reviews pending.</p>
-              </div>
-            ) : (
-              pendingReviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="flex items-start gap-3 pb-3 border-b border-border last:border-0 last:pb-0"
-                >
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
-                    {review.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-foreground">{review.name}</p>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(review.rating)].map((_, i) => (
-                          <Star key={i} className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-[12px] text-muted-foreground mb-1 truncate">
-                      {review.tour.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {review.body}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Quick Actions ─────────────────────────────────────────────────── */}
-      <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-        <p className="font-display font-bold text-foreground text-sm mb-4">Quick Actions</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {QUICK_ACTIONS.map(({ label, Icon, href, color }) => (
-            <Link
-              key={label}
-              href={href}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-center"
-            >
-              <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-semibold text-foreground leading-tight">{label}</span>
-            </Link>
+      {kpis.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {kpis.map((k) => (
+            <KpiCard key={k.label} {...k} />
           ))}
         </div>
+      )}
+
+      {/* Pipeline · Alerts · Quick actions */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-[1.35fr_1fr_240px]">
+        {pipeline && (
+          <Panel
+            title="Sales Pipeline"
+            Icon={Filter}
+            iconClass="bg-blue-500/10 text-blue-600 dark:text-blue-300"
+            badge={`${pipeline.total} leads`}
+            href="/admin/leads"
+          >
+            <Pipeline {...pipeline} />
+          </Panel>
+        )}
+        {(canLeads || canBookings) && (
+          <Panel
+            title="Alerts & Reminders"
+            Icon={BellRing}
+            iconClass="bg-rose-500/10 text-rose-600 dark:text-rose-300"
+            badge={alertCount > 0 ? alertCount : undefined}
+          >
+            <AlertsList reminders={reminders.slice(0, 8)} activity={activityAlerts.slice(0, 12)} />
+          </Panel>
+        )}
+        {quickActions.length > 0 && (
+          <Panel
+            title="Quick Actions"
+            Icon={Zap}
+            iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-300"
+            className="lg:col-span-2 2xl:col-span-1"
+          >
+            <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3 2xl:grid-cols-1">
+              {quickActions.map(({ label, href, Icon, className }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition ${className}`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" /> {label}
+                </Link>
+              ))}
+            </div>
+          </Panel>
+        )}
       </div>
+
+      {trips && (
+        <Panel
+          title="Upcoming Trips"
+          Icon={Plane}
+          iconClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+          badge={`${trips.length} trips`}
+          href="/admin/trips"
+        >
+          <TripsTable trips={trips.slice(0, 6)} />
+        </Panel>
+      )}
+
+      {/* Recent leads · Recent bookings */}
+      {(recentLeads || recentBookings) && (
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          {recentLeads && (
+            <Panel
+              title="Recent Leads"
+              Icon={UserPlus}
+              iconClass="bg-violet-500/10 text-violet-600 dark:text-violet-300"
+              href="/admin/leads"
+            >
+              <RecentLeadsTable rows={recentLeads} showAssignee={isAdmin} />
+            </Panel>
+          )}
+          {recentBookings && (
+            <Panel
+              title="Recent Bookings"
+              Icon={CalendarCheck2}
+              iconClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+              href="/admin/bookings"
+            >
+              <RecentBookingsTable rows={recentBookings} />
+            </Panel>
+          )}
+        </div>
+      )}
+
+      {/* Admin revenue · reviews */}
+      {(revenue || reviews) && (
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.6fr_1fr]">
+          {revenue && (
+            <Panel
+              title="Money Collected — Last 6 Months"
+              Icon={IndianRupee}
+              badge={fmtINR(revenue.reduce((t, m) => t + m.revenue, 0))}
+              bodyClassName="p-4 sm:p-5"
+            >
+              <RevenueChart data={revenue} />
+            </Panel>
+          )}
+          {reviews && (
+            <Panel
+              title="Reviews Awaiting Approval"
+              Icon={Star}
+              iconClass="bg-yellow-500/10 text-yellow-600 dark:text-yellow-300"
+              badge={reviews.length > 0 ? reviews.length : undefined}
+              href="/admin/reviews"
+              hrefLabel="Manage"
+            >
+              {reviews.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 px-5 py-8 text-center">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+                  <p className="text-xs text-muted-foreground">No reviews waiting.</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {reviews.map((r) => (
+                    <li key={r.id} className="px-4 py-3 sm:px-5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-xs font-semibold text-foreground">{r.name}</p>
+                        <span className="flex shrink-0 gap-0.5">
+                          {Array.from({ length: r.rating }).map((_, i) => (
+                            <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </span>
+                      </div>
+                      <p className="truncate text-[12px] text-muted-foreground">{r.tour.title}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{r.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          )}
+        </div>
+      )}
     </div>
   );
 }

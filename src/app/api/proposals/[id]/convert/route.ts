@@ -6,6 +6,7 @@ import { can, requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
 import { proposalToItineraryData } from "@/lib/proposal/toItinerary";
 import { uniqueItineraryTitle } from "@/lib/itinerary/list";
+import { parseTravelDates } from "@/lib/itinerary/leadFactsSync";
 import { isAdminRole } from "@/lib/itinerary/access";
 import type { Role } from "@/lib/rbac";
 
@@ -22,9 +23,10 @@ const bodySchema = z.object({
 });
 
 // "Convert to Itinerary": creates the lead's DRAFT itinerary pre-filled from
-// the saved proposal (see src/lib/proposal/toItinerary.ts). Only a lead with
-// no itinerary yet qualifies (one itinerary per lead), with the same lead
-// scoping as POST /api/itineraries/[id]/link. The proposal is left unchanged.
+// the saved proposal (see src/lib/proposal/toItinerary.ts) and copies its
+// travel dates onto the lead. Only a lead with no itinerary yet qualifies
+// (one itinerary per lead), with the same lead scoping as
+// POST /api/itineraries/[id]/link. The proposal is left unchanged.
 export async function POST(req: NextRequest, { params }: Params) {
   const guard = await requirePermission("proposals", "view");
   if (guard instanceof NextResponse) return guard;
@@ -92,8 +94,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   const title = await uniqueItineraryTitle(data);
   const editedByName = (guard.user.name ?? guard.user.email) as string;
   try {
+    // The accepted proposal's travel dates become the lead's (it's not
+    // converted yet, so there's no booking to follow).
+    const dates = parseTravelDates(parsedData.data.travelDates);
     // Seeded with its first history snapshot, same as POST /api/leads/[id]/itinerary.
-    const created = await prisma.itinerary.create({
+    const createOp = prisma.itinerary.create({
       data: {
         title,
         status: "DRAFT",
@@ -104,6 +109,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
       select: { id: true },
     });
+    const [created] = await prisma.$transaction([
+      createOp,
+      ...(dates
+        ? [prisma.lead.update({ where: { id: leadId }, data: { startDate: dates.start, endDate: dates.end } })]
+        : []),
+    ]);
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (err) {
     // Lost a race with another itinerary for the same lead (leadId is @unique).

@@ -7,7 +7,8 @@ import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import type { Prisma } from "@prisma/client";
 import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
-import { leadFactsFromItinerary } from "@/lib/itinerary/leadFactsSync";
+import { leadFactsFromItinerary, parseTravelDates } from "@/lib/itinerary/leadFactsSync";
+import { travelDatesOps } from "@/lib/bookings/syncBookingDates";
 
 export const dynamic = "force-dynamic";
 
@@ -162,6 +163,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           }),
         );
       }
+    }
+
+    // Converted request (only editable while its booking's services are
+    // unlocked — see resolveB2bItineraryAccess): dates follow on to the
+    // request and its booking.
+    if (existing.lead?.status === "CONVERTED") {
+      const dates = parseTravelDates(parsed.data.data.travelDates);
+      if (dates) ops.push(...(await travelDatesOps(existing.lead.id, dates)));
     }
 
     // Converted request unlocked for corrections: its booking follows the new price.

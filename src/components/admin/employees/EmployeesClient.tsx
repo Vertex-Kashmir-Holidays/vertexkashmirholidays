@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, Shield, Pencil, Trash2, RotateCcw, X, UserPlus } from "lucide-react";
+import { Search, Shield, Pencil, Trash2, RotateCcw, X, UserPlus, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/rbac";
 import { usePagination } from "@/components/admin/ui/usePagination";
@@ -303,6 +304,13 @@ export function EmployeesClient({ initialEmployees, currentUserId, currentUserRo
                               >
                                 <Pencil className="w-3.5 h-3.5" /> Edit
                               </button>
+                              <Link
+                                href={`/admin/employees/${u.id}/offer-letter`}
+                                title="Offer letter"
+                                className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg border border-border text-foreground hover:bg-muted whitespace-nowrap"
+                              >
+                                <FileSignature className="w-3.5 h-3.5" /> Offer Letter
+                              </Link>
                               <button
                                 onClick={() => setDeleting(u)}
                                 disabled={isPending || isSelf || lockedSuper}

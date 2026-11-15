@@ -4,14 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import type { Role } from "@/lib/rbac";
 import { LeadsClient } from "@/components/admin/leads/LeadsClient";
+import { LEAD_STATUS_STYLES } from "@/lib/leads/status";
 
 export const metadata: Metadata = { title: "Leads — Admin" };
 export const dynamic = "force-dynamic";
 
-type PageProps = { searchParams: Promise<{ ip?: string }> };
+type PageProps = { searchParams: Promise<{ ip?: string; status?: string }> };
 
 export default async function AdminLeadsPage({ searchParams }: PageProps) {
-  const { ip } = await searchParams;
+  const { ip, status } = await searchParams;
+  // ?status=NEW etc. — opens the list pre-filtered (dashboard pipeline links).
+  const statusFilter = status && status in LEAD_STATUS_STYLES ? status : undefined;
   const ipFilter = ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : undefined;
 
   const session = await auth();
@@ -122,6 +125,7 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
       canDelete={canDelete}
       isAdmin={isAdminOrSuper}
       initialIpFilter={ipFilter}
+      initialStatusFilter={statusFilter}
       offers={offers}
       budgetBands={budgetBands}
     />

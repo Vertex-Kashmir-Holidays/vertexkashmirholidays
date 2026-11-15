@@ -1173,6 +1173,8 @@ function emailShell(opts: {
   preheader: string;
   contentHtml: string;
   maxWidth?: number;
+  /** Replaces the "automated message" line under the card (pre-escaped). */
+  footerNote?: string;
 }): string {
   const maxWidth = opts.maxWidth ?? 600;
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -1208,7 +1210,7 @@ ${brandHeader()}
 ${opts.contentHtml}
        </table>
        <p style="margin:16px 0 0;color:#9aa0a6;font-size:11px;font-family:Arial,Helvetica,sans-serif">
-         This is an automated message from Vertex Kashmir Holidays.
+         ${opts.footerNote ?? "This is an automated message from Vertex Kashmir Holidays."}
        </p>
      </td>
    </tr>
@@ -1988,4 +1990,120 @@ export function hotelRateRequestHtml(data: HotelRateRequestData): string {
  </div>
 </body>
 </html>`;
+}
+
+// ── Offer cum Appointment Letter (to the new hire's personal email) ──────────
+// Sent from the Employees → Offer Letter page with the PDF attached. Written
+// as a personal HR email, not a system notice — replies go to HR.
+
+export interface OfferLetterEmailData {
+  /** "Mr Owais Hassan Wani" */
+  salutationName: string;
+  firstName: string;
+  designation: string;
+  team: string;
+  /** "1st June 2026" */
+  joiningDate: string;
+  reportingOfficer: string;
+  /** "₹15,000" — shown as "Monthly stipend/salary" */
+  pay: string;
+  /** "Stipend" | "Salary" */
+  payLabel: string;
+  /** "5% of net tour profit" — omitted when there is no booking incentive. */
+  incentive?: string | null;
+  refNo: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  signatoryPhone: string;
+  signatoryEmail: string;
+}
+
+/** What the new hire brings on the joining day — listed in the cover email. */
+const OFFER_LETTER_DOCUMENTS = [
+  "A printed (hard) copy of this offer letter, signed on the acceptance section, with a recent passport-size photograph pasted in the photo box",
+  "One valid identity proof (original and a photocopy): Aadhaar Card, PAN Card, Passport or Driving Licence",
+  "Your final degree certificate or college marks card (original and a photocopy)",
+];
+
+export function offerLetterEmailSubject(data: OfferLetterEmailData): string {
+  return `Offer cum Appointment Letter – ${data.designation} | Vertex Kashmir Holidays`;
+}
+
+export function offerLetterText(data: OfferLetterEmailData): string {
+  return [
+    `Dear ${data.salutationName},`,
+    "",
+    `Congratulations! We are delighted to offer you the position of ${data.designation} in our ${data.team} at Vertex Kashmir Holidays.`,
+    "",
+    "Your Offer cum Appointment Letter is attached to this email. A quick summary:",
+    `- Position: ${data.designation}`,
+    `- Joining date: ${data.joiningDate}`,
+    `- Reporting to: ${data.reportingOfficer}`,
+    `- Monthly ${data.payLabel.toLowerCase()}: ${data.pay}`,
+    ...(data.incentive ? [`- Booking incentive: ${data.incentive}`] : []),
+    `- Reference: ${data.refNo}`,
+    "",
+    "Please read the letter carefully, including the initial six-month term and the early-exit clause.",
+    "",
+    `Please bring the following with you on your joining day (${data.joiningDate}):`,
+    ...OFFER_LETTER_DOCUMENTS.map((d) => `- ${d}`),
+    "",
+    "If you have any questions about the offer, simply reply to this email or call us — we will be happy to help.",
+    "",
+    `We look forward to welcoming you to the team, ${data.firstName}.`,
+    "",
+    "Warm regards,",
+    data.signatoryName,
+    `${data.signatoryTitle}, Vertex Kashmir Holidays`,
+    `${data.signatoryPhone} · ${data.signatoryEmail}`,
+  ].join("\n");
+}
+
+export function offerLetterHtml(data: OfferLetterEmailData): string {
+  const p = (html: string) =>
+    `<p style="margin:0 0 14px;color:#333333;font-size:14px;line-height:1.65;font-family:Arial,Helvetica,sans-serif">${html}</p>`;
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 6px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 16px;color:${BRAND};font-size:20px;font-weight:700">Welcome to Vertex Kashmir Holidays</h1>
+             ${p(`Dear ${escapeHtml(data.salutationName)},`)}
+             ${p(`Congratulations! We are delighted to offer you the position of <strong>${escapeHtml(data.designation)}</strong> in our ${escapeHtml(data.team)} at Vertex Kashmir Holidays.`)}
+             ${p("Your <strong>Offer cum Appointment Letter</strong> is attached to this email. Here is a quick summary:")}
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:0 28px 8px">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Position", data.designation)}
+${detailRow("Joining date", data.joiningDate)}
+${detailRow("Reporting to", data.reportingOfficer)}
+${detailRow(`Monthly ${data.payLabel.toLowerCase()}`, data.pay)}
+${data.incentive ? detailRow("Booking incentive", data.incentive) : ""}
+${detailRow("Reference", data.refNo)}
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:16px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             ${p("Please read the letter carefully, including the initial six-month term and the early-exit clause.")}
+             ${p(`<strong>Please bring the following with you on your joining day (${escapeHtml(data.joiningDate)}):</strong>`)}
+             <ul style="margin:0 0 16px;padding-left:20px;color:#333333;font-size:14px;line-height:1.65;font-family:Arial,Helvetica,sans-serif">
+${OFFER_LETTER_DOCUMENTS.map((d) => `               <li style="margin:0 0 6px">${escapeHtml(d)}</li>`).join("\n")}
+             </ul>
+             ${p("If you have any questions about the offer, simply reply to this email or call us — we will be happy to help.")}
+             ${p(`We look forward to welcoming you to the team, ${escapeHtml(data.firstName)}.`)}
+             <p style="margin:18px 0 0;color:#333333;font-size:14px;line-height:1.6;font-family:Arial,Helvetica,sans-serif">
+               Warm regards,<br />
+               <strong>${escapeHtml(data.signatoryName)}</strong><br />
+               <span style="color:#666666">${escapeHtml(data.signatoryTitle)}, Vertex Kashmir Holidays</span><br />
+               <span style="color:#666666">${escapeHtml(data.signatoryPhone)} · <a href="mailto:${escapeHtml(data.signatoryEmail)}" style="color:${BRAND}">${escapeHtml(data.signatoryEmail)}</a></span>
+             </p>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: offerLetterEmailSubject(data),
+    preheader: `Your offer for ${escapeHtml(data.designation)} — letter attached`,
+    contentHtml: content,
+    footerNote: "Vertex Kashmir Holidays · Gulmarg, Jammu &amp; Kashmir · Private &amp; confidential",
+  });
 }

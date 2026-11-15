@@ -266,7 +266,7 @@ export function BookingServicesClient({
   hotelOptions?: HotelOption[];
   /** `bookings:edit` permission — distinct from the time-based edit window below. */
   canEdit: boolean;
-  /** Admin/Superadmin only — company profit margin is not shown to Sales. */
+  /** Admin/Superadmin, and Sales on their own bookings. */
   canViewProfit: boolean;
   /** Admin/Superadmin only — may unlock locked services for corrections. */
   canUnlock: boolean;

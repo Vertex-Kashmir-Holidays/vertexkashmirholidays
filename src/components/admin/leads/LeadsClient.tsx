@@ -32,6 +32,7 @@ import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
 import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
+import { LEAD_STATUS_STYLES } from "@/lib/leads/status";
 
 // IN_PROGRESS is a real LeadStatus value at the type level (B2B-request-only —
 // see prisma/schema.prisma), included so this type structurally matches
@@ -140,25 +141,15 @@ interface Props {
   canDelete: boolean;
   isAdmin: boolean;
   initialIpFilter?: string;
+  /** Pre-selected status filter (from ?status=). */
+  initialStatusFilter?: string;
   /** Occasion Offers for the Offer filter. */
   offers?: { id: string; name: string }[];
   /** Budget bands (inactive included) for the Budget filter. */
   budgetBands?: { key: string; label: string; isActive: boolean }[];
 }
 
-const STATUS_STYLES: Record<LeadStatus, string> = {
-  NEW: "bg-link/10 text-link",
-  CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
-  NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-  QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  NEGOTIATION: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  ON_HOLD: "bg-muted text-muted-foreground",
-  // B2B-request-only value — never actually rendered here (see comment on the
-  // LeadStatus type above), present only so this Record type-checks.
-  IN_PROGRESS: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-  REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
-};
+const STATUS_STYLES = LEAD_STATUS_STYLES;
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   WEBSITE: "Website",
@@ -179,6 +170,7 @@ export function LeadsClient({
   canDelete,
   isAdmin,
   initialIpFilter,
+  initialStatusFilter,
   offers = [],
   budgetBands = [],
 }: Props) {
@@ -186,7 +178,7 @@ export function LeadsClient({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter ?? "ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
   const [assigneeFilter, setAssigneeFilter] = useState("ALL");
   // Trip Planner request-type filter (TRANSPORT/TOUR/HOTEL/PLAN) — what the
@@ -737,7 +729,15 @@ export function LeadsClient({
                         day: "numeric",
                         month: "short",
                         year: "numeric",
+                        timeZone: "Asia/Kolkata",
                       })}
+                      <span className="block text-[11px]">
+                        {new Date(lead.updatedAt).toLocaleTimeString("en-IN", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          timeZone: "Asia/Kolkata",
+                        })}
+                      </span>
                     </td>
 
                     {/* Actions */}

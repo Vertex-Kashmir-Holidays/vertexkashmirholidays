@@ -29,6 +29,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
+import { LEAD_STATUS_STYLES } from "@/lib/leads/status";
 
 // IN_PROGRESS is a real LeadStatus value at the type level (it's a B2B-request
 // -only value — see prisma/schema.prisma), included here only so this type
@@ -191,19 +192,7 @@ interface Props {
   ipDuplicates: IpDuplicateLead[];
 }
 
-const STATUS_STYLES: Record<LeadStatus, string> = {
-  NEW: "bg-link/10 text-link",
-  CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
-  NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-  QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  NEGOTIATION: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  ON_HOLD: "bg-muted text-muted-foreground",
-  // B2B-request-only value — never actually rendered here (see comment on the
-  // LeadStatus type above), present only so this Record type-checks.
-  IN_PROGRESS: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-  REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
-};
+const STATUS_STYLES = LEAD_STATUS_STYLES;
 
 const BOOKING_STATUS_STYLES: Record<string, string> = {
   PENDING: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",

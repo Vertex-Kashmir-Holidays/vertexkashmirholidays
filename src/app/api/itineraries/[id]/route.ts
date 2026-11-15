@@ -7,6 +7,8 @@ import { resolveItineraryAccess } from "@/lib/itinerary/access";
 import { itineraryTitleExists, uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { buildDocumentTitle, duplicateTitleMessage } from "@/lib/itinerary/documentTitle";
 import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
+import { travelDatesOps } from "@/lib/bookings/syncBookingDates";
+import { parseTravelDates } from "@/lib/itinerary/leadFactsSync";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +24,7 @@ const ACCESS_SELECT = {
   title: true,
   data: true,
   lead: { select: { assignedToId: true, locked: true, status: true, b2bAgentId: true } },
-  booking: { select: { servicesLocked: true } },
+  booking: { select: { id: true, servicesLocked: true, travelDate: true, travelEndDate: true } },
 } as const;
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -166,6 +168,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // A converted lead is only unlocked while an admin corrects its booking —
     // then the booking amount follows the new price too.
     if (existing.leadId && !existing.lead?.locked) {
+      // Travel dates on the cover flow on to the lead (and its unlocked booking).
+      const dates = parseTravelDates(parsed.data.data.travelDates);
+      if (dates) ops.push(...(await travelDatesOps(existing.leadId, dates)));
+
       const proposed = parseProposedAmount(parsed.data.data.totalCost);
       if (proposed != null) {
         ops.push(
@@ -180,6 +186,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           if (sync.op) ops.push(sync.op);
         }
       }
+    }
+    // Direct (website) booking's itinerary: its booking follows the cover dates
+    // while services are unlocked.
+    const b = existing.booking;
+    const bookingDates = b && !b.servicesLocked ? parseTravelDates(parsed.data.data.travelDates) : null;
+    if (
+      b &&
+      bookingDates &&
+      (b.travelDate.getTime() !== bookingDates.start.getTime() ||
+        (b.travelEndDate?.getTime() ?? null) !== (bookingDates.end?.getTime() ?? null))
+    ) {
+      ops.push(
+        prisma.booking.update({
+          where: { id: b.id },
+          data: { travelDate: bookingDates.start, travelEndDate: bookingDates.end },
+        }),
+      );
     }
   }
 

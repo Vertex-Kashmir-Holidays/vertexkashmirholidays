@@ -48,7 +48,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
     can(role, "bookings", "edit"),
     can(role, "itinerary", "create"),
   ]);
-  const canViewProfit = role === "SUPERADMIN" || role === "ADMIN";
+  // Sales see profit on their own bookings (the query below is already scoped to them).
+  const canViewProfit = role === "SUPERADMIN" || role === "ADMIN" || role === "SALES";
   // Unlocking (services or the converted lead's itinerary) is an admin-only correction.
   const canUnlock = canEdit && isAdminRole(role);
 

@@ -10,6 +10,7 @@ import { isAdminRole } from "@/lib/itinerary/access";
 import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 import { phoneField } from "@/lib/leads/schema";
 import { convertedBookingAmountUpdate } from "@/lib/bookings/syncBookingAmount";
+import { travelDatesOps } from "@/lib/bookings/syncBookingDates";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -273,7 +274,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         )
       : [];
 
-  // Converted lead unlocked for corrections: its booking follows the new price.
+  // Converted lead unlocked for corrections: its booking follows the new dates…
+  const bookingDateOps =
+    existing.status === LeadStatus.CONVERTED && (startDate !== undefined || endDate !== undefined) && effStart
+      ? await travelDatesOps(id, { start: effStart, end: effEnd }, { includeLead: false })
+      : [];
+
+  // …and the new price.
   let bookingAmountOp: Prisma.PrismaPromise<unknown> | null = null;
   if (negotiatedAmount != null && existing.status === LeadStatus.CONVERTED) {
     const sync = await convertedBookingAmountUpdate(id, negotiatedAmount);
@@ -381,6 +388,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Sync lead trip facts into the linked itinerary's cover fields.
     ...itinerarySyncOps,
     ...(bookingAmountOp ? [bookingAmountOp] : []),
+    ...bookingDateOps,
   ]);
 
   // Post-commit, best-effort: notify the affected staff (in-app + email). On a
