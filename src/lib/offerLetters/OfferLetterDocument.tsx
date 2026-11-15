@@ -244,7 +244,7 @@ export function OfferLetterPdf({
             ]}
           />
           <P>
-            Working days shall be Monday to Saturday, with Sunday as the weekly off, along with gazetted holidays
+            Working days shall be Saturday to Thursday, with Friday as the weekly off, along with gazetted holidays
             observed by the Company as applicable in Jammu & Kashmir, and a reasonable break during office hours.
             Depending upon operational requirements, project timelines, customer support, or peak-season schedules,
             working hours may occasionally be adjusted or extended by the Company. Regular attendance and punctuality
