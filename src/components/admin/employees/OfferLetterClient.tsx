@@ -65,6 +65,8 @@ export function OfferLetterClient({
   );
   const [confirmSend, setConfirmSend] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<LetterRow | null>(null);
+  // An already-emailed letter to send again (same PDF, same ref no.).
+  const [confirmResend, setConfirmResend] = useState<LetterRow | null>(null);
 
   const dirty = savedSnapshot !== JSON.stringify(form);
   const editing = letters.find((l) => l.id === editingId) ?? null;
@@ -139,6 +141,17 @@ export function OfferLetterClient({
       setEditingId(null);
       setSavedSnapshot(null);
       setForm({ ...form, letterDate: fromProfile.letterDate });
+      router.refresh();
+    });
+  }
+
+  function resend(letter: LetterRow) {
+    setConfirmResend(null);
+    startBusy(async () => {
+      const res = await fetch(`/api/offer-letters/${letter.id}/send`, { method: "POST" });
+      const json = (await res.json().catch(() => ({}))) as { error?: string; sentTo?: string };
+      if (!res.ok) return void toast.error(json.error ?? "Email failed.");
+      toast.success(`Offer letter emailed again to ${json.sentTo}.`);
       router.refresh();
     });
   }
@@ -430,13 +443,23 @@ export function OfferLetterClient({
                           <Download className="h-3 w-3" /> PDF
                         </a>
                         {l.sentAt ? (
-                          <button
-                            type="button"
-                            onClick={() => startNew(l.input)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-semibold text-foreground hover:bg-muted"
-                          >
-                            <Plus className="h-3 w-3" /> New from this
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setConfirmResend(l)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-semibold text-emerald-700 hover:bg-muted disabled:opacity-50 dark:text-emerald-300"
+                            >
+                              <Mail className="h-3 w-3" /> Resend
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => startNew(l.input)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-semibold text-foreground hover:bg-muted"
+                            >
+                              <Plus className="h-3 w-3" /> New from this
+                            </button>
+                          </>
                         ) : (
                           <>
                             <button
@@ -477,6 +500,14 @@ export function OfferLetterClient({
         confirmLabel="Send email"
         onConfirm={send}
         onCancel={() => setConfirmSend(false)}
+      />
+      <ConfirmDialog
+        open={confirmResend !== null}
+        title={confirmResend ? `Email ${confirmResend.refNo} again to ${confirmResend.input.recipientEmail}?` : ""}
+        description="The same letter (PDF and reference number) is sent again with the HR cover email."
+        confirmLabel="Send again"
+        onConfirm={() => confirmResend && resend(confirmResend)}
+        onCancel={() => setConfirmResend(null)}
       />
       <ConfirmDialog
         open={confirmDelete !== null}
