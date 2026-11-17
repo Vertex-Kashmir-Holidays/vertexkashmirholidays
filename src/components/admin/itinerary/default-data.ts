@@ -117,7 +117,7 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       mealType: "Room + breakfast + one of lunch/dinner",
       image: "/itinerary/srinagar.webp",
       extraBed: "0",
-      childWithBed: "0",
+      childWithoutBed: "0",
     },
     {
       id: "h-2",
@@ -132,7 +132,7 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       mealType: "Room + breakfast + one of lunch/dinner",
       image: "/itinerary/gulmarg.webp",
       extraBed: "0",
-      childWithBed: "0",
+      childWithoutBed: "0",
     },
     {
       id: "h-3",
@@ -147,7 +147,7 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
       mealType: "Room + breakfast + one of lunch/dinner",
       image: "/itinerary/pahalgam.webp",
       extraBed: "0",
-      childWithBed: "0",
+      childWithoutBed: "0",
     },
   ],
   hotelImages: DEFAULT_HOTEL_IMAGES,
@@ -220,9 +220,16 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   transportDesc: "Private Vehicle for the entire trip",
   transportImage: "/itinerary/gurez.webp",
   transportSeats: "4 seats",
-  transportBags: "2 large bags",
   transportDays: "Day 01 – 06",
-  transportTags: ["Driver allowance", "Fuel", "Parking", "Tolls", "No tip expected"],
+  transportTags: [
+    "Driver allowance",
+    "Fuel",
+    "Parking",
+    "Tolls",
+    "Experienced local driver",
+    "Airport pick-up & drop",
+    "24×7 trip support",
+  ],
 
   // "Where a local taxi is required" — hidden from the editor for now (see
   // ItineraryEditor.tsx); left empty so the PDF's own `localTaxis.length > 0`

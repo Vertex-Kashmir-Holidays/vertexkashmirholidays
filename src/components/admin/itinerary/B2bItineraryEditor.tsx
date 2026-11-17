@@ -218,7 +218,7 @@ export function B2bItineraryEditor({
           mealType: "MAP",
           image: DEFAULT_HOTEL_IMAGES[0],
           extraBed: "0",
-          childWithBed: "0",
+          childWithoutBed: "0",
           hotelAlt: "",
           checkIn: "",
           checkOut: "",
@@ -813,7 +813,7 @@ export function B2bItineraryEditor({
           onClick={() =>
             update("extraVehicles", [
               ...data.extraVehicles,
-              { id: genId("veh"), type: "", count: "1", seats: "" },
+              { id: genId("veh"), type: "", count: "1", seats: "", days: "", usedFor: "", image: "" },
             ])
           }
           className="mt-3 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80"

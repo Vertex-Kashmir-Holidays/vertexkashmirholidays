@@ -87,6 +87,7 @@ export async function downloadItineraryPdf(
   const srcs = [
     data.coverImage,
     data.transportImage,
+    ...data.extraVehicles.map((v) => v.image),
     ...data.days.map((d) => d.image),
     ...data.hotels.map((h) => h.image),
     ...data.hotelImages,

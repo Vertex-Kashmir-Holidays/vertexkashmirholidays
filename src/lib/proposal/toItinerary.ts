@@ -9,6 +9,7 @@
 
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { STOCK_IMAGES, genId, type ItineraryData } from "@/types/itinerary";
+import { withDropOnLastDay } from "@/lib/itinerary/dropDay";
 import {
   SINGLE_TIER_KEY,
   COMPARISON_CHECK,
@@ -80,7 +81,7 @@ export function proposalToItineraryData(
       mealType: base.hotels[0].mealType,
       image: stockImageFor(r.destination),
       extraBed: "0",
-      childWithBed: "0",
+      childWithoutBed: "0",
     };
   });
 
@@ -130,7 +131,7 @@ export function proposalToItineraryData(
       if (it.id === "info-4") return { ...it, value: `${rooms} ${rooms === "1" ? "Room" : "Rooms"}` };
       return it;
     }),
-    days: days.length ? days : base.days,
+    days: days.length ? withDropOnLastDay(days) : base.days,
     hotels,
     activities,
     optionalActivities: proposal.optionalActivities,
@@ -144,6 +145,9 @@ export function proposalToItineraryData(
             type: cell(r[vehicleField]),
             count: String(parseVehicleCount(r.count) ?? 1),
             seats: r.seating,
+            days: r.duration,
+            usedFor: r.usedFor,
+            image: "",
           })),
           transportDesc: firstVehicle.usedFor,
           transportSeats: firstVehicle.seating,
