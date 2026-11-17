@@ -735,13 +735,16 @@ export function ItineraryEditor({
                       rows={3}
                     />
 
-                    {day.meta
-                      .filter((m) => m.label.trim().toLowerCase() === "highlights")
-                      .map((m) => {
-                        const highlightPoints = parseHighlights(m.value);
-                        return (
-                          <div key={m.id} className="mt-3">
-                            <label className={fieldLabel}>Highlights</label>
+                    {/* Always shown — a day with no highlights yet (e.g. converted
+                        from a single-package proposal, which has none) still
+                        gets the box and "+ point" creates the Highlights detail. */}
+                    {(() => {
+                      const m = day.meta.find((x) => metaKey(x) === "highlights");
+                      const highlightPoints = m ? parseHighlights(m.value) : [];
+                      return (
+                        <div className="mt-3">
+                          <label className={fieldLabel}>Highlights</label>
+                          {m && highlightPoints.length > 0 ? (
                             <div className="grid gap-2 sm:grid-cols-2">
                               {highlightPoints.map((point, i) => (
                                 <ChipInput
@@ -753,17 +756,26 @@ export function ItineraryEditor({
                                 />
                               ))}
                             </div>
-                            {highlightPoints.length < MAX_HIGHLIGHTS && (
-                              <button
-                                onClick={() => addHighlightPoint(day.id, m.id, m.value)}
-                                className={addBtn}
-                              >
-                                <Plus className="h-2.5 w-2.5" /> point
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              None yet — add up to {MAX_HIGHLIGHTS}, e.g. Dal Lake, Mughal Gardens.
+                            </p>
+                          )}
+                          {highlightPoints.length < MAX_HIGHLIGHTS && (
+                            <button
+                              onClick={() =>
+                                m
+                                  ? addHighlightPoint(day.id, m.id, m.value)
+                                  : setMetaValue(day.id, "Highlights", "New highlight")
+                              }
+                              className={addBtn}
+                            >
+                              <Plus className="h-2.5 w-2.5" /> point
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Stay (Drop on the last day) then Meals — fixed labels like
                         the proposal. Any other custom detail keeps an editable
