@@ -80,7 +80,7 @@ export function TripCelebrationGate() {
         setTrips(
           (json.trips ?? []).filter(
             // A locked trip without a driver belongs to DriverDueGate first.
-            (t) => !seen.has(seenKey(t)) && !(t.servicesLocked && !t.driver),
+            (t) => !seen.has(seenKey(t)) && !(t.servicesLocked && t.drivers.length === 0),
           ),
         );
       })
@@ -107,8 +107,10 @@ export function TripCelebrationGate() {
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto p-0">
-        <div className="relative overflow-hidden rounded-t-lg bg-gradient-to-br from-[#1d5c43] via-[#22704f] to-[#6abf8e] px-6 pb-5 pt-6 text-white">
+      {/* minmax(0,1fr): the default auto grid track grows to fit long one-line
+          rows and pushes content past the dialog's edge. */}
+      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg grid-cols-[minmax(0,1fr)] gap-0 overflow-y-auto overflow-x-hidden p-0">
+        <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-[#1d5c43] via-[#22704f] to-[#6abf8e] px-5 pb-5 pt-6 text-white sm:px-6">
           <div aria-hidden className="pointer-events-none absolute -right-4 -top-3 text-6xl opacity-90">
             🎉
           </div>
@@ -116,7 +118,7 @@ export function TripCelebrationGate() {
             🎊
           </div>
           <DialogHeader>
-            <DialogTitle className="text-left font-display text-2xl font-extrabold text-white">
+            <DialogTitle className="pr-8 text-left font-display text-xl font-extrabold text-white sm:text-2xl">
               {trips.length === 1 ? "A tour starts tomorrow!" : `${trips.length} tours start tomorrow!`} 😊
             </DialogTitle>
           </DialogHeader>
@@ -126,7 +128,7 @@ export function TripCelebrationGate() {
           </p>
         </div>
 
-        <div className="space-y-3 p-5">
+        <div className="space-y-3 p-4 sm:p-5">
           {trips.map((t) => (
             <div key={t.id} className="rounded-xl border border-border p-3.5">
               <div className="flex items-start justify-between gap-3">
@@ -161,9 +163,9 @@ export function TripCelebrationGate() {
               {t.hotels.length > 0 && (
                 <ul className="mt-2.5 space-y-1">
                   {t.hotels.map((h) => (
-                    <li key={h.id} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="min-w-0 truncate text-foreground">
-                        <BedDouble className="mr-1 inline h-3.5 w-3.5 text-primary" />
+                    <li key={h.id} className="flex items-start justify-between gap-2 text-xs">
+                      <span className="min-w-0 break-words text-foreground">
+                        <BedDouble className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-primary" />
                         {h.name}
                         <span className="text-muted-foreground"> · {fmtDay(h.checkIn)} → {fmtDay(h.checkOut)}</span>
                       </span>
@@ -173,19 +175,24 @@ export function TripCelebrationGate() {
                 </ul>
               )}
 
-              <p className="mt-2.5 flex items-center gap-1.5 text-xs">
-                <Car className="h-3.5 w-3.5 text-primary" />
-                {t.driver ? (
-                  <span className="text-foreground">
-                    {t.driver.name}
-                    {t.driver.phone ? ` · ${t.driver.phone}` : ""}
-                    {t.driver.vehicle ? ` · ${t.driver.vehicle}` : ""}
-                    {t.driver.number ? ` (${t.driver.number})` : ""}
-                  </span>
-                ) : (
+              {t.drivers.length > 0 ? (
+                t.drivers.map((d, i) => (
+                  <p key={i} className="mt-2.5 flex items-start gap-1.5 text-xs">
+                    <Car className="mt-px h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="min-w-0 break-words text-foreground">
+                      {d.name}
+                      {d.phone ? ` · ${d.phone}` : ""}
+                      {d.vehicle ? ` · ${d.vehicle}` : ""}
+                      {d.number ? ` (${d.number})` : ""}
+                    </span>
+                  </p>
+                ))
+              ) : (
+                <p className="mt-2.5 flex items-start gap-1.5 text-xs">
+                  <Car className="mt-px h-3.5 w-3.5 shrink-0 text-primary" />
                   <span className="font-bold text-red-600 dark:text-red-400">No driver assigned yet</span>
-                )}
-              </p>
+                </p>
+              )}
 
               <Link
                 href={`/admin/bookings/${t.id}/services`}

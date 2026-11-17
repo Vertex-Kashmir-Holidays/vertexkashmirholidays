@@ -215,6 +215,8 @@ export const DEFAULT_ITINERARY_DATA: ItineraryData = {
   ],
 
   transportType: "Sedan",
+  transportCount: "1",
+  extraVehicles: [],
   transportDesc: "Private Vehicle for the entire trip",
   transportImage: "/itinerary/gurez.webp",
   transportSeats: "4 seats",

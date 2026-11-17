@@ -112,6 +112,28 @@ export async function notifyB2bAgentsOfDocument(doc: {
   });
 }
 
+/** A document shared with one agent only (Admin → B2B Agents → Documents). */
+export async function notifyB2bAgentOfDocument(
+  agent: B2bRecipient,
+  doc: { title: string; description: string },
+): Promise<boolean> {
+  const { sent } = await sendToEach([agent], (r) => {
+    const data = {
+      contactName: contactNameOf(r),
+      agencyName: r.agencyName ?? "",
+      docTitle: doc.title,
+      docDescription: doc.description,
+      personal: true,
+    };
+    return {
+      subject: b2bDocumentUpdateSubject(doc.title, true),
+      html: b2bDocumentUpdateHtml(data),
+      text: b2bDocumentUpdateText(data),
+    };
+  });
+  return sent > 0;
+}
+
 /** A message staff write themselves (Admin → B2B Agents → Email agents). */
 export async function sendB2bAnnouncement(
   recipients: B2bRecipient[],

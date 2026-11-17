@@ -13,7 +13,11 @@ export default async function AdminDocsPage() {
   const { role } = guard;
 
   const [items, links, canCreate, canEdit, canDelete] = await Promise.all([
-    prisma.adminDocument.findMany({ orderBy: [{ category: "asc" }, { createdAt: "desc" }] }),
+    // Agent-only documents live under Admin → B2B Agents → Documents.
+    prisma.adminDocument.findMany({
+      where: { agentId: null },
+      orderBy: [{ category: "asc" }, { createdAt: "desc" }],
+    }),
     prisma.adminDocLink.findMany({ orderBy: { createdAt: "desc" } }),
     can(role, "docs", "create"),
     can(role, "docs", "edit"),

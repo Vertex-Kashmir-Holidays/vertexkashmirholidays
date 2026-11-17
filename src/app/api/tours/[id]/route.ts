@@ -136,7 +136,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // Re-applied on every save (falling back to the stored options when the
   // payload omits them) so a PATCH of formMode/priceFrom alone can never
   // re-open checkout on a tour that has package options.
-  const packageRules = applyPackageOptionRules(packageOptions ?? existing.packageOptions);
+  const packageRules = applyPackageOptionRules(
+    packageOptions ?? existing.packageOptions,
+    rest.minPersons ?? existing.minPersons,
+  );
   if (!packageRules.ok) return NextResponse.json({ error: packageRules.error }, { status: 422 });
   try {
     const updated = await prisma.tour.update({

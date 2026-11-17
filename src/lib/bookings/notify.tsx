@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
+import { driversSelect } from "@/lib/bookings/driver";
 import { notifyNewBooking } from "@/lib/notifications";
 import {
   sendMail,
@@ -356,7 +357,7 @@ export async function sendPaymentInvoiceEmail(
 
 /**
  * Driver & vehicle details email to the customer. Sent when staff assign or
- * update the driver for a booking and choose to notify the customer. Best-effort.
+ * update the drivers for a booking and choose to notify the customer. Best-effort.
  */
 export async function sendDriverDetailsEmail(
   bookingId: string,
@@ -368,17 +369,10 @@ export async function sendDriverDetailsEmail(
       include: {
         tour: { select: { title: true } },
         user: { select: { name: true, email: true } },
+        drivers: driversSelect,
       },
     });
-    if (!booking) return { delivered: false };
-    if (
-      !booking.driverName ||
-      !booking.driverPhone ||
-      !booking.vehicleName ||
-      !booking.vehicleNumber
-    ) {
-      return { delivered: false };
-    }
+    if (!booking || booking.drivers.length === 0) return { delivered: false };
 
     const to = booking.guestEmail ?? booking.user?.email ?? null;
     if (!to) return { delivered: false };
@@ -386,10 +380,7 @@ export async function sendDriverDetailsEmail(
     const wa = await whatsappNumber();
     const payload = {
       guestName: booking.guestName || booking.user?.name || "Guest",
-      driverName: booking.driverName,
-      driverPhone: booking.driverPhone,
-      vehicleName: booking.vehicleName,
-      vehicleNumber: booking.vehicleNumber,
+      drivers: booking.drivers,
       tourTitle: booking.tour?.title ?? null,
       travelDate: fmtDate(booking.travelDate),
       updated: opts.updated ?? false,

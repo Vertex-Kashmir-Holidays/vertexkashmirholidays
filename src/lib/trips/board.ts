@@ -8,7 +8,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import { toDateInputValue } from "@/lib/bookings/serviceDisplay";
-import { hasDriverDetails } from "@/lib/bookings/driver";
+import { driversSelect } from "@/lib/bookings/driver";
+import { transportName } from "@/lib/bookings/serviceDisplay";
 import type { Role } from "@/lib/rbac";
 import type {
   HotelConfirmationStatus,
@@ -54,10 +55,7 @@ const tripSelect = {
   guestPhone: true,
   guestEmail: true,
   servicesLocked: true,
-  driverName: true,
-  driverPhone: true,
-  vehicleName: true,
-  vehicleNumber: true,
+  drivers: driversSelect,
   tour: { select: { title: true } },
   leads: {
     select: { b2bAgentId: true, assignedTo: { select: { id: true, name: true, email: true } } },
@@ -74,6 +72,7 @@ const tripSelect = {
       nights: true,
       rooms: true,
       roomType: true,
+      vehicles: true,
       checkIn: true,
       checkOut: true,
       hotelSupplierId: true,
@@ -135,18 +134,16 @@ function toCard(b: TripRow, today: string): TripCard {
     servicesLocked: b.servicesLocked,
     isB2b: lead?.b2bAgentId != null,
     assignee,
-    driver: hasDriverDetails(b)
-      ? {
-          name: b.driverName!,
-          phone: b.driverPhone,
-          vehicle: b.vehicleName,
-          number: b.vehicleNumber,
-        }
-      : null,
+    drivers: b.drivers.map((d) => ({
+      name: d.driverName,
+      phone: d.driverPhone,
+      vehicle: d.vehicleName,
+      number: d.vehicleNumber,
+    })),
     hotels,
     unconfirmedHotels: hotels.filter((h) => h.confirmation !== "CONFIRMED" && h.confirmation !== "CANCELLED")
       .length,
-    transport: b.services.filter((s) => s.kind === "TRANSPORT").map((s) => s.name),
+    transport: b.services.filter((s) => s.kind === "TRANSPORT").map(transportName),
   };
 }
 

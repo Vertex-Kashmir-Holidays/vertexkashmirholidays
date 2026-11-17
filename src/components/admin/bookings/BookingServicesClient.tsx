@@ -54,6 +54,7 @@ interface Service {
   hotelConfirmation: HotelConfirmationValue | null;
   pickup: string | null;
   dropoff: string | null;
+  vehicles: number | null;
   timing: string | null;
   sortOrder: number;
 }
@@ -132,7 +133,7 @@ interface BookingData {
   } | null;
   services: Service[];
   payments: Payment[];
-  driver: DriverDetails | null;
+  drivers: DriverDetails[];
 }
 
 type FieldKey =
@@ -146,6 +147,7 @@ type FieldKey =
   | "hotelConfirmation"
   | "pickup"
   | "dropoff"
+  | "vehicles"
   | "timing"
   | "amount";
 interface FieldDef {
@@ -185,6 +187,7 @@ const SECTIONS: {
     addLabel: "Add Cab",
     fields: [
       { key: "name", label: "Cab Name", type: "text" },
+      { key: "vehicles", label: "Vehicles", type: "number" },
       { key: "pickup", label: "Pick", type: "text" },
       { key: "dropoff", label: "Drop", type: "text" },
       { key: "amount", label: "Amount", type: "number" },
@@ -371,6 +374,7 @@ export function BookingServicesClient({
         hotelConfirmation: null,
         pickup: null,
         dropoff: null,
+        vehicles: null,
         timing: null,
         sortOrder: services.length + d.length,
       },
@@ -1211,29 +1215,30 @@ function EditDetailsModal({
 }
 
 // ── Driver & vehicle section ──────────────────────────────────────────────────
-// Appears after services are locked. Staff can add the assigned driver/vehicle
-// and optionally email the customer; details remain editable until one day
-// before travel, after which the card is read-only. Rendered from the parent
-// page (right column, below Payment & Account) rather than here — exported
-// for that.
+// Appears after services are locked. Staff add the assigned driver + vehicle —
+// one entry per vehicle (a big group can travel in two) — and optionally email
+// the customer; details remain editable through the travel date, after which
+// the card is read-only. Rendered from the parent page (right column, below
+// Payment & Account) rather than here — exported for that.
 export function DriverSection({
   bookingId,
   travelDate,
-  initialDriver,
+  initialDrivers,
   canEdit,
   autoOpen = false,
 }: {
   bookingId: string;
   travelDate: string;
-  initialDriver: DriverDetails | null;
+  initialDrivers: DriverDetails[];
   canEdit: boolean;
   /** Open the Add Driver form on load (DriverDueGate's CTA) — only when none is saved yet. */
   autoOpen?: boolean;
 }) {
   const router = useRouter();
-  const [driver, setDriver] = useState<DriverDetails | null>(initialDriver);
+  const [drivers, setDrivers] = useState<DriverDetails[]>(initialDrivers);
+  const hasDrivers = drivers.length > 0;
   const [open, setOpen] = useState(
-    autoOpen && !initialDriver && canEdit && canEditDriver(travelDate),
+    autoOpen && initialDrivers.length === 0 && canEdit && canEditDriver(travelDate),
   );
   const [saving, startSave] = useTransition();
   const editable = canEditDriver(travelDate) && canEdit;
@@ -1244,20 +1249,26 @@ export function DriverSection({
     vehicleNumber: "",
     vehicleName: "",
   };
-  const [form, setForm] = useState<DriverDetails>(initialDriver ?? empty);
+  const [form, setForm] = useState<DriverDetails[]>(hasDrivers ? initialDrivers : [empty]);
   const [sendEmail, setSendEmail] = useState(true);
 
   function openModal() {
-    setForm(driver ?? empty);
+    setForm(hasDrivers ? drivers : [empty]);
     setSendEmail(true);
     setOpen(true);
   }
 
+  const setEntry = (i: number, patch: Partial<DriverDetails>) =>
+    setForm((f) => f.map((d, j) => (j === i ? { ...d, ...patch } : d)));
+
   function submit() {
-    if (form.driverName.trim().length < 2) return toast.error("Enter the driver's name.");
-    if (!isValidPhone(form.driverPhone.trim(), "IN")) return toast.error(PHONE_MESSAGE);
-    if (form.vehicleNumber.trim().length < 4) return toast.error("Enter the vehicle number.");
-    if (form.vehicleName.trim().length < 2) return toast.error("Enter the vehicle name.");
+    for (const [i, d] of form.entries()) {
+      const which = form.length > 1 ? ` for vehicle ${i + 1}` : "";
+      if (d.driverName.trim().length < 2) return toast.error(`Enter the driver's name${which}.`);
+      if (!isValidPhone(d.driverPhone.trim(), "IN")) return toast.error(PHONE_MESSAGE);
+      if (d.vehicleNumber.trim().length < 4) return toast.error(`Enter the vehicle number${which}.`);
+      if (d.vehicleName.trim().length < 2) return toast.error(`Enter the vehicle name${which}.`);
+    }
 
     startSave(async () => {
       try {
@@ -1265,10 +1276,12 @@ export function DriverSection({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            driverName: form.driverName.trim(),
-            driverPhone: form.driverPhone.trim(),
-            vehicleNumber: form.vehicleNumber.trim(),
-            vehicleName: form.vehicleName.trim(),
+            drivers: form.map((d) => ({
+              driverName: d.driverName.trim(),
+              driverPhone: d.driverPhone.trim(),
+              vehicleNumber: d.vehicleNumber.trim(),
+              vehicleName: d.vehicleName.trim(),
+            })),
             sendEmail,
           }),
         });
@@ -1277,12 +1290,7 @@ export function DriverSection({
           throw new Error(
             typeof data.error === "string" ? data.error : "Failed to save driver details.",
           );
-        setDriver({
-          driverName: data.driverName,
-          driverPhone: data.driverPhone,
-          vehicleNumber: data.vehicleNumber,
-          vehicleName: data.vehicleName,
-        });
+        setDrivers(data.drivers);
         setOpen(false);
         if (data.requestedEmail) {
           toast.success(
@@ -1302,14 +1310,16 @@ export function DriverSection({
 
   const fieldCls =
     "w-full px-2.5 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
+  const labelCls = "mb-1 block text-xs font-semibold text-muted-foreground";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 font-bold text-foreground text-sm">
-          <Car className="w-4 h-4 text-primary" /> Driver &amp; Vehicle
+          <Car className="w-4 h-4 text-primary" />{" "}
+          {drivers.length > 1 ? `Drivers & Vehicles (${drivers.length})` : "Driver & Vehicle"}
         </h3>
-        {driver
+        {hasDrivers
           ? editable && (
               <button
                 onClick={openModal}
@@ -1328,12 +1338,23 @@ export function DriverSection({
             )}
       </div>
 
-      {driver ? (
-        <div className="mt-4 grid grid-cols-1 gap-3">
-          <DriverFact icon={UserRound} label="Driver" value={driver.driverName} />
-          <DriverFact icon={Phone} label="Driver Phone" value={driver.driverPhone} />
-          <DriverFact icon={Car} label="Vehicle" value={driver.vehicleName} />
-          <DriverFact icon={Car} label="Vehicle Number" value={driver.vehicleNumber} />
+      {hasDrivers ? (
+        <div className="mt-4 space-y-4">
+          {drivers.map((d, i) => (
+            <div key={i}>
+              {drivers.length > 1 && (
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-primary">
+                  Vehicle {i + 1}
+                </p>
+              )}
+              <div className="grid grid-cols-1 gap-3">
+                <DriverFact icon={UserRound} label="Driver" value={d.driverName} />
+                <DriverFact icon={Phone} label="Driver Phone" value={d.driverPhone} />
+                <DriverFact icon={Car} label="Vehicle" value={d.vehicleName} />
+                <DriverFact icon={Car} label="Vehicle Number" value={d.vehicleNumber} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <p className="mt-3 text-xs text-muted-foreground">
@@ -1343,7 +1364,7 @@ export function DriverSection({
         </p>
       )}
 
-      {driver && !editable && (
+      {hasDrivers && !editable && (
         <p className="mt-3 text-[12px] text-muted-foreground">
           Editing is closed — driver details can only be changed on or before the travel date.
         </p>
@@ -1358,7 +1379,7 @@ export function DriverSection({
           <div className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h4 className="font-display text-base font-bold text-foreground">
-                {driver ? "Edit driver details" : "Add driver details"}
+                {hasDrivers ? "Edit driver details" : "Add driver details"}
               </h4>
               <button
                 onClick={() => setOpen(false)}
@@ -1369,50 +1390,81 @@ export function DriverSection({
               </button>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Driver name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.driverName}
-                  onChange={(e) => setForm({ ...form, driverName: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. Bashir Ahmad"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Driver phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.driverPhone}
-                  onChange={(e) => setForm({ ...form, driverPhone: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. +91 98765 43210"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Vehicle name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.vehicleName}
-                  onChange={(e) => setForm({ ...form, vehicleName: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. Toyota Innova Crysta"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Vehicle number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.vehicleNumber}
-                  onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. JK01AB1234"
-                />
-              </div>
+              {form.map((d, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "space-y-3",
+                    form.length > 1 && "rounded-xl border border-border p-3",
+                  )}
+                >
+                  {form.length > 1 && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] font-bold uppercase tracking-wide text-primary">
+                        Vehicle {i + 1}
+                      </p>
+                      <button
+                        onClick={() => setForm((f) => f.filter((_, j) => j !== i))}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Remove
+                      </button>
+                    </div>
+                  )}
+                  <div>
+                    <label className={labelCls}>
+                      Driver name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.driverName}
+                      onChange={(e) => setEntry(i, { driverName: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. Bashir Ahmad"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Driver phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.driverPhone}
+                      onChange={(e) => setEntry(i, { driverPhone: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. +91 98765 43210"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Vehicle name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.vehicleName}
+                      onChange={(e) => setEntry(i, { vehicleName: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. Toyota Innova Crysta"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Vehicle number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.vehicleNumber}
+                      onChange={(e) => setEntry(i, { vehicleNumber: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. JK01AB1234"
+                    />
+                  </div>
+                </div>
+              ))}
+              {form.length < 10 && (
+                <button
+                  onClick={() => setForm((f) => [...f, empty])}
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2 text-sm font-semibold text-primary transition hover:bg-muted"
+                >
+                  <Plus className="h-4 w-4" /> Add another vehicle
+                </button>
+              )}
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
@@ -1429,7 +1481,7 @@ export function DriverSection({
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
                 >
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {driver ? "Save changes" : "Add driver"}
+                  {hasDrivers ? "Save changes" : "Add driver"}
                 </button>
                 <button
                   onClick={() => setOpen(false)}
@@ -1724,6 +1776,7 @@ interface RowForm {
   hotelConfirmation: string;
   pickup: string;
   dropoff: string;
+  vehicles: string;
   timing: string;
   amount: string;
 }
@@ -1748,6 +1801,7 @@ function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
         }
       : {}),
     pickup: form.pickup.trim() || null,
+    vehicles: form.vehicles === "" ? null : parseInt(form.vehicles, 10),
     dropoff: form.dropoff.trim() || null,
     timing: form.timing.trim() || null,
     sortOrder,
@@ -1794,6 +1848,7 @@ function ServiceRow({
     hotelSupplierId: record.hotelSupplierId ?? "",
     hotelConfirmation: record.hotelConfirmation ?? "",
     pickup: record.pickup ?? "",
+    vehicles: record.vehicles != null ? String(record.vehicles) : "",
     dropoff: record.dropoff ?? "",
     timing: record.timing ?? "",
     amount: record.amount ? String(record.amount) : "",
@@ -1816,6 +1871,7 @@ function ServiceRow({
           hotelSupplierId: record.hotelSupplierId ?? "",
           hotelConfirmation: record.hotelConfirmation ?? "",
           pickup: record.pickup ?? "",
+          vehicles: record.vehicles != null ? String(record.vehicles) : "",
           dropoff: record.dropoff ?? "",
           timing: record.timing ?? "",
           amount: record.amount ? String(record.amount) : "",
@@ -1933,7 +1989,7 @@ function ServiceRow({
           "block min-w-0",
           isHotel
             ? ""
-            : f.key === "amount" || f.key === "nights" || f.key === "rooms"
+            : f.key === "amount" || f.key === "nights" || f.key === "rooms" || f.key === "vehicles"
               ? "w-24"
               : f.type === "date" || f.type === "confirmation"
                 ? "w-36"
@@ -1993,7 +2049,8 @@ function ServiceRow({
               if (f.key === "amount") onAmountChange(record.id, parseFloat(value) || 0);
             }}
             onBlur={autoSave}
-            min={f.key === "checkOut" ? form.checkIn || undefined : undefined}
+            min={f.key === "checkOut" ? form.checkIn || undefined : f.key === "vehicles" ? 1 : undefined}
+            placeholder={f.key === "vehicles" ? "1" : undefined}
             disabled={locked || !canEdit}
             aria-invalid={missing || undefined}
             className={cn(

@@ -26,6 +26,7 @@ import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
 import { LogoUploadField } from "@/components/b2b/LogoUploadField";
 import { NewB2bRequestForAgentButton } from "./NewB2bRequestForAgentButton";
+import { AgentDocumentsButton } from "./AgentDocumentsButton";
 import { EmailB2bAgentsDialog } from "./EmailB2bAgentsDialog";
 import { ConfirmDialog } from "@/components/admin/connect/ConfirmDialog";
 
@@ -500,6 +501,12 @@ export function B2bAgentsClient({ initialAgents }: Props) {
                               <NewB2bRequestForAgentButton
                                 agentId={a.id}
                                 agentLabel={a.agencyName ?? a.name ?? a.email}
+                              />
+                              <AgentDocumentsButton
+                                agentId={a.id}
+                                agentLabel={a.agencyName ?? a.name ?? a.email}
+                                agentEmail={a.email}
+                                agentActive={a.agencyStatus === "ACTIVE"}
                               />
                             </div>
                           </div>

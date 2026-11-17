@@ -50,6 +50,8 @@ export function ImagePicker({
   const [galleryPages, setGalleryPages] = useState(1);
   const [gallerySource, setGallerySource] = useState<SourceFilter>("ALL");
   const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
+  // Gallery category for uploads — usually the hotel's name, same as the Gallery page.
+  const [category, setCategory] = useState("");
 
   useEffect(() => setMounted(true), []);
 
@@ -86,7 +88,9 @@ export function ImagePicker({
     try {
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("folder", "itinerary");
+      const name = category.trim();
+      fd.append("folder", name || "itinerary");
+      if (name) fd.append("alt", name);
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Upload failed");
@@ -299,15 +303,26 @@ export function ImagePicker({
                 </div>
               )}
 
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                <p className="text-xs text-muted-foreground">
-                  Upload JPG · PNG · WebP (max 500 KB).
-                </p>
+              <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-end">
+                <div className="min-w-0 flex-1">
+                  <label htmlFor="image-picker-category" className="mb-1 block text-[12px] font-semibold text-muted-foreground">
+                    Hotel / category name <span className="font-normal">(optional — files it in the Gallery)</span>
+                  </label>
+                  <input
+                    id="image-picker-category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="e.g. AS Resorts, Hotel The Royal Ganpati…"
+                    maxLength={80}
+                    className="w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">Upload JPG · PNG · WebP (max 500 KB).</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50 sm:mb-5"
                 >
                   {uploading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

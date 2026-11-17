@@ -1,5 +1,6 @@
 import type { ServiceKind } from "@prisma/client";
 import type { ItineraryData } from "@/types/itinerary";
+import { parseVehicleCount } from "@/lib/vehicleCount";
 
 // Maps an itinerary's hotels/transport/included-activities into booking
 // service rows. Pure and itinerary-shape-only (no Lead/Booking/B2B concept
@@ -21,6 +22,8 @@ export interface ItineraryServiceInput {
   // Hotel only. The itinerary's check-in/out are free-text labels ("Wed 10 Jun",
   // no year), so they are not carried over — staff set the real dates.
   rooms?: number | null;
+  // Transport only: the itinerary's vehicle count (null = 1).
+  vehicles?: number | null;
   pickup: string | null;
   dropoff: string | null;
   timing: string | null;
@@ -52,6 +55,22 @@ export function buildServicesFromItinerary(data: ItineraryData): ItineraryServic
     services.push({
       kind: "TRANSPORT",
       name: data.transportType.trim(),
+      vehicles: parseVehicleCount(data.transportCount),
+      amount: 0,
+      location: null,
+      nights: null,
+      roomType: null,
+      pickup: null,
+      dropoff: null,
+      timing: data.transportDays.trim() || null,
+    });
+  }
+  for (const v of data.extraVehicles) {
+    if (!v.type.trim()) continue;
+    services.push({
+      kind: "TRANSPORT",
+      name: v.type.trim(),
+      vehicles: parseVehicleCount(v.count),
       amount: 0,
       location: null,
       nights: null,

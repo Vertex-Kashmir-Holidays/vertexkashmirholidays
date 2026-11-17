@@ -159,6 +159,14 @@ export function ItineraryEditor({
   /* ---------- cover ---------- */
   const updateCover = (field: keyof ItineraryData, value: string) =>
     setData((p) => ({ ...p, [field]: value }));
+  const updateExtraVehicle = (
+    id: string,
+    patch: Partial<ItineraryData["extraVehicles"][number]>,
+  ) =>
+    setData((p) => ({
+      ...p,
+      extraVehicles: p.extraVehicles.map((v) => (v.id === id ? { ...v, ...patch } : v)),
+    }));
 
   /* ---------- lead trip sync (two-way) ---------- */
   // Recompute the lead-derived cover/duration fields live when trip details change.
@@ -1193,11 +1201,87 @@ export function ItineraryEditor({
                   className="mt-1 h-9 w-9 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary"
                 />
                 <div className="min-w-0">
-                  <EditableField
-                    value={data.transportType}
-                    onValueChange={(v) => updateCover("transportType", v)}
-                    className="text-base font-bold"
-                  />
+                  <div className="flex items-start gap-2">
+                    <label className="w-14 shrink-0" title="No. of vehicles">
+                      <EditableField
+                        value={data.transportCount}
+                        onValueChange={(v) =>
+                          updateCover("transportCount", v.replace(/\D/g, "").slice(0, 2))
+                        }
+                        inputMode="numeric"
+                        placeholder="1"
+                        aria-label="No. of vehicles"
+                        className="text-center text-base font-bold"
+                      />
+                    </label>
+                    <span className="pt-1 text-base font-bold text-mute dark:text-muted-foreground">×</span>
+                    <EditableField
+                      value={data.transportType}
+                      onValueChange={(v) => updateCover("transportType", v)}
+                      className="text-base font-bold"
+                    />
+                  </div>
+                  {/* More vehicles in a different combo (Sedan + SUV). */}
+                  {data.extraVehicles.map((v) => (
+                    <div key={v.id} className="group/veh mt-2 flex items-start gap-2">
+                      <span className="pt-1 text-base font-bold text-mute dark:text-muted-foreground">+</span>
+                      <label className="w-12 shrink-0" title="No. of vehicles">
+                        <EditableField
+                          value={v.count}
+                          onValueChange={(val) =>
+                            updateExtraVehicle(v.id, { count: val.replace(/\D/g, "").slice(0, 2) })
+                          }
+                          inputMode="numeric"
+                          placeholder="1"
+                          aria-label="No. of vehicles"
+                          className="text-center text-base font-bold"
+                        />
+                      </label>
+                      <span className="pt-1 text-base font-bold text-mute dark:text-muted-foreground">×</span>
+                      <EditableField
+                        value={v.type}
+                        onValueChange={(val) => updateExtraVehicle(v.id, { type: val })}
+                        placeholder="SUV"
+                        aria-label="Vehicle"
+                        className="text-base font-bold"
+                      />
+                      <label className="w-24 shrink-0">
+                        <EditableField
+                          value={v.seats}
+                          onValueChange={(val) => updateExtraVehicle(v.id, { seats: val })}
+                          placeholder="6 seats"
+                          aria-label="Seats"
+                          className="text-xs"
+                        />
+                      </label>
+                      <button
+                        onClick={() =>
+                          setData((p) => ({
+                            ...p,
+                            extraVehicles: p.extraVehicles.filter((x) => x.id !== v.id),
+                          }))
+                        }
+                        aria-label={`Remove vehicle ${v.type}`}
+                        className="mt-1.5 hidden text-rose-500 hover:text-rose-600 group-hover/veh:block no-print [@media(hover:none)]:block"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() =>
+                      setData((p) => ({
+                        ...p,
+                        extraVehicles: [
+                          ...p.extraVehicles,
+                          { id: genId("veh"), type: "", count: "1", seats: "" },
+                        ],
+                      }))
+                    }
+                    className="addbtn mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[hsl(156_40%_21%)] dark:text-primary no-print"
+                  >
+                    <Plus className="h-3 w-3" /> Add another vehicle
+                  </button>
                   <EditableField
                     value={data.transportDesc}
                     onValueChange={(v) => updateCover("transportDesc", v)}

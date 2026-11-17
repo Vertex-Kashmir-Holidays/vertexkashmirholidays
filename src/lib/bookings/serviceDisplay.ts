@@ -1,6 +1,8 @@
 // Customer-safe display helpers for booking services. Used by the customer
 // account area to show service details WITHOUT exposing per-service prices.
 
+import { withVehicleCount } from "@/lib/vehicleCount";
+
 export type ServiceKind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
 export interface DisplayService {
@@ -14,6 +16,7 @@ export interface DisplayService {
   checkOut?: Date | string | null;
   pickup?: string | null;
   dropoff?: string | null;
+  vehicles?: number | null;
   timing?: string | null;
 }
 
@@ -30,8 +33,14 @@ export function toDisplayService(s: DisplayService): DisplayService {
     checkOut: s.checkOut,
     pickup: s.pickup,
     dropoff: s.dropoff,
+    vehicles: s.vehicles,
     timing: s.timing,
   };
+}
+
+/** Cab name with its vehicle count — "2 × Innova Crysta" when more than one. */
+export function transportName(s: { name: string; vehicles?: number | null }): string {
+  return withVehicleCount(s.name, s.vehicles);
 }
 
 // Hotel check-in/out are stored as a plain DATE (UTC midnight), so they are
@@ -99,6 +108,8 @@ export function serviceFields(s: DisplayService): ServiceField[] {
         fields.push({ label: "Nights", value: `${s.nights} night${s.nights === 1 ? "" : "s"}` });
       break;
     case "TRANSPORT":
+      if (s.vehicles != null && s.vehicles > 1)
+        fields.push({ label: "Vehicles", value: String(s.vehicles) });
       if (s.pickup) fields.push({ label: "Pickup", value: s.pickup });
       if (s.dropoff) fields.push({ label: "Drop", value: s.dropoff });
       break;
@@ -156,7 +167,7 @@ export function serviceRow(s: DisplayService): string[] {
         s.nights != null ? String(s.nights) : DASH,
       ];
     case "TRANSPORT":
-      return [s.name, s.pickup || DASH, s.dropoff || DASH];
+      return [transportName(s), s.pickup || DASH, s.dropoff || DASH];
     case "ACTIVITY":
       return [s.name, s.timing || DASH, s.location || DASH];
     default:

@@ -98,6 +98,7 @@ model User {
   rateCardRevisions        RateCardRevision[]   @relation("RateCardRevisionCreatedBy")
   offerLetters             OfferLetter[]        @relation("OfferLetterEmployee")
   offerLettersCreated      OfferLetter[]        @relation("OfferLetterCreatedBy")
+  agentDocuments           AdminDocument[]      @relation("AgentDocuments")
 
   // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
@@ -736,12 +737,15 @@ model Booking {
   inclusions         String              @default("[]")
   // Once locked, services can no longer be added/edited/deleted.
   servicesLocked     Boolean             @default(false)
-  // Assigned driver/vehicle, added by staff after services are locked. Editable
-  // through the end of travelDate (including the tour start day). driverAddedAt non-null = details exist.
+  // LEGACY single driver/vehicle — superseded by `drivers` (BookingDriver,
+  // one row per vehicle; migration 20261117090000 copied these across). No
+  // longer read or written; kept only so live doesn't break between migrate
+  // and deploy. Drop in a later migration.
   driverName         String?
   driverPhone        String?
   vehicleNumber      String?
   vehicleName        String?
+  // Stamped the first time drivers are saved (preserved on later edits).
   driverAddedAt      DateTime?
   // Soft-delete marker. Non-null = hidden from all listings/reports but the row
   // (and its payments/services) is retained. Permanent delete removes the row.
@@ -771,6 +775,7 @@ model Booking {
   leads              Lead[]
   payments           BookingPayment[]
   services           BookingService[]
+  drivers            BookingDriver[]
   itinerary          Itinerary?
   offlineConversions OfflineConversion[]
   commission         BookingCommission?
@@ -841,12 +846,31 @@ model BookingService {
   hotelConfirmedAt  DateTime?
   pickup            String? // transport
   dropoff           String? // transport
+  vehicles          Int? // transport — number of vehicles of this type (null = 1)
   timing            String? // activity
   sortOrder         Int                @default(0)
   createdAt         DateTime           @default(now())
 
   @@index([bookingId])
   @@index([hotelSupplierId])
+}
+
+// Assigned driver + vehicle for a booking — one row per vehicle (a big group
+// can travel in two). Added by staff after services are locked, editable
+// through the end of travelDate (src/lib/bookings/driver.ts). Saved as a
+// whole list: the driver API replaces every row each time.
+model BookingDriver {
+  id            String   @id @default(cuid())
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  driverName    String
+  driverPhone   String
+  vehicleName   String
+  vehicleNumber String
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([bookingId])
 }
 
 enum HotelConfirmation {
@@ -1506,10 +1530,16 @@ model AdminDocument {
   sizeBytes      Int
   uploadedById   String?
   uploadedByName String
+  // Set = shared with this one B2B agent only (Admin → B2B Agents → Documents,
+  // e.g. their proposal); null = library doc, B2B category goes to all agents.
+  // Cascade: deleting the agent removes their private documents.
+  agentId        String?
+  agent          User?    @relation("AgentDocuments", fields: [agentId], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now())
 
   @@index([category])
   @@index([createdAt])
+  @@index([agentId])
 }
 
 // External reference links staff want quick access to from the Docs page —

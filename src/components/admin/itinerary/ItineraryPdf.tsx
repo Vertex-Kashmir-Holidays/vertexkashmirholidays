@@ -19,6 +19,7 @@ import { MEAL_PLAN_LEGEND } from "@/lib/hotelSuppliers/schema";
 import { SITE_URL } from "@/lib/seo";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "./icons";
+import { withVehicleCount } from "@/lib/vehicleCount";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -1225,9 +1226,19 @@ export function ItineraryPdf({
             <View style={s.transportBody}>
               <View style={s.transportMain}>
                 <View style={s.transportHeadRow}>
-                  <Text style={s.transportType}>{data.transportType}</Text>
+                  <Text style={s.transportType}>
+                    {withVehicleCount(data.transportType, data.transportCount)}
+                  </Text>
                   <Text style={s.privateBadge}>Private</Text>
                 </View>
+                {data.extraVehicles
+                  .filter((v) => v.type.trim())
+                  .map((v) => (
+                    <Text key={v.id} style={[s.transportType, { marginTop: 3 }]}>
+                      + {withVehicleCount(v.type, v.count)}
+                      {v.seats ? ` (${v.seats})` : ""}
+                    </Text>
+                  ))}
                 <Text style={s.transportDesc}>{data.transportDesc}</Text>
                 {data.transportTags.length > 0 ? (
                   <View style={s.dayPillRow}>

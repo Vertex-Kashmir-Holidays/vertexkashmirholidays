@@ -88,6 +88,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(d.checkIn !== undefined ? { checkIn: d.checkIn } : {}),
       ...(d.checkOut !== undefined ? { checkOut: d.checkOut } : {}),
       ...(d.pickup !== undefined ? { pickup: d.pickup } : {}),
+      ...(d.vehicles !== undefined ? { vehicles: d.vehicles } : {}),
       ...(d.dropoff !== undefined ? { dropoff: d.dropoff } : {}),
       ...(d.timing !== undefined ? { timing: d.timing } : {}),
       ...(d.sortOrder !== undefined ? { sortOrder: d.sortOrder } : {}),

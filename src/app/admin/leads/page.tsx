@@ -1,3 +1,4 @@
+import { findLeadsNewFirst } from "@/lib/leads/newFirst";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -53,9 +54,8 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
     offers,
     budgetBands,
   ] = await Promise.all([
-    prisma.lead.findMany({
-      where: { ...scopeWhere, ...ipWhere },
-      orderBy: { updatedAt: "desc" },
+    // NEW leads on top, then the rest — each most recently updated first.
+    findLeadsNewFirst({ ...scopeWhere, ...ipWhere }, {
       take: ipFilter ? undefined : 10,
       select: {
         id: true,

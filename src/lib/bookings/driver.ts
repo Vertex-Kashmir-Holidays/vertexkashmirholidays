@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 // Shared rules for the booking's assigned driver/vehicle details.
 //
 // Driver details may be added/edited by staff only after services are locked,
@@ -33,6 +35,7 @@ export interface DriverDueBooking {
   travelDate: string;
 }
 
+/** One assigned driver + vehicle (a BookingDriver row). A booking can have several. */
 export interface DriverDetails {
   driverName: string;
   driverPhone: string;
@@ -40,7 +43,8 @@ export interface DriverDetails {
   vehicleName: string;
 }
 
-/** True when a booking has driver details saved (driverName is the marker). */
-export function hasDriverDetails(b: { driverName: string | null }): boolean {
-  return !!b.driverName && b.driverName.trim().length > 0;
-}
+/** Prisma select for a booking's drivers, in display order. */
+export const driversSelect = {
+  orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  select: { driverName: true, driverPhone: true, vehicleName: true, vehicleNumber: true },
+} satisfies Prisma.Booking$driversArgs;

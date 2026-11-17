@@ -714,12 +714,25 @@ export function B2bItineraryEditor({
         <h2 className={sectionTitle}>Transportation &amp; Price</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label className={fieldLabel}>Vehicle</label>
-            <input
-              className={inputCls + " mt-1.5"}
-              value={data.transportType}
-              onChange={(e) => update("transportType", e.target.value)}
-            />
+            <label className={fieldLabel}>No. of vehicles × Vehicle</label>
+            <div className="mt-1.5 flex gap-2">
+              <input
+                className={inputCls + " w-16 shrink-0 text-center"}
+                inputMode="numeric"
+                placeholder="1"
+                aria-label="No. of vehicles"
+                value={data.transportCount}
+                onChange={(e) =>
+                  update("transportCount", e.target.value.replace(/\D/g, "").slice(0, 2))
+                }
+              />
+              <input
+                className={inputCls}
+                aria-label="Vehicle"
+                value={data.transportType}
+                onChange={(e) => update("transportType", e.target.value)}
+              />
+            </div>
           </div>
           <div>
             <label className={fieldLabel}>Details</label>
@@ -739,6 +752,64 @@ export function B2bItineraryEditor({
             />
           </div>
         </div>
+        {/* More vehicles in a different combo (Sedan + SUV). */}
+        {data.extraVehicles.map((v) => (
+          <div key={v.id} className="mt-3 flex items-center gap-2 sm:max-w-md">
+            <span className="text-sm font-bold text-muted-foreground">+</span>
+            <input
+              className={inputCls + " w-16 shrink-0 text-center"}
+              inputMode="numeric"
+              placeholder="1"
+              aria-label="No. of vehicles"
+              value={v.count}
+              onChange={(e) =>
+                update(
+                  "extraVehicles",
+                  data.extraVehicles.map((x) =>
+                    x.id === v.id ? { ...x, count: e.target.value.replace(/\D/g, "").slice(0, 2) } : x,
+                  ),
+                )
+              }
+            />
+            <input
+              className={inputCls}
+              placeholder="e.g. SUV"
+              aria-label="Vehicle"
+              value={v.type}
+              onChange={(e) =>
+                update(
+                  "extraVehicles",
+                  data.extraVehicles.map((x) => (x.id === v.id ? { ...x, type: e.target.value } : x)),
+                )
+              }
+            />
+            <button
+              type="button"
+              onClick={() =>
+                update(
+                  "extraVehicles",
+                  data.extraVehicles.filter((x) => x.id !== v.id),
+                )
+              }
+              aria-label={`Remove vehicle ${v.type}`}
+              className="shrink-0 p-1 text-rose-500 hover:text-rose-600"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            update("extraVehicles", [
+              ...data.extraVehicles,
+              { id: genId("veh"), type: "", count: "1", seats: "" },
+            ])
+          }
+          className="mt-3 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add another vehicle
+        </button>
       </div>
 
       {/* Included Activities */}

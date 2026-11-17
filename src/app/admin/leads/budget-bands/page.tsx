@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
 import { isAdminRole } from "@/lib/itinerary/access";
-import { publishedPackageOptions } from "@/lib/tours/content";
+import { packagePartySize, publishedPackageOptions } from "@/lib/tours/content";
 import { bandForPrice, trimTourTitle } from "@/lib/leads/qualification";
 import { BudgetBandsClient, type CoverageItem } from "@/components/admin/leads/BudgetBandsClient";
 
@@ -24,7 +24,7 @@ export default async function BudgetBandsPage() {
         prisma.tour.findMany({
           where: { published: true },
           orderBy: { priceFrom: "asc" },
-          select: { title: true, priceFrom: true, packageOptions: true },
+          select: { title: true, priceFrom: true, packageOptions: true, minPersons: true },
         }),
         prisma.occasionOffer.findMany({
           orderBy: { sortOrder: "asc" },
@@ -50,7 +50,7 @@ export default async function BudgetBandsPage() {
       const rows = options.length
         ? options.map((o) => ({
             name: `${trimTourTitle(t.title)} — ${o.name}`,
-            pp: o.priceForTwo / 2,
+            pp: o.priceForTwo / packagePartySize(t.minPersons),
           }))
         : [{ name: trimTourTitle(t.title), pp: t.priceFrom }];
       return rows.map((r) => ({ kind: "Tour", ...r }));

@@ -38,7 +38,7 @@ export function TripsBoard({ trips, showAssignee }: { trips: TripCard[]; showAss
     return trips.filter((t) => {
       if (assignee !== "all" && t.assignee?.id !== assignee) return false;
       if (flag === "unconfirmed" && t.unconfirmedHotels === 0) return false;
-      if (flag === "noDriver" && (t.driver || t.bucket === "completed")) return false;
+      if (flag === "noDriver" && (t.drivers.length > 0 || t.bucket === "completed")) return false;
       if (!needle) return true;
       return [t.guestName, t.guestPhone, t.guestEmail ?? "", t.ref, ...t.hotels.map((h) => h.name)]
         .join(" ")
@@ -52,7 +52,7 @@ export function TripsBoard({ trips, showAssignee }: { trips: TripCard[]; showAss
     tomorrow: trips.filter((t) => t.bucket === "tomorrow").length,
     onTour: trips.filter((t) => t.bucket === "onTour").length,
     unconfirmed: active.reduce((n, t) => n + t.unconfirmedHotels, 0),
-    noDriver: active.filter((t) => !t.driver).length,
+    noDriver: active.filter((t) => t.drivers.length === 0).length,
   };
 
   return (
@@ -190,7 +190,7 @@ function TripCardView({ trip: t, bucket }: { trip: TripCard; bucket: TripBucket 
   const nights = t.hotels.reduce((n, h) => n + (h.nights ?? 0), 0);
   const activeHotels = t.hotels.filter((h) => h.confirmation !== "CANCELLED");
   const confirmed = activeHotels.length - t.unconfirmedHotels;
-  const allSet = !ended && t.unconfirmedHotels === 0 && !!t.driver && activeHotels.length > 0;
+  const allSet = !ended && t.unconfirmedHotels === 0 && t.drivers.length > 0 && activeHotels.length > 0;
   const muted = "text-foreground/55";
 
   return (
@@ -227,7 +227,8 @@ function TripCardView({ trip: t, bucket }: { trip: TripCard; bucket: TripBucket 
           {t.tourTitle ?? "Custom package"} · Ref {t.ref}
         </p>
         {/* Trip facts — spelled out, one labelled item each. */}
-        <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {/* 4 across only when the card is wide (single column, or 2 columns from xl). */}
+        <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             { label: "Starts", value: fmtDay(t.startDate, true) },
             { label: "Ends", value: t.endDate ? fmtDay(t.endDate, true) : "—" },
@@ -305,15 +306,17 @@ function TripCardView({ trip: t, bucket }: { trip: TripCard; bucket: TripBucket 
           </p>
         </div>
         <div className="min-w-0">
-          <SectionLabel>Driver</SectionLabel>
-          {t.driver ? (
-            <p className="mt-1 flex items-center gap-1.5 truncate text-xs font-semibold text-foreground">
-              <Car className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="truncate">
-                {t.driver.name}
-                {t.driver.number && <span className="font-normal text-muted-foreground"> · {t.driver.number}</span>}
-              </span>
-            </p>
+          <SectionLabel>{t.drivers.length > 1 ? `Drivers (${t.drivers.length})` : "Driver"}</SectionLabel>
+          {t.drivers.length > 0 ? (
+            t.drivers.map((d, i) => (
+              <p key={i} className="mt-1 flex items-center gap-1.5 truncate text-xs font-semibold text-foreground">
+                <Car className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {d.name}
+                  {d.number && <span className="font-normal text-muted-foreground"> · {d.number}</span>}
+                </span>
+              </p>
+            ))
           ) : ended ? (
             <p className="mt-1 text-xs text-muted-foreground">—</p>
           ) : (

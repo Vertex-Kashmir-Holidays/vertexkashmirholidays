@@ -18,6 +18,8 @@ export const serviceBodySchema = z.object({
   hotelSupplierId: z.string().trim().min(1).nullable().optional(),
   hotelConfirmation: z.enum(["PENDING", "REQUESTED", "CONFIRMED", "CANCELLED"]).nullable().optional(),
   pickup: z.string().trim().max(200).nullable().optional(),
+  // Transport only: how many vehicles of this type (null = 1).
+  vehicles: z.coerce.number().int().min(1, "Vehicles must be at least 1").max(20).nullable().optional(),
   dropoff: z.string().trim().max(200).nullable().optional(),
   timing: z.string().trim().max(200).nullable().optional(),
   sortOrder: z.coerce.number().int().optional(),

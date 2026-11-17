@@ -80,6 +80,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       checkIn: d.checkIn ?? null,
       checkOut: d.checkOut ?? null,
       pickup: d.pickup ?? null,
+      vehicles: d.vehicles ?? null,
       dropoff: d.dropoff ?? null,
       timing: d.timing ?? null,
       sortOrder: d.sortOrder ?? 0,

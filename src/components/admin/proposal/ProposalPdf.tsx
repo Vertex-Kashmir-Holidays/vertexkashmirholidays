@@ -37,6 +37,7 @@ import { PDF_CONTACT, type PdfSocialLinks } from "@/lib/pdf/contact";
 import { SITE_URL } from "@/lib/seo";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "../itinerary/icons";
+import { withVehicleCount } from "@/lib/vehicleCount";
 
 // The brand icon mark — same asset ItineraryPdf.tsx uses for its own
 // watermark. Redefined here (not imported from ItineraryPdf.tsx) to avoid
@@ -1140,9 +1141,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
         return {
           id: r.id,
           label: r.usedFor || "Vehicle",
-          budget: r.vehicleBudget,
-          premium: r.vehicle,
-          luxury: r.vehicleLuxury,
+          budget: withVehicleCount(r.vehicleBudget, r.count),
+          premium: withVehicleCount(r.vehicle, r.count),
+          luxury: withVehicleCount(r.vehicleLuxury, r.count),
         };
       }),
     },
@@ -1628,7 +1629,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                   {data.transport.map((row) => (
                     <View key={row.id} style={s.simpleTableRow} wrap={false}>
                       <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 1 }]}>
-                        {row.vehicle}
+                        {withVehicleCount(row.vehicle, row.count)}
                       </Text>
                       <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
                         {row.seating}

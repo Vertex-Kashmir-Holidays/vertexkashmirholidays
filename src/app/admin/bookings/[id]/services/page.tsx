@@ -8,6 +8,7 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { driversSelect } from "@/lib/bookings/driver";
 import { wasServicesUnlocked } from "@/lib/bookings/audit";
 import { toDateInputValue } from "@/lib/bookings/serviceDisplay";
 import { isAdminRole } from "@/lib/itinerary/access";
@@ -70,6 +71,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
       user: { select: { name: true, email: true, mustChangePassword: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       payments: { orderBy: { createdAt: "asc" } },
+      drivers: driversSelect,
       leads: {
         take: 1,
         select: {
@@ -104,14 +106,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
     inclusions: parseInclusions(booking.inclusions),
     travelDate: booking.travelDate.toISOString(),
     travelEndDate: booking.travelEndDate ? booking.travelEndDate.toISOString() : null,
-    driver: booking.driverAddedAt
-      ? {
-          driverName: booking.driverName ?? "",
-          driverPhone: booking.driverPhone ?? "",
-          vehicleNumber: booking.vehicleNumber ?? "",
-          vehicleName: booking.vehicleName ?? "",
-        }
-      : null,
+    drivers: booking.drivers,
     travellers: booking.travellers,
     guestName: booking.guestName,
     guestEmail: booking.guestEmail,
@@ -136,6 +131,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
       hotelSupplierId: s.hotelSupplierId,
       hotelConfirmation: s.hotelConfirmation,
       pickup: s.pickup,
+      vehicles: s.vehicles,
       dropoff: s.dropoff,
       timing: s.timing,
       sortOrder: s.sortOrder,
@@ -246,7 +242,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             <DriverSection
               bookingId={booking.id}
               travelDate={data.travelDate}
-              initialDriver={data.driver}
+              initialDrivers={data.drivers}
               canEdit={canEdit}
               autoOpen={addDriver === "1"}
             />
