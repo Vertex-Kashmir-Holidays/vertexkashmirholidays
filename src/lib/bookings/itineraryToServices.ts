@@ -1,6 +1,7 @@
 import type { ServiceKind } from "@prisma/client";
 import type { ItineraryData } from "@/types/itinerary";
 import { parseVehicleCount } from "@/lib/vehicleCount";
+import { stayDateToDate } from "@/lib/itinerary/travelDates";
 
 // Maps an itinerary's hotels/transport/included-activities into booking
 // service rows. Pure and itinerary-shape-only (no Lead/Booking/B2B concept
@@ -19,9 +20,12 @@ export interface ItineraryServiceInput {
   location: string | null;
   nights: number | null;
   roomType: string | null;
-  // Hotel only. The itinerary's check-in/out are free-text labels ("Wed 10 Jun",
-  // no year), so they are not carried over — staff set the real dates.
+  // Hotel only. Check-in/out carry over when the itinerary has calendar dates
+  // ("2026-06-10" — filled from the travel dates); older free-text labels
+  // ("Wed 10 Jun", no year) are left for staff to set.
   rooms?: number | null;
+  checkIn?: Date | null;
+  checkOut?: Date | null;
   // Transport only: the itinerary's vehicle count (null = 1).
   vehicles?: number | null;
   pickup: string | null;
@@ -45,6 +49,8 @@ export function buildServicesFromItinerary(data: ItineraryData): ItineraryServic
       nights: Number.isFinite(nights) && nights > 0 ? nights : null,
       roomType: h.roomType.trim() || null,
       rooms: Number.isFinite(rooms) && rooms > 0 ? rooms : null,
+      checkIn: stayDateToDate(h.checkIn),
+      checkOut: stayDateToDate(h.checkOut),
       pickup: null,
       dropoff: null,
       timing: null,

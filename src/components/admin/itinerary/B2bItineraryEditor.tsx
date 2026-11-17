@@ -9,7 +9,8 @@
 // exactly the ambiguity this component exists to remove. Every field below
 // corresponds 1:1 to something B2bItineraryPdf.tsx actually renders
 // (including Included Activities, as compact text cards without photos).
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save, Download, Plus, Trash2 } from "lucide-react";
@@ -83,7 +84,16 @@ export function B2bItineraryEditor({
   initialUpdatedAt,
 }: Props) {
   const router = useRouter();
-  const [data, setData] = useState<ItineraryData>(initialData);
+  const [data, setRawData] = useState<ItineraryData>(initialData);
+  // Every edit goes through resyncTripDates: day dates and hotel check-in/out follow the
+  // travel start date, nights and hotel order (manual tweaks stay otherwise).
+  const setData = useCallback(
+    (update: ItineraryData | ((prev: ItineraryData) => ItineraryData)) =>
+      setRawData((prev) =>
+        resyncTripDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // Standard name (customer name - duration - phone); the server assigns the
   // saved one, which may carry a " (2)" suffix — shown until the next edit.
   const title = data === initialData ? initialTitle : buildDocumentTitle(data);

@@ -20,7 +20,7 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { ItineraryData, ItineraryStatus } from "@/types/itinerary";
 import { PdfIcon } from "./ItineraryPdf";
-import { formatStayDate } from "@/lib/itinerary/stayDate";
+import { formatDayDate, formatStayDate } from "@/lib/itinerary/stayDate";
 import { withVehicleCount } from "@/lib/vehicleCount";
 
 export interface B2bAgentInfo {
@@ -594,7 +594,7 @@ export function B2bItineraryPdf({
                           {day.dateLabel ? (
                             <Text style={s.dayDate}>
                               {"  ·  "}
-                              {formatStayDate(day.dateLabel, { year: false })}
+                              {formatDayDate(day.dateLabel)}
                             </Text>
                           ) : null}
                         </View>

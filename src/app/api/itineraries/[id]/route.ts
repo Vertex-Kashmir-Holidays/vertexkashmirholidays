@@ -7,7 +7,7 @@ import { resolveItineraryAccess } from "@/lib/itinerary/access";
 import { itineraryTitleExists, uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { buildDocumentTitle, duplicateTitleMessage } from "@/lib/itinerary/documentTitle";
 import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
-import { travelDatesOps } from "@/lib/bookings/syncBookingDates";
+import { hotelShiftOps, tripSyncOps } from "@/lib/bookings/syncBookingDates";
 import { parseTravelDates } from "@/lib/itinerary/leadFactsSync";
 import type { Prisma } from "@prisma/client";
 
@@ -24,7 +24,15 @@ const ACCESS_SELECT = {
   title: true,
   data: true,
   lead: { select: { assignedToId: true, locked: true, status: true, b2bAgentId: true } },
-  booking: { select: { id: true, servicesLocked: true, travelDate: true, travelEndDate: true } },
+  booking: {
+    select: {
+      id: true,
+      servicesLocked: true,
+      travelDate: true,
+      travelEndDate: true,
+      services: { where: { kind: "HOTEL" }, select: { id: true, checkIn: true, checkOut: true } },
+    },
+  },
 } as const;
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -170,7 +178,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (existing.leadId && !existing.lead?.locked) {
       // Travel dates on the cover flow on to the lead (and its unlocked booking).
       const dates = parseTravelDates(parsed.data.data.travelDates);
-      if (dates) ops.push(...(await travelDatesOps(existing.leadId, dates)));
+      if (dates) ops.push(...(await tripSyncOps(existing.leadId, dates)));
 
       const proposed = parseProposedAmount(parsed.data.data.totalCost);
       if (proposed != null) {
@@ -202,6 +210,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           where: { id: b.id },
           data: { travelDate: bookingDates.start, travelEndDate: bookingDates.end },
         }),
+        ...hotelShiftOps(b.services, b.travelDate, bookingDates.start),
       );
     }
   }

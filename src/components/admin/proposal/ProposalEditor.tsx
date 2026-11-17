@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { resyncDayDates } from "@/lib/itinerary/travelDates";
+import { stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus, Sparkles, BookmarkPlus } from "lucide-react";
@@ -77,7 +79,16 @@ export function ProposalEditor({
   dayPlans = { canPick: false, canSave: false },
 }: ProposalEditorProps) {
   const router = useRouter();
-  const [data, setData] = useState<ProposalData>(initialData);
+  const [data, setRawData] = useState<ProposalData>(initialData);
+  // Every edit goes through resyncDayDates: day dates follow the travel start
+  // date and the days' order (a date set by hand stays otherwise).
+  const setData = useCallback(
+    (update: ProposalData | ((prev: ProposalData) => ProposalData)) =>
+      setRawData((prev) =>
+        resyncDayDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // "<customer> - <duration> - <phone>" from the cover; the API derives the
   // same string on save, so this is what the list will show.
   const title = initialTitle && data === initialData ? initialTitle : buildDocumentTitle(data);
@@ -835,11 +846,13 @@ export function ProposalEditor({
                             className="min-w-0 flex-1 text-sm font-bold"
                           />
                         </div>
-                        <EditableField
-                          value={day.dateLabel}
-                          onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
-                          placeholder="Wed 10 Jun"
-                          className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                        {/* Filled from the travel start date (resyncDayDates); blank = not printed. */}
+                        <input
+                          type="date"
+                          aria-label={`Day ${dayIdx + 1} date`}
+                          value={stayDateInputValue(day.dateLabel)}
+                          onChange={(e) => updateDay(day.id, "dateLabel", e.target.value)}
+                          className="ml-12 w-36 text-xs text-mute dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)] bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-mute/20"
                         />
                       </div>
                       <EditableField

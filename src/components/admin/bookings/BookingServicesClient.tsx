@@ -989,6 +989,8 @@ function EditDetailsModal({
 
     if (tripFieldsEditable) {
       if (!travelDate) return toast.error("Choose a travel date.");
+      if (travelEndDate && travelEndDate < travelDate)
+        return toast.error("The end date can't be before the start date.");
       const t = parseInt(travellers, 10);
       if (!t || t < 1) return toast.error("Enter the number of travellers.");
       const amt = parseFloat(amount);
@@ -1035,7 +1037,13 @@ function EditDetailsModal({
         className="relative z-10 w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl max-h-[90vh] overflow-y-auto"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h4 className="font-display text-base font-bold text-foreground">Edit booking details</h4>
+          <div>
+            <h4 className="font-display text-base font-bold text-foreground">Edit booking details</h4>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Name, phone, dates and travellers also update the lead and itinerary; hotel
+              check-in/out move with the start date.
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground"
@@ -1125,6 +1133,7 @@ function EditDetailsModal({
               </label>
               <input
                 type="date"
+                min={travelDate || undefined}
                 value={travelEndDate}
                 onChange={(e) => setTravelEndDate(e.target.value)}
                 disabled={!tripFieldsEditable}

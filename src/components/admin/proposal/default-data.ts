@@ -116,7 +116,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-1",
       title: "Arrival & Srinagar Gardens",
-      dateLabel: "Wed 10 Jun",
+      dateLabel: "",
       body: "Airport pickup, then the Mughal Gardens – Shalimar, Nishat and Cheshmashahi – with Shankaracharya Temple and Hazratbal Dargah before sunset.",
       stayLabel: "Srinagar",
       highlightsLine: "Mughal Gardens · Hazratbal · Dal Lake",
@@ -126,7 +126,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-2",
       title: "Gulmarg",
-      dateLabel: "Thu 11 Jun",
+      dateLabel: "",
       body: "A full day in the Meadow of Flowers, with the Gondola climbing to Kongdoori and horse trails out to Strawberry Valley. Back to Srinagar for the night.",
       stayLabel: "Srinagar",
       highlightsLine: "Gondola · Strawberry Valley",
@@ -136,7 +136,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-3",
       title: "Sonamarg",
-      dateLabel: "Fri 12 Jun",
+      dateLabel: "",
       body: "Up the Sindh valley to the Meadow of Gold. Thajiwas Glacier sits a short pony ride from the road head, with the Himalayan wall behind it.",
       stayLabel: "Srinagar",
       highlightsLine: "Thajiwas Glacier · Sindh Valley",
@@ -146,7 +146,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-4",
       title: "Pahalgam",
-      dateLabel: "Sat 13 Jun",
+      dateLabel: "",
       body: "Through Pampore's saffron fields and Awantipora to the Lidder valley. Aru and Betaab in the afternoon, then a night beside the river.",
       stayLabel: "Pahalgam",
       highlightsLine: "Aru · Betaab · Lidder",
@@ -156,7 +156,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-5",
       title: "Back to Srinagar",
-      dateLabel: "Sun 14 Jun",
+      dateLabel: "",
       body: "Pari Mahal and Chashme Shahi above the lake, an afternoon in the old city bazaars, and a Shikara out onto Dal as the light goes.",
       stayLabel: "Srinagar",
       highlightsLine: "Pari Mahal · Shikara · Bazaars",
@@ -166,7 +166,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-6",
       title: "Departure",
-      dateLabel: "Mon 15 Jun",
+      dateLabel: "",
       body: "Breakfast, then your driver takes you to Srinagar airport. Pickup time is confirmed with you the evening before.",
       // Left blank on purpose — the departure day shows a plane icon with
       // `highlightsLine` alone instead of the usual bed-icon + highlights

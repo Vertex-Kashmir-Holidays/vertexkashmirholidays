@@ -20,6 +20,7 @@ import {
   type ProposalTierKey,
 } from "@/types/proposal";
 import { parseVehicleCount, withVehicleCount } from "@/lib/vehicleCount";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
 
 const FALLBACK_IMAGE = "/itinerary/hero.webp";
 
@@ -104,7 +105,8 @@ export function proposalToItineraryData(
   const places = [...new Set(proposal.days.map((d) => d.stayLabel.trim()).filter(Boolean))];
   const rooms = hotels[0]?.rooms ?? "1";
 
-  return {
+  // Hotel check-in/out filled from the travel start date (resyncTripDates).
+  return resyncTripDates(null, {
     ...base,
     coverImage: proposal.coverImage || base.coverImage,
     duration: proposal.duration,
@@ -159,5 +161,5 @@ export function proposalToItineraryData(
     cancel: proposal.cancel.length ? proposal.cancel : base.cancel,
     cancelNotes: proposal.cancelNotes.length ? proposal.cancelNotes : base.cancelNotes,
     whyChoose: proposal.whyChoose.length ? proposal.whyChoose : base.whyChoose,
-  };
+  });
 }

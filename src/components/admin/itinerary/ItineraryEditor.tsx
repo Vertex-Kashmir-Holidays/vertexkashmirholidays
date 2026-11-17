@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
+import { stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus, QrCode, Sparkles, BookmarkPlus } from "lucide-react";
@@ -116,7 +118,16 @@ export function ItineraryEditor({
   dayPlans = { canPick: false, canSave: false },
 }: ItineraryEditorProps) {
   const router = useRouter();
-  const [data, setData] = useState<ItineraryData>(initialData);
+  const [data, setRawData] = useState<ItineraryData>(initialData);
+  // Every edit goes through resyncTripDates: day dates and hotel check-in/out follow the
+  // travel start date, nights and hotel order (manual tweaks stay otherwise).
+  const setData = useCallback(
+    (update: ItineraryData | ((prev: ItineraryData) => ItineraryData)) =>
+      setRawData((prev) =>
+        resyncTripDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // Every itinerary is named "<customer> - <duration> - <phone>" from its own
   // content; the API derives the same string on save (a lead/booking-linked
   // one may get a " (2)" suffix there — shown until the next edit).
@@ -688,11 +699,13 @@ export function ItineraryEditor({
                           className="min-w-0 flex-1 font-serif text-base font-bold text-[#0F2A1E] dark:text-foreground"
                         />
                       </div>
-                      <EditableField
-                        value={day.dateLabel}
-                        onValueChange={(v) => updateDay(day.id, { dateLabel: v })}
-                        placeholder="Wed 10 Jun"
-                        className="pl-12 text-left text-xs text-[#6B7C73] dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                      {/* Filled from the travel start date (resyncTripDates); blank = not printed. */}
+                      <input
+                        type="date"
+                        aria-label={`Day ${dayIdx + 1} date`}
+                        value={stayDateInputValue(day.dateLabel)}
+                        onChange={(e) => updateDay(day.id, { dateLabel: e.target.value })}
+                        className="ml-12 w-36 text-xs text-[#6B7C73] dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)] bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-mute/20"
                       />
                     </div>
                     <EditableField
@@ -907,20 +920,24 @@ export function ItineraryEditor({
 
                     {/* Check In / Check Out / Nights / No. of Rooms / Room Type / Extra Bed / Child With Bed / Meal Type */}
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[hsl(40_14%_87%)] pt-3 dark:border-mute/20">
+                      {/* Filled from the travel dates + nights (resyncTripDates); still adjustable. */}
                       <div>
                         <label className={fieldLabel}>Check In</label>
-                        <EditableField
-                          value={h.checkIn}
-                          onValueChange={(v) => updateHotel(h.id, "checkIn", v)}
-                          placeholder="Wed 10 Jun"
+                        <input
+                          type="date"
+                          value={stayDateInputValue(h.checkIn)}
+                          onChange={(e) => updateHotel(h.id, "checkIn", e.target.value)}
+                          className={numberInputCls}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Check Out</label>
-                        <EditableField
-                          value={h.checkOut}
-                          onValueChange={(v) => updateHotel(h.id, "checkOut", v)}
-                          placeholder="Sat 13 Jun"
+                        <input
+                          type="date"
+                          min={stayDateInputValue(h.checkIn) || undefined}
+                          value={stayDateInputValue(h.checkOut)}
+                          onChange={(e) => updateHotel(h.id, "checkOut", e.target.value)}
+                          className={numberInputCls}
                         />
                       </div>
                       <div className="flex items-start gap-2">
