@@ -34,6 +34,8 @@ import {
   type RequiredServiceField,
 } from "@/lib/bookings/service-schema";
 import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
+import { hotelPaymentSummary } from "@/lib/bookings/hotelPayments";
+import { HotelPaymentDialog, type HotelPaymentResult } from "@/components/admin/bookings/HotelPaymentDialog";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
@@ -52,6 +54,10 @@ interface Service {
   /** Hotel only — link to the hotel list + confirmation with the hotel. */
   hotelSupplierId: string | null;
   hotelConfirmation: HotelConfirmationValue | null;
+  /** Hotel only — confirmed without a token payment. */
+  hotelTokenWaived: boolean;
+  /** Hotel only — payments made to the hotel for this stay. */
+  hotelPayments: { amount: number; type: string }[];
   pickup: string | null;
   dropoff: string | null;
   vehicles: number | null;
@@ -84,6 +90,8 @@ export interface HotelOption {
   id: string;
   name: string;
   destination: string;
+  /** Hotel's email from the hotel list — prefills the confirmation email. */
+  email: string | null;
 }
 
 /** Exact (case/space-insensitive) match of a typed hotel name in the hotel list. */
@@ -117,6 +125,8 @@ interface BookingData {
   travelEndDate: string | null;
   travellers: number;
   guestName: string;
+  /** "6 adults, 2 kids" — prefills the hotel confirmation email. */
+  guestsLabel: string;
   guestEmail: string | null;
   guestPhone: string;
   address: string | null;
@@ -262,8 +272,11 @@ export function BookingServicesClient({
   canUnlock,
   isRelock,
   hotelOptions = [],
+  currentUserName = "",
 }: {
   booking: BookingData;
+  /** Prefills "By" when recording a payment to a hotel. */
+  currentUserName?: string;
   gstRates: number[];
   /** Active hotels from the hotel list — picks for the Hotel Name field. */
   hotelOptions?: HotelOption[];
@@ -372,6 +385,8 @@ export function BookingServicesClient({
         checkOut: null,
         hotelSupplierId: null,
         hotelConfirmation: null,
+        hotelTokenWaived: false,
+        hotelPayments: [],
         pickup: null,
         dropoff: null,
         vehicles: null,
@@ -676,6 +691,11 @@ export function BookingServicesClient({
                   showRequired={lockAttempted}
                   onAmountChange={setLiveAmount}
                   hotelOptions={hotelOptions}
+                  hotelPay={{
+                    guestName: booking.guestName,
+                    guests: booking.guestsLabel,
+                    defaultPaidBy: currentUserName,
+                  }}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
               ))}
@@ -692,6 +712,11 @@ export function BookingServicesClient({
                   showRequired={lockAttempted}
                   onAmountChange={setLiveAmount}
                   hotelOptions={hotelOptions}
+                  hotelPay={{
+                    guestName: booking.guestName,
+                    guests: booking.guestsLabel,
+                    defaultPaidBy: currentUserName,
+                  }}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                   onSaved={() => markDraftSaved(svc.id)}
                 />
@@ -1803,12 +1828,9 @@ function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
     rooms: form.rooms === "" ? null : parseInt(form.rooms, 10),
     checkIn: form.checkIn || null,
     checkOut: form.checkOut || null,
-    ...(kind === "HOTEL"
-      ? {
-          hotelSupplierId: form.hotelSupplierId || null,
-          hotelConfirmation: (form.hotelConfirmation || null) as HotelConfirmationValue | null,
-        }
-      : {}),
+    // Hotel confirmation is not part of the row save — it has its own
+    // routes (confirm dialog / hotel-status) that work after lock too.
+    ...(kind === "HOTEL" ? { hotelSupplierId: form.hotelSupplierId || null } : {}),
     pickup: form.pickup.trim() || null,
     vehicles: form.vehicles === "" ? null : parseInt(form.vehicles, 10),
     dropoff: form.dropoff.trim() || null,
@@ -1830,6 +1852,7 @@ function ServiceRow({
   onRemoved,
   onSaved,
   hotelOptions = [],
+  hotelPay,
 }: {
   bookingId: string;
   record: Service;
@@ -1845,7 +1868,12 @@ function ServiceRow({
   onSaved?: () => void;
   /** Hotel list, offered as picks in a HOTEL row's name field. */
   hotelOptions?: HotelOption[];
+  /** Booking facts for the hotel confirm/payment dialog. */
+  hotelPay?: { guestName: string; guests: string; defaultPaidBy: string };
 }) {
+  const [hotelPayments, setHotelPayments] = useState(record.hotelPayments);
+  const [tokenWaived, setTokenWaived] = useState(record.hotelTokenWaived);
+  const [payDialog, setPayDialog] = useState<null | "confirm" | "payment">(null);
   const [form, setForm] = useState<RowForm>({
     name: record.name,
     location: record.location ?? "",
@@ -1980,6 +2008,42 @@ function ServiceRow({
     });
   }
 
+  const [confirmPending, startConfirm] = useTransition();
+  // Confirmed opens the confirm dialog (token payment or a waived token);
+  // the other statuses save straight away.
+  function changeConfirmation(value: string) {
+    if (!serverId) return;
+    if (value === "CONFIRMED") return setPayDialog("confirm");
+    const prev = form.hotelConfirmation;
+    setForm((p) => ({ ...p, hotelConfirmation: value }));
+    startConfirm(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/services/${serverId}/hotel-status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: value || "PENDING" }),
+        });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(j.error ?? "Save failed.");
+        }
+        setTokenWaived(false);
+      } catch (err) {
+        setForm((p) => ({ ...p, hotelConfirmation: prev }));
+        toast.error(err instanceof Error ? err.message : "An error occurred.");
+      }
+    });
+  }
+
+  function onHotelPaid(r: HotelPaymentResult) {
+    setPayDialog(null);
+    if (r.payment) setHotelPayments((p) => [...p, r.payment!]);
+    if (r.confirmed) {
+      setForm((p) => ({ ...p, hotelConfirmation: "CONFIRMED" }));
+      setTokenWaived(r.tokenWaived);
+    }
+  }
+
   // Hotel stays get a structured two-line card (identity, then stay facts);
   // other kinds keep the compact single wrapping row.
   const isHotel = record.kind === "HOTEL";
@@ -2012,12 +2076,11 @@ function ServiceRow({
         {f.type === "confirmation" ? (
           <select
             value={form.hotelConfirmation}
-            onChange={(e) => {
-              const value = e.target.value;
-              setForm((p) => ({ ...p, hotelConfirmation: value }));
-            }}
-            onBlur={autoSave}
-            disabled={locked || !canEdit}
+            onChange={(e) => changeConfirmation(e.target.value)}
+            // Confirmation is operations, not the invoice — it stays
+            // editable after the services lock.
+            disabled={!canEdit || !serverId || confirmPending}
+            title={!serverId ? "Save the hotel first" : undefined}
             className={cn(inputCls, "mt-0.5")}
           >
             <option value="">Pending</option>
@@ -2141,6 +2204,56 @@ function ServiceRow({
           </div>
           <div className="flex shrink-0 items-center gap-1">{actionsEl}</div>
         </div>
+        {serverId && (status === "CONFIRMED" || hotelPayments.length > 0) && (() => {
+          const sum = hotelPaymentSummary(parseFloat(form.amount) || 0, hotelPayments);
+          return (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-3 py-2 text-xs">
+              <span className="font-semibold text-muted-foreground">Paid to hotel</span>
+              <span>
+                Paid <strong className="text-foreground">{inr(sum.paid)}</strong> of {inr(sum.total)}
+              </span>
+              <span>
+                Balance{" "}
+                <strong className={sum.balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600"}>
+                  {inr(sum.balance)}
+                </strong>
+              </span>
+              {tokenWaived && (
+                <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+                  Token not needed
+                </span>
+              )}
+              {canEdit && hotelPay && sum.balance > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPayDialog("payment")}
+                  className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-semibold hover:bg-muted"
+                >
+                  <Wallet className="h-3.5 w-3.5" /> Add payment
+                </button>
+              )}
+            </div>
+          );
+        })()}
+        {payDialog && serverId && hotelPay && (
+          <HotelPaymentDialog
+            mode={payDialog}
+            target={{
+              bookingId,
+              serviceId: serverId,
+              hotelName: form.name.trim() || record.name,
+              guestName: hotelPay.guestName,
+              guests: hotelPay.guests,
+              hotelEmail: hotelOptions.find((o) => o.id === form.hotelSupplierId)?.email ?? null,
+              total: parseFloat(form.amount) || 0,
+              payments: hotelPayments,
+              tokenWaived,
+            }}
+            defaultPaidBy={hotelPay.defaultPaidBy}
+            onClose={() => setPayDialog(null)}
+            onDone={onHotelPaid}
+          />
+        )}
         <div className="flex flex-col gap-3 p-3 md:flex-row">
           <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
             {fields.filter((f) => f.key !== "amount").map(renderField)}

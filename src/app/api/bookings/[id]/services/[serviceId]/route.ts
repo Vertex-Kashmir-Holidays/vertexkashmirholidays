@@ -108,7 +108,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const booking = await prisma.booking.findFirst({
     where: { id, ...(await bookingWhereForUser(role, userId)) },
-    select: { id: true, servicesLocked: true, services: { select: { id: true } } },
+    select: {
+      id: true,
+      servicesLocked: true,
+      services: { select: { id: true, _count: { select: { hotelPayments: true } } } },
+    },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
@@ -117,8 +121,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       { status: 423 },
     );
   }
-  if (!booking.services.some((s) => s.id === serviceId)) {
+  const target = booking.services.find((s) => s.id === serviceId);
+  if (!target) {
     return NextResponse.json({ error: "Service not found" }, { status: 404 });
+  }
+  // Deleting the stay would delete the record of money paid to the hotel.
+  if (target._count.hotelPayments > 0) {
+    return NextResponse.json(
+      { error: "This hotel has payments recorded — remove them on the hotel's page first." },
+      { status: 409 },
+    );
   }
 
   await prisma.bookingService.delete({ where: { id: serviceId } });

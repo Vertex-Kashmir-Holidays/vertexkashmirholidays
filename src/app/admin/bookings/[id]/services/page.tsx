@@ -13,6 +13,8 @@ import { wasServicesUnlocked } from "@/lib/bookings/audit";
 import { toDateInputValue } from "@/lib/bookings/serviceDisplay";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
+import { hotelDataSchema } from "@/lib/hotelSuppliers/schema";
+import { guestsLabel } from "@/lib/bookings/hotelPayments";
 import {
   BookingServicesClient,
   DriverSection,
@@ -56,20 +58,33 @@ export default async function BookingServicesPage({ params, searchParams }: Page
 
   // Active hotels offered as picks in the Hotel Name field (links the stay
   // to the hotel list for the Trips board's hotel view).
-  const hotelOptions = (
-    await prisma.hotelSupplier.findMany({
+  const [hotelRows, me] = await Promise.all([
+    prisma.hotelSupplier.findMany({
       where: { isActive: true },
       orderBy: { hotelName: "asc" },
-      select: { id: true, hotelName: true, destination: true },
-    })
-  ).map((h) => ({ id: h.id, name: h.hotelName, destination: h.destination }));
+      select: { id: true, hotelName: true, destination: true, data: true },
+    }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+  ]);
+  const hotelOptions = hotelRows.map((h) => {
+    const d = hotelDataSchema.safeParse(h.data);
+    return {
+      id: h.id,
+      name: h.hotelName,
+      destination: h.destination,
+      email: d.success ? d.data.property.email : null,
+    };
+  });
 
   const booking = await prisma.booking.findFirst({
     where: { id, deletedAt: null, ...(await bookingWhereForUser(role, userId)) },
     include: {
       tour: { select: { title: true } },
       user: { select: { name: true, email: true, mustChangePassword: true } },
-      services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+      services: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: { hotelPayments: { select: { amount: true, type: true } } },
+      },
       payments: { orderBy: { createdAt: "asc" } },
       drivers: driversSelect,
       leads: {
@@ -79,6 +94,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
           name: true,
           phone: true,
           email: true,
+          adults: true,
+          children: true,
           endDate: true,
           b2bAgentId: true,
           locked: true,
@@ -109,6 +126,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
     drivers: booking.drivers,
     travellers: booking.travellers,
     guestName: booking.guestName,
+    guestsLabel: guestsLabel(lead?.adults, lead?.children, booking.travellers),
     guestEmail: booking.guestEmail,
     guestPhone: booking.guestPhone,
     address: booking.address,
@@ -130,6 +148,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
       checkOut: toDateInputValue(s.checkOut),
       hotelSupplierId: s.hotelSupplierId,
       hotelConfirmation: s.hotelConfirmation,
+      hotelTokenWaived: s.hotelTokenWaived,
+      hotelPayments: s.hotelPayments,
       pickup: s.pickup,
       vehicles: s.vehicles,
       dropoff: s.dropoff,
@@ -202,6 +222,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             canUnlock={canUnlock}
             isRelock={isRelock}
             hotelOptions={hotelOptions}
+            currentUserName={me?.name ?? ""}
           />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}

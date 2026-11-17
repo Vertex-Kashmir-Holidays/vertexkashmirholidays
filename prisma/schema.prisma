@@ -844,6 +844,12 @@ model BookingService {
   // as Pending). hotelConfirmedAt is stamped server-side on → CONFIRMED.
   hotelConfirmation HotelConfirmation?
   hotelConfirmedAt  DateTime?
+  // Hotel only. Confirmed without a token payment (a friendly hotel that
+  // doesn't need one) — set from the confirm dialog after a warning.
+  hotelTokenWaived  Boolean            @default(false)
+  // Money we have paid the hotel for this stay (token, then balance before
+  // checkout). The stay's `amount` is the total owed to the hotel.
+  hotelPayments     HotelPayment[]
   pickup            String? // transport
   dropoff           String? // transport
   vehicles          Int? // transport — number of vehicles of this type (null = 1)
@@ -871,6 +877,30 @@ model BookingDriver {
   createdAt     DateTime @default(now())
 
   @@index([bookingId])
+}
+
+// A payment we made to a hotel for one stay (BookingService of kind HOTEL).
+// Usually two: a token to confirm, then the balance before checkout. Recorded
+// from the confirm dialog or the hotel's page; works after services lock.
+model HotelPayment {
+  id           String           @id @default(cuid())
+  serviceId    String
+  service      BookingService   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  amount       Float
+  type         HotelPaymentType
+  method       String // Via — same set as BookingPayment.method (Cash/UPI/…)
+  paidBy       String // By — who made the payment
+  receiptUrl   String? // optional receipt (PDF/image) — cash often has none
+  emailedTo    String? // hotel address the confirmation went to, null = not emailed
+  recordedById String?
+  createdAt    DateTime         @default(now())
+
+  @@index([serviceId])
+}
+
+enum HotelPaymentType {
+  TOKEN
+  BALANCE
 }
 
 enum HotelConfirmation {
