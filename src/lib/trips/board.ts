@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import { toDateInputValue } from "@/lib/bookings/serviceDisplay";
 import { driversSelect } from "@/lib/bookings/driver";
+import { guestsLabel } from "@/lib/bookings/hotelPayments";
 import { transportName } from "@/lib/bookings/serviceDisplay";
 import type { Role } from "@/lib/rbac";
 import type {
@@ -349,6 +350,8 @@ export async function getStaysForHotel(
         amount: true,
         hotelSupplierId: true,
         hotelConfirmation: true,
+        hotelTokenWaived: true,
+        hotelPayments: { orderBy: { createdAt: "asc" } },
         booking: {
           select: {
             id: true,
@@ -357,7 +360,10 @@ export async function getStaysForHotel(
             travellers: true,
             travelDate: true,
             travelEndDate: true,
-            leads: { select: { assignedTo: { select: { name: true, email: true } } }, take: 1 },
+            leads: {
+              select: { adults: true, children: true, assignedTo: { select: { name: true, email: true } } },
+              take: 1,
+            },
           },
         },
       },
@@ -387,6 +393,18 @@ export async function getStaysForHotel(
       bucket: tripBucket(start, end, today),
       assigneeName: assignee ? (assignee.name ?? assignee.email) : null,
       amount: r.amount,
+      tokenWaived: r.hotelTokenWaived,
+      guestsLabel: guestsLabel(r.booking.leads[0]?.adults, r.booking.leads[0]?.children, r.booking.travellers),
+      payments: r.hotelPayments.map((p) => ({
+        id: p.id,
+        amount: p.amount,
+        type: p.type,
+        method: p.method,
+        paidBy: p.paidBy,
+        receiptUrl: p.receiptUrl,
+        emailedTo: p.emailedTo,
+        createdAt: p.createdAt.toISOString(),
+      })),
     } satisfies HotelStay;
   });
   return { stays, total };

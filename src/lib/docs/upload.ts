@@ -26,10 +26,10 @@ export function docFileError(file: FormDataEntryValue | null): string | null {
  * resourceType "raw": "auto" stores PDFs as resource_type "image", which
  * Cloudinary's PDF/ZIP delivery-security setting blocks; "raw" serves as-is.
  */
-export async function storeDocFile(file: File) {
+export async function storeDocFile(file: File, folder = "docs") {
   const buffer = Buffer.from(await file.arrayBuffer());
   const { url, publicId } = await saveUpload(buffer, {
-    folder: "docs",
+    folder,
     ext: DOC_EXT_BY_MIME[file.type],
     isImage: false,
     resourceType: "raw",

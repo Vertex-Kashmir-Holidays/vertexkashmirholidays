@@ -8,8 +8,9 @@ import { getConfirmedStayStats, getStaysForHotel } from "@/lib/trips/board";
 import { canViewHotelStays } from "@/lib/hotelSuppliers/stayAccess";
 import { toHotelSupplierRecord } from "@/lib/hotelSuppliers/record";
 import { can } from "@/lib/permissions";
-import { ConfirmationBadge, fmtDay } from "@/components/admin/trips/TripBits";
-import { StayRow } from "@/components/admin/hotel-suppliers/StayRow";
+import { fmtDay } from "@/components/admin/trips/TripBits";
+import { HotelStaysTable } from "@/components/admin/hotel-suppliers/HotelStaysTable";
+import { hotelDataSchema } from "@/lib/hotelSuppliers/schema";
 import { HotelDetailsCard } from "@/components/admin/hotel-suppliers/HotelDetailsCard";
 import { HotelProfilePanel } from "@/components/admin/hotel-suppliers/HotelProfilePanel";
 
@@ -34,28 +35,46 @@ export default async function AdminHotelDetailPage({ params, searchParams }: Pag
   const { id } = await params;
   const page = Math.max(1, Number((await searchParams).page) || 1);
 
-  const [row, canSeeStays, canEdit, canDelete] = await Promise.all([
+  const [row, canSeeStays, canEdit, canDelete, canPay, me] = await Promise.all([
     prisma.hotelSupplier.findUnique({ where: { id } }),
     canViewHotelStays(role),
     can(role, "hotelSuppliers", "edit"),
     can(role, "hotelSuppliers", "delete"),
+    can(role, "bookings", "edit"),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
   ]);
   if (!row) notFound();
 
-  const [stats, staysPage] = await Promise.all([
+  const [stats, staysPage, paidAgg] = await Promise.all([
     getConfirmedStayStats([row.id]),
     canSeeStays
       ? getStaysForHotel(role, userId, row.id, { take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE })
       : Promise.resolve(null),
+    // Paid to the hotel across the same confirmed stays as "Booked value".
+    prisma.hotelPayment.aggregate({
+      _sum: { amount: true },
+      where: {
+        service: {
+          hotelSupplierId: row.id,
+          hotelConfirmation: "CONFIRMED",
+          booking: { deletedAt: null, status: { notIn: ["CANCELLED", "FAILED", "REFUNDED"] } },
+        },
+      },
+    }),
   ]);
   const hotel = toHotelSupplierRecord(row, stats);
   const s = stats[hotel.id] ?? { stays: 0, roomNights: 0, lastStay: null, amount: 0 };
+  const paidTotal = paidAgg._sum.amount ?? 0;
+  const hotelData = hotelDataSchema.safeParse(row.data);
+  const hotelEmail = hotelData.success ? hotelData.data.property.email : null;
   const pages = staysPage ? Math.max(1, Math.ceil(staysPage.total / PAGE_SIZE)) : 1;
 
   const kpis = [
     { label: "Bookings given", value: String(s.stays), sub: "Linked & confirmed stays" },
     { label: "Room nights", value: String(s.roomNights) },
     { label: "Booked value", value: inr(s.amount), sub: "Confirmed stays" },
+    { label: "Paid to hotel", value: inr(paidTotal), sub: "Confirmed stays" },
+    { label: "Balance due", value: inr(Math.max(0, s.amount - paidTotal)), sub: "Confirmed stays" },
     { label: "Last stay", value: s.lastStay ? fmtDay(s.lastStay, true) : "—" },
   ];
 
@@ -77,7 +96,7 @@ export default async function AdminHotelDetailPage({ params, searchParams }: Pag
 
       <HotelDetailsCard data={hotel.data} recommended={hotel.recommended} />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {kpis.map((k) => (
           <div key={k.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -105,52 +124,14 @@ export default async function AdminHotelDetailPage({ params, searchParams }: Pag
             No bookings linked yet — pick this hotel in a booking’s Hotel Details to link a stay.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-2 font-semibold">Customer</th>
-                  <th className="px-4 py-2 font-semibold">Check-in</th>
-                  <th className="px-4 py-2 font-semibold">Check-out</th>
-                  <th className="px-4 py-2 font-semibold">Nights</th>
-                  <th className="px-4 py-2 font-semibold">Rooms</th>
-                  <th className="px-4 py-2 font-semibold">Room type</th>
-                  <th className="px-4 py-2 text-right font-semibold">Price</th>
-                  <th className="px-4 py-2 font-semibold">Status</th>
-                  <th className="px-4 py-2 font-semibold">Salesperson</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {staysPage.stays.map((st) => (
-                  <StayRow key={st.id} href={`/admin/bookings/${st.bookingId}/services`}>
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={`/admin/bookings/${st.bookingId}/services`}
-                        className="font-semibold text-foreground hover:text-primary"
-                      >
-                        {st.guestName}
-                      </Link>
-                      <p className="text-[11px] text-muted-foreground">
-                        {st.bookingRef} · {st.travellers} pax · {st.guestPhone}
-                      </p>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2.5">{fmtDay(st.checkIn, true)}</td>
-                    <td className="whitespace-nowrap px-4 py-2.5">{fmtDay(st.checkOut, true)}</td>
-                    <td className="px-4 py-2.5">{st.nights ?? "—"}</td>
-                    <td className="px-4 py-2.5">{st.rooms ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{st.roomType ?? "—"}</td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold">
-                      {st.amount != null ? inr(st.amount) : "—"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <ConfirmationBadge status={st.confirmation} />
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{st.assigneeName ?? "—"}</td>
-                  </StayRow>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <HotelStaysTable
+            // Re-mount on page change so the client list follows the new page.
+            key={page}
+            stays={staysPage.stays}
+            hotelEmail={hotelEmail}
+            canPay={canPay}
+            currentUserName={me?.name ?? ""}
+          />
         )}
         {staysPage && pages > 1 && (
           <div className="flex items-center justify-between border-t border-border px-5 py-3 text-xs">

@@ -2128,3 +2128,134 @@ ${OFFER_LETTER_DOCUMENTS.map((d) => `               <li style="margin:0 0 6px">$
     footerNote: "Vertex Kashmir Holidays · Gulmarg, Jammu &amp; Kashmir · Private &amp; confidential",
   });
 }
+
+// ── Hotel reservation confirmation + payment ────────────────────────────────
+// Sent to a hotel when staff confirm a stay and/or record a payment to it
+// (token, then balance before checkout). Opt-in from the confirm/payment dialog.
+
+// Short notice to the hotel (the enquiry with the rate already went out):
+// we have processed a token / partial / full payment for this booking.
+export interface HotelPaymentEmailData {
+  hotelName: string;
+  guestName: string;
+  guests: string; // "6 adults, 2 kids (5 yrs & 1 yr)"
+  checkIn: string | null; // "25 Dec 2026"
+  checkOut: string | null;
+  nights: number | null;
+  roomType: string | null;
+  rooms: number | null;
+  mealPlan: string | null;
+  bookingRef: string;
+  /** This payment, or null when confirming without one (token waived). */
+  payment: { stage: "Token" | "Partial" | "Full"; amount: number; method: string; paidBy: string; date: string } | null;
+  senderName: string;
+  companyName: string;
+  companyPhone: string | null;
+}
+
+/** "Token Payment Processed" / "Partial …" / "Full …" / "Reservation Confirmation". */
+function hotelPaymentHeading(d: HotelPaymentEmailData): string {
+  return d.payment ? `${d.payment.stage} Payment Processed` : "Reservation Confirmation";
+}
+
+export function hotelPaymentEmailSubject(d: HotelPaymentEmailData): string {
+  const stay = `${d.guestName}${d.checkIn ? `, Check-in ${d.checkIn}` : ""}`;
+  return `${hotelPaymentHeading(d)} — ${stay} | ${d.companyName}`;
+}
+
+function hotelReservationRows(d: HotelPaymentEmailData): [string, string][] {
+  const rows: [string, string | number | null][] = [
+    ["Check-in", d.checkIn],
+    ["Check-out", d.checkOut],
+    ["Number of Nights", d.nights],
+    ["Room Type", d.roomType],
+    ["Number of Rooms", d.rooms],
+    ["Meal Plan", d.mealPlan],
+  ];
+  return rows.filter(([, v]) => v != null && v !== "").map(([k, v]) => [k, String(v)]);
+}
+
+function hotelPaymentRows(d: HotelPaymentEmailData): [string, string][] {
+  if (!d.payment) return [];
+  return [
+    ["Payment", `${d.payment.stage} payment`],
+    ["Amount Paid", inr(d.payment.amount)],
+    ["Paid Via", d.payment.method],
+    ["Paid By", d.payment.paidBy],
+    ["Payment Date", d.payment.date],
+  ];
+}
+
+const HOTEL_PAYMENT_GREETING = "Dear Manager,";
+
+function hotelPaymentIntro(d: HotelPaymentEmailData): string {
+  return d.payment
+    ? `We have processed the ${d.payment.stage.toLowerCase()} payment for the below booking. Please find the details below.`
+    : "This is to confirm the below booking. Please find the details below.";
+}
+
+export function hotelPaymentEmailText(d: HotelPaymentEmailData): string {
+  return [
+    HOTEL_PAYMENT_GREETING,
+    "",
+    hotelPaymentIntro(d),
+    "",
+    `Guest Name: ${d.guestName}`,
+    `Number of Guests: ${d.guests}`,
+    `Booking Ref: ${d.bookingRef}`,
+    "",
+    "Reservation Details",
+    ...hotelReservationRows(d).map(([k, v]) => `${k}: ${v}`),
+    "",
+    ...(d.payment ? ["Payment Details", ...hotelPaymentRows(d).map(([k, v]) => `${k}: ${v}`)] : []),
+    "",
+    "With Regards,",
+    d.senderName,
+    d.companyName,
+    d.companyPhone ? `Phone: ${d.companyPhone}` : "",
+  ]
+    .filter((l, i, a) => !(l === "" && a[i - 1] === ""))
+    .join("\n");
+}
+
+export function hotelPaymentEmailHtml(d: HotelPaymentEmailData): string {
+  const section = (title: string, rows: [string, string][]) => `          <tr>
+           <td class="vk-px" style="padding:14px 28px 4px;font-family:Arial,Helvetica,sans-serif">
+             <h2 style="margin:0 0 6px;color:${BRAND};font-size:15px;font-weight:700">${escapeHtml(title)}</h2>
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${rows.map(([k, v]) => detailRow(k, v)).join("\n")}
+             </table>
+           </td>
+         </tr>`;
+
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">${escapeHtml(hotelPaymentHeading(d))}</h1>
+             <p style="margin:0 0 6px;color:#444444;font-size:14px;line-height:1.6">${HOTEL_PAYMENT_GREETING}</p>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">${escapeHtml(hotelPaymentIntro(d))}</p>
+           </td>
+         </tr>
+${section("Guest Details", [
+  ["Guest Name", d.guestName],
+  ["Number of Guests", d.guests],
+  ["Booking Ref", d.bookingRef],
+])}
+${section("Reservation Details", hotelReservationRows(d))}
+${d.payment ? section("Payment Details", hotelPaymentRows(d)) : ""}
+         <tr>
+           <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:#444444;font-size:13px;line-height:1.6">
+             With Regards,<br />
+             <strong>${escapeHtml(d.senderName)}</strong><br />
+             ${escapeHtml(d.companyName)}${d.companyPhone ? `<br />Phone: ${escapeHtml(d.companyPhone)}` : ""}
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: hotelPaymentEmailSubject(d),
+    preheader: escapeHtml(
+      `${d.guestName} · ${d.checkIn ?? ""}${d.payment ? ` · ${hotelPaymentHeading(d)} ${inr(d.payment.amount)}` : ""}`,
+    ),
+    contentHtml: content,
+    footerNote: `Sent by ${escapeHtml(d.companyName)} reservations.`,
+  });
+}

@@ -1,3 +1,4 @@
+import type { HotelPaymentRow } from "@/lib/bookings/hotelPayments";
 // Client-safe shapes for the Trips board, hotel stays view and the
 // "tour starts tomorrow" celebration. Built server-side in src/lib/trips/board.ts.
 
@@ -70,6 +71,11 @@ export interface HotelStay extends TripHotel {
   assigneeName: string | null;
   /** Hotel service amount for this stay — set by the per-hotel history only. */
   amount?: number;
+  /** Per-hotel history only: payments made to the hotel for this stay. */
+  payments?: HotelPaymentRow[];
+  tokenWaived?: boolean;
+  /** Per-hotel history only: "6 adults, 2 kids" for the confirmation email. */
+  guestsLabel?: string;
 }
 
 export interface HotelStayGroup {
