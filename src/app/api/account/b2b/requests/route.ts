@@ -1,3 +1,4 @@
+import { notifyNewLead } from "@/lib/notifications";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -104,6 +105,13 @@ export async function POST(req: NextRequest) {
       // created on the agent's behalf).
     },
     select: REQUEST_SELECT,
+  });
+
+  await notifyNewLead({
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
+    via: `B2B request (${session.user.name ?? "agent"})`,
   });
 
   return NextResponse.json(lead, { status: 201 });

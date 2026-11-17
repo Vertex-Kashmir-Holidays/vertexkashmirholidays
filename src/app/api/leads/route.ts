@@ -24,10 +24,12 @@ import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
-import { publishedPackageOptions } from "@/lib/tours/content";
+import { packagePartySize, publishedPackageOptions } from "@/lib/tours/content";
 import { isOfferCurrent } from "@/lib/offers/content";
 import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
+import { notifyNewLead } from "@/lib/notifications";
+import { findLeadsNewFirst } from "@/lib/leads/newFirst";
 import type { Prisma } from "@prisma/client";
 import { deriveBandForPrice, resolveQualification } from "@/lib/leads/budgetBands.server";
 import { adventureTierChoices, parseAdventureTiers } from "@/lib/adventureTiers";
@@ -114,12 +116,9 @@ export async function GET(req: NextRequest) {
   }
 
   const [leads, total] = await Promise.all([
-    prisma.lead.findMany({
-      where,
-      // Matches the admin Leads list's display order (most recently touched
-      // lead first) — not createdAt, which would reorder rows the moment a
-      // filter/search request replaces the initial server-rendered page.
-      orderBy: { updatedAt: "desc" },
+    // Same order as the admin Leads page's first render: NEW leads on top,
+    // then the rest, each most recently updated first.
+    findLeadsNewFirst(where, {
       take,
       skip,
       select: {
@@ -361,7 +360,7 @@ export async function POST(req: NextRequest) {
   const tour = tourWhere
     ? await prisma.tour.findFirst({
         where: { ...tourWhere, published: true },
-        select: { priceFrom: true, packageOptions: true, hidePrice: true },
+        select: { priceFrom: true, packageOptions: true, hidePrice: true, minPersons: true },
       })
     : null;
   // A price-on-request tour (Tour.hidePrice) shows no price, so its band is
@@ -381,7 +380,9 @@ export async function POST(req: NextRequest) {
     const option = context?.packageName
       ? publishedPackageOptions(tour!.packageOptions).find((o) => o.name === context.packageName)
       : undefined;
-    derivedBand = await deriveBandForPrice(option ? option.priceForTwo / 2 : tour!.priceFrom);
+    derivedBand = await deriveBandForPrice(
+      option ? option.priceForTwo / packagePartySize(tour!.minPersons) : tour!.priceFrom,
+    );
   }
   const qualification = {
     budgetBandKey: derivedBand?.budgetBandKey ?? answered.budgetBandKey,
@@ -584,6 +585,14 @@ export async function POST(req: NextRequest) {
       contactChannel: "FORM",
       ...buildAttributionCreateInput(attribution, req),
     },
+  });
+
+  await notifyNewLead({
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
+    via: "Website form",
+    tourTitle: leadOffer?.name ?? leadAdventure?.name ?? context?.tourName ?? null,
   });
 
   // Dedicated lead inbox; falls back to the admin/from address if unset.

@@ -18,8 +18,9 @@ type Params = { params: Promise<{ id: string }> };
  * own domain with an explicit Content-Disposition fixes that for every
  * browser.
  *
- * Reachable by staff with docs:view, and by any B2B agent for a doc whose
- * category is B2B-visible (matches what /account already shows them).
+ * Reachable by staff with docs:view (or b2bAgents:view for agent-only docs),
+ * and by a B2B agent for a B2B-visible library doc or one shared with them
+ * (matches what /account shows them).
  */
 export async function GET(_req: Request, { params }: Params) {
   const session = await auth();
@@ -28,15 +29,20 @@ export async function GET(_req: Request, { params }: Params) {
 
   const doc = await prisma.adminDocument.findUnique({
     where: { id },
-    select: { title: true, category: true, url: true, mimeType: true },
+    select: { title: true, category: true, url: true, mimeType: true, agentId: true },
   });
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const staffAllowed = isStaff(session.user.role) && (await can(session.user.role, "docs", "view"));
+  const staffAllowed =
+    isStaff(session.user.role) &&
+    ((await can(session.user.role, "docs", "view")) ||
+      (doc.agentId !== null && (await can(session.user.role, "b2bAgents", "view"))));
+  // Agents: B2B library docs, or a document shared with them alone.
   const agentAllowed =
     session.user.agencyStatus !== null &&
-    isDocCategory(doc.category) &&
-    B2B_VISIBLE_DOC_CATEGORIES.includes(doc.category);
+    (doc.agentId
+      ? doc.agentId === session.user.id
+      : isDocCategory(doc.category) && B2B_VISIBLE_DOC_CATEGORIES.includes(doc.category));
   if (!staffAllowed && !agentAllowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

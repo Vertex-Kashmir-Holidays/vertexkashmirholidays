@@ -37,6 +37,8 @@ import { PDF_CONTACT, type PdfSocialLinks } from "@/lib/pdf/contact";
 import { SITE_URL } from "@/lib/seo";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "../itinerary/icons";
+import { withVehicleCount } from "@/lib/vehicleCount";
+import { formatDayDate } from "@/lib/itinerary/stayDate";
 
 // The brand icon mark — same asset ItineraryPdf.tsx uses for its own
 // watermark. Redefined here (not imported from ItineraryPdf.tsx) to avoid
@@ -1140,9 +1142,9 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
         return {
           id: r.id,
           label: r.usedFor || "Vehicle",
-          budget: r.vehicleBudget,
-          premium: r.vehicle,
-          luxury: r.vehicleLuxury,
+          budget: withVehicleCount(r.vehicleBudget, r.count),
+          premium: withVehicleCount(r.vehicle, r.count),
+          luxury: withVehicleCount(r.vehicleLuxury, r.count),
         };
       }),
     },
@@ -1394,7 +1396,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                             <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
                             <Text style={s.dayTitle}>{day.title}</Text>
                           </View>
-                          {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
+                          {day.dateLabel.trim() ? <Text style={s.dayDate}>{formatDayDate(day.dateLabel)}</Text> : null}
                         </View>
                         {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
                         {day.stayLabel || day.highlightsLine ? (
@@ -1456,7 +1458,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                           {day.title}
                         </Text>
                         {day.dateLabel.trim() ? (
-                          <Text style={s.dayDate}>{day.dateLabel}</Text>
+                          <Text style={s.dayDate}>{formatDayDate(day.dateLabel)}</Text>
                         ) : null}
                       </View>
                       {day.body ? (
@@ -1527,7 +1529,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                         <Text style={s.dayPlanDayLabel}>Day</Text>
                         <Text style={s.dayPlanDayNum}>{String(i + 1).padStart(2, "0")}</Text>
                         {day.dateLabel.trim() ? (
-                          <Text style={s.simpleTableDate}>{day.dateLabel}</Text>
+                          <Text style={s.simpleTableDate}>{formatDayDate(day.dateLabel)}</Text>
                         ) : null}
                       </View>
                       <View style={[s.simpleTableCell, { flex: hasDayDates ? 2.55 : 3 }]}>
@@ -1628,7 +1630,7 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                   {data.transport.map((row) => (
                     <View key={row.id} style={s.simpleTableRow} wrap={false}>
                       <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 1 }]}>
-                        {row.vehicle}
+                        {withVehicleCount(row.vehicle, row.count)}
                       </Text>
                       <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
                         {row.seating}

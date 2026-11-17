@@ -50,7 +50,8 @@ export interface TripCard {
   servicesLocked: boolean;
   isB2b: boolean;
   assignee: { id: string; name: string } | null;
-  driver: { name: string; phone: string | null; vehicle: string | null; number: string | null } | null;
+  // One per vehicle, in order; empty = no driver assigned yet.
+  drivers: { name: string; phone: string; vehicle: string; number: string }[];
   hotels: TripHotel[];
   /** Hotels not yet Confirmed (Cancelled rows excluded). */
   unconfirmedHotels: number;

@@ -1083,10 +1083,10 @@ export function PackageForm({
             </div>
             <p className="text-[12px] text-muted-foreground mb-3">
               Optional variants of this tour (e.g. Basic / Comfort / Premium / Luxury) — same
-              itinerary, different stay and services. Enter the public price for 2 persons only;
-              other group sizes are quoted by Sales. When any option exists, the tour is saved as
-              Inquiry Only and &ldquo;Price From&rdquo; is set automatically (lowest 2-person price
-              ÷ 2).
+              itinerary, different stay and services. Enter the public price for 2 persons — or for
+              &ldquo;Min Persons&rdquo; when that is higher (e.g. 4 for a family package); other
+              group sizes are quoted by Sales. When any option exists, the tour is saved as Inquiry
+              Only and &ldquo;Price From&rdquo; is set automatically (lowest package price ÷ persons).
             </p>
             {packageOptionFields.length === 0 ? (
               <p className="text-xs text-muted-foreground py-2">
@@ -1176,7 +1176,7 @@ export function PackageForm({
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                       <div>
-                        <FieldLabel required>Price for 2 persons (₹)</FieldLabel>
+                        <FieldLabel required>Package price (₹, for 2 or Min Persons)</FieldLabel>
                         <TextInput
                           {...register(`packageOptions.${i}.priceForTwo`, { valueAsNumber: true })}
                           type="number"

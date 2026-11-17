@@ -20,7 +20,8 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { ItineraryData, ItineraryStatus } from "@/types/itinerary";
 import { PdfIcon } from "./ItineraryPdf";
-import { formatStayDate } from "@/lib/itinerary/stayDate";
+import { formatDayDate, formatStayDate } from "@/lib/itinerary/stayDate";
+import { withVehicleCount } from "@/lib/vehicleCount";
 
 export interface B2bAgentInfo {
   agencyName: string | null;
@@ -593,7 +594,7 @@ export function B2bItineraryPdf({
                           {day.dateLabel ? (
                             <Text style={s.dayDate}>
                               {"  ·  "}
-                              {formatStayDate(day.dateLabel, { year: false })}
+                              {formatDayDate(day.dateLabel)}
                             </Text>
                           ) : null}
                         </View>
@@ -669,10 +670,20 @@ export function B2bItineraryPdf({
                 </View>
                 <View style={s.tRow}>
                   <Text style={[s.tCell, { width: 150, fontFamily: "Helvetica-Bold", color: INK }]}>
-                    {data.transportType || "—"}
+                    {withVehicleCount(data.transportType, data.transportCount) || "—"}
                   </Text>
                   <Text style={[s.tCell, { flex: 1 }]}>{data.transportDesc || "—"}</Text>
                 </View>
+                {data.extraVehicles
+                  .filter((v) => v.type.trim())
+                  .map((v) => (
+                    <View key={v.id} style={s.tRow}>
+                      <Text style={[s.tCell, { width: 150, fontFamily: "Helvetica-Bold", color: INK }]}>
+                        {withVehicleCount(v.type, v.count)}
+                      </Text>
+                      <Text style={[s.tCell, { flex: 1 }]}>{v.seats || data.transportDesc || "—"}</Text>
+                    </View>
+                  ))}
               </View>
             </View>
           )}

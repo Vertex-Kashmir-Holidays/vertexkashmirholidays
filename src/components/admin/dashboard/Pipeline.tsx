@@ -12,6 +12,8 @@ const STAGE_TONES = [
   "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
 ];
 
+const STAGE_BARS = ["bg-blue-500", "bg-amber-400", "bg-rose-500", "bg-violet-500", "bg-emerald-500"];
+
 // Arrow notch on both sides; the first stage has a flat left edge.
 const ARROW = "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%)";
 const ARROW_FIRST = "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)";
@@ -28,8 +30,33 @@ export function Pipeline({
   const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
   return (
     <div className="space-y-3 p-4 sm:p-5">
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
-        <div className="flex min-w-[560px]">
+      {/* Narrow panel (phones; half-width at lg–xl): stages as a vertical bar list. */}
+      <ul className="space-y-2 sm:hidden lg:block 2xl:hidden">
+        {stages.map((s, i) => (
+          <li key={s.status}>
+            <Link
+              href={`/admin/leads?status=${s.status}`}
+              className="block rounded-lg px-1 py-0.5 transition hover:bg-muted/50"
+            >
+              <span className="flex items-baseline justify-between gap-2 text-[12px]">
+                <span className="font-semibold text-foreground">{s.label}</span>
+                <span className="text-muted-foreground">
+                  <span className="font-display text-sm font-extrabold text-foreground">{s.count}</span> · {pct(s.count)}%
+                </span>
+              </span>
+              <span className="mt-1 block h-2 overflow-hidden rounded-full bg-muted">
+                <span
+                  className={cn("block h-full rounded-full", STAGE_BARS[i % STAGE_BARS.length])}
+                  style={{ width: `${Math.max(pct(s.count), s.count > 0 ? 3 : 0)}%` }}
+                />
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {/* Wide panel: arrow-shaped stages. */}
+      <div className="hidden sm:block lg:hidden 2xl:block">
+        <div className="flex">
           {stages.map((s, i) => (
             <Link
               key={s.status}

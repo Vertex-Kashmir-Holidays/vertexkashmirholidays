@@ -19,6 +19,8 @@ import {
   type ProposalData,
   type ProposalTierKey,
 } from "@/types/proposal";
+import { parseVehicleCount, withVehicleCount } from "@/lib/vehicleCount";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
 
 const FALLBACK_IMAGE = "/itinerary/hero.webp";
 
@@ -103,7 +105,8 @@ export function proposalToItineraryData(
   const places = [...new Set(proposal.days.map((d) => d.stayLabel.trim()).filter(Boolean))];
   const rooms = hotels[0]?.rooms ?? "1";
 
-  return {
+  // Hotel check-in/out filled from the travel start date (resyncTripDates).
+  return resyncTripDates(null, {
     ...base,
     coverImage: proposal.coverImage || base.coverImage,
     duration: proposal.duration,
@@ -119,7 +122,11 @@ export function proposalToItineraryData(
     destinations: places.length ? places.join(" · ") : base.destinations,
     info: base.info.map((it) => {
       if (it.id === "info-1") return { ...it, value: proposal.duration };
-      if (it.id === "info-3" && firstVehicle) return { ...it, value: cell(firstVehicle[vehicleField]) };
+      if (it.id === "info-3" && firstVehicle)
+        return {
+          ...it,
+          value: vehicles.map((r) => withVehicleCount(cell(r[vehicleField]), r.count)).join(" + "),
+        };
       if (it.id === "info-4") return { ...it, value: `${rooms} ${rooms === "1" ? "Room" : "Rooms"}` };
       return it;
     }),
@@ -129,7 +136,15 @@ export function proposalToItineraryData(
     optionalActivities: proposal.optionalActivities,
     ...(firstVehicle
       ? {
-          transportType: vehicles.map((r) => cell(r[vehicleField])).join(" + "),
+          // First row → the main vehicle; any more (Sedan + SUV) → extraVehicles.
+          transportType: cell(firstVehicle[vehicleField]),
+          transportCount: String(parseVehicleCount(firstVehicle.count) ?? 1),
+          extraVehicles: vehicles.slice(1).map((r) => ({
+            id: genId("veh"),
+            type: cell(r[vehicleField]),
+            count: String(parseVehicleCount(r.count) ?? 1),
+            seats: r.seating,
+          })),
           transportDesc: firstVehicle.usedFor,
           transportSeats: firstVehicle.seating,
           transportDays: firstVehicle.duration,
@@ -146,5 +161,5 @@ export function proposalToItineraryData(
     cancel: proposal.cancel.length ? proposal.cancel : base.cancel,
     cancelNotes: proposal.cancelNotes.length ? proposal.cancelNotes : base.cancelNotes,
     whyChoose: proposal.whyChoose.length ? proposal.whyChoose : base.whyChoose,
-  };
+  });
 }

@@ -117,6 +117,9 @@ export const transportRowSchema = z.object({
   vehicle: z.string(),
   vehicleBudget: z.string().default(""),
   vehicleLuxury: z.string().default(""),
+  // How many vehicles of this type ("2" → "2 × Innova Crysta"); applies to
+  // every option. Defaulted so rows saved before it existed load as one.
+  count: z.string().default("1"),
   seating: z.string(),
   usedFor: z.string(),
   duration: z.string(),

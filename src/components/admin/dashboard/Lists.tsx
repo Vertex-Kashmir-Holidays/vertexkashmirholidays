@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   BadgeCheck,
   CalendarClock,
@@ -37,6 +38,30 @@ const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const staffName = (u: { name: string | null; email: string } | null) => (u ? (u.name ?? u.email) : "—");
 const leadService = (l: { packageName: string | null; tour: { title: string } | null }) =>
   l.tour?.title ?? l.packageName ?? "—";
+
+/** Phones: each row becomes a stacked card instead of a sideways-scrolling table. */
+function CardList({ children }: { children: ReactNode }) {
+  return <ul className="divide-y divide-border md:hidden">{children}</ul>;
+}
+
+function CardItem({ href, person, aside, children }: { href: string; person: ReactNode; aside: ReactNode; children: ReactNode }) {
+  return (
+    <li>
+      <Link href={href} className="block space-y-1.5 px-4 py-3 transition hover:bg-muted/50">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">{person}</div>
+          <div className="shrink-0">{aside}</div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-[42px] text-[12px] text-muted-foreground">{children}</div>
+      </Link>
+    </li>
+  );
+}
+
+/** Table shown from tablet width up (cards below). */
+const tableWrap = "hidden overflow-x-auto md:block";
+/** "Trip" column: hidden where its panel is half width (xl two-column row). */
+const tripCol = "hidden md:table-cell xl:hidden 2xl:table-cell";
 
 function LeadBadge({ status }: { status: LeadStatus }) {
   return (
@@ -169,11 +194,59 @@ function DaysLeft({ trip }: { trip: DashboardTrip }) {
   );
 }
 
+function TaskBadge({ trip }: { trip: DashboardTrip }) {
+  return trip.tasks.length === 0 ? (
+    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+      <CheckCircle2 className="h-3 w-3" /> Clear
+    </span>
+  ) : (
+    <span
+      title={trip.tasks.map((x) => x.label).join(" · ")}
+      className="inline-flex items-center gap-1 rounded-md bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300"
+    >
+      <CalendarClock className="h-3 w-3" /> Pending {trip.tasks.length}
+    </span>
+  );
+}
+
+const tripPlace = (t: DashboardTrip) => t.tourTitle ?? t.hotels[0]?.location ?? "Kashmir";
+
 export function TripsTable({ trips }: { trips: DashboardTrip[] }) {
   if (trips.length === 0) return <EmptyRow>No upcoming trips.</EmptyRow>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-xs">
+    <>
+    <CardList>
+      {trips.map((t) => (
+        <CardItem
+          key={t.id}
+          href={`/admin/bookings/${t.id}/services`}
+          person={<PersonCell name={t.guestName} phone={t.guestPhone} />}
+          aside={<DaysLeft trip={t} />}
+        >
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{tripPlace(t)}</span>
+          </span>
+          <span className="whitespace-nowrap font-semibold text-foreground">
+            {fmtTripDate(t.startDate)} · {fmtWeekday(t.startDate)}
+          </span>
+          {t.tasks.length === 0 ? (
+            <TaskBadge trip={t} />
+          ) : (
+            t.tasks.map((x) => (
+              <span
+                key={x.label}
+                className="rounded-md bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300"
+              >
+                {x.label}
+              </span>
+            ))
+          )}
+        </CardItem>
+      ))}
+    </CardList>
+    <div className={tableWrap}>
+      <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border">
             <th className={thCls}>Customer</th>
@@ -194,7 +267,7 @@ export function TripsTable({ trips }: { trips: DashboardTrip[] }) {
               <td className={cn(tdCls, "max-w-[160px]")}>
                 <span className="flex items-center gap-1 truncate text-muted-foreground">
                   <MapPin className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{t.tourTitle ?? t.hotels[0]?.location ?? "Kashmir"}</span>
+                  <span className="truncate">{tripPlace(t)}</span>
                 </span>
               </td>
               <td className={cn(tdCls, "whitespace-nowrap")}>
@@ -205,24 +278,14 @@ export function TripsTable({ trips }: { trips: DashboardTrip[] }) {
                 <DaysLeft trip={t} />
               </td>
               <td className={tdCls}>
-                {t.tasks.length === 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-                    <CheckCircle2 className="h-3 w-3" /> Clear
-                  </span>
-                ) : (
-                  <span
-                    title={t.tasks.map((x) => x.label).join(" · ")}
-                    className="inline-flex items-center gap-1 rounded-md bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300"
-                  >
-                    <CalendarClock className="h-3 w-3" /> Pending {t.tasks.length}
-                  </span>
-                )}
+                <TaskBadge trip={t} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 
@@ -237,12 +300,27 @@ export function RecentLeadsTable({
 }) {
   if (rows.length === 0) return <EmptyRow>No leads yet.</EmptyRow>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-xs">
+    <>
+    <CardList>
+      {rows.map((l) => (
+        <CardItem
+          key={l.id}
+          href={`/admin/leads/${l.id}`}
+          person={<PersonCell name={l.name} phone={l.phone} />}
+          aside={<LeadBadge status={l.status} />}
+        >
+          <span className="min-w-0 truncate">{leadService(l)}</span>
+          {showAssignee && <span className="text-foreground">{staffName(l.assignedTo)}</span>}
+          <span className="whitespace-nowrap">{fmtDate(l.createdAt)}</span>
+        </CardItem>
+      ))}
+    </CardList>
+    <div className={tableWrap}>
+      <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border">
             <th className={thCls}>Customer</th>
-            <th className={thCls}>Trip</th>
+            <th className={cn(thCls, tripCol)}>Trip</th>
             <th className={thCls}>Status</th>
             {showAssignee && <th className={thCls}>Assigned to</th>}
             <th className={thCls}>Created</th>
@@ -256,7 +334,7 @@ export function RecentLeadsTable({
                   <PersonCell name={l.name} phone={l.phone} />
                 </Link>
               </td>
-              <td className={cn(tdCls, "max-w-[160px] truncate text-muted-foreground")}>{leadService(l)}</td>
+              <td className={cn(tdCls, tripCol, "max-w-[160px] truncate text-muted-foreground")}>{leadService(l)}</td>
               <td className={tdCls}>
                 <LeadBadge status={l.status} />
               </td>
@@ -267,6 +345,7 @@ export function RecentLeadsTable({
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 
@@ -279,12 +358,32 @@ const PAYMENT_BADGES: Record<PaymentStatus, { label: string; className: string }
 export function RecentBookingsTable({ rows }: { rows: RecentBookingRow[] }) {
   if (rows.length === 0) return <EmptyRow>No bookings yet.</EmptyRow>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-xs">
+    <>
+    <CardList>
+      {rows.map((b) => {
+        const badge = PAYMENT_BADGES[b.paymentStatus];
+        return (
+          <CardItem
+            key={b.id}
+            href={`/admin/bookings/${b.id}/services`}
+            person={<PersonCell name={b.guestName} phone={b.guestPhone} />}
+            aside={
+              <span className={cn("rounded-md px-2 py-0.5 text-[11px] font-bold", badge.className)}>{badge.label}</span>
+            }
+          >
+            <span className="font-semibold text-foreground">{inr(b.amount)}</span>
+            <span className="min-w-0 truncate">{b.destination}</span>
+            <span className="whitespace-nowrap">{fmtDate(b.createdAt)}</span>
+          </CardItem>
+        );
+      })}
+    </CardList>
+    <div className={tableWrap}>
+      <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border">
             <th className={thCls}>Customer</th>
-            <th className={thCls}>Trip</th>
+            <th className={cn(thCls, tripCol)}>Trip</th>
             <th className={thCls}>Amount</th>
             <th className={thCls}>Payment</th>
             <th className={thCls}>Booked</th>
@@ -300,7 +399,7 @@ export function RecentBookingsTable({ rows }: { rows: RecentBookingRow[] }) {
                     <PersonCell name={b.guestName} phone={b.guestPhone} />
                   </Link>
                 </td>
-                <td className={cn(tdCls, "max-w-[160px] truncate text-muted-foreground")}>{b.destination}</td>
+                <td className={cn(tdCls, tripCol, "max-w-[160px] truncate text-muted-foreground")}>{b.destination}</td>
                 <td className={cn(tdCls, "whitespace-nowrap font-semibold text-foreground")}>{inr(b.amount)}</td>
                 <td className={tdCls}>
                   <span className={cn("rounded-md px-2 py-0.5 text-[11px] font-bold", badge.className)}>
@@ -314,5 +413,6 @@ export function RecentBookingsTable({ rows }: { rows: RecentBookingRow[] }) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }

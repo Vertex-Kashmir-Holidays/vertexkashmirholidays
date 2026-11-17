@@ -2,7 +2,21 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/atoms/button";
-import { RefreshCw, Download, Save, Loader2, ArrowLeft, FileOutput } from "lucide-react";
+import {
+  RefreshCw,
+  Download,
+  Save,
+  Loader2,
+  ArrowLeft,
+  FileOutput,
+  MoreHorizontal,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/organisms/dropdown-menu";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
 import type { ProposalDocType, ProposalStatus } from "@/types/proposal";
 
@@ -28,6 +42,8 @@ interface ToolbarProps {
   /** Opens the convert dialog. Omitted when the proposal isn't saved yet or the user can't create itineraries. */
   onConvert?: () => void;
   isConverting?: boolean;
+  /** Phones only: section shortcuts (element ids) shown as a scrollable chip row. */
+  sections?: { id: string; label: string }[];
 }
 
 export function Toolbar({
@@ -44,11 +60,26 @@ export function Toolbar({
   canSave = true,
   onConvert,
   isConverting,
+  sections,
 }: ToolbarProps) {
+  const saveButton = (
+    <Button size="sm" onClick={onSave} disabled={isSaving || !canSave}>
+      {isSaving ? (
+        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Save className="mr-1 h-3.5 w-3.5" />
+      )}
+      Save
+    </Button>
+  );
+
+  // Phones: one compact bar — Back · title · Save, then type/status and a
+  // "more" menu for PDF / Convert / Reset. Stays pinned while scrolling so
+  // Save is always one tap away. sm+: the original single wrapping row.
   return (
-    <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 no-print">
-      <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5">
-        <div className="flex min-w-0 flex-1 basis-[180px] items-center gap-3">
+    <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 no-print">
+      <div className="mx-auto flex max-w-[900px] flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2.5 sm:py-3 sm:px-5">
+        <div className="flex min-w-0 flex-1 basis-[180px] items-center gap-3 max-sm:basis-full">
           <Link
             href="/admin/proposals"
             className="text-muted-foreground transition hover:text-foreground"
@@ -62,9 +93,10 @@ export function Toolbar({
           >
             {title}
           </p>
+          <div className="shrink-0 sm:hidden">{saveButton}</div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
           <div
             role="radiogroup"
             aria-label="Proposal type"
@@ -100,13 +132,40 @@ export function Toolbar({
             ))}
           </select>
 
-          <ThemeToggle className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="ml-auto sm:hidden" aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={onExport} disabled={isExporting}>
+                <Download className="h-4 w-4" /> {isExporting ? "Exporting…" : "Download PDF"}
+              </DropdownMenuItem>
+              {onConvert && (
+                <DropdownMenuItem onSelect={onConvert} disabled={isConverting || isSaving}>
+                  <FileOutput className="h-4 w-4" /> Convert to Itinerary
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onSelect={onReset}>
+                <RefreshCw className="h-4 w-4" /> Reset
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <Button variant="outline" size="sm" onClick={onReset}>
+          <ThemeToggle className="max-sm:hidden inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground" />
+
+          <Button variant="outline" size="sm" onClick={onReset} className="max-sm:hidden">
             <RefreshCw className="mr-1 h-3.5 w-3.5" /> Reset
           </Button>
 
-          <Button variant="outline" size="sm" onClick={onExport} disabled={isExporting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            disabled={isExporting}
+            className="max-sm:hidden"
+          >
             {isExporting ? (
               <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
             ) : (
@@ -116,7 +175,13 @@ export function Toolbar({
           </Button>
 
           {onConvert && (
-            <Button variant="outline" size="sm" onClick={onConvert} disabled={isConverting || isSaving}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onConvert}
+              disabled={isConverting || isSaving}
+              className="max-sm:hidden"
+            >
               {isConverting ? (
                 <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -126,16 +191,28 @@ export function Toolbar({
             </Button>
           )}
 
-          <Button size="sm" onClick={onSave} disabled={isSaving || !canSave}>
-            {isSaving ? (
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="mr-1 h-3.5 w-3.5" />
-            )}
-            Save
-          </Button>
+          <div className="max-sm:hidden">{saveButton}</div>
         </div>
       </div>
+      {sections && sections.length > 0 && (
+        <nav
+          aria-label="Jump to section"
+          className="flex gap-1.5 overflow-x-auto px-3 pb-2.5 [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden"
+        >
+          {sections.map((sec) => (
+            <button
+              key={sec.id}
+              type="button"
+              onClick={() =>
+                document.getElementById(sec.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+              className="shrink-0 rounded-full border border-border bg-card px-3 py-1 text-[12px] font-semibold text-muted-foreground active:bg-primary/10 active:text-primary"
+            >
+              {sec.label}
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

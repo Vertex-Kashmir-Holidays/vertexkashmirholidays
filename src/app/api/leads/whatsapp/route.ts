@@ -4,6 +4,7 @@ import { LeadStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { sendMail, leadNotificationHtml, leadNotificationText } from "@/lib/mail";
+import { notifyNewLead } from "@/lib/notifications";
 import { isValidE164Strict } from "@/lib/auth/phoneStrict.server";
 import { phoneField } from "@/lib/leads/schema";
 import { budgetBandKeyField, travelMonthField } from "@/lib/leads/qualification";
@@ -113,6 +114,14 @@ export async function POST(req: NextRequest) {
       travelMonth: q.travelMonth,
       ...buildAttributionCreateInput(attribution, req),
     },
+  });
+
+  await notifyNewLead({
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
+    via: "WhatsApp popup",
+    tourTitle: tourName ?? null,
   });
 
   // Best-effort, after the commit — same inbox as the website forms.

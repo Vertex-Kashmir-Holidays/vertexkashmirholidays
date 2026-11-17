@@ -10,7 +10,7 @@ import { isAdminRole } from "@/lib/itinerary/access";
 import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 import { phoneField } from "@/lib/leads/schema";
 import { convertedBookingAmountUpdate } from "@/lib/bookings/syncBookingAmount";
-import { travelDatesOps } from "@/lib/bookings/syncBookingDates";
+import { tripSyncOps } from "@/lib/bookings/syncBookingDates";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -274,10 +274,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         )
       : [];
 
-  // Converted lead unlocked for corrections: its booking follows the new dates…
+  // Converted lead unlocked for corrections: its booking follows the new
+  // name, phone, dates and travellers (while its services are unlocked)…
   const bookingDateOps =
-    existing.status === LeadStatus.CONVERTED && (startDate !== undefined || endDate !== undefined) && effStart
-      ? await travelDatesOps(id, { start: effStart, end: effEnd }, { includeLead: false })
+    existing.status === LeadStatus.CONVERTED && tripFactsTouched
+      ? await tripSyncOps(
+          id,
+          {
+            ...((startDate !== undefined || endDate !== undefined) && effStart
+              ? { start: effStart, end: effEnd }
+              : {}),
+            ...(rest.name !== undefined ? { name: rest.name } : {}),
+            ...(rest.phone !== undefined ? { phone: rest.phone } : {}),
+            ...(rest.adults !== undefined ? { adults: rest.adults } : {}),
+            ...(rest.children !== undefined ? { children: rest.children } : {}),
+          },
+          { includeLead: false },
+        )
       : [];
 
   // …and the new price.

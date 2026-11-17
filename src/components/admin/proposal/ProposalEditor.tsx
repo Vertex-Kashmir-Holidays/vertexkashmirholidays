@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { resyncDayDates } from "@/lib/itinerary/travelDates";
+import { stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus, Sparkles, BookmarkPlus } from "lucide-react";
@@ -77,7 +79,16 @@ export function ProposalEditor({
   dayPlans = { canPick: false, canSave: false },
 }: ProposalEditorProps) {
   const router = useRouter();
-  const [data, setData] = useState<ProposalData>(initialData);
+  const [data, setRawData] = useState<ProposalData>(initialData);
+  // Every edit goes through resyncDayDates: day dates follow the travel start
+  // date and the days' order (a date set by hand stays otherwise).
+  const setData = useCallback(
+    (update: ProposalData | ((prev: ProposalData) => ProposalData)) =>
+      setRawData((prev) =>
+        resyncDayDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // "<customer> - <duration> - <phone>" from the cover; the API derives the
   // same string on save, so this is what the list will show.
   const title = initialTitle && data === initialData ? initialTitle : buildDocumentTitle(data);
@@ -259,6 +270,7 @@ export function ProposalEditor({
           vehicle: "",
           vehicleBudget: "",
           vehicleLuxury: "",
+          count: "1",
           seating: "",
           usedFor: "",
           duration: "",
@@ -473,9 +485,25 @@ export function ProposalEditor({
   // Shown only on phones, where table-style column headings are hidden.
   const mobileLabel = `${fieldLabel} sm:hidden`;
 
+  // Phone shortcuts under the toolbar — jump straight to a section of this long form.
+  const sections = [
+    { id: "cover", label: "Cover" },
+    { id: "packages", label: isMulti ? "Options" : "Price" },
+    ...(isMulti ? [{ id: "compare", label: "Compare" }] : []),
+    { id: "days", label: "Days" },
+    { id: "stays", label: "Stays" },
+    { id: "transport", label: "Transport" },
+    { id: "activities", label: "Activities" },
+    { id: "covered", label: "Inclusions" },
+    { id: "payment", label: "Payment" },
+    { id: "why-us", label: "Why us" },
+    { id: "confirm", label: "Confirm" },
+  ];
+
   return (
     <div className="pb-8">
       <Toolbar
+        sections={sections.map((sec) => ({ ...sec, id: `ps-${sec.id}` }))}
         title={title}
         status={status}
         onStatusChange={setStatus}
@@ -515,7 +543,7 @@ export function ProposalEditor({
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[920px] space-y-8">
           {/* Cover */}
-          <article className={pageCard}>
+          <article id="ps-cover" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>Cover</h2>
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
               <div>
@@ -617,7 +645,7 @@ export function ProposalEditor({
           {/* Pricing Tiers — the single-package doc reuses this exact same
               tier-card editor, just for one fixed slot (SINGLE_TIER_KEY)
               instead of looping over all three. */}
-          <article className={pageCard}>
+          <article id="ps-packages" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {data.docType === "multi" ? "Your Three Options" : "Package & Price"}
             </h2>
@@ -719,7 +747,7 @@ export function ProposalEditor({
           {/* Comparison table — multi-package only; the single-package doc
               has only one option, nothing to compare. */}
           {data.docType !== "multi" ? null : (
-            <article className={pageCard}>
+            <article id="ps-compare" className={`${pageCard} scroll-mt-32`}>
               <h2 className={greenHead}>What Actually Differs</h2>
               <p className="mt-2 text-xs text-mute dark:text-muted-foreground">
                 Hotels, vehicles and activities are compared automatically from the Stay Plan,
@@ -745,15 +773,17 @@ export function ProposalEditor({
                       value={row.label}
                       onValueChange={(v) => updateComparisonRow(row.id, "label", v)}
                       placeholder="Feature"
-                      className="text-sm font-bold sm:col-span-1"
+                      className="col-span-2 text-sm font-bold sm:col-span-1"
                     />
                     {TIER_ORDER.map((tk) => (
-                      <OptionCell
-                        key={tk}
-                        tierKey={tk}
-                        value={row[tk]}
-                        onChange={(v) => updateComparisonRow(row.id, tk, v)}
-                      />
+                      <div key={tk} className="col-span-2 sm:col-span-1">
+                        <span className={mobileLabel}>{data.tiers[tk].label}</span>
+                        <OptionCell
+                          tierKey={tk}
+                          value={row[tk]}
+                          onChange={(v) => updateComparisonRow(row.id, tk, v)}
+                        />
+                      </div>
                     ))}
                     <button
                       onClick={() => removeComparisonRow(row.id)}
@@ -782,7 +812,7 @@ export function ProposalEditor({
           {/* Days — the single-package doc's "Day Plan at a Glance" table
               reads the same `days` array, plus its Meals column (blank/unused
               in multi-package). */}
-          <article className={pageCard}>
+          <article id="ps-days" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {data.docType === "multi" ? "Your Six Days" : "Day Plan at a Glance"}
             </h2>
@@ -816,11 +846,13 @@ export function ProposalEditor({
                             className="min-w-0 flex-1 text-sm font-bold"
                           />
                         </div>
-                        <EditableField
-                          value={day.dateLabel}
-                          onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
-                          placeholder="Wed 10 Jun"
-                          className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                        {/* Filled from the travel start date (resyncDayDates); blank = not printed. */}
+                        <input
+                          type="date"
+                          aria-label={`Day ${dayIdx + 1} date`}
+                          value={stayDateInputValue(day.dateLabel)}
+                          onChange={(e) => updateDay(day.id, "dateLabel", e.target.value)}
+                          className="ml-12 w-36 text-xs text-mute dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)] bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-mute/20"
                         />
                       </div>
                       <EditableField
@@ -915,7 +947,7 @@ export function ProposalEditor({
           {/* Stay Plan — both docs. Single: one hotel per row. Multi: one
               hotel per option (Premium = the single doc's hotel), printed as
               the comparison table's "Stays" section. */}
-          <article className={pageCard}>
+          <article id="ps-stays" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>{isMulti ? "Stay Plan — Hotel per Option" : "Stay Plan"}</h2>
             <div
               className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-5"}`}
@@ -960,7 +992,7 @@ export function ProposalEditor({
                       />
                     </div>
                     {isMulti ? null : (
-                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-4 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Hotel Name</span>
                         <EditableField
                           value={row.hotelName}
@@ -1032,14 +1064,15 @@ export function ProposalEditor({
           </article>
 
           {/* Transportation — same single/multi split as Stay Plan. */}
-          <article className={pageCard}>
+          <article id="ps-transport" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {isMulti ? "Transportation — Vehicle per Option" : "Transportation"}
             </h2>
             <div
-              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-4"}`}
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-4" : "grid-cols-5"}`}
             >
               <span className={fieldLabel}>{isMulti ? "Used For" : "Vehicle"}</span>
+              <span className={fieldLabel}>No. of vehicles</span>
               <span className={fieldLabel}>Seating</span>
               {isMulti ? null : <span className={fieldLabel}>Used For</span>}
               <span className={fieldLabel}>Duration</span>
@@ -1051,13 +1084,13 @@ export function ProposalEditor({
                   className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20"
                 >
                   {/* Phones: labelled fields (mobileLabel), ordered Vehicle
-                      or Used For / Seating + Duration / Used For (single).
-                      sm+: one row under the column headings. */}
+                      or Used For / No. + Seating + Duration / Used For
+                      (single). sm+: one row under the column headings. */}
                   <div
-                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-4"}`}
+                    className={`grid grid-cols-3 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-4" : "sm:grid-cols-5"}`}
                   >
                     {isMulti ? null : (
-                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-1 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Vehicle</span>
                         <EditableField
                           value={row.vehicle}
@@ -1068,7 +1101,7 @@ export function ProposalEditor({
                       </div>
                     )}
                     {isMulti ? (
-                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-1 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Used For</span>
                         <EditableField
                           value={row.usedFor}
@@ -1078,6 +1111,18 @@ export function ProposalEditor({
                         />
                       </div>
                     ) : null}
+                    <div className="order-2 sm:order-none">
+                      <span className={mobileLabel}>No. of vehicles</span>
+                      <EditableField
+                        value={row.count}
+                        onValueChange={(v) =>
+                          updateTransportRow(row.id, "count", v.replace(/\D/g, "").slice(0, 2))
+                        }
+                        inputMode="numeric"
+                        placeholder="1"
+                        className="text-xs"
+                      />
+                    </div>
                     <div className="order-2 sm:order-none">
                       <span className={mobileLabel}>Seating</span>
                       <EditableField
@@ -1151,7 +1196,7 @@ export function ProposalEditor({
           {/* Activities — multi: one cell per option (✓ / – / text), printed
               as the comparison's "Activities" section. Single: the Premium
               cell is the detail; a dash leaves the activity out of the PDF. */}
-          <article className={pageCard}>
+          <article id="ps-activities" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {isMulti ? "Activities — per Option" : "Activities Included"}
             </h2>
@@ -1175,16 +1220,27 @@ export function ProposalEditor({
                     value={row.label}
                     onValueChange={(v) => updateActivity(row.id, "label", v)}
                     placeholder="Shikara ride"
-                    className="text-sm font-bold"
+                    className={`text-sm font-bold ${isMulti ? "col-span-2 sm:col-span-1" : ""}`}
                   />
-                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
-                    <OptionCell
-                      key={tk}
-                      tierKey={tk}
-                      value={row[tk]}
-                      onChange={(v) => updateActivity(row.id, tk, v)}
-                    />
-                  ))}
+                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) =>
+                    isMulti ? (
+                      <div key={tk} className="col-span-2 sm:col-span-1">
+                        <span className={mobileLabel}>{data.tiers[tk].label}</span>
+                        <OptionCell
+                          tierKey={tk}
+                          value={row[tk]}
+                          onChange={(v) => updateActivity(row.id, tk, v)}
+                        />
+                      </div>
+                    ) : (
+                      <OptionCell
+                        key={tk}
+                        tierKey={tk}
+                        value={row[tk]}
+                        onChange={(v) => updateActivity(row.id, tk, v)}
+                      />
+                    ),
+                  )}
                   <button
                     onClick={() => removeActivity(row.id)}
                     aria-label={`Remove activity ${row.label}`}
@@ -1212,7 +1268,7 @@ export function ProposalEditor({
           </article>
 
           {/* What's Covered */}
-          <article className={pageCard}>
+          <article id="ps-covered" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>What&apos;s Covered</h2>
             <div className="mt-8 space-y-10">
               <ListColumn
@@ -1248,7 +1304,7 @@ export function ProposalEditor({
 
           {/* Payment & Cancellation — same 3-column card + tier table pattern
               as ItineraryEditor.tsx, same field names. */}
-          <article className={pageCard}>
+          <article id="ps-payment" className={`${pageCard} scroll-mt-32`}>
             <h2 className="font-serif text-3xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">
               Payment &amp; Cancellation
             </h2>
@@ -1375,7 +1431,7 @@ export function ProposalEditor({
 
           {/* Why Choose Us — editable like the main Itinerary module's "Why
               Choose Vertex" (title/subtitle per item, icon fixed per item). */}
-          <article className={pageCard}>
+          <article id="ps-why-us" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>Why Choose Us</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {data.whyChoose.map((w) => (
@@ -1405,7 +1461,7 @@ export function ProposalEditor({
           </article>
 
           {/* Closing */}
-          <article className={pageCard}>
+          <article id="ps-confirm" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>How to Confirm</h2>
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
               {(
@@ -1513,7 +1569,7 @@ function OptionCell({
         type="button"
         onClick={() => onChange(COMPARISON_CHECK)}
         aria-label={`Set ${tierKey} to included`}
-        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-[hsl(156_40%_21%)] no-print"
+        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-[hsl(156_40%_21%)] no-print max-md:px-2.5 max-md:py-1.5 max-md:text-sm"
       >
         ✓
       </button>
@@ -1521,7 +1577,7 @@ function OptionCell({
         type="button"
         onClick={() => onChange(COMPARISON_DASH)}
         aria-label={`Set ${tierKey} to not included`}
-        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-mute no-print"
+        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-mute no-print max-md:px-2.5 max-md:py-1.5 max-md:text-sm"
       >
         –
       </button>

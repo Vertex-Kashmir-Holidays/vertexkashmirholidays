@@ -187,7 +187,7 @@ export async function POST(request: Request) {
   }
 
   const { category, activityIds = [], collectionIds = [], packageOptions, ...rest } = parsed.data;
-  const packageRules = applyPackageOptionRules(packageOptions ?? "[]");
+  const packageRules = applyPackageOptionRules(packageOptions ?? "[]", rest.minPersons);
   if (!packageRules.ok) return NextResponse.json({ error: packageRules.error }, { status: 422 });
   try {
     const tour = await prisma.tour.create({

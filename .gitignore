@@ -51,3 +51,5 @@ prisma/dev.db-journal
 
 *storybook.log
 storybook-static
+# Originals saved by scripts/watermark-old-gallery-images.ts
+/backups/

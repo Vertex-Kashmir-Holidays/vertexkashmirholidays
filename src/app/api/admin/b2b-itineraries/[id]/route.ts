@@ -7,8 +7,8 @@ import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import type { Prisma } from "@prisma/client";
 import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { convertedBookingAmountUpdate, parseProposedAmount } from "@/lib/bookings/syncBookingAmount";
-import { leadFactsFromItinerary, parseTravelDates } from "@/lib/itinerary/leadFactsSync";
-import { travelDatesOps } from "@/lib/bookings/syncBookingDates";
+import { leadFactsFromItinerary } from "@/lib/itinerary/leadFactsSync";
+import { tripSyncOps } from "@/lib/bookings/syncBookingDates";
 
 export const dynamic = "force-dynamic";
 
@@ -166,11 +166,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     // Converted request (only editable while its booking's services are
-    // unlocked — see resolveB2bItineraryAccess): dates follow on to the
-    // request and its booking.
+    // unlocked — see resolveB2bItineraryAccess): name, phone, dates and
+    // travellers follow on to the request and its booking.
     if (existing.lead?.status === "CONVERTED") {
-      const dates = parseTravelDates(parsed.data.data.travelDates);
-      if (dates) ops.push(...(await travelDatesOps(existing.lead.id, dates)));
+      const f = leadFactsFromItinerary(parsed.data.data);
+      ops.push(
+        ...(await tripSyncOps(existing.lead.id, {
+          ...(f.startDate ? { start: f.startDate, end: f.endDate ?? null } : {}),
+          ...(f.name !== undefined ? { name: f.name } : {}),
+          ...(f.phone !== undefined ? { phone: f.phone } : {}),
+          ...(f.adults !== undefined ? { adults: f.adults, children: f.children ?? null } : {}),
+        })),
+      );
     }
 
     // Converted request unlocked for corrections: its booking follows the new price.

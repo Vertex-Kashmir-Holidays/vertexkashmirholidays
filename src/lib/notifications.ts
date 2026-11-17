@@ -153,6 +153,41 @@ export async function notifyNewBooking(bookingId: string): Promise<void> {
   }
 }
 
+/**
+ * Bell notification for every SUPERADMIN and ADMIN when a lead arrives on its
+ * own (website form, WhatsApp popup, B2B agent request) — those leads come in
+ * unassigned, and admins are the ones who assign them. Staff-created leads
+ * don't call this (the creator already knows). Never throws.
+ */
+export async function notifyNewLead(lead: {
+  id: string;
+  name: string;
+  phone: string;
+  /** Where it came from, e.g. "Website form", "WhatsApp popup". */
+  via: string;
+  tourTitle?: string | null;
+}): Promise<void> {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["SUPERADMIN", "ADMIN"] }, deletedAt: null },
+      select: { id: true },
+    });
+    if (admins.length === 0) return;
+    const body = [lead.name, lead.phone, lead.tourTitle, lead.via].filter(Boolean).join(" · ");
+    await prisma.notification.createMany({
+      data: admins.map((u) => ({
+        userId: u.id,
+        type: "LEAD_NEW",
+        title: "New lead received",
+        body,
+        link: `/admin/leads/${lead.id}`,
+      })),
+    });
+  } catch (err) {
+    console.error("[notifications] notifyNewLead failed", err);
+  }
+}
+
 /** Notify a staff member that a lead has been reassigned away from them. */
 export async function notifyLeadUnassigned(
   assigneeId: string,

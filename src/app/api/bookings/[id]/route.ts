@@ -5,6 +5,7 @@ import { z } from "zod";
 import { BookingStatus } from "@prisma/client";
 import { computeBookingFinance, isBookingCompleted } from "@/lib/bookings/finance";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { bookingToLeadOps } from "@/lib/bookings/syncBookingDates";
 import type { Role } from "@/lib/rbac";
 
 type Params = { params: Promise<{ id: string }> };
@@ -22,7 +23,10 @@ const patchSchema = z.object({
   // services are locked — same rule as the services sheet.
   guestName: z.string().trim().min(2, "Enter the guest's name").max(120).optional(),
   guestPhone: z.string().trim().min(6, "Enter a valid phone number").max(20).optional(),
+  address: z.string().trim().max(500).nullable().optional(),
+  requirements: z.string().trim().max(2000).nullable().optional(),
   travelDate: z.string().trim().min(1).optional(),
+  travelEndDate: z.string().trim().min(1).nullable().optional(),
   travellers: z.coerce.number().int().positive().max(50).optional(),
   amount: z.coerce.number().min(0).optional(),
 });
@@ -59,6 +63,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       discountType: true,
       discountValue: true,
       travelDate: true,
+      travelEndDate: true,
+      guestName: true,
+      guestPhone: true,
+      travellers: true,
       payments: { select: { amount: true, type: true } },
       services: { select: { amount: true } },
     },
@@ -80,7 +88,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     guestEmail,
     guestName,
     guestPhone,
+    address,
+    requirements,
     travelDate,
+    travelEndDate,
     travellers,
     amount,
   } = parsed.data;
@@ -93,6 +104,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     discountValue !== undefined ||
     inclusions !== undefined ||
     travelDate !== undefined ||
+    travelEndDate !== undefined ||
     travellers !== undefined ||
     amount !== undefined;
   if (touchesServices && existing.servicesLocked) {
@@ -111,6 +123,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     travel = new Date(travelDate);
     if (Number.isNaN(travel.getTime())) {
       return NextResponse.json({ error: "Enter a valid travel date." }, { status: 422 });
+    }
+  }
+  let travelEnd: Date | null | undefined;
+  if (travelEndDate !== undefined) {
+    travelEnd = travelEndDate ? new Date(travelEndDate) : null;
+    if (travelEnd && Number.isNaN(travelEnd.getTime())) {
+      return NextResponse.json({ error: "Enter a valid end date." }, { status: 422 });
+    }
+    const startForCheck = travel ?? existing.travelDate;
+    if (travelEnd && travelEnd.getTime() < startForCheck.getTime()) {
+      return NextResponse.json(
+        { error: "The end date can't be before the start date." },
+        { status: 422 },
+      );
     }
   }
 
@@ -164,21 +190,50 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
-  const updated = await prisma.booking.update({
-    where: { id },
-    data: {
-      ...(status !== undefined ? { status: status as BookingStatus } : {}),
-      ...(discountType !== undefined ? { discountType } : {}),
-      ...(discountValue !== undefined ? { discountValue } : {}),
-      ...(inclusions !== undefined ? { inclusions: JSON.stringify(inclusions) } : {}),
-      ...(guestEmail !== undefined ? { guestEmail } : {}),
-      ...(guestName !== undefined ? { guestName } : {}),
-      ...(guestPhone !== undefined ? { guestPhone } : {}),
-      ...(travel !== undefined ? { travelDate: travel } : {}),
-      ...(travellers !== undefined ? { travellers } : {}),
-      ...(amount !== undefined ? { amount } : {}),
-    },
-  });
+  // Name / phone / dates / travellers flow on to the lead and its itinerary
+  // (and the booking's hotel dates move with the start date) — see
+  // bookingToLeadOps. Read before the update: it shifts from the old start.
+  const next = {
+    start: travel ?? existing.travelDate,
+    end: travelEnd !== undefined ? travelEnd : existing.travelEndDate,
+    name: guestName ?? existing.guestName,
+    phone: guestPhone ?? existing.guestPhone,
+    travellers: travellers ?? existing.travellers,
+  };
+  const tripChanged =
+    next.start.getTime() !== existing.travelDate.getTime() ||
+    (next.end?.getTime() ?? null) !== (existing.travelEndDate?.getTime() ?? null) ||
+    next.name !== existing.guestName ||
+    next.phone !== existing.guestPhone ||
+    next.travellers !== existing.travellers;
+  const syncOps = tripChanged
+    ? await bookingToLeadOps(id, next, {
+        id: guard.user.id as string,
+        name: (guard.user.name ?? guard.user.email ?? "Staff") as string,
+      })
+    : [];
+
+  const [updated] = await prisma.$transaction([
+    prisma.booking.update({
+      where: { id },
+      data: {
+        ...(status !== undefined ? { status: status as BookingStatus } : {}),
+        ...(discountType !== undefined ? { discountType } : {}),
+        ...(discountValue !== undefined ? { discountValue } : {}),
+        ...(inclusions !== undefined ? { inclusions: JSON.stringify(inclusions) } : {}),
+        ...(guestEmail !== undefined ? { guestEmail } : {}),
+        ...(guestName !== undefined ? { guestName } : {}),
+        ...(guestPhone !== undefined ? { guestPhone } : {}),
+        ...(address !== undefined ? { address } : {}),
+        ...(requirements !== undefined ? { requirements } : {}),
+        ...(travel !== undefined ? { travelDate: travel } : {}),
+        ...(travelEnd !== undefined ? { travelEndDate: travelEnd } : {}),
+        ...(travellers !== undefined ? { travellers } : {}),
+        ...(amount !== undefined ? { amount } : {}),
+      },
+    }),
+    ...syncOps,
+  ]);
 
   // A cancelled/refunded booking can no longer earn/keep a commission. Rows
   // already PAID are left untouched — reversing money already paid to an

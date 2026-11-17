@@ -235,6 +235,9 @@ export const itineraryDataSchema = z.object({
 
   // Transport
   transportType: z.string(),
+  // How many of that vehicle ("2" → "2 × Innova Crysta"). Defaulted so
+  // itineraries saved before it existed load as one.
+  transportCount: z.string().default("1"),
   transportDesc: z.string(),
   transportImage: z.string(),
   transportSeats: z.string().default(""),
@@ -242,6 +245,18 @@ export const itineraryDataSchema = z.object({
   // e.g. "Day 01 – 06"
   transportDays: z.string().default(""),
   transportTags: z.array(z.string()).default([]),
+  // More vehicles in a different combo (Sedan + SUV) — the fields above are
+  // the first vehicle; description, image, days and tags cover them all.
+  extraVehicles: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        count: z.string().default("1"),
+        seats: z.string().default(""),
+      }),
+    )
+    .default([]),
   // Local-taxi-required stops (union vehicles at specific points) — same
   // shape/spirit as optionalActivities.
   localTaxis: z.array(priceActivitySchema).default([]),

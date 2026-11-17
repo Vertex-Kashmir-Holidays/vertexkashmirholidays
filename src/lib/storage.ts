@@ -107,7 +107,8 @@ async function getWatermarkRaw(): Promise<Buffer> {
   return _watermarkRaw;
 }
 
-async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
+/** Bottom-right Vertex logo (see WATERMARK_* above). Images under 300×200 are returned unchanged. */
+export async function applyWatermark(buffer: Buffer, ext: string): Promise<Buffer> {
   const logoRaw = await getWatermarkRaw();
 
   const { width: imgW = 0, height: imgH = 0 } = await sharp(buffer).metadata();
@@ -213,6 +214,46 @@ async function saveToCloudinary(
   });
 
   return { url: result.secure_url, folder: slug, publicId: result.public_id ?? null };
+}
+
+/**
+ * Overwrite an existing Cloudinary image in place (same public_id), already
+ * watermarked by the caller. Every saved URL keeps working — Cloudinary
+ * serves the current asset whatever version number a URL carries, and
+ * `invalidate` purges the CDN copies of the old image.
+ */
+export async function overwriteCloudinaryImage(publicId: string, buffer: Buffer): Promise<string> {
+  ensureCloudinaryConfig();
+  const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { public_id: publicId, overwrite: true, invalidate: true, resource_type: "image" },
+      (error, uploaded) => (error || !uploaded ? reject(new Error(error?.message ?? "Cloudinary upload failed")) : resolve(uploaded)),
+    );
+    stream.end(buffer);
+  });
+  return result.secure_url;
+}
+
+/**
+ * Replace a gallery image's file. Cloudinary assets are overwritten in place
+ * (so pages, itineraries and proposals already using the image show the new
+ * one); anything else (local-disk dev uploads) is saved as a new file.
+ */
+export async function replaceUpload(
+  buffer: Buffer,
+  { publicId, folder, ext }: { publicId: string | null; folder: string; ext: string },
+): Promise<SaveUploadResult> {
+  if (publicId && isCloudinaryConfigured()) {
+    let watermarked = buffer;
+    try {
+      watermarked = await applyWatermark(buffer, ext);
+    } catch (err) {
+      console.error(`[upload] watermark skipped — ${err instanceof Error ? err.message : err}`);
+    }
+    const url = await overwriteCloudinaryImage(publicId, watermarked);
+    return { url, folder: folderSlug(folder), publicId };
+  }
+  return saveUpload(buffer, { folder, ext, isImage: true });
 }
 
 /**

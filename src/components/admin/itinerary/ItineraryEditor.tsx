@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
+import { stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus, QrCode, Sparkles, BookmarkPlus } from "lucide-react";
@@ -116,7 +118,16 @@ export function ItineraryEditor({
   dayPlans = { canPick: false, canSave: false },
 }: ItineraryEditorProps) {
   const router = useRouter();
-  const [data, setData] = useState<ItineraryData>(initialData);
+  const [data, setRawData] = useState<ItineraryData>(initialData);
+  // Every edit goes through resyncTripDates: day dates and hotel check-in/out follow the
+  // travel start date, nights and hotel order (manual tweaks stay otherwise).
+  const setData = useCallback(
+    (update: ItineraryData | ((prev: ItineraryData) => ItineraryData)) =>
+      setRawData((prev) =>
+        resyncTripDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // Every itinerary is named "<customer> - <duration> - <phone>" from its own
   // content; the API derives the same string on save (a lead/booking-linked
   // one may get a " (2)" suffix there — shown until the next edit).
@@ -159,6 +170,14 @@ export function ItineraryEditor({
   /* ---------- cover ---------- */
   const updateCover = (field: keyof ItineraryData, value: string) =>
     setData((p) => ({ ...p, [field]: value }));
+  const updateExtraVehicle = (
+    id: string,
+    patch: Partial<ItineraryData["extraVehicles"][number]>,
+  ) =>
+    setData((p) => ({
+      ...p,
+      extraVehicles: p.extraVehicles.map((v) => (v.id === id ? { ...v, ...patch } : v)),
+    }));
 
   /* ---------- lead trip sync (two-way) ---------- */
   // Recompute the lead-derived cover/duration fields live when trip details change.
@@ -680,11 +699,13 @@ export function ItineraryEditor({
                           className="min-w-0 flex-1 font-serif text-base font-bold text-[#0F2A1E] dark:text-foreground"
                         />
                       </div>
-                      <EditableField
-                        value={day.dateLabel}
-                        onValueChange={(v) => updateDay(day.id, { dateLabel: v })}
-                        placeholder="Wed 10 Jun"
-                        className="pl-12 text-left text-xs text-[#6B7C73] dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                      {/* Filled from the travel start date (resyncTripDates); blank = not printed. */}
+                      <input
+                        type="date"
+                        aria-label={`Day ${dayIdx + 1} date`}
+                        value={stayDateInputValue(day.dateLabel)}
+                        onChange={(e) => updateDay(day.id, { dateLabel: e.target.value })}
+                        className="ml-12 w-36 text-xs text-[#6B7C73] dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)] bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-mute/20"
                       />
                     </div>
                     <EditableField
@@ -899,20 +920,24 @@ export function ItineraryEditor({
 
                     {/* Check In / Check Out / Nights / No. of Rooms / Room Type / Extra Bed / Child With Bed / Meal Type */}
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[hsl(40_14%_87%)] pt-3 dark:border-mute/20">
+                      {/* Filled from the travel dates + nights (resyncTripDates); still adjustable. */}
                       <div>
                         <label className={fieldLabel}>Check In</label>
-                        <EditableField
-                          value={h.checkIn}
-                          onValueChange={(v) => updateHotel(h.id, "checkIn", v)}
-                          placeholder="Wed 10 Jun"
+                        <input
+                          type="date"
+                          value={stayDateInputValue(h.checkIn)}
+                          onChange={(e) => updateHotel(h.id, "checkIn", e.target.value)}
+                          className={numberInputCls}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Check Out</label>
-                        <EditableField
-                          value={h.checkOut}
-                          onValueChange={(v) => updateHotel(h.id, "checkOut", v)}
-                          placeholder="Sat 13 Jun"
+                        <input
+                          type="date"
+                          min={stayDateInputValue(h.checkIn) || undefined}
+                          value={stayDateInputValue(h.checkOut)}
+                          onChange={(e) => updateHotel(h.id, "checkOut", e.target.value)}
+                          className={numberInputCls}
                         />
                       </div>
                       <div className="flex items-start gap-2">
@@ -1193,11 +1218,87 @@ export function ItineraryEditor({
                   className="mt-1 h-9 w-9 shrink-0 text-[hsl(156_40%_21%)] dark:text-primary"
                 />
                 <div className="min-w-0">
-                  <EditableField
-                    value={data.transportType}
-                    onValueChange={(v) => updateCover("transportType", v)}
-                    className="text-base font-bold"
-                  />
+                  <div className="flex items-start gap-2">
+                    <label className="w-14 shrink-0" title="No. of vehicles">
+                      <EditableField
+                        value={data.transportCount}
+                        onValueChange={(v) =>
+                          updateCover("transportCount", v.replace(/\D/g, "").slice(0, 2))
+                        }
+                        inputMode="numeric"
+                        placeholder="1"
+                        aria-label="No. of vehicles"
+                        className="text-center text-base font-bold"
+                      />
+                    </label>
+                    <span className="pt-1 text-base font-bold text-mute dark:text-muted-foreground">×</span>
+                    <EditableField
+                      value={data.transportType}
+                      onValueChange={(v) => updateCover("transportType", v)}
+                      className="text-base font-bold"
+                    />
+                  </div>
+                  {/* More vehicles in a different combo (Sedan + SUV). */}
+                  {data.extraVehicles.map((v) => (
+                    <div key={v.id} className="group/veh mt-2 flex items-start gap-2">
+                      <span className="pt-1 text-base font-bold text-mute dark:text-muted-foreground">+</span>
+                      <label className="w-12 shrink-0" title="No. of vehicles">
+                        <EditableField
+                          value={v.count}
+                          onValueChange={(val) =>
+                            updateExtraVehicle(v.id, { count: val.replace(/\D/g, "").slice(0, 2) })
+                          }
+                          inputMode="numeric"
+                          placeholder="1"
+                          aria-label="No. of vehicles"
+                          className="text-center text-base font-bold"
+                        />
+                      </label>
+                      <span className="pt-1 text-base font-bold text-mute dark:text-muted-foreground">×</span>
+                      <EditableField
+                        value={v.type}
+                        onValueChange={(val) => updateExtraVehicle(v.id, { type: val })}
+                        placeholder="SUV"
+                        aria-label="Vehicle"
+                        className="text-base font-bold"
+                      />
+                      <label className="w-24 shrink-0">
+                        <EditableField
+                          value={v.seats}
+                          onValueChange={(val) => updateExtraVehicle(v.id, { seats: val })}
+                          placeholder="6 seats"
+                          aria-label="Seats"
+                          className="text-xs"
+                        />
+                      </label>
+                      <button
+                        onClick={() =>
+                          setData((p) => ({
+                            ...p,
+                            extraVehicles: p.extraVehicles.filter((x) => x.id !== v.id),
+                          }))
+                        }
+                        aria-label={`Remove vehicle ${v.type}`}
+                        className="mt-1.5 hidden text-rose-500 hover:text-rose-600 group-hover/veh:block no-print [@media(hover:none)]:block"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() =>
+                      setData((p) => ({
+                        ...p,
+                        extraVehicles: [
+                          ...p.extraVehicles,
+                          { id: genId("veh"), type: "", count: "1", seats: "" },
+                        ],
+                      }))
+                    }
+                    className="addbtn mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[hsl(156_40%_21%)] dark:text-primary no-print"
+                  >
+                    <Plus className="h-3 w-3" /> Add another vehicle
+                  </button>
                   <EditableField
                     value={data.transportDesc}
                     onValueChange={(v) => updateCover("transportDesc", v)}

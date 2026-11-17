@@ -173,7 +173,7 @@ export async function getUpcomingTrips(u: DashboardUser, now = new Date()): Prom
     if (c.unconfirmedHotels > 0) {
       tasks.push({ label: `Confirm ${c.unconfirmedHotels} hotel${c.unconfirmedHotels === 1 ? "" : "s"}` });
     }
-    if (!c.driver && DRIVER_DUE_BUCKETS.has(c.bucket)) tasks.push({ label: "Add driver" });
+    if (c.drivers.length === 0 && DRIVER_DUE_BUCKETS.has(c.bucket)) tasks.push({ label: "Add driver" });
     if (balance > 0) tasks.push({ label: `Collect ₹${balance.toLocaleString("en-IN")}` });
     const daysLeft = Math.round((Date.parse(c.startDate) - Date.parse(today)) / 86_400_000);
     return { ...c, daysLeft, balance, tasks };

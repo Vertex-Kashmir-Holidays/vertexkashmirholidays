@@ -969,14 +969,26 @@ ${gst ? detailRow(`${gst.label} (included)`, inr(gst.amount)) : ""}
 
 interface DriverDetailsEmailData {
   guestName: string;
-  driverName: string;
-  driverPhone: string;
-  vehicleName: string;
-  vehicleNumber: string;
+  // One per vehicle — a big group can travel in two.
+  drivers: { driverName: string; driverPhone: string; vehicleName: string; vehicleNumber: string }[];
   tourTitle?: string | null;
   travelDate?: string | null;
   updated?: boolean; // true when this is an update to previously-sent details
   whatsappNumber?: string | null;
+}
+
+/** Label/value rows per vehicle; "Vehicle 2 — Driver Name" style only when there are several. */
+function driverDetailRows(data: DriverDetailsEmailData): [string, string][] {
+  const multi = data.drivers.length > 1;
+  return data.drivers.flatMap((d, i) => {
+    const p = multi ? `Vehicle ${i + 1} — ` : "";
+    return [
+      [`${p}Driver Name`, d.driverName],
+      [`${p}Driver Phone`, d.driverPhone],
+      [`${p}Vehicle`, d.vehicleName],
+      [`${p}Vehicle Number`, d.vehicleNumber],
+    ] as [string, string][];
+  });
 }
 
 export function driverDetailsText(data: DriverDetailsEmailData): string {
@@ -990,10 +1002,7 @@ export function driverDetailsText(data: DriverDetailsEmailData): string {
   if (data.tourTitle) lines.push(`Tour: ${data.tourTitle}`);
   if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
   lines.push(
-    `Driver Name: ${data.driverName}`,
-    `Driver Phone: ${data.driverPhone}`,
-    `Vehicle: ${data.vehicleName}`,
-    `Vehicle Number: ${data.vehicleNumber}`,
+    ...driverDetailRows(data).map(([label, value]) => `${label}: ${value}`),
     "",
     "Your driver will contact you before pickup. Safe travels!",
     `WhatsApp us: ${waText}`,
@@ -1015,10 +1024,9 @@ export function driverDetailsHtml(data: DriverDetailsEmailData): string {
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${data.tourTitle ? detailRow("Tour", data.tourTitle) : ""}
 ${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
-${detailRow("Driver Name", data.driverName)}
-${detailRow("Driver Phone", data.driverPhone)}
-${detailRow("Vehicle", data.vehicleName)}
-${detailRow("Vehicle Number", data.vehicleNumber)}
+${driverDetailRows(data)
+  .map(([label, value]) => detailRow(label, value))
+  .join("\n")}
              </table>
            </td>
          </tr>
@@ -1031,7 +1039,9 @@ ${detailRow("Vehicle Number", data.vehicleNumber)}
 
   return emailShell({
     title: `Driver & Vehicle Details — Vertex Kashmir Holidays`,
-    preheader: `${escapeHtml(data.driverName)} · ${escapeHtml(data.vehicleNumber)}`,
+    preheader: data.drivers
+      .map((d) => `${escapeHtml(d.driverName)} · ${escapeHtml(d.vehicleNumber)}`)
+      .join(" | "),
     contentHtml: content,
   });
 }
@@ -1746,22 +1756,33 @@ interface B2bDocumentUpdateData {
   docTitle: string;
   /** The one-line "what this document is for" from the upload form — may be blank. */
   docDescription: string;
+  /** Shared with this one agent only (e.g. their proposal), not all partners. */
+  personal?: boolean;
 }
 
-export function b2bDocumentUpdateSubject(docTitle: string): string {
-  return `New partner document: ${docTitle}`;
+export function b2bDocumentUpdateSubject(docTitle: string, personal = false): string {
+  return personal ? `Document shared with you: ${docTitle}` : `New partner document: ${docTitle}`;
 }
+
+const docIntro = (d: B2bDocumentUpdateData) =>
+  d.personal
+    ? `we have shared a document with you: ${d.docTitle}.`
+    : `we have added a new document for our B2B partners: ${d.docTitle}.`;
+const docOutro = (d: B2bDocumentUpdateData) =>
+  d.personal
+    ? "Please sign in to your partner account to view or download it. Reply to this email if you have any questions."
+    : "Please sign in to your partner account to view or download it, and use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.";
 
 export function b2bDocumentUpdateText(data: B2bDocumentUpdateData): string {
   return [
-    `New partner document: ${data.docTitle}`,
+    b2bDocumentUpdateSubject(data.docTitle, data.personal),
     "",
     `Dear ${data.contactName},`,
     "",
-    `We have added a new document for our B2B partners: ${data.docTitle}.`,
+    `${docIntro(data).charAt(0).toUpperCase()}${docIntro(data).slice(1)}`,
     ...(data.docDescription ? ["", data.docDescription] : []),
     "",
-    "Please sign in to your partner account to view or download it, and use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.",
+    docOutro(data),
     "",
     `Partner documents: ${b2bPortalUrl()}`,
     "",
@@ -1774,8 +1795,8 @@ export function b2bDocumentUpdateText(data: B2bDocumentUpdateData): string {
 export function b2bDocumentUpdateHtml(data: B2bDocumentUpdateData): string {
   const content = `          <tr>
            <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
-             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">New partner document</h1>
-             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.contactName)}, we have added a new document for our B2B partners.</p>
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">${data.personal ? "Document shared with you" : "New partner document"}</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.contactName)}, ${data.personal ? "we have shared a document with you." : "we have added a new document for our B2B partners."}</p>
            </td>
          </tr>
          <tr>
@@ -1796,18 +1817,18 @@ export function b2bDocumentUpdateHtml(data: B2bDocumentUpdateData): string {
          </tr>
          <tr>
            <td class="vk-px" style="padding:18px 28px 8px;font-family:Arial,Helvetica,sans-serif">
-             <a href="${b2bPortalUrl()}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">View partner documents</a>
+             <a href="${b2bPortalUrl()}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">${data.personal ? "View document" : "View partner documents"}</a>
            </td>
          </tr>
          <tr>
            <td class="vk-px" style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
-             <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">Please use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.</p>
+             <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">${data.personal ? "Reply to this email if you have any questions." : "Please use it for your quotations from now on. If it replaces an earlier version, please stop using the old one."}</p>
              <p style="margin:14px 0 0;color:#444444;font-size:13px;line-height:1.6">Regards,<br /><strong>B2B Partnerships Team</strong><br />Vertex Kashmir Holidays</p>
            </td>
          </tr>`;
 
   return emailShell({
-    title: b2bDocumentUpdateSubject(data.docTitle),
+    title: b2bDocumentUpdateSubject(data.docTitle, data.personal),
     preheader: `${escapeHtml(data.docTitle)} is now available in your partner account.`,
     contentHtml: content,
     maxWidth: 520,

@@ -19,6 +19,8 @@ import { MEAL_PLAN_LEGEND } from "@/lib/hotelSuppliers/schema";
 import { SITE_URL } from "@/lib/seo";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "./icons";
+import { withVehicleCount } from "@/lib/vehicleCount";
+import { formatDayDate, formatStayDate } from "@/lib/itinerary/stayDate";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -983,7 +985,7 @@ export function ItineraryPdf({
                     <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
                     <Text style={s.dayTitle}>{day.title}</Text>
                   </View>
-                  {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
+                  {day.dateLabel.trim() ? <Text style={s.dayDate}>{formatDayDate(day.dateLabel)}</Text> : null}
                 </View>
                 <Text style={s.dayText}>{day.body}</Text>
                 {highlightItems.length > 0 ? (
@@ -1048,20 +1050,30 @@ export function ItineraryPdf({
                   <Text style={s.hotelBadge}>{h.destination}</Text>
                 </View>
                 <View style={s.hotelStatRow}>
-                  <View style={s.hotelStat}>
-                    <Text style={s.hotelStatLabel}>Check In</Text>
-                    <Text style={s.hotelStatValue}>{h.checkIn || "To Decide"}</Text>
-                  </View>
-                  <View style={s.hotelStat}>
-                    <Text style={s.hotelStatLabel}>Check Out</Text>
-                    <Text style={s.hotelStatValue}>{h.checkOut || "To Decide"}</Text>
-                  </View>
-                  <View style={s.hotelStat}>
+                  {/* Not set → not printed. */}
+                  {h.checkIn.trim() ? (
+                    <View style={s.hotelStat}>
+                      <Text style={s.hotelStatLabel}>Check In</Text>
+                      <Text style={s.hotelStatValue}>{formatStayDate(h.checkIn, { year: false })}</Text>
+                    </View>
+                  ) : null}
+                  {h.checkOut.trim() ? (
+                    <View style={s.hotelStat}>
+                      <Text style={s.hotelStatLabel}>Check Out</Text>
+                      <Text style={s.hotelStatValue}>{formatStayDate(h.checkOut, { year: false })}</Text>
+                    </View>
+                  ) : null}
+                  {/* Short numbers (Nights, Rooms) take less width than Room Type. */}
+                  <View style={[s.hotelStat, { flex: 0.7 }]}>
                     <Text style={s.hotelStatLabel}>Nights</Text>
                     <Text style={s.hotelStatValue}>{h.nights}</Text>
                   </View>
-                  <View style={s.hotelStat}>
-                    <Text style={s.hotelStatLabel}>Room</Text>
+                  <View style={[s.hotelStat, { flex: 0.7 }]}>
+                    <Text style={s.hotelStatLabel}>Rooms</Text>
+                    <Text style={s.hotelStatValue}>{h.rooms}</Text>
+                  </View>
+                  <View style={[s.hotelStat, { flex: 1.6 }]}>
+                    <Text style={s.hotelStatLabel}>Room Type</Text>
                     <Text style={s.hotelStatValue}>{h.roomType}</Text>
                   </View>
                 </View>
@@ -1225,9 +1237,19 @@ export function ItineraryPdf({
             <View style={s.transportBody}>
               <View style={s.transportMain}>
                 <View style={s.transportHeadRow}>
-                  <Text style={s.transportType}>{data.transportType}</Text>
+                  <Text style={s.transportType}>
+                    {withVehicleCount(data.transportType, data.transportCount)}
+                  </Text>
                   <Text style={s.privateBadge}>Private</Text>
                 </View>
+                {data.extraVehicles
+                  .filter((v) => v.type.trim())
+                  .map((v) => (
+                    <Text key={v.id} style={[s.transportType, { marginTop: 3 }]}>
+                      + {withVehicleCount(v.type, v.count)}
+                      {v.seats ? ` (${v.seats})` : ""}
+                    </Text>
+                  ))}
                 <Text style={s.transportDesc}>{data.transportDesc}</Text>
                 {data.transportTags.length > 0 ? (
                   <View style={s.dayPillRow}>
