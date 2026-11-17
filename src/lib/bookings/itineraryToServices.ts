@@ -33,6 +33,23 @@ export interface ItineraryServiceInput {
   timing: string | null;
 }
 
+// Room type plus any extra beds, e.g. "Deluxe + 1 extra bed + 2 child without
+// bed" — the booking service has no bed columns; Room Type carries them.
+function hotelRoomType(h: ItineraryData["hotels"][number]): string | null {
+  const count = (v: string) => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  const extra = count(h.extraBed);
+  const cnb = count(h.childWithoutBed);
+  const parts = [
+    h.roomType.trim(),
+    extra ? `${extra} extra bed` : "",
+    cnb ? `${cnb} child without bed` : "",
+  ].filter(Boolean);
+  return parts.length ? parts.join(" + ") : null;
+}
+
 export function buildServicesFromItinerary(data: ItineraryData): ItineraryServiceInput[] {
   const services: ItineraryServiceInput[] = [];
 
@@ -47,7 +64,7 @@ export function buildServicesFromItinerary(data: ItineraryData): ItineraryServic
       amount: 0,
       location: h.destination.trim() || null,
       nights: Number.isFinite(nights) && nights > 0 ? nights : null,
-      roomType: h.roomType.trim() || null,
+      roomType: hotelRoomType(h),
       rooms: Number.isFinite(rooms) && rooms > 0 ? rooms : null,
       checkIn: stayDateToDate(h.checkIn),
       checkOut: stayDateToDate(h.checkOut),
@@ -83,7 +100,7 @@ export function buildServicesFromItinerary(data: ItineraryData): ItineraryServic
       roomType: null,
       pickup: null,
       dropoff: null,
-      timing: data.transportDays.trim() || null,
+      timing: v.days.trim() || data.transportDays.trim() || null,
     });
   }
 

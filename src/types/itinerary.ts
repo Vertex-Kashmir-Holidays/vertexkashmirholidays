@@ -71,11 +71,11 @@ export const hotelSchema = z.object({
     .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 0, {
       message: "Extra Bed must be a whole number of at least 0.",
     }),
-  childWithBed: z
+  childWithoutBed: z
     .string()
     .default("0")
     .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 0, {
-      message: "Child With Bed must be a whole number of at least 0.",
+      message: "Child Without Bed must be a whole number of at least 0.",
     }),
   // "or Hotel Royal Heritage / similar category" — subtitle line under the
   // hotel name. Defaulted so itineraries saved before this field existed
@@ -241,12 +241,12 @@ export const itineraryDataSchema = z.object({
   transportDesc: z.string(),
   transportImage: z.string(),
   transportSeats: z.string().default(""),
-  transportBags: z.string().default(""),
   // e.g. "Day 01 – 06"
   transportDays: z.string().default(""),
   transportTags: z.array(z.string()).default([]),
-  // More vehicles in a different combo (Sedan + SUV) — the fields above are
-  // the first vehicle; description, image, days and tags cover them all.
+  // More vehicles in a different combo (Innova + Swift) — the fields above are
+  // the first vehicle. Each extra has its own seating, days and use (blank =
+  // same as the first) and photo; the tags cover them all.
   extraVehicles: z
     .array(
       z.object({
@@ -254,6 +254,9 @@ export const itineraryDataSchema = z.object({
         type: z.string(),
         count: z.string().default("1"),
         seats: z.string().default(""),
+        days: z.string().default(""),
+        usedFor: z.string().default(""),
+        image: z.string().default(""),
       }),
     )
     .default([]),

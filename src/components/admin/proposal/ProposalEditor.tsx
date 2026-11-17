@@ -13,6 +13,7 @@ import { Toolbar } from "./Toolbar";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
+import { ChipInput } from "../itinerary/ChipInput";
 import { ImagePicker } from "../itinerary/ImagePicker";
 import { PriceActivitySection } from "../itinerary/PriceActivitySection";
 import { ItineraryIcon } from "../itinerary/icons";
@@ -484,26 +485,15 @@ export function ProposalEditor({
     "block text-[11px] font-semibold uppercase tracking-wide text-mute dark:text-muted-foreground mb-1";
   // Shown only on phones, where table-style column headings are hidden.
   const mobileLabel = `${fieldLabel} sm:hidden`;
+  // Short one-line row fields (stay plan / transport): bordered inputs,
+  // 16px on phones so iOS doesn't zoom on focus.
+  const rowInput =
+    "w-full rounded-md border border-[hsl(40_14%_87%)]/80 bg-transparent px-2 py-1.5 outline-none transition-all focus:bg-muted/30 focus:ring-1 focus:ring-primary/30 dark:border-white/10 max-md:text-[16px] print:border-none print:p-0";
 
-  // Phone shortcuts under the toolbar — jump straight to a section of this long form.
-  const sections = [
-    { id: "cover", label: "Cover" },
-    { id: "packages", label: isMulti ? "Options" : "Price" },
-    ...(isMulti ? [{ id: "compare", label: "Compare" }] : []),
-    { id: "days", label: "Days" },
-    { id: "stays", label: "Stays" },
-    { id: "transport", label: "Transport" },
-    { id: "activities", label: "Activities" },
-    { id: "covered", label: "Inclusions" },
-    { id: "payment", label: "Payment" },
-    { id: "why-us", label: "Why us" },
-    { id: "confirm", label: "Confirm" },
-  ];
 
   return (
     <div className="pb-8">
       <Toolbar
-        sections={sections.map((sec) => ({ ...sec, id: `ps-${sec.id}` }))}
         title={title}
         status={status}
         onStatusChange={setStatus}
@@ -548,79 +538,87 @@ export function ProposalEditor({
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
               <div>
                 <label className={fieldLabel}>Quote Number</label>
-                <EditableField
+                <input
                   value={data.quoteNumber}
-                  onValueChange={(v) => updateField("quoteNumber", v)}
+                  onChange={(e) => updateField("quoteNumber", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Duration</label>
-                <EditableField
+                <input
                   value={data.duration}
-                  onValueChange={(v) => updateField("duration", v)}
+                  onChange={(e) => updateField("duration", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Travel Dates</label>
-                <EditableField
+                <input
                   value={data.travelDates}
-                  onValueChange={(v) => updateField("travelDates", v)}
+                  onChange={(e) => updateField("travelDates", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared For</label>
-                <EditableField
+                <input
                   value={data.preparedFor}
-                  onValueChange={(v) => updateField("preparedFor", v)}
+                  onChange={(e) => updateField("preparedFor", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Customer Phone</label>
-                <EditableField
+                <input
                   value={data.customerPhone}
-                  onValueChange={(v) => updateField("customerPhone", v)}
+                  onChange={(e) => updateField("customerPhone", e.target.value)}
                   placeholder="+91 ..."
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Travellers</label>
-                <EditableField
+                <input
                   value={data.travelers}
-                  onValueChange={(v) => updateField("travelers", v)}
+                  onChange={(e) => updateField("travelers", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared By</label>
-                <EditableField
+                <input
                   value={data.preparedByName}
-                  onValueChange={(v) => updateField("preparedByName", v)}
+                  onChange={(e) => updateField("preparedByName", e.target.value)}
                   placeholder="Staff name"
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared By — Phone</label>
-                <EditableField
+                <input
                   value={data.preparedByPhone}
-                  onValueChange={(v) => updateField("preparedByPhone", v)}
+                  onChange={(e) => updateField("preparedByPhone", e.target.value)}
                   placeholder="+91 ..."
+                  className={rowInput}
                 />
               </div>
             </div>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className={fieldLabel}>Title</label>
-                <EditableField
+                <input
                   value={data.coverTitle}
-                  onValueChange={(v) => updateField("coverTitle", v)}
-                  className="text-lg font-bold"
+                  onChange={(e) => updateField("coverTitle", e.target.value)}
+                  className={`${rowInput} text-lg font-bold`}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Subtitle</label>
-                <EditableField
+                <input
                   value={data.coverSubtitle}
-                  onValueChange={(v) => updateField("coverSubtitle", v)}
-                  className="text-lg font-bold"
+                  onChange={(e) => updateField("coverSubtitle", e.target.value)}
+                  className={`${rowInput} text-lg font-bold`}
                 />
               </div>
             </div>
@@ -630,6 +628,7 @@ export function ProposalEditor({
                 value={data.coverIntro}
                 onValueChange={(v) => updateField("coverIntro", v)}
                 rows={2}
+                className={rowInput}
               />
             </div>
             <div className="mt-5">
@@ -660,31 +659,34 @@ export function ProposalEditor({
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                       <div>
                         <label className={fieldLabel}>Label</label>
-                        <EditableField
+                        <input
                           value={tier.label}
-                          onValueChange={(v) => updateTier(key, "label", v)}
+                          onChange={(e) => updateTier(key, "label", e.target.value)}
+                          className={rowInput}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Card Title</label>
-                        <EditableField
+                        <input
                           value={tier.title}
-                          onValueChange={(v) => updateTier(key, "title", v)}
+                          onChange={(e) => updateTier(key, "title", e.target.value)}
+                          className={rowInput}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Price</label>
-                        <EditableField
+                        <input
                           value={tier.priceLabel}
-                          onValueChange={(v) => updateTier(key, "priceLabel", v)}
-                          className="font-bold"
+                          onChange={(e) => updateTier(key, "priceLabel", e.target.value)}
+                          className={`${rowInput} font-bold`}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Cover Note</label>
-                        <EditableField
+                        <input
                           value={tier.coverNote}
-                          onValueChange={(v) => updateTier(key, "coverNote", v)}
+                          onChange={(e) => updateTier(key, "coverNote", e.target.value)}
+                          className={rowInput}
                         />
                       </div>
                     </div>
@@ -694,36 +696,33 @@ export function ProposalEditor({
                         value={tier.description}
                         onValueChange={(v) => updateTier(key, "description", v)}
                         rows={2}
+                        className={rowInput}
                       />
                     </div>
                     <div className="mt-3">
                       <label className={fieldLabel}>
                         Badge (e.g. &quot;MOST CHOSEN&quot;, blank = none)
                       </label>
-                      <EditableField
+                      <input
                         value={tier.badgeLabel}
-                        onValueChange={(v) => updateTier(key, "badgeLabel", v)}
+                        onChange={(e) => updateTier(key, "badgeLabel", e.target.value)}
                         placeholder="Blank = no badge"
-                        className="max-w-[220px]"
+                        className={`${rowInput} max-w-[220px]`}
                       />
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {tier.tags.map((tag, idx) => (
-                        <span key={idx} className="group/tag relative">
-                          <EditableField
+                    <div className="mt-3">
+                      <label className={fieldLabel}>Tags</label>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {tier.tags.map((tag, idx) => (
+                          <ChipInput
+                            key={idx}
                             value={tag}
-                            onValueChange={(v) => updateTierTag(key, idx, v)}
-                            className="rounded-full bg-[hsl(150_28%_92%)] px-3 py-1 text-[11px] font-bold text-[hsl(156_40%_21%)] dark:bg-primary/10 dark:text-primary"
+                            onChange={(v) => updateTierTag(key, idx, v)}
+                            onRemove={() => removeTierTag(key, idx)}
+                            label={`Tag ${idx + 1}`}
                           />
-                          <button
-                            onClick={() => removeTierTag(key, idx)}
-                            aria-label={`Remove tag ${tag}`}
-                            className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                        ))}
+                      </div>
                       <button onClick={() => addTierTag(key)} className={addBtn}>
                         <Plus className="h-2.5 w-2.5" /> tag
                       </button>
@@ -739,6 +738,7 @@ export function ProposalEditor({
                   value={data.tipText}
                   onValueChange={(v) => updateField("tipText", v)}
                   rows={2}
+                  className={rowInput}
                 />
               </div>
             ) : null}
@@ -852,7 +852,7 @@ export function ProposalEditor({
                           aria-label={`Day ${dayIdx + 1} date`}
                           value={stayDateInputValue(day.dateLabel)}
                           onChange={(e) => updateDay(day.id, "dateLabel", e.target.value)}
-                          className="ml-12 w-36 text-xs text-mute dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)] bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-mute/20"
+                          className="ml-12 w-36 text-xs text-mute dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)]/80 bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-white/10"
                         />
                       </div>
                       <EditableField
@@ -861,27 +861,36 @@ export function ProposalEditor({
                         rows={2}
                         className="mt-2 block text-sm"
                       />
-                      <div className="mt-2 grid grid-cols-2 gap-3">
-                        <EditableField
-                          value={day.stayLabel}
-                          onValueChange={(v) => updateDay(day.id, "stayLabel", v)}
-                          placeholder="Stay (blank on departure day)"
-                          className="text-xs text-mute dark:text-muted-foreground"
-                        />
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                          <label className={fieldLabel}>Stay</label>
+                          <input
+                            value={day.stayLabel}
+                            onChange={(e) => updateDay(day.id, "stayLabel", e.target.value)}
+                            placeholder="Blank on departure day"
+                            className={`${rowInput} text-sm`}
+                          />
+                        </div>
                         {data.docType === "multi" ? (
-                          <EditableField
-                            value={day.highlightsLine}
-                            onValueChange={(v) => updateDay(day.id, "highlightsLine", v)}
-                            placeholder="Highlights"
-                            className="text-xs text-mute dark:text-muted-foreground"
-                          />
+                          <div className="min-w-0">
+                            <label className={fieldLabel}>Highlights</label>
+                            <input
+                              value={day.highlightsLine}
+                              onChange={(e) => updateDay(day.id, "highlightsLine", e.target.value)}
+                              placeholder="Highlights"
+                              className={`${rowInput} text-sm`}
+                            />
+                          </div>
                         ) : (
-                          <EditableField
-                            value={day.mealsLabel}
-                            onValueChange={(v) => updateDay(day.id, "mealsLabel", v)}
-                            placeholder="Meals (e.g. Breakfast, Dinner)"
-                            className="text-xs text-mute dark:text-muted-foreground"
-                          />
+                          <div className="min-w-0">
+                            <label className={fieldLabel}>Meals</label>
+                            <input
+                              value={day.mealsLabel}
+                              onChange={(e) => updateDay(day.id, "mealsLabel", e.target.value)}
+                              placeholder="Breakfast, Dinner"
+                              className={`${rowInput} text-sm`}
+                            />
+                          </div>
                         )}
                       </div>
                     </div>
@@ -975,30 +984,30 @@ export function ProposalEditor({
                   >
                     <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Destination</span>
-                      <EditableField
+                      <input
                         value={row.destination}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "destination", v)}
+                        onChange={(e) => updateStayPlanRow(row.id, "destination", e.target.value)}
                         placeholder="Destination"
-                        className="text-sm font-bold"
+                        className={`${rowInput} text-sm font-bold`}
                       />
                     </div>
                     <div className="order-2 sm:order-none">
                       <span className={mobileLabel}>Nights</span>
-                      <EditableField
+                      <input
                         value={row.nights}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "nights", v)}
+                        onChange={(e) => updateStayPlanRow(row.id, "nights", e.target.value)}
                         placeholder="Nights"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                     {isMulti ? null : (
-                      <div className="order-4 col-span-3 sm:order-none sm:col-span-1">
+                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Hotel Name</span>
                         <EditableField
                           value={row.hotelName}
                           onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
                           placeholder="Hotel Name / Similar"
-                          className="text-xs"
+                          className={`${rowInput} text-xs`}
                         />
                       </div>
                     )}
@@ -1007,21 +1016,21 @@ export function ProposalEditor({
                     {isMulti ? null : (
                       <div className="order-5 col-span-2 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Room Type</span>
-                        <EditableField
+                        <input
                           value={row.roomType}
-                          onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
+                          onChange={(e) => updateStayPlanRow(row.id, "roomType", e.target.value)}
                           placeholder="Room Type"
-                          className="text-xs"
+                          className={`${rowInput} text-xs`}
                         />
                       </div>
                     )}
                     <div className="order-3 sm:order-none">
                       <span className={mobileLabel}>No. of Rooms</span>
-                      <EditableField
+                      <input
                         value={row.rooms}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
+                        onChange={(e) => updateStayPlanRow(row.id, "rooms", e.target.value)}
                         placeholder="1"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                   </div>
@@ -1034,7 +1043,7 @@ export function ProposalEditor({
                             value={row[stayHotelField(tk)]}
                             onValueChange={(v) => updateStayPlanRow(row.id, stayHotelField(tk), v)}
                             placeholder="Hotel Name / Similar"
-                            className="text-xs"
+                            className={`${rowInput} text-xs`}
                           />
                         </div>
                       ))}
@@ -1083,73 +1092,73 @@ export function ProposalEditor({
                   key={row.id}
                   className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20"
                 >
-                  {/* Phones: labelled fields (mobileLabel), ordered Vehicle
-                      or Used For / No. + Seating + Duration / Used For
-                      (single). sm+: one row under the column headings. */}
+                  {/* Phones (4 cols): Vehicle or Used For + No. / Seating +
+                      Duration / Used For (single, full width). sm+: one row
+                      under the column headings. */}
                   <div
-                    className={`grid grid-cols-3 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-4" : "sm:grid-cols-5"}`}
+                    className={`grid grid-cols-4 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-4" : "sm:grid-cols-5"}`}
                   >
                     {isMulti ? null : (
                       <div className="order-1 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Vehicle</span>
-                        <EditableField
+                        <input
                           value={row.vehicle}
-                          onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
+                          onChange={(e) => updateTransportRow(row.id, "vehicle", e.target.value)}
                           placeholder="Sedan"
-                          className="text-sm font-bold"
+                          className={`${rowInput} text-sm font-bold`}
                         />
                       </div>
                     )}
                     {isMulti ? (
                       <div className="order-1 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Used For</span>
-                        <EditableField
+                        <input
                           value={row.usedFor}
-                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          onChange={(e) => updateTransportRow(row.id, "usedFor", e.target.value)}
                           placeholder="Used for"
-                          className="text-sm font-bold"
+                          className={`${rowInput} text-sm font-bold`}
                         />
                       </div>
                     ) : null}
                     <div className="order-2 sm:order-none">
-                      <span className={mobileLabel}>No. of vehicles</span>
-                      <EditableField
+                      <span className={mobileLabel}>No.</span>
+                      <input
                         value={row.count}
-                        onValueChange={(v) =>
-                          updateTransportRow(row.id, "count", v.replace(/\D/g, "").slice(0, 2))
+                        onChange={(e) =>
+                          updateTransportRow(row.id, "count", e.target.value.replace(/\D/g, "").slice(0, 2))
                         }
                         inputMode="numeric"
                         placeholder="1"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
-                    <div className="order-2 sm:order-none">
+                    <div className="order-2 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Seating</span>
-                      <EditableField
+                      <input
                         value={row.seating}
-                        onValueChange={(v) => updateTransportRow(row.id, "seating", v)}
+                        onChange={(e) => updateTransportRow(row.id, "seating", e.target.value)}
                         placeholder="04 + driver"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                     {isMulti ? null : (
-                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-4 col-span-4 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Used For</span>
-                        <EditableField
+                        <input
                           value={row.usedFor}
-                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          onChange={(e) => updateTransportRow(row.id, "usedFor", e.target.value)}
                           placeholder="Used for"
-                          className="text-xs"
+                          className={`${rowInput} text-xs`}
                         />
                       </div>
                     )}
-                    <div className="order-3 sm:order-none">
+                    <div className="order-3 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Duration</span>
-                      <EditableField
+                      <input
                         value={row.duration}
-                        onValueChange={(v) => updateTransportRow(row.id, "duration", v)}
+                        onChange={(e) => updateTransportRow(row.id, "duration", e.target.value)}
                         placeholder="06 Days"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                   </div>
@@ -1200,51 +1209,39 @@ export function ProposalEditor({
             <h2 className={greenHead}>
               {isMulti ? "Activities — per Option" : "Activities Included"}
             </h2>
-            <div
-              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-4" : "grid-cols-2"}`}
-            >
-              <span className={fieldLabel}>Activity</span>
-              {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
-                <span key={tk} className={fieldLabel}>
-                  {isMulti ? data.tiers[tk].label : "Details (✓ = included)"}
-                </span>
-              ))}
-            </div>
-            <div className="mt-2 space-y-3">
+            {/* One card per activity with labelled inputs (same feel as the
+                itinerary's activity cards; proposals have no activity photo). */}
+            <div className="mt-6 space-y-3">
               {data.activities.map((row) => (
                 <div
                   key={row.id}
-                  className={`group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 ${isMulti ? "sm:grid-cols-4" : ""}`}
+                  className={`relative grid grid-cols-1 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-10 dark:border-mute/20 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
                 >
-                  <EditableField
-                    value={row.label}
-                    onValueChange={(v) => updateActivity(row.id, "label", v)}
-                    placeholder="Shikara ride"
-                    className={`text-sm font-bold ${isMulti ? "col-span-2 sm:col-span-1" : ""}`}
-                  />
-                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) =>
-                    isMulti ? (
-                      <div key={tk} className="col-span-2 sm:col-span-1">
-                        <span className={mobileLabel}>{data.tiers[tk].label}</span>
-                        <OptionCell
-                          tierKey={tk}
-                          value={row[tk]}
-                          onChange={(v) => updateActivity(row.id, tk, v)}
-                        />
-                      </div>
-                    ) : (
+                  <div className={isMulti ? "sm:col-span-3" : ""}>
+                    <label className={fieldLabel}>Activity</label>
+                    <input
+                      value={row.label}
+                      onChange={(e) => updateActivity(row.id, "label", e.target.value)}
+                      placeholder="Shikara ride"
+                      className={`${rowInput} text-sm font-bold`}
+                    />
+                  </div>
+                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
+                    <div key={tk}>
+                      <label className={fieldLabel}>
+                        {isMulti ? data.tiers[tk].label : "Details (✓ = included)"}
+                      </label>
                       <OptionCell
-                        key={tk}
                         tierKey={tk}
                         value={row[tk]}
                         onChange={(v) => updateActivity(row.id, tk, v)}
                       />
-                    ),
-                  )}
+                    </div>
+                  ))}
                   <button
                     onClick={() => removeActivity(row.id)}
                     aria-label={`Remove activity ${row.label}`}
-                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
+                    className="absolute right-3 top-3 text-rose-500 hover:text-rose-600 no-print"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -1353,27 +1350,21 @@ export function ProposalEditor({
                 <div className="hidden w-px shrink-0 bg-[hsl(40_14%_87%)] dark:bg-mute/20 sm:block" />
 
                 <div className="sm:min-w-0 sm:flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <label className={fieldLabel}>Payment methods</label>
+                  <div className="grid gap-2">
                     {data.pay.map((tag, idx) => (
-                      <span key={idx} className="group/tag relative">
-                        <EditableField
-                          value={tag}
-                          onValueChange={(v) => updateListItem("pay", idx, v)}
-                          className="rounded-full bg-[hsl(150_28%_92%)] px-3 py-1 text-[11px] font-bold text-[hsl(156_40%_21%)] dark:bg-primary/10 dark:text-primary"
-                        />
-                        <button
-                          onClick={() => removeListItem("pay", idx)}
-                          aria-label={`Remove tag ${tag}`}
-                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
-                        >
-                          ×
-                        </button>
-                      </span>
+                      <ChipInput
+                        key={idx}
+                        value={tag}
+                        onChange={(v) => updateListItem("pay", idx, v)}
+                        onRemove={() => removeListItem("pay", idx)}
+                        label={`Payment method ${idx + 1}`}
+                      />
                     ))}
-                    <button onClick={() => addListItem("pay", "New tag")} className={addBtn}>
-                      <Plus className="h-2.5 w-2.5" /> tag
-                    </button>
                   </div>
+                  <button onClick={() => addListItem("pay", "New tag")} className={addBtn}>
+                    <Plus className="h-2.5 w-2.5" /> tag
+                  </button>
                   <EditableField
                     value={data.payNote}
                     onValueChange={(v) => updateField("payNote", v)}
@@ -1563,7 +1554,7 @@ function OptionCell({
         value={value}
         onValueChange={onChange}
         placeholder={placeholder ?? "✓ / – / details"}
-        className="min-w-0 flex-1 text-xs"
+        className="min-w-0 flex-1 border border-[hsl(40_14%_87%)]/80 px-2 py-1.5 text-sm dark:border-white/10 print:border-none"
       />
       <button
         type="button"
@@ -1611,9 +1602,9 @@ function ListColumn({
       </h3>
       <ul className="mt-5 space-y-3 text-sm text-ink/85 dark:text-muted-foreground">
         {items.map((item) => (
-          <li key={item.id} className="group relative flex items-start gap-2.5 pr-6">
+          <li key={item.id} className="group relative flex items-start gap-2.5 pr-7">
             <span
-              className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}
+              className={`mt-1.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1628,24 +1619,27 @@ function ListColumn({
               </svg>
             </span>
             <div className="min-w-0 flex-1">
-              <EditableField
+              <input
                 value={item.category}
-                onValueChange={(v) => onUpdateCategory(item.id, v)}
+                onChange={(e) => onUpdateCategory(item.id, e.target.value)}
                 placeholder="Category"
-                className="inline-block rounded bg-[#E8F2EB] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#145C3E] dark:bg-primary/10 dark:text-primary"
+                aria-label="Category"
+                className="w-full max-w-[220px] rounded-md border border-[hsl(40_14%_87%)]/80 bg-transparent px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#145C3E] outline-none focus:ring-1 focus:ring-primary/30 dark:border-white/10 dark:text-primary max-md:text-[16px] print:border-none"
               />
+              {/* Can be a full sentence — a bordered box that wraps. */}
               <EditableField
                 value={item.text}
                 onValueChange={(v) => onUpdateText(item.id, v)}
-                className="mt-1"
+                aria-label="Item"
+                className="mt-1.5 border border-[hsl(40_14%_87%)]/80 px-2 py-1.5 text-sm dark:border-white/10 print:border-none"
               />
             </div>
             <button
               onClick={() => onRemove(item.id)}
               aria-label={`Remove item from ${title}`}
-              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
+              className="absolute right-0 top-1 text-rose-500 hover:text-rose-600 no-print"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </li>
         ))}
