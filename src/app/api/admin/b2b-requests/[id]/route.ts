@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { b2bRequestFieldsSchema } from "@/lib/b2b/requestSchema";
 import { leadFactsItineraryOps } from "@/lib/itinerary/leadFactsSync";
+import { b2bRequestClosedAt, canAdminUpdateClosed } from "@/lib/b2b/close";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (lead.status === "CONVERTED" || lead.locked) {
     return NextResponse.json(
       { error: "This request is converted to a booking — edit the booking instead." },
+      { status: 423 },
+    );
+  }
+  if (
+    lead.status === "REJECTED" &&
+    !canAdminUpdateClosed(guard.user.role as string, await b2bRequestClosedAt(id))
+  ) {
+    return NextResponse.json(
+      { error: "This request is closed — only an admin can update it, within 2 months of closing." },
       { status: 423 },
     );
   }

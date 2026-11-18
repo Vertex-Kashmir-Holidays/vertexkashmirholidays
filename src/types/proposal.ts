@@ -279,6 +279,9 @@ export interface ProposalSummary {
   status: ProposalStatus;
   ownerId: string;
   ownerName?: string | null;
+  /** Sales person it's handed to (owner + assignee both see it). */
+  assignedToId?: string | null;
+  assignedToName?: string | null;
   /** From `data` — who the proposal is for, and their phone (follow-ups). */
   customerName?: string;
   customerPhone?: string;

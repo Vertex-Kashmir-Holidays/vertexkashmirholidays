@@ -8,6 +8,7 @@ import { proposalToItineraryData } from "@/lib/proposal/toItinerary";
 import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { parseTravelDates } from "@/lib/itinerary/leadFactsSync";
 import { isAdminRole } from "@/lib/itinerary/access";
+import { canAccessProposal } from "@/lib/proposal/access";
 import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
@@ -37,11 +38,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const record = await prisma.proposalItinerary.findUnique({
     where: { id },
-    select: { ownerId: true, data: true },
+    select: { ownerId: true, assignedToId: true, data: true },
   });
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const isAdmin = isAdminRole(guard.user.role);
-  if (!isAdmin && record.ownerId !== guard.user.id) {
+  if (!canAccessProposal(guard.user.role, guard.user.id, record)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -47,6 +47,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (lead.status === "CONVERTED" || lead.locked) {
     return NextResponse.json({ error: "This request is already converted." }, { status: 422 });
   }
+  if (lead.status === "REJECTED") {
+    return NextResponse.json({ error: "This request is closed." }, { status: 422 });
+  }
 
   // Same business rule as the normal flow: an itinerary must exist before a
   // request can be converted — it's the agreed plan the booking is built on.

@@ -77,6 +77,7 @@ model User {
   itineraries              Itinerary[]          @relation("ItineraryOwner")
   itinerariesEdited        Itinerary[]          @relation("ItineraryEditor")
   proposals                ProposalItinerary[]  @relation("ProposalOwner")
+  assignedProposals        ProposalItinerary[]  @relation("ProposalAssignee")
   leadsAssigned            Lead[]               @relation("LeadAssignee")
   b2bRequests              Lead[]               @relation("B2BAgentLeads")
   b2bRequestsCreated       Lead[]               @relation("LeadCreatedBy")
@@ -223,10 +224,15 @@ model ProposalItinerary {
   data      Json
   ownerId   String
   owner     User           @relation("ProposalOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // Sales person the proposal is handed to (e.g. made on a colleague's
+  // behalf). Owner and assignee both see/edit it; admins see all.
+  assignedToId String?
+  assignedTo   User?          @relation("ProposalAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
   @@index([ownerId])
+  @@index([assignedToId])
   @@index([status])
 }
 

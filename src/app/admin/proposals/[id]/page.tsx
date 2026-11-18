@@ -9,6 +9,7 @@ import { DEFAULT_PROPOSAL_DATA } from "@/components/admin/proposal/default-data"
 import { resolvePrimaryOffice } from "@/lib/companyOffice";
 import { getPdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { proposalDataSchema } from "@/types/proposal";
+import { canAccessProposal, listProposalAssignees } from "@/lib/proposal/access";
 
 export const metadata: Metadata = { title: "Edit Proposal — Admin" };
 export const dynamic = "force-dynamic";
@@ -21,12 +22,16 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
     redirect("/admin/proposals");
   }
 
-  const record = await prisma.proposalItinerary.findUnique({ where: { id } });
+  const record = await prisma.proposalItinerary.findUnique({
+    where: { id },
+    include: { owner: { select: { name: true } } },
+  });
   if (!record) notFound();
 
-  const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
   const canEditModule = await can(role, "proposals", "edit");
-  const canSave = canEditModule && (isAdmin || record.ownerId === session!.user.id);
+  // Owner, assignee or admin may edit — and hand it to someone else.
+  const canSave = canEditModule && canAccessProposal(role, session!.user.id, record);
+  const assignees = canSave ? await listProposalAssignees() : [];
   // Only the copy's own author (who can edit and delete) is held to "update it
   // or it's deleted" — an admin just viewing someone's fresh copy never deletes it.
   const ownsCopy =
@@ -55,6 +60,15 @@ export default async function EditProposalPage({ params }: { params: Promise<{ i
       ownsCopy={ownsCopy}
       canConvert={canConvert}
       dayPlans={{ canPick: canSave && dayPlans.canPick, canSave: dayPlans.canSave }}
+      assignment={
+        canSave
+          ? {
+              ownerName: record.owner?.name ?? null,
+              assignedToId: record.assignedToId,
+              staff: assignees,
+            }
+          : undefined
+      }
       companyAddress={companyAddress}
       trustContent={trustContent}
       socialLinks={{
