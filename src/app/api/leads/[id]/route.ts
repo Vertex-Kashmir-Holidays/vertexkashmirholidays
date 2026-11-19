@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  STAFF_BLOCKING_STATUSES,
+  duplicateLeadResponse,
+  findOpenDuplicateLead,
+} from "@/lib/leads/duplicates";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { parsePackageOptions } from "@/lib/tours/content";
@@ -179,6 +184,26 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       { error: "Travel end date can't be before the start date." },
       { status: 422 },
     );
+  }
+
+  // Duplicate guard: an edit (new phone/email, or reopening a closed lead)
+  // must not leave this customer with two open leads.
+  const effPhone = rest.phone ?? existing.phone;
+  const effEmail = rest.email !== undefined ? rest.email : existing.email;
+  const effStatus = status ?? existing.status;
+  const identityChanged =
+    (rest.phone !== undefined && rest.phone !== existing.phone) ||
+    (rest.email !== undefined && (rest.email ?? null) !== (existing.email ?? null));
+  const reopened =
+    !STAFF_BLOCKING_STATUSES.includes(existing.status) && STAFF_BLOCKING_STATUSES.includes(effStatus);
+  if ((identityChanged || reopened) && STAFF_BLOCKING_STATUSES.includes(effStatus)) {
+    const dup = await findOpenDuplicateLead(prisma, {
+      phone: effPhone,
+      email: effEmail || null,
+      statuses: STAFF_BLOCKING_STATUSES,
+      excludeId: id,
+    });
+    if (dup) return duplicateLeadResponse(dup);
   }
 
   if (bookingId) {

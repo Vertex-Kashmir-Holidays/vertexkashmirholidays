@@ -21,6 +21,8 @@ const bodySchema = z.object({
   // Required — a converted itinerary is always the lead's final itinerary,
   // never a standalone orphan.
   leadId: z.string().min(1, "Select the lead this proposal is for."),
+  // Stay-plan row id → final hotel, for stays offering several hotels.
+  hotelPicks: z.record(z.string(), z.string().max(200)).optional(),
 });
 
 // "Convert to Itinerary": creates the lead's DRAFT itinerary pre-filled from
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Proposal data is invalid." }, { status: 422 });
   }
 
-  const { leadId, tier } = parsedBody.data;
+  const { leadId, tier, hotelPicks } = parsedBody.data;
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
     select: {
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
 
-  const data = proposalToItineraryData(parsedData.data, tier);
+  const data = proposalToItineraryData(parsedData.data, tier, hotelPicks);
   // System-assigned, so a taken title gets a "(2)" suffix instead of a 409.
   const title = await uniqueItineraryTitle(data);
   const editedByName = (guard.user.name ?? guard.user.email) as string;

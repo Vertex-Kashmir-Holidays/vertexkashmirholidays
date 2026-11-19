@@ -399,9 +399,23 @@ export function LeadDetail({
           body: JSON.stringify(payload),
         });
         if (!res.ok) {
-          const j = (await res.json()) as { error?: string | Record<string, unknown> };
+          const j = (await res.json()) as {
+            error?: string | Record<string, unknown>;
+            existingLeadId?: string;
+          };
           const msg = typeof j.error === "string" ? j.error : "Update failed.";
-          toast.error(msg);
+          // A refused status change (e.g. reopening into a duplicate) snaps back.
+          if (payload.status !== undefined) setStatus(lead.status);
+          const existingId = j.existingLeadId;
+          toast.error(
+            msg,
+            existingId
+              ? {
+                  duration: 10000,
+                  action: { label: "Open lead", onClick: () => router.push(`/admin/leads/${existingId}`) },
+                }
+              : undefined,
+          );
           return;
         }
         toast.success("Saved.");

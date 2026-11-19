@@ -14,6 +14,8 @@ import { ProposalAssignee, type AssigneeOption } from "./ProposalAssignee";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
+import { HotelChoicesInput } from "./HotelChoicesInput";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 import { ChipInput } from "../itinerary/ChipInput";
 import { ImagePicker } from "../itinerary/ImagePicker";
 import { PriceActivitySection } from "../itinerary/PriceActivitySection";
@@ -420,7 +422,7 @@ export function ProposalEditor({
   }
 
   // Saves first (when allowed) so the itinerary is built from what's on screen.
-  async function handleConvert(tier: ProposalTierKey, leadId: string) {
+  async function handleConvert(tier: ProposalTierKey, leadId: string, hotelPicks: Record<string, string>) {
     if (!id) return;
     setConverting(true);
     if (canSave && !(await handleSave())) {
@@ -431,7 +433,7 @@ export function ProposalEditor({
       const res = await fetch(`${apiBasePath}/${id}/convert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, leadId }),
+        body: JSON.stringify({ tier, leadId, hotelPicks }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Conversion failed");
@@ -524,6 +526,13 @@ export function ProposalEditor({
               }))
             : []
         }
+        stays={data.stayPlan.map((r) => ({
+          id: r.id,
+          destination: r.destination || "Stay",
+          choices: Object.fromEntries(
+            TIER_ORDER.map((tk) => [tk, parseHotelChoices(r[stayHotelField(tk)]).choices]),
+          ),
+        }))}
         isConverting={isConverting}
       />
       {id && initialTitle && (
@@ -972,11 +981,10 @@ export function ProposalEditor({
           <article id="ps-stays" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>{isMulti ? "Stay Plan — Hotel per Option" : "Stay Plan"}</h2>
             <div
-              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-5"}`}
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-4"}`}
             >
               <span className={fieldLabel}>Destination</span>
               <span className={fieldLabel}>Nights</span>
-              {isMulti ? null : <span className={fieldLabel}>Hotel Name</span>}
               {isMulti ? null : <span className={fieldLabel}>Room Type</span>}
               <span className={fieldLabel}>No. of Rooms</span>
             </div>
@@ -990,10 +998,10 @@ export function ProposalEditor({
                 <div className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20">
                   {/* Phones: the column headings above are hidden, so each
                       field carries its own label (mobileLabel) and the order
-                      is Destination / Nights + Rooms / Hotel / Room Type.
+                      is Destination / Nights + Rooms / Room Type, hotels below.
                       sm+: one row under the headings, labels hidden. */}
                   <div
-                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-5"}`}
+                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-4"}`}
                   >
                     <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Destination</span>
@@ -1013,17 +1021,6 @@ export function ProposalEditor({
                         className={`${rowInput} text-xs`}
                       />
                     </div>
-                    {isMulti ? null : (
-                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
-                        <span className={mobileLabel}>Hotel Name</span>
-                        <EditableField
-                          value={row.hotelName}
-                          onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
-                          placeholder="Hotel Name / Similar"
-                          className={`${rowInput} text-xs`}
-                        />
-                      </div>
-                    )}
                     {/* Multi compares room class per option in the
                         comparison rows ("Room category") instead. */}
                     {isMulti ? null : (
@@ -1047,15 +1044,29 @@ export function ProposalEditor({
                       />
                     </div>
                   </div>
+                  {/* Single: the hotel choices on their own line —
+                      Hotel 1 | Hotel 2 | Hotel 3 | Similar. */}
+                  {isMulti ? null : (
+                    <div className="mt-3">
+                      <span className={fieldLabel}>Hotels</span>
+                      <HotelChoicesInput
+                        inline
+                        destination={row.destination}
+                        value={row.hotelName}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
+                        className={`${rowInput} text-xs`}
+                      />
+                    </div>
+                  )}
                   {isMulti ? (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {TIER_ORDER.map((tk) => (
                         <div key={tk}>
                           <label className={fieldLabel}>{data.tiers[tk].label} hotel</label>
-                          <EditableField
+                          <HotelChoicesInput
+                            destination={row.destination}
                             value={row[stayHotelField(tk)]}
                             onValueChange={(v) => updateStayPlanRow(row.id, stayHotelField(tk), v)}
-                            placeholder="Hotel Name / Similar"
                             className={`${rowInput} text-xs`}
                           />
                         </div>
