@@ -11,6 +11,7 @@ import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { CreateB2bItineraryButton } from "@/components/admin/b2b/CreateB2bItineraryButton";
 import { B2bConvertAction } from "@/components/admin/b2b/B2bConvertAction";
 import { EditB2bRequestButton } from "@/components/admin/b2b/EditB2bRequestButton";
+import { FollowUpB2bRequestButton } from "@/components/admin/b2b/FollowUpB2bRequestButton";
 import {
   CloseB2bRequestButton,
   ReopenB2bRequestButton,
@@ -106,6 +107,13 @@ export default async function AdminB2bRequestDetailPage({
   const canClose = canConvert && !isClosed && lead.status !== "CONVERTED" && !lead.locked;
   // Closed requests the agent already has — same count as the close route.
   const closedCount = canClose && lead.b2bAgentId ? await b2bClosedCount(lead.b2bAgentId) : 0;
+  // Follow-up emails about this request (B2B Communication, tagged request).
+  const canFollowUp = lead.status !== "CONVERTED" && (await can(role, "b2bAgents", "edit"));
+  const followUps = await prisma.b2bMessage.findMany({
+    where: { requestId: lead.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, subject: true, sentByName: true, createdAt: true, sent: true },
+  });
   const ymd = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
   // Matches the convert route: "sent" = published to the agent.
   const itinerarySent = isItinerarySent(lead.itinerary?.status) && !!lead.itinerary?.publishedAt;
@@ -165,6 +173,15 @@ export default async function AdminB2bRequestDetailPage({
             />
           )}
           {canUpdateClosed && <ReopenB2bRequestButton requestId={lead.id} />}
+          {canFollowUp && (
+            <FollowUpB2bRequestButton
+              request={{
+                id: lead.id,
+                label: `${lead.name} · sent ${fmtDate(lead.createdAt)}`,
+                agentLabel: lead.b2bAgent?.agencyName ?? lead.b2bAgent?.name ?? "the agent",
+              }}
+            />
+          )}
           <span className="inline-flex rounded-full bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300">
             {STATUS_LABELS[lead.status as B2bRequestStatus] ?? lead.status}
           </span>
@@ -218,6 +235,25 @@ export default async function AdminB2bRequestDetailPage({
           </div>
         )}
       </div>
+
+      {followUps.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-foreground">Follow-ups sent</h2>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            {followUps.map((f) => (
+              <li key={f.id} className="flex flex-wrap justify-between gap-2">
+                <span className="font-semibold text-foreground">
+                  {f.subject}
+                  {f.sent === 0 && <span className="ml-2 text-xs font-bold text-red-600">not delivered</span>}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {fmtDate(f.createdAt)} · {f.sentByName}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-sm font-bold text-foreground">Itinerary</h2>

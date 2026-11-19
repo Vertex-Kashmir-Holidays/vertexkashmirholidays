@@ -12,6 +12,7 @@ import {
   b2bDocumentUpdateSubject,
   b2bDocumentUpdateText,
   ADMIN_COPY,
+  type MailAttachment,
 } from "@/lib/mail";
 
 /**
@@ -44,6 +45,7 @@ export async function sendB2bAgentActivationEmail(
 // ── Partner updates (documents + staff announcements) ───────────────────────
 
 export interface B2bRecipient {
+  id?: string;
   email: string;
   name: string | null;
   agencyName: string | null;
@@ -53,7 +55,7 @@ export interface B2bRecipient {
 export async function activeB2bRecipients(): Promise<B2bRecipient[]> {
   return prisma.user.findMany({
     where: { agencyStatus: "ACTIVE" },
-    select: { email: true, name: true, agencyName: true },
+    select: { id: true, email: true, name: true, agencyName: true },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -65,7 +67,12 @@ const contactNameOf = (r: B2bRecipient) => r.name?.trim() || r.agencyName?.trim(
 // rest, and nothing here throws.
 async function sendToEach(
   recipients: B2bRecipient[],
-  build: (r: B2bRecipient) => { subject: string; html: string; text: string },
+  build: (r: B2bRecipient) => {
+    subject: string;
+    html: string;
+    text: string;
+    attachments?: MailAttachment[];
+  },
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -139,10 +146,16 @@ export async function sendB2bAnnouncement(
   recipients: B2bRecipient[],
   subject: string,
   message: string,
+  attachments?: MailAttachment[],
 ): Promise<{ sent: number; failed: number }> {
   return sendToEach(recipients, (r) => {
     const data = { contactName: contactNameOf(r), subject, message };
-    return { subject, html: b2bAnnouncementHtml(data), text: b2bAnnouncementText(data) };
+    return {
+      subject,
+      html: b2bAnnouncementHtml(data),
+      text: b2bAnnouncementText(data),
+      ...(attachments?.length ? { attachments } : {}),
+    };
   });
 }
 

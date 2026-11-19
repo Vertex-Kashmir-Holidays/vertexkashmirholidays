@@ -189,6 +189,14 @@ export async function POST(req: NextRequest, { params }: Params) {
             paidBy: d.paidBy!,
             date: formatStayDate(todayIst(now)),
           },
+      account:
+        service.amount > 0
+          ? {
+              total: round2(service.amount),
+              paid: round2(paidBefore + (d.amount ?? 0)),
+              balance: round2(service.amount - paidBefore - (d.amount ?? 0)),
+            }
+          : null,
       senderName: guard.user.name ?? `${companyName} Reservations`,
       companyName,
       companyPhone: settings?.sitePhone ?? null,

@@ -1208,6 +1208,7 @@ model Lead {
   activities          LeadActivity[]
   itinerary           Itinerary?
   offlineConversions  OfflineConversion[]
+  b2bMessages         B2bMessage[]
 
   @@index([status])
   @@index([source])
@@ -1344,6 +1345,28 @@ model OfflineConversion {
   @@unique([leadId, platform])
   @@unique([bookingId, platform])
   @@index([status])
+}
+
+// B2B Communication — one row per email sent to B2B agents (Admin → B2B
+// Communication). Recipients are a snapshot [{id, name, agencyName, email}];
+// the attachment itself is not stored, only its file name.
+model B2bMessage {
+  id             String   @id @default(cuid())
+  subject        String
+  message        String
+  attachmentName String?
+  // Optional tagged B2B request (a follow-up about one request).
+  requestId      String?
+  request        Lead?    @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  recipients     Json
+  sent           Int      @default(0)
+  failed         Int      @default(0)
+  sentById       String?
+  sentByName     String
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([requestId])
 }
 
 model LeadActivity {

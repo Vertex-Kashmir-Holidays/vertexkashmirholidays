@@ -2148,6 +2148,9 @@ export interface HotelPaymentEmailData {
   bookingRef: string;
   /** This payment, or null when confirming without one (token waived). */
   payment: { stage: "Token" | "Partial" | "Full"; amount: number; method: string; paidBy: string; date: string } | null;
+  /** The stay's total owed to the hotel and what's paid so far (this payment
+   *  included). Null when the stay has no amount set. */
+  account: { total: number; paid: number; balance: number } | null;
   senderName: string;
   companyName: string;
   companyPhone: string | null;
@@ -2176,14 +2179,22 @@ function hotelReservationRows(d: HotelPaymentEmailData): [string, string][] {
 }
 
 function hotelPaymentRows(d: HotelPaymentEmailData): [string, string][] {
-  if (!d.payment) return [];
-  return [
-    ["Payment", `${d.payment.stage} payment`],
-    ["Amount Paid", inr(d.payment.amount)],
-    ["Paid Via", d.payment.method],
-    ["Paid By", d.payment.paidBy],
-    ["Payment Date", d.payment.date],
-  ];
+  const rows: [string, string][] = d.payment
+    ? [
+        ["Payment", `${d.payment.stage} payment`],
+        ["Amount Paid", inr(d.payment.amount)],
+        ["Paid Via", d.payment.method],
+        ["Paid By", d.payment.paidBy],
+        ["Payment Date", d.payment.date],
+      ]
+    : [];
+  // Balance still due to the hotel — shown whenever anything is outstanding.
+  if (d.account && d.account.balance > 0) {
+    rows.push(["Total Booking Amount", inr(d.account.total)]);
+    if (d.account.paid > 0) rows.push(["Total Paid So Far", inr(d.account.paid)]);
+    rows.push(["Balance Due", inr(d.account.balance)]);
+  }
+  return rows;
 }
 
 const HOTEL_PAYMENT_GREETING = "Dear Manager,";
@@ -2207,7 +2218,9 @@ export function hotelPaymentEmailText(d: HotelPaymentEmailData): string {
     "Reservation Details",
     ...hotelReservationRows(d).map(([k, v]) => `${k}: ${v}`),
     "",
-    ...(d.payment ? ["Payment Details", ...hotelPaymentRows(d).map(([k, v]) => `${k}: ${v}`)] : []),
+    ...(hotelPaymentRows(d).length
+      ? ["Payment Details", ...hotelPaymentRows(d).map(([k, v]) => `${k}: ${v}`)]
+      : []),
     "",
     "With Regards,",
     d.senderName,
@@ -2241,7 +2254,7 @@ ${section("Guest Details", [
   ["Booking Ref", d.bookingRef],
 ])}
 ${section("Reservation Details", hotelReservationRows(d))}
-${d.payment ? section("Payment Details", hotelPaymentRows(d)) : ""}
+${hotelPaymentRows(d).length ? section("Payment Details", hotelPaymentRows(d)) : ""}
          <tr>
            <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:#444444;font-size:13px;line-height:1.6">
              With Regards,<br />
