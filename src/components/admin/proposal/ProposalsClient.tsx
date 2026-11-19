@@ -19,6 +19,7 @@ const COLUMNS = [
   "Travel Dates",
   "Est Cost",
   "Created By",
+  "Assigned To",
   "Updated At",
   "Actions",
 ];
@@ -227,6 +228,9 @@ export function ProposalsClient({
                     </td>
                     <td data-label="Owner" className="whitespace-nowrap px-4 py-3 text-foreground/85">
                       {item.ownerName || <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td data-label="Assigned To" className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                      {item.assignedToName || <span className="text-muted-foreground">—</span>}
                     </td>
                     <td data-label="Last updated" className="whitespace-nowrap px-4 py-3 text-[13px] text-muted-foreground">
                       {new Date(item.updatedAt).toLocaleString("en-IN", {

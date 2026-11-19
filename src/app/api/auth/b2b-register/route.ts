@@ -6,6 +6,7 @@ import { B2B_REGISTER_TOKEN_TTL_MS } from "@/lib/auth/otp";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { isSameOrigin } from "@/lib/security/origin";
 import { b2bRegisterSchema, parseAgencyLogo } from "@/lib/b2b/schema";
+import { notifyNewB2bAgent } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
   const placeholderPassword = crypto.randomBytes(9).toString("base64url");
   const passwordHash = await bcrypt.hash(placeholderPassword, 12);
 
-  await prisma.user.create({
+  const agent = await prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
@@ -123,9 +124,17 @@ export async function POST(req: NextRequest) {
       agencyRegistrationNumber: data.agencyRegistrationNumber || undefined,
       agencyGstin: data.agencyGstin || undefined,
     },
+    select: { id: true },
   });
 
   await prisma.emailOtp.delete({ where: { email: data.email } });
+
+  await notifyNewB2bAgent({
+    id: agent.id,
+    agencyName: data.agencyName,
+    name: data.name,
+    agencyState: data.agencyState,
+  });
 
   return NextResponse.json({ success: true }, { status: 201 });
 }

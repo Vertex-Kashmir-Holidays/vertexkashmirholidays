@@ -12,6 +12,7 @@ import {
   b2bDocumentUpdateSubject,
   b2bDocumentUpdateText,
   ADMIN_COPY,
+  type MailAttachment,
 } from "@/lib/mail";
 
 /**
@@ -44,6 +45,7 @@ export async function sendB2bAgentActivationEmail(
 // ── Partner updates (documents + staff announcements) ───────────────────────
 
 export interface B2bRecipient {
+  id?: string;
   email: string;
   name: string | null;
   agencyName: string | null;
@@ -53,7 +55,7 @@ export interface B2bRecipient {
 export async function activeB2bRecipients(): Promise<B2bRecipient[]> {
   return prisma.user.findMany({
     where: { agencyStatus: "ACTIVE" },
-    select: { email: true, name: true, agencyName: true },
+    select: { id: true, email: true, name: true, agencyName: true },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -65,7 +67,12 @@ const contactNameOf = (r: B2bRecipient) => r.name?.trim() || r.agencyName?.trim(
 // rest, and nothing here throws.
 async function sendToEach(
   recipients: B2bRecipient[],
-  build: (r: B2bRecipient) => { subject: string; html: string; text: string },
+  build: (r: B2bRecipient) => {
+    subject: string;
+    html: string;
+    text: string;
+    attachments?: MailAttachment[];
+  },
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -139,9 +146,58 @@ export async function sendB2bAnnouncement(
   recipients: B2bRecipient[],
   subject: string,
   message: string,
+  attachments?: MailAttachment[],
 ): Promise<{ sent: number; failed: number }> {
   return sendToEach(recipients, (r) => {
     const data = { contactName: contactNameOf(r), subject, message };
-    return { subject, html: b2bAnnouncementHtml(data), text: b2bAnnouncementText(data) };
+    return {
+      subject,
+      html: b2bAnnouncementHtml(data),
+      text: b2bAnnouncementText(data),
+      ...(attachments?.length ? { attachments } : {}),
+    };
   });
+}
+
+// ── Request closed by staff ─────────────────────────────────────────────────
+
+/** Tells the agent a request was closed, why, and how many closures their
+ *  account now has. On the closure that reaches the limit the same email
+ *  says the partnership is deactivated (admin gets a copy of that one). */
+export async function sendB2bRequestClosedEmail(
+  agent: B2bRecipient,
+  request: { guestName: string; days: number | null; pax: number },
+  reason: string,
+  closedCount: number,
+  limit: number,
+  deactivated: boolean,
+): Promise<{ delivered: boolean }> {
+  const trip = [request.days ? `${request.days} days` : null, `${request.pax} pax`]
+    .filter(Boolean)
+    .join(", ");
+  const subject = deactivated
+    ? "Your Vertex Kashmir Holidays B2B partnership has been deactivated"
+    : `B2B request closed — ${request.guestName}`;
+  const message = [
+    `We have closed your B2B request for ${request.guestName} (${trip}).`,
+    `Reason: ${reason}`,
+    "To help us quote quickly and accurately, please send only genuine, confirmed requests with complete details — guest name and contact number, travel dates, number of travellers and rooms, preferred hotel category and a realistic budget. Incomplete, duplicate or speculative requests take our team's time away from the bookings we are working on for you.",
+    deactivated
+      ? `With this, ${closedCount} of your requests have been closed. As per our partnership terms, your B2B partner account has now been deactivated and you will no longer be able to send new requests. Bookings already confirmed are not affected and our team will continue to service them.\n\nIf you would like to discuss reactivating your partnership, simply reply to this email.`
+      : `Please note: as per our partnership terms, a partner account is deactivated after ${limit} closed requests. Your account now has ${closedCount} of ${limit}.\n\nIf you believe this request was closed by mistake, simply reply to this email.`,
+  ].join("\n\n");
+  const data = { contactName: contactNameOf(agent), subject, message };
+  try {
+    const res = await sendMail({
+      to: agent.email,
+      subject,
+      ...(deactivated ? { bcc: ADMIN_COPY } : {}),
+      html: b2bAnnouncementHtml(data),
+      text: b2bAnnouncementText(data),
+    });
+    return { delivered: res.delivered };
+  } catch (err) {
+    console.error("[b2b/notify] request closed email failed", err);
+    return { delivered: false };
+  }
 }

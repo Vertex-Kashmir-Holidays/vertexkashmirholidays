@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { listProposalSummaries } from "@/lib/proposal/list";
+import { proposalWhereForUser } from "@/lib/proposal/access";
 import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 import { ProposalsClient } from "@/components/admin/proposal/ProposalsClient";
 
@@ -16,10 +17,8 @@ export default async function AdminProposalsPage() {
     redirect("/admin/dashboard");
   }
 
-  const isAdmin = role === "SUPERADMIN" || role === "ADMIN";
-
   const { items, total } = await listProposalSummaries({
-    ownerId: isAdmin ? undefined : session!.user.id,
+    scope: proposalWhereForUser(role, session!.user.id),
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
   });

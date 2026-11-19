@@ -48,6 +48,7 @@ import {
   Handshake,
   ClipboardList,
   CalendarCheck2,
+  Mails,
   Layers,
   FolderOpen,
   IndianRupee,
@@ -118,6 +119,7 @@ const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
 const PAGE_TITLES: Record<string, string> = {
   ...Object.fromEntries(MODULES.map((m) => [m.href, m.label])),
   "/admin/b2b-bookings": "B2B Bookings",
+  "/admin/b2b-communications": "B2B Communication",
   "/admin/finance-overview": "Finance Overview",
   "/admin/offers": "Occasion Offers",
 };
@@ -189,6 +191,13 @@ const NAV_GROUPS: { label: string | null; keys: ModuleKey[]; extra?: ExtraNavIte
         Icon: CalendarCheck2,
         permKey: "bookings",
         b2bOnly: true,
+      },
+      // Email offers/updates/reminders to partners; B2B Agents permission.
+      {
+        href: "/admin/b2b-communications",
+        label: "B2B Communication",
+        Icon: Mails,
+        permKey: "b2bAgents",
       },
     ],
   },

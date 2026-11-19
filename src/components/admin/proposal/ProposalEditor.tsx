@@ -10,6 +10,7 @@ import { DayPlanPicker } from "../day-plans/DayPlanPicker";
 import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
 import { guessRoute, toProposalDay, type DayPlanRecord } from "@/lib/dayPlans/schema";
 import { Toolbar } from "./Toolbar";
+import { ProposalAssignee, type AssigneeOption } from "./ProposalAssignee";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
@@ -63,6 +64,8 @@ interface ProposalEditorProps {
   canConvert?: boolean;
   /** Day Plans library access: pick plans into days / save a day as a new plan. */
   dayPlans?: { canPick: boolean; canSave: boolean };
+  /** "Assigned to" picker — set when the user may hand this proposal to someone. */
+  assignment?: { ownerName: string | null; assignedToId: string | null; staff: AssigneeOption[] };
 }
 
 export function ProposalEditor({
@@ -78,6 +81,7 @@ export function ProposalEditor({
   apiBasePath = "/api/proposals",
   canConvert = false,
   dayPlans = { canPick: false, canSave: false },
+  assignment,
 }: ProposalEditorProps) {
   const router = useRouter();
   const [data, setRawData] = useState<ProposalData>(initialData);
@@ -532,6 +536,15 @@ export function ProposalEditor({
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[920px] space-y-8">
+          {id && assignment && (
+            <ProposalAssignee
+              proposalId={id}
+              ownerName={assignment.ownerName}
+              initialAssigneeId={assignment.assignedToId}
+              staff={assignment.staff}
+              apiBasePath={apiBasePath}
+            />
+          )}
           {/* Cover */}
           <article id="ps-cover" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>Cover</h2>
