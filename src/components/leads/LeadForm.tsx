@@ -37,7 +37,7 @@ import {
   UNDECIDED,
   type Qualification,
 } from "@/lib/leads/qualification";
-import { requestWhatsAppOpen } from "@/lib/leads/whatsappGate";
+import { showQueryExistsToast } from "@/lib/leads/queryExistsToast";
 
 interface LeadFormProps {
   /** Distinct per-placement tag, stored on Lead.sourcePage for attribution. */
@@ -260,6 +260,7 @@ export function LeadForm({
         error?: string;
         blocked?: boolean;
         whatsapp?: string;
+        call?: string | null;
         offerEnded?: boolean;
         offersHref?: string;
         fieldErrors?: Record<string, string[] | undefined>;
@@ -269,13 +270,9 @@ export function LeadForm({
       };
 
       if (!res.ok) {
-        // Duplicate-block (409) comes with a friendly message + WhatsApp link.
-        if (json.blocked && json.whatsapp) {
-          const wa = json.whatsapp;
-          toast.error(json.error || "Your query is already in progress.", {
-            duration: 8000,
-            action: { label: "WhatsApp", onClick: () => requestWhatsAppOpen(wa) },
-          });
+        // Query already in progress (409) — WhatsApp / Call to check its status.
+        if (json.blocked) {
+          showQueryExistsToast(json);
           return;
         }
         // Ended Occasion Offer (410) — point to the current offers.

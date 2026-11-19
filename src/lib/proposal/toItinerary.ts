@@ -10,6 +10,7 @@
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { STOCK_IMAGES, genId, type ItineraryData } from "@/types/itinerary";
 import { withDropOnLastDay } from "@/lib/itinerary/dropDay";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 import {
   SINGLE_TIER_KEY,
   COMPARISON_CHECK,
@@ -42,6 +43,8 @@ const isCheck = (v: string) => v === COMPARISON_CHECK || v.toLowerCase() === "ye
 export function proposalToItineraryData(
   proposal: ProposalData,
   accepted: ProposalTierKey,
+  /** Stay-plan row id → the hotel picked from that stay's choices. */
+  hotelPicks?: Record<string, string>,
 ): ItineraryData {
   const tierKey = proposal.docType === "single" ? SINGLE_TIER_KEY : accepted;
   const tier = proposal.tiers[tierKey];
@@ -68,11 +71,15 @@ export function proposalToItineraryData(
   const hotelField = stayHotelField(tierKey);
   const hotels = stayRows.map((r) => {
     const nights = String(Number(r.nights) || 1);
+    // Several hotel choices → the one picked at conversion (else the first).
+    const { choices, similar } = parseHotelChoices(cell(r[hotelField]));
+    const picked = hotelPicks?.[r.id];
+    const name = picked && choices.includes(picked) ? picked : (choices[0] ?? "");
     return {
       id: genId("h"),
       destination: `${r.destination} (${nights}N)`,
-      hotelDetails: cell(r[hotelField]),
-      hotelAlt: "",
+      hotelDetails: name,
+      hotelAlt: similar ? "or similar" : "",
       checkIn: "",
       checkOut: "",
       nights,

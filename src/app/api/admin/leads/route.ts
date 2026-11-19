@@ -7,6 +7,13 @@ import { notifyLeadAssigned } from "@/lib/notifications";
 import { LeadSource, LeadActivityType, LeadContactChannel } from "@prisma/client";
 import { phoneField } from "@/lib/leads/schema";
 import {
+  STAFF_BLOCKING_STATUSES,
+  duplicateLeadResponse,
+  findOpenDuplicateLead,
+  lockLeadPhone,
+  type OpenDuplicateLead,
+} from "@/lib/leads/duplicates";
+import {
   normalizeWhatsAppTokenParam,
   resolveWhatsAppAttributionToken,
 } from "@/lib/whatsappAttribution.server";
@@ -135,7 +142,18 @@ export async function POST(req: NextRequest) {
       ? waOffer.packages.find((p) => p.name === resolved?.intent?.packageName)?.name
       : undefined;
 
+  // Duplicate guard (src/lib/leads/duplicates.ts): a customer with a lead
+  // still being worked is updated on that lead, never given a second one.
+  // Checked under a per-phone lock so two saves at once can't both pass.
+  let duplicate: OpenDuplicateLead | null = null;
   const lead = await prisma.$transaction(async (tx) => {
+    await lockLeadPhone(tx, rest.phone);
+    duplicate = await findOpenDuplicateLead(tx, {
+      phone: rest.phone,
+      email: email || null,
+      statuses: STAFF_BLOCKING_STATUSES,
+    });
+    if (duplicate) return null;
     const created = await tx.lead.create({
       data: {
         ...rest,
@@ -233,6 +251,8 @@ export async function POST(req: NextRequest) {
 
     return created;
   });
+  const dup = duplicate as OpenDuplicateLead | null;
+  if (!lead || dup) return duplicateLeadResponse(dup!);
 
   // Notify the assignee (in-app + email), best-effort — never blocks creation.
   if (assignedToId) {

@@ -9,6 +9,7 @@
 // exactly the ambiguity this component exists to remove. Every field below
 // corresponds 1:1 to something B2bItineraryPdf.tsx actually renders
 // (including Included Activities, as compact text cards without photos).
+import { HotelNameInput } from "@/components/admin/HotelNameInput";
 import { useCallback, useState } from "react";
 import { resyncTripDates } from "@/lib/itinerary/travelDates";
 import { useRouter } from "next/navigation";
@@ -651,10 +652,12 @@ export function B2bItineraryEditor({
               </div>
               <div>
                 <label className={fieldLabel}>Hotel Name</label>
-                <input
+                <HotelNameInput
                   className={inputCls + " mt-1"}
                   value={h.hotelDetails}
-                  onChange={(e) => updateHotel(h.id, "hotelDetails", e.target.value)}
+                  onValueChange={(v) => updateHotel(h.id, "hotelDetails", v)}
+                  destination={h.destination}
+                  placeholder="Pick a hotel"
                 />
               </div>
               <div>

@@ -292,9 +292,22 @@ export function LeadForm({
         });
 
         if (!res.ok) {
-          const j = (await res.json()) as { error?: string | { formErrors?: string[] } };
+          const j = (await res.json()) as {
+            error?: string | { formErrors?: string[] };
+            existingLeadId?: string;
+          };
           const msg = typeof j.error === "string" ? j.error : "Save failed.";
-          toast.error(msg);
+          // Duplicate customer — offer the open lead instead.
+          const existingId = j.existingLeadId;
+          toast.error(
+            msg,
+            existingId
+              ? {
+                  duration: 10000,
+                  action: { label: "Open lead", onClick: () => router.push(`/admin/leads/${existingId}`) },
+                }
+              : undefined,
+          );
           return;
         }
 

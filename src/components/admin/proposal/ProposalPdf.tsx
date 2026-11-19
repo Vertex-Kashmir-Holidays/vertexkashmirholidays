@@ -10,6 +10,7 @@
 // embedded data URL: brand assets (watermarks, logos) lossless, photos
 // compressed — same technique as ItineraryPdf.tsx.
 
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 import {
   Document,
   Page,
@@ -466,6 +467,42 @@ const s = StyleSheet.create({
     lineHeight: 1.4,
   },
   simpleTableDate: { fontSize: 8, color: C.muted, marginTop: 2, lineHeight: 1.3 },
+  // Single-package Stay Plan: details row, then a labelled row of hotel
+  // options (one box per hotel) — a stronger rule separates the stays.
+  stayBlock: { borderTopWidth: 1.5, borderTopColor: C.border },
+  // No fill; a hairline (lighter than the 1.5pt rule between stays) keeps it
+  // part of the stay's details row above.
+  stayHotelsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderTopWidth: 0.5,
+    borderTopColor: C.border,
+    paddingTop: SP.sm,
+    paddingBottom: SP.sm + 3,
+    paddingHorizontal: SP.sm + 3,
+  },
+  stayHotelsLabel: {
+    width: 78,
+    flexShrink: 0,
+    fontSize: 7,
+    color: C.muted,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  stayHotelsList: { flex: 1, flexDirection: "row", alignItems: "stretch" },
+  stayHotelPill: {
+    flex: 1,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 6,
+    backgroundColor: C.white,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    marginRight: 6,
+  },
+  stayHotelPillText: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.green },
+  stayHotelSimilar: { fontSize: 8.5, color: C.muted, fontStyle: "italic" },
   // Day Plan at a Glance rows — title on its own line above the body, with a
   // small "DAY" label over the number and light striping between days.
   dayPlanRowAlt: { backgroundColor: C.bgSubtle },
@@ -1566,41 +1603,63 @@ export function ProposalPdf({ data, images = {}, address, trustContent, socialLi
                 <SectionHead title="Stay Plan" />
                 <View style={s.simpleTable}>
                   <View style={s.simpleTableHeadRow} wrap={false}>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1.6 }]}>
                       Destination
                     </Text>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.6 }]}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.7 }]}>
                       Nights
                     </Text>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 2.2 }]}>
-                      Hotel Name
-                    </Text>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1 }]}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 1.4 }]}>
                       Room Type
                     </Text>
-                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.8 }]}>
+                    <Text style={[s.simpleTableHeadCell, s.simpleTableHeadText, { flex: 0.9 }]}>
                       No. of Rooms
                     </Text>
                   </View>
-                  {data.stayPlan.map((row) => (
-                    <View key={row.id} style={s.simpleTableRow} wrap={false}>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 1 }]}>
-                        {row.destination}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.6 }]}>
-                        {row.nights}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 2.2 }]}>
-                        {row.hotelName}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1 }]}>
-                        {row.roomType}
-                      </Text>
-                      <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.8 }]}>
-                        {row.rooms}
-                      </Text>
-                    </View>
-                  ))}
+                  {/* Each stay: its details, then the hotel choices side by
+                      side — Hotel 1 | Hotel 2 | Hotel 3 | Similar. */}
+                  {data.stayPlan.map((row) => {
+                    const { choices, similar } = parseHotelChoices(row.hotelName);
+                    return (
+                      <View key={row.id} style={s.stayBlock} wrap={false}>
+                        <View style={{ flexDirection: "row" }}>
+                          <Text style={[s.simpleTableCell, s.simpleTableCellStrong, { flex: 1.6 }]}>
+                            {row.destination}
+                          </Text>
+                          <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.7 }]}>
+                            {row.nights}
+                          </Text>
+                          <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 1.4 }]}>
+                            {row.roomType.replace(/\n\s*\n+/g, "\n").trim()}
+                          </Text>
+                          <Text style={[s.simpleTableCell, s.simpleTableCellText, { flex: 0.9 }]}>
+                            {row.rooms}
+                          </Text>
+                        </View>
+                        {choices.length > 0 ? (
+                          <View style={s.stayHotelsRow}>
+                            <Text style={s.stayHotelsLabel}>
+                              {choices.length > 1 ? "Hotel options" : "Hotel"}
+                            </Text>
+                            <View style={s.stayHotelsList}>
+                              {/* Equal boxes across the full width:
+                                  Hotel 1 | Hotel 2 | Hotel 3 | Similar. */}
+                              {[...choices, ...(similar ? [null] : [])].map((h, i, all) => (
+                                <View
+                                  key={`${h ?? "similar"}-${i}`}
+                                  style={[s.stayHotelPill, i === all.length - 1 ? { marginRight: 0 } : {}]}
+                                >
+                                  <Text style={h === null ? s.stayHotelSimilar : s.stayHotelPillText}>
+                                    {h ?? "or similar"}
+                                  </Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })}
                 </View>
                 {data.stayPlanNote ? (
                   <Text style={s.simpleTableNote}>{data.stayPlanNote}</Text>

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { LeadStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { sendMail, leadNotificationHtml, leadNotificationText } from "@/lib/mail";
 import { notifyNewLead } from "@/lib/notifications";
 import { isValidE164Strict } from "@/lib/auth/phoneStrict.server";
 import { phoneField } from "@/lib/leads/schema";
+import {
+  VISITOR_BLOCKING_STATUSES,
+  findOpenDuplicateLead,
+  lockLeadPhone,
+} from "@/lib/leads/duplicates";
 import { budgetBandKeyField, travelMonthField } from "@/lib/leads/qualification";
 import { resolveQualification } from "@/lib/leads/budgetBands.server";
 import { attributionSchema } from "@/lib/attribution";
@@ -23,16 +27,8 @@ export const dynamic = "force-dynamic";
 // Placeholder until sales learns the name on the first call/chat.
 const NAME_PENDING = "WhatsApp visitor";
 
-// Same "open conversation" set and window as POST /api/leads: a recent active
-// lead for this phone means we already have them — no second row.
-const ACTIVE_LEAD_STATUSES: LeadStatus[] = [
-  LeadStatus.NEW,
-  LeadStatus.CONNECTED,
-  LeadStatus.NOT_CONNECTED,
-  LeadStatus.QUALIFIED,
-  LeadStatus.NEGOTIATION,
-];
-const DUPLICATE_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
+// Same rule as POST /api/leads: a lead for this phone still at an early stage
+// (VISITOR_BLOCKING_STATUSES) means we already have them — no second row.
 
 const bodySchema = z.object({
   phone: phoneField,
@@ -73,16 +69,7 @@ export async function POST(req: NextRequest) {
   const phoneLimit = await rateLimit(`lead-wa:phone:${phone}`, 3, "24 h");
   if (!phoneLimit.success) return tooManyRequests(phoneLimit);
 
-  const recent = await prisma.lead.findFirst({
-    where: { phone },
-    orderBy: { createdAt: "desc" },
-    select: { status: true, createdAt: true },
-  });
-  if (
-    recent &&
-    ACTIVE_LEAD_STATUSES.includes(recent.status) &&
-    Date.now() - recent.createdAt.getTime() < DUPLICATE_WINDOW_MS
-  ) {
+  if (await findOpenDuplicateLead(prisma, { phone, statuses: VISITOR_BLOCKING_STATUSES })) {
     return NextResponse.json({ ok: true, duplicate: true });
   }
 
@@ -100,21 +87,28 @@ export async function POST(req: NextRequest) {
     .filter(Boolean)
     .join("\n");
 
-  const lead = await prisma.lead.create({
-    data: {
-      name: NAME_PENDING,
-      phone,
-      source: deriveChannel(attribution),
-      sourcePage: "whatsapp-popup",
-      contactChannel: "WHATSAPP",
-      notes,
-      budgetBandKey: q.budgetBandKey,
-      budgetBandLabel: q.budgetBandLabel,
-      budgetBandDerived: !!q.budgetBandKey && !!budgetDerived,
-      travelMonth: q.travelMonth,
-      ...buildAttributionCreateInput(attribution, req),
-    },
+  // Re-checked under a per-phone lock so two taps at once can't both create.
+  const lead = await prisma.$transaction(async (tx) => {
+    await lockLeadPhone(tx, phone);
+    if (await findOpenDuplicateLead(tx, { phone, statuses: VISITOR_BLOCKING_STATUSES }))
+      return null;
+    return tx.lead.create({
+      data: {
+        name: NAME_PENDING,
+        phone,
+        source: deriveChannel(attribution),
+        sourcePage: "whatsapp-popup",
+        contactChannel: "WHATSAPP",
+        notes,
+        budgetBandKey: q.budgetBandKey,
+        budgetBandLabel: q.budgetBandLabel,
+        budgetBandDerived: !!q.budgetBandKey && !!budgetDerived,
+        travelMonth: q.travelMonth,
+        ...buildAttributionCreateInput(attribution, req),
+      },
+    });
   });
+  if (!lead) return NextResponse.json({ ok: true, duplicate: true });
 
   await notifyNewLead({
     id: lead.id,

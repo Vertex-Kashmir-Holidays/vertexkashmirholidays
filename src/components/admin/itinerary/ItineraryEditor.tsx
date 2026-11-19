@@ -1,5 +1,6 @@
 "use client";
 
+import { HotelNameInput } from "@/components/admin/HotelNameInput";
 import { useCallback, useState } from "react";
 import { resyncTripDates } from "@/lib/itinerary/travelDates";
 import { withDropOnLastDay } from "@/lib/itinerary/dropDay";
@@ -957,10 +958,11 @@ export function ItineraryEditor({
                   <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 sm:w-[60%] sm:flex-none">
                     <div>
                       <label className={fieldLabel}>Hotel Name</label>
-                      <input
+                      <HotelNameInput
                         value={h.hotelDetails}
-                        onChange={(e) => updateHotel(h.id, "hotelDetails", e.target.value)}
-                        placeholder="Hotel name"
+                        onValueChange={(v) => updateHotel(h.id, "hotelDetails", v)}
+                        destination={h.destination}
+                        placeholder="Pick a hotel"
                         className={`${numberInputCls} font-semibold`}
                       />
                       <input
