@@ -9,7 +9,6 @@ import {
   Plus,
   Mail,
   Star,
-  Check,
   Download,
   SlidersHorizontal,
   Eye,
@@ -97,7 +96,7 @@ const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({
   label: HOTEL_CATEGORY_LABELS[c],
 }));
 // Columns before Actions: Select, Sr, Name, Phone, Email, Category,
-// Recommended, Family Room, Rating, MAP (Deluxe), Bookings, Valid Till, Sent — kept as one
+// Recommended, Family Room, Rating, MAP (Deluxe), Valid Till, Bookings — kept as one
 // constant so the expand-row colSpan can't silently drift from the header
 // count. Location and the full per-room rate table live in the expanded row only.
 const HOTEL_COL_COUNT = 11;
@@ -583,7 +582,7 @@ export function HotelSuppliersClient({
                   "Rating",
                   "MAP (Deluxe)",
                   "Valid Till",
-                  "Sent",
+                  "Bookings",
                   "Actions",
                 ].map((h, i) => (
                   <th
@@ -747,12 +746,15 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
         {fmtDate(hotel.data.rate?.validTo ?? null)}
       </td>
       <td className="px-3 py-2.5 whitespace-nowrap">
-        {hotel.lastRateRequestSentAt ? (
-          <span className="flex items-center gap-1 text-[12px] text-emerald-600 dark:text-emerald-400">
-            <Check className="w-3.5 h-3.5" /> {fmtDate(hotel.lastRateRequestSentAt)}
+        {totalBookings(hotel) > 0 ? (
+          <span
+            className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400"
+            title={`${hotel.roomNights} room nights · last stay ${fmtDate(hotel.lastStay)}`}
+          >
+            {totalBookings(hotel)}
           </span>
         ) : (
-          <span className="text-[12px] text-muted-foreground/50">Not sent</span>
+          <span className="text-[12px] text-muted-foreground/50">—</span>
         )}
       </td>
       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>

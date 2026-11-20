@@ -36,6 +36,11 @@ export interface ConvertLeadToBookingInput {
   performedById: string;
   performedByName: string;
   /**
+   * Who the commission is credited to — the lead's assignee, even when an admin
+   * clicked Convert for them. Defaults to the performer.
+   */
+  creditToId?: string | null;
+  /**
    * Sales incentive commission — a normal-lead-only concept (the converting
    * staff member's personal conversion rate). B2B partner sales have no
    * commission/pricing system yet (explicitly out of scope), so B2B callers
@@ -73,6 +78,7 @@ export async function convertLeadToBooking(
     performedByName,
     creditCommission,
   } = input;
+  const creditToId = input.creditToId || performedById;
 
   // Atomic claim — must be the first statement. A concurrent second call
   // racing this same lead either commits after this one (sees locked: true,
@@ -124,7 +130,7 @@ export async function convertLeadToBooking(
 
   if (creditCommission) {
     const employee = await tx.user.findUnique({
-      where: { id: performedById },
+      where: { id: creditToId },
       select: { bookingConversionPct: true },
     });
     const ratePct = employee?.bookingConversionPct;
@@ -143,7 +149,7 @@ export async function convertLeadToBooking(
       await tx.bookingCommission.create({
         data: {
           bookingId: booking.id,
-          employeeId: performedById,
+          employeeId: creditToId,
           rateSnapshotPct: ratePct,
           profitAmount,
           commissionAmount: computeCommission(profitAmount, ratePct),
