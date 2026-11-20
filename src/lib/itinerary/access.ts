@@ -45,14 +45,12 @@ export function resolveItineraryAccess(
 
   if (it.leadId) {
     const assigned = it.lead?.assignedToId === user.id;
-    // Admins may VIEW any lead-linked itinerary, but only the lead's assignee may
-    // EDIT it while the lead is open — managing a lead is the assignee's job.
-    // Exception: a converted lead an admin has unlocked for corrections (via the
-    // booking's "Unlock for changes") is editable by admins too.
+    // The lead's assignee and admins may edit it (admins without reassigning
+    // the lead first). A converted lead stays locked until an admin unlocks it
+    // (the booking's "Unlock for changes").
     const canView = admin || assigned;
     const locked = it.locked || (it.lead?.locked ?? false);
-    const adminCorrection = admin && it.lead?.status === "CONVERTED";
-    return { canView, canEdit: (assigned || adminCorrection) && !locked, locked };
+    return { canView, canEdit: (assigned || admin) && !locked, locked };
   }
 
   // Direct-booking itinerary: staff-managed (owner or admin). Editable until the

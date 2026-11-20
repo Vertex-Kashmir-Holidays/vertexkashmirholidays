@@ -8,6 +8,8 @@ export interface HotelNameOption {
   id: string;
   name: string;
   destination: string;
+  /** Confirmed stays we've booked there — the list comes sorted by this. */
+  bookings: number;
 }
 
 // Fetched once per page load and shared by every picker on the page.
@@ -80,7 +82,9 @@ export function HotelNameInput({
       <datalist id={listId}>
         {suggestions.map((o) => (
           <option key={o.id} value={o.name}>
-            {o.destination}
+            {o.bookings > 0
+              ? `${o.destination} · ${o.bookings} booking${o.bookings === 1 ? "" : "s"}`
+              : o.destination}
           </option>
         ))}
       </datalist>

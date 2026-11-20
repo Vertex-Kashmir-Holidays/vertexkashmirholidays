@@ -108,3 +108,37 @@ export async function refreshOpenCommissions(db: Db, employeeId: string): Promis
   });
   for (const c of open) await syncBookingCommission(db, c.bookingId);
 }
+
+/**
+ * Credit follows the lead's current assignee: when a converted lead is
+ * reassigned, its booking's commission moves to the new assignee at their own
+ * conversion rate (re-snapshotted), then is recomputed. Settled commission —
+ * PAID, REVERSED, or already claimed by a payroll run — never moves. A new
+ * assignee without a conversion rate means no commission row.
+ */
+export async function moveBookingCommission(
+  db: Db,
+  bookingId: string,
+  employeeId: string | null,
+): Promise<void> {
+  const commission = await db.bookingCommission.findUnique({ where: { bookingId } });
+  if (commission) {
+    const settled =
+      commission.status === "PAID" || commission.status === "REVERSED" || commission.salaryRecordId != null;
+    if (settled || commission.employeeId === employeeId) return;
+    const employee = employeeId
+      ? await db.user.findUnique({ where: { id: employeeId }, select: { bookingConversionPct: true } })
+      : null;
+    const ratePct = employee?.bookingConversionPct;
+    if (!employeeId || ratePct == null || ratePct <= 0) {
+      await db.bookingCommission.delete({ where: { bookingId } });
+      return;
+    }
+    await db.bookingCommission.update({
+      where: { bookingId },
+      data: { employeeId, rateSnapshotPct: ratePct },
+    });
+  }
+  // Recompute — also creates the row for the new assignee when there was none.
+  await syncBookingCommission(db, bookingId);
+}

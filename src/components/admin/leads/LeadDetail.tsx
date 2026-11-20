@@ -387,7 +387,9 @@ export function LeadDetail({
   }, [lead.booking]);
 
   function patch(payload: Record<string, unknown>) {
-    if (locked) {
+    // An admin may reassign a locked (converted) lead — credit follows the assignee.
+    const reassignOnly = Object.keys(payload).every((k) => k === "assignedToId");
+    if (locked && !(isAdmin && reassignOnly)) {
       toast.error("This lead is locked. Ask an admin to unlock it before editing.");
       return;
     }
@@ -1255,13 +1257,13 @@ export function LeadDetail({
                 <select
                   value={assignedToId}
                   onChange={(e) => handleAssignChange(e.target.value)}
-                  disabled={isPending || !isAdmin || locked}
+                  disabled={isPending || !isAdmin}
                   title={
-                    locked
-                      ? "Unlock the lead before reassigning."
-                      : isAdmin
-                        ? undefined
-                        : "Only an admin can change the assignee."
+                    !isAdmin
+                      ? "Only an admin can change the assignee."
+                      : converted
+                        ? "The conversion and its commission move to the person you assign."
+                        : undefined
                   }
                   className={selectCls}
                 >

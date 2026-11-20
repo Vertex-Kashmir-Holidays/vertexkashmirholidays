@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { moveBookingCommission } from "@/lib/bookings/commissionSync";
 import {
   STAFF_BLOCKING_STATUSES,
   duplicateLeadResponse,
@@ -87,26 +88,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Access split: an admin's only lead power is (re)assignment; every other lead
-  // change (status, details, notes, follow-up, booking link, amounts) belongs to
-  // the staff member the lead is assigned to. Both rules are applied per-field
-  // after the body is parsed (see below).
+  // Access split: (re)assignment is admin-only; every other lead change (status,
+  // details, notes, follow-up, booking link, amounts) is for the assignee or an
+  // admin. Both rules are applied per-field after the body is parsed (below).
   const role = (guard.user as { role: string }).role;
   const userId = guard.user.id as string;
   const admin = isAdminRole(role);
   const isAssignee = existing.assignedToId === userId;
-  // An unassigned lead has no owner, so an admin may act on it freely (any
-  // operation). Once a lead is assigned, an admin's only power is reassignment;
-  // all other work belongs to the assignee.
-  const canManage = isAssignee || (admin && existing.assignedToId === null);
-
-  // Locked (converted) leads cannot be edited until an admin unlocks them.
-  if (existing.locked) {
-    return NextResponse.json(
-      { error: "This lead is locked. An admin must unlock it before editing." },
-      { status: 423 },
-    );
-  }
+  // The assignee works their lead; an admin may make any change on any lead
+  // without reassigning it first, so it stays with the salesperson. Credit
+  // (converted + commission) always follows the current assignee.
+  const canManage = isAssignee || admin;
 
   let body: unknown;
   try {
@@ -117,6 +109,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  }
+
+  // Locked (converted) leads cannot be edited until an admin unlocks them —
+  // except that an admin may reassign one (credit and commission follow the
+  // assignee, e.g. a lead converted on a trainee's behalf, handed back).
+  const onlyReassign = Object.entries(parsed.data).every(
+    ([k, v]) => k === "assignedToId" || v === undefined,
+  );
+  if (existing.locked && !(admin && onlyReassign)) {
+    return NextResponse.json(
+      { error: "This lead is locked. An admin must unlock it before editing." },
+      { status: 423 },
+    );
   }
 
   const {
@@ -168,7 +173,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     (rest.children !== undefined && (rest.children ?? null) !== (existing.children ?? null));
   if (workChanged && !canManage) {
     return NextResponse.json(
-      { error: "Only the staff member this lead is assigned to can update it." },
+      { error: "Only the staff member this lead is assigned to (or an admin) can update it." },
       { status: 403 },
     );
   }
@@ -428,6 +433,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     ...(bookingAmountOp ? [bookingAmountOp] : []),
     ...bookingDateOps,
   ]);
+
+  // A converted lead's commission moves with it to the new assignee.
+  if (assignmentChanged && existing.status === LeadStatus.CONVERTED && existing.bookingId) {
+    await moveBookingCommission(prisma, existing.bookingId, assignedToId ?? null);
+  }
 
   // Post-commit, best-effort: notify the affected staff (in-app + email). On a
   // reassignment both the removed and the added owner are informed.
