@@ -67,8 +67,9 @@ export interface SendMailResult {
   skipped?: boolean;
 }
 
-// Silent office copy for booking and account emails (booking/payment emails,
-// customer + B2B account credentials) so staff can confirm they went out.
+// Silent office copy for booking, account and B2B partner emails (booking/
+// payment emails, customer + B2B account credentials, every email to B2B
+// agents) so staff can confirm they went out.
 // Callers opt in via `bcc: ADMIN_COPY` — never OTP or password-reset mail.
 export const ADMIN_COPY = env.MAIL_TO_ADMIN ?? "admin@vertexkashmirholidays.com";
 
@@ -2151,13 +2152,17 @@ export interface HotelPaymentEmailData {
   /** The stay's total owed to the hotel and what's paid so far (this payment
    *  included). Null when the stay has no amount set. */
   account: { total: number; paid: number; balance: number } | null;
+  /** Set when the stay is being cancelled with the hotel — the email becomes a
+   *  cancellation notice carrying this reason. */
+  cancelReason?: string | null;
   senderName: string;
   companyName: string;
   companyPhone: string | null;
 }
 
-/** "Token Payment Processed" / "Partial …" / "Full …" / "Reservation Confirmation". */
+/** "Token Payment Processed" / "Partial …" / "Full …" / "Reservation Confirmation" / "Reservation Cancellation". */
 function hotelPaymentHeading(d: HotelPaymentEmailData): string {
+  if (d.cancelReason) return "Reservation Cancellation";
   return d.payment ? `${d.payment.stage} Payment Processed` : "Reservation Confirmation";
 }
 
@@ -2179,6 +2184,12 @@ function hotelReservationRows(d: HotelPaymentEmailData): [string, string][] {
 }
 
 function hotelPaymentRows(d: HotelPaymentEmailData): [string, string][] {
+  // Cancelled: only what was already paid to the hotel (to settle/adjust).
+  if (d.cancelReason) {
+    return d.account && d.account.paid > 0
+      ? [["Booking Amount", inr(d.account.total)], ["Amount Paid to Hotel", inr(d.account.paid)]]
+      : [];
+  }
   const rows: [string, string][] = d.payment
     ? [
         ["Payment", `${d.payment.stage} payment`],
@@ -2200,6 +2211,9 @@ function hotelPaymentRows(d: HotelPaymentEmailData): [string, string][] {
 const HOTEL_PAYMENT_GREETING = "Dear Manager,";
 
 function hotelPaymentIntro(d: HotelPaymentEmailData): string {
+  if (d.cancelReason) {
+    return "We regret to inform you that the below booking has been cancelled. Kindly release the rooms. Please find the reason and the booking details below.";
+  }
   return d.payment
     ? `We have processed the ${d.payment.stage.toLowerCase()} payment for the below booking. Please find the details below.`
     : "This is to confirm the below booking. Please find the details below.";
@@ -2215,6 +2229,7 @@ export function hotelPaymentEmailText(d: HotelPaymentEmailData): string {
     `Number of Guests: ${d.guests}`,
     `Booking Ref: ${d.bookingRef}`,
     "",
+    ...(d.cancelReason ? ["Cancellation", `Reason: ${d.cancelReason}`, ""] : []),
     "Reservation Details",
     ...hotelReservationRows(d).map(([k, v]) => `${k}: ${v}`),
     "",
@@ -2222,6 +2237,7 @@ export function hotelPaymentEmailText(d: HotelPaymentEmailData): string {
       ? ["Payment Details", ...hotelPaymentRows(d).map(([k, v]) => `${k}: ${v}`)]
       : []),
     "",
+    ...(d.cancelReason ? ["We regret the inconvenience and look forward to working with you again.", ""] : []),
     "With Regards,",
     d.senderName,
     d.companyName,
@@ -2253,11 +2269,12 @@ ${section("Guest Details", [
   ["Number of Guests", d.guests],
   ["Booking Ref", d.bookingRef],
 ])}
+${d.cancelReason ? section("Cancellation", [["Reason", d.cancelReason]]) : ""}
 ${section("Reservation Details", hotelReservationRows(d))}
 ${hotelPaymentRows(d).length ? section("Payment Details", hotelPaymentRows(d)) : ""}
          <tr>
            <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:#444444;font-size:13px;line-height:1.6">
-             With Regards,<br />
+             ${d.cancelReason ? "We regret the inconvenience and look forward to working with you again.<br /><br />" : ""}With Regards,<br />
              <strong>${escapeHtml(d.senderName)}</strong><br />
              ${escapeHtml(d.companyName)}${d.companyPhone ? `<br />Phone: ${escapeHtml(d.companyPhone)}` : ""}
            </td>
@@ -2266,7 +2283,7 @@ ${hotelPaymentRows(d).length ? section("Payment Details", hotelPaymentRows(d)) :
   return emailShell({
     title: hotelPaymentEmailSubject(d),
     preheader: escapeHtml(
-      `${d.guestName} · ${d.checkIn ?? ""}${d.payment ? ` · ${hotelPaymentHeading(d)} ${inr(d.payment.amount)}` : ""}`,
+      `${d.guestName} · ${d.checkIn ?? ""}${d.cancelReason ? " · Cancelled" : ""}${d.payment ? ` · ${hotelPaymentHeading(d)} ${inr(d.payment.amount)}` : ""}`,
     ),
     contentHtml: content,
     footerNote: `Sent by ${escapeHtml(d.companyName)} reservations.`,

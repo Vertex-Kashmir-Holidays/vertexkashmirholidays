@@ -18,7 +18,9 @@ export type PaymentAuditEvent =
   | "SERVICES_LOCKED"
   // Admin services-lock corrections (unlock-services / re-lock via lock-services).
   | "SERVICES_UNLOCKED"
-  | "SERVICES_RELOCKED";
+  | "SERVICES_RELOCKED"
+  // A hotel stay cancelled with the hotel — detail carries the hotel + reason.
+  | "HOTEL_CANCELLED";
 
 export interface PaymentAuditInput {
   event: PaymentAuditEvent;

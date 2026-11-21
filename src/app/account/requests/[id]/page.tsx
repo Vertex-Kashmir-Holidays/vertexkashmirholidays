@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { b2bLeadWhere } from "@/lib/b2b/leadScope";
 import { B2B_STATUS_LABELS, type B2bRequestStatus } from "@/lib/b2b/requestStatus";
 import { B2bItineraryDownloadButton } from "@/components/account/B2bItineraryDownloadButton";
+import { ManualItineraryLink } from "@/components/account/ManualItineraryLink";
 
 export const metadata: Metadata = { title: "Request Details" };
 export const dynamic = "force-dynamic";
@@ -63,6 +64,9 @@ export default async function AccountRequestDetailPage({
       locked: true,
       createdAt: true,
       itinerary: { select: { publishedAt: true } },
+      // Uploaded PDF only — the staff artifact link is never selected here.
+      manualItineraryUrl: true,
+      manualItineraryName: true,
     },
   });
   if (!request) notFound();
@@ -140,10 +144,15 @@ export default async function AccountRequestDetailPage({
             </p>
             <B2bItineraryDownloadButton requestId={request.id} />
           </div>
-        ) : (
+        ) : request.manualItineraryUrl ? null : (
           <p className="mt-3 text-sm text-muted-foreground">
             Not available yet — our team is preparing your itinerary.
           </p>
+        )}
+        {request.manualItineraryUrl && (
+          <div className="mt-3">
+            <ManualItineraryLink url={request.manualItineraryUrl} name={request.manualItineraryName} />
+          </div>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import type { ServiceKind } from "@prisma/client";
 import type { ItineraryData } from "@/types/itinerary";
 import { parseVehicleCount } from "@/lib/vehicleCount";
 import { stayDateToDate } from "@/lib/itinerary/travelDates";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 
 // Maps an itinerary's hotels/transport/included-activities into booking
 // service rows. Pure and itinerary-shape-only (no Lead/Booking/B2B concept
@@ -50,11 +51,21 @@ function hotelRoomType(h: ItineraryData["hotels"][number]): string | null {
   return parts.length ? parts.join(" + ") : null;
 }
 
-export function buildServicesFromItinerary(data: ItineraryData): ItineraryServiceInput[] {
+/**
+ * `hotelPicks` (stay id → hotel) is the hotel confirmed for a stay that
+ * offered several choices ("Hotel A / Hotel B / Similar", B2B itineraries);
+ * a single choice is used as-is, minus any "/ Similar".
+ */
+export function buildServicesFromItinerary(
+  data: ItineraryData,
+  hotelPicks: Record<string, string> = {},
+): ItineraryServiceInput[] {
   const services: ItineraryServiceInput[] = [];
 
   for (const h of data.hotels) {
-    const name = h.hotelDetails.trim() || h.destination.trim();
+    const { choices } = parseHotelChoices(h.hotelDetails);
+    const hotel = hotelPicks[h.id]?.trim() || (choices.length === 1 ? choices[0] : h.hotelDetails.trim());
+    const name = hotel || h.destination.trim();
     if (!name) continue;
     const nights = parseInt(h.nights, 10);
     const rooms = parseInt(h.rooms, 10);

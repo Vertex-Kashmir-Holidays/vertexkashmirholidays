@@ -9,6 +9,9 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
 import { CreateB2bItineraryButton } from "@/components/admin/b2b/CreateB2bItineraryButton";
+import { ManualItineraryCard } from "@/components/admin/leads/ManualItineraryCard";
+import { itineraryDataSchema } from "@/types/itinerary";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 import { B2bConvertAction } from "@/components/admin/b2b/B2bConvertAction";
 import { EditB2bRequestButton } from "@/components/admin/b2b/EditB2bRequestButton";
 import { FollowUpB2bRequestButton } from "@/components/admin/b2b/FollowUpB2bRequestButton";
@@ -80,13 +83,24 @@ export default async function AdminB2bRequestDetailPage({
       bookingId: true,
       b2bAgent: { select: { id: true, name: true, email: true, agencyName: true } },
       locked: true,
-      itinerary: { select: { id: true, status: true, updatedAt: true, locked: true, publishedAt: true } },
+      itinerary: {
+        select: { id: true, status: true, updatedAt: true, locked: true, publishedAt: true, data: true },
+      },
       booking: { select: { servicesLocked: true } },
+      manualItineraryUrl: true,
+      manualItineraryName: true,
+      manualItineraryAt: true,
+      itineraryArtifactUrl: true,
     },
   });
   if (!lead || lead.b2bAgentId === null) notFound();
 
   const canManageItinerary = await can(role, "itinerary", "create");
+  // Stays offering several hotels — the convert dialog asks which was confirmed.
+  const parsedItinerary = lead.itinerary ? itineraryDataSchema.safeParse(lead.itinerary.data) : null;
+  const hotelStays = (parsedItinerary?.success ? parsedItinerary.data.hotels : [])
+    .map((h) => ({ id: h.id, destination: h.destination, choices: parseHotelChoices(h.hotelDetails).choices }))
+    .filter((h) => h.choices.length > 1);
   const canConvert = await can(role, "b2bRequests", "edit");
   // Same rules as PATCH /api/admin/b2b-requests/[id]: frozen once converted;
   // a closed request is open to admins for 2 months after closing.
@@ -285,6 +299,19 @@ export default async function AdminB2bRequestDetailPage({
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">No itinerary yet.</p>
         )}
+        <div className="mt-4">
+          <ManualItineraryCard
+            leadId={lead.id}
+            audience="agent"
+            canEdit={canConvert}
+            initial={{
+              url: lead.manualItineraryUrl,
+              name: lead.manualItineraryName,
+              uploadedAt: lead.manualItineraryAt?.toISOString() ?? null,
+              artifactUrl: lead.itineraryArtifactUrl,
+            }}
+          />
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -317,6 +344,7 @@ export default async function AdminB2bRequestDetailPage({
               itinerarySent={itinerarySent}
               initialStartDate={lead.startDate?.toISOString().slice(0, 10) ?? ""}
               initialEndDate={lead.endDate?.toISOString().slice(0, 10) ?? ""}
+              hotelStays={hotelStays}
             />
           </div>
         ) : (

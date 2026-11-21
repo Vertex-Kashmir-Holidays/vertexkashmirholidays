@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
-import { activeB2bRecipients, sendB2bAnnouncement } from "@/lib/b2b/notify";
-import {
-  B2B_ATTACHMENT_MAX_BYTES,
-  B2B_ATTACHMENT_TYPES,
-  b2bRequestSummary,
-} from "@/lib/b2b/communication";
+import { sendB2bAnnouncement } from "@/lib/b2b/notify";
+import { resolveB2bAudience } from "@/lib/b2b/audience";
+import { B2B_ATTACHMENT_MAX_BYTES, B2B_ATTACHMENT_TYPES } from "@/lib/b2b/communication";
 
 export const dynamic = "force-dynamic";
 
@@ -58,34 +55,10 @@ export async function POST(req: NextRequest) {
     file = { filename: attachment.name, content, contentType: attachment.type };
   }
 
-  const recipientSelect = { id: true, email: true, name: true, agencyName: true } as const;
-  let recipients;
-  if (requestId) {
-    const lead = await prisma.lead.findUnique({
-      where: { id: requestId },
-      select: {
-        name: true,
-        days: true,
-        adults: true,
-        children: true,
-        startDate: true,
-        createdAt: true,
-        b2bAgent: { select: recipientSelect },
-      },
-    });
-    if (!lead?.b2bAgent) {
-      return NextResponse.json({ error: "B2B request not found" }, { status: 404 });
-    }
-    recipients = [lead.b2bAgent];
-    message = `${b2bRequestSummary(lead)}\n\n${message}`;
-  } else {
-    recipients = agentIds
-      ? await prisma.user.findMany({
-          where: { id: { in: agentIds }, agencyStatus: { not: null } },
-          select: recipientSelect,
-        })
-      : await activeB2bRecipients();
-  }
+  const audience = await resolveB2bAudience({ requestId, agentIds }, message);
+  if (!audience) return NextResponse.json({ error: "B2B request not found" }, { status: 404 });
+  const { recipients } = audience;
+  message = audience.message;
   if (recipients.length === 0) {
     return NextResponse.json({ error: "No B2B agents to email." }, { status: 422 });
   }

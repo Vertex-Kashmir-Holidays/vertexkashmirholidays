@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, ReceiptText } from "lucide-react";
+import { Check, Loader2, ReceiptText } from "lucide-react";
 import { PAYMENT_METHODS } from "@/lib/payments/gst";
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   /** The request's travel dates ("YYYY-MM-DD"), prefilled; a start date is required. */
   initialStartDate: string;
   initialEndDate: string;
+  /** Itinerary stays offering several hotels — the confirmed one is picked here. */
+  hotelStays?: { id: string; destination: string; choices: string[] }[];
 }
 
 const inputCls =
@@ -37,6 +39,7 @@ export function B2bConvertAction({
   itinerarySent,
   initialStartDate,
   initialEndDate,
+  hotelStays = [],
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -48,6 +51,7 @@ export function B2bConvertAction({
   const [endDate, setEndDate] = useState(initialEndDate);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [picks, setPicks] = useState<Record<string, string>>({});
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +68,8 @@ export function B2bConvertAction({
     if (!gstPercent || Number.isNaN(g)) return setError("Select a GST rate.");
     if (!startDate) return setError("Enter the travel start date.");
     if (endDate && endDate < startDate) return setError("Travel end date can't be before the start date.");
+    const unpicked = hotelStays.find((st) => !picks[st.id]);
+    if (unpicked) return setError(`Pick the confirmed hotel for ${unpicked.destination || "each stay"}.`);
     setError(null);
     setSubmitting(true);
 
@@ -79,6 +85,7 @@ export function B2bConvertAction({
             gstPercent: g,
             startDate,
             endDate: endDate || null,
+            hotelPicks: picks,
           }),
         });
         const json = await res.json().catch(() => ({}));
@@ -218,6 +225,44 @@ export function B2bConvertAction({
                 automatically based on the payment mode.
               </p>
             </div>
+
+            {hotelStays.length > 0 && (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">Final hotels</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Pick the hotel the agent confirmed for each stay — only it goes into the booking.
+                  </p>
+                </div>
+                {hotelStays.map((st) => (
+                  <div key={st.id}>
+                    <p className="mb-1 text-[12px] font-semibold text-foreground">{st.destination}</p>
+                    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Hotel for ${st.destination}`}>
+                      {st.choices.map((h) => {
+                        const on = picks[st.id] === h;
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setPicks((p) => ({ ...p, [st.id]: h }))}
+                            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold transition ${
+                              on
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {on && <Check className="h-3 w-3" />}
+                            {h}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
 

@@ -10,7 +10,8 @@ import { genId, itineraryDataSchema, type ItineraryData } from "@/types/itinerar
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { getPdfTrustContent, toItineraryWhyChoose } from "@/lib/itinerary/pdfTrustContent";
 import { isB2bAgentWhiteLabelEligible } from "@/lib/b2b/whiteLabelEligibility";
-import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
+import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";import { dayPlanAccess } from "@/lib/dayPlans/access";
+
 
 export const metadata: Metadata = { title: "Edit B2B Itinerary — Admin" };
 export const dynamic = "force-dynamic";
@@ -56,6 +57,7 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
     { role, canEditItineraries: await can(role, "itinerary", "edit") },
   );
   const canSave = access.canEdit;
+  const dayPlans = await dayPlanAccess(role);
 
   // Same backfills as the normal itinerary editor page — itineraries saved
   // before these fields existed parse them as `[]`. Not written back until
@@ -130,6 +132,7 @@ export default async function EditB2bItineraryPage({ params }: { params: Promise
         apiBasePath="/api/admin/b2b-itineraries"
         agent={record.lead.b2bAgent}
         whiteLabel={whiteLabel}
+        dayPlans={{ canPick: canSave && dayPlans.canPick, canSave: dayPlans.canSave }}
       />
     </div>
   );

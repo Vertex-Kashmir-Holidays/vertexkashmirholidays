@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, IdCard, Lock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { getSiteSettings } from "@/lib/siteSettings";
@@ -15,12 +15,14 @@ import { isAdminRole } from "@/lib/itinerary/access";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
 import { hotelDataSchema } from "@/lib/hotelSuppliers/schema";
 import { guestsLabel } from "@/lib/bookings/hotelPayments";
+import { isWelcomeCardAvailable, welcomeCardAvailableFrom } from "@/lib/welcomeCard/pdf";
 import {
   BookingServicesClient,
   DriverSection,
 } from "@/components/admin/bookings/BookingServicesClient";
 import { BookingItineraryCard } from "@/components/admin/bookings/BookingItineraryCard";
 import { BookingAdminPanel } from "@/components/admin/bookings/BookingAdminPanel";
+import { WelcomeCardButton } from "@/components/admin/bookings/WelcomeCardButton";
 
 export const metadata: Metadata = { title: "Booking Services — Admin" };
 export const dynamic = "force-dynamic";
@@ -205,11 +207,30 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             Ref {booking.id.slice(-8).toUpperCase()}
           </p>
         </div>
-        {booking.servicesLocked && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-            <Lock className="w-4 h-4" /> Services locked
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Driver's arrival name board — opens the day before travel. */}
+          {!["CANCELLED", "FAILED", "REFUNDED"].includes(booking.status) &&
+            (isWelcomeCardAvailable(booking.travelDate) ? (
+              <WelcomeCardButton bookingId={booking.id} guestName={booking.guestName} />
+            ) : (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+                title="The guest welcome card for the driver can be downloaded from the day before travel."
+              >
+                <IdCard className="w-4 h-4" /> Welcome card from{" "}
+                {new Date(`${welcomeCardAvailableFrom(booking.travelDate)}T00:00:00Z`).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  timeZone: "UTC",
+                })}
+              </span>
+            ))}
+          {booking.servicesLocked && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+              <Lock className="w-4 h-4" /> Services locked
+            </span>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
         {/* Left — 75%: service editor, details, payments, lock CTA */}

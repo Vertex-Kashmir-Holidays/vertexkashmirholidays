@@ -9,12 +9,15 @@
 // exactly the ambiguity this component exists to remove. Every field below
 // corresponds 1:1 to something B2bItineraryPdf.tsx actually renders
 // (including Included Activities, as compact text cards without photos).
-import { HotelNameInput } from "@/components/admin/HotelNameInput";
+import { HotelChoicesInput } from "@/components/admin/proposal/HotelChoicesInput";
 import { useCallback, useState } from "react";
 import { resyncTripDates } from "@/lib/itinerary/travelDates";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save, Download, Plus, Trash2 } from "lucide-react";
+import { Loader2, Save, Download, Plus, Trash2, Sparkles, BookmarkPlus } from "lucide-react";
+import { DayPlanPicker } from "../day-plans/DayPlanPicker";
+import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
+import { guessRoute } from "@/lib/dayPlans/schema";
 import { downloadB2bItineraryPdf } from "@/lib/itinerary/export-pdf";
 import {
   genId,
@@ -70,6 +73,8 @@ interface Props {
   initialPublishedAt: string | null;
   /** Last server save (ISO). */
   initialUpdatedAt: string;
+  /** Destinations Library: pick a ready-written day / save a day to it. */
+  dayPlans?: { canPick: boolean; canSave: boolean };
 }
 
 export function B2bItineraryEditor({
@@ -83,8 +88,11 @@ export function B2bItineraryEditor({
   whiteLabel,
   initialPublishedAt,
   initialUpdatedAt,
+  dayPlans = { canPick: false, canSave: false },
 }: Props) {
   const router = useRouter();
+  const [pickForDay, setPickForDay] = useState<string | null>(null);
+  const [saveDay, setSaveDay] = useState<ItineraryDay | null>(null);
   const [data, setRawData] = useState<ItineraryData>(initialData);
   // Every edit goes through resyncTripDates: day dates and hotel check-in/out follow the
   // travel start date, nights and hotel order (manual tweaks stay otherwise).
@@ -607,9 +615,51 @@ export function B2bItineraryEditor({
                   />
                 </div>
               </div>
+              {/* Destinations Library — same as the proposal / customer itinerary. */}
+              {(dayPlans.canPick || dayPlans.canSave) && (
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                  {dayPlans.canPick ? (
+                    <button
+                      type="button"
+                      onClick={() => setPickForDay(day.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1 text-[12px] font-bold text-primary-foreground hover:brightness-110"
+                    >
+                      <Sparkles className="h-3 w-3" /> Pick from library
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                  {dayPlans.canSave && (
+                    <button
+                      type="button"
+                      onClick={() => setSaveDay(day)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 px-2.5 py-1 text-[12px] font-bold text-primary hover:bg-primary/10"
+                    >
+                      <BookmarkPlus className="h-3 w-3" /> Save to library
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </ReorderableList>
+        {pickForDay && (
+          <DayPlanPicker
+            open
+            onOpenChange={(o) => !o && setPickForDay(null)}
+            dayNumber={data.days.findIndex((d) => d.id === pickForDay) + 1}
+            onPick={(plan) => updateDay(pickForDay, { title: plan.title, body: plan.body })}
+          />
+        )}
+        {saveDay && (
+          <DayPlanFormDialog
+            open
+            onOpenChange={(o) => !o && setSaveDay(null)}
+            title="Save this day to the library"
+            initial={{ ...EMPTY_DAY_PLAN, ...guessRoute(saveDay.title), title: saveDay.title, body: saveDay.body }}
+            onSaved={() => {}}
+          />
+        )}
       </div>
 
       {/* Stay Plan — maps to the Stay Plan table (no images) */}
@@ -632,7 +682,7 @@ export function B2bItineraryEditor({
         >
           {(h) => (
             <div
-              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.8fr_1.2fr_0.8fr_auto]"
+              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.2fr_0.8fr_auto]"
             >
               <div>
                 <label className={fieldLabel}>Destination</label>
@@ -648,16 +698,6 @@ export function B2bItineraryEditor({
                   className={inputCls + " mt-1"}
                   value={h.nights}
                   onChange={(e) => updateHotel(h.id, "nights", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={fieldLabel}>Hotel Name</label>
-                <HotelNameInput
-                  className={inputCls + " mt-1"}
-                  value={h.hotelDetails}
-                  onValueChange={(v) => updateHotel(h.id, "hotelDetails", v)}
-                  destination={h.destination}
-                  placeholder="Pick a hotel"
                 />
               </div>
               <div>
@@ -693,6 +733,18 @@ export function B2bItineraryEditor({
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
+              {/* Hotel choices, as in the proposal: Hotel 1 | Hotel 2 | Hotel 3 |
+                  Similar — the confirmed one is picked when converting. */}
+              <div className="col-span-full">
+                <label className={fieldLabel}>Hotel options</label>
+                <HotelChoicesInput
+                  inline
+                  className={inputCls}
+                  value={h.hotelDetails}
+                  onValueChange={(v) => updateHotel(h.id, "hotelDetails", v)}
+                  destination={h.destination}
+                />
+              </div>
               {/* Dates only (no time), both optional — a second row of the
                   same card. The PDF's Stay Plan shows Check-in / Check-out
                   columns once any hotel has one. */}
