@@ -11,8 +11,8 @@ import {
 const STATUSES: ProposalStatus[] = ["DRAFT", "SENT"];
 
 interface ListOptions {
-  /** Set for non-admins — they only ever see their own proposals. */
-  ownerId?: string;
+  /** Visibility scope — see proposalWhereForUser (admins: all; others: own + assigned). */
+  scope: Prisma.ProposalItineraryWhereInput;
   search?: string;
   /** "ALL" (or anything unrecognised) means no status filter. */
   status?: string;
@@ -21,15 +21,14 @@ interface ListOptions {
 }
 
 export async function listProposalSummaries({
-  ownerId,
+  scope,
   search,
   status,
   page,
   pageSize,
 }: ListOptions): Promise<{ items: ProposalSummary[]; total: number }> {
   await purgeStaleProposalCopies();
-  const where: Prisma.ProposalItineraryWhereInput = {};
-  if (ownerId) where.ownerId = ownerId;
+  const where: Prisma.ProposalItineraryWhereInput = { AND: [scope] };
   if (status && (STATUSES as string[]).includes(status)) where.status = status as ProposalStatus;
   // Title, or the customer's name/phone stored in the proposal content —
   // staff following up often only have the number to hand.
@@ -55,6 +54,8 @@ export async function listProposalSummaries({
         createdAt: true,
         updatedAt: true,
         owner: { select: { name: true } },
+        assignedToId: true,
+        assignedTo: { select: { name: true } },
         // Only a few short strings are read from it, but Prisma can't select
         // JSON sub-paths — acceptable at this list's page size.
         data: true,
@@ -71,6 +72,8 @@ export async function listProposalSummaries({
       status: i.status,
       ownerId: i.ownerId,
       ownerName: i.owner?.name ?? null,
+      assignedToId: i.assignedToId,
+      assignedToName: i.assignedTo?.name ?? null,
       ...customerFrom(i.data),
       createdAt: i.createdAt,
       updatedAt: i.updatedAt,

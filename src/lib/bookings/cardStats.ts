@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { computeGstDeduction, computeBookingProfit } from "@/lib/bookings/commission";
+import { refreshOpenCommissions } from "@/lib/bookings/commissionSync";
 import type { Role } from "@/lib/rbac";
 
 export interface BookingCardStats {
@@ -23,10 +24,10 @@ export interface BookingCardStats {
   bookingsCount: { all: number; month: number };
   bookingsTotal: { all: number; month: number };
   cancelledBookings: { all: number; month: number };
-  // Admin only — profit is not exposed to sales users at all (not just hidden in the UI).
-  bookingsProfit?: { all: number; month: number };
+  // Profit across the bookings the user can see (admin: all, sales: their own).
+  bookingsProfit: { all: number; month: number };
   // Sales only.
-  myCommission?: { all: number; month: number }; // status EARNED — booking paid in full, not yet settled to the employee
+  myCommission?: { all: number; month: number }; // status EARNED — tour completed + paid in full, not yet settled to the employee
   paidCommission?: { all: number; month: number }; // status PAID — actually settled ("Earned Commission" card)
 }
 
@@ -94,12 +95,12 @@ export async function getBookingCardStats(role: Role, userId: string): Promise<B
     bookingsCount: { all: all.count, month: month.count },
     bookingsTotal: { all: all.total, month: month.total },
     cancelledBookings: { all: cancelledAll, month: cancelledMonth },
+    bookingsProfit: { all: all.profit, month: month.profit },
   };
 
-  if (isAdmin) {
-    // Profit is admin-only — not attached to the response at all for sales.
-    stats.bookingsProfit = { all: all.profit, month: month.profit };
-  } else {
+  if (!isAdmin) {
+    // Tours completed since the last booking edit move to EARNED first.
+    await refreshOpenCommissions(prisma, userId);
     const [byStatus, earnedMonth, paidMonth] = await Promise.all([
       prisma.bookingCommission.groupBy({
         by: ["status"],

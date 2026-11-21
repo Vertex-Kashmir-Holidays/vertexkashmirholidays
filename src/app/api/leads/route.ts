@@ -18,36 +18,49 @@ import {
   TRANSPORT_MODE_LABELS,
 } from "@/lib/leads/schema";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+import {
+  VISITOR_BLOCKING_STATUSES,
+  findOpenDuplicateLead,
+  lockLeadPhone,
+} from "@/lib/leads/duplicates";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import { checkBotSignals } from "@/lib/security/formGuard";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isSameOrigin } from "@/lib/security/origin";
 import { maskPhone, maskEmail } from "@/lib/security/mask";
 import { deriveChannel, buildAttributionCreateInput } from "@/lib/attribution.server";
-import { publishedPackageOptions } from "@/lib/tours/content";
+import { packagePartySize, publishedPackageOptions } from "@/lib/tours/content";
 import { isOfferCurrent } from "@/lib/offers/content";
-import { LeadStatus } from "@prisma/client";
 import { env } from "@/lib/env";
+import { notifyNewLead } from "@/lib/notifications";
+import { findLeadsNewFirst } from "@/lib/leads/newFirst";
 import type { Prisma } from "@prisma/client";
 import { deriveBandForPrice, resolveQualification } from "@/lib/leads/budgetBands.server";
 import { adventureTierChoices, parseAdventureTiers } from "@/lib/adventureTiers";
 
 export const dynamic = "force-dynamic";
 
-// Lead statuses that represent an open, in-progress conversation. A recent
-// active duplicate (same phone/email) is blocked; HOLD/REJECTED/CONVERTED are
-// treated as closed and always allow a fresh enquiry. (We keep the existing
-// 8-value enum and map onto it rather than renaming — see CRM module.)
-const ACTIVE_LEAD_STATUSES: LeadStatus[] = [
-  LeadStatus.NEW,
-  LeadStatus.CONNECTED,
-  LeadStatus.NOT_CONNECTED,
-  LeadStatus.QUALIFIED,
-  LeadStatus.NEGOTIATION,
-];
-
-// A matching ACTIVE lead newer than this is treated as a live duplicate.
-const DUPLICATE_WINDOW_DAYS = 15;
+// Repeat enquiries: blocked only while the customer's lead is still at an
+// early stage (VISITOR_BLOCKING_STATUSES, src/lib/leads/duplicates.ts) — no
+// time window. Any other status lets a fresh enquiry through.
+async function queryExistsResponse() {
+  const settings = await getSiteSettings();
+  const whatsapp = buildWhatsAppHref(
+    settings?.whatsapp ?? settings?.sitePhone,
+    "Hi! I have already sent an enquiry and wanted to check its status.",
+  );
+  const phone = (settings?.sitePhone ?? settings?.whatsapp ?? "").replace(/[^\d+]/g, "");
+  return NextResponse.json(
+    {
+      error:
+        "We already have your query and our team is working on it. Call or WhatsApp us to check its status.",
+      blocked: true,
+      whatsapp,
+      call: phone ? `tel:${phone}` : null,
+    },
+    { status: 409 },
+  );
+}
 
 // Strips CR/LF (and surrounding whitespace) from any value placed into an email
 // header, defeating header-injection attempts.
@@ -114,12 +127,9 @@ export async function GET(req: NextRequest) {
   }
 
   const [leads, total] = await Promise.all([
-    prisma.lead.findMany({
-      where,
-      // Matches the admin Leads list's display order (most recently touched
-      // lead first) — not createdAt, which would reorder rows the moment a
-      // filter/search request replaces the initial server-rendered page.
-      orderBy: { updatedAt: "desc" },
+    // Same order as the admin Leads page's first render: NEW leads on top,
+    // then the rest, each most recently updated first.
+    findLeadsNewFirst(where, {
       take,
       skip,
       select: {
@@ -361,7 +371,7 @@ export async function POST(req: NextRequest) {
   const tour = tourWhere
     ? await prisma.tour.findFirst({
         where: { ...tourWhere, published: true },
-        select: { priceFrom: true, packageOptions: true, hidePrice: true },
+        select: { priceFrom: true, packageOptions: true, hidePrice: true, minPersons: true },
       })
     : null;
   // A price-on-request tour (Tour.hidePrice) shows no price, so its band is
@@ -381,7 +391,9 @@ export async function POST(req: NextRequest) {
     const option = context?.packageName
       ? publishedPackageOptions(tour!.packageOptions).find((o) => o.name === context.packageName)
       : undefined;
-    derivedBand = await deriveBandForPrice(option ? option.priceForTwo / 2 : tour!.priceFrom);
+    derivedBand = await deriveBandForPrice(
+      option ? option.priceForTwo / packagePartySize(tour!.minPersons) : tour!.priceFrom,
+    );
   }
   const qualification = {
     budgetBandKey: derivedBand?.budgetBandKey ?? answered.budgetBandKey,
@@ -430,38 +442,17 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Anti-junk / duplicate prevention ───────────────────────────────────────
-  // Look up the most recent lead matching the normalized phone OR email. If it
-  // is still ACTIVE and was created within the dedupe window, block the new
-  // submission with a friendly message. Closed leads (HOLD/REJECTED/CONVERTED)
-  // or stale active ones (older than the window) fall through and are allowed.
+  // Early check (skips the work below); re-checked under a per-phone lock at
+  // create time so two submissions at once can't both get through.
   const normalizedEmail = email || undefined;
-  const recent = await prisma.lead.findFirst({
-    where: {
-      OR: [{ phone }, ...(normalizedEmail ? [{ email: normalizedEmail }] : [])],
-    },
-    orderBy: { createdAt: "desc" },
-    select: { status: true, createdAt: true },
-  });
-
-  if (recent && ACTIVE_LEAD_STATUSES.includes(recent.status)) {
-    const ageMs = Date.now() - recent.createdAt.getTime();
-    const withinWindow = ageMs < DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
-    if (withinWindow) {
-      const settings = await getSiteSettings();
-      const whatsapp = buildWhatsAppHref(
-        settings?.whatsapp,
-        "Hi! I recently submitted an enquiry and wanted to follow up.",
-      );
-      return NextResponse.json(
-        {
-          error:
-            "Your query is already in progress — our team will reach out within 3 days. For anything urgent, message us on WhatsApp.",
-          blocked: true,
-          whatsapp,
-        },
-        { status: 409 },
-      );
-    }
+  if (
+    await findOpenDuplicateLead(prisma, {
+      phone,
+      email: normalizedEmail,
+      statuses: VISITOR_BLOCKING_STATUSES,
+    })
+  ) {
+    return queryExistsResponse();
   }
 
   // The tour the enquiry was made from (tour page sidebar, package cards,
@@ -533,57 +524,75 @@ export async function POST(req: NextRequest) {
               .find((c) => c.name === context.packageName)?.name
           : undefined;
 
-  const lead = await prisma.lead.create({
-    data: {
-      // name is sanitized (control chars stripped, trimmed) and phone is E.164,
-      // both enforced by the shared schema; email is lowercased + trimmed.
-      name,
+  const lead = await prisma.$transaction(async (tx) => {
+    await lockLeadPhone(tx, phone);
+    const dup = await findOpenDuplicateLead(tx, {
       phone,
-      email: email || undefined,
-      source: deriveChannel(attribution),
-      sourcePage,
-      adults: effectiveTravellers ?? 1,
-      startDate: effectiveDate ? new Date(effectiveDate) : undefined,
-      endDate: effectiveReturnDate ? new Date(effectiveReturnDate) : undefined,
-      // An offer lead is also tagged with the offer's hidden CRM tour.
-      tourId: leadTour?.id ?? leadOffer?.crmTourId ?? undefined,
-      occasionOfferId: leadOffer?.id,
-      adventureId: leadAdventure?.id,
-      packageName,
-      notes: composeNotes(
-        message,
-        // offerName from the DB, never the client-sent display copy.
-        context
-          ? {
-              ...context,
-              packageName,
-              offerName: leadOffer?.name,
-              activityName: leadActivity?.name,
-              adventureName: leadAdventure?.name,
-            }
+      email: normalizedEmail,
+      statuses: VISITOR_BLOCKING_STATUSES,
+    });
+    if (dup) return null;
+    return tx.lead.create({
+      data: {
+        // name is sanitized (control chars stripped, trimmed) and phone is E.164,
+        // both enforced by the shared schema; email is lowercased + trimmed.
+        name,
+        phone,
+        email: email || undefined,
+        source: deriveChannel(attribution),
+        sourcePage,
+        adults: effectiveTravellers ?? 1,
+        startDate: effectiveDate ? new Date(effectiveDate) : undefined,
+        endDate: effectiveReturnDate ? new Date(effectiveReturnDate) : undefined,
+        // An offer lead is also tagged with the offer's hidden CRM tour.
+        tourId: leadTour?.id ?? leadOffer?.crmTourId ?? undefined,
+        occasionOfferId: leadOffer?.id,
+        adventureId: leadAdventure?.id,
+        packageName,
+        notes: composeNotes(
+          message,
+          // offerName from the DB, never the client-sent display copy.
+          context
+            ? {
+                ...context,
+                packageName,
+                offerName: leadOffer?.name,
+                activityName: leadActivity?.name,
+                adventureName: leadAdventure?.name,
+              }
+            : undefined,
+        ),
+        // Trip Planner structured intent — WHAT the customer wants, separate
+        // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
+        // when nothing was selected, so this stays indistinguishable from an
+        // old pre-Trip-Planner lead at read time.
+        budgetBandKey: qualification.budgetBandKey,
+        budgetBandLabel: qualification.budgetBandLabel,
+        budgetBandDerived: qualification.budgetBandDerived,
+        travelMonth: qualification.travelMonth,
+        requestedComponents: context?.requestedComponents?.length
+          ? JSON.stringify(context.requestedComponents)
           : undefined,
-      ),
-      // Trip Planner structured intent — WHAT the customer wants, separate
-      // from `source` (WHERE) above. JSON string arrays, undefined (not "[]")
-      // when nothing was selected, so this stays indistinguishable from an
-      // old pre-Trip-Planner lead at read time.
-      budgetBandKey: qualification.budgetBandKey,
-      budgetBandLabel: qualification.budgetBandLabel,
-      budgetBandDerived: qualification.budgetBandDerived,
-      travelMonth: qualification.travelMonth,
-      requestedComponents: context?.requestedComponents?.length
-        ? JSON.stringify(context.requestedComponents)
-        : undefined,
-      transportModes: context?.transportModes?.length
-        ? JSON.stringify(context.transportModes)
-        : undefined,
-      fromCity: context?.fromCity || undefined,
-      toCity: context?.toCity || undefined,
-      // HOW they contacted us — always FORM for a public submission; never
-      // client-supplied (leadServerSchema has no contactChannel field).
-      contactChannel: "FORM",
-      ...buildAttributionCreateInput(attribution, req),
-    },
+        transportModes: context?.transportModes?.length
+          ? JSON.stringify(context.transportModes)
+          : undefined,
+        fromCity: context?.fromCity || undefined,
+        toCity: context?.toCity || undefined,
+        // HOW they contacted us — always FORM for a public submission; never
+        // client-supplied (leadServerSchema has no contactChannel field).
+        contactChannel: "FORM",
+        ...buildAttributionCreateInput(attribution, req),
+      },
+    });
+  });
+  if (!lead) return queryExistsResponse();
+
+  await notifyNewLead({
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
+    via: "Website form",
+    tourTitle: leadOffer?.name ?? leadAdventure?.name ?? context?.tourName ?? null,
   });
 
   // Dedicated lead inbox; falls back to the admin/from address if unset.

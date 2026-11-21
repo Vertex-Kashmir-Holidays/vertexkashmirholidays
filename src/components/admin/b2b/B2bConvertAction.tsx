@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, ReceiptText } from "lucide-react";
+import { Check, Loader2, ReceiptText } from "lucide-react";
 import { PAYMENT_METHODS } from "@/lib/payments/gst";
 
 interface Props {
@@ -13,6 +13,11 @@ interface Props {
   /** The itinerary has gone to the agent (status SENT or CONFIRMED) — the
    *  button stays disabled until then; the convert API enforces the same. */
   itinerarySent: boolean;
+  /** The request's travel dates ("YYYY-MM-DD"), prefilled; a start date is required. */
+  initialStartDate: string;
+  initialEndDate: string;
+  /** Itinerary stays offering several hotels — the confirmed one is picked here. */
+  hotelStays?: { id: string; destination: string; choices: string[] }[];
 }
 
 const inputCls =
@@ -27,15 +32,26 @@ const inputCls =
  * the same resolveGst() the normal flow uses — this only makes the *input*
  * mandatory, not the business rule).
  */
-export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }: Props) {
+export function B2bConvertAction({
+  leadId,
+  guestName,
+  gstRates,
+  itinerarySent,
+  initialStartDate,
+  initialEndDate,
+  hotelStays = [],
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [bookingAmount, setBookingAmount] = useState("");
   const [tokenAmount, setTokenAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("Online");
   const [gstPercent, setGstPercent] = useState<string>(String(gstRates[0] ?? ""));
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [picks, setPicks] = useState<Record<string, string>>({});
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,6 +66,10 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
       );
     }
     if (!gstPercent || Number.isNaN(g)) return setError("Select a GST rate.");
+    if (!startDate) return setError("Enter the travel start date.");
+    if (endDate && endDate < startDate) return setError("Travel end date can't be before the start date.");
+    const unpicked = hotelStays.find((st) => !picks[st.id]);
+    if (unpicked) return setError(`Pick the confirmed hotel for ${unpicked.destination || "each stay"}.`);
     setError(null);
     setSubmitting(true);
 
@@ -58,7 +78,15 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
         const res = await fetch(`/api/admin/b2b-requests/${leadId}/convert`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingAmount: b, tokenAmount: t, paymentMethod, gstPercent: g }),
+          body: JSON.stringify({
+            bookingAmount: b,
+            tokenAmount: t,
+            paymentMethod,
+            gstPercent: g,
+            startDate,
+            endDate: endDate || null,
+            hotelPicks: picks,
+          }),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok || !json.bookingId) {
@@ -78,7 +106,7 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
       <button
         onClick={() => setOpen(true)}
         disabled={!itinerarySent}
-        title={itinerarySent ? undefined : "Send the itinerary to the agent first"}
+        title={itinerarySent ? undefined : "Publish the itinerary to the agent first"}
         className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-600"
       >
         <ReceiptText className="h-4 w-4" />
@@ -99,11 +127,36 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
               <h3 className="font-display font-bold text-foreground">Convert B2B Request</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Convert <span className="font-semibold text-foreground">{guestName}</span> into a
-                booking under the agent&apos;s account. This locks the request and its itinerary.
+                booking under the agent&apos;s account. The itinerary stays editable until the booking&apos;s services are locked.
               </p>
             </div>
 
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Travel Start *
+                  </span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className={`${inputCls} mt-1`}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
+                    Travel End
+                  </span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className={`${inputCls} mt-1`}
+                  />
+                </label>
+              </div>
               <label className="block">
                 <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
                   Total Amount (₹) *
@@ -172,6 +225,44 @@ export function B2bConvertAction({ leadId, guestName, gstRates, itinerarySent }:
                 automatically based on the payment mode.
               </p>
             </div>
+
+            {hotelStays.length > 0 && (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">Final hotels</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Pick the hotel the agent confirmed for each stay — only it goes into the booking.
+                  </p>
+                </div>
+                {hotelStays.map((st) => (
+                  <div key={st.id}>
+                    <p className="mb-1 text-[12px] font-semibold text-foreground">{st.destination}</p>
+                    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Hotel for ${st.destination}`}>
+                      {st.choices.map((h) => {
+                        const on = picks[st.id] === h;
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setPicks((p) => ({ ...p, [st.id]: h }))}
+                            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold transition ${
+                              on
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {on && <Check className="h-3 w-3" />}
+                            {h}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
 

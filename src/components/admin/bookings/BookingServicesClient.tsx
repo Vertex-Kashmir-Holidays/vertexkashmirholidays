@@ -34,6 +34,9 @@ import {
   type RequiredServiceField,
 } from "@/lib/bookings/service-schema";
 import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
+import { hotelPaymentSummary } from "@/lib/bookings/hotelPayments";
+import { HotelPaymentDialog, type HotelPaymentResult } from "@/components/admin/bookings/HotelPaymentDialog";
+import { HotelCancelDialog } from "@/components/admin/bookings/HotelCancelDialog";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
@@ -45,10 +48,57 @@ interface Service {
   location: string | null;
   nights: number | null;
   roomType: string | null;
+  rooms: number | null;
+  /** "YYYY-MM-DD" (hotel only) */
+  checkIn: string | null;
+  checkOut: string | null;
+  /** Hotel only — link to the hotel list + confirmation with the hotel. */
+  hotelSupplierId: string | null;
+  hotelConfirmation: HotelConfirmationValue | null;
+  /** Hotel only — confirmed without a token payment. */
+  hotelTokenWaived: boolean;
+  /** Hotel only — payments made to the hotel for this stay. */
+  hotelPayments: { amount: number; type: string }[];
   pickup: string | null;
   dropoff: string | null;
+  vehicles: number | null;
   timing: string | null;
   sortOrder: number;
+}
+
+type HotelConfirmationValue = "PENDING" | "REQUESTED" | "CONFIRMED" | "CANCELLED";
+
+const CONFIRMATION_OPTIONS: { value: HotelConfirmationValue; label: string }[] = [
+  { value: "PENDING", label: "Pending" },
+  { value: "REQUESTED", label: "Requested" },
+  { value: "CONFIRMED", label: "Confirmed" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
+
+const CONFIRMATION_PILL: Record<HotelConfirmationValue, string> = {
+  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  REQUESTED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  CONFIRMED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  CANCELLED: "bg-red-500/15 text-red-700 dark:text-red-300",
+};
+
+// Hotel card: two rows of four equal columns (Hotel Name · Location · Room
+// Type · Rooms / Check-in · Check-out · Nights · Confirmation), with Amount in
+// its own column on the right, divided off and spanning both rows.
+
+/** A hotel from the hotel list, offered as a pick in the Hotel Name field. */
+export interface HotelOption {
+  id: string;
+  name: string;
+  destination: string;
+  /** Hotel's email from the hotel list — prefills the confirmation email. */
+  email: string | null;
+}
+
+/** Exact (case/space-insensitive) match of a typed hotel name in the hotel list. */
+function matchHotel(options: HotelOption[], name: string): HotelOption | undefined {
+  const key = name.trim().toLowerCase();
+  return key ? options.find((o) => o.name.trim().toLowerCase() === key) : undefined;
 }
 
 interface Payment {
@@ -76,6 +126,8 @@ interface BookingData {
   travelEndDate: string | null;
   travellers: number;
   guestName: string;
+  /** "6 adults, 2 kids" — prefills the hotel confirmation email. */
+  guestsLabel: string;
   guestEmail: string | null;
   guestPhone: string;
   address: string | null;
@@ -92,15 +144,27 @@ interface BookingData {
   } | null;
   services: Service[];
   payments: Payment[];
-  driver: DriverDetails | null;
+  drivers: DriverDetails[];
 }
 
 type FieldKey =
-  "name" | "location" | "nights" | "roomType" | "pickup" | "dropoff" | "timing" | "amount";
+  | "name"
+  | "location"
+  | "nights"
+  | "roomType"
+  | "rooms"
+  | "checkIn"
+  | "checkOut"
+  | "hotelConfirmation"
+  | "pickup"
+  | "dropoff"
+  | "vehicles"
+  | "timing"
+  | "amount";
 interface FieldDef {
   key: FieldKey;
   label: string;
-  type: "text" | "number";
+  type: "text" | "number" | "date" | "confirmation";
 }
 
 const SECTIONS: {
@@ -119,7 +183,11 @@ const SECTIONS: {
       { key: "name", label: "Hotel Name", type: "text" },
       { key: "location", label: "Location", type: "text" },
       { key: "roomType", label: "Room Type", type: "text" },
+      { key: "rooms", label: "Rooms", type: "number" },
+      { key: "checkIn", label: "Check-in", type: "date" },
+      { key: "checkOut", label: "Check-out", type: "date" },
       { key: "nights", label: "Nights", type: "number" },
+      { key: "hotelConfirmation", label: "Hotel Confirmation", type: "confirmation" },
       { key: "amount", label: "Amount", type: "number" },
     ],
   },
@@ -130,6 +198,7 @@ const SECTIONS: {
     addLabel: "Add Cab",
     fields: [
       { key: "name", label: "Cab Name", type: "text" },
+      { key: "vehicles", label: "Vehicles", type: "number" },
       { key: "pickup", label: "Pick", type: "text" },
       { key: "dropoff", label: "Drop", type: "text" },
       { key: "amount", label: "Amount", type: "number" },
@@ -189,6 +258,8 @@ function canEditDetails(travelDate: string): boolean {
   return (travel.getTime() - today.getTime()) / (1000 * 60 * 60 * 24) >= 2;
 }
 
+const HOTEL_DATALIST_ID = "booking-hotel-options";
+
 const inputCls =
   "w-full px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary disabled:opacity-60";
 
@@ -201,12 +272,18 @@ export function BookingServicesClient({
   canViewProfit,
   canUnlock,
   isRelock,
+  hotelOptions = [],
+  currentUserName = "",
 }: {
   booking: BookingData;
+  /** Prefills "By" when recording a payment to a hotel. */
+  currentUserName?: string;
   gstRates: number[];
+  /** Active hotels from the hotel list — picks for the Hotel Name field. */
+  hotelOptions?: HotelOption[];
   /** `bookings:edit` permission — distinct from the time-based edit window below. */
   canEdit: boolean;
-  /** Admin/Superadmin only — company profit margin is not shown to Sales. */
+  /** Admin/Superadmin, and Sales on their own bookings. */
   canViewProfit: boolean;
   /** Admin/Superadmin only — may unlock locked services for corrections. */
   canUnlock: boolean;
@@ -304,8 +381,16 @@ export function BookingServicesClient({
         location: null,
         nights: null,
         roomType: null,
+        rooms: null,
+        checkIn: null,
+        checkOut: null,
+        hotelSupplierId: null,
+        hotelConfirmation: null,
+        hotelTokenWaived: false,
+        hotelPayments: [],
         pickup: null,
         dropoff: null,
+        vehicles: null,
         timing: null,
         sortOrder: services.length + d.length,
       },
@@ -483,6 +568,13 @@ export function BookingServicesClient({
 
   return (
     <div className="space-y-5">
+      <datalist id={HOTEL_DATALIST_ID}>
+        {hotelOptions.map((h) => (
+          <option key={h.id} value={h.name}>
+            {h.destination}
+          </option>
+        ))}
+      </datalist>
       {/* Summary */}
       <div className="bg-card rounded-2xl border border-border shadow-sm p-4 sm:p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -599,6 +691,12 @@ export function BookingServicesClient({
                   capError={capError}
                   showRequired={lockAttempted}
                   onAmountChange={setLiveAmount}
+                  hotelOptions={hotelOptions}
+                  hotelPay={{
+                    guestName: booking.guestName,
+                    guests: booking.guestsLabel,
+                    defaultPaidBy: currentUserName,
+                  }}
                   onRemoved={() => setServices((prev) => prev.filter((x) => x.id !== svc.id))}
                 />
               ))}
@@ -614,6 +712,12 @@ export function BookingServicesClient({
                   capError={capError}
                   showRequired={lockAttempted}
                   onAmountChange={setLiveAmount}
+                  hotelOptions={hotelOptions}
+                  hotelPay={{
+                    guestName: booking.guestName,
+                    guests: booking.guestsLabel,
+                    defaultPaidBy: currentUserName,
+                  }}
                   onRemoved={() => setDrafts((prev) => prev.filter((x) => x.id !== svc.id))}
                   onSaved={() => markDraftSaved(svc.id)}
                 />
@@ -911,6 +1015,8 @@ function EditDetailsModal({
 
     if (tripFieldsEditable) {
       if (!travelDate) return toast.error("Choose a travel date.");
+      if (travelEndDate && travelEndDate < travelDate)
+        return toast.error("The end date can't be before the start date.");
       const t = parseInt(travellers, 10);
       if (!t || t < 1) return toast.error("Enter the number of travellers.");
       const amt = parseFloat(amount);
@@ -957,7 +1063,13 @@ function EditDetailsModal({
         className="relative z-10 w-full max-w-lg rounded-2xl bg-card p-5 shadow-xl max-h-[90vh] overflow-y-auto"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h4 className="font-display text-base font-bold text-foreground">Edit booking details</h4>
+          <div>
+            <h4 className="font-display text-base font-bold text-foreground">Edit booking details</h4>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Name, phone, dates and travellers also update the lead and itinerary; hotel
+              check-in/out move with the start date.
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground"
@@ -1047,6 +1159,7 @@ function EditDetailsModal({
               </label>
               <input
                 type="date"
+                min={travelDate || undefined}
                 value={travelEndDate}
                 onChange={(e) => setTravelEndDate(e.target.value)}
                 disabled={!tripFieldsEditable}
@@ -1137,29 +1250,30 @@ function EditDetailsModal({
 }
 
 // ── Driver & vehicle section ──────────────────────────────────────────────────
-// Appears after services are locked. Staff can add the assigned driver/vehicle
-// and optionally email the customer; details remain editable until one day
-// before travel, after which the card is read-only. Rendered from the parent
-// page (right column, below Payment & Account) rather than here — exported
-// for that.
+// Appears after services are locked. Staff add the assigned driver + vehicle —
+// one entry per vehicle (a big group can travel in two) — and optionally email
+// the customer; details remain editable through the travel date, after which
+// the card is read-only. Rendered from the parent page (right column, below
+// Payment & Account) rather than here — exported for that.
 export function DriverSection({
   bookingId,
   travelDate,
-  initialDriver,
+  initialDrivers,
   canEdit,
   autoOpen = false,
 }: {
   bookingId: string;
   travelDate: string;
-  initialDriver: DriverDetails | null;
+  initialDrivers: DriverDetails[];
   canEdit: boolean;
   /** Open the Add Driver form on load (DriverDueGate's CTA) — only when none is saved yet. */
   autoOpen?: boolean;
 }) {
   const router = useRouter();
-  const [driver, setDriver] = useState<DriverDetails | null>(initialDriver);
+  const [drivers, setDrivers] = useState<DriverDetails[]>(initialDrivers);
+  const hasDrivers = drivers.length > 0;
   const [open, setOpen] = useState(
-    autoOpen && !initialDriver && canEdit && canEditDriver(travelDate),
+    autoOpen && initialDrivers.length === 0 && canEdit && canEditDriver(travelDate),
   );
   const [saving, startSave] = useTransition();
   const editable = canEditDriver(travelDate) && canEdit;
@@ -1170,20 +1284,26 @@ export function DriverSection({
     vehicleNumber: "",
     vehicleName: "",
   };
-  const [form, setForm] = useState<DriverDetails>(initialDriver ?? empty);
+  const [form, setForm] = useState<DriverDetails[]>(hasDrivers ? initialDrivers : [empty]);
   const [sendEmail, setSendEmail] = useState(true);
 
   function openModal() {
-    setForm(driver ?? empty);
+    setForm(hasDrivers ? drivers : [empty]);
     setSendEmail(true);
     setOpen(true);
   }
 
+  const setEntry = (i: number, patch: Partial<DriverDetails>) =>
+    setForm((f) => f.map((d, j) => (j === i ? { ...d, ...patch } : d)));
+
   function submit() {
-    if (form.driverName.trim().length < 2) return toast.error("Enter the driver's name.");
-    if (!isValidPhone(form.driverPhone.trim(), "IN")) return toast.error(PHONE_MESSAGE);
-    if (form.vehicleNumber.trim().length < 4) return toast.error("Enter the vehicle number.");
-    if (form.vehicleName.trim().length < 2) return toast.error("Enter the vehicle name.");
+    for (const [i, d] of form.entries()) {
+      const which = form.length > 1 ? ` for vehicle ${i + 1}` : "";
+      if (d.driverName.trim().length < 2) return toast.error(`Enter the driver's name${which}.`);
+      if (!isValidPhone(d.driverPhone.trim(), "IN")) return toast.error(PHONE_MESSAGE);
+      if (d.vehicleNumber.trim().length < 4) return toast.error(`Enter the vehicle number${which}.`);
+      if (d.vehicleName.trim().length < 2) return toast.error(`Enter the vehicle name${which}.`);
+    }
 
     startSave(async () => {
       try {
@@ -1191,10 +1311,12 @@ export function DriverSection({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            driverName: form.driverName.trim(),
-            driverPhone: form.driverPhone.trim(),
-            vehicleNumber: form.vehicleNumber.trim(),
-            vehicleName: form.vehicleName.trim(),
+            drivers: form.map((d) => ({
+              driverName: d.driverName.trim(),
+              driverPhone: d.driverPhone.trim(),
+              vehicleNumber: d.vehicleNumber.trim(),
+              vehicleName: d.vehicleName.trim(),
+            })),
             sendEmail,
           }),
         });
@@ -1203,12 +1325,7 @@ export function DriverSection({
           throw new Error(
             typeof data.error === "string" ? data.error : "Failed to save driver details.",
           );
-        setDriver({
-          driverName: data.driverName,
-          driverPhone: data.driverPhone,
-          vehicleNumber: data.vehicleNumber,
-          vehicleName: data.vehicleName,
-        });
+        setDrivers(data.drivers);
         setOpen(false);
         if (data.requestedEmail) {
           toast.success(
@@ -1228,14 +1345,16 @@ export function DriverSection({
 
   const fieldCls =
     "w-full px-2.5 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
+  const labelCls = "mb-1 block text-xs font-semibold text-muted-foreground";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 font-bold text-foreground text-sm">
-          <Car className="w-4 h-4 text-primary" /> Driver &amp; Vehicle
+          <Car className="w-4 h-4 text-primary" />{" "}
+          {drivers.length > 1 ? `Drivers & Vehicles (${drivers.length})` : "Driver & Vehicle"}
         </h3>
-        {driver
+        {hasDrivers
           ? editable && (
               <button
                 onClick={openModal}
@@ -1254,12 +1373,23 @@ export function DriverSection({
             )}
       </div>
 
-      {driver ? (
-        <div className="mt-4 grid grid-cols-1 gap-3">
-          <DriverFact icon={UserRound} label="Driver" value={driver.driverName} />
-          <DriverFact icon={Phone} label="Driver Phone" value={driver.driverPhone} />
-          <DriverFact icon={Car} label="Vehicle" value={driver.vehicleName} />
-          <DriverFact icon={Car} label="Vehicle Number" value={driver.vehicleNumber} />
+      {hasDrivers ? (
+        <div className="mt-4 space-y-4">
+          {drivers.map((d, i) => (
+            <div key={i}>
+              {drivers.length > 1 && (
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-primary">
+                  Vehicle {i + 1}
+                </p>
+              )}
+              <div className="grid grid-cols-1 gap-3">
+                <DriverFact icon={UserRound} label="Driver" value={d.driverName} />
+                <DriverFact icon={Phone} label="Driver Phone" value={d.driverPhone} />
+                <DriverFact icon={Car} label="Vehicle" value={d.vehicleName} />
+                <DriverFact icon={Car} label="Vehicle Number" value={d.vehicleNumber} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <p className="mt-3 text-xs text-muted-foreground">
@@ -1269,7 +1399,7 @@ export function DriverSection({
         </p>
       )}
 
-      {driver && !editable && (
+      {hasDrivers && !editable && (
         <p className="mt-3 text-[12px] text-muted-foreground">
           Editing is closed — driver details can only be changed on or before the travel date.
         </p>
@@ -1284,7 +1414,7 @@ export function DriverSection({
           <div className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h4 className="font-display text-base font-bold text-foreground">
-                {driver ? "Edit driver details" : "Add driver details"}
+                {hasDrivers ? "Edit driver details" : "Add driver details"}
               </h4>
               <button
                 onClick={() => setOpen(false)}
@@ -1295,50 +1425,81 @@ export function DriverSection({
               </button>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Driver name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.driverName}
-                  onChange={(e) => setForm({ ...form, driverName: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. Bashir Ahmad"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Driver phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.driverPhone}
-                  onChange={(e) => setForm({ ...form, driverPhone: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. +91 98765 43210"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Vehicle name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.vehicleName}
-                  onChange={(e) => setForm({ ...form, vehicleName: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. Toyota Innova Crysta"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-muted-foreground">
-                  Vehicle number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.vehicleNumber}
-                  onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value })}
-                  className={fieldCls}
-                  placeholder="e.g. JK01AB1234"
-                />
-              </div>
+              {form.map((d, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "space-y-3",
+                    form.length > 1 && "rounded-xl border border-border p-3",
+                  )}
+                >
+                  {form.length > 1 && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] font-bold uppercase tracking-wide text-primary">
+                        Vehicle {i + 1}
+                      </p>
+                      <button
+                        onClick={() => setForm((f) => f.filter((_, j) => j !== i))}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-red-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Remove
+                      </button>
+                    </div>
+                  )}
+                  <div>
+                    <label className={labelCls}>
+                      Driver name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.driverName}
+                      onChange={(e) => setEntry(i, { driverName: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. Bashir Ahmad"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Driver phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.driverPhone}
+                      onChange={(e) => setEntry(i, { driverPhone: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. +91 98765 43210"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Vehicle name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.vehicleName}
+                      onChange={(e) => setEntry(i, { vehicleName: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. Toyota Innova Crysta"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Vehicle number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={d.vehicleNumber}
+                      onChange={(e) => setEntry(i, { vehicleNumber: e.target.value })}
+                      className={fieldCls}
+                      placeholder="e.g. JK01AB1234"
+                    />
+                  </div>
+                </div>
+              ))}
+              {form.length < 10 && (
+                <button
+                  onClick={() => setForm((f) => [...f, empty])}
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2 text-sm font-semibold text-primary transition hover:bg-muted"
+                >
+                  <Plus className="h-4 w-4" /> Add another vehicle
+                </button>
+              )}
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
@@ -1355,7 +1516,7 @@ export function DriverSection({
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
                 >
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {driver ? "Save changes" : "Add driver"}
+                  {hasDrivers ? "Save changes" : "Add driver"}
                 </button>
                 <button
                   onClick={() => setOpen(false)}
@@ -1630,13 +1791,27 @@ function Row({
   );
 }
 
+/** Whole nights from check-in to check-out ("YYYY-MM-DD"), or null if not after check-in. */
+function nightsBetween(checkIn: string, checkOut: string): number | null {
+  const n = Math.round(
+    (Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86_400_000,
+  );
+  return Number.isFinite(n) && n >= 1 ? n : null;
+}
+
 interface RowForm {
   name: string;
   location: string;
   nights: string;
   roomType: string;
+  rooms: string;
+  checkIn: string;
+  checkOut: string;
+  hotelSupplierId: string;
+  hotelConfirmation: string;
   pickup: string;
   dropoff: string;
+  vehicles: string;
   timing: string;
   amount: string;
 }
@@ -1651,7 +1826,14 @@ function buildPayload(kind: Kind, sortOrder: number, form: RowForm) {
     location: form.location.trim() || null,
     nights: form.nights === "" ? null : parseInt(form.nights, 10),
     roomType: form.roomType.trim() || null,
+    rooms: form.rooms === "" ? null : parseInt(form.rooms, 10),
+    checkIn: form.checkIn || null,
+    checkOut: form.checkOut || null,
+    // Hotel confirmation is not part of the row save — it has its own
+    // routes (confirm dialog / hotel-status) that work after lock too.
+    ...(kind === "HOTEL" ? { hotelSupplierId: form.hotelSupplierId || null } : {}),
     pickup: form.pickup.trim() || null,
+    vehicles: form.vehicles === "" ? null : parseInt(form.vehicles, 10),
     dropoff: form.dropoff.trim() || null,
     timing: form.timing.trim() || null,
     sortOrder,
@@ -1670,6 +1852,8 @@ function ServiceRow({
   onAmountChange,
   onRemoved,
   onSaved,
+  hotelOptions = [],
+  hotelPay,
 }: {
   bookingId: string;
   record: Service;
@@ -1683,13 +1867,27 @@ function ServiceRow({
   onAmountChange: (id: string, amount: number) => void;
   onRemoved: () => void;
   onSaved?: () => void;
+  /** Hotel list, offered as picks in a HOTEL row's name field. */
+  hotelOptions?: HotelOption[];
+  /** Booking facts for the hotel confirm/payment dialog. */
+  hotelPay?: { guestName: string; guests: string; defaultPaidBy: string };
 }) {
+  const [hotelPayments, setHotelPayments] = useState(record.hotelPayments);
+  const [tokenWaived, setTokenWaived] = useState(record.hotelTokenWaived);
+  const [payDialog, setPayDialog] = useState<null | "confirm" | "payment">(null);
+  const [cancelDialog, setCancelDialog] = useState(false);
   const [form, setForm] = useState<RowForm>({
     name: record.name,
     location: record.location ?? "",
     nights: record.nights != null ? String(record.nights) : "",
     roomType: record.roomType ?? "",
+    rooms: record.rooms != null ? String(record.rooms) : "",
+    checkIn: record.checkIn ?? "",
+    checkOut: record.checkOut ?? "",
+    hotelSupplierId: record.hotelSupplierId ?? "",
+    hotelConfirmation: record.hotelConfirmation ?? "",
     pickup: record.pickup ?? "",
+    vehicles: record.vehicles != null ? String(record.vehicles) : "",
     dropoff: record.dropoff ?? "",
     timing: record.timing ?? "",
     amount: record.amount ? String(record.amount) : "",
@@ -1706,7 +1904,13 @@ function ServiceRow({
           location: record.location ?? "",
           nights: record.nights != null ? String(record.nights) : "",
           roomType: record.roomType ?? "",
+          rooms: record.rooms != null ? String(record.rooms) : "",
+          checkIn: record.checkIn ?? "",
+          checkOut: record.checkOut ?? "",
+          hotelSupplierId: record.hotelSupplierId ?? "",
+          hotelConfirmation: record.hotelConfirmation ?? "",
           pickup: record.pickup ?? "",
+          vehicles: record.vehicles != null ? String(record.vehicles) : "",
           dropoff: record.dropoff ?? "",
           timing: record.timing ?? "",
           amount: record.amount ? String(record.amount) : "",
@@ -1727,6 +1931,12 @@ function ServiceRow({
     if (!form.name.trim()) return; // nothing meaningful to persist yet
     const snapshot = JSON.stringify(buildPayload(record.kind, record.sortOrder, form));
     if (snapshot === savedSnapshot) return; // unchanged since last save
+    if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
+      const msg = "Check-out must be after check-in.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
 
     const payload = buildPayload(record.kind, record.sortOrder, form);
     const err = capError(payload.amount, record.id);
@@ -1800,45 +2010,137 @@ function ServiceRow({
     });
   }
 
-  return (
-    <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
-      {fields.map((f) => {
-        const required = (REQUIRED_SERVICE_FIELDS[record.kind] as FieldKey[]).includes(f.key);
-        // Saved rows always show their gaps; a fresh draft only after a refused lock.
-        const missing =
-          required &&
-          !locked &&
-          (!!serverId || showRequired) &&
-          !isServiceFieldFilled(f.key as RequiredServiceField, form[f.key]);
-        return (
-        <label
-          key={f.key}
-          className={cn(
-            "block",
-            f.key === "amount" || f.key === "nights" ? "w-24" : "flex-1 min-w-[120px]",
-          )}
-        >
-          <span className="text-[12px] font-semibold text-muted-foreground">
-            {f.label}
-            {required && !locked && <span className="text-red-500"> *</span>}
-          </span>
+  const [confirmPending, startConfirm] = useTransition();
+  // A first Confirmed opens the confirm dialog (token payment or a waived
+  // token) — a stay confirmed before (paid, or token waived) just switches
+  // back; Cancelled opens the cancel dialog (reason + email to the hotel); the
+  // other statuses save straight away.
+  function changeConfirmation(value: string) {
+    if (!serverId) return;
+    if (value === "CONFIRMED" && hotelPayments.length === 0 && !tokenWaived) return setPayDialog("confirm");
+    if (value === "CANCELLED") return setCancelDialog(true);
+    const prev = form.hotelConfirmation;
+    setForm((p) => ({ ...p, hotelConfirmation: value }));
+    startConfirm(async () => {
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/services/${serverId}/hotel-status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: value || "PENDING" }),
+        });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(j.error ?? "Save failed.");
+        }
+      } catch (err) {
+        setForm((p) => ({ ...p, hotelConfirmation: prev }));
+        toast.error(err instanceof Error ? err.message : "An error occurred.");
+      }
+    });
+  }
+
+  function onHotelPaid(r: HotelPaymentResult) {
+    setPayDialog(null);
+    if (r.payment) setHotelPayments((p) => [...p, r.payment!]);
+    if (r.confirmed) {
+      setForm((p) => ({ ...p, hotelConfirmation: "CONFIRMED" }));
+      setTokenWaived(r.tokenWaived);
+    }
+  }
+
+  // Hotel stays get a structured two-line card (identity, then stay facts);
+  // other kinds keep the compact single wrapping row.
+  const isHotel = record.kind === "HOTEL";
+  const renderField = (f: FieldDef) => {
+    const required = (REQUIRED_SERVICE_FIELDS[record.kind] as FieldKey[]).includes(f.key);
+    // Saved rows always show their gaps; a fresh draft only after a refused lock.
+    const missing =
+      required &&
+      !locked &&
+      (!!serverId || showRequired) &&
+      !isServiceFieldFilled(f.key as RequiredServiceField, form[f.key]);
+    return (
+      <label
+        key={f.key}
+        className={cn(
+          "block min-w-0",
+          isHotel
+            ? ""
+            : f.key === "amount" || f.key === "nights" || f.key === "rooms" || f.key === "vehicles"
+              ? "w-24"
+              : f.type === "date" || f.type === "confirmation"
+                ? "w-36"
+                : "flex-1 min-w-[120px]",
+        )}
+      >
+        <span className="block truncate text-[12px] font-semibold text-muted-foreground">
+          {f.label}
+          {required && !locked && <span className="text-red-500"> *</span>}
+        </span>
+        {f.type === "confirmation" ? (
+          <select
+            value={form.hotelConfirmation}
+            onChange={(e) => changeConfirmation(e.target.value)}
+            // Confirmation is operations, not the invoice — it stays
+            // editable after the services lock.
+            disabled={!canEdit || !serverId || confirmPending}
+            title={!serverId ? "Save the hotel first" : undefined}
+            className={cn(inputCls, "mt-0.5")}
+          >
+            <option value="">Pending</option>
+            {CONFIRMATION_OPTIONS.filter((o) => o.value !== "PENDING").map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        ) : (
           <input
             type={f.type}
+            list={record.kind === "HOTEL" && f.key === "name" ? HOTEL_DATALIST_ID : undefined}
             value={form[f.key]}
             onChange={(e) => {
               const value = e.target.value;
-              setForm((p) => ({ ...p, [f.key]: value }));
+              setForm((p) => {
+                const next = { ...p, [f.key]: value };
+                // Hotel name picked from (or typed exactly as) the hotel list →
+                // link it and fill an empty location from the hotel's destination.
+                if (record.kind === "HOTEL" && f.key === "name") {
+                  const hit = matchHotel(hotelOptions, value);
+                  next.hotelSupplierId = hit?.id ?? "";
+                  if (hit && !next.location.trim()) next.location = hit.destination;
+                }
+                // Both hotel dates set → Nights follows them (still editable).
+                if (
+                  (f.key === "checkIn" || f.key === "checkOut") &&
+                  next.checkIn &&
+                  next.checkOut
+                ) {
+                  const n = nightsBetween(next.checkIn, next.checkOut);
+                  if (n != null) next.nights = String(n);
+                }
+                return next;
+              });
               // Totals follow every keystroke; the row itself still saves on blur.
               if (f.key === "amount") onAmountChange(record.id, parseFloat(value) || 0);
             }}
             onBlur={autoSave}
+            min={f.key === "checkOut" ? form.checkIn || undefined : f.key === "vehicles" ? 1 : undefined}
+            placeholder={f.key === "vehicles" ? "1" : undefined}
             disabled={locked || !canEdit}
             aria-invalid={missing || undefined}
-            className={cn(inputCls, "mt-0.5", missing && "border-red-500 focus:border-red-500 focus:ring-red-500/25")}
+            className={cn(
+              inputCls,
+              "mt-0.5",
+              missing && "border-red-500 focus:border-red-500 focus:ring-red-500/25",
+            )}
           />
-        </label>
-        );
-      })}
+        )}
+      </label>
+    );
+  };
+  const actionsEl = (
+    <>
       {!locked && canEdit && (
         <div className="flex items-center gap-1">
           <span
@@ -1873,6 +2175,122 @@ function ServiceRow({
           </button>
         </div>
       )}
+    </>
+  );
+
+  if (isHotel) {
+    const status = (form.hotelConfirmation || "PENDING") as HotelConfirmationValue;
+    return (
+      <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Hotel className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate text-sm font-bold text-foreground">
+              {form.name.trim() || "New hotel"}
+            </span>
+            {form.hotelSupplierId ? (
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                ✓ In hotel list
+              </span>
+            ) : form.name.trim() ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
+                Not in hotel list
+              </span>
+            ) : null}
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                CONFIRMATION_PILL[status],
+              )}
+            >
+              {CONFIRMATION_OPTIONS.find((o) => o.value === status)?.label}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">{actionsEl}</div>
+        </div>
+        {serverId && (status === "CONFIRMED" || hotelPayments.length > 0) && (() => {
+          const sum = hotelPaymentSummary(parseFloat(form.amount) || 0, hotelPayments);
+          return (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-3 py-2 text-xs">
+              <span className="font-semibold text-muted-foreground">Paid to hotel</span>
+              <span>
+                Paid <strong className="text-foreground">{inr(sum.paid)}</strong> of {inr(sum.total)}
+              </span>
+              <span>
+                Balance{" "}
+                <strong className={sum.balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600"}>
+                  {inr(sum.balance)}
+                </strong>
+              </span>
+              {tokenWaived && (
+                <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+                  Token not needed
+                </span>
+              )}
+              {canEdit && hotelPay && sum.balance > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPayDialog("payment")}
+                  className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 font-semibold hover:bg-muted"
+                >
+                  <Wallet className="h-3.5 w-3.5" /> Add payment
+                </button>
+              )}
+            </div>
+          );
+        })()}
+        {payDialog && serverId && hotelPay && (
+          <HotelPaymentDialog
+            mode={payDialog}
+            target={{
+              bookingId,
+              serviceId: serverId,
+              hotelName: form.name.trim() || record.name,
+              guestName: hotelPay.guestName,
+              guests: hotelPay.guests,
+              hotelEmail: hotelOptions.find((o) => o.id === form.hotelSupplierId)?.email ?? null,
+              total: parseFloat(form.amount) || 0,
+              payments: hotelPayments,
+              tokenWaived,
+            }}
+            defaultPaidBy={hotelPay.defaultPaidBy}
+            onClose={() => setPayDialog(null)}
+            onDone={onHotelPaid}
+          />
+        )}
+        {cancelDialog && serverId && hotelPay && (
+          <HotelCancelDialog
+            target={{
+              bookingId,
+              serviceId: serverId,
+              hotelName: form.name.trim() || record.name,
+              guestName: hotelPay.guestName,
+              guests: hotelPay.guests,
+              hotelEmail: hotelOptions.find((o) => o.id === form.hotelSupplierId)?.email ?? null,
+            }}
+            onClose={() => setCancelDialog(false)}
+            onDone={() => {
+              setCancelDialog(false);
+              setForm((p) => ({ ...p, hotelConfirmation: "CANCELLED" }));
+            }}
+          />
+        )}
+        <div className="flex flex-col gap-3 p-3 md:flex-row">
+          <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-4">
+            {fields.filter((f) => f.key !== "amount").map(renderField)}
+          </div>
+          <div className="flex items-center border-t border-border pt-3 md:w-40 md:border-l md:border-t-0 md:pl-3 md:pt-0">
+            <div className="w-full">{fields.filter((f) => f.key === "amount").map(renderField)}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border p-2.5">
+      {fields.map(renderField)}
+      {actionsEl}
     </div>
   );
 }

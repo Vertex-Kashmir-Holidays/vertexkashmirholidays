@@ -33,3 +33,12 @@ export function addDaysToStayDate(value: string, days: number): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+/** A day's date for the PDFs: "2026-06-10" → "Wed 10 Jun"; other text as written. */
+export function formatDayDate(value: string): string {
+  const m = ISO_DATE.exec(value);
+  if (!m) return value;
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const weekday = date.toLocaleDateString("en-IN", { weekday: "short" });
+  return `${weekday} ${formatStayDate(value, { year: false })}`;
+}

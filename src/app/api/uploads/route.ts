@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireStaff } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { saveUpload, isCloudinaryConfigured } from "@/lib/storage";
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, checkMagicBytes } from "@/lib/uploads/imageValidation";
 
-const MAX_IMAGE_SIZE = 500 * 1024;
 const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
 const MAX_DOC_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const DOCUMENT_TYPES = new Set([
   "application/pdf",
@@ -15,25 +13,6 @@ const DOCUMENT_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "text/plain",
 ]);
-
-function checkMagicBytes(buf: Buffer, mime: string): boolean {
-  if (mime === "image/jpeg") return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
-  if (mime === "image/png")
-    return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
-  if (mime === "image/webp") {
-    return (
-      buf[0] === 0x52 &&
-      buf[1] === 0x49 &&
-      buf[2] === 0x46 &&
-      buf[3] === 0x46 &&
-      buf[8] === 0x57 &&
-      buf[9] === 0x45 &&
-      buf[10] === 0x42 &&
-      buf[11] === 0x50
-    );
-  }
-  return true;
-}
 
 export async function POST(req: NextRequest) {
   const guard = await requireStaff();

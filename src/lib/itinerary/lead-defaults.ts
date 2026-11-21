@@ -5,6 +5,7 @@
 
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import type { ItineraryData } from "@/types/itinerary";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
 
 export interface LeadItinerarySeed {
   name: string;
@@ -73,7 +74,8 @@ function deriveLeadFacts(lead: LeadItinerarySeed): DerivedLeadFacts {
 /** Overlay lead facts onto an itinerary's cover/info fields, preserving the rest. */
 function withLeadFacts(data: ItineraryData, lead: LeadItinerarySeed): ItineraryData {
   const f = deriveLeadFacts(lead);
-  return {
+  // Hotel check-in/out follow a new start date (see resyncTripDates).
+  return resyncTripDates(data, {
     ...data,
     duration: f.duration,
     preparedFor: f.preparedFor,
@@ -88,7 +90,7 @@ function withLeadFacts(data: ItineraryData, lead: LeadItinerarySeed): ItineraryD
     ...(lead.phone ? { customerPhone: lead.phone } : {}),
     // Keep the info strip's Duration tile in sync with the cover.
     info: data.info.map((it) => (it.id === "info-1" ? { ...it, value: f.durationPlain } : it)),
-  };
+  });
 }
 
 /** Initial itinerary for a new lead: template + lead facts, price starts at 0. */

@@ -9,7 +9,7 @@ export const B2B_STATUS_LABELS: Record<B2bRequestStatus, string> = {
   NEW: "Pending",
   IN_PROGRESS: "In Progress",
   CONVERTED: "Converted",
-  REJECTED: "Rejected",
+  REJECTED: "Closed",
 };
 
 export const B2B_STATUS_STYLES: Record<B2bRequestStatus, string> = {
@@ -25,3 +25,7 @@ export const B2B_STATUS_STYLES: Record<B2bRequestStatus, string> = {
 export function isItinerarySent(status: string | null | undefined): boolean {
   return status === "SENT" || status === "CONFIRMED";
 }
+
+/** Closed (REJECTED) requests an agent may have before their partnership is
+ *  deactivated — counted since the agent was last activated. */
+export const B2B_CLOSE_LIMIT = 3;

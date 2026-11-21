@@ -117,6 +117,9 @@ export const transportRowSchema = z.object({
   vehicle: z.string(),
   vehicleBudget: z.string().default(""),
   vehicleLuxury: z.string().default(""),
+  // How many vehicles of this type ("2" → "2 × Innova Crysta"); applies to
+  // every option. Defaulted so rows saved before it existed load as one.
+  count: z.string().default("1"),
   seating: z.string(),
   usedFor: z.string(),
   duration: z.string(),
@@ -276,6 +279,9 @@ export interface ProposalSummary {
   status: ProposalStatus;
   ownerId: string;
   ownerName?: string | null;
+  /** Sales person it's handed to (owner + assignee both see it). */
+  assignedToId?: string | null;
+  assignedToName?: string | null;
   /** From `data` — who the proposal is for, and their phone (follow-ups). */
   customerName?: string;
   customerPhone?: string;

@@ -260,7 +260,7 @@ export function BookingsClient({
       </div>
 
       {cardStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${cardStats.isAdmin ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
           <StatCard
             label={cardStats.isAdmin ? "Bookings" : "My Bookings"}
             value={cardStats.bookingsCount.all}
@@ -275,9 +275,9 @@ export function BookingsClient({
             icon={IndianRupee}
             accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
           />
-          {cardStats.isAdmin && cardStats.bookingsProfit && (
+          {cardStats.bookingsProfit && (
             <StatCard
-              label="Booking Profit"
+              label={cardStats.isAdmin ? "Booking Profit" : "My Booking Profit"}
               value={fmtINR(cardStats.bookingsProfit.all)}
               sub={`${fmtINR(cardStats.bookingsProfit.month)} this month`}
               icon={TrendingUp}
@@ -346,7 +346,7 @@ export function BookingsClient({
 
         {/* Table */}
         <div className={cn("overflow-x-auto", loading && "opacity-60 pointer-events-none")}>
-          <table className="w-full text-sm">
+          <table className="table-cards w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {[
@@ -390,7 +390,7 @@ export function BookingsClient({
                       }}
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                     >
-                      <td className="px-4 py-3">
+                      <td data-label="Ref" className="px-4 py-3">
                         <span
                           className="font-mono text-[12px] font-semibold text-foreground"
                           title={b.id}
@@ -398,35 +398,35 @@ export function BookingsClient({
                           #{b.id.slice(-8).toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-span="full" className="px-4 py-3 max-md:order-first">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             <User className="w-3 h-3 text-foreground" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">
+                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px] max-md:max-w-none">
                               {b.guestName}
                             </p>
-                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px]">
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px] max-md:max-w-none">
                               {b.guestEmail}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      <td data-label="Travel date" className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.travelDate).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
                         })}
                       </td>
-                      <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
+                      <td data-label="Amount" className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
                         {fmtINR(b.amount)}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      <td data-label="Converted by" className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {b.convertedBy ?? "Website"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-pin="top-right" className="px-4 py-3">
                         {isCompleted(b) ? (
                           <span
                             title="Fully paid and the travel date has passed"
@@ -445,7 +445,7 @@ export function BookingsClient({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-label="Payment" className="px-4 py-3 max-md:order-first">
                         <span
                           className={cn(
                             "text-[12px] font-bold px-2 py-0.5 rounded-full",
@@ -455,7 +455,7 @@ export function BookingsClient({
                           {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-actions className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <Link
                             href={`/admin/bookings/${b.id}/services`}

@@ -552,6 +552,36 @@ export function readWhatsAppAttributionTag(): string | undefined {
 }
 
 /**
+ * The WhatsApp popup's phone number, sent as a background lead the moment the
+ * visitor taps "Open WhatsApp" (POST /api/leads/whatsapp). `keepalive` lets it
+ * finish while the device hands off to WhatsApp; it never blocks or fails the
+ * hand-off. Resolves to the new lead's id, or undefined (duplicate / failed).
+ */
+export function sendWhatsAppPopupLead(payload: {
+  phone: string;
+  budgetBandKey?: string;
+  travelMonth: string;
+  budgetDerived?: boolean;
+  tourName?: string;
+}): Promise<string | undefined> {
+  if (typeof window === "undefined") return Promise.resolve(undefined);
+  return fetch("/api/leads/whatsapp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      token: readWaTokenCache()?.token,
+      attribution: readAttributionForSubmit(),
+      page: window.location.pathname,
+    }),
+    keepalive: true,
+  })
+    .then((res) => (res.ok ? (res.json() as Promise<{ id?: string }>) : null))
+    .then((json) => json?.id)
+    .catch(() => undefined);
+}
+
+/**
  * Lead-qualification answers from the WhatsApp modal. With an existing token
  * they're saved onto it (the Ref tag stays the same); without one, a token is
  * minted carrying them, so an organic WhatsApp click is qualified too.

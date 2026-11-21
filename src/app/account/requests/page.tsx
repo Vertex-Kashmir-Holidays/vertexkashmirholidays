@@ -45,7 +45,7 @@ export default async function AccountRequestsPage() {
       status: true,
       bookingId: true,
       createdAt: true,
-      itinerary: { select: { status: true } },
+      itinerary: { select: { publishedAt: true } },
     },
   });
 
@@ -64,7 +64,7 @@ export default async function AccountRequestsPage() {
         <div className="space-y-3">
           {requests.map((r) => {
             const status = r.status as B2bRequestStatus;
-            const itineraryReady = !!r.itinerary && r.itinerary.status !== "DRAFT";
+            const itineraryReady = !!r.itinerary?.publishedAt;
             return (
               <Link
                 key={r.id}

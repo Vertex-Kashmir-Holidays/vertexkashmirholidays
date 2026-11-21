@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { showQueryExistsToast } from "@/lib/leads/queryExistsToast";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -113,8 +114,15 @@ export function ContactForm({ content }: ContactFormProps) {
         const j = (await res.json().catch(() => ({}))) as {
           error?: string;
           blocked?: boolean;
+          whatsapp?: string;
+          call?: string | null;
           fieldErrors?: Record<string, string[] | undefined>;
         };
+        // Query already in progress (409) — WhatsApp / Call to check its status.
+        if (j.blocked) {
+          showQueryExistsToast(j);
+          return;
+        }
         // Map validation failures onto their fields (inline, no stack traces).
         if (j.fieldErrors) {
           for (const key of ["name", "phone", "email", "message", "agree"] as const) {

@@ -42,13 +42,25 @@ export const REQUEST_QUOTE_ALL = env.REQUEST_QUOTE === "true";
 //   }
 // 
 
+// Runtime vs build pool size. The live DB is a plain Postgres (max_connections
+// 100) with no server-side pooler, and every warm Vercel function instance
+// keeps its own pool open while idle. At 10 per instance, ~10 warm instances
+// filled the whole server (2026-11-10: "too many clients already", logins and
+// scripts failing). Serving a request needs only a few connections, so runtime
+// uses 3; `next build` keeps 10 for its parallel static-generation workers
+// (see the P2024 note above). An explicit connection_limit in DATABASE_URL
+// still wins over both.
+const IS_BUILD = process.env.NEXT_PHASE === "phase-production-build";
+
 // DATABASE_URL is guaranteed set by this point — importing `env` above
 // throws a clear error at module load if it's missing, before Prisma ever
 // gets a chance to fail with its own opaque schema-validation error.
 function datasourceUrl(): string {
   const url = new URL(env.DATABASE_URL);
   // assertNotLiveInDevelopment(url);
-  if (!url.searchParams.has("connection_limit")) url.searchParams.set("connection_limit", "10");
+  if (!url.searchParams.has("connection_limit")) {
+    url.searchParams.set("connection_limit", IS_BUILD ? "10" : "3");
+  }
   if (!url.searchParams.has("pool_timeout")) url.searchParams.set("pool_timeout", "30");
   if (!url.searchParams.has("connect_timeout")) url.searchParams.set("connect_timeout", "15");
   return url.toString();

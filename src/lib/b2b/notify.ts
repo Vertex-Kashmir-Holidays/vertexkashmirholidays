@@ -11,6 +11,8 @@ import {
   b2bDocumentUpdateHtml,
   b2bDocumentUpdateSubject,
   b2bDocumentUpdateText,
+  ADMIN_COPY,
+  type MailAttachment,
 } from "@/lib/mail";
 
 /**
@@ -29,6 +31,7 @@ export async function sendB2bAgentActivationEmail(
     const res = await sendMail({
       to: email,
       subject: "Your Vertex Kashmir Holidays B2B Partner account is active",
+      bcc: ADMIN_COPY,
       html: b2bAgentActivationHtml({ contactName, agencyName, email, tempPassword }),
       text: b2bAgentActivationText({ contactName, agencyName, email, tempPassword }),
     });
@@ -42,6 +45,7 @@ export async function sendB2bAgentActivationEmail(
 // ── Partner updates (documents + staff announcements) ───────────────────────
 
 export interface B2bRecipient {
+  id?: string;
   email: string;
   name: string | null;
   agencyName: string | null;
@@ -51,7 +55,7 @@ export interface B2bRecipient {
 export async function activeB2bRecipients(): Promise<B2bRecipient[]> {
   return prisma.user.findMany({
     where: { agencyStatus: "ACTIVE" },
-    select: { email: true, name: true, agencyName: true },
+    select: { id: true, email: true, name: true, agencyName: true },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -60,19 +64,25 @@ const contactNameOf = (r: B2bRecipient) => r.name?.trim() || r.agencyName?.trim(
 
 // One email per agent (never a shared To/CC — agents must not see each other),
 // a few at a time. Best-effort per recipient: one bad address doesn't stop the
-// rest, and nothing here throws.
+// rest, and nothing here throws. Admin is BCC'd on the first email only — one
+// office copy per send, not one per agent on a bulk announcement.
 async function sendToEach(
   recipients: B2bRecipient[],
-  build: (r: B2bRecipient) => { subject: string; html: string; text: string },
+  build: (r: B2bRecipient) => {
+    subject: string;
+    html: string;
+    text: string;
+    attachments?: MailAttachment[];
+  },
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
   const BATCH = 5;
   for (let i = 0; i < recipients.length; i += BATCH) {
     const results = await Promise.all(
-      recipients.slice(i, i + BATCH).map(async (r) => {
+      recipients.slice(i, i + BATCH).map(async (r, j) => {
         try {
-          const res = await sendMail({ to: r.email, ...build(r) });
+          const res = await sendMail({ to: r.email, ...(i + j === 0 ? { bcc: ADMIN_COPY } : {}), ...build(r) });
           return res.delivered;
         } catch (err) {
           console.error("[b2b/notify] partner update email failed", r.email, err);
@@ -110,14 +120,85 @@ export async function notifyB2bAgentsOfDocument(doc: {
   });
 }
 
+/** A document shared with one agent only (Admin → B2B Agents → Documents). */
+export async function notifyB2bAgentOfDocument(
+  agent: B2bRecipient,
+  doc: { title: string; description: string },
+): Promise<boolean> {
+  const { sent } = await sendToEach([agent], (r) => {
+    const data = {
+      contactName: contactNameOf(r),
+      agencyName: r.agencyName ?? "",
+      docTitle: doc.title,
+      docDescription: doc.description,
+      personal: true,
+    };
+    return {
+      subject: b2bDocumentUpdateSubject(doc.title, true),
+      html: b2bDocumentUpdateHtml(data),
+      text: b2bDocumentUpdateText(data),
+    };
+  });
+  return sent > 0;
+}
+
 /** A message staff write themselves (Admin → B2B Agents → Email agents). */
 export async function sendB2bAnnouncement(
   recipients: B2bRecipient[],
   subject: string,
   message: string,
+  attachments?: MailAttachment[],
 ): Promise<{ sent: number; failed: number }> {
   return sendToEach(recipients, (r) => {
     const data = { contactName: contactNameOf(r), subject, message };
-    return { subject, html: b2bAnnouncementHtml(data), text: b2bAnnouncementText(data) };
+    return {
+      subject,
+      html: b2bAnnouncementHtml(data),
+      text: b2bAnnouncementText(data),
+      ...(attachments?.length ? { attachments } : {}),
+    };
   });
+}
+
+// ── Request closed by staff ─────────────────────────────────────────────────
+
+/** Tells the agent a request was closed, why, and how many closures their
+ *  account now has. On the closure that reaches the limit the same email
+ *  says the partnership is deactivated. Admin gets a copy. */
+export async function sendB2bRequestClosedEmail(
+  agent: B2bRecipient,
+  request: { guestName: string; days: number | null; pax: number },
+  reason: string,
+  closedCount: number,
+  limit: number,
+  deactivated: boolean,
+): Promise<{ delivered: boolean }> {
+  const trip = [request.days ? `${request.days} days` : null, `${request.pax} pax`]
+    .filter(Boolean)
+    .join(", ");
+  const subject = deactivated
+    ? "Your Vertex Kashmir Holidays B2B partnership has been deactivated"
+    : `B2B request closed — ${request.guestName}`;
+  const message = [
+    `We have closed your B2B request for ${request.guestName} (${trip}).`,
+    `Reason: ${reason}`,
+    "To help us quote quickly and accurately, please send only genuine, confirmed requests with complete details — guest name and contact number, travel dates, number of travellers and rooms, preferred hotel category and a realistic budget. Incomplete, duplicate or speculative requests take our team's time away from the bookings we are working on for you.",
+    deactivated
+      ? `With this, ${closedCount} of your requests have been closed. As per our partnership terms, your B2B partner account has now been deactivated and you will no longer be able to send new requests. Bookings already confirmed are not affected and our team will continue to service them.\n\nIf you would like to discuss reactivating your partnership, simply reply to this email.`
+      : `Please note: as per our partnership terms, a partner account is deactivated after ${limit} closed requests. Your account now has ${closedCount} of ${limit}.\n\nIf you believe this request was closed by mistake, simply reply to this email.`,
+  ].join("\n\n");
+  const data = { contactName: contactNameOf(agent), subject, message };
+  try {
+    const res = await sendMail({
+      to: agent.email,
+      subject,
+      bcc: ADMIN_COPY,
+      html: b2bAnnouncementHtml(data),
+      text: b2bAnnouncementText(data),
+    });
+    return { delivered: res.delivered };
+  } catch (err) {
+    console.error("[b2b/notify] request closed email failed", err);
+    return { delivered: false };
+  }
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   LayoutDashboard,
-  Package,
+  Layers,
   Inbox,
   CalendarDays,
   MessageSquare,
@@ -19,14 +19,14 @@ interface TabDef {
   Icon: LucideIcon;
 }
 
-// Fixed, curated set (not the full sidebar) — the handful of sections staff
-// need one-tap access to on a phone. Same MODULE_ICONS choices as the sidebar
-// for Dashboard/Packages/Leads/Bookings; Connect uses "Chats" here since that's
+// Fixed, curated set (not the full sidebar) — the sales flow staff need
+// one-tap access to on a phone, in order: lead → proposal → booking. Same
+// MODULE_ICONS choices as the sidebar; Connect uses "Chats" here since that's
 // what it's used for day-to-day, even though the module itself is "Vertex Connect".
 const TABS: TabDef[] = [
   { key: "dashboard", href: "/admin/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { key: "packages", href: "/admin/packages", label: "Packages", Icon: Package },
   { key: "leads", href: "/admin/leads", label: "Leads", Icon: Inbox },
+  { key: "proposals", href: "/admin/proposals", label: "Proposals", Icon: Layers },
   { key: "bookings", href: "/admin/bookings", label: "Bookings", Icon: CalendarDays },
   { key: "connect", href: "/admin/connect", label: "Chats", Icon: MessageSquare },
 ];

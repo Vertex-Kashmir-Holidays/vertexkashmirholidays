@@ -83,11 +83,12 @@ export function TourCard({ tour, index = 0, variant = "tours" }: TourCardProps) 
 
   // Lead-qualification context for this card's WhatsApp button: a tour, priced
   // per person. Every caller formats `p` with formatINR from a number, and a
-  // package-option card (priceSuffix "/ 2 persons") shows the price for 2.
+  // package-option card (priceSuffix "/ N persons") shows the price for N.
   // A price-on-request tour carries no price at all — generic context, so
   // the WhatsApp gate asks the budget (and nothing leaks into the HTML).
   const shownPrice = tour.priceHidden ? 0 : Number(tour.p.replace(/[^\d]/g, ""));
-  const pricePerPerson = /2 persons/.test(tour.priceSuffix ?? "") ? shownPrice / 2 : shownPrice;
+  const partySize = Number(tour.priceSuffix?.match(/(\d+) persons/)?.[1] ?? 1);
+  const pricePerPerson = shownPrice / partySize;
   const waContext = tour.priceHidden
     ? contextAttrs({ kind: "generic" })
     : pricePerPerson > 0

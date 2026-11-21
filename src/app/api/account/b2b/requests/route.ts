@@ -1,3 +1,4 @@
+import { notifyNewB2bRequest } from "@/lib/notifications";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -104,6 +105,16 @@ export async function POST(req: NextRequest) {
       // created on the agent's behalf).
     },
     select: REQUEST_SELECT,
+  });
+
+  const agency = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { agencyName: true, name: true },
+  });
+  await notifyNewB2bRequest({
+    id: lead.id,
+    guestName: lead.name,
+    agencyName: agency?.agencyName ?? agency?.name ?? session.user.name ?? "agent",
   });
 
   return NextResponse.json(lead, { status: 201 });

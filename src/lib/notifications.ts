@@ -153,6 +153,73 @@ export async function notifyNewBooking(bookingId: string): Promise<void> {
   }
 }
 
+/**
+ * Bell notification for every SUPERADMIN and ADMIN when a lead arrives on its
+ * own (website form, WhatsApp popup) — those leads come in
+ * unassigned, and admins are the ones who assign them. Staff-created leads
+ * don't call this (the creator already knows). Never throws.
+ */
+export async function notifyNewLead(lead: {
+  id: string;
+  name: string;
+  phone: string;
+  /** Where it came from, e.g. "Website form", "WhatsApp popup". */
+  via: string;
+  tourTitle?: string | null;
+}): Promise<void> {
+  await notifyAdmins({
+    type: "LEAD_NEW",
+    title: "New lead received",
+    body: [lead.name, lead.phone, lead.tourTitle, lead.via].filter(Boolean).join(" · "),
+    link: `/admin/leads/${lead.id}`,
+  });
+}
+
+/** Bell notification for every SUPERADMIN and ADMIN. Never throws. */
+async function notifyAdmins(n: { type: string; title: string; body: string; link: string }) {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["SUPERADMIN", "ADMIN"] }, deletedAt: null },
+      select: { id: true },
+    });
+    if (admins.length === 0) return;
+    await prisma.notification.createMany({
+      data: admins.map((u) => ({ userId: u.id, ...n })),
+    });
+  } catch (err) {
+    console.error(`[notifications] ${n.type} failed`, err);
+  }
+}
+
+/** Admins only: a B2B agent sent a new request. */
+export async function notifyNewB2bRequest(request: {
+  id: string;
+  guestName: string;
+  agencyName: string;
+}): Promise<void> {
+  await notifyAdmins({
+    type: "B2B_REQUEST_NEW",
+    title: "New B2B request",
+    body: `${request.guestName} · from ${request.agencyName}`,
+    link: `/admin/b2b-requests/${request.id}`,
+  });
+}
+
+/** Admins only: a travel agency registered for a B2B account (awaits approval). */
+export async function notifyNewB2bAgent(agent: {
+  id: string;
+  agencyName: string;
+  name: string;
+  agencyState?: string | null;
+}): Promise<void> {
+  await notifyAdmins({
+    type: "B2B_AGENT_NEW",
+    title: "New B2B partner registration",
+    body: [agent.agencyName, agent.name, agent.agencyState, "awaiting approval"].filter(Boolean).join(" · "),
+    link: "/admin/b2b-agents",
+  });
+}
+
 /** Notify a staff member that a lead has been reassigned away from them. */
 export async function notifyLeadUnassigned(
   assigneeId: string,

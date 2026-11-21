@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { rowClick } from "@/components/admin/ui/rowClick";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Search, Trash2, Pencil, Eye, Copy, FileText, Phone } from "lucide-react";
@@ -18,6 +19,7 @@ const COLUMNS = [
   "Travel Dates",
   "Est Cost",
   "Created By",
+  "Assigned To",
   "Updated At",
   "Actions",
 ];
@@ -142,7 +144,7 @@ export function ProposalsClient({
           className={`overflow-x-auto transition-opacity ${loading ? "opacity-60" : ""}`}
           aria-busy={loading}
         >
-          <table className="w-full text-sm">
+          <table className="table-cards w-full text-sm">
             <thead>
               <tr className="border-y border-border bg-muted">
                 {COLUMNS.map((h) => (
@@ -173,13 +175,17 @@ export function ProposalsClient({
                 </tr>
               ) : (
                 items.map((item) => (
-                  <tr key={item.id} className="align-top transition-colors hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={item.id}
+                    onClick={rowClick(() => router.push(`/admin/proposals/${item.id}`))}
+                    className="cursor-pointer align-top transition-colors hover:bg-muted/50"
+                  >
+                    <td data-span="full" className="px-4 py-3">
                       <Link
                         href={`/admin/proposals/${item.id}`}
-                        className="group block min-w-[180px]"
+                        className="group block min-w-[180px] max-md:min-w-0"
                       >
-                        <p className="max-w-[260px] truncate font-semibold text-foreground group-hover:text-primary">
+                        <p className="max-w-[260px] truncate font-semibold max-md:max-w-none text-foreground group-hover:text-primary">
                           {item.title}
                         </p>
                         <Badge variant={STATUS_VARIANT[item.status]} className="mt-1">
@@ -187,7 +193,7 @@ export function ProposalsClient({
                         </Badge>
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td data-label="Phone" className="whitespace-nowrap px-4 py-3">
                       {item.customerPhone ? (
                         <a
                           href={`tel:${item.customerPhone.replace(/[^\d+]/g, "")}`}
@@ -201,10 +207,10 @@ export function ProposalsClient({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                    <td data-label="Travel dates" className="whitespace-nowrap px-4 py-3 text-foreground/85">
                       {item.travelDates || <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td data-label="Package cost" className="whitespace-nowrap px-4 py-3">
                       {!item.packageCosts?.length ? (
                         <span className="text-muted-foreground">—</span>
                       ) : item.packageCosts.length === 1 ? (
@@ -220,10 +226,13 @@ export function ProposalsClient({
                         ))
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                    <td data-label="Owner" className="whitespace-nowrap px-4 py-3 text-foreground/85">
                       {item.ownerName || <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[13px] text-muted-foreground">
+                    <td data-label="Assigned To" className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                      {item.assignedToName || <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td data-label="Last updated" className="whitespace-nowrap px-4 py-3 text-[13px] text-muted-foreground">
                       {new Date(item.updatedAt).toLocaleString("en-IN", {
                         day: "numeric",
                         month: "short",
@@ -232,7 +241,7 @@ export function ProposalsClient({
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="px-4 py-2">
+                    <td data-actions className="px-4 py-2">
                       <div className="flex items-center gap-1">
                         <Link
                           href={`/admin/proposals/${item.id}`}

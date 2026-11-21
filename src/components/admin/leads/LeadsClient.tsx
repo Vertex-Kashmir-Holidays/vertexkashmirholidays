@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { rowClick } from "@/components/admin/ui/rowClick";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -14,6 +15,7 @@ import {
   TrendingUp,
   X,
   RefreshCw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/atoms/button";
@@ -32,6 +34,7 @@ import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
 import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
+import { LEAD_STATUS_STYLES } from "@/lib/leads/status";
 
 // IN_PROGRESS is a real LeadStatus value at the type level (B2B-request-only —
 // see prisma/schema.prisma), included so this type structurally matches
@@ -140,25 +143,15 @@ interface Props {
   canDelete: boolean;
   isAdmin: boolean;
   initialIpFilter?: string;
+  /** Pre-selected status filter (from ?status=). */
+  initialStatusFilter?: string;
   /** Occasion Offers for the Offer filter. */
   offers?: { id: string; name: string }[];
   /** Budget bands (inactive included) for the Budget filter. */
   budgetBands?: { key: string; label: string; isActive: boolean }[];
 }
 
-const STATUS_STYLES: Record<LeadStatus, string> = {
-  NEW: "bg-link/10 text-link",
-  CONNECTED: "bg-purple-500/15 text-purple-700 dark:text-purple-300",
-  NOT_CONNECTED: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-  QUALIFIED: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  NEGOTIATION: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  ON_HOLD: "bg-muted text-muted-foreground",
-  // B2B-request-only value — never actually rendered here (see comment on the
-  // LeadStatus type above), present only so this Record type-checks.
-  IN_PROGRESS: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  CONVERTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-  REJECTED: "bg-red-500/15 text-red-700 dark:text-red-300",
-};
+const STATUS_STYLES = LEAD_STATUS_STYLES;
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   WEBSITE: "Website",
@@ -168,6 +161,9 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
   THIRD_PARTY: "3rd Party",
   REFERRAL: "Referral",
 };
+
+// Filter dropdowns: two per line on phones, natural width on md+.
+const FILTER_TRIGGER = "w-auto min-w-[150px] max-md:w-[calc(50%-0.375rem)] max-md:min-w-0";
 
 export function LeadsClient({
   initialLeads,
@@ -179,6 +175,7 @@ export function LeadsClient({
   canDelete,
   isAdmin,
   initialIpFilter,
+  initialStatusFilter,
   offers = [],
   budgetBands = [],
 }: Props) {
@@ -186,7 +183,7 @@ export function LeadsClient({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter ?? "ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
   const [assigneeFilter, setAssigneeFilter] = useState("ALL");
   // Trip Planner request-type filter (TRANSPORT/TOUR/HOTEL/PLAN) — what the
@@ -196,6 +193,8 @@ export function LeadsClient({
   // Lead-qualification budget filter: a band key, "undecided" or "NONE" (not asked).
   const [budgetFilter, setBudgetFilter] = useState("ALL");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  // Phones: the dropdown filters fold behind the filter button (search stays).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // The IP-investigation view (?ip=...) is a rare, narrow fraud-check lookup:
   // admin/leads/page.tsx loads every matching row up front (no cap, no
@@ -444,11 +443,46 @@ export function LeadsClient({
             value={search}
             onChange={setSearch}
             placeholder="Search name, phone, email, ref..."
-            className="min-w-[180px]"
+            className="min-w-[180px] max-md:order-first max-md:min-w-0"
           />
 
+          {(() => {
+            const activeFilters = [
+              statusFilter,
+              sourceFilter,
+              requestFilter,
+              offerFilter,
+              budgetFilter,
+              assigneeFilter,
+            ].filter((f) => f !== "ALL").length;
+            return (
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((o) => !o)}
+                aria-expanded={filtersOpen}
+                aria-label={filtersOpen ? "Hide filters" : "Show filters"}
+                className={cn(
+                  "relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border transition-colors max-md:order-first md:hidden",
+                  filtersOpen
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/50 text-muted-foreground",
+                )}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {activeFilters > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {activeFilters}
+                  </span>
+                )}
+              </button>
+            );
+          })()}
+
+          {/* display:contents keeps the dropdowns in the bar's wrap on md+. */}
+          <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
+
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-auto min-w-[150px]">
+            <SelectTrigger className={FILTER_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -465,7 +499,7 @@ export function LeadsClient({
           </Select>
 
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-auto min-w-[150px]">
+            <SelectTrigger className={FILTER_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -480,7 +514,7 @@ export function LeadsClient({
           </Select>
 
           <Select value={requestFilter} onValueChange={setRequestFilter}>
-            <SelectTrigger className="w-auto min-w-[150px]">
+            <SelectTrigger className={FILTER_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -494,7 +528,7 @@ export function LeadsClient({
 
           {offers.length > 0 && (
             <Select value={offerFilter} onValueChange={setOfferFilter}>
-              <SelectTrigger className="w-auto min-w-[150px]">
+              <SelectTrigger className={FILTER_TRIGGER}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -511,7 +545,7 @@ export function LeadsClient({
 
           {budgetBands.length > 0 && (
             <Select value={budgetFilter} onValueChange={setBudgetFilter}>
-              <SelectTrigger className="w-auto min-w-[150px]">
+              <SelectTrigger className={FILTER_TRIGGER}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -530,7 +564,7 @@ export function LeadsClient({
 
           {isAdmin && (
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-              <SelectTrigger className="w-auto min-w-[150px]">
+              <SelectTrigger className={FILTER_TRIGGER}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -545,7 +579,9 @@ export function LeadsClient({
             </Select>
           )}
 
-          <p className="text-xs text-muted-foreground self-center shrink-0">
+          </div>
+
+          <p className="text-xs text-muted-foreground self-center shrink-0 max-md:order-last max-md:-mt-1 max-md:w-full">
             {resultsCount} results{!isIpMode && loading ? " · loading…" : ""}
           </p>
 
@@ -554,10 +590,11 @@ export function LeadsClient({
             variant="outline"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="ml-auto"
+            aria-label="Refresh"
+            className="ml-auto max-md:order-first max-md:ml-0 max-md:h-[38px] max-md:w-[38px] max-md:px-0"
           >
             <RefreshCw className={refreshing ? "animate-spin" : undefined} />
-            Refresh
+            <span className="max-md:sr-only">Refresh</span>
           </Button>
         </div>
 
@@ -568,7 +605,7 @@ export function LeadsClient({
             !isIpMode && loading && "opacity-60 pointer-events-none",
           )}
         >
-          <table className="w-full text-sm">
+          <table className="table-cards w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Ref", "Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map(
@@ -601,13 +638,14 @@ export function LeadsClient({
                 pageItems.map((lead) => (
                   <tr
                     key={lead.id}
+                    onClick={rowClick(() => router.push(`/admin/leads/${lead.id}`))}
                     className={cn(
-                      "hover:bg-muted/50 transition-colors",
+                      "cursor-pointer hover:bg-muted/50 transition-colors",
                       confirmDelete === lead.id && "bg-red-500/5",
                     )}
                   >
                     {/* Ref */}
-                    <td className="px-4 py-3">
+                    <td data-label="Ref" className="px-4 py-3">
                       <span
                         className="font-mono text-[12px] font-semibold text-foreground"
                         title={lead.id}
@@ -617,14 +655,14 @@ export function LeadsClient({
                     </td>
 
                     {/* Lead */}
-                    <td className="px-4 py-3">
+                    <td data-span="full" className="px-4 py-3 max-md:order-first">
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-xs truncate max-w-[160px]">
+                        <p className="font-semibold text-foreground text-xs truncate max-w-[160px] max-md:max-w-none">
                           {lead.name}
                         </p>
                         <p className="text-[12px] text-muted-foreground">{lead.phone}</p>
                         {lead.email && (
-                          <p className="text-[12px] text-muted-foreground truncate max-w-[160px]">
+                          <p className="text-[12px] text-muted-foreground truncate max-w-[160px] max-md:max-w-none">
                             {lead.email}
                           </p>
                         )}
@@ -692,13 +730,13 @@ export function LeadsClient({
                     </td>
 
                     {/* Assigned To — name + email */}
-                    <td className="px-4 py-3">
+                    <td data-label="Assigned to" className="px-4 py-3">
                       {lead.assignedTo ? (
                         <div className="min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate max-w-[140px]">
+                          <p className="text-xs font-medium text-foreground truncate max-w-[140px] max-md:max-w-none">
                             {lead.assignedTo.name ?? "—"}
                           </p>
-                          <p className="text-[12px] text-muted-foreground truncate max-w-[140px]">
+                          <p className="text-[12px] text-muted-foreground truncate max-w-[140px] max-md:hidden">
                             {lead.assignedTo.email}
                           </p>
                         </div>
@@ -708,7 +746,7 @@ export function LeadsClient({
                     </td>
 
                     {/* Status */}
-                    <td className="px-4 py-3">
+                    <td data-pin="top-right" className="px-4 py-3">
                       <span
                         className={cn(
                           "text-[12px] font-bold px-2 py-0.5 rounded-full",
@@ -720,28 +758,36 @@ export function LeadsClient({
                     </td>
 
                     {/* Source (WHERE they came from) + Channel (HOW they contacted us) */}
-                    <td className="px-4 py-3">
+                    <td data-label="Source" className="px-4 py-3 max-md:order-first">
                       <span className="text-[12px] bg-muted text-muted-foreground px-2 py-0.5 rounded-md">
                         {SOURCE_LABELS[lead.source]}
                       </span>
                       {lead.contactChannel && (
-                        <span className="mt-1 block text-[11px] text-muted-foreground">
+                        <span className="mt-1 block text-[11px] text-muted-foreground max-md:ml-1.5 max-md:mt-0 max-md:inline">
                           via {CONTACT_CHANNEL_LABELS[lead.contactChannel]}
                         </span>
                       )}
                     </td>
 
                     {/* Last Updated */}
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <td data-label="Last updated" className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(lead.updatedAt).toLocaleDateString("en-IN", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
+                        timeZone: "Asia/Kolkata",
                       })}
+                      <span className="block text-[11px] max-md:ml-1 max-md:inline">
+                        {new Date(lead.updatedAt).toLocaleTimeString("en-IN", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          timeZone: "Asia/Kolkata",
+                        })}
+                      </span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-3">
+                    <td data-actions className="px-4 py-3">
                       <InlineConfirmActions
                         confirming={confirmDelete === lead.id}
                         onConfirm={() => handleDelete(lead.id)}

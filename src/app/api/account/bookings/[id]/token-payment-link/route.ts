@@ -21,14 +21,14 @@ export async function GET(_req: Request, { params }: Params) {
   const booking = await prisma.booking.findFirst({
     where: { id, ...customerBookingWhere(session.user.id, session.user.email) },
     select: {
-      itinerary: { select: { id: true, status: true } },
-      leads: { take: 1, select: { itinerary: { select: { id: true, status: true } } } },
+      itinerary: { select: { id: true, publishedAt: true } },
+      leads: { take: 1, select: { itinerary: { select: { id: true, publishedAt: true } } } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const itinerary = booking.itinerary ?? booking.leads[0]?.itinerary ?? null;
-  if (!itinerary || itinerary.status === "DRAFT") {
+  if (!itinerary || !itinerary.publishedAt) {
     return NextResponse.json({ error: "Itinerary is not available yet." }, { status: 404 });
   }
 

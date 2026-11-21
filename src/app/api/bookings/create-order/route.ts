@@ -5,7 +5,7 @@ import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { sendMail, bookingRequestReceivedHtml, bookingRequestReceivedText } from "@/lib/mail";
+import { sendMail, ADMIN_COPY, bookingRequestReceivedHtml, bookingRequestReceivedText } from "@/lib/mail";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/ratelimit";
 import {
   computeChargeable,
@@ -331,6 +331,7 @@ export async function POST(req: NextRequest) {
     await sendMail({
       to: emailNorm,
       subject: `Booking Request Received — ${tour.title} | Vertex Kashmir Holidays`,
+      bcc: ADMIN_COPY,
       html: bookingRequestReceivedHtml(emailPayload),
       text: bookingRequestReceivedText(emailPayload),
     });

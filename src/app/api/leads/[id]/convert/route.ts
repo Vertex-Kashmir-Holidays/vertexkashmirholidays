@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRole } from "@/lib/itinerary/access";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
@@ -39,16 +40,25 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  // Conversion is a lead activity, so only the staff member the lead is assigned
-  // to may convert it — not an admin acting on someone else's lead.
-  if (lead.assignedToId !== guard.user.id) {
+  // The assignee converts their own lead; an admin may convert any lead on the
+  // assignee's behalf — the conversion is still credited to the assignee.
+  if (lead.assignedToId !== guard.user.id && !isAdminRole(guard.user.role)) {
     return NextResponse.json(
-      { error: "Only the staff member this lead is assigned to can convert it." },
+      { error: "Only the staff member this lead is assigned to (or an admin) can convert it." },
       { status: 403 },
     );
   }
   if (lead.status === "CONVERTED" || lead.locked) {
     return NextResponse.json({ error: "This lead is already converted." }, { status: 422 });
+  }
+
+  // The booking's travel date comes from the lead — without it the booking
+  // would have no real trip date (and its edit window would close at once).
+  if (!lead.startDate) {
+    return NextResponse.json(
+      { error: "Add the travel start date to this lead before converting.", code: "TRAVEL_DATE_REQUIRED" },
+      { status: 422 },
+    );
   }
 
   // Business rule: an itinerary must be prepared and linked to the lead before it
@@ -120,6 +130,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         paymentMethod: paymentMethod ?? null,
         performedById,
         performedByName,
+        // Credit stays with the salesperson the lead is assigned to.
+        creditToId: lead.assignedToId ?? performedById,
         creditCommission: true,
       });
 

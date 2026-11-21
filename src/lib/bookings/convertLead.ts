@@ -2,6 +2,7 @@ import type { Lead, Prisma } from "@prisma/client";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { computeGstDeduction, computeBookingProfit, computeCommission } from "@/lib/bookings/commission";
 import { buildServicesFromItinerary } from "@/lib/bookings/itineraryToServices";
+import { matchHotelSupplierIds } from "@/lib/bookings/hotelLink";
 import { pickAttribution } from "@/lib/attribution";
 import { itineraryDataSchema } from "@/types/itinerary";
 
@@ -35,12 +36,19 @@ export interface ConvertLeadToBookingInput {
   performedById: string;
   performedByName: string;
   /**
+   * Who the commission is credited to — the lead's assignee, even when an admin
+   * clicked Convert for them. Defaults to the performer.
+   */
+  creditToId?: string | null;
+  /**
    * Sales incentive commission — a normal-lead-only concept (the converting
    * staff member's personal conversion rate). B2B partner sales have no
    * commission/pricing system yet (explicitly out of scope), so B2B callers
    * pass false and this step is skipped entirely, not just zeroed.
    */
   creditCommission: boolean;
+  /** Stay id → the hotel confirmed for a stay that offered several (B2B). */
+  hotelPicks?: Record<string, string>;
 }
 
 export interface ConvertLeadToBookingResult {
@@ -72,6 +80,7 @@ export async function convertLeadToBooking(
     performedByName,
     creditCommission,
   } = input;
+  const creditToId = input.creditToId || performedById;
 
   // Atomic claim — must be the first statement. A concurrent second call
   // racing this same lead either commits after this one (sees locked: true,
@@ -87,13 +96,15 @@ export async function convertLeadToBooking(
     throw new LeadAlreadyConvertedError();
   }
 
+  // Both convert routes require a start date before calling in.
+  if (!lead.startDate) throw new Error("A travel start date is required to convert.");
   const travellers = lead.adults + (lead.children ?? 0);
   const booking = await tx.booking.create({
     data: {
       userId: customerId,
       amount: bookingAmount,
       status: "PENDING",
-      travelDate: lead.startDate ?? new Date(),
+      travelDate: lead.startDate,
       travelEndDate: lead.endDate ?? null,
       travellers: travellers > 0 ? travellers : 1,
       guestName: lead.name,
@@ -121,7 +132,7 @@ export async function convertLeadToBooking(
 
   if (creditCommission) {
     const employee = await tx.user.findUnique({
-      where: { id: performedById },
+      where: { id: creditToId },
       select: { bookingConversionPct: true },
     });
     const ratePct = employee?.bookingConversionPct;
@@ -140,7 +151,7 @@ export async function convertLeadToBooking(
       await tx.bookingCommission.create({
         data: {
           bookingId: booking.id,
-          employeeId: performedById,
+          employeeId: creditToId,
           rateSnapshotPct: ratePct,
           profitAmount,
           commissionAmount: computeCommission(profitAmount, ratePct),
@@ -155,6 +166,9 @@ export async function convertLeadToBooking(
     where: { id: lead.id },
     data: {
       status: "CONVERTED",
+      // Persist dates confirmed at conversion (the B2B dialog can supply them).
+      startDate: lead.startDate,
+      endDate: lead.endDate,
       negotiatedAmount: bookingAmount,
       tokenAmount,
       booking: { connect: { id: booking.id } },
@@ -178,10 +192,20 @@ export async function convertLeadToBooking(
     });
     const parsedItinerary = itineraryDataSchema.safeParse(itinerary.data);
     if (parsedItinerary.success) {
-      const services = buildServicesFromItinerary(parsedItinerary.data);
+      const services = buildServicesFromItinerary(parsedItinerary.data, input.hotelPicks);
       if (services.length > 0) {
+        const hotelIds = await matchHotelSupplierIds(
+          tx,
+          services.filter((s) => s.kind === "HOTEL").map((s) => s.name),
+        );
         await tx.bookingService.createMany({
-          data: services.map((s, i) => ({ ...s, bookingId: booking.id, sortOrder: i })),
+          data: services.map((s, i) => ({
+            ...s,
+            bookingId: booking.id,
+            sortOrder: i,
+            hotelSupplierId:
+              s.kind === "HOTEL" ? (hotelIds.get(s.name.trim().toLowerCase()) ?? null) : null,
+          })),
         });
       }
     }

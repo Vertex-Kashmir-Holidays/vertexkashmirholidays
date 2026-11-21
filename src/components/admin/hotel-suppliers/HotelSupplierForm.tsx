@@ -27,7 +27,6 @@ const schema = z.object({
   mapUrl: z.string().optional(),
   rating: z.string().optional(),
   services: z.string().optional(),
-  bookingsCount: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -78,7 +77,6 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       mapUrl: "",
       rating: "",
       services: "",
-      bookingsCount: "0",
     },
   });
 
@@ -119,7 +117,6 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
       isActive: true,
       recommended,
       hasFamilyRoom,
-      bookingsCount: Math.max(0, Math.round(Number(data.bookingsCount) || 0)),
       data: {
         property: {
           location: data.location || null,
@@ -225,17 +222,6 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
           <div>
             <label className={labelCls}>Rating</label>
             <input {...register("rating")} className={inputCls} placeholder="e.g. 4.7★ / 2,698 reviews" />
-          </div>
-          <div>
-            <label className={labelCls}>No. of Bookings</label>
-            <input
-              {...register("bookingsCount")}
-              type="number"
-              min={0}
-              step={1}
-              className={inputCls}
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">Manual tally, not auto-tracked.</p>
           </div>
           <div className="sm:col-span-2">
             <label className={labelCls}>Services</label>

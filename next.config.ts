@@ -48,6 +48,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["sharp"],
+  // Offer-letter PDFs read the signature (kept out of public/ on purpose) and
+  // the logo from disk at runtime — make sure they ship with those functions.
+  outputFileTracingIncludes: {
+    "/api/offer-letters/**": [
+      "./src/lib/offerLetters/assets/**",
+      "./public/brand/png/horizontal/vertex-horizontal-light-1600w.png",
+    ],
+  },
   experimental: {
     // Barrel-optimize these icon/animation/chart packages so importing a few
     // symbols doesn't pull the whole package into a route's bundle. recharts is

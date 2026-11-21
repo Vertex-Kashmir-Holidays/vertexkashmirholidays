@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { resyncDayDates } from "@/lib/itinerary/travelDates";
+import { stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Sparkles, BookmarkPlus } from "lucide-react";
+import { DayPlanPicker } from "../day-plans/DayPlanPicker";
+import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
+import { guessRoute, toProposalDay, type DayPlanRecord } from "@/lib/dayPlans/schema";
 import { Toolbar } from "./Toolbar";
+import { ProposalAssignee, type AssigneeOption } from "./ProposalAssignee";
 import { ConvertToItineraryDialog } from "./ConvertToItineraryDialog";
 import { ReorderableList } from "../itinerary/ReorderableList";
 import { EditableField } from "../itinerary/EditableField";
+import { HotelChoicesInput } from "./HotelChoicesInput";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
+import { ChipInput } from "../itinerary/ChipInput";
 import { ImagePicker } from "../itinerary/ImagePicker";
 import { PriceActivitySection } from "../itinerary/PriceActivitySection";
 import { ItineraryIcon } from "../itinerary/icons";
@@ -55,6 +64,10 @@ interface ProposalEditorProps {
   apiBasePath?: string;
   /** May create itineraries — shows "Convert to Itinerary". */
   canConvert?: boolean;
+  /** Day Plans library access: pick plans into days / save a day as a new plan. */
+  dayPlans?: { canPick: boolean; canSave: boolean };
+  /** "Assigned to" picker — set when the user may hand this proposal to someone. */
+  assignment?: { ownerName: string | null; assignedToId: string | null; staff: AssigneeOption[] };
 }
 
 export function ProposalEditor({
@@ -69,9 +82,20 @@ export function ProposalEditor({
   socialLinks,
   apiBasePath = "/api/proposals",
   canConvert = false,
+  dayPlans = { canPick: false, canSave: false },
+  assignment,
 }: ProposalEditorProps) {
   const router = useRouter();
-  const [data, setData] = useState<ProposalData>(initialData);
+  const [data, setRawData] = useState<ProposalData>(initialData);
+  // Every edit goes through resyncDayDates: day dates follow the travel start
+  // date and the days' order (a date set by hand stays otherwise).
+  const setData = useCallback(
+    (update: ProposalData | ((prev: ProposalData) => ProposalData)) =>
+      setRawData((prev) =>
+        resyncDayDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // "<customer> - <duration> - <phone>" from the cover; the API derives the
   // same string on save, so this is what the list will show.
   const title = initialTitle && data === initialData ? initialTitle : buildDocumentTitle(data);
@@ -196,6 +220,18 @@ export function ProposalEditor({
     }));
   const removeDay = (dayId: string) =>
     setData((p) => ({ ...p, days: p.days.filter((d) => d.id !== dayId) }));
+  // A picked library plan replaces ONLY the day's heading and description —
+  // stay, meals, highlights, photo and date are untouched. The copy is the
+  // proposal's own (editable); it never changes the library.
+  const [pickForDay, setPickForDay] = useState<string | null>(null);
+  const [saveDay, setSaveDay] = useState<ProposalDay | null>(null);
+  const applyDayPlan = (dayId: string, plan: DayPlanRecord) =>
+    setData((p) => ({
+      ...p,
+      days: p.days.map((d) => {
+        return d.id === dayId ? { ...d, ...toProposalDay(plan) } : d;
+      }),
+    }));
   const reorderDays = (next: ProposalDay[]) =>
     setData((p) => ({ ...p, days: keepDateLabelsInSlots(p.days, next) }));
 
@@ -241,6 +277,7 @@ export function ProposalEditor({
           vehicle: "",
           vehicleBudget: "",
           vehicleLuxury: "",
+          count: "1",
           seating: "",
           usedFor: "",
           duration: "",
@@ -385,7 +422,7 @@ export function ProposalEditor({
   }
 
   // Saves first (when allowed) so the itinerary is built from what's on screen.
-  async function handleConvert(tier: ProposalTierKey, leadId: string) {
+  async function handleConvert(tier: ProposalTierKey, leadId: string, hotelPicks: Record<string, string>) {
     if (!id) return;
     setConverting(true);
     if (canSave && !(await handleSave())) {
@@ -396,7 +433,7 @@ export function ProposalEditor({
       const res = await fetch(`${apiBasePath}/${id}/convert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, leadId }),
+        body: JSON.stringify({ tier, leadId, hotelPicks }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Conversion failed");
@@ -454,6 +491,11 @@ export function ProposalEditor({
     "block text-[11px] font-semibold uppercase tracking-wide text-mute dark:text-muted-foreground mb-1";
   // Shown only on phones, where table-style column headings are hidden.
   const mobileLabel = `${fieldLabel} sm:hidden`;
+  // Short one-line row fields (stay plan / transport): bordered inputs,
+  // 16px on phones so iOS doesn't zoom on focus.
+  const rowInput =
+    "w-full rounded-md border border-[hsl(40_14%_87%)]/80 bg-transparent px-2 py-1.5 outline-none transition-all focus:bg-muted/30 focus:ring-1 focus:ring-primary/30 dark:border-white/10 max-md:text-[16px] print:border-none print:p-0";
+
 
   return (
     <div className="pb-8">
@@ -484,6 +526,13 @@ export function ProposalEditor({
               }))
             : []
         }
+        stays={data.stayPlan.map((r) => ({
+          id: r.id,
+          destination: r.destination || "Stay",
+          choices: Object.fromEntries(
+            TIER_ORDER.map((tk) => [tk, parseHotelChoices(r[stayHotelField(tk)]).choices]),
+          ),
+        }))}
         isConverting={isConverting}
       />
       {id && initialTitle && (
@@ -496,85 +545,102 @@ export function ProposalEditor({
 
       <div className="px-3 py-7 sm:px-5">
         <div className="mx-auto max-w-[920px] space-y-8">
+          {id && assignment && (
+            <ProposalAssignee
+              proposalId={id}
+              ownerName={assignment.ownerName}
+              initialAssigneeId={assignment.assignedToId}
+              staff={assignment.staff}
+              apiBasePath={apiBasePath}
+            />
+          )}
           {/* Cover */}
-          <article className={pageCard}>
+          <article id="ps-cover" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>Cover</h2>
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
               <div>
                 <label className={fieldLabel}>Quote Number</label>
-                <EditableField
+                <input
                   value={data.quoteNumber}
-                  onValueChange={(v) => updateField("quoteNumber", v)}
+                  onChange={(e) => updateField("quoteNumber", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Duration</label>
-                <EditableField
+                <input
                   value={data.duration}
-                  onValueChange={(v) => updateField("duration", v)}
+                  onChange={(e) => updateField("duration", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Travel Dates</label>
-                <EditableField
+                <input
                   value={data.travelDates}
-                  onValueChange={(v) => updateField("travelDates", v)}
+                  onChange={(e) => updateField("travelDates", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared For</label>
-                <EditableField
+                <input
                   value={data.preparedFor}
-                  onValueChange={(v) => updateField("preparedFor", v)}
+                  onChange={(e) => updateField("preparedFor", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Customer Phone</label>
-                <EditableField
+                <input
                   value={data.customerPhone}
-                  onValueChange={(v) => updateField("customerPhone", v)}
+                  onChange={(e) => updateField("customerPhone", e.target.value)}
                   placeholder="+91 ..."
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Travellers</label>
-                <EditableField
+                <input
                   value={data.travelers}
-                  onValueChange={(v) => updateField("travelers", v)}
+                  onChange={(e) => updateField("travelers", e.target.value)}
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared By</label>
-                <EditableField
+                <input
                   value={data.preparedByName}
-                  onValueChange={(v) => updateField("preparedByName", v)}
+                  onChange={(e) => updateField("preparedByName", e.target.value)}
                   placeholder="Staff name"
+                  className={rowInput}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Prepared By — Phone</label>
-                <EditableField
+                <input
                   value={data.preparedByPhone}
-                  onValueChange={(v) => updateField("preparedByPhone", v)}
+                  onChange={(e) => updateField("preparedByPhone", e.target.value)}
                   placeholder="+91 ..."
+                  className={rowInput}
                 />
               </div>
             </div>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className={fieldLabel}>Title</label>
-                <EditableField
+                <input
                   value={data.coverTitle}
-                  onValueChange={(v) => updateField("coverTitle", v)}
-                  className="text-lg font-bold"
+                  onChange={(e) => updateField("coverTitle", e.target.value)}
+                  className={`${rowInput} text-lg font-bold`}
                 />
               </div>
               <div>
                 <label className={fieldLabel}>Subtitle</label>
-                <EditableField
+                <input
                   value={data.coverSubtitle}
-                  onValueChange={(v) => updateField("coverSubtitle", v)}
-                  className="text-lg font-bold"
+                  onChange={(e) => updateField("coverSubtitle", e.target.value)}
+                  className={`${rowInput} text-lg font-bold`}
                 />
               </div>
             </div>
@@ -584,6 +650,7 @@ export function ProposalEditor({
                 value={data.coverIntro}
                 onValueChange={(v) => updateField("coverIntro", v)}
                 rows={2}
+                className={rowInput}
               />
             </div>
             <div className="mt-5">
@@ -599,7 +666,7 @@ export function ProposalEditor({
           {/* Pricing Tiers — the single-package doc reuses this exact same
               tier-card editor, just for one fixed slot (SINGLE_TIER_KEY)
               instead of looping over all three. */}
-          <article className={pageCard}>
+          <article id="ps-packages" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {data.docType === "multi" ? "Your Three Options" : "Package & Price"}
             </h2>
@@ -614,31 +681,34 @@ export function ProposalEditor({
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                       <div>
                         <label className={fieldLabel}>Label</label>
-                        <EditableField
+                        <input
                           value={tier.label}
-                          onValueChange={(v) => updateTier(key, "label", v)}
+                          onChange={(e) => updateTier(key, "label", e.target.value)}
+                          className={rowInput}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Card Title</label>
-                        <EditableField
+                        <input
                           value={tier.title}
-                          onValueChange={(v) => updateTier(key, "title", v)}
+                          onChange={(e) => updateTier(key, "title", e.target.value)}
+                          className={rowInput}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Price</label>
-                        <EditableField
+                        <input
                           value={tier.priceLabel}
-                          onValueChange={(v) => updateTier(key, "priceLabel", v)}
-                          className="font-bold"
+                          onChange={(e) => updateTier(key, "priceLabel", e.target.value)}
+                          className={`${rowInput} font-bold`}
                         />
                       </div>
                       <div>
                         <label className={fieldLabel}>Cover Note</label>
-                        <EditableField
+                        <input
                           value={tier.coverNote}
-                          onValueChange={(v) => updateTier(key, "coverNote", v)}
+                          onChange={(e) => updateTier(key, "coverNote", e.target.value)}
+                          className={rowInput}
                         />
                       </div>
                     </div>
@@ -648,36 +718,33 @@ export function ProposalEditor({
                         value={tier.description}
                         onValueChange={(v) => updateTier(key, "description", v)}
                         rows={2}
+                        className={rowInput}
                       />
                     </div>
                     <div className="mt-3">
                       <label className={fieldLabel}>
                         Badge (e.g. &quot;MOST CHOSEN&quot;, blank = none)
                       </label>
-                      <EditableField
+                      <input
                         value={tier.badgeLabel}
-                        onValueChange={(v) => updateTier(key, "badgeLabel", v)}
+                        onChange={(e) => updateTier(key, "badgeLabel", e.target.value)}
                         placeholder="Blank = no badge"
-                        className="max-w-[220px]"
+                        className={`${rowInput} max-w-[220px]`}
                       />
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {tier.tags.map((tag, idx) => (
-                        <span key={idx} className="group/tag relative">
-                          <EditableField
+                    <div className="mt-3">
+                      <label className={fieldLabel}>Tags</label>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {tier.tags.map((tag, idx) => (
+                          <ChipInput
+                            key={idx}
                             value={tag}
-                            onValueChange={(v) => updateTierTag(key, idx, v)}
-                            className="rounded-full bg-[hsl(150_28%_92%)] px-3 py-1 text-[11px] font-bold text-[hsl(156_40%_21%)] dark:bg-primary/10 dark:text-primary"
+                            onChange={(v) => updateTierTag(key, idx, v)}
+                            onRemove={() => removeTierTag(key, idx)}
+                            label={`Tag ${idx + 1}`}
                           />
-                          <button
-                            onClick={() => removeTierTag(key, idx)}
-                            aria-label={`Remove tag ${tag}`}
-                            className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                        ))}
+                      </div>
                       <button onClick={() => addTierTag(key)} className={addBtn}>
                         <Plus className="h-2.5 w-2.5" /> tag
                       </button>
@@ -693,6 +760,7 @@ export function ProposalEditor({
                   value={data.tipText}
                   onValueChange={(v) => updateField("tipText", v)}
                   rows={2}
+                  className={rowInput}
                 />
               </div>
             ) : null}
@@ -701,7 +769,7 @@ export function ProposalEditor({
           {/* Comparison table — multi-package only; the single-package doc
               has only one option, nothing to compare. */}
           {data.docType !== "multi" ? null : (
-            <article className={pageCard}>
+            <article id="ps-compare" className={`${pageCard} scroll-mt-32`}>
               <h2 className={greenHead}>What Actually Differs</h2>
               <p className="mt-2 text-xs text-mute dark:text-muted-foreground">
                 Hotels, vehicles and activities are compared automatically from the Stay Plan,
@@ -727,15 +795,17 @@ export function ProposalEditor({
                       value={row.label}
                       onValueChange={(v) => updateComparisonRow(row.id, "label", v)}
                       placeholder="Feature"
-                      className="text-sm font-bold sm:col-span-1"
+                      className="col-span-2 text-sm font-bold sm:col-span-1"
                     />
                     {TIER_ORDER.map((tk) => (
-                      <OptionCell
-                        key={tk}
-                        tierKey={tk}
-                        value={row[tk]}
-                        onChange={(v) => updateComparisonRow(row.id, tk, v)}
-                      />
+                      <div key={tk} className="col-span-2 sm:col-span-1">
+                        <span className={mobileLabel}>{data.tiers[tk].label}</span>
+                        <OptionCell
+                          tierKey={tk}
+                          value={row[tk]}
+                          onChange={(v) => updateComparisonRow(row.id, tk, v)}
+                        />
+                      </div>
                     ))}
                     <button
                       onClick={() => removeComparisonRow(row.id)}
@@ -764,7 +834,7 @@ export function ProposalEditor({
           {/* Days — the single-package doc's "Day Plan at a Glance" table
               reads the same `days` array, plus its Meals column (blank/unused
               in multi-package). */}
-          <article className={pageCard}>
+          <article id="ps-days" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {data.docType === "multi" ? "Your Six Days" : "Day Plan at a Glance"}
             </h2>
@@ -798,11 +868,13 @@ export function ProposalEditor({
                             className="min-w-0 flex-1 text-sm font-bold"
                           />
                         </div>
-                        <EditableField
-                          value={day.dateLabel}
-                          onValueChange={(v) => updateDay(day.id, "dateLabel", v)}
-                          placeholder="Wed 10 Jun"
-                          className="pl-12 text-left text-xs text-mute dark:text-muted-foreground sm:w-24 sm:shrink-0 sm:pl-1 sm:text-right"
+                        {/* Filled from the travel start date (resyncDayDates); blank = not printed. */}
+                        <input
+                          type="date"
+                          aria-label={`Day ${dayIdx + 1} date`}
+                          value={stayDateInputValue(day.dateLabel)}
+                          onChange={(e) => updateDay(day.id, "dateLabel", e.target.value)}
+                          className="ml-12 w-36 text-xs text-mute dark:text-muted-foreground sm:ml-0 sm:shrink-0 rounded-md border border-[hsl(40_14%_87%)]/80 bg-transparent px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-primary/30 dark:border-white/10"
                         />
                       </div>
                       <EditableField
@@ -811,27 +883,36 @@ export function ProposalEditor({
                         rows={2}
                         className="mt-2 block text-sm"
                       />
-                      <div className="mt-2 grid grid-cols-2 gap-3">
-                        <EditableField
-                          value={day.stayLabel}
-                          onValueChange={(v) => updateDay(day.id, "stayLabel", v)}
-                          placeholder="Stay (blank on departure day)"
-                          className="text-xs text-mute dark:text-muted-foreground"
-                        />
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                          <label className={fieldLabel}>Stay</label>
+                          <input
+                            value={day.stayLabel}
+                            onChange={(e) => updateDay(day.id, "stayLabel", e.target.value)}
+                            placeholder="Blank on departure day"
+                            className={`${rowInput} text-sm`}
+                          />
+                        </div>
                         {data.docType === "multi" ? (
-                          <EditableField
-                            value={day.highlightsLine}
-                            onValueChange={(v) => updateDay(day.id, "highlightsLine", v)}
-                            placeholder="Highlights"
-                            className="text-xs text-mute dark:text-muted-foreground"
-                          />
+                          <div className="min-w-0">
+                            <label className={fieldLabel}>Highlights</label>
+                            <input
+                              value={day.highlightsLine}
+                              onChange={(e) => updateDay(day.id, "highlightsLine", e.target.value)}
+                              placeholder="Highlights"
+                              className={`${rowInput} text-sm`}
+                            />
+                          </div>
                         ) : (
-                          <EditableField
-                            value={day.mealsLabel}
-                            onValueChange={(v) => updateDay(day.id, "mealsLabel", v)}
-                            placeholder="Meals (e.g. Breakfast, Dinner)"
-                            className="text-xs text-mute dark:text-muted-foreground"
-                          />
+                          <div className="min-w-0">
+                            <label className={fieldLabel}>Meals</label>
+                            <input
+                              value={day.mealsLabel}
+                              onChange={(e) => updateDay(day.id, "mealsLabel", e.target.value)}
+                              placeholder="Breakfast, Dinner"
+                              className={`${rowInput} text-sm`}
+                            />
+                          </div>
                         )}
                       </div>
                     </div>
@@ -841,9 +922,54 @@ export function ProposalEditor({
                       className="h-32 sm:h-auto sm:min-h-28 sm:w-40 sm:shrink-0"
                     />
                   </div>
+                  {(dayPlans.canPick || dayPlans.canSave) && (
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-dashed border-[hsl(40_14%_87%)] pt-2.5 no-print dark:border-mute/20">
+                      {!dayPlans.canPick && <span />}
+                      {dayPlans.canPick && (
+                        <button
+                          type="button"
+                          onClick={() => setPickForDay(day.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[hsl(156_40%_21%)] px-2.5 py-1 text-xs font-bold text-white hover:brightness-110 dark:bg-primary dark:text-primary-foreground"
+                        >
+                          <Sparkles className="h-3 w-3" /> Pick from library
+                        </button>
+                      )}
+                      {dayPlans.canSave && (
+                        <button
+                          type="button"
+                          onClick={() => setSaveDay(day)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[hsl(40_14%_87%)] px-2.5 py-1 text-xs font-bold text-mute hover:text-foreground dark:border-mute/20 dark:text-muted-foreground"
+                        >
+                          <BookmarkPlus className="h-3 w-3" /> Save to library
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </ReorderableList>
+            {pickForDay && (
+              <DayPlanPicker
+                open
+                onOpenChange={(o) => !o && setPickForDay(null)}
+                dayNumber={data.days.findIndex((d) => d.id === pickForDay) + 1}
+                onPick={(plan) => applyDayPlan(pickForDay, plan)}
+              />
+            )}
+            {saveDay && (
+              <DayPlanFormDialog
+                open
+                onOpenChange={(o) => !o && setSaveDay(null)}
+                title="Save this day to the library"
+                initial={{
+                  ...EMPTY_DAY_PLAN,
+                  ...guessRoute(saveDay.title),
+                  title: saveDay.title,
+                  body: saveDay.body,
+                }}
+                onSaved={() => {}}
+              />
+            )}
             <button onClick={addDay} className={addBtn}>
               <Plus className="h-3 w-3" /> Add day
             </button>
@@ -852,14 +978,13 @@ export function ProposalEditor({
           {/* Stay Plan — both docs. Single: one hotel per row. Multi: one
               hotel per option (Premium = the single doc's hotel), printed as
               the comparison table's "Stays" section. */}
-          <article className={pageCard}>
+          <article id="ps-stays" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>{isMulti ? "Stay Plan — Hotel per Option" : "Stay Plan"}</h2>
             <div
-              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-5"}`}
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-4"}`}
             >
               <span className={fieldLabel}>Destination</span>
               <span className={fieldLabel}>Nights</span>
-              {isMulti ? null : <span className={fieldLabel}>Hotel Name</span>}
               {isMulti ? null : <span className={fieldLabel}>Room Type</span>}
               <span className={fieldLabel}>No. of Rooms</span>
             </div>
@@ -873,73 +998,76 @@ export function ProposalEditor({
                 <div className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20">
                   {/* Phones: the column headings above are hidden, so each
                       field carries its own label (mobileLabel) and the order
-                      is Destination / Nights + Rooms / Hotel / Room Type.
+                      is Destination / Nights + Rooms / Room Type, hotels below.
                       sm+: one row under the headings, labels hidden. */}
                   <div
-                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-5"}`}
+                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-4"}`}
                   >
                     <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Destination</span>
-                      <EditableField
+                      <input
                         value={row.destination}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "destination", v)}
+                        onChange={(e) => updateStayPlanRow(row.id, "destination", e.target.value)}
                         placeholder="Destination"
-                        className="text-sm font-bold"
+                        className={`${rowInput} text-sm font-bold`}
                       />
                     </div>
                     <div className="order-2 sm:order-none">
                       <span className={mobileLabel}>Nights</span>
-                      <EditableField
+                      <input
                         value={row.nights}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "nights", v)}
+                        onChange={(e) => updateStayPlanRow(row.id, "nights", e.target.value)}
                         placeholder="Nights"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
-                    {isMulti ? null : (
-                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
-                        <span className={mobileLabel}>Hotel Name</span>
-                        <EditableField
-                          value={row.hotelName}
-                          onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
-                          placeholder="Hotel Name / Similar"
-                          className="text-xs"
-                        />
-                      </div>
-                    )}
                     {/* Multi compares room class per option in the
                         comparison rows ("Room category") instead. */}
                     {isMulti ? null : (
                       <div className="order-5 col-span-2 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Room Type</span>
-                        <EditableField
+                        <input
                           value={row.roomType}
-                          onValueChange={(v) => updateStayPlanRow(row.id, "roomType", v)}
+                          onChange={(e) => updateStayPlanRow(row.id, "roomType", e.target.value)}
                           placeholder="Room Type"
-                          className="text-xs"
+                          className={`${rowInput} text-xs`}
                         />
                       </div>
                     )}
                     <div className="order-3 sm:order-none">
                       <span className={mobileLabel}>No. of Rooms</span>
-                      <EditableField
+                      <input
                         value={row.rooms}
-                        onValueChange={(v) => updateStayPlanRow(row.id, "rooms", v)}
+                        onChange={(e) => updateStayPlanRow(row.id, "rooms", e.target.value)}
                         placeholder="1"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                   </div>
+                  {/* Single: the hotel choices on their own line —
+                      Hotel 1 | Hotel 2 | Hotel 3 | Similar. */}
+                  {isMulti ? null : (
+                    <div className="mt-3">
+                      <span className={fieldLabel}>Hotels</span>
+                      <HotelChoicesInput
+                        inline
+                        destination={row.destination}
+                        value={row.hotelName}
+                        onValueChange={(v) => updateStayPlanRow(row.id, "hotelName", v)}
+                        className={`${rowInput} text-xs`}
+                      />
+                    </div>
+                  )}
                   {isMulti ? (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {TIER_ORDER.map((tk) => (
                         <div key={tk}>
                           <label className={fieldLabel}>{data.tiers[tk].label} hotel</label>
-                          <EditableField
+                          <HotelChoicesInput
+                            destination={row.destination}
                             value={row[stayHotelField(tk)]}
                             onValueChange={(v) => updateStayPlanRow(row.id, stayHotelField(tk), v)}
-                            placeholder="Hotel Name / Similar"
-                            className="text-xs"
+                            className={`${rowInput} text-xs`}
                           />
                         </div>
                       ))}
@@ -969,14 +1097,15 @@ export function ProposalEditor({
           </article>
 
           {/* Transportation — same single/multi split as Stay Plan. */}
-          <article className={pageCard}>
+          <article id="ps-transport" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {isMulti ? "Transportation — Vehicle per Option" : "Transportation"}
             </h2>
             <div
-              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-3" : "grid-cols-4"}`}
+              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-4" : "grid-cols-5"}`}
             >
               <span className={fieldLabel}>{isMulti ? "Used For" : "Vehicle"}</span>
+              <span className={fieldLabel}>No. of vehicles</span>
               <span className={fieldLabel}>Seating</span>
               {isMulti ? null : <span className={fieldLabel}>Used For</span>}
               <span className={fieldLabel}>Duration</span>
@@ -987,61 +1116,73 @@ export function ProposalEditor({
                   key={row.id}
                   className="group relative rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20"
                 >
-                  {/* Phones: labelled fields (mobileLabel), ordered Vehicle
-                      or Used For / Seating + Duration / Used For (single).
-                      sm+: one row under the column headings. */}
+                  {/* Phones (4 cols): Vehicle or Used For + No. / Seating +
+                      Duration / Used For (single, full width). sm+: one row
+                      under the column headings. */}
                   <div
-                    className={`grid grid-cols-2 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-4"}`}
+                    className={`grid grid-cols-4 gap-x-3 gap-y-2 ${isMulti ? "sm:grid-cols-4" : "sm:grid-cols-5"}`}
                   >
                     {isMulti ? null : (
-                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-1 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Vehicle</span>
-                        <EditableField
+                        <input
                           value={row.vehicle}
-                          onValueChange={(v) => updateTransportRow(row.id, "vehicle", v)}
+                          onChange={(e) => updateTransportRow(row.id, "vehicle", e.target.value)}
                           placeholder="Sedan"
-                          className="text-sm font-bold"
+                          className={`${rowInput} text-sm font-bold`}
                         />
                       </div>
                     )}
                     {isMulti ? (
-                      <div className="order-1 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-1 col-span-3 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Used For</span>
-                        <EditableField
+                        <input
                           value={row.usedFor}
-                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          onChange={(e) => updateTransportRow(row.id, "usedFor", e.target.value)}
                           placeholder="Used for"
-                          className="text-sm font-bold"
+                          className={`${rowInput} text-sm font-bold`}
                         />
                       </div>
                     ) : null}
                     <div className="order-2 sm:order-none">
+                      <span className={mobileLabel}>No.</span>
+                      <input
+                        value={row.count}
+                        onChange={(e) =>
+                          updateTransportRow(row.id, "count", e.target.value.replace(/\D/g, "").slice(0, 2))
+                        }
+                        inputMode="numeric"
+                        placeholder="1"
+                        className={`${rowInput} text-xs`}
+                      />
+                    </div>
+                    <div className="order-2 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Seating</span>
-                      <EditableField
+                      <input
                         value={row.seating}
-                        onValueChange={(v) => updateTransportRow(row.id, "seating", v)}
+                        onChange={(e) => updateTransportRow(row.id, "seating", e.target.value)}
                         placeholder="04 + driver"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                     {isMulti ? null : (
-                      <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
+                      <div className="order-4 col-span-4 sm:order-none sm:col-span-1">
                         <span className={mobileLabel}>Used For</span>
-                        <EditableField
+                        <input
                           value={row.usedFor}
-                          onValueChange={(v) => updateTransportRow(row.id, "usedFor", v)}
+                          onChange={(e) => updateTransportRow(row.id, "usedFor", e.target.value)}
                           placeholder="Used for"
-                          className="text-xs"
+                          className={`${rowInput} text-xs`}
                         />
                       </div>
                     )}
-                    <div className="order-3 sm:order-none">
+                    <div className="order-3 col-span-2 sm:order-none sm:col-span-1">
                       <span className={mobileLabel}>Duration</span>
-                      <EditableField
+                      <input
                         value={row.duration}
-                        onValueChange={(v) => updateTransportRow(row.id, "duration", v)}
+                        onChange={(e) => updateTransportRow(row.id, "duration", e.target.value)}
                         placeholder="06 Days"
-                        className="text-xs"
+                        className={`${rowInput} text-xs`}
                       />
                     </div>
                   </div>
@@ -1088,44 +1229,43 @@ export function ProposalEditor({
           {/* Activities — multi: one cell per option (✓ / – / text), printed
               as the comparison's "Activities" section. Single: the Premium
               cell is the detail; a dash leaves the activity out of the PDF. */}
-          <article className={pageCard}>
+          <article id="ps-activities" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>
               {isMulti ? "Activities — per Option" : "Activities Included"}
             </h2>
-            <div
-              className={`mt-6 hidden gap-x-3 px-3 sm:grid ${isMulti ? "grid-cols-4" : "grid-cols-2"}`}
-            >
-              <span className={fieldLabel}>Activity</span>
-              {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
-                <span key={tk} className={fieldLabel}>
-                  {isMulti ? data.tiers[tk].label : "Details (✓ = included)"}
-                </span>
-              ))}
-            </div>
-            <div className="mt-2 space-y-3">
+            {/* One card per activity with labelled inputs (same feel as the
+                itinerary's activity cards; proposals have no activity photo). */}
+            <div className="mt-6 space-y-3">
               {data.activities.map((row) => (
                 <div
                   key={row.id}
-                  className={`group relative grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-8 dark:border-mute/20 ${isMulti ? "sm:grid-cols-4" : ""}`}
+                  className={`relative grid grid-cols-1 gap-x-3 gap-y-2 rounded-xl border border-[hsl(40_14%_87%)] p-3 pr-10 dark:border-mute/20 ${isMulti ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
                 >
-                  <EditableField
-                    value={row.label}
-                    onValueChange={(v) => updateActivity(row.id, "label", v)}
-                    placeholder="Shikara ride"
-                    className="text-sm font-bold"
-                  />
-                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
-                    <OptionCell
-                      key={tk}
-                      tierKey={tk}
-                      value={row[tk]}
-                      onChange={(v) => updateActivity(row.id, tk, v)}
+                  <div className={isMulti ? "sm:col-span-3" : ""}>
+                    <label className={fieldLabel}>Activity</label>
+                    <input
+                      value={row.label}
+                      onChange={(e) => updateActivity(row.id, "label", e.target.value)}
+                      placeholder="Shikara ride"
+                      className={`${rowInput} text-sm font-bold`}
                     />
+                  </div>
+                  {(isMulti ? TIER_ORDER : [SINGLE_TIER_KEY]).map((tk) => (
+                    <div key={tk}>
+                      <label className={fieldLabel}>
+                        {isMulti ? data.tiers[tk].label : "Details (✓ = included)"}
+                      </label>
+                      <OptionCell
+                        tierKey={tk}
+                        value={row[tk]}
+                        onChange={(v) => updateActivity(row.id, tk, v)}
+                      />
+                    </div>
                   ))}
                   <button
                     onClick={() => removeActivity(row.id)}
                     aria-label={`Remove activity ${row.label}`}
-                    className="absolute right-2 top-1/2 hidden -translate-y-1/2 text-rose-500 hover:text-rose-600 group-hover:block no-print [@media(hover:none)]:block"
+                    className="absolute right-3 top-3 text-rose-500 hover:text-rose-600 no-print"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -1149,7 +1289,7 @@ export function ProposalEditor({
           </article>
 
           {/* What's Covered */}
-          <article className={pageCard}>
+          <article id="ps-covered" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>What&apos;s Covered</h2>
             <div className="mt-8 space-y-10">
               <ListColumn
@@ -1185,7 +1325,7 @@ export function ProposalEditor({
 
           {/* Payment & Cancellation — same 3-column card + tier table pattern
               as ItineraryEditor.tsx, same field names. */}
-          <article className={pageCard}>
+          <article id="ps-payment" className={`${pageCard} scroll-mt-32`}>
             <h2 className="font-serif text-3xl font-bold text-[hsl(156_40%_21%)] dark:text-primary">
               Payment &amp; Cancellation
             </h2>
@@ -1234,27 +1374,21 @@ export function ProposalEditor({
                 <div className="hidden w-px shrink-0 bg-[hsl(40_14%_87%)] dark:bg-mute/20 sm:block" />
 
                 <div className="sm:min-w-0 sm:flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <label className={fieldLabel}>Payment methods</label>
+                  <div className="grid gap-2">
                     {data.pay.map((tag, idx) => (
-                      <span key={idx} className="group/tag relative">
-                        <EditableField
-                          value={tag}
-                          onValueChange={(v) => updateListItem("pay", idx, v)}
-                          className="rounded-full bg-[hsl(150_28%_92%)] px-3 py-1 text-[11px] font-bold text-[hsl(156_40%_21%)] dark:bg-primary/10 dark:text-primary"
-                        />
-                        <button
-                          onClick={() => removeListItem("pay", idx)}
-                          aria-label={`Remove tag ${tag}`}
-                          className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] text-white group-hover/tag:flex no-print [@media(hover:none)]:flex"
-                        >
-                          ×
-                        </button>
-                      </span>
+                      <ChipInput
+                        key={idx}
+                        value={tag}
+                        onChange={(v) => updateListItem("pay", idx, v)}
+                        onRemove={() => removeListItem("pay", idx)}
+                        label={`Payment method ${idx + 1}`}
+                      />
                     ))}
-                    <button onClick={() => addListItem("pay", "New tag")} className={addBtn}>
-                      <Plus className="h-2.5 w-2.5" /> tag
-                    </button>
                   </div>
+                  <button onClick={() => addListItem("pay", "New tag")} className={addBtn}>
+                    <Plus className="h-2.5 w-2.5" /> tag
+                  </button>
                   <EditableField
                     value={data.payNote}
                     onValueChange={(v) => updateField("payNote", v)}
@@ -1312,7 +1446,7 @@ export function ProposalEditor({
 
           {/* Why Choose Us — editable like the main Itinerary module's "Why
               Choose Vertex" (title/subtitle per item, icon fixed per item). */}
-          <article className={pageCard}>
+          <article id="ps-why-us" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>Why Choose Us</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {data.whyChoose.map((w) => (
@@ -1342,7 +1476,7 @@ export function ProposalEditor({
           </article>
 
           {/* Closing */}
-          <article className={pageCard}>
+          <article id="ps-confirm" className={`${pageCard} scroll-mt-32`}>
             <h2 className={greenHead}>How to Confirm</h2>
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
               {(
@@ -1444,13 +1578,13 @@ function OptionCell({
         value={value}
         onValueChange={onChange}
         placeholder={placeholder ?? "✓ / – / details"}
-        className="min-w-0 flex-1 text-xs"
+        className="min-w-0 flex-1 border border-[hsl(40_14%_87%)]/80 px-2 py-1.5 text-sm dark:border-white/10 print:border-none"
       />
       <button
         type="button"
         onClick={() => onChange(COMPARISON_CHECK)}
         aria-label={`Set ${tierKey} to included`}
-        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-[hsl(156_40%_21%)] no-print"
+        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-[hsl(156_40%_21%)] no-print max-md:px-2.5 max-md:py-1.5 max-md:text-sm"
       >
         ✓
       </button>
@@ -1458,7 +1592,7 @@ function OptionCell({
         type="button"
         onClick={() => onChange(COMPARISON_DASH)}
         aria-label={`Set ${tierKey} to not included`}
-        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-mute no-print"
+        className="shrink-0 rounded border border-[hsl(40_14%_87%)] px-1 text-[10px] text-mute no-print max-md:px-2.5 max-md:py-1.5 max-md:text-sm"
       >
         –
       </button>
@@ -1492,9 +1626,9 @@ function ListColumn({
       </h3>
       <ul className="mt-5 space-y-3 text-sm text-ink/85 dark:text-muted-foreground">
         {items.map((item) => (
-          <li key={item.id} className="group relative flex items-start gap-2.5 pr-6">
+          <li key={item.id} className="group relative flex items-start gap-2.5 pr-7">
             <span
-              className={`mt-0.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}
+              className={`mt-1.5 flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full text-white ${tone === "inc" ? "bg-[hsl(156_40%_21%)] dark:bg-primary" : "bg-rose-500"}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1509,24 +1643,27 @@ function ListColumn({
               </svg>
             </span>
             <div className="min-w-0 flex-1">
-              <EditableField
+              <input
                 value={item.category}
-                onValueChange={(v) => onUpdateCategory(item.id, v)}
+                onChange={(e) => onUpdateCategory(item.id, e.target.value)}
                 placeholder="Category"
-                className="inline-block rounded bg-[#E8F2EB] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#145C3E] dark:bg-primary/10 dark:text-primary"
+                aria-label="Category"
+                className="w-full max-w-[220px] rounded-md border border-[hsl(40_14%_87%)]/80 bg-transparent px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#145C3E] outline-none focus:ring-1 focus:ring-primary/30 dark:border-white/10 dark:text-primary max-md:text-[16px] print:border-none"
               />
+              {/* Can be a full sentence — a bordered box that wraps. */}
               <EditableField
                 value={item.text}
                 onValueChange={(v) => onUpdateText(item.id, v)}
-                className="mt-1"
+                aria-label="Item"
+                className="mt-1.5 border border-[hsl(40_14%_87%)]/80 px-2 py-1.5 text-sm dark:border-white/10 print:border-none"
               />
             </div>
             <button
               onClick={() => onRemove(item.id)}
               aria-label={`Remove item from ${title}`}
-              className="absolute right-0 top-0 hidden text-rose-500 group-hover:block no-print [@media(hover:none)]:block"
+              className="absolute right-0 top-1 text-rose-500 hover:text-rose-600 no-print"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </li>
         ))}

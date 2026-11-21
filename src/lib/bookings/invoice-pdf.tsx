@@ -15,6 +15,7 @@ import {
   type InvoiceAgentBranding,
 } from "@/lib/pdf/InvoiceDocuments";
 import { resolvePrimaryOffice } from "@/lib/companyOffice";
+import { toDisplayService } from "@/lib/bookings/serviceDisplay";
 import { isB2bAgentWhiteLabelEligible } from "@/lib/b2b/whiteLabelEligibility";
 
 /**
@@ -85,16 +86,7 @@ export async function renderBookingSummaryPdf(
     services: booking.services,
   });
 
-  const services: PdfService[] = booking.services.map((s) => ({
-    kind: s.kind,
-    name: s.name,
-    location: s.location,
-    nights: s.nights,
-    roomType: s.roomType,
-    pickup: s.pickup,
-    dropoff: s.dropoff,
-    timing: s.timing,
-  }));
+  const services: PdfService[] = booking.services.map(toDisplayService);
   const ref = bookingRef(booking.id);
   const [logo, settings, branding] = await Promise.all([
     loadLogoDataUrl(),
@@ -178,6 +170,8 @@ export async function renderPaymentReceiptPdf(
         totalPaid: finance.paidAmount,
         balance: finance.balance,
         statusLabel: PAYMENT_STATUS_LABELS[finance.paymentStatus],
+        gstPercent: payment.gstPercent,
+        gstAmount: payment.gstAmount,
       }}
     />,
   );

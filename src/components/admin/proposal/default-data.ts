@@ -116,7 +116,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-1",
       title: "Arrival & Srinagar Gardens",
-      dateLabel: "Wed 10 Jun",
+      dateLabel: "",
       body: "Airport pickup, then the Mughal Gardens – Shalimar, Nishat and Cheshmashahi – with Shankaracharya Temple and Hazratbal Dargah before sunset.",
       stayLabel: "Srinagar",
       highlightsLine: "Mughal Gardens · Hazratbal · Dal Lake",
@@ -126,7 +126,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-2",
       title: "Gulmarg",
-      dateLabel: "Thu 11 Jun",
+      dateLabel: "",
       body: "A full day in the Meadow of Flowers, with the Gondola climbing to Kongdoori and horse trails out to Strawberry Valley. Back to Srinagar for the night.",
       stayLabel: "Srinagar",
       highlightsLine: "Gondola · Strawberry Valley",
@@ -136,7 +136,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-3",
       title: "Sonamarg",
-      dateLabel: "Fri 12 Jun",
+      dateLabel: "",
       body: "Up the Sindh valley to the Meadow of Gold. Thajiwas Glacier sits a short pony ride from the road head, with the Himalayan wall behind it.",
       stayLabel: "Srinagar",
       highlightsLine: "Thajiwas Glacier · Sindh Valley",
@@ -146,7 +146,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-4",
       title: "Pahalgam",
-      dateLabel: "Sat 13 Jun",
+      dateLabel: "",
       body: "Through Pampore's saffron fields and Awantipora to the Lidder valley. Aru and Betaab in the afternoon, then a night beside the river.",
       stayLabel: "Pahalgam",
       highlightsLine: "Aru · Betaab · Lidder",
@@ -156,7 +156,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-5",
       title: "Back to Srinagar",
-      dateLabel: "Sun 14 Jun",
+      dateLabel: "",
       body: "Pari Mahal and Chashme Shahi above the lake, an afternoon in the old city bazaars, and a Shikara out onto Dal as the light goes.",
       stayLabel: "Srinagar",
       highlightsLine: "Pari Mahal · Shikara · Bazaars",
@@ -166,7 +166,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
     {
       id: "pday-6",
       title: "Departure",
-      dateLabel: "Mon 15 Jun",
+      dateLabel: "",
       body: "Breakfast, then your driver takes you to Srinagar airport. Pickup time is confirmed with you the evening before.",
       // Left blank on purpose — the departure day shows a plane icon with
       // `highlightsLine` alone instead of the usual bed-icon + highlights
@@ -223,6 +223,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       vehicleBudget: "Sedan (Dzire / Etios)",
       vehicle: "Sedan or Ertiga",
       vehicleLuxury: "Innova Crysta",
+      count: "1",
       seating: "04 + driver",
       usedFor: "Airport transfers & all sightseeing",
       duration: "06 Days",
@@ -232,6 +233,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       vehicleBudget: "–",
       vehicle: "–",
       vehicleLuxury: "✓",
+      count: "1",
       seating: "Union taxi",
       usedFor: "Pahalgam valley taxis — Aru, Betaab, Chandanwari",
       duration: "Day 4",
@@ -241,6 +243,7 @@ export const DEFAULT_PROPOSAL_DATA: ProposalData = {
       vehicleBudget: "–",
       vehicle: "–",
       vehicleLuxury: "✓",
+      count: "1",
       seating: "Union taxi",
       usedFor: "Sonamarg union taxi — Thajiwas Glacier",
       duration: "Day 3",
@@ -499,6 +502,7 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
       vehicle: "Sedan",
       vehicleBudget: "",
       vehicleLuxury: "",
+      count: "1",
       seating: "04 + driver",
       usedFor: "Airport pick-up & drop, all sightseeing and inter-city transfers",
       duration: "06 Days",
@@ -513,22 +517,26 @@ export const DEFAULT_SINGLE_PROPOSAL_DATA: ProposalData = {
 
   optionalActivities: DEFAULT_OPTIONAL_ACTIVITIES,
 
+  // Grouped by `category` in the PDF (a heading shows whenever it changes from
+  // the previous row) — same categories as the itinerary's defaults; keep
+  // same-category rows adjacent.
   inc: [
-    { id: "sinc-1", category: "", text: "Hotel stay for 5 nights as per plan" },
-    { id: "sinc-2", category: "", text: "Daily breakfast and dinner" },
-    { id: "sinc-3", category: "", text: "All transfers and sightseeing by private vehicle" },
-    { id: "sinc-4", category: "", text: "Driver allowance, fuel, parking, tolls" },
-    { id: "sinc-5", category: "", text: "All hotel taxes and GST, airport pick-up and drop" },
-    { id: "sinc-6", category: "", text: "24x7 support from our local team" },
-    { id: "sinc-7", category: "", text: "Honeymoon room decoration" },
-    { id: "sinc-8", category: "", text: "1 hour Shikara ride" },
-    { id: "sinc-9", category: "", text: "Honeymoon special cake" },
+    { id: "sinc-1", category: "Stay", text: "Hotel stay for 5 nights as per plan" },
+    { id: "sinc-5", category: "Stay", text: "All hotel taxes and GST" },
+    { id: "sinc-2", category: "Meals", text: "Daily breakfast and dinner" },
+    { id: "sinc-3", category: "Transport", text: "All transfers and sightseeing by private vehicle" },
+    { id: "sinc-10", category: "Transport", text: "Airport pick-up and drop" },
+    { id: "sinc-4", category: "Transport", text: "Driver allowance, fuel, parking, tolls" },
+    { id: "sinc-8", category: "Activities", text: "1 hour Shikara ride" },
+    { id: "sinc-7", category: "Honeymoon", text: "Honeymoon room decoration" },
+    { id: "sinc-9", category: "Honeymoon", text: "Honeymoon special cake" },
+    { id: "sinc-6", category: "Support", text: "24x7 support from our local team" },
   ],
   exc: [
-    { id: "sexc-1", category: "", text: "Pony rides and local union taxi charges" },
-    { id: "sexc-2", category: "", text: "Entry fees at gardens and monuments" },
-    { id: "sexc-3", category: "", text: "Lunch, travel insurance and personal expenses" },
-    { id: "sexc-4", category: "", text: "Anything not listed under inclusions" },
+    { id: "sexc-1", category: "Activities on the day", text: "Pony rides and local union taxi charges" },
+    { id: "sexc-2", category: "Activities on the day", text: "Entry fees at gardens and monuments" },
+    { id: "sexc-3", category: "Personal", text: "Lunch, travel insurance and personal expenses" },
+    { id: "sexc-4", category: "Other", text: "Anything not listed under inclusions" },
   ],
   policyNote:
     "All costs are inclusive of GST. Rates are held only up to the validity date on the cover and can move with hotel availability during peak season.",

@@ -45,14 +45,12 @@ export function resolveItineraryAccess(
 
   if (it.leadId) {
     const assigned = it.lead?.assignedToId === user.id;
-    // Admins may VIEW any lead-linked itinerary, but only the lead's assignee may
-    // EDIT it while the lead is open — managing a lead is the assignee's job.
-    // Exception: a converted lead an admin has unlocked for corrections (via the
-    // booking's "Unlock for changes") is editable by admins too.
+    // The lead's assignee and admins may edit it (admins without reassigning
+    // the lead first). A converted lead stays locked until an admin unlocks it
+    // (the booking's "Unlock for changes").
     const canView = admin || assigned;
     const locked = it.locked || (it.lead?.locked ?? false);
-    const adminCorrection = admin && it.lead?.status === "CONVERTED";
-    return { canView, canEdit: (assigned || adminCorrection) && !locked, locked };
+    return { canView, canEdit: (assigned || admin) && !locked, locked };
   }
 
   // Direct-booking itinerary: staff-managed (owner or admin). Editable until the
@@ -74,18 +72,23 @@ export function resolveItineraryAccess(
 
 /**
  * B2B itineraries (managed under /admin/b2b-itineraries; not assignee-scoped
- * like a normal lead's). Same lifecycle as a customer's:
+ * like a normal lead's):
  *   • before the request is converted — anyone allowed to edit itineraries;
- *   • once converted — locked with the booking, view-only;
- *   • while an admin has the booking "Unlocked for changes" — admins may edit;
- *     re-locking the booking's services locks it again.
+ *   • once converted — admins may edit while the booking's services are
+ *     unlocked (before the first lock, or after "Unlock for changes"), and it
+ *     is view-only while they're locked. The booking's servicesLocked is the
+ *     source of truth here, not the lead/itinerary `locked` flags — conversion
+ *     sets those immediately, before the services have ever been locked.
  */
 export function resolveB2bItineraryAccess(
-  it: { locked: boolean; lead: { locked: boolean; status: string } },
+  it: {
+    locked: boolean;
+    lead: { locked: boolean; status: string; booking?: { servicesLocked: boolean } | null };
+  },
   user: { role: Role | string; canEditItineraries: boolean },
 ): { canEdit: boolean; locked: boolean; converted: boolean } {
-  const locked = it.locked || it.lead.locked;
   const converted = it.lead.status === "CONVERTED";
+  const locked = converted ? (it.lead.booking?.servicesLocked ?? true) : it.locked || it.lead.locked;
   const allowed = converted ? isAdminRole(user.role) : user.canEditItineraries;
   return { canEdit: allowed && !locked, locked, converted };
 }

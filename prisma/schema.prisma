@@ -77,6 +77,7 @@ model User {
   itineraries              Itinerary[]          @relation("ItineraryOwner")
   itinerariesEdited        Itinerary[]          @relation("ItineraryEditor")
   proposals                ProposalItinerary[]  @relation("ProposalOwner")
+  assignedProposals        ProposalItinerary[]  @relation("ProposalAssignee")
   leadsAssigned            Lead[]               @relation("LeadAssignee")
   b2bRequests              Lead[]               @relation("B2BAgentLeads")
   b2bRequestsCreated       Lead[]               @relation("LeadCreatedBy")
@@ -96,6 +97,9 @@ model User {
   // ── Season Rate Cards ────────────────────────────────────────────────────
   rateCardsUpdated         RateCard[]           @relation("RateCardUpdatedBy")
   rateCardRevisions        RateCardRevision[]   @relation("RateCardRevisionCreatedBy")
+  offerLetters             OfferLetter[]        @relation("OfferLetterEmployee")
+  offerLettersCreated      OfferLetter[]        @relation("OfferLetterCreatedBy")
+  agentDocuments           AdminDocument[]      @relation("AgentDocuments")
 
   // email already has a unique index via @unique above — no separate @@index needed.
   @@index([deletedAt])
@@ -160,9 +164,17 @@ model Itinerary {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
+  // ── Client-visible copy (see src/lib/itinerary/publish.ts) ──
+  // Customers and B2B agents only ever see this snapshot, never the live
+  // `data` staff are still editing. Set by an explicit "Publish" in the
+  // editor; null = never shared, so the client sees nothing yet.
+  publishedTitle String?
+  publishedData  Json?
+  publishedAt    DateTime?
+
   // ── Booking-token Razorpay Payment Link (see src/lib/itinerary/tokenPaymentLink.ts) ──
-  // The single CURRENT active/most-recent fixed-amount (₹2,000, or the tour total
-  // if lower) token Payment Link embedded as a QR in this itinerary's PDF. Kept on
+  // The single CURRENT active/most-recent token Payment Link (10% of the package
+  // total, rounded up to ₹500) embedded as a QR in this itinerary's PDF. Kept on
   // Itinerary (not Booking) because a link can be minted while the itinerary is
   // still only Lead-linked, before conversion — Booking may not exist yet. Only
   // ever one row of "current" link state; a superseded (expired/replaced) link is
@@ -212,10 +224,15 @@ model ProposalItinerary {
   data      Json
   ownerId   String
   owner     User           @relation("ProposalOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // Sales person the proposal is handed to (e.g. made on a colleague's
+  // behalf). Owner and assignee both see/edit it; admins see all.
+  assignedToId String?
+  assignedTo   User?          @relation("ProposalAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
   @@index([ownerId])
+  @@index([assignedToId])
   @@index([status])
 }
 
@@ -307,20 +324,20 @@ model RolePermission {
 // destination/category/isActive stay relational columns because they're the
 // fields Sales actually filters/searches by; everything else nests in `data`.
 model HotelSupplier {
-  id                    String        @id @default(cuid())
+  id                    String           @id @default(cuid())
   hotelName             String
   destination           String
   category              HotelCategory
-  isActive              Boolean       @default(true)
+  isActive              Boolean          @default(true)
   // Sales-curated "push this property first" flag — separate from `category`
   // (which is auto-derived from rate) since recommendation is a judgment call.
-  recommended           Boolean       @default(false)
+  recommended           Boolean          @default(false)
   // Staff-ticked: the hotel has a family room set (for family enquiries).
-  hasFamilyRoom         Boolean       @default(false)
-  // Manual tally of bookings sent to this hotel — staff-entered (not derived
-  // from any Booking relation; HotelSupplier is a supplier reference, not
-  // bookable inventory, per the module's own design — see schema.ts).
-  bookingsCount         Int           @default(0)
+  hasFamilyRoom         Boolean          @default(false)
+  // Legacy manual tally — no longer shown or editable; bookings given to a
+  // hotel are counted only from linked, confirmed BookingService stays (see
+  // getConfirmedStayStats). Kept so old tallies aren't deleted.
+  bookingsCount         Int              @default(0)
   // Stamped by POST /api/hotel-suppliers/[id]/request-rates after a successful
   // send — never set any other way. Null means no request has been sent yet.
   lastRateRequestSentAt DateTime?
@@ -334,7 +351,7 @@ model HotelSupplier {
   // sortOrder column — see src/lib/hotelSuppliers/stats.ts.
   coverImageUrl         String?
   roomImageUrl          String?
-  showOnWebsite         Boolean       @default(false)
+  showOnWebsite         Boolean          @default(false)
   // The public "View on Google" CTA reuses data.property.mapUrl (already
   // admin-configured, already inline-editable in the Hotel Rates table) —
   // confirmed against real rows that it's already a proper Google listing
@@ -345,9 +362,10 @@ model HotelSupplier {
   // POST /api/hotel-suppliers/[id]/like — never tied to a Lead or a specific
   // visitor's identity. Read-only in the admin UI; only the like route
   // writes it.
-  publicLikeCount       Int           @default(0)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  publicLikeCount       Int              @default(0)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  bookingServices       BookingService[]
 
   @@index([destination])
   @@index([category])
@@ -398,6 +416,27 @@ model RateCardRevision {
   createdBy   User?    @relation("RateCardRevisionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@unique([rateCardId, version])
+}
+
+// Offer cum Appointment Letter issued to an employee (/admin/employees/[id]/offer-letter).
+// `data` is the full snapshot of what the letter prints (validated by
+// src/lib/offerLetters/schema.ts), so a letter re-downloads exactly as issued
+// even after the employee's profile changes. Editable until it is emailed
+// (sentAt set); after that a correction is a new letter with a new refNo.
+model OfferLetter {
+  id          String    @id @default(cuid())
+  refNo       String    @unique
+  employeeId  String
+  employee    User      @relation("OfferLetterEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  data        Json
+  sentAt      DateTime?
+  sentTo      String?
+  createdById String?
+  createdBy   User?     @relation("OfferLetterCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([employeeId])
 }
 
 enum RateCardStatus {
@@ -704,12 +743,15 @@ model Booking {
   inclusions         String              @default("[]")
   // Once locked, services can no longer be added/edited/deleted.
   servicesLocked     Boolean             @default(false)
-  // Assigned driver/vehicle, added by staff after services are locked. Editable
-  // through the end of travelDate (including the tour start day). driverAddedAt non-null = details exist.
+  // LEGACY single driver/vehicle — superseded by `drivers` (BookingDriver,
+  // one row per vehicle; migration 20261117090000 copied these across). No
+  // longer read or written; kept only so live doesn't break between migrate
+  // and deploy. Drop in a later migration.
   driverName         String?
   driverPhone        String?
   vehicleNumber      String?
   vehicleName        String?
+  // Stamped the first time drivers are saved (preserved on later edits).
   driverAddedAt      DateTime?
   // Soft-delete marker. Non-null = hidden from all listings/reports but the row
   // (and its payments/services) is retained. Permanent delete removes the row.
@@ -739,6 +781,7 @@ model Booking {
   leads              Lead[]
   payments           BookingPayment[]
   services           BookingService[]
+  drivers            BookingDriver[]
   itinerary          Itinerary?
   offlineConversions OfflineConversion[]
   commission         BookingCommission?
@@ -785,22 +828,92 @@ model BookingPayment {
 // A line item in a booking's services sheet. One table covers all kinds; only
 // the columns relevant to a kind are populated (others stay null).
 model BookingService {
-  id        String      @id @default(cuid())
-  bookingId String
-  booking   Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  kind      ServiceKind
-  name      String // Hotel name / Cab name / Activity name / Other name
-  amount    Float       @default(0)
-  location  String? // hotel + activity
-  nights    Int? // hotel
-  roomType  String? // hotel — e.g. "1 room", "1 room + 1 extra bed", "Family room"
-  pickup    String? // transport
-  dropoff   String? // transport
-  timing    String? // activity
-  sortOrder Int         @default(0)
-  createdAt DateTime    @default(now())
+  id                String             @id @default(cuid())
+  bookingId         String
+  booking           Booking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind              ServiceKind
+  name              String // Hotel name / Cab name / Activity name / Other name
+  amount            Float              @default(0)
+  location          String? // hotel + activity
+  nights            Int? // hotel
+  roomType          String? // hotel — e.g. "1 room", "1 room + 1 extra bed", "Family room"
+  // Hotel booking facts printed on the customer's booking summary so they can
+  // show it at the hotel. Nullable: services created before these existed stay blank.
+  rooms             Int? // hotel — number of rooms
+  checkIn           DateTime?          @db.Date // hotel
+  checkOut          DateTime?          @db.Date // hotel
+  // Hotel only. Optional link to the hotel list; `name` stays the snapshot shown
+  // everywhere, so renaming/deleting a HotelSupplier never rewrites a booking.
+  hotelSupplierId   String?
+  hotelSupplier     HotelSupplier?     @relation(fields: [hotelSupplierId], references: [id], onDelete: SetNull)
+  // Whether the stay is confirmed with the hotel (null = not yet tracked, shown
+  // as Pending). hotelConfirmedAt is stamped server-side on → CONFIRMED.
+  hotelConfirmation HotelConfirmation?
+  hotelConfirmedAt  DateTime?
+  // Hotel only. Confirmed without a token payment (a friendly hotel that
+  // doesn't need one) — set from the confirm dialog after a warning.
+  hotelTokenWaived  Boolean            @default(false)
+  // Money we have paid the hotel for this stay (token, then balance before
+  // checkout). The stay's `amount` is the total owed to the hotel.
+  hotelPayments     HotelPayment[]
+  pickup            String? // transport
+  dropoff           String? // transport
+  vehicles          Int? // transport — number of vehicles of this type (null = 1)
+  timing            String? // activity
+  sortOrder         Int                @default(0)
+  createdAt         DateTime           @default(now())
 
   @@index([bookingId])
+  @@index([hotelSupplierId])
+}
+
+// Assigned driver + vehicle for a booking — one row per vehicle (a big group
+// can travel in two). Added by staff after services are locked, editable
+// through the end of travelDate (src/lib/bookings/driver.ts). Saved as a
+// whole list: the driver API replaces every row each time.
+model BookingDriver {
+  id            String   @id @default(cuid())
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  driverName    String
+  driverPhone   String
+  vehicleName   String
+  vehicleNumber String
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+// A payment we made to a hotel for one stay (BookingService of kind HOTEL).
+// Usually two: a token to confirm, then the balance before checkout. Recorded
+// from the confirm dialog or the hotel's page; works after services lock.
+model HotelPayment {
+  id           String           @id @default(cuid())
+  serviceId    String
+  service      BookingService   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  amount       Float
+  type         HotelPaymentType
+  method       String // Via — same set as BookingPayment.method (Cash/UPI/…)
+  paidBy       String // By — who made the payment
+  receiptUrl   String? // optional receipt (PDF/image) — cash often has none
+  emailedTo    String? // hotel address the confirmation went to, null = not emailed
+  recordedById String?
+  createdAt    DateTime         @default(now())
+
+  @@index([serviceId])
+}
+
+enum HotelPaymentType {
+  TOKEN
+  BALANCE
+}
+
+enum HotelConfirmation {
+  PENDING
+  REQUESTED
+  CONFIRMED
+  CANCELLED
 }
 
 // One row per lead-converted booking, tracking the salesperson's commission
@@ -1024,6 +1137,14 @@ model Lead {
   tokenAmount         Float?
   // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
   locked              Boolean             @default(false)
+  // Manual itinerary PDF uploaded by staff (e.g. a 5-star one made outside the
+  // generator) — shown to the customer (booking) / B2B agent (request) as a
+  // download. One file, replaced on re-upload. The artifact link is staff-only
+  // and must never be selected into customer/agent pages.
+  manualItineraryUrl  String?
+  manualItineraryName String?
+  manualItineraryAt   DateTime?
+  itineraryArtifactUrl String?
   ipAddress           String?
   userAgent           String?
   // ── Marketing attribution — captured once at submission, permanent from then
@@ -1095,6 +1216,7 @@ model Lead {
   activities          LeadActivity[]
   itinerary           Itinerary?
   offlineConversions  OfflineConversion[]
+  b2bMessages         B2bMessage[]
 
   @@index([status])
   @@index([source])
@@ -1231,6 +1353,28 @@ model OfflineConversion {
   @@unique([leadId, platform])
   @@unique([bookingId, platform])
   @@index([status])
+}
+
+// B2B Communication — one row per email sent to B2B agents (Admin → B2B
+// Communication). Recipients are a snapshot [{id, name, agencyName, email}];
+// the attachment itself is not stored, only its file name.
+model B2bMessage {
+  id             String   @id @default(cuid())
+  subject        String
+  message        String
+  attachmentName String?
+  // Optional tagged B2B request (a follow-up about one request).
+  requestId      String?
+  request        Lead?    @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  recipients     Json
+  sent           Int      @default(0)
+  failed         Int      @default(0)
+  sentById       String?
+  sentByName     String
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([requestId])
 }
 
 model LeadActivity {
@@ -1453,10 +1597,16 @@ model AdminDocument {
   sizeBytes      Int
   uploadedById   String?
   uploadedByName String
+  // Set = shared with this one B2B agent only (Admin → B2B Agents → Documents,
+  // e.g. their proposal); null = library doc, B2B category goes to all agents.
+  // Cascade: deleting the agent removes their private documents.
+  agentId        String?
+  agent          User?    @relation("AgentDocuments", fields: [agentId], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now())
 
   @@index([category])
   @@index([createdAt])
+  @@index([agentId])
 }
 
 // External reference links staff want quick access to from the Docs page —
@@ -2553,4 +2703,31 @@ enum BannerLayout {
 enum BannerType {
   STRIP // thin full-width bar above navbar — one visible at a time
   PROMO // rich image+text card placed within page content areas
+}
+
+// Destinations Library — ready-written day headings + descriptions per route
+// ("Srinagar → Gulmarg"), several versions per route. Picking one copies only
+// the heading and description into a proposal day (the rest of the day is
+// untouched, and editing the copy never changes the library). Managed under
+// the Itineraries permission. from == to = a local day.
+model DayPlan {
+  id          String        @id @default(cuid())
+  fromPlace   String
+  toPlace     String
+  title       String
+  body        String
+  season      DayPlanSeason @default(ALL_YEAR)
+  isActive    Boolean       @default(true)
+  sortOrder   Int           @default(0)
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([fromPlace, toPlace])
+}
+
+enum DayPlanSeason {
+  ALL_YEAR
+  SUMMER
+  WINTER
 }

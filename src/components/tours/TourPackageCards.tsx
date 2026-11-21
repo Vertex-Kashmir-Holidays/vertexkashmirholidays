@@ -28,6 +28,8 @@ interface TourPackageCardsProps {
   /** Tour.hidePrice — "Request Quote" instead of prices (options arrive with
    *  priceForTwo zeroed) and the enquiry asks the budget. */
   priceHidden?: boolean;
+  /** Persons each price covers — packagePartySize(Tour.minPersons). */
+  partySize?: number;
 }
 
 // "Choose Your Package" section on a tour detail page — one card per
@@ -74,6 +76,7 @@ export function TourPackageCards({
   tourName,
   options,
   priceHidden = false,
+  partySize = 2,
 }: TourPackageCardsProps) {
   const wa = useWhatsAppLink();
   const [enquiring, setEnquiring] = useState<TourPackageOption | null>(null);
@@ -92,7 +95,7 @@ export function TourPackageCards({
       <p className="mt-1 text-[14px] text-muted-foreground">
         {priceHidden
           ? "Same itinerary, your choice of stay and services. Each package is quoted for your dates and group size."
-          : "Same itinerary, your choice of stay and services. Prices shown are for 2 persons — for other group sizes, our team will share a quote on request."}
+          : `Same itinerary, your choice of stay and services. Prices shown are for ${partySize} persons — for other group sizes, our team will share a quote on request.`}
       </p>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -189,7 +192,9 @@ export function TourPackageCards({
                     <span className="text-[24px] font-extrabold leading-none text-foreground">
                       ₹{o.priceForTwo.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-[14px] font-medium text-muted-foreground">/ 2 persons</span>
+                    <span className="text-[14px] font-medium text-muted-foreground">
+                      / {partySize} persons
+                    </span>
                   </p>
                 )}
 

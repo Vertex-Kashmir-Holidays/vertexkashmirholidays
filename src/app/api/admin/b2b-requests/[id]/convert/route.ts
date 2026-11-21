@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { resolveGst } from "@/lib/payments/gst";
 import { convertLeadToBooking, LeadAlreadyConvertedError } from "@/lib/bookings/convertLead";
-import { isItinerarySent } from "@/lib/b2b/requestStatus";
+import { isItinerarySent } from "@/lib/b2b/requestStatus";import { itineraryDataSchema } from "@/types/itinerary";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
+
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,12 @@ const schema = z.object({
   tokenAmount: z.coerce.number().positive("Token amount must be greater than zero."),
   paymentMethod: z.string().trim().max(40).nullable().optional(),
   gstPercent: z.coerce.number().min(0).max(100),
+  // Travel dates ("YYYY-MM-DD") — a request's dates are only set when it's
+  // created, so the convert dialog confirms/supplies them (prefilled).
+  startDate: z.iso.date("Enter the travel start date."),
+  endDate: z.iso.date().nullable().optional(),
+  // Stay id → the hotel confirmed for each stay that offered several choices.
+  hotelPicks: z.record(z.string(), z.string().trim().min(1).max(200)).optional(),
 });
 
 /**
@@ -43,12 +51,15 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (lead.status === "CONVERTED" || lead.locked) {
     return NextResponse.json({ error: "This request is already converted." }, { status: 422 });
   }
+  if (lead.status === "REJECTED") {
+    return NextResponse.json({ error: "This request is closed." }, { status: 422 });
+  }
 
   // Same business rule as the normal flow: an itinerary must exist before a
   // request can be converted — it's the agreed plan the booking is built on.
   const itinerary = await prisma.itinerary.findUnique({
     where: { leadId: id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, publishedAt: true, data: true },
   });
   if (!itinerary) {
     return NextResponse.json(
@@ -60,10 +71,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
   // …and it must have gone to the agent first — a draft isn't an agreed plan.
-  if (!isItinerarySent(itinerary.status)) {
+  // "Gone" means published: the agent sees nothing until it is.
+  if (!isItinerarySent(itinerary.status) || !itinerary.publishedAt) {
     return NextResponse.json(
       {
-        error: "Send the itinerary to the agent before converting this request.",
+        error: "Publish the itinerary to the agent before converting this request.",
         code: "ITINERARY_NOT_SENT",
       },
       { status: 422 },
@@ -84,6 +96,27 @@ export async function POST(req: NextRequest, { params }: Params) {
     );
   }
   const { bookingAmount, tokenAmount, paymentMethod, gstPercent } = parsed.data;
+  const startDate = new Date(`${parsed.data.startDate}T00:00:00.000Z`);
+  const endDate = parsed.data.endDate ? new Date(`${parsed.data.endDate}T00:00:00.000Z`) : null;
+
+  // Every stay that offers several hotels needs the one the agent confirmed.
+  const hotelPicks = parsed.data.hotelPicks ?? {};
+  const itineraryData = itineraryDataSchema.safeParse(itinerary.data);
+  for (const h of itineraryData.success ? itineraryData.data.hotels : []) {
+    const { choices } = parseHotelChoices(h.hotelDetails);
+    if (choices.length > 1 && !choices.includes(hotelPicks[h.id] ?? "")) {
+      return NextResponse.json(
+        { error: `Pick the confirmed hotel for ${h.destination || "each stay"}.` },
+        { status: 422 },
+      );
+    }
+  }
+  if (endDate && endDate < startDate) {
+    return NextResponse.json(
+      { error: "Travel end date can't be before the start date." },
+      { status: 422 },
+    );
+  }
 
   const tokenGst = resolveGst(tokenAmount, gstPercent, paymentMethod);
 
@@ -102,7 +135,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     ({ bookingId } = await prisma.$transaction((tx) =>
       convertLeadToBooking({
         tx,
-        lead,
+        lead: { ...lead, startDate, endDate },
         // The agent IS the customer/account — never resolved or created via
         // email/phone matching, unlike the normal lead path.
         customerId: lead.b2bAgentId,
@@ -113,6 +146,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         performedById,
         performedByName,
         creditCommission: false,
+        hotelPicks,
       }),
     ));
   } catch (err) {

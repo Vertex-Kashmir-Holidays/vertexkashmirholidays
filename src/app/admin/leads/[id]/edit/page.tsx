@@ -64,33 +64,23 @@ export default async function EditLeadPage({ params }: PageProps) {
   if (!lead) notFound();
 
   // Access rules (the form opens for the assignee or any admin — others not found):
-  //  • Assignee on an active lead → full edit.
-  //  • Admin on a still-unassigned lead → full edit.
-  //  • Admin on someone else's assigned lead → reassign-only (only the "Assign To"
-  //    field is editable; every other field is locked).
+  //  • Assignee or any admin on an active lead → full edit (admins don't need to
+  //    reassign the lead to themselves first).
   //  • Anyone on a locked (converted) lead → view-only until an admin unlocks it.
-  // Read-only/assign-only states show the form with a business message instead of a
-  // 404, which would wrongly imply the lead doesn't exist.
+  // The read-only state shows the form with a business message instead of a 404,
+  // which would wrongly imply the lead doesn't exist.
   const isAssignee = lead.assignedToId === session?.user?.id;
   const isAdmin = isAdminRole(session?.user?.role);
   if (!isAssignee && !isAdmin) notFound();
 
-  const canFullyEdit = !lead.locked && (isAssignee || (isAdmin && !lead.assignedToId));
-  // Admin on an assigned, unlocked lead they don't own → may only reassign it.
-  const assignOnly = !lead.locked && isAdmin && !!lead.assignedToId && !isAssignee;
-  const readOnly = !canFullyEdit && !assignOnly;
-  const assigneeName = lead.assignedTo?.name ?? lead.assignedTo?.email ?? "another staff member";
+  const canFullyEdit = !lead.locked && (isAssignee || isAdmin);
+  const readOnly = !canFullyEdit;
   const readOnlyNotice = lead.locked
     ? {
         title: "This lead is locked",
         body: "It has been converted to a booking, so its details are read-only. An admin must unlock the lead before any changes can be made.",
       }
-    : assignOnly
-      ? {
-          title: "Reassign only",
-          body: `This lead is assigned to ${assigneeName}. As an admin you can change who it's assigned to below, but only the assignee can edit its other details.`,
-        }
-      : undefined;
+    : undefined;
 
   const defaultValues = {
     name: lead.name,
@@ -134,21 +124,17 @@ export default async function EditLeadPage({ params }: PageProps) {
             <ChevronRight className="w-3 h-3" />
           </li>
           <li className="text-foreground font-medium">
-            {readOnly ? "View" : assignOnly ? "Reassign" : "Edit"}
+            {readOnly ? "View" : "Edit"}
           </li>
         </ol>
       </nav>
 
       <div>
         <h2 className="font-display font-extrabold text-foreground text-xl">
-          {readOnly ? "View Lead" : assignOnly ? "Reassign Lead" : "Edit Lead"}
+          {readOnly ? "View Lead" : "Edit Lead"}
         </h2>
         <p className="text-muted-foreground text-xs mt-0.5">
-          {readOnly
-            ? `${lead.name}'s details (read-only)`
-            : assignOnly
-              ? `Reassign ${lead.name} to another staff member`
-              : `Update ${lead.name}'s details`}
+          {readOnly ? `${lead.name}'s details (read-only)` : `Update ${lead.name}'s details`}
         </p>
       </div>
 
@@ -158,7 +144,6 @@ export default async function EditLeadPage({ params }: PageProps) {
         leadId={lead.id}
         defaultValues={defaultValues}
         readOnly={readOnly}
-        assignOnly={assignOnly}
         readOnlyNotice={readOnlyNotice}
       />
     </div>
