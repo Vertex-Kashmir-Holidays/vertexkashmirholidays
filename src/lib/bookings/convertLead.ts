@@ -47,6 +47,8 @@ export interface ConvertLeadToBookingInput {
    * pass false and this step is skipped entirely, not just zeroed.
    */
   creditCommission: boolean;
+  /** Stay id → the hotel confirmed for a stay that offered several (B2B). */
+  hotelPicks?: Record<string, string>;
 }
 
 export interface ConvertLeadToBookingResult {
@@ -190,7 +192,7 @@ export async function convertLeadToBooking(
     });
     const parsedItinerary = itineraryDataSchema.safeParse(itinerary.data);
     if (parsedItinerary.success) {
-      const services = buildServicesFromItinerary(parsedItinerary.data);
+      const services = buildServicesFromItinerary(parsedItinerary.data, input.hotelPicks);
       if (services.length > 0) {
         const hotelIds = await matchHotelSupplierIds(
           tx,

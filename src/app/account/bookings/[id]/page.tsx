@@ -27,6 +27,7 @@ import {
 } from "@/lib/bookings/serviceDisplay";
 import { ItineraryDownloadButton } from "@/components/account/ItineraryDownloadButton";
 import { B2bItineraryDownloadButton } from "@/components/account/B2bItineraryDownloadButton";
+import { ManualItineraryLink } from "@/components/account/ManualItineraryLink";
 
 export const metadata: Metadata = { title: "Booking Details" };
 export const dynamic = "force-dynamic";
@@ -85,6 +86,9 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
           id: true,
           b2bAgentId: true,
           itinerary: { select: { publishedTitle: true, publishedAt: true } },
+          // Uploaded PDF only — the staff artifact link is never selected here.
+          manualItineraryUrl: true,
+          manualItineraryName: true,
         },
       },
     },
@@ -175,26 +179,38 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Trip itinerary */}
-      {itineraryVisible && itinerary?.publishedAt && (
+      {/* Trip itinerary — the published one and/or a staff-uploaded PDF */}
+      {((itineraryVisible && itinerary?.publishedAt) || originatingLead?.manualItineraryUrl) && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display font-bold text-foreground">Your Itinerary</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {itinerary.publishedTitle} · Updated{" "}
-                {itinerary.publishedAt.toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
+              {itineraryVisible && itinerary?.publishedAt && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {itinerary.publishedTitle} · Updated{" "}
+                  {itinerary.publishedAt.toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </div>
-            {b2bRequestId ? (
-              <B2bItineraryDownloadButton requestId={b2bRequestId} />
-            ) : (
-              <ItineraryDownloadButton bookingId={booking.id} />
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {itineraryVisible &&
+                itinerary?.publishedAt &&
+                (b2bRequestId ? (
+                  <B2bItineraryDownloadButton requestId={b2bRequestId} />
+                ) : (
+                  <ItineraryDownloadButton bookingId={booking.id} />
+                ))}
+              {originatingLead?.manualItineraryUrl && (
+                <ManualItineraryLink
+                  url={originatingLead.manualItineraryUrl}
+                  name={originatingLead.manualItineraryName}
+                />
+              )}
+            </div>
           </div>
         </div>
       )}

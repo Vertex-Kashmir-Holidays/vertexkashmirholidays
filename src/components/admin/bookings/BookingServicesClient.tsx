@@ -36,6 +36,7 @@ import {
 import { isValidPhone, PHONE_MESSAGE } from "@/lib/auth/validation";
 import { hotelPaymentSummary } from "@/lib/bookings/hotelPayments";
 import { HotelPaymentDialog, type HotelPaymentResult } from "@/components/admin/bookings/HotelPaymentDialog";
+import { HotelCancelDialog } from "@/components/admin/bookings/HotelCancelDialog";
 
 type Kind = "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
 
@@ -1874,6 +1875,7 @@ function ServiceRow({
   const [hotelPayments, setHotelPayments] = useState(record.hotelPayments);
   const [tokenWaived, setTokenWaived] = useState(record.hotelTokenWaived);
   const [payDialog, setPayDialog] = useState<null | "confirm" | "payment">(null);
+  const [cancelDialog, setCancelDialog] = useState(false);
   const [form, setForm] = useState<RowForm>({
     name: record.name,
     location: record.location ?? "",
@@ -2009,11 +2011,14 @@ function ServiceRow({
   }
 
   const [confirmPending, startConfirm] = useTransition();
-  // Confirmed opens the confirm dialog (token payment or a waived token);
-  // the other statuses save straight away.
+  // A first Confirmed opens the confirm dialog (token payment or a waived
+  // token) — a stay confirmed before (paid, or token waived) just switches
+  // back; Cancelled opens the cancel dialog (reason + email to the hotel); the
+  // other statuses save straight away.
   function changeConfirmation(value: string) {
     if (!serverId) return;
-    if (value === "CONFIRMED") return setPayDialog("confirm");
+    if (value === "CONFIRMED" && hotelPayments.length === 0 && !tokenWaived) return setPayDialog("confirm");
+    if (value === "CANCELLED") return setCancelDialog(true);
     const prev = form.hotelConfirmation;
     setForm((p) => ({ ...p, hotelConfirmation: value }));
     startConfirm(async () => {
@@ -2027,7 +2032,6 @@ function ServiceRow({
           const j = (await res.json().catch(() => ({}))) as { error?: string };
           throw new Error(j.error ?? "Save failed.");
         }
-        setTokenWaived(false);
       } catch (err) {
         setForm((p) => ({ ...p, hotelConfirmation: prev }));
         toast.error(err instanceof Error ? err.message : "An error occurred.");
@@ -2252,6 +2256,23 @@ function ServiceRow({
             defaultPaidBy={hotelPay.defaultPaidBy}
             onClose={() => setPayDialog(null)}
             onDone={onHotelPaid}
+          />
+        )}
+        {cancelDialog && serverId && hotelPay && (
+          <HotelCancelDialog
+            target={{
+              bookingId,
+              serviceId: serverId,
+              hotelName: form.name.trim() || record.name,
+              guestName: hotelPay.guestName,
+              guests: hotelPay.guests,
+              hotelEmail: hotelOptions.find((o) => o.id === form.hotelSupplierId)?.email ?? null,
+            }}
+            onClose={() => setCancelDialog(false)}
+            onDone={() => {
+              setCancelDialog(false);
+              setForm((p) => ({ ...p, hotelConfirmation: "CANCELLED" }));
+            }}
           />
         )}
         <div className="flex flex-col gap-3 p-3 md:flex-row">

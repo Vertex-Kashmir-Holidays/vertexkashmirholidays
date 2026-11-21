@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Paperclip, Send, X } from "lucide-react";
+import { ExternalLink, Loader2, MessageCircle, Paperclip, Send, X } from "lucide-react";
 import {
   B2B_ATTACHMENT_ACCEPT,
   B2B_ATTACHMENT_MAX_BYTES,
@@ -60,6 +60,8 @@ export function EmailB2bAgentsDialog({
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
+  // WhatsApp: one prefilled chat per agent, opened by staff one at a time.
+  const [waChats, setWaChats] = useState<{ id: string; label: string; href: string | null }[] | null>(null);
 
   function applyTemplate(key: string) {
     const t = B2B_MESSAGE_TEMPLATES.find((x) => x.key === key);
@@ -83,11 +85,47 @@ export function EmailB2bAgentsDialog({
 
   // Opening with agents ticked defaults to those; otherwise to everyone.
   useEffect(() => {
-    if (open) setAudience(selected.length > 0 ? "selected" : "all");
+    if (open) {
+      setAudience(selected.length > 0 ? "selected" : "all");
+      setWaChats(null);
+    }
   }, [open, selected.length]);
 
   const count = request ? 1 : audience === "selected" ? selected.length : activeCount;
   const canSend = !sending && count > 0 && subject.trim().length >= 3 && message.trim().length >= 10;
+
+  // Same audience and message as the email, as WhatsApp chats to open.
+  async function prepareWhatsApp() {
+    if (!canSend) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/b2b-agents/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(request
+            ? { requestId: request.id }
+            : audience === "selected"
+              ? { agentIds: selected.map((s) => s.id) }
+              : {}),
+          subject: subject.trim(),
+          message: message.trim(),
+          ...(file ? { attachmentName: file.name } : {}),
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        chats?: { id: string; label: string; href: string | null }[];
+      };
+      if (!res.ok || !json.chats) throw new Error(json.error ?? "Could not prepare the WhatsApp messages.");
+      setWaChats(json.chats);
+      onSent?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not prepare the WhatsApp messages.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -144,6 +182,54 @@ export function EmailB2bAgentsDialog({
           Agents never see who else received it.
         </DialogDescription>
 
+        {waChats ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Open each chat — the message is filled in, just press Send in WhatsApp.
+              {file ? " Attach the file there yourself; WhatsApp links can't carry files." : ""}
+            </p>
+            <ul className="max-h-[50vh] divide-y divide-border overflow-y-auto rounded-xl border border-border">
+              {waChats.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                  <span className="min-w-0 truncate font-semibold text-foreground">{c.label}</span>
+                  {c.href ? (
+                    <a
+                      href={c.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-bold text-white hover:brightness-95"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Open chat
+                    </a>
+                  ) : (
+                    <span className="shrink-0 text-xs text-muted-foreground">No phone number</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWaChats(null)}
+                className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubject("");
+                  setMessage("");
+                  setFile(null);
+                  onOpenChange(false);
+                }}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={send} className="space-y-4">
           {request ? (
             <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm">
@@ -292,6 +378,15 @@ export function EmailB2bAgentsDialog({
               Cancel
             </button>
             <button
+              type="button"
+              disabled={!canSend}
+              onClick={prepareWhatsApp}
+              title="Send the same message on WhatsApp"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#25D366] px-4 py-2 text-sm font-bold text-[#128C7E] transition hover:bg-[#25D366]/10 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#25D366]"
+            >
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </button>
+            <button
               type="submit"
               disabled={!canSend}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
@@ -301,6 +396,7 @@ export function EmailB2bAgentsDialog({
             </button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

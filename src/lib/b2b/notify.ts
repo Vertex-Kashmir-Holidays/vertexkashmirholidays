@@ -64,7 +64,8 @@ const contactNameOf = (r: B2bRecipient) => r.name?.trim() || r.agencyName?.trim(
 
 // One email per agent (never a shared To/CC — agents must not see each other),
 // a few at a time. Best-effort per recipient: one bad address doesn't stop the
-// rest, and nothing here throws.
+// rest, and nothing here throws. Admin is BCC'd on the first email only — one
+// office copy per send, not one per agent on a bulk announcement.
 async function sendToEach(
   recipients: B2bRecipient[],
   build: (r: B2bRecipient) => {
@@ -79,9 +80,9 @@ async function sendToEach(
   const BATCH = 5;
   for (let i = 0; i < recipients.length; i += BATCH) {
     const results = await Promise.all(
-      recipients.slice(i, i + BATCH).map(async (r) => {
+      recipients.slice(i, i + BATCH).map(async (r, j) => {
         try {
-          const res = await sendMail({ to: r.email, ...build(r) });
+          const res = await sendMail({ to: r.email, ...(i + j === 0 ? { bcc: ADMIN_COPY } : {}), ...build(r) });
           return res.delivered;
         } catch (err) {
           console.error("[b2b/notify] partner update email failed", r.email, err);
@@ -163,7 +164,7 @@ export async function sendB2bAnnouncement(
 
 /** Tells the agent a request was closed, why, and how many closures their
  *  account now has. On the closure that reaches the limit the same email
- *  says the partnership is deactivated (admin gets a copy of that one). */
+ *  says the partnership is deactivated. Admin gets a copy. */
 export async function sendB2bRequestClosedEmail(
   agent: B2bRecipient,
   request: { guestName: string; days: number | null; pax: number },
@@ -191,7 +192,7 @@ export async function sendB2bRequestClosedEmail(
     const res = await sendMail({
       to: agent.email,
       subject,
-      ...(deactivated ? { bcc: ADMIN_COPY } : {}),
+      bcc: ADMIN_COPY,
       html: b2bAnnouncementHtml(data),
       text: b2bAnnouncementText(data),
     });

@@ -1137,6 +1137,14 @@ model Lead {
   tokenAmount         Float?
   // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
   locked              Boolean             @default(false)
+  // Manual itinerary PDF uploaded by staff (e.g. a 5-star one made outside the
+  // generator) — shown to the customer (booking) / B2B agent (request) as a
+  // download. One file, replaced on re-upload. The artifact link is staff-only
+  // and must never be selected into customer/agent pages.
+  manualItineraryUrl  String?
+  manualItineraryName String?
+  manualItineraryAt   DateTime?
+  itineraryArtifactUrl String?
   ipAddress           String?
   userAgent           String?
   // ── Marketing attribution — captured once at submission, permanent from then

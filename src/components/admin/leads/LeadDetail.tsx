@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
 import { LEAD_STATUS_STYLES } from "@/lib/leads/status";
+import { ManualItineraryCard } from "@/components/admin/leads/ManualItineraryCard";
 
 // IN_PROGRESS is a real LeadStatus value at the type level (it's a B2B-request
 // -only value — see prisma/schema.prisma), included here only so this type
@@ -136,6 +137,10 @@ interface Lead {
   updatedAt: Date | string;
   activities: Activity[];
   itinerary: LeadItinerary | null;
+  manualItineraryUrl: string | null;
+  manualItineraryName: string | null;
+  manualItineraryAt: Date | string | null;
+  itineraryArtifactUrl: string | null;
   // Raw attribution signals — what deriveChannel() (src/lib/attribution.server.ts)
   // actually classified `source` from. Shown so staff can self-diagnose an
   // unexpected source (e.g. a stale first-touch cookie carrying an old test
@@ -1136,6 +1141,19 @@ export function LeadDetail({
                 )}
               </div>
             )}
+            <div className="mt-4">
+              <ManualItineraryCard
+                leadId={lead.id}
+                audience="customer"
+                canEdit={canManage}
+                initial={{
+                  url: lead.manualItineraryUrl,
+                  name: lead.manualItineraryName,
+                  uploadedAt: lead.manualItineraryAt ? new Date(lead.manualItineraryAt).toISOString() : null,
+                  artifactUrl: lead.itineraryArtifactUrl,
+                }}
+              />
+            </div>
           </div>
 
           {/* Notes */}

@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { resolveGst } from "@/lib/payments/gst";
 import { convertLeadToBooking, LeadAlreadyConvertedError } from "@/lib/bookings/convertLead";
-import { isItinerarySent } from "@/lib/b2b/requestStatus";
+import { isItinerarySent } from "@/lib/b2b/requestStatus";import { itineraryDataSchema } from "@/types/itinerary";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
+
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,8 @@ const schema = z.object({
   // created, so the convert dialog confirms/supplies them (prefilled).
   startDate: z.iso.date("Enter the travel start date."),
   endDate: z.iso.date().nullable().optional(),
+  // Stay id → the hotel confirmed for each stay that offered several choices.
+  hotelPicks: z.record(z.string(), z.string().trim().min(1).max(200)).optional(),
 });
 
 /**
@@ -55,7 +59,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   // request can be converted — it's the agreed plan the booking is built on.
   const itinerary = await prisma.itinerary.findUnique({
     where: { leadId: id },
-    select: { id: true, status: true, publishedAt: true },
+    select: { id: true, status: true, publishedAt: true, data: true },
   });
   if (!itinerary) {
     return NextResponse.json(
@@ -94,6 +98,19 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { bookingAmount, tokenAmount, paymentMethod, gstPercent } = parsed.data;
   const startDate = new Date(`${parsed.data.startDate}T00:00:00.000Z`);
   const endDate = parsed.data.endDate ? new Date(`${parsed.data.endDate}T00:00:00.000Z`) : null;
+
+  // Every stay that offers several hotels needs the one the agent confirmed.
+  const hotelPicks = parsed.data.hotelPicks ?? {};
+  const itineraryData = itineraryDataSchema.safeParse(itinerary.data);
+  for (const h of itineraryData.success ? itineraryData.data.hotels : []) {
+    const { choices } = parseHotelChoices(h.hotelDetails);
+    if (choices.length > 1 && !choices.includes(hotelPicks[h.id] ?? "")) {
+      return NextResponse.json(
+        { error: `Pick the confirmed hotel for ${h.destination || "each stay"}.` },
+        { status: 422 },
+      );
+    }
+  }
   if (endDate && endDate < startDate) {
     return NextResponse.json(
       { error: "Travel end date can't be before the start date." },
@@ -129,6 +146,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         performedById,
         performedByName,
         creditCommission: false,
+        hotelPicks,
       }),
     ));
   } catch (err) {

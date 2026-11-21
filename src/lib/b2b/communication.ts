@@ -67,3 +67,20 @@ export function b2bRequestSummary(r: {
   ].filter(Boolean);
   return `Regarding your request: ${r.name} (${bits.join(", ")})`;
 }
+
+/** The same message as the email, laid out for WhatsApp: bold title, the
+ *  agent's name, "reply here" instead of "reply to this email". */
+export function b2bWhatsAppText(d: { contactName: string; subject: string; message: string }): string {
+  const body = d.message.trim().replace(/reply to this email/gi, "reply here");
+  return [
+    `*${d.subject.trim()}*`,
+    "",
+    `Dear ${d.contactName},`,
+    "",
+    body,
+    "",
+    "Regards,",
+    "B2B Partnerships Team",
+    "Vertex Kashmir Holidays",
+  ].join("\n");
+}
