@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { rowClick } from "@/components/admin/ui/rowClick";
 import { useRouter } from "next/navigation";
@@ -34,6 +34,9 @@ interface Props {
   initialItems: ProposalSummary[];
   /** Total proposals visible to this user, across all pages. */
   initialTotal: number;
+  /** People on proposals this user can see — the Created By / Assigned To filters. */
+  creators: { id: string; name: string }[];
+  assignees: { id: string; name: string }[];
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
@@ -42,6 +45,8 @@ interface Props {
 export function ProposalsClient({
   initialItems,
   initialTotal,
+  creators,
+  assignees,
   canCreate,
   canEdit,
   canDelete,
@@ -50,6 +55,16 @@ export function ProposalsClient({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("ALL");
+  const [phone, setPhone] = useState("");
+  const [debouncedPhone, setDebouncedPhone] = useState("");
+  const [createdBy, setCreatedBy] = useState("ALL");
+  const [assignedTo, setAssignedTo] = useState("ALL");
+
+  // Same 300 ms debounce the hook applies to the name search.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedPhone(phone.replace(/\D/g, "")), 300);
+    return () => clearTimeout(t);
+  }, [phone]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const { items, total, page, setPage, pageSize, changePageSize, pageCount, loading, reload } =
@@ -59,7 +74,7 @@ export function ProposalsClient({
       initialItems,
       initialTotal,
       search,
-      filters: { status: statusFilter },
+      filters: { status: statusFilter, phone: debouncedPhone, createdBy, assignedTo },
     });
 
   function remove(item: ProposalSummary) {
@@ -117,19 +132,59 @@ export function ProposalsClient({
       </div>
 
       <div className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="flex flex-col gap-3 p-4 sm:flex-row">
-          <div className="relative flex-1">
+        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title, customer name or phone…"
+              placeholder="Search by customer name…"
+              aria-label="Search by customer name"
+              className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+            />
+          </div>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              inputMode="tel"
+              placeholder="Customer phone…"
+              aria-label="Filter by customer phone"
               className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
             />
           </div>
           <select
+            value={createdBy}
+            onChange={(e) => setCreatedBy(e.target.value)}
+            aria-label="Filter by created by"
+            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+          >
+            <option value="ALL">Created by: anyone</option>
+            {creators.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={assignedTo}
+            onChange={(e) => setAssignedTo(e.target.value)}
+            aria-label="Filter by assigned to"
+            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+          >
+            <option value="ALL">Assigned to: anyone</option>
+            <option value="UNASSIGNED">Unassigned</option>
+            {assignees.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as (typeof STATUSES)[number])}
+            aria-label="Filter by status"
             className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
           >
             {STATUSES.map((sVal) => (

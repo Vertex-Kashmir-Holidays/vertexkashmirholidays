@@ -390,15 +390,15 @@ export function ProposalEditor({
     }));
 
   /* ---------- actions ---------- */
-  /** Resolves true once the proposal is saved. */
-  async function handleSave(): Promise<boolean> {
+  /** Resolves true once the proposal is saved. `nextStatus` saves it with that status. */
+  async function handleSave(nextStatus?: ProposalStatus): Promise<boolean> {
     if (!data.preparedFor.trim()) {
       toast.error("Please enter the customer name (Prepared For).");
       return false;
     }
     setSaving(true);
     try {
-      const payload = { status, data };
+      const payload = { status: nextStatus ?? status, data };
       const res = await fetch(id ? `${apiBasePath}/${id}` : apiBasePath, {
         method: id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -406,6 +406,7 @@ export function ProposalEditor({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Save failed");
+      if (nextStatus) setStatus(nextStatus);
       toast.success("Proposal saved.");
       if (!id && json.id) {
         router.replace(`/admin/proposals/${json.id}`);
@@ -447,6 +448,12 @@ export function ProposalEditor({
 
   async function handleExport() {
     setExporting(true);
+    // A downloaded PDF is what the customer receives, so save first (as Sent):
+    // a proposal that was only downloaded used to exist nowhere in the system.
+    if (canSave && !(await handleSave("SENT"))) {
+      setExporting(false);
+      return;
+    }
     try {
       const { bytes } = await downloadProposalPdf(data, companyAddress, trustContent, socialLinks);
       const kb = Math.round(bytes / 1024);
@@ -457,7 +464,8 @@ export function ProposalEditor({
       } else {
         toast.success(`PDF downloaded (${kb} KB).`);
       }
-      if (id && status === "DRAFT") {
+      // Viewers who can't save: still mark an existing draft as sent.
+      if (!canSave && id && status === "DRAFT") {
         const res = await fetch(`${apiBasePath}/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -505,7 +513,7 @@ export function ProposalEditor({
         onStatusChange={setStatus}
         docType={data.docType}
         onDocTypeChange={handleDocTypeChange}
-        onSave={handleSave}
+        onSave={() => handleSave()}
         onExport={handleExport}
         onReset={handleReset}
         isSaving={isSaving}
