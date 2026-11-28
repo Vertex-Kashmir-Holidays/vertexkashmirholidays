@@ -42,22 +42,32 @@ export function HotelPhotos({
   if (variant === "thumb") {
     if (photos.length === 0) {
       return (
-        <span className="flex h-11 w-16 items-center justify-center rounded-md bg-muted text-muted-foreground/50">
+        <span className="flex h-11 w-16 items-center justify-center rounded-md bg-muted text-muted-foreground/50 max-md:h-32 max-md:w-full max-md:gap-1.5 max-md:rounded-none max-md:text-xs max-md:font-semibold">
           <ImageOff className="h-4 w-4" />
+          <span className="md:hidden">No photo</span>
         </span>
       );
     }
-    // stopPropagation on the wrapper: the row navigates on click, and React
-    // bubbles lightbox (portal) clicks up through this tree too.
+    // Desktop: the thumb opens the lightbox, and stopPropagation keeps the row
+    // (which navigates on click) from firing — React bubbles lightbox (portal)
+    // clicks up through this tree too. Phones: it's the card's cover photo, so
+    // a tap falls through to the card and opens the hotel's page.
+    const isDesktop = () => window.matchMedia("(min-width: 768px)").matches;
     return (
-      <span onClick={(e) => e.stopPropagation()}>
+      <span className="block" onClick={(e) => isDesktop() && e.stopPropagation()}>
         <button
           type="button"
-          onClick={() => setOpenAt(0)}
-          className="relative block h-11 w-16 overflow-hidden rounded-md ring-1 ring-border hover:ring-primary"
+          onClick={() => isDesktop() && setOpenAt(0)}
+          className="relative block h-11 w-16 overflow-hidden rounded-md ring-1 ring-border hover:ring-primary max-md:h-44 max-md:w-full max-md:rounded-none max-md:ring-0"
           aria-label={`View ${hotelName} photos`}
         >
-          <Image src={photos[0].src} alt={photos[0].alt} fill sizes="64px" className="object-cover" />
+          <Image
+            src={photos[0].src}
+            alt={photos[0].alt}
+            fill
+            sizes="(max-width: 767px) 100vw, 64px"
+            className="object-cover"
+          />
         </button>
         {lightbox}
       </span>

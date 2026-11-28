@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPushToUsers } from "@/lib/push";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
@@ -155,6 +156,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
     throw err;
   }
+
+  await sendPushToUsers([lead.b2bAgentId], {
+    title: "Booking confirmed",
+    body: `${lead.name} — your request is now a confirmed booking.`,
+    link: `/account/bookings/${bookingId}`,
+  });
 
   return NextResponse.json({ bookingId }, { status: 201 });
 }

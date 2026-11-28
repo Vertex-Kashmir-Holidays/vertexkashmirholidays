@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPushToUsers } from "@/lib/push";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
@@ -85,6 +86,16 @@ export async function POST(req: NextRequest) {
       },
     })
     .catch((err) => console.error("[b2b-agents/email] history save failed", err));
+
+  // Same message as a push (the full text is in their email).
+  await sendPushToUsers(
+    recipients.map((r) => r.id),
+    {
+      title: "New message from Vertex Kashmir Holidays",
+      body: subject,
+      link: requestId ? `/account/requests/${requestId}` : "/account/requests",
+    },
+  );
 
   return NextResponse.json({ total: recipients.length, ...result });
 }

@@ -246,6 +246,18 @@ export type HotelData = z.infer<typeof hotelDataSchema>;
 
 // Extracts the leading number from a free-text rating string (e.g. "4.7★ /
 // 2,698 reviews" -> 4.7) for the rating sort. Null when nothing parses.
+/** Rating for display: a plain number ("4.8") gets the star ("4.8★"); older
+ *  free text ("4.7★ / 2,698 reviews") is shown as entered. */
+export function formatHotelRating(rating: string | null | undefined): string {
+  const r = rating?.trim() ?? "";
+  return /^\d+(\.\d+)?$/.test(r) ? `${r}★` : r;
+}
+
+/** Rating as typed → stored: the star is added on display, so it's dropped. */
+export function normalizeHotelRating(input: string): string | null {
+  return input.replace(/★/g, "").trim() || null;
+}
+
 export function parseRatingValue(rating: string | null | undefined): number | null {
   if (!rating) return null;
   const match = rating.match(/(\d+(\.\d+)?)/);

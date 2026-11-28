@@ -39,7 +39,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await auth();
 
   if (!session?.user || !isStaff(session.user.role)) {
-    redirect("/login");
+    // Back to the page they asked for after signing in (e.g. a push notification's
+    // link). The login page only honours same-origin relative paths.
+    const path = (await headers()).get("x-pathname");
+    redirect(path ? `/login?callbackUrl=${encodeURIComponent(path)}` : "/login");
   }
 
   const [permissions, profile, requestHeaders] = await Promise.all([

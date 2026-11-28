@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { b2bLeadWhere } from "@/lib/b2b/leadScope";
 import { B2B_STATUS_LABELS, B2B_STATUS_STYLES, type B2bRequestStatus } from "@/lib/b2b/requestStatus";
 import { NewB2bRequestButton } from "@/components/account/NewB2bRequestButton";
+import { PushNotificationsToggle } from "@/components/common/PushNotificationsToggle";
 
 export const metadata: Metadata = { title: "My Requests" };
 export const dynamic = "force-dynamic";
@@ -55,6 +56,8 @@ export default async function AccountRequestsPage() {
         <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">My Requests</h1>
         {session.user.agencyStatus === "ACTIVE" && <NewB2bRequestButton label="New Request" />}
       </div>
+      {/* Push alerts when an itinerary is ready, a request is closed or converted. */}
+      <PushNotificationsToggle />
 
       {requests.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card px-5 py-12 text-center text-sm text-muted-foreground">

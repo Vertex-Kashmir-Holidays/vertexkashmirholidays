@@ -9,6 +9,8 @@ import {
   getDeluxeMapRate,
   rateNeedsRefresh,
   type HotelData,
+  formatHotelRating,
+  normalizeHotelRating,
 } from "@/lib/hotelSuppliers/schema";
 import type { HotelSupplierRecord } from "./HotelSuppliersClient";
 import { InlineCell } from "./InlineCell";
@@ -164,7 +166,11 @@ export function HotelProfilePanel({
           <InlineCell
             canEdit={canEdit}
             value={hotel.data.rating ?? ""}
-            onSave={(v) => patchHotel(hotel.id, { data: { ...hotel.data, rating: v || null } })}
+            displayValue={formatHotelRating(hotel.data.rating) || undefined}
+            placeholder="e.g. 4.7"
+            onSave={(v) =>
+              patchHotel(hotel.id, { data: { ...hotel.data, rating: normalizeHotelRating(v) } })
+            }
           />,
         )}
         {field(

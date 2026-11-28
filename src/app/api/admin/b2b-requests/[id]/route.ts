@@ -104,3 +104,39 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   return NextResponse.json({ ...updated, itinerarySynced: itineraryOps.length > 0 });
 }
+
+/**
+ * Delete a B2B request — e.g. a duplicate. Converted requests are permanent
+ * (the booking points at them); a closed one only by an admin within 2 months
+ * of closing, same as editing it, so the agent's closed count can't be
+ * quietly lowered. Cascades like a lead delete (itinerary, activity); follow-up
+ * emails keep their history (requestId set null).
+ */
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const guard = await requirePermission("b2bRequests", "delete");
+  if (guard instanceof NextResponse) return guard;
+  const { id } = await params;
+
+  const lead = await prisma.lead.findUnique({
+    where: { id },
+    select: { b2bAgentId: true, status: true, locked: true },
+  });
+  if (!lead || lead.b2bAgentId === null) {
+    return NextResponse.json({ error: "B2B request not found" }, { status: 404 });
+  }
+  if (lead.status === "CONVERTED" || lead.locked) {
+    return NextResponse.json({ error: "A converted request cannot be deleted." }, { status: 423 });
+  }
+  if (
+    lead.status === "REJECTED" &&
+    !canAdminUpdateClosed(guard.user.role as string, await b2bRequestClosedAt(id))
+  ) {
+    return NextResponse.json(
+      { error: "This request is closed — only an admin can delete it, within 2 months of closing." },
+      { status: 423 },
+    );
+  }
+
+  await prisma.lead.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}

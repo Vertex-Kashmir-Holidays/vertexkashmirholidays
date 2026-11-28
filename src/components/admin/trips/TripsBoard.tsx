@@ -21,10 +21,22 @@ import { ConfirmationBadge, TripsTabs, fmtDay } from "./TripBits";
 
 type Flag = "all" | "unconfirmed" | "noDriver";
 
+/** "2026-12" → "Dec 2026". */
+function monthLabel(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-IN", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export function TripsBoard({ trips, showAssignee }: { trips: TripCard[]; showAssignee: boolean }) {
   const [q, setQ] = useState("");
   const [assignee, setAssignee] = useState("all");
   const [flag, setFlag] = useState<Flag>("all");
+  // "YYYY-MM" or "all" — a trip shows in every month its dates touch.
+  const [month, setMonth] = useState("all");
   const [showCompleted, setShowCompleted] = useState(false);
 
   const assignees = useMemo(() => {
@@ -33,10 +45,30 @@ export function TripsBoard({ trips, showAssignee }: { trips: TripCard[]; showAss
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [trips]);
 
+  // Months the trips run in, earliest first (dates are "YYYY-MM-DD").
+  const months = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of trips) {
+      const [y, m] = t.startDate.slice(0, 7).split("-").map(Number);
+      const last = (t.endDate ?? t.startDate).slice(0, 7);
+      for (let d = new Date(Date.UTC(y, m - 1, 1)); ; d.setUTCMonth(d.getUTCMonth() + 1)) {
+        const key = d.toISOString().slice(0, 7);
+        if (key > last) break;
+        set.add(key);
+      }
+    }
+    return [...set].sort();
+  }, [trips]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return trips.filter((t) => {
       if (assignee !== "all" && t.assignee?.id !== assignee) return false;
+      if (
+        month !== "all" &&
+        (t.startDate.slice(0, 7) > month || (t.endDate ?? t.startDate).slice(0, 7) < month)
+      )
+        return false;
       if (flag === "unconfirmed" && t.unconfirmedHotels === 0) return false;
       if (flag === "noDriver" && (t.drivers.length > 0 || t.bucket === "completed")) return false;
       if (!needle) return true;
@@ -45,7 +77,7 @@ export function TripsBoard({ trips, showAssignee }: { trips: TripCard[]; showAss
         .toLowerCase()
         .includes(needle);
     });
-  }, [trips, q, assignee, flag]);
+  }, [trips, q, assignee, flag, month]);
 
   const active = trips.filter((t) => t.bucket !== "completed");
   const stats = {
@@ -78,6 +110,21 @@ export function TripsBoard({ trips, showAssignee }: { trips: TripCard[]; showAss
         <div className="flex-1">
           <AdminSearchInput value={q} onChange={setQ} placeholder="Search guest, phone, email, ref or hotel…" />
         </div>
+        {months.length > 1 && (
+          <select
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="h-9 rounded-lg border border-border bg-background px-3 text-sm"
+            aria-label="Filter by month"
+          >
+            <option value="all">All months</option>
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {monthLabel(m)}
+              </option>
+            ))}
+          </select>
+        )}
         {showAssignee && assignees.length > 0 && (
           <select
             value={assignee}

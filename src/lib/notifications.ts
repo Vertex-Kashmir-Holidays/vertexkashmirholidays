@@ -1,8 +1,9 @@
-// Centralised in-app notifications (+ matching emails) for staff. Best-effort:
+// Centralised in-app notifications (+ matching emails and push) for staff. Best-effort:
 // every function swallows its own errors so a failed notification/email can never
 // break the business action that triggered it (lead assignment, etc.).
 
 import { prisma } from "@/lib/prisma";
+import { sendPushToUsers } from "@/lib/push";
 import {
   sendMail,
   siteUrl,
@@ -34,6 +35,8 @@ export async function createNotification(input: {
         link: input.link ?? null,
       },
     });
+    // Same alert as a push to the user's devices (if they turned it on).
+    await sendPushToUsers([input.userId], input);
   } catch (err) {
     console.error("[notifications] create failed", err);
   }
@@ -148,6 +151,7 @@ export async function notifyNewBooking(bookingId: string): Promise<void> {
     await prisma.notification.createMany({
       data: staffUsers.map((u) => ({ userId: u.id, type: "BOOKING_NEW", title, body, link })),
     });
+    await sendPushToUsers(staffUsers.map((u) => u.id), { title, body, link });
   } catch (err) {
     console.error("[notifications] notifyNewBooking failed", err);
   }
@@ -186,6 +190,7 @@ async function notifyAdmins(n: { type: string; title: string; body: string; link
     await prisma.notification.createMany({
       data: admins.map((u) => ({ userId: u.id, ...n })),
     });
+    await sendPushToUsers(admins.map((u) => u.id), n);
   } catch (err) {
     console.error(`[notifications] ${n.type} failed`, err);
   }

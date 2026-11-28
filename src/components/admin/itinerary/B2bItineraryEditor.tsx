@@ -662,8 +662,9 @@ export function B2bItineraryEditor({
         )}
       </div>
 
-      {/* Stay Plan — maps to the Stay Plan table (no images) */}
-      <div className={card}>
+      {/* Stay Plan — maps to the Stay Plan table (no images). Tighter left
+          padding on phones: the reorder handle already takes a 28px gutter. */}
+      <div className={`${card} max-sm:pl-1.5 max-sm:pr-3`}>
         <div className="flex items-center justify-between">
           <h2 className={sectionTitle}>Stay Plan</h2>
           <button
@@ -682,7 +683,7 @@ export function B2bItineraryEditor({
         >
           {(h) => (
             <div
-              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.2fr_0.8fr_auto]"
+              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1.6fr_0.7fr_1.2fr_0.8fr_auto] sm:p-4"
             >
               <div>
                 <label className={fieldLabel}>Destination</label>

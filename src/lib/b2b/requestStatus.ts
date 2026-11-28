@@ -29,3 +29,14 @@ export function isItinerarySent(status: string | null | undefined): boolean {
 /** Closed (REJECTED) requests an agent may have before their partnership is
  *  deactivated — counted since the agent was last activated. */
 export const B2B_CLOSE_LIMIT = 3;
+
+/** An agent may delete their own request (e.g. a duplicate) only while it is
+ *  still Pending and untouched — no itinerary yet, not locked. Shared by the
+ *  agent Delete button and DELETE /api/account/b2b/requests/[id]. */
+export function canAgentDeleteB2bRequest(r: {
+  status: string;
+  locked: boolean;
+  hasItinerary: boolean;
+}): boolean {
+  return r.status === "NEW" && !r.locked && !r.hasItinerary;
+}

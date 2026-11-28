@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPushToUsers } from "@/lib/push";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
@@ -112,6 +113,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     B2B_CLOSE_LIMIT,
     deactivated,
   );
+
+  await sendPushToUsers([agent.id], {
+    title: "Request closed",
+    body: `${lead.name} — ${reason}`,
+    link: `/account/requests/${lead.id}`,
+  });
 
   return NextResponse.json({ closedCount, deactivated, emailDelivered: delivered });
 }

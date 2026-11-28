@@ -14,11 +14,8 @@ import {
   CalendarClock,
   TrendingUp,
   X,
-  RefreshCw,
-  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/atoms/button";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import {
@@ -31,6 +28,13 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/atoms/tooltip";
 import { PageHeader } from "@/components/ui/molecules/page-header";
 import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  LIST_FILTER_TRIGGER,
+  LIST_SEARCH_CLASS,
+  ListFilterToggle,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { InlineConfirmActions } from "@/components/ui/organisms/inline-confirm-actions";
 import { UNDECIDED, travelMonthText } from "@/lib/leads/qualification";
@@ -163,7 +167,6 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
 };
 
 // Filter dropdowns: two per line on phones, natural width on md+.
-const FILTER_TRIGGER = "w-auto min-w-[150px] max-md:w-[calc(50%-0.375rem)] max-md:min-w-0";
 
 export function LeadsClient({
   initialLeads,
@@ -443,46 +446,24 @@ export function LeadsClient({
             value={search}
             onChange={setSearch}
             placeholder="Search name, phone, email, ref..."
-            className="min-w-[180px] max-md:order-first max-md:min-w-0"
+            className={LIST_SEARCH_CLASS}
           />
 
-          {(() => {
-            const activeFilters = [
-              statusFilter,
-              sourceFilter,
-              requestFilter,
-              offerFilter,
-              budgetFilter,
-              assigneeFilter,
-            ].filter((f) => f !== "ALL").length;
-            return (
-              <button
-                type="button"
-                onClick={() => setFiltersOpen((o) => !o)}
-                aria-expanded={filtersOpen}
-                aria-label={filtersOpen ? "Hide filters" : "Show filters"}
-                className={cn(
-                  "relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border transition-colors max-md:order-first md:hidden",
-                  filtersOpen
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-muted/50 text-muted-foreground",
-                )}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                {activeFilters > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {activeFilters}
-                  </span>
-                )}
-              </button>
-            );
-          })()}
+          <ListFilterToggle
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((o) => !o)}
+            activeCount={
+              [statusFilter, sourceFilter, requestFilter, offerFilter, budgetFilter, assigneeFilter].filter(
+                (f) => f !== "ALL",
+              ).length
+            }
+          />
 
           {/* display:contents keeps the dropdowns in the bar's wrap on md+. */}
           <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className={FILTER_TRIGGER}>
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -499,7 +480,7 @@ export function LeadsClient({
           </Select>
 
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className={FILTER_TRIGGER}>
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -514,7 +495,7 @@ export function LeadsClient({
           </Select>
 
           <Select value={requestFilter} onValueChange={setRequestFilter}>
-            <SelectTrigger className={FILTER_TRIGGER}>
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -528,7 +509,7 @@ export function LeadsClient({
 
           {offers.length > 0 && (
             <Select value={offerFilter} onValueChange={setOfferFilter}>
-              <SelectTrigger className={FILTER_TRIGGER}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -545,7 +526,7 @@ export function LeadsClient({
 
           {budgetBands.length > 0 && (
             <Select value={budgetFilter} onValueChange={setBudgetFilter}>
-              <SelectTrigger className={FILTER_TRIGGER}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -564,7 +545,7 @@ export function LeadsClient({
 
           {isAdmin && (
             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-              <SelectTrigger className={FILTER_TRIGGER}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -581,21 +562,11 @@ export function LeadsClient({
 
           </div>
 
-          <p className="text-xs text-muted-foreground self-center shrink-0 max-md:order-last max-md:-mt-1 max-md:w-full">
+          <ListResultsCount>
             {resultsCount} results{!isIpMode && loading ? " · loading…" : ""}
-          </p>
+          </ListResultsCount>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            aria-label="Refresh"
-            className="ml-auto max-md:order-first max-md:ml-0 max-md:h-[38px] max-md:w-[38px] max-md:px-0"
-          >
-            <RefreshCw className={refreshing ? "animate-spin" : undefined} />
-            <span className="max-md:sr-only">Refresh</span>
-          </Button>
+          <ListRefreshButton onClick={handleRefresh} refreshing={refreshing} />
         </div>
 
         {/* Table */}
@@ -605,7 +576,7 @@ export function LeadsClient({
             !isIpMode && loading && "opacity-60 pointer-events-none",
           )}
         >
-          <table className="table-cards w-full text-sm">
+          <table className="table-cards table-cards-dashed w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {["Ref", "Lead", "Assigned To", "Status", "Source", "Last Updated", "Actions"].map(
