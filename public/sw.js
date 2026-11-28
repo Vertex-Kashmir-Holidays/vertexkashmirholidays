@@ -65,7 +65,9 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(data.title || "Vertex Kashmir Holidays", {
       body: data.body || "",
       icon: "/brand/app-icons/icon-192.png",
-      badge: "/brand/app-icons/icon-192.png",
+      // Android status-bar icon: drawn from the alpha channel only, so it must be
+      // a white mark on transparent (a full-colour icon shows as a blank blob).
+      badge: "/brand/app-icons/notification-badge.png",
       data: { link: data.link || "/" },
     }),
   );
