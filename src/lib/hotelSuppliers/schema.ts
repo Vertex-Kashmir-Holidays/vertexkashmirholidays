@@ -274,6 +274,7 @@ export const createHotelSupplierSchema = z.object({
   data: hotelDataSchema,
   coverImageUrl: nullableUrl.optional(),
   roomImageUrl: nullableUrl.optional(),
+  roomImage2Url: nullableUrl.optional(),
   showOnWebsite: z.boolean().default(false),
 });
 export type CreateHotelSupplierInput = z.infer<typeof createHotelSupplierSchema>;
@@ -288,6 +289,7 @@ export const patchHotelSupplierSchema = z.object({
   data: hotelDataSchema.optional(),
   coverImageUrl: nullableUrl.optional(),
   roomImageUrl: nullableUrl.optional(),
+  roomImage2Url: nullableUrl.optional(),
   showOnWebsite: z.boolean().optional(),
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;

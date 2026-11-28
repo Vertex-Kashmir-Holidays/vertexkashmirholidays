@@ -7,7 +7,7 @@ import { withDropOnLastDay } from "@/lib/itinerary/dropDay";
 import { stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus, QrCode, Sparkles, BookmarkPlus } from "lucide-react";
+import { Trash2, Plus, QrCode, Sparkles, BookmarkPlus, ImageOff } from "lucide-react";
 import { DayPlanPicker } from "../day-plans/DayPlanPicker";
 import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
 import { guessRoute } from "@/lib/dayPlans/schema";
@@ -337,6 +337,23 @@ export function ItineraryEditor({
       ...p,
       hotels: p.hotels.map((h) => (h.id === hid ? { ...h, [field]: value } : h)),
     }));
+
+  /** A photo picked for a hotel row is also saved to that hotel in the hotel
+   *  list (first empty slot only, never overwriting) — stock images aren't. */
+  const saveHotelImage = (hid: string, hotelName: string, src: string) => {
+    updateHotel(hid, "image", src);
+    if (!hotelName.trim() || !/^https?:\/\//.test(src)) return;
+    fetch("/api/hotel-suppliers/photo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hotelName, imageUrl: src }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res: { saved: boolean; slot?: string } | null) => {
+        if (res?.saved) toast.success(`Saved as ${hotelName}'s ${res.slot} photo in Hotel Rates.`);
+      })
+      .catch(() => {});
+  };
 
   const addHotel = () =>
     setData((p) => ({
@@ -1106,17 +1123,24 @@ export function ItineraryEditor({
                   <div className="relative h-[200px] shrink-0 overflow-hidden rounded-b-xl sm:h-auto sm:w-[40%] sm:rounded-bl-none sm:rounded-r-xl">
                     <ImagePicker
                       value={h.image}
-                      onChange={(src) => updateHotel(h.id, "image", src)}
+                      onChange={(src) => saveHotelImage(h.id, h.hotelDetails, src)}
                       className="absolute right-2 top-2 z-10"
-                      label="Replace"
+                      label={h.image ? "Replace" : "Add image"}
                     />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={h.image}
-                      alt={h.hotelDetails}
-                      className="absolute inset-0 h-full w-full object-cover"
-                      loading="lazy"
-                    />
+                    {h.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={h.image}
+                        alt={h.hotelDetails}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-muted text-muted-foreground">
+                        <ImageOff className="h-6 w-6" />
+                        <span className="text-xs font-semibold">No image</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

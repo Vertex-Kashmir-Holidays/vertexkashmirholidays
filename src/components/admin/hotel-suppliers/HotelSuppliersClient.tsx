@@ -42,6 +42,7 @@ import {
 } from "@/lib/hotelSuppliers/schema";
 import { buildHotelExportWorkbook } from "@/lib/hotelSuppliers/export";
 import { RequestRatesDialog } from "./RequestRatesDialog";
+import { HotelPhotos } from "./HotelPhotos";
 
 export interface HotelSupplierRecord {
   id: string;
@@ -65,6 +66,7 @@ export interface HotelSupplierRecord {
   // that's a genuine publish gate; the others are inert until it's true.
   coverImageUrl: string | null;
   roomImageUrl: string | null;
+  roomImage2Url: string | null;
   showOnWebsite: boolean;
   // System-derived (POST /api/hotel-suppliers/[id]/like) — read-only here.
   publicLikeCount: number;
@@ -99,7 +101,7 @@ const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({
 // Recommended, Family Room, Rating, MAP (Deluxe), Valid Till, Bookings — kept as one
 // constant so the expand-row colSpan can't silently drift from the header
 // count. Location and the full per-room rate table live in the expanded row only.
-const HOTEL_COL_COUNT = 11;
+const HOTEL_COL_COUNT = 12;
 
 // Snaps the price slider's handles to clean values, same convention as the
 // Tours listing filter (see ToursPageClient's PRICE_STEP).
@@ -575,6 +577,7 @@ export function HotelSuppliersClient({
                 </th>
                 {[
                   "Name",
+                  "Photo",
                   "Email",
                   "Category",
                   "Rec.",
@@ -711,6 +714,15 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
         <Link href={href} onClick={(e) => e.stopPropagation()} className="hover:text-primary">
           {hotel.hotelName}
         </Link>
+      </td>
+      <td className="px-3 py-1.5">
+        <HotelPhotos
+          variant="thumb"
+          hotelName={hotel.hotelName}
+          coverImageUrl={hotel.coverImageUrl}
+          roomImageUrl={hotel.roomImageUrl}
+          roomImage2Url={hotel.roomImage2Url}
+        />
       </td>
       <td className="px-3 py-2.5 text-muted-foreground">{hotel.data.property.email || "—"}</td>
       <td className="px-3 py-2.5" title="Auto-set from the cheapest room's MAP rate">

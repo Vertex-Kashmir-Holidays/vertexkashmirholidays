@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { can, requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
 import { proposalToItineraryData } from "@/lib/proposal/toItinerary";
+import { hotelMainImages } from "@/lib/hotelSuppliers/photos";
 import { uniqueItineraryTitle } from "@/lib/itinerary/list";
 import { parseTravelDates } from "@/lib/itinerary/leadFactsSync";
 import { isAdminRole } from "@/lib/itinerary/access";
@@ -93,6 +94,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const data = proposalToItineraryData(parsedData.data, tier, hotelPicks);
+  // Each hotel row shows that hotel's main photo; none on file → no image.
+  const mainImages = await hotelMainImages(data.hotels.map((h) => h.hotelDetails));
+  data.hotels = data.hotels.map((h) => ({ ...h, image: mainImages.get(h.hotelDetails) ?? "" }));
   // System-assigned, so a taken title gets a "(2)" suffix instead of a 409.
   const title = await uniqueItineraryTitle(data);
   const editedByName = (guard.user.name ?? guard.user.email) as string;

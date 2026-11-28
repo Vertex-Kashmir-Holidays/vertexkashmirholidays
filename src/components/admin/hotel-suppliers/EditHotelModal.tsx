@@ -73,6 +73,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
   // here — it's a system-derived counter (POST .../like), not a form field.
   const [coverImageUrl, setCoverImageUrl] = useState(hotel.coverImageUrl ?? "");
   const [roomImageUrl, setRoomImageUrl] = useState(hotel.roomImageUrl ?? "");
+  const [roomImage2Url, setRoomImage2Url] = useState(hotel.roomImage2Url ?? "");
   const [showOnWebsite, setShowOnWebsite] = useState(hotel.showOnWebsite);
   const [validTo, setValidTo] = useState(hotel.data.rate?.validTo ?? "");
   const [rows, setRows] = useState<RoomRateRowDraft[]>(
@@ -97,6 +98,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
     setIsActive(hotel.isActive);
     setCoverImageUrl(hotel.coverImageUrl ?? "");
     setRoomImageUrl(hotel.roomImageUrl ?? "");
+    setRoomImage2Url(hotel.roomImage2Url ?? "");
     setShowOnWebsite(hotel.showOnWebsite);
     setValidTo(hotel.data.rate?.validTo ?? "");
     setRows(
@@ -154,6 +156,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
       data,
       coverImageUrl: coverImageUrl || null,
       roomImageUrl: roomImageUrl || null,
+      roomImage2Url: roomImage2Url || null,
       showOnWebsite,
     });
     setSaving(false);
@@ -163,7 +166,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-4xl overflow-y-auto overflow-x-hidden sm:p-6 [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle>Edit — {hotel.hotelName}</DialogTitle>
         </DialogHeader>
@@ -173,7 +176,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
         </DialogDescription>
 
         <div className="space-y-4 py-1">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label className={labelCls}>Destination</label>
               <select
@@ -206,7 +209,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <label className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer">
               <input
                 type="checkbox"
@@ -237,7 +240,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
           </div>
 
           <div className="border-t border-border pt-4 space-y-3">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-bold text-foreground">
                 Plan Your Kashmir Trip — Public Listing
               </p>
@@ -255,7 +258,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
               Only hotels with this on, and a cover image set, appear in the public Trip Planner
               hotel carousel.
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 [&>*]:min-w-0">
               <div>
                 <label className={labelCls}>Cover Image</label>
                 <ImageField
@@ -269,6 +272,14 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
                 <ImageField
                   value={roomImageUrl}
                   onChange={setRoomImageUrl}
+                  folder="hotel-suppliers"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Room Image 2</label>
+                <ImageField
+                  value={roomImage2Url}
+                  onChange={setRoomImage2Url}
                   folder="hotel-suppliers"
                 />
               </div>
@@ -288,7 +299,7 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
           </div>
 
           <div className="border-t border-border pt-4">
-            <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
               <p className="text-sm font-bold text-foreground">Room Rates</p>
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-muted-foreground">Valid Till</label>
@@ -300,7 +311,9 @@ export function EditHotelModal({ hotel, open, onOpenChange, onSave }: EditHotelM
                 />
               </div>
             </div>
-            <RoomRatesEditor rows={rows} onChange={setRows} />
+            <div className="overflow-x-auto">
+              <RoomRatesEditor rows={rows} onChange={setRows} />
+            </div>
           </div>
 
           <div className="border-t border-border pt-4">

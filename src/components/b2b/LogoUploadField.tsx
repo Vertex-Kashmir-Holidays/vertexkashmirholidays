@@ -5,29 +5,37 @@ import { ImagePlus, X } from "lucide-react";
 
 const MAX_LOGO_BYTES = 500 * 1024; // 500KB
 const ACCEPTED_TYPES = ["image/png", "image/webp"];
-// Longest side a converted WebP logo is drawn at — plenty for the PDF/admin
-// thumbnails, and keeps the converted PNG under the 500KB server limit.
-const MAX_CONVERTED_SIDE = 800;
+// Longest sides a converted WebP logo is tried at, largest first. A detailed
+// logo's PNG can exceed the 500KB server limit at 800px even when the WebP is
+// tiny, so it steps down until it fits — still plenty for PDF/admin thumbnails.
+const CONVERTED_SIDES = [800, 640, 512, 400, 320];
 
 /**
  * WebP → PNG data URL via canvas. Agency logos end up in the B2B itinerary
  * PDF (@react-pdf/renderer), which only renders PNG/JPEG — so WebP is
- * accepted at the picker but always stored as PNG. Only ever scales down.
+ * accepted at the picker but always stored as PNG. Only ever scales down;
+ * returns the largest size that fits MAX_LOGO_BYTES (or the smallest tried).
  */
 function webpToPngDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, MAX_CONVERTED_SIDE / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      const ctx = canvas.getContext("2d");
       URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("canvas unavailable"));
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/png"));
+      let dataUrl = "";
+      for (const side of CONVERTED_SIDES) {
+        const scale = Math.min(1, side / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        dataUrl = canvas.toDataURL("image/png");
+        if (dataUrlBytes(dataUrl) <= MAX_LOGO_BYTES) break;
+      }
+      resolve(dataUrl);
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
