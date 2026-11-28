@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPushToUsers } from "@/lib/push";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { resolveB2bItineraryAccess } from "@/lib/itinerary/access";
@@ -23,7 +24,14 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: {
       locked: true,
       lead: {
-        select: { b2bAgentId: true, locked: true, status: true, booking: { select: { servicesLocked: true } } },
+        select: {
+          id: true,
+          name: true,
+          b2bAgentId: true,
+          locked: true,
+          status: true,
+          booking: { select: { servicesLocked: true } },
+        },
       },
     },
   });
@@ -39,5 +47,12 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Only an admin can publish a converted request's itinerary." }, { status: 403 });
   }
 
-  return NextResponse.json(await publishItinerary(id));
+  const result = await publishItinerary(id);
+  // Push the agent: their itinerary is ready to download.
+  await sendPushToUsers([existing.lead.b2bAgentId], {
+    title: "Itinerary ready",
+    body: `${existing.lead.name} — your itinerary is ready to download.`,
+    link: `/account/requests/${existing.lead.id}`,
+  });
+  return NextResponse.json(result);
 }

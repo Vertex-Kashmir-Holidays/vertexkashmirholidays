@@ -50,3 +50,47 @@ self.addEventListener("fetch", (event) => {
     })(),
   );
 });
+
+// ── Push notifications (see src/lib/push.ts) ──────────────────────────────
+// Payload: { title, body, link }. Tapping opens `link` — focusing an open
+// Vertex tab/app window when there is one.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Vertex Kashmir Holidays", {
+      body: data.body || "",
+      icon: "/brand/app-icons/icon-192.png",
+      badge: "/brand/app-icons/icon-192.png",
+      data: { link: data.link || "/" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.link || "/", self.location.origin).href;
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      // Prefer a window already in the same area (CRM / agent account).
+      const area = new URL(url).pathname.split("/")[1];
+      const same = windows.filter((w) => new URL(w.url).origin === self.location.origin);
+      const existing = same.find((w) => new URL(w.url).pathname.split("/")[1] === area) ?? same[0];
+      if (existing) {
+        try {
+          await existing.focus();
+          // navigate() only works on windows this worker controls; else open fresh.
+          if (await existing.navigate(url)) return;
+        } catch {
+          /* fall through */
+        }
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
+});

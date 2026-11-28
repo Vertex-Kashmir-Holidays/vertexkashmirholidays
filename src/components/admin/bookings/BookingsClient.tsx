@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Search,
-  ChevronDown,
   User,
   ClipboardList,
   Trash2,
@@ -21,6 +19,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/organisms/select";
+import {
+  LIST_FILTER_TRIGGER,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { isBookingCompleted } from "@/lib/bookings/finance";
 import { ConfirmDialog } from "@/components/admin/connect/ConfirmDialog";
@@ -313,40 +324,43 @@ export function BookingsClient({
       )}
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 p-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, ref, order ID..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
-            />
-          </div>
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-4 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none"
-            >
-              <option value="ALL">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="PAID">Paid</option>
-              <option value="FAILED">Failed</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="REFUNDED">Refunded</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
-          <p className="text-xs text-muted-foreground self-center shrink-0">{total} results</p>
+        {/* Filters — same layout as Leads/Proposals (see ListFilterBar). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, email, ref, order ID..."
+            className="min-w-[180px] max-md:order-first max-md:min-w-0"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className={cn(LIST_FILTER_TRIGGER, "max-md:w-full")} aria-label="Filter by status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Status</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
+              <SelectItem value="FAILED">Failed</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="REFUNDED">Refunded</SelectItem>
+            </SelectContent>
+          </Select>
+          <ListResultsCount>
+            {total} results{loading ? " · loading…" : ""}
+          </ListResultsCount>
+          <ListRefreshButton
+            onClick={() => {
+              router.refresh();
+              fetchBookings();
+            }}
+            refreshing={loading}
+          />
         </div>
 
         {/* Table */}
         <div className={cn("overflow-x-auto", loading && "opacity-60 pointer-events-none")}>
-          <table className="table-cards w-full text-sm">
+          <table className="table-cards table-cards-dashed w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {[

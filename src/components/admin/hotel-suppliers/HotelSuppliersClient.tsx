@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Search,
   Plus,
   Mail,
-  Star,
   Download,
-  SlidersHorizontal,
   Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,11 +33,20 @@ import {
   getMinMapRate,
   getDeluxeMapRate,
   parseRatingValue,
+  formatHotelRating,
   rateNeedsRefresh,
   type HotelCategoryValue,
   type HotelData,
 } from "@/lib/hotelSuppliers/schema";
 import { buildHotelExportWorkbook } from "@/lib/hotelSuppliers/export";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  LIST_FILTER_TRIGGER,
+  LIST_SEARCH_CLASS,
+  ListFilterToggle,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
 import { RequestRatesDialog } from "./RequestRatesDialog";
 import { HotelPhotos } from "./HotelPhotos";
 
@@ -97,15 +103,45 @@ const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({
   value: c,
   label: HOTEL_CATEGORY_LABELS[c],
 }));
-// Columns before Actions: Select, Sr, Name, Phone, Email, Category,
-// Recommended, Family Room, Rating, MAP (Deluxe), Valid Till, Bookings — kept as one
+// Columns before Actions: Select, Name, Photo, Email, Category, Family Room,
+// Rating, MAP (Deluxe), Valid Till, Bookings — kept as one
 // constant so the expand-row colSpan can't silently drift from the header
 // count. Location and the full per-room rate table live in the expanded row only.
-const HOTEL_COL_COUNT = 12;
+const HOTEL_COL_COUNT = 11;
 
 // Snaps the price slider's handles to clean values, same convention as the
 // Tours listing filter (see ToursPageClient's PRICE_STEP).
 const HOTEL_PRICE_STEP = 500;
+
+// List view remembered across hotel-page visits (see the restore effect).
+const VIEW_STORAGE_KEY = "hotel-rates:view";
+const SCROLL_STORAGE_KEY = "hotel-rates:scroll";
+interface SavedView {
+  activeTab: string;
+  search: string;
+  categoryFilter: "ALL" | HotelCategoryValue;
+  recommendedFilter: TriState;
+  roomCategoryFilter: "ALL" | RoomCategoryValue;
+  sentFilter: TriState;
+  emailFilter: TriState;
+  bookedFilter: TriState;
+  sortMode: SortMode;
+  pageSize: PageSize;
+}
+function pickView(v: SavedView): SavedView {
+  return {
+    activeTab: v.activeTab,
+    search: v.search,
+    categoryFilter: v.categoryFilter,
+    recommendedFilter: v.recommendedFilter,
+    roomCategoryFilter: v.roomCategoryFilter,
+    sentFilter: v.sentFilter,
+    emailFilter: v.emailFilter,
+    bookedFilter: v.bookedFilter,
+    sortMode: v.sortMode,
+    pageSize: v.pageSize,
+  };
+}
 
 function fmtMoney(n: number | null): string {
   return n == null ? "—" : `₹${n.toLocaleString("en-IN")}`;
@@ -138,6 +174,8 @@ export function HotelSuppliersClient({
   // Phones only: the dropdowns + price slider stay folded behind the filter
   // icon. From md up they're always shown and this flag is ignored.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
   // Phones: locations are one swipeable row — keep the chosen one in view.
   const locationTabsRef = useRef<HTMLDivElement>(null);
   const tabsMounted = useRef(false);
@@ -311,9 +349,74 @@ export function HotelSuppliersClient({
 
   // Filters/sort/page-size changes reshuffle `rows`, so the current page can
   // land past the new last page (or just be stale) — snap back to page 1.
+  // Keyed on the filter values (not `rows`) so restoring a saved view below
+  // can keep its page.
+  const view: SavedView = {
+    activeTab,
+    search,
+    categoryFilter,
+    recommendedFilter,
+    roomCategoryFilter,
+    sentFilter,
+    emailFilter,
+    bookedFilter,
+    sortMode,
+    pageSize,
+  };
+  const viewKey = JSON.stringify(view);
+  const lastViewKey = useRef<string | null>(null);
   useEffect(() => {
-    setPage(1);
-  }, [rows, pageSize]);
+    if (lastViewKey.current !== null && lastViewKey.current !== viewKey) setPage(1);
+    lastViewKey.current = viewKey;
+  }, [viewKey]);
+
+  // Back from a hotel's page lands where the user was: same tab, filters,
+  // page and scroll position (this browser tab only, via sessionStorage).
+  const [restoreScrollTo, setRestoreScrollTo] = useState<number | null>(null);
+  const restored = useRef(false);
+  useEffect(() => {
+    const raw = sessionStorage.getItem(VIEW_STORAGE_KEY);
+    restored.current = true;
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw) as SavedView & { page: number };
+      if (!(HOTEL_DESTINATIONS as readonly string[]).includes(saved.activeTab)) return;
+      lastViewKey.current = JSON.stringify({ ...view, ...pickView(saved) });
+      setActiveTab(saved.activeTab);
+      setSearch(saved.search);
+      setCategoryFilter(saved.categoryFilter);
+      setRecommendedFilter(saved.recommendedFilter);
+      setRoomCategoryFilter(saved.roomCategoryFilter);
+      setSentFilter(saved.sentFilter);
+      setEmailFilter(saved.emailFilter);
+      setBookedFilter(saved.bookedFilter);
+      setSortMode(saved.sortMode);
+      setPageSize(saved.pageSize);
+      setPage(saved.page);
+      setRestoreScrollTo(Number(sessionStorage.getItem(SCROLL_STORAGE_KEY)) || 0);
+    } catch {
+      // Unreadable saved view — start fresh.
+    }
+    // Mount only: restores the saved view once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (restoreScrollTo === null) return;
+    const main = document.querySelector("main");
+    requestAnimationFrame(() => main?.scrollTo({ top: restoreScrollTo }));
+    setRestoreScrollTo(null);
+  }, [restoreScrollTo]);
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    const onScroll = () => sessionStorage.setItem(SCROLL_STORAGE_KEY, String(main.scrollTop));
+    main.addEventListener("scroll", onScroll, { passive: true });
+    return () => main.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (!restored.current) return;
+    sessionStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ ...view, page }));
+  });
 
   const pageStart = pageSize === "ALL" ? 0 : (page - 1) * pageSize;
   const pagedRows = pageSize === "ALL" ? rows : rows.slice(pageStart, pageStart + pageSize);
@@ -392,47 +495,28 @@ export function HotelSuppliersClient({
       </Tabs>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 p-4">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search hotel..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
-            />
-          </div>
+        {/* Filter bar — shared with Leads/Proposals/Bookings (ListFilterBar). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search hotel..."
+            className={LIST_SEARCH_CLASS}
+          />
 
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((o) => !o)}
-            aria-expanded={filtersOpen}
-            aria-label={filtersOpen ? "Hide filters" : "Show filters"}
-            className={cn(
-              "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border transition md:hidden",
-              filtersOpen ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground",
-            )}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            {activeFilterCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground ring-2 ring-card">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+          <ListFilterToggle
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((o) => !o)}
+            activeCount={activeFilterCount}
+          />
 
-          <div
-            className={cn(
-              "grid w-full grid-cols-2 gap-2 md:contents",
-              !filtersOpen && "hidden",
-            )}
-          >
+          {/* display:contents keeps the dropdowns in the bar's wrap on md+. */}
+          <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
           <Select
             value={categoryFilter}
             onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}
           >
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -449,7 +533,7 @@ export function HotelSuppliersClient({
             value={recommendedFilter}
             onValueChange={(v) => setRecommendedFilter(v as TriState)}
           >
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Recommended" />
             </SelectTrigger>
             <SelectContent>
@@ -463,7 +547,7 @@ export function HotelSuppliersClient({
             value={roomCategoryFilter}
             onValueChange={(v) => setRoomCategoryFilter(v as "ALL" | RoomCategoryValue)}
           >
-            <SelectTrigger className="w-full md:w-[190px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Room category" />
             </SelectTrigger>
             <SelectContent>
@@ -477,7 +561,7 @@ export function HotelSuppliersClient({
           </Select>
 
           <Select value={sentFilter} onValueChange={(v) => setSentFilter(v as TriState)}>
-            <SelectTrigger className="w-full md:w-[160px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Rate request" />
             </SelectTrigger>
             <SelectContent>
@@ -488,7 +572,7 @@ export function HotelSuppliersClient({
           </Select>
 
           <Select value={emailFilter} onValueChange={(v) => setEmailFilter(v as TriState)}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Email" />
             </SelectTrigger>
             <SelectContent>
@@ -499,7 +583,7 @@ export function HotelSuppliersClient({
           </Select>
 
           <Select value={bookedFilter} onValueChange={(v) => setBookedFilter(v as TriState)}>
-            <SelectTrigger className="w-full md:w-[160px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Bookings" />
             </SelectTrigger>
             <SelectContent>
@@ -510,7 +594,7 @@ export function HotelSuppliersClient({
           </Select>
 
           <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
-            <SelectTrigger className="w-full md:w-[170px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>
@@ -524,7 +608,7 @@ export function HotelSuppliersClient({
             value={String(pageSize)}
             onValueChange={(v) => setPageSize(v === "ALL" ? "ALL" : (Number(v) as PageSize))}
           >
-            <SelectTrigger className="w-full md:w-[120px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Page size" />
             </SelectTrigger>
             <SelectContent>
@@ -537,9 +621,14 @@ export function HotelSuppliersClient({
           </Select>
           </div>
 
-          <p className="text-xs text-muted-foreground shrink-0 ml-auto">
+          <ListResultsCount>
             {rows.length} hotel{rows.length === 1 ? "" : "s"} in {activeTab}
-          </p>
+          </ListResultsCount>
+
+          <ListRefreshButton
+            onClick={() => startRefresh(() => router.refresh())}
+            refreshing={refreshing}
+          />
         </div>
 
         {priceBounds.max > priceBounds.min && (
@@ -563,7 +652,7 @@ export function HotelSuppliersClient({
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-cards table-cards-compact table-cards-dashed w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 <th className="px-3 py-3 w-8">
@@ -580,7 +669,6 @@ export function HotelSuppliersClient({
                   "Photo",
                   "Email",
                   "Category",
-                  "Rec.",
                   "Family Room",
                   "Rating",
                   "MAP (Deluxe)",
@@ -690,13 +778,15 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
 
   return (
     <tr
+      // Recommended hotels are tinted green (the row colour replaces a column).
+      data-highlight={hotel.recommended || undefined}
       onClick={() => router.push(href)}
       className={cn(
         "cursor-pointer hover:bg-muted/50 transition-colors",
         hotel.recommended && "bg-emerald-500/[0.06] hover:bg-emerald-500/10",
       )}
     >
-      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+      <td data-mobile-hidden className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           className="cbx"
@@ -706,8 +796,9 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
         />
       </td>
       <td
+        data-span="full"
         className={cn(
-          "sticky left-0 bg-card px-3 py-2.5 font-semibold text-foreground",
+          "sticky left-0 bg-card px-3 py-2.5 font-semibold text-foreground max-md:static max-md:bg-transparent",
           hotel.recommended && "bg-emerald-50 dark:bg-emerald-950/40",
         )}
       >
@@ -715,7 +806,7 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
           {hotel.hotelName}
         </Link>
       </td>
-      <td className="px-3 py-1.5">
+      <td data-media className="px-3 py-1.5">
         <HotelPhotos
           variant="thumb"
           hotelName={hotel.hotelName}
@@ -724,40 +815,48 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
           roomImage2Url={hotel.roomImage2Url}
         />
       </td>
-      <td className="px-3 py-2.5 text-muted-foreground">{hotel.data.property.email || "—"}</td>
-      <td className="px-3 py-2.5" title="Auto-set from the cheapest room's MAP rate">
-        <Badge>{HOTEL_CATEGORY_LABELS[hotel.category]}</Badge>
+      <td data-wide className="px-3 py-2.5 text-muted-foreground max-md:text-foreground">
+        {/* Phones: the select box sits beside the email (its own column is hidden). */}
+        <div className="flex items-center gap-2.5">
+          <input
+            type="checkbox"
+            className="cbx md:hidden"
+            checked={selected}
+            onChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select ${hotel.hotelName}`}
+          />
+          <span className="min-w-0 max-md:break-all">{hotel.data.property.email || "—"}</span>
+        </div>
       </td>
-      <td className="px-3 py-2.5">
-        {hotel.recommended ? (
-          <Star className="w-4 h-4 text-amber-400" fill="currentColor" strokeWidth={0} />
-        ) : (
-          <span className="text-muted-foreground/40">—</span>
-        )}
+      <td data-label="Category" className="px-3 py-2.5" title="Auto-set from the cheapest room's MAP rate">
+        <Badge className="max-md:bg-transparent max-md:p-0 max-md:text-foreground">{HOTEL_CATEGORY_LABELS[hotel.category]}</Badge>
       </td>
-      <td className="px-3 py-2.5">
+      <td data-label="Family Room" className="px-3 py-2.5">
         <span
           className={cn(
-            "rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap",
+            "rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap max-md:p-0 max-md:text-[12px]",
+            "max-md:bg-transparent",
             hotel.hasFamilyRoom
               ? "bg-sky-500/10 text-sky-700 dark:text-sky-300"
-              : "bg-muted text-muted-foreground",
+              : "bg-muted text-muted-foreground max-md:text-foreground",
           )}
         >
           {hotel.hasFamilyRoom ? "Yes" : "No"}
         </span>
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap">{hotel.data.rating || "—"}</td>
+      <td data-label="Rating" className="px-3 py-2.5 whitespace-nowrap">{formatHotelRating(hotel.data.rating) || "—"}</td>
       <td
-        className="px-3 py-2.5 text-right whitespace-nowrap"
+        data-label="MAP (Deluxe)"
+        className="px-3 py-2.5 text-right whitespace-nowrap max-md:text-left"
         title="MAP rate for the Deluxe room type"
       >
         {fmtMoney(getDeluxeMapRate(hotel.data.rate))}
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+      <td data-label="Valid Till" className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-md:text-foreground">
         {fmtDate(hotel.data.rate?.validTo ?? null)}
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      <td data-label="Bookings" className="px-3 py-2.5 whitespace-nowrap">
         {totalBookings(hotel) > 0 ? (
           <span
             className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400"
@@ -769,7 +868,7 @@ function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClic
           <span className="text-[12px] text-muted-foreground/50">—</span>
         )}
       </td>
-      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+      <td data-actions className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1.5">
           {canEdit && (
             <button

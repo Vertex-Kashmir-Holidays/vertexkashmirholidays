@@ -14,6 +14,7 @@ import {
   computeCategoryFromMap,
   getDeluxeMapRate,
   type RoomRateRow,
+  normalizeHotelRating,
 } from "@/lib/hotelSuppliers/schema";
 import { RoomRatesEditor, EMPTY_ROOM_RATE_ROW_DRAFT, type RoomRateRowDraft } from "./RoomRatesEditor";
 
@@ -126,7 +127,7 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
           mapUrl: data.mapUrl || null,
           services: data.services || null,
         },
-        rating: data.rating || null,
+        rating: normalizeHotelRating(data.rating ?? ""),
         rate,
       },
     };
@@ -221,7 +222,19 @@ export function HotelSupplierForm({ defaultDestination }: Props) {
           </div>
           <div>
             <label className={labelCls}>Rating</label>
-            <input {...register("rating")} className={inputCls} placeholder="e.g. 4.7★ / 2,698 reviews" />
+            <div className="relative">
+              <input
+                {...register("rating")}
+                type="number"
+                inputMode="decimal"
+                min={0}
+                max={5}
+                step={0.1}
+                className={inputCls + " pr-8"}
+                placeholder="e.g. 4.7"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-amber-500">★</span>
+            </div>
           </div>
           <div className="sm:col-span-2">
             <label className={labelCls}>Services</label>

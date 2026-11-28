@@ -167,9 +167,12 @@ export function B2bRequestFormDialog({ open, onOpenChange, title, submitLabel, i
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-foreground">Budget (₹, min 20,000)</label>
+              <label className="text-xs font-semibold text-foreground">
+                Expected Budget (₹, min 20,000) <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="number"
+                required
                 min={20000}
                 step={1000}
                 className={inputCls + " mt-1"}

@@ -14,6 +14,7 @@ import { itineraryDataSchema } from "@/types/itinerary";
 import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 import { B2bConvertAction } from "@/components/admin/b2b/B2bConvertAction";
 import { EditB2bRequestButton } from "@/components/admin/b2b/EditB2bRequestButton";
+import { DeleteB2bRequestButton } from "@/components/b2b/DeleteB2bRequestButton";
 import { FollowUpB2bRequestButton } from "@/components/admin/b2b/FollowUpB2bRequestButton";
 import {
   CloseB2bRequestButton,
@@ -118,6 +119,12 @@ export default async function AdminB2bRequestDetailPage({
   const canUpdateClosed = isClosed && canConvert && canAdminUpdateClosed(role, closedAt);
   const canEditRequest =
     canConvert && lead.status !== "CONVERTED" && !lead.locked && (!isClosed || canUpdateClosed);
+  // Same rules as DELETE /api/admin/b2b-requests/[id].
+  const canDelete =
+    lead.status !== "CONVERTED" &&
+    !lead.locked &&
+    (await can(role, "b2bRequests", "delete")) &&
+    (!isClosed || canAdminUpdateClosed(role, closedAt));
   const canClose = canConvert && !isClosed && lead.status !== "CONVERTED" && !lead.locked;
   // Closed requests the agent already has — same count as the close route.
   const closedCount = canClose && lead.b2bAgentId ? await b2bClosedCount(lead.b2bAgentId) : 0;
@@ -187,6 +194,9 @@ export default async function AdminB2bRequestDetailPage({
             />
           )}
           {canUpdateClosed && <ReopenB2bRequestButton requestId={lead.id} />}
+          {canDelete && (
+            <DeleteB2bRequestButton endpoint={`/api/admin/b2b-requests/${lead.id}`} redirectTo="/admin/b2b-requests" />
+          )}
           {canFollowUp && (
             <FollowUpB2bRequestButton
               request={{

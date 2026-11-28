@@ -5,7 +5,23 @@ import Link from "next/link";
 import { rowClick } from "@/components/admin/ui/rowClick";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, Eye, Copy, FileText, Phone } from "lucide-react";
+import { Plus, Trash2, Pencil, Eye, Copy, FileText, Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  LIST_FILTER_TRIGGER,
+  LIST_SEARCH_CLASS,
+  ListFilterToggle,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/organisms/select";
 import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { useServerPagedList } from "@/components/admin/ui/useServerPagedList";
@@ -59,6 +75,10 @@ export function ProposalsClient({
   const [debouncedPhone, setDebouncedPhone] = useState("");
   const [createdBy, setCreatedBy] = useState("ALL");
   const [assignedTo, setAssignedTo] = useState("ALL");
+  // Phones only: the filters stay folded behind the filter icon.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters =
+    [statusFilter, createdBy, assignedTo].filter((f) => f !== "ALL").length + (phone.trim() ? 1 : 0);
 
   // Same 300 ms debounce the hook applies to the name search.
   useEffect(() => {
@@ -132,74 +152,100 @@ export function ProposalsClient({
       </div>
 
       <div className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by customer name…"
-              aria-label="Search by customer name"
-              className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-            />
+        {/* Filter bar — same layout as Leads: search always shown; on phones
+            the other filters fold behind the filter icon (with a count). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by customer name…"
+            className={LIST_SEARCH_CLASS}
+          />
+
+          <ListFilterToggle
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((o) => !o)}
+            activeCount={activeFilters}
+          />
+
+          {/* display:contents keeps the filters in the bar's wrap on md+. */}
+          <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
+            <div className="relative min-w-[170px] max-md:w-full">
+              <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                inputMode="tel"
+                placeholder="Customer phone…"
+                aria-label="Filter by customer phone"
+                className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+              />
+            </div>
+
+            <Select value={createdBy} onValueChange={setCreatedBy}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by created by">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Created by: anyone</SelectItem>
+                {creators.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={assignedTo} onValueChange={setAssignedTo}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by assigned to">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Assigned to: anyone</SelectItem>
+                <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                {assignees.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as (typeof STATUSES)[number])}
+            >
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((sVal) => (
+                  <SelectItem key={sVal} value={sVal}>
+                    {sVal === "ALL" ? "All Statuses" : sVal}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              inputMode="tel"
-              placeholder="Customer phone…"
-              aria-label="Filter by customer phone"
-              className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-            />
-          </div>
-          <select
-            value={createdBy}
-            onChange={(e) => setCreatedBy(e.target.value)}
-            aria-label="Filter by created by"
-            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-          >
-            <option value="ALL">Created by: anyone</option>
-            {creators.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={assignedTo}
-            onChange={(e) => setAssignedTo(e.target.value)}
-            aria-label="Filter by assigned to"
-            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-          >
-            <option value="ALL">Assigned to: anyone</option>
-            <option value="UNASSIGNED">Unassigned</option>
-            {assignees.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as (typeof STATUSES)[number])}
-            aria-label="Filter by status"
-            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-          >
-            {STATUSES.map((sVal) => (
-              <option key={sVal} value={sVal}>
-                {sVal === "ALL" ? "All Statuses" : sVal}
-              </option>
-            ))}
-          </select>
+
+          <ListResultsCount>
+            {total} results{loading ? " · loading…" : ""}
+          </ListResultsCount>
+
+          <ListRefreshButton
+            onClick={() => {
+              router.refresh();
+              reload();
+            }}
+            refreshing={loading}
+          />
         </div>
 
         <div
           className={`overflow-x-auto transition-opacity ${loading ? "opacity-60" : ""}`}
           aria-busy={loading}
         >
-          <table className="table-cards w-full text-sm">
+          <table className="table-cards table-cards-dashed w-full text-sm">
             <thead>
               <tr className="border-y border-border bg-muted">
                 {COLUMNS.map((h) => (

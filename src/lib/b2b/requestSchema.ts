@@ -17,7 +17,10 @@ export const b2bRequestFieldsSchema = z.object({
   pax: z.coerce.number().int().positive().max(50).optional(),
   children: z.coerce.number().int().min(0).max(20).optional(),
   rooms: z.coerce.number().int().positive().max(20).optional(),
-  budget: z.coerce.number().min(20000, "Minimum budget is ₹20,000.").optional(),
+  // Expected budget is mandatory on every B2B request (agent + CRM).
+  budget: z.coerce
+    .number({ error: "Please enter the expected budget." })
+    .min(20000, "Minimum budget is ₹20,000."),
   startDate: z.string().trim().max(40).optional(),
   endDate: z.string().trim().max(40).optional(),
   notes: z.string().trim().max(2000).optional(),

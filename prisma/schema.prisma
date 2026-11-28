@@ -82,6 +82,7 @@ model User {
   b2bRequests              Lead[]               @relation("B2BAgentLeads")
   b2bRequestsCreated       Lead[]               @relation("LeadCreatedBy")
   notifications            Notification[]
+  pushSubscriptions        PushSubscription[]
   // ── Vertex Connect ────────────────────────────────────────────────────────
   chatRoomsCreated         ChatRoom[]           @relation("ConnectRoomCreator")
   chatMemberships          ChatMember[]         @relation("ConnectMemberships")
@@ -137,6 +138,22 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+// A device (browser / installed app) that turned on push notifications. Staff
+// get a push for every bell Notification; B2B agents for their own request
+// updates. Rows whose endpoint the browser reports gone (404/410) are deleted.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Itinerary {
@@ -218,18 +235,18 @@ model ItineraryHistory {
 // Booking (unlike Itinerary). No lock/history/payment-link machinery here:
 // there's no compliance surface for a document with no lead attached.
 model ProposalItinerary {
-  id        String         @id @default(cuid())
-  title     String
-  status    ProposalStatus @default(DRAFT)
-  data      Json
-  ownerId   String
-  owner     User           @relation("ProposalOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  title        String
+  status       ProposalStatus @default(DRAFT)
+  data         Json
+  ownerId      String
+  owner        User           @relation("ProposalOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   // Sales person the proposal is handed to (e.g. made on a colleague's
   // behalf). Owner and assignee both see/edit it; admins see all.
   assignedToId String?
   assignedTo   User?          @relation("ProposalAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([ownerId])
   @@index([assignedToId])
@@ -1085,86 +1102,86 @@ model PaymentAudit {
 }
 
 model Lead {
-  id                  String              @id @default(cuid())
-  name                String
-  phone               String
-  email               String?
-  source              LeadSource          @default(WEBSITE)
+  id                   String              @id @default(cuid())
+  name                 String
+  phone                String
+  email                String?
+  source               LeadSource          @default(WEBSITE)
   // Free-text page/campaign tag (home, tours, blog-detail, …). The LeadSource
   // enum captures the marketing channel; this captures which on-site form fired.
-  sourcePage          String?
+  sourcePage           String?
   // Deprecated — superseded by tourId below (mapping a lead to the real Tour
   // catalog instead of a generic trip-type tag). Left in the schema, unused
   // by application code, rather than dropped, so no historical data is lost.
-  category            LeadCategory?
+  category             LeadCategory?
   // Which real Tour package this lead is interested in. Null = "Custom" (a
   // bespoke itinerary, not tied to a catalog package) — same nullable-FK
   // idiom as Booking.tourId.
-  tourId              String?
-  tour                Tour?               @relation(fields: [tourId], references: [id])
+  tourId               String?
+  tour                 Tour?               @relation(fields: [tourId], references: [id])
   // Name of the selected Tour.packageOptions entry (e.g. "Premium"), snapshot
   // at enquiry time so a later rename never rewrites history. Null = no
   // package chosen / the tour has no package options.
-  packageName         String?
-  adults              Int                 @default(1)
-  children            Int?
-  startDate           DateTime?
-  endDate             DateTime?
-  attachments         String              @default("[]")
-  notes               String?
-  followUpAt          DateTime?
-  assignedToId        String?
-  assignedTo          User?               @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  packageName          String?
+  adults               Int                 @default(1)
+  children             Int?
+  startDate            DateTime?
+  endDate              DateTime?
+  attachments          String              @default("[]")
+  notes                String?
+  followUpAt           DateTime?
+  assignedToId         String?
+  assignedTo           User?               @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   // ── B2B request (Phase 2) ────────────────────────────────────────────────
   // Non-null b2bAgentId is the ONLY discriminator for "this Lead is a B2B
   // request" — no separate leadType field (mirrors the Itinerary.leadId/
   // bookingId nullable-FK-as-discriminator idiom already used elsewhere in
   // this schema). Restrict (not Cascade/SetNull): a B2B agent must never be
   // hard-deletable while historical requests exist.
-  b2bAgentId          String?
-  b2bAgent            User?               @relation("B2BAgentLeads", fields: [b2bAgentId], references: [id], onDelete: Restrict)
+  b2bAgentId           String?
+  b2bAgent             User?               @relation("B2BAgentLeads", fields: [b2bAgentId], references: [id], onDelete: Restrict)
   // Who created this request: null = the agent self-submitted; set = a staff
   // member created it on the agent's behalf (mirrors assignedToId's shape).
   // Normal (non-B2B) leads never set this.
-  createdById         String?
-  createdBy           User?               @relation("LeadCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById          String?
+  createdBy            User?               @relation("LeadCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   // B2B-request-only fields — always null on normal leads.
-  days                Int?
-  rooms               Int?
-  budget              Float?
-  status              LeadStatus          @default(NEW)
-  bookingId           String?
-  booking             Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  negotiatedAmount    Float?
-  tokenAmount         Float?
+  days                 Int?
+  rooms                Int?
+  budget               Float?
+  status               LeadStatus          @default(NEW)
+  bookingId            String?
+  booking              Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  negotiatedAmount     Float?
+  tokenAmount          Float?
   // Set true on conversion; blocks lead/itinerary edits until an admin unlocks.
-  locked              Boolean             @default(false)
+  locked               Boolean             @default(false)
   // Manual itinerary PDF uploaded by staff (e.g. a 5-star one made outside the
   // generator) — shown to the customer (booking) / B2B agent (request) as a
   // download. One file, replaced on re-upload. The artifact link is staff-only
   // and must never be selected into customer/agent pages.
-  manualItineraryUrl  String?
-  manualItineraryName String?
-  manualItineraryAt   DateTime?
+  manualItineraryUrl   String?
+  manualItineraryName  String?
+  manualItineraryAt    DateTime?
   itineraryArtifactUrl String?
-  ipAddress           String?
-  userAgent           String?
+  ipAddress            String?
+  userAgent            String?
   // ── Marketing attribution — captured once at submission, permanent from then
   // on. See src/lib/attribution.ts (single shared field list/schema). Copied
   // verbatim onto Booking at conversion time (src/app/api/leads/[id]/convert) —
   // never re-derived or duplicated as separate logic.
-  utmSource           String?
-  utmMedium           String?
-  utmCampaign         String?
-  utmTerm             String?
-  utmContent          String?
-  gclid               String?
-  gbraid              String?
-  wbraid              String?
-  fbclid              String?
-  msclkid             String?
-  landingPage         String?
-  referrer            String?
+  utmSource            String?
+  utmMedium            String?
+  utmCampaign          String?
+  utmTerm              String?
+  utmContent           String?
+  gclid                String?
+  gbraid               String?
+  wbraid               String?
+  fbclid               String?
+  msclkid              String?
+  landingPage          String?
+  referrer             String?
   // ── Trip Planner structured intent (Plan Your Kashmir Trip) ─────────────
   // WHAT the customer wants, orthogonal to `source` (WHERE they came from —
   // GOOGLE_ADS/META_ADS/…) and `sourcePage` (WHICH on-site form fired). All
@@ -1176,49 +1193,49 @@ model Lead {
   // ("Help Me Plan") is its own distinct, undecided intent — it must NEVER
   // be expanded into all three at write time; that expansion, if ever
   // wanted, is a read-time/reporting decision, not a stored fact.
-  requestedComponents String?
+  requestedComponents  String?
   // Values: "FLIGHT" | "TRAIN" | "BUS" (any subset) — only meaningful when
   // requestedComponents includes "TRANSPORT". Distinct from the older,
   // single-value `Itinerary`/proposal transport fields (unrelated) and from
   // TransportAssistanceBanner's legacy context.transportMode (FLIGHT/TRAIN/
   // EITHER) — that banner's mode maps into this array at submission time.
-  transportModes      String?
-  fromCity            String?
-  toCity              String?
+  transportModes       String?
+  fromCity             String?
+  toCity               String?
   // Lead qualification (lead forms + the WhatsApp modal). budgetBandKey is a
   // BudgetBand.key ("band1"…) or "undecided"; budgetBandLabel snapshots the
   // text the visitor saw, so re-pricing a band never rewrites old leads.
   // travelMonth is "YYYY-MM", "later" or "undecided".
-  budgetBandKey       String?
-  budgetBandLabel     String?
-  travelMonth         String?
+  budgetBandKey        String?
+  budgetBandLabel      String?
+  travelMonth          String?
   // True when the band was derived from the tour's price (tour pages / tour
   // cards) rather than chosen by the visitor.
-  budgetBandDerived   Boolean             @default(false)
+  budgetBandDerived    Boolean             @default(false)
   // HOW the customer actually contacted us (this submission/creation) — set
   // server-side only, never client-supplied. FORM for anything created via
   // POST /api/leads; WHATSAPP/PHONE for staff-created leads logged from a
   // conversation (src/app/api/admin/leads/route.ts). Deliberately NOT named
   // `channel` — src/lib/whatsappAttribution.server.ts already uses that word
   // to mean marketing channel (a LeadSource), a different concept.
-  contactChannel      LeadContactChannel?
+  contactChannel       LeadContactChannel?
   // Occasion Offer page the enquiry came from (/diwali-kashmir-tour-package-2026,
   // …). The chosen tier's name is stored in packageName above. SetNull so an
   // offer can't take its leads' history with it (the API also refuses to
   // delete an offer that has leads).
-  occasionOfferId     String?
-  occasionOffer       OccasionOffer?      @relation(fields: [occasionOfferId], references: [id], onDelete: SetNull)
+  occasionOfferId      String?
+  occasionOffer        OccasionOffer?      @relation(fields: [occasionOfferId], references: [id], onDelete: SetNull)
   // Adventure page (/adventures/[slug]) the enquiry came from. The chosen
   // pricing tier's name is stored in packageName above. SetNull so deleting
   // an adventure never takes its leads with it.
-  adventureId         String?
-  adventure           Adventure?          @relation(fields: [adventureId], references: [id], onDelete: SetNull)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  activities          LeadActivity[]
-  itinerary           Itinerary?
-  offlineConversions  OfflineConversion[]
-  b2bMessages         B2bMessage[]
+  adventureId          String?
+  adventure            Adventure?          @relation(fields: [adventureId], references: [id], onDelete: SetNull)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  activities           LeadActivity[]
+  itinerary            Itinerary?
+  offlineConversions   OfflineConversion[]
+  b2bMessages          B2bMessage[]
 
   @@index([status])
   @@index([source])

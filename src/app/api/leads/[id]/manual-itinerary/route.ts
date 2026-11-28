@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPushToUsers } from "@/lib/push";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -29,7 +30,7 @@ async function loadForEdit(id: string) {
   if (!session?.user || !role) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   const lead = await prisma.lead.findUnique({
     where: { id },
-    select: { id: true, b2bAgentId: true, assignedToId: true },
+    select: { id: true, name: true, b2bAgentId: true, assignedToId: true },
   });
   if (!lead) return { error: NextResponse.json({ error: "Lead not found" }, { status: 404 }) };
   const allowed = lead.b2bAgentId
@@ -101,6 +102,14 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const updated = await prisma.lead.update({ where: { id }, data, select: selectOut });
+  // A new itinerary PDF on a B2B request: push the agent.
+  if (hasFile && loaded.lead.b2bAgentId) {
+    await sendPushToUsers([loaded.lead.b2bAgentId], {
+      title: "Itinerary ready",
+      body: `${loaded.lead.name} — your itinerary is ready to download.`,
+      link: `/account/requests/${loaded.lead.id}`,
+    });
+  }
   return NextResponse.json({ ok: true, manualItinerary: toInfo(updated) });
 }
 

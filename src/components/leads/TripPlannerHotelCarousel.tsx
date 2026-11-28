@@ -6,6 +6,7 @@ import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
 import { HotelLikeButton } from "@/components/leads/HotelLikeButton";
 import type { PublicHotel } from "@/lib/hotelSuppliers/stats";
+import { formatHotelRating } from "@/lib/hotelSuppliers/schema";
 
 const ROW_ID = "trip-planner-hotels-row";
 
@@ -113,7 +114,7 @@ export function TripPlannerHotelCarousel() {
                 </p>
               )}
               {hotel.rating && (
-                <p className="mt-1.5 text-[12px] font-semibold text-gold">{hotel.rating}</p>
+                <p className="mt-1.5 text-[12px] font-semibold text-gold">{formatHotelRating(hotel.rating)}</p>
               )}
               <div className="mt-3.5 flex flex-wrap items-center gap-2">
                 {hotel.googleProfileUrl && (
