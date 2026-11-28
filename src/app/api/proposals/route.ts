@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { can, requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
 import { listProposalSummaries, proposalTitleExists } from "@/lib/proposal/list";
+import { canAccessProposal, proposalWhereForUser } from "@/lib/proposal/access";
 import {
   buildDocumentTitle,
   copyTitleCandidates,
@@ -15,11 +16,8 @@ import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
-function isAdmin(role?: Role | string | null): boolean {
-  return role === "SUPERADMIN" || role === "ADMIN";
-}
-
-// List proposals (paginated). Staff see their own; ADMIN/SUPERADMIN see all.
+// List proposals (paginated). Staff see their own + ones assigned to them;
+// ADMIN/SUPERADMIN see all.
 export async function GET(req: NextRequest) {
   const guard = await requirePermission("proposals", "view");
   if (guard instanceof NextResponse) return guard;
@@ -27,8 +25,11 @@ export async function GET(req: NextRequest) {
   const { id: userId, role } = guard.user;
   const { searchParams } = new URL(req.url);
   const { items, total } = await listProposalSummaries({
-    ownerId: isAdmin(role) ? undefined : userId,
+    scope: proposalWhereForUser(role, userId),
     search: searchParams.get("search")?.trim() ?? "",
+    phone: searchParams.get("phone")?.trim() ?? "",
+    createdBy: searchParams.get("createdBy") ?? undefined,
+    assignedTo: searchParams.get("assignedTo") ?? undefined,
     status: searchParams.get("status") ?? undefined,
     ...parsePageParams(searchParams),
   });
@@ -74,9 +75,9 @@ export async function POST(req: NextRequest) {
     }
     const source = await prisma.proposalItinerary.findUnique({
       where: { id: parsed.data.copyOf },
-      select: { title: true, data: true, ownerId: true },
+      select: { title: true, data: true, ownerId: true, assignedToId: true },
     });
-    if (!source || (!isAdmin(guard.user.role) && source.ownerId !== guard.user.id)) {
+    if (!source || !canAccessProposal(guard.user.role, guard.user.id, source)) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     const copy = await prisma.proposalItinerary.create({

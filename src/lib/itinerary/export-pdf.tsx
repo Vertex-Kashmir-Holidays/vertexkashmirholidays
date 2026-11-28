@@ -45,6 +45,8 @@ export interface TokenPaymentLink {
   /** Razorpay Payment Link short URL — the only thing encoded in the QR. */
   shortUrl: string;
   amountRupees: number;
+  /** Package total the 10% token was calculated from (shown in the QR caption). */
+  totalRupees?: number;
 }
 
 /**
@@ -85,6 +87,7 @@ export async function downloadItineraryPdf(
   const srcs = [
     data.coverImage,
     data.transportImage,
+    ...data.extraVehicles.map((v) => v.image),
     ...data.days.map((d) => d.image),
     ...data.hotels.map((h) => h.image),
     ...data.hotelImages,
@@ -136,6 +139,7 @@ export async function downloadItineraryPdf(
       address={address}
       tokenQrDataUrl={tokenQrDataUrl}
       tokenAmountRupees={tokenPaymentLink?.amountRupees}
+      tokenTotalRupees={tokenPaymentLink?.totalRupees}
       trustContent={trustContent}
       socialLinks={socialLinks}
     />,

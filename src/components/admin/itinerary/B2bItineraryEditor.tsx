@@ -9,10 +9,15 @@
 // exactly the ambiguity this component exists to remove. Every field below
 // corresponds 1:1 to something B2bItineraryPdf.tsx actually renders
 // (including Included Activities, as compact text cards without photos).
-import { useState } from "react";
+import { HotelChoicesInput } from "@/components/admin/proposal/HotelChoicesInput";
+import { useCallback, useState } from "react";
+import { resyncTripDates } from "@/lib/itinerary/travelDates";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save, Download, Plus, Trash2 } from "lucide-react";
+import { Loader2, Save, Download, Plus, Trash2, Sparkles, BookmarkPlus } from "lucide-react";
+import { DayPlanPicker } from "../day-plans/DayPlanPicker";
+import { DayPlanFormDialog, EMPTY_DAY_PLAN } from "../day-plans/DayPlanFormDialog";
+import { guessRoute } from "@/lib/dayPlans/schema";
 import { downloadB2bItineraryPdf } from "@/lib/itinerary/export-pdf";
 import {
   genId,
@@ -30,6 +35,7 @@ import { ReorderableList } from "./ReorderableList";
 import { addDaysToStayDate, stayDateInputValue } from "@/lib/itinerary/stayDate";
 import { B2B_DEFAULT_COVER, b2bCoverImage } from "@/lib/b2b/coverImage";
 import { ImagePicker } from "./ImagePicker";
+import { PublishBar, publishTo, type PublishState } from "./PublishBar";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25";
@@ -63,6 +69,12 @@ interface Props {
   agent?: B2bAgentInfo | null;
   /** False until the agency has earned full white-label — see WHITE_LABEL_MIN_BOOKINGS. */
   whiteLabel: boolean;
+  /** When the agent-visible copy was last published (ISO), or null — see src/lib/itinerary/publish.ts. */
+  initialPublishedAt: string | null;
+  /** Last server save (ISO). */
+  initialUpdatedAt: string;
+  /** Destinations Library: pick a ready-written day / save a day to it. */
+  dayPlans?: { canPick: boolean; canSave: boolean };
 }
 
 export function B2bItineraryEditor({
@@ -74,15 +86,59 @@ export function B2bItineraryEditor({
   apiBasePath,
   agent,
   whiteLabel,
+  initialPublishedAt,
+  initialUpdatedAt,
+  dayPlans = { canPick: false, canSave: false },
 }: Props) {
   const router = useRouter();
-  const [data, setData] = useState<ItineraryData>(initialData);
+  const [pickForDay, setPickForDay] = useState<string | null>(null);
+  const [saveDay, setSaveDay] = useState<ItineraryDay | null>(null);
+  const [data, setRawData] = useState<ItineraryData>(initialData);
+  // Every edit goes through resyncTripDates: day dates and hotel check-in/out follow the
+  // travel start date, nights and hotel order (manual tweaks stay otherwise).
+  const setData = useCallback(
+    (update: ItineraryData | ((prev: ItineraryData) => ItineraryData)) =>
+      setRawData((prev) =>
+        resyncTripDates(prev, typeof update === "function" ? update(prev) : update),
+      ),
+    [],
+  );
   // Standard name (customer name - duration - phone); the server assigns the
   // saved one, which may carry a " (2)" suffix — shown until the next edit.
   const title = data === initialData ? initialTitle : buildDocumentTitle(data);
   const [status, setStatus] = useState<ItineraryStatus>(initialStatus);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Agent visibility: agents only see the published snapshot (publish.ts).
+  const [savedData, setSavedData] = useState<ItineraryData>(initialData);
+  const [savedAt, setSavedAt] = useState<string>(initialUpdatedAt);
+  const [publishedAt, setPublishedAt] = useState<string | null>(initialPublishedAt);
+  const publishState: PublishState = !publishedAt
+    ? "never"
+    : new Date(savedAt) > new Date(publishedAt)
+      ? "stale"
+      : "current";
+  const publishUrl = `${apiBasePath}/${id}/publish`;
+
+  /** After a save/download: nudge staff that the agent can't see this yet. */
+  function promptPublish(message: string) {
+    if (!canSave) return;
+    toast.info(message, {
+      duration: 10000,
+      action: {
+        label: "Publish to agent",
+        onClick: async () => {
+          const at = await publishTo(publishUrl);
+          if (!at) return;
+          setPublishedAt(at);
+          setSavedAt(at);
+          toast.success("Published — the agent now sees this version.");
+          router.refresh();
+        },
+      },
+    });
+  }
 
   function update<K extends keyof ItineraryData>(field: K, value: ItineraryData[K]) {
     setData((p) => ({ ...p, [field]: value }));
@@ -171,7 +227,7 @@ export function B2bItineraryEditor({
           mealType: "MAP",
           image: DEFAULT_HOTEL_IMAGES[0],
           extraBed: "0",
-          childWithBed: "0",
+          childWithoutBed: "0",
           hotelAlt: "",
           checkIn: "",
           checkOut: "",
@@ -255,7 +311,7 @@ export function B2bItineraryEditor({
     }));
   }
 
-  async function handleSave() {
+  async function handleSave(opts: { promptPublish?: boolean } = { promptPublish: true }): Promise<boolean> {
     setSaving(true);
     try {
       const res = await fetch(`${apiBasePath}/${id}`, {
@@ -265,10 +321,22 @@ export function B2bItineraryEditor({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Save failed");
-      toast.success("Quotation saved.");
+      setSavedData(data);
+      setSavedAt(json.updatedAt ?? new Date().toISOString());
+      if (opts.promptPublish) {
+        promptPublish(
+          publishedAt
+            ? "Saved. The agent still sees the previously published version."
+            : "Saved. The agent can't see this quotation until you publish it.",
+        );
+      } else {
+        toast.success("Quotation saved.");
+      }
       router.refresh();
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -279,18 +347,16 @@ export function B2bItineraryEditor({
     try {
       const { bytes } = await downloadB2bItineraryPdf(data, status, id, agent, whiteLabel);
       toast.success(`PDF downloaded (${Math.round(bytes / 1024)} KB).`);
-      // Downloading means it's being shared with the agent — bump a
-      // still-draft quotation out of DRAFT, same rule as the normal editor.
-      if (status === "DRAFT") {
-        const res = await fetch(`${apiBasePath}/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "SENT" }),
-        });
-        if (res.ok) {
-          setStatus("SENT");
-          router.refresh();
-        }
+      // Downloading no longer shares it automatically — the agent's account
+      // only shows what's explicitly published. Nudge when theirs is behind.
+      if (data !== savedData) {
+        toast.info("This PDF includes unsaved changes — save and publish to update the agent's account.");
+      } else if (publishState !== "current") {
+        promptPublish(
+          publishedAt
+            ? "The agent's account still shows the older published version."
+            : "The agent can't see this quotation in their account until you publish it.",
+        );
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PDF export failed");
@@ -345,7 +411,7 @@ export function B2bItineraryEditor({
           </button>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             disabled={saving || !canSave}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -354,6 +420,20 @@ export function B2bItineraryEditor({
           </button>
         </div>
       </div>
+
+      <PublishBar
+        publishUrl={publishUrl}
+        audience="agent"
+        state={publishState}
+        publishedAt={publishedAt}
+        dirty={data !== savedData}
+        onSave={() => handleSave({ promptPublish: false })}
+        canPublish={canSave}
+        onPublished={(at) => {
+          setPublishedAt(at);
+          setSavedAt(at);
+        }}
+      />
 
       {/* Trip details — maps to B2bItineraryPdf's title + info bar + destinations */}
       <div className={card}>
@@ -535,13 +615,56 @@ export function B2bItineraryEditor({
                   />
                 </div>
               </div>
+              {/* Destinations Library — same as the proposal / customer itinerary. */}
+              {(dayPlans.canPick || dayPlans.canSave) && (
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                  {dayPlans.canPick ? (
+                    <button
+                      type="button"
+                      onClick={() => setPickForDay(day.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1 text-[12px] font-bold text-primary-foreground hover:brightness-110"
+                    >
+                      <Sparkles className="h-3 w-3" /> Pick from library
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                  {dayPlans.canSave && (
+                    <button
+                      type="button"
+                      onClick={() => setSaveDay(day)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 px-2.5 py-1 text-[12px] font-bold text-primary hover:bg-primary/10"
+                    >
+                      <BookmarkPlus className="h-3 w-3" /> Save to library
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </ReorderableList>
+        {pickForDay && (
+          <DayPlanPicker
+            open
+            onOpenChange={(o) => !o && setPickForDay(null)}
+            dayNumber={data.days.findIndex((d) => d.id === pickForDay) + 1}
+            onPick={(plan) => updateDay(pickForDay, { title: plan.title, body: plan.body })}
+          />
+        )}
+        {saveDay && (
+          <DayPlanFormDialog
+            open
+            onOpenChange={(o) => !o && setSaveDay(null)}
+            title="Save this day to the library"
+            initial={{ ...EMPTY_DAY_PLAN, ...guessRoute(saveDay.title), title: saveDay.title, body: saveDay.body }}
+            onSaved={() => {}}
+          />
+        )}
       </div>
 
-      {/* Stay Plan — maps to the Stay Plan table (no images) */}
-      <div className={card}>
+      {/* Stay Plan — maps to the Stay Plan table (no images). Tighter left
+          padding on phones: the reorder handle already takes a 28px gutter. */}
+      <div className={`${card} max-sm:pl-1.5 max-sm:pr-3`}>
         <div className="flex items-center justify-between">
           <h2 className={sectionTitle}>Stay Plan</h2>
           <button
@@ -560,7 +683,7 @@ export function B2bItineraryEditor({
         >
           {(h) => (
             <div
-              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-[1.6fr_0.7fr_1.8fr_1.2fr_0.8fr_auto]"
+              className="grid grid-cols-2 items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1.6fr_0.7fr_1.2fr_0.8fr_auto] sm:p-4"
             >
               <div>
                 <label className={fieldLabel}>Destination</label>
@@ -576,14 +699,6 @@ export function B2bItineraryEditor({
                   className={inputCls + " mt-1"}
                   value={h.nights}
                   onChange={(e) => updateHotel(h.id, "nights", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={fieldLabel}>Hotel Name</label>
-                <input
-                  className={inputCls + " mt-1"}
-                  value={h.hotelDetails}
-                  onChange={(e) => updateHotel(h.id, "hotelDetails", e.target.value)}
                 />
               </div>
               <div>
@@ -619,6 +734,18 @@ export function B2bItineraryEditor({
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
+              {/* Hotel choices, as in the proposal: Hotel 1 | Hotel 2 | Hotel 3 |
+                  Similar — the confirmed one is picked when converting. */}
+              <div className="col-span-full">
+                <label className={fieldLabel}>Hotel options</label>
+                <HotelChoicesInput
+                  inline
+                  className={inputCls}
+                  value={h.hotelDetails}
+                  onValueChange={(v) => updateHotel(h.id, "hotelDetails", v)}
+                  destination={h.destination}
+                />
+              </div>
               {/* Dates only (no time), both optional — a second row of the
                   same card. The PDF's Stay Plan shows Check-in / Check-out
                   columns once any hotel has one. */}
@@ -653,12 +780,25 @@ export function B2bItineraryEditor({
         <h2 className={sectionTitle}>Transportation &amp; Price</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label className={fieldLabel}>Vehicle</label>
-            <input
-              className={inputCls + " mt-1.5"}
-              value={data.transportType}
-              onChange={(e) => update("transportType", e.target.value)}
-            />
+            <label className={fieldLabel}>No. of vehicles × Vehicle</label>
+            <div className="mt-1.5 flex gap-2">
+              <input
+                className={inputCls + " w-16 shrink-0 text-center"}
+                inputMode="numeric"
+                placeholder="1"
+                aria-label="No. of vehicles"
+                value={data.transportCount}
+                onChange={(e) =>
+                  update("transportCount", e.target.value.replace(/\D/g, "").slice(0, 2))
+                }
+              />
+              <input
+                className={inputCls}
+                aria-label="Vehicle"
+                value={data.transportType}
+                onChange={(e) => update("transportType", e.target.value)}
+              />
+            </div>
           </div>
           <div>
             <label className={fieldLabel}>Details</label>
@@ -678,6 +818,64 @@ export function B2bItineraryEditor({
             />
           </div>
         </div>
+        {/* More vehicles in a different combo (Sedan + SUV). */}
+        {data.extraVehicles.map((v) => (
+          <div key={v.id} className="mt-3 flex items-center gap-2 sm:max-w-md">
+            <span className="text-sm font-bold text-muted-foreground">+</span>
+            <input
+              className={inputCls + " w-16 shrink-0 text-center"}
+              inputMode="numeric"
+              placeholder="1"
+              aria-label="No. of vehicles"
+              value={v.count}
+              onChange={(e) =>
+                update(
+                  "extraVehicles",
+                  data.extraVehicles.map((x) =>
+                    x.id === v.id ? { ...x, count: e.target.value.replace(/\D/g, "").slice(0, 2) } : x,
+                  ),
+                )
+              }
+            />
+            <input
+              className={inputCls}
+              placeholder="e.g. SUV"
+              aria-label="Vehicle"
+              value={v.type}
+              onChange={(e) =>
+                update(
+                  "extraVehicles",
+                  data.extraVehicles.map((x) => (x.id === v.id ? { ...x, type: e.target.value } : x)),
+                )
+              }
+            />
+            <button
+              type="button"
+              onClick={() =>
+                update(
+                  "extraVehicles",
+                  data.extraVehicles.filter((x) => x.id !== v.id),
+                )
+              }
+              aria-label={`Remove vehicle ${v.type}`}
+              className="shrink-0 p-1 text-rose-500 hover:text-rose-600"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            update("extraVehicles", [
+              ...data.extraVehicles,
+              { id: genId("veh"), type: "", count: "1", seats: "", days: "", usedFor: "", image: "" },
+            ])
+          }
+          className="mt-3 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add another vehicle
+        </button>
       </div>
 
       {/* Included Activities */}

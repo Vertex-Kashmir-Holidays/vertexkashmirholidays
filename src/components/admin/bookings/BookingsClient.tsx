@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Search,
-  ChevronDown,
   User,
   ClipboardList,
   Trash2,
@@ -21,6 +19,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/organisms/select";
+import {
+  LIST_FILTER_TRIGGER,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
 import { StatCard } from "@/components/ui/molecules/stat-card";
 import { isBookingCompleted } from "@/lib/bookings/finance";
 import { ConfirmDialog } from "@/components/admin/connect/ConfirmDialog";
@@ -260,7 +271,7 @@ export function BookingsClient({
       </div>
 
       {cardStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${cardStats.isAdmin ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}>
           <StatCard
             label={cardStats.isAdmin ? "Bookings" : "My Bookings"}
             value={cardStats.bookingsCount.all}
@@ -275,9 +286,9 @@ export function BookingsClient({
             icon={IndianRupee}
             accent="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
           />
-          {cardStats.isAdmin && cardStats.bookingsProfit && (
+          {cardStats.bookingsProfit && (
             <StatCard
-              label="Booking Profit"
+              label={cardStats.isAdmin ? "Booking Profit" : "My Booking Profit"}
               value={fmtINR(cardStats.bookingsProfit.all)}
               sub={`${fmtINR(cardStats.bookingsProfit.month)} this month`}
               icon={TrendingUp}
@@ -313,40 +324,43 @@ export function BookingsClient({
       )}
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 p-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, ref, order ID..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
-            />
-          </div>
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-4 pr-8 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50 appearance-none"
-            >
-              <option value="ALL">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="PAID">Paid</option>
-              <option value="FAILED">Failed</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="REFUNDED">Refunded</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          </div>
-          <p className="text-xs text-muted-foreground self-center shrink-0">{total} results</p>
+        {/* Filters — same layout as Leads/Proposals (see ListFilterBar). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, email, ref, order ID..."
+            className="min-w-[180px] max-md:order-first max-md:min-w-0"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className={cn(LIST_FILTER_TRIGGER, "max-md:w-full")} aria-label="Filter by status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Status</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
+              <SelectItem value="FAILED">Failed</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="REFUNDED">Refunded</SelectItem>
+            </SelectContent>
+          </Select>
+          <ListResultsCount>
+            {total} results{loading ? " · loading…" : ""}
+          </ListResultsCount>
+          <ListRefreshButton
+            onClick={() => {
+              router.refresh();
+              fetchBookings();
+            }}
+            refreshing={loading}
+          />
         </div>
 
         {/* Table */}
         <div className={cn("overflow-x-auto", loading && "opacity-60 pointer-events-none")}>
-          <table className="w-full text-sm">
+          <table className="table-cards table-cards-dashed w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 {[
@@ -390,7 +404,7 @@ export function BookingsClient({
                       }}
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
                     >
-                      <td className="px-4 py-3">
+                      <td data-label="Ref" className="px-4 py-3">
                         <span
                           className="font-mono text-[12px] font-semibold text-foreground"
                           title={b.id}
@@ -398,35 +412,35 @@ export function BookingsClient({
                           #{b.id.slice(-8).toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-span="full" className="px-4 py-3 max-md:order-first">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             <User className="w-3 h-3 text-foreground" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px]">
+                            <p className="font-semibold text-foreground text-xs truncate max-w-[120px] max-md:max-w-none">
                               {b.guestName}
                             </p>
-                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px]">
+                            <p className="text-[12px] text-muted-foreground truncate max-w-[120px] max-md:max-w-none">
                               {b.guestEmail}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      <td data-label="Travel date" className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(b.travelDate).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
                         })}
                       </td>
-                      <td className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
+                      <td data-label="Amount" className="px-4 py-3 text-xs font-bold text-foreground whitespace-nowrap">
                         {fmtINR(b.amount)}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      <td data-label="Converted by" className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {b.convertedBy ?? "Website"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-pin="top-right" className="px-4 py-3">
                         {isCompleted(b) ? (
                           <span
                             title="Fully paid and the travel date has passed"
@@ -445,7 +459,7 @@ export function BookingsClient({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-label="Payment" className="px-4 py-3 max-md:order-first">
                         <span
                           className={cn(
                             "text-[12px] font-bold px-2 py-0.5 rounded-full",
@@ -455,7 +469,7 @@ export function BookingsClient({
                           {PAYMENT_STATUS_LABELS[b.paymentStatus]}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td data-actions className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <Link
                             href={`/admin/bookings/${b.id}/services`}

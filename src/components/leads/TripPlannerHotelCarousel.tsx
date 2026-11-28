@@ -1,14 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { imgSrc } from "@/lib/placeholder";
 import { HotelLikeButton } from "@/components/leads/HotelLikeButton";
 import type { PublicHotel } from "@/lib/hotelSuppliers/stats";
-
-interface TripPlannerHotelCarouselProps {
-  hotels: PublicHotel[];
-}
+import { formatHotelRating } from "@/lib/hotelSuppliers/schema";
 
 const ROW_ID = "trip-planner-hotels-row";
 
@@ -21,7 +19,19 @@ const ROW_ID = "trip-planner-hotels-row";
 // Slider mechanics (native scroll-snap + prev/next buttons) match the site's
 // existing carousel pattern (src/components/activities/ActivitiesCarousel.tsx)
 // — touch-swipeable on mobile, button-driven on desktop, same on both.
-export function TripPlannerHotelCarousel({ hotels }: TripPlannerHotelCarouselProps) {
+//
+// Hotel names must never reach search engines: the list is fetched after
+// load from /api/ (robots-disallowed), image alts are generic, outbound links
+// are nofollow, and the section is data-nosnippet.
+export function TripPlannerHotelCarousel() {
+  const [hotels, setHotels] = useState<PublicHotel[]>([]);
+  useEffect(() => {
+    fetch("/api/hotel-suppliers/public")
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setHotels)
+      .catch(() => {});
+  }, []);
+
   if (hotels.length === 0) return null;
 
   const scroll = (direction: "prev" | "next") => {
@@ -32,7 +42,10 @@ export function TripPlannerHotelCarousel({ hotels }: TripPlannerHotelCarouselPro
   };
 
   return (
-    <section className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24">
+    <section
+      data-nosnippet
+      className="relative z-[2] mx-auto max-w-[1300px] px-4 pt-16 sm:px-6 sm:pt-24"
+    >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="text-center sm:text-left">
           <p className="text-[12px] font-bold tracking-[0.22em] text-primary">OUR HOTEL PARTNERS</p>
@@ -73,7 +86,7 @@ export function TripPlannerHotelCarousel({ hotels }: TripPlannerHotelCarouselPro
             <div className="relative h-40 overflow-hidden">
               <Image
                 src={imgSrc(hotel.coverImageUrl)}
-                alt={hotel.hotelName}
+                alt="Hotel exterior"
                 fill
                 sizes="300px"
                 className="object-cover"
@@ -82,7 +95,7 @@ export function TripPlannerHotelCarousel({ hotels }: TripPlannerHotelCarouselPro
                 <div className="absolute bottom-2 right-2 h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 shadow-card">
                   <Image
                     src={imgSrc(hotel.roomImageUrl)}
-                    alt={`${hotel.hotelName} — room`}
+                    alt="Hotel room"
                     fill
                     sizes="56px"
                     className="object-cover"
@@ -101,14 +114,14 @@ export function TripPlannerHotelCarousel({ hotels }: TripPlannerHotelCarouselPro
                 </p>
               )}
               {hotel.rating && (
-                <p className="mt-1.5 text-[12px] font-semibold text-gold">{hotel.rating}</p>
+                <p className="mt-1.5 text-[12px] font-semibold text-gold">{formatHotelRating(hotel.rating)}</p>
               )}
               <div className="mt-3.5 flex flex-wrap items-center gap-2">
                 {hotel.googleProfileUrl && (
                   <a
                     href={hotel.googleProfileUrl}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="nofollow noopener noreferrer"
                     className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12px] font-bold text-foreground transition hover:border-primary/40 hover:text-primary"
                   >
                     <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} />

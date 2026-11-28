@@ -246,6 +246,18 @@ export type HotelData = z.infer<typeof hotelDataSchema>;
 
 // Extracts the leading number from a free-text rating string (e.g. "4.7★ /
 // 2,698 reviews" -> 4.7) for the rating sort. Null when nothing parses.
+/** Rating for display: a plain number ("4.8") gets the star ("4.8★"); older
+ *  free text ("4.7★ / 2,698 reviews") is shown as entered. */
+export function formatHotelRating(rating: string | null | undefined): string {
+  const r = rating?.trim() ?? "";
+  return /^\d+(\.\d+)?$/.test(r) ? `${r}★` : r;
+}
+
+/** Rating as typed → stored: the star is added on display, so it's dropped. */
+export function normalizeHotelRating(input: string): string | null {
+  return input.replace(/★/g, "").trim() || null;
+}
+
 export function parseRatingValue(rating: string | null | undefined): number | null {
   if (!rating) return null;
   const match = rating.match(/(\d+(\.\d+)?)/);
@@ -271,13 +283,10 @@ export const createHotelSupplierSchema = z.object({
   isActive: z.boolean().default(true),
   recommended: z.boolean().default(false),
   hasFamilyRoom: z.boolean().default(false),
-  // Manual tally of bookings sent to this hotel — staff-entered, not derived
-  // from any Booking relation (HotelSupplier is a supplier reference, not
-  // bookable inventory — see the module comment at the top of this file).
-  bookingsCount: z.coerce.number().int().min(0).default(0),
   data: hotelDataSchema,
   coverImageUrl: nullableUrl.optional(),
   roomImageUrl: nullableUrl.optional(),
+  roomImage2Url: nullableUrl.optional(),
   showOnWebsite: z.boolean().default(false),
 });
 export type CreateHotelSupplierInput = z.infer<typeof createHotelSupplierSchema>;
@@ -289,10 +298,10 @@ export const patchHotelSupplierSchema = z.object({
   isActive: z.boolean().optional(),
   recommended: z.boolean().optional(),
   hasFamilyRoom: z.boolean().optional(),
-  bookingsCount: z.coerce.number().int().min(0).optional(),
   data: hotelDataSchema.optional(),
   coverImageUrl: nullableUrl.optional(),
   roomImageUrl: nullableUrl.optional(),
+  roomImage2Url: nullableUrl.optional(),
   showOnWebsite: z.boolean().optional(),
 });
 export type PatchHotelSupplierInput = z.infer<typeof patchHotelSupplierSchema>;

@@ -19,6 +19,8 @@ import { MEAL_PLAN_LEGEND } from "@/lib/hotelSuppliers/schema";
 import { SITE_URL } from "@/lib/seo";
 import type { PdfTrustContent } from "@/lib/itinerary/pdfTrustContent";
 import { ITINERARY_ICON_PATHS, type ItineraryIconKey } from "./icons";
+import { withVehicleCount } from "@/lib/vehicleCount";
+import { formatDayDate, formatStayDate } from "@/lib/itinerary/stayDate";
 
 // Brand assets. Each data URL is supplied through the `images` map (keyed by
 // these paths). The icon doubles as the faint per-page watermark; the
@@ -371,7 +373,17 @@ const s = StyleSheet.create({
   // No explicit height — same absolute-fill-to-content-height trick as
   // dayImgCol above.
   hotelImgCol: { width: 130, flexShrink: 0, position: "relative" },
-  hotelImgFallback: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.green },
+  hotelImgFallback: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: C.green,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hotelImgFallbackText: { fontSize: 9, color: "#FFFFFF", opacity: 0.7 },
   hotelImgFull: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, objectFit: "cover" },
   hotelBody: { flex: 1, padding: SP.md + 2 },
   hotelHeadRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
@@ -419,15 +431,16 @@ const s = StyleSheet.create({
     flexDirection: "row",
   },
   // Fixed height — same reasoning as dayImgCol above.
-  // 50/50 split with a fixed landscape height (unlike day/hotel cards, this
-  // one doesn't stretch to match content — activity copy is short and
-  // variable, so a fixed height keeps every tile the same uniform shape).
-  activityImgCol: { width: "50%", height: 150, flexShrink: 0 },
+  // Photo 60% / details 40% (same as Transport) with a fixed landscape height
+  // (unlike day/hotel cards, this one doesn't stretch to match content —
+  // activity copy is short and variable, so a fixed height keeps every tile
+  // the same uniform shape).
+  activityImgCol: { width: "60%", height: 150, flexShrink: 0 },
   activityImgFallback: { width: "100%", height: "100%", backgroundColor: C.green },
   activityImgFull: { width: "100%", height: "100%", objectFit: "cover" },
-  activityBody: { width: "50%", padding: SP.md + 2 },
+  activityBody: { width: "40%", padding: SP.md + 2, justifyContent: "center" },
   activityHeadRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  activityName: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink },
+  activityName: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink, flexShrink: 1 },
   includedBadge: {
     fontSize: 8,
     color: C.white,
@@ -437,7 +450,8 @@ const s = StyleSheet.create({
     borderRadius: 99,
   },
   activityDesc: { fontSize: 9.5, color: C.body, marginTop: 6, lineHeight: 1.55 },
-  activityStatRow: { flexDirection: "row", flexWrap: "wrap", gap: SP.md, marginTop: SP.sm + 2 },
+  // Stacked (place / time / day), same as Transport's details.
+  activityStatRow: { gap: 6, marginTop: SP.sm + 2 },
   activityStatItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   activityStatText: { fontSize: 9, color: C.muted },
 
@@ -476,23 +490,25 @@ const s = StyleSheet.create({
     borderColor: C.border,
     borderRadius: 10,
     overflow: "hidden",
-    flexDirection: "row",
+    // Details left, photo right.
+    flexDirection: "row-reverse",
     marginBottom: SP.md,
   },
-  // 50/50 split with a fixed landscape height — same reasoning as
+  // Photo 60% / details 40%, fixed landscape height — same reasoning as
   // activityImgCol above.
   transportIconCol: {
-    width: "50%",
+    width: "60%",
     height: 150,
     flexShrink: 0,
     backgroundColor: C.green,
     alignItems: "center",
     justifyContent: "center",
   },
-  transportBody: { width: "50%", padding: SP.md + 2, flexDirection: "row", gap: SP.md },
-  transportMain: { flex: 1 },
+  // Details stacked: "2 × Sedan  Private" / used for / seats / days.
+  transportBody: { width: "40%", padding: SP.md + 2, justifyContent: "center" },
+  transportMain: {},
   transportHeadRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  transportType: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink },
+  transportType: { fontSize: 13, fontFamily: "Helvetica-Bold", color: C.ink, flexShrink: 1 },
   privateBadge: {
     fontSize: 8,
     color: C.white,
@@ -502,13 +518,7 @@ const s = StyleSheet.create({
     borderRadius: 99,
   },
   transportDesc: { fontSize: 9.5, color: C.body, marginTop: 6, lineHeight: 1.55 },
-  transportStatCol: {
-    paddingLeft: SP.md,
-    borderLeftWidth: 1,
-    borderLeftColor: C.borderLight,
-    justifyContent: "center",
-    gap: 7,
-  },
+  transportStatCol: { marginTop: SP.sm + 2, gap: 6 },
   transportStatItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   transportStatText: { fontSize: 9, color: C.muted },
   driverNote: {
@@ -800,8 +810,10 @@ interface Props {
    * below), not filled with a generic fallback QR.
    */
   tokenQrDataUrl?: string;
-  /** The fixed token amount that QR collects, in rupees — drives the "Pay ₹X only" caption. */
+  /** The token amount that QR collects, in rupees — drives the "Pay ₹X only" caption. */
   tokenAmountRupees?: number;
+  /** Package total the 10% token was calculated from — shown as "10% of ₹X". */
+  tokenTotalRupees?: number;
   /**
    * Real review-rating badge, sourced server-side from the live site's own
    * HomeContent.aboutRatingTitle/Subtitle (see
@@ -820,6 +832,7 @@ export function ItineraryPdf({
   address,
   tokenQrDataUrl,
   tokenAmountRupees,
+  tokenTotalRupees,
   trustContent,
   socialLinks,
 }: Props) {
@@ -836,6 +849,7 @@ export function ItineraryPdf({
   // item, which .map() alone doesn't expose cleanly.
   const incRuns = withCategoryRuns(data.inc);
   const excRuns = withCategoryRuns(data.exc);
+  const checklistColumns = splitIntoColumns(withCategoryRuns(data.checklist));
 
   return (
     <Document title={`Itinerary - ${data.preparedFor}`} author="Vertex Kashmir Holidays">
@@ -979,7 +993,7 @@ export function ItineraryPdf({
                     <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
                     <Text style={s.dayTitle}>{day.title}</Text>
                   </View>
-                  {day.dateLabel ? <Text style={s.dayDate}>{day.dateLabel}</Text> : null}
+                  {day.dateLabel.trim() ? <Text style={s.dayDate}>{formatDayDate(day.dateLabel)}</Text> : null}
                 </View>
                 <Text style={s.dayText}>{day.body}</Text>
                 {highlightItems.length > 0 ? (
@@ -1032,7 +1046,9 @@ export function ItineraryPdf({
                 {img(h.image) ? (
                   <Image src={img(h.image)} style={s.hotelImgFull} />
                 ) : (
-                  <View style={s.hotelImgFallback} />
+                  <View style={s.hotelImgFallback}>
+                    <Text style={s.hotelImgFallbackText}>No image</Text>
+                  </View>
                 )}
               </View>
               <View style={s.hotelBody}>
@@ -1044,20 +1060,30 @@ export function ItineraryPdf({
                   <Text style={s.hotelBadge}>{h.destination}</Text>
                 </View>
                 <View style={s.hotelStatRow}>
-                  <View style={s.hotelStat}>
-                    <Text style={s.hotelStatLabel}>Check In</Text>
-                    <Text style={s.hotelStatValue}>{h.checkIn || "To Decide"}</Text>
-                  </View>
-                  <View style={s.hotelStat}>
-                    <Text style={s.hotelStatLabel}>Check Out</Text>
-                    <Text style={s.hotelStatValue}>{h.checkOut || "To Decide"}</Text>
-                  </View>
-                  <View style={s.hotelStat}>
+                  {/* Not set → not printed. */}
+                  {h.checkIn.trim() ? (
+                    <View style={s.hotelStat}>
+                      <Text style={s.hotelStatLabel}>Check In</Text>
+                      <Text style={s.hotelStatValue}>{formatStayDate(h.checkIn, { year: false })}</Text>
+                    </View>
+                  ) : null}
+                  {h.checkOut.trim() ? (
+                    <View style={s.hotelStat}>
+                      <Text style={s.hotelStatLabel}>Check Out</Text>
+                      <Text style={s.hotelStatValue}>{formatStayDate(h.checkOut, { year: false })}</Text>
+                    </View>
+                  ) : null}
+                  {/* Short numbers (Nights, Rooms) take less width than Room Type. */}
+                  <View style={[s.hotelStat, { flex: 0.7 }]}>
                     <Text style={s.hotelStatLabel}>Nights</Text>
                     <Text style={s.hotelStatValue}>{h.nights}</Text>
                   </View>
-                  <View style={s.hotelStat}>
-                    <Text style={s.hotelStatLabel}>Room</Text>
+                  <View style={[s.hotelStat, { flex: 0.7 }]}>
+                    <Text style={s.hotelStatLabel}>Rooms</Text>
+                    <Text style={s.hotelStatValue}>{h.rooms}</Text>
+                  </View>
+                  <View style={[s.hotelStat, { flex: 1.6 }]}>
+                    <Text style={s.hotelStatLabel}>Room Type</Text>
                     <Text style={s.hotelStatValue}>{h.roomType}</Text>
                   </View>
                 </View>
@@ -1066,8 +1092,8 @@ export function ItineraryPdf({
                     {MEAL_PLAN_LEGEND.find((l) => l.code === h.mealType)?.meaning ?? h.mealType}
                   </Text>
                   {h.extraBed !== "0" ? <Text style={s.dayPill}>{h.extraBed} Extra Bed</Text> : null}
-                  {h.childWithBed !== "0" ? (
-                    <Text style={s.dayPill}>{h.childWithBed} Child With Bed</Text>
+                  {h.childWithoutBed !== "0" ? (
+                    <Text style={s.dayPill}>{h.childWithoutBed} Child Without Bed</Text>
                   ) : null}
                 </View>
               </View>
@@ -1210,55 +1236,72 @@ export function ItineraryPdf({
         {/* TRANSPORT */}
         <View style={s.sectionGap} wrap={false}>
           <SectionHead title="Transport" tag={data.transportDays ? `Private · ${data.transportDays}` : "Private"} />
-          <View style={s.transportCard}>
-            <View style={s.transportIconCol}>
-              {img(data.transportImage) ? (
-                <Image src={img(data.transportImage)} style={s.activityImgFull} />
-              ) : (
-                <PdfIcon icon="car" size={30} color={C.mint} />
-              )}
-            </View>
-            <View style={s.transportBody}>
-              <View style={s.transportMain}>
-                <View style={s.transportHeadRow}>
-                  <Text style={s.transportType}>{data.transportType}</Text>
-                  <Text style={s.privateBadge}>Private</Text>
+          {/* One card per vehicle (main + each added cab, own photo); the
+              tags are shared, printed once below the cards. */}
+          {[
+            {
+              id: "main",
+              image: data.transportImage,
+              label: withVehicleCount(data.transportType, data.transportCount),
+              desc: data.transportDesc,
+              seats: data.transportSeats,
+              days: data.transportDays,
+            },
+            ...data.extraVehicles
+              .filter((v) => v.type.trim())
+              .map((v) => ({
+                id: v.id,
+                image: v.image,
+                label: withVehicleCount(v.type, v.count),
+                desc: v.usedFor,
+                seats: v.seats,
+                days: v.days,
+              })),
+          ].map((veh) => (
+            <View key={veh.id} style={s.transportCard}>
+              <View style={s.transportIconCol}>
+                {img(veh.image) ? (
+                  <Image src={img(veh.image)} style={s.activityImgFull} />
+                ) : (
+                  <PdfIcon icon="car" size={30} color={C.mint} />
+                )}
+              </View>
+              <View style={s.transportBody}>
+                <View style={s.transportMain}>
+                  <View style={s.transportHeadRow}>
+                    <Text style={s.transportType}>{veh.label}</Text>
+                    <Text style={s.privateBadge}>Private</Text>
+                  </View>
+                  {veh.desc ? <Text style={s.transportDesc}>{veh.desc}</Text> : null}
                 </View>
-                <Text style={s.transportDesc}>{data.transportDesc}</Text>
-                {data.transportTags.length > 0 ? (
-                  <View style={s.dayPillRow}>
-                    {data.transportTags.map((tag, ti) => (
-                      <Text key={ti} style={s.dayPill}>
-                        {tag}
-                      </Text>
-                    ))}
+                {veh.seats || veh.days ? (
+                  <View style={s.transportStatCol}>
+                    {veh.seats ? (
+                      <View style={s.transportStatItem}>
+                        <PdfIcon icon="users" size={11} color={C.green} solid />
+                        <Text style={s.transportStatText}>{veh.seats}</Text>
+                      </View>
+                    ) : null}
+                    {veh.days ? (
+                      <View style={s.transportStatItem}>
+                        <PdfIcon icon="calendar" size={11} color={C.green} />
+                        <Text style={s.transportStatText}>{veh.days}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 ) : null}
               </View>
-              {data.transportSeats || data.transportBags || data.transportDays ? (
-                <View style={s.transportStatCol}>
-                  {data.transportSeats ? (
-                    <View style={s.transportStatItem}>
-                      <PdfIcon icon="users" size={11} color={C.green} solid />
-                      <Text style={s.transportStatText}>{data.transportSeats}</Text>
-                    </View>
-                  ) : null}
-                  {data.transportBags ? (
-                    <View style={s.transportStatItem}>
-                      <PdfIcon icon="briefcase" size={11} color={C.green} />
-                      <Text style={s.transportStatText}>{data.transportBags}</Text>
-                    </View>
-                  ) : null}
-                  {data.transportDays ? (
-                    <View style={s.transportStatItem}>
-                      <PdfIcon icon="calendar" size={11} color={C.green} />
-                      <Text style={s.transportStatText}>{data.transportDays}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
             </View>
-          </View>
+          ))}
+          {data.transportTags.length > 0 ? (
+            <View style={[s.dayPillRow, { marginTop: 0, marginBottom: SP.md }]}>
+              {data.transportTags.map((tag, ti) => (
+                <Text key={ti} style={s.dayPill}>
+                  {tag}
+                </Text>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         <View style={s.driverNote} wrap={false}>
@@ -1347,6 +1390,34 @@ export function ItineraryPdf({
             your approval first.
           </Text>
         </View>
+
+        {/* TRAVEL CHECK LIST — what to carry, grouped by category and split
+            into two balanced columns; omitted entirely when the list is empty. */}
+        {checklistColumns.length > 0 ? (
+          <View style={s.sectionGap} wrap={false}>
+            <SectionHead title="Travel Check List" tag="Pack these" />
+            <View style={[s.coveredCard, { borderColor: C.border }]}>
+              <View style={[s.coveredCardHead, { backgroundColor: C.green }]}>
+                <PdfIcon icon="check" size={12} color={C.mintPale} />
+                <Text style={s.coveredCardHeadText}>Carry these for a comfortable trip</Text>
+              </View>
+              <View style={[s.coveredCardBody, { flexDirection: "row", gap: SP.md }]}>
+                {checklistColumns.map((col, ci) => (
+                  <View key={ci} style={{ flex: 1 }}>
+                    {col.map((row) => (
+                      <View key={row.id}>
+                        {row.showCategory ? (
+                          <Text style={[s.coveredCategory, { color: C.green }]}>{row.category}</Text>
+                        ) : null}
+                        <Text style={s.coveredText}>• {row.text}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        ) : null}
 
         {/* PAYMENT & CANCELLATION */}
         <View style={s.sectionGap} wrap={false}>
@@ -1469,6 +1540,11 @@ export function ItineraryPdf({
                   ? `Scan to pay ${inr(tokenAmountRupees)}/- and confirm your booking`
                   : "Scan to pay your advance"}
               </Text>
+              {tokenAmountRupees != null && tokenTotalRupees != null ? (
+                <Text style={s.qrSubCaption}>
+                  {`Booking token: 10% of your package total ${inr(tokenTotalRupees)}, rounded up to ${inr(tokenAmountRupees)}`}
+                </Text>
+              ) : null}
               <Text style={s.qrSubCaption}>Open your phone camera or any UPI app</Text>
             </>
           ) : null}
@@ -1548,6 +1624,22 @@ function withCategoryRuns<T extends { id: string; category: string; text: string
     ...item,
     showCategory: !!item.category && item.category !== items[i - 1]?.category,
   }));
+}
+
+/**
+ * Split category runs into two columns at a category boundary nearest the
+ * halfway point, so a category never straddles both columns. A single
+ * category (or ≤ 4 rows) stays in one column. Empty input → no columns.
+ */
+function splitIntoColumns<T extends { showCategory: boolean }>(rows: T[]): T[][] {
+  if (rows.length === 0) return [];
+  if (rows.length <= 4) return [rows];
+  let best = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i].showCategory) continue;
+    if (best === -1 || Math.abs(i - rows.length / 2) < Math.abs(best - rows.length / 2)) best = i;
+  }
+  return best === -1 ? [rows] : [rows.slice(0, best), rows.slice(best)];
 }
 
 // Icons whose path geometry is a single closed silhouette (verified by

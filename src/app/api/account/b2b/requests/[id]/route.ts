@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { b2bLeadWhere } from "@/lib/b2b/leadScope";
 import { b2bRequestFieldsSchema } from "@/lib/b2b/requestSchema";
+import { canAgentDeleteB2bRequest } from "@/lib/b2b/requestStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +48,7 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 /**
- * Agent self-edit — no delete (agents may only correct/withdraw details, not
- * remove the record). Blocked once the request is `locked` (set true at
+ * Agent self-edit (delete is the DELETE below, Pending requests only). Blocked once the request is `locked` (set true at
  * conversion, the same lock used repo-wide for a converted lead — see
  * src/app/api/leads/[id]/convert), mirroring the 423 used on the normal-lead
  * PATCH route for the identical case.
@@ -102,4 +102,34 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
 
   return NextResponse.json(updated);
+}
+
+/**
+ * Agent deletes their own request — e.g. a duplicate. Only while it is still
+ * Pending with no itinerary (canAgentDeleteB2bRequest); after that our team
+ * has started on it and only the CRM can delete it. Cascades like a lead
+ * delete; follow-up emails keep their history (requestId set null).
+ */
+export async function DELETE(_req: Request, { params }: Params) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.agencyStatus === null) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+
+  const existing = await prisma.lead.findFirst({
+    where: { id, ...b2bLeadWhere(session.user.id) },
+    select: { status: true, locked: true, manualItineraryUrl: true, itinerary: { select: { id: true } } },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const hasItinerary = !!existing.itinerary || !!existing.manualItineraryUrl;
+  if (!canAgentDeleteB2bRequest({ status: existing.status, locked: existing.locked, hasItinerary })) {
+    return NextResponse.json(
+      { error: "Our team has already started on this request, so it can no longer be deleted. Please contact us." },
+      { status: 423 },
+    );
+  }
+
+  await prisma.lead.delete({ where: { id } });
+  return NextResponse.json({ success: true });
 }

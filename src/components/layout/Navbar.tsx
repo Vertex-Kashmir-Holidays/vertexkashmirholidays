@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/ui/atoms/ThemeToggle";
+import { InstallAppButton } from "@/components/layout/InstallAppButton";
 import { useSiteSettings, useWhatsAppLink } from "@/components/providers/SiteSettingsProvider";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { EASE_BRAND } from "@/lib/motion";
@@ -452,6 +453,13 @@ export function Navbar({
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 lg:flex">
+            <InstallAppButton
+              className={`grid h-9 w-9 place-items-center rounded-full border transition ${
+                overHero
+                  ? "border-white/30 text-white hover:bg-white hover:text-foreground"
+                  : "border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
+              }`}
+            />
             <ThemeToggle
               className={`grid h-9 w-9 place-items-center rounded-full border transition ${
                 overHero
@@ -492,8 +500,16 @@ export function Navbar({
             )}
           </div>
 
-          {/* Mobile Top Bar - Only Theme Toggle */}
+          {/* Mobile Top Bar - Install app (only when installable) + Theme Toggle */}
           <div className="flex items-center gap-2 lg:hidden">
+            <InstallAppButton
+              showLabel
+              className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-semibold transition ${
+                overHero
+                  ? "border-white/30 text-white hover:bg-white hover:text-foreground"
+                  : "border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
+              }`}
+            />
             <ThemeToggle />
           </div>
         </nav>

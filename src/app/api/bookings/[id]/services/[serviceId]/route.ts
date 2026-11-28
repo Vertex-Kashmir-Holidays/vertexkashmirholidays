@@ -5,6 +5,7 @@ import { serviceUpdateSchema } from "@/lib/bookings/service-schema";
 import { round2 } from "@/lib/bookings/finance";
 import { syncBookingCommission } from "@/lib/bookings/commissionSync";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { hotelLinkData } from "@/lib/bookings/hotelLink";
 import type { Role } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       id: true,
       amount: true,
       servicesLocked: true,
-      services: { select: { id: true, amount: true } },
+      services: { select: { id: true, amount: true, kind: true, hotelConfirmation: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -68,6 +69,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
+  const link =
+    (d.kind ?? service.kind) === "HOTEL"
+      ? await hotelLinkData(d, service.hotelConfirmation)
+      : { data: {} };
+  if ("error" in link) return NextResponse.json({ error: link.error }, { status: 422 });
+
   const updated = await prisma.bookingService.update({
     where: { id: serviceId },
     data: {
@@ -77,10 +84,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(d.location !== undefined ? { location: d.location } : {}),
       ...(d.nights !== undefined ? { nights: d.nights } : {}),
       ...(d.roomType !== undefined ? { roomType: d.roomType } : {}),
+      ...(d.rooms !== undefined ? { rooms: d.rooms } : {}),
+      ...(d.checkIn !== undefined ? { checkIn: d.checkIn } : {}),
+      ...(d.checkOut !== undefined ? { checkOut: d.checkOut } : {}),
       ...(d.pickup !== undefined ? { pickup: d.pickup } : {}),
+      ...(d.vehicles !== undefined ? { vehicles: d.vehicles } : {}),
       ...(d.dropoff !== undefined ? { dropoff: d.dropoff } : {}),
       ...(d.timing !== undefined ? { timing: d.timing } : {}),
       ...(d.sortOrder !== undefined ? { sortOrder: d.sortOrder } : {}),
+      ...link.data,
     },
   });
   await syncBookingCommission(prisma, id);
@@ -96,7 +108,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const booking = await prisma.booking.findFirst({
     where: { id, ...(await bookingWhereForUser(role, userId)) },
-    select: { id: true, servicesLocked: true, services: { select: { id: true } } },
+    select: {
+      id: true,
+      servicesLocked: true,
+      services: { select: { id: true, _count: { select: { hotelPayments: true } } } },
+    },
   });
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   if (booking.servicesLocked) {
@@ -105,8 +121,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       { status: 423 },
     );
   }
-  if (!booking.services.some((s) => s.id === serviceId)) {
+  const target = booking.services.find((s) => s.id === serviceId);
+  if (!target) {
     return NextResponse.json({ error: "Service not found" }, { status: 404 });
+  }
+  // Deleting the stay would delete the record of money paid to the hotel.
+  if (target._count.hotelPayments > 0) {
+    return NextResponse.json(
+      { error: "This hotel has payments recorded — remove them on the hotel's page first." },
+      { status: 409 },
+    );
   }
 
   await prisma.bookingService.delete({ where: { id: serviceId } });

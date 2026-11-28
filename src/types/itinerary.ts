@@ -71,11 +71,11 @@ export const hotelSchema = z.object({
     .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 0, {
       message: "Extra Bed must be a whole number of at least 0.",
     }),
-  childWithBed: z
+  childWithoutBed: z
     .string()
     .default("0")
     .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 0, {
-      message: "Child With Bed must be a whole number of at least 0.",
+      message: "Child Without Bed must be a whole number of at least 0.",
     }),
   // "or Hotel Royal Heritage / similar category" — subtitle line under the
   // hotel name. Defaulted so itineraries saved before this field existed
@@ -235,13 +235,31 @@ export const itineraryDataSchema = z.object({
 
   // Transport
   transportType: z.string(),
+  // How many of that vehicle ("2" → "2 × Innova Crysta"). Defaulted so
+  // itineraries saved before it existed load as one.
+  transportCount: z.string().default("1"),
   transportDesc: z.string(),
   transportImage: z.string(),
   transportSeats: z.string().default(""),
-  transportBags: z.string().default(""),
   // e.g. "Day 01 – 06"
   transportDays: z.string().default(""),
   transportTags: z.array(z.string()).default([]),
+  // More vehicles in a different combo (Innova + Swift) — the fields above are
+  // the first vehicle. Each extra has its own seating, days and use (blank =
+  // same as the first) and photo; the tags cover them all.
+  extraVehicles: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        count: z.string().default("1"),
+        seats: z.string().default(""),
+        days: z.string().default(""),
+        usedFor: z.string().default(""),
+        image: z.string().default(""),
+      }),
+    )
+    .default([]),
   // Local-taxi-required stops (union vehicles at specific points) — same
   // shape/spirit as optionalActivities.
   localTaxis: z.array(priceActivitySchema).default([]),
@@ -251,6 +269,12 @@ export const itineraryDataSchema = z.object({
   // itinerary saved before this shape existed still loads.
   inc: z.preprocess(migrateLegacyListItems, z.array(listItemSchema)).default([]),
   exc: z.preprocess(migrateLegacyListItems, z.array(listItemSchema)).default([]),
+  // Check List — what to carry (warm clothes, ID, hot water flask…), same
+  // category + text rows as inc/exc and grouped the same way in the PDF.
+  // Defaulted so itineraries saved before it existed still parse;
+  // src/app/admin/itinerary/[id]/page.tsx seeds the default list on load only
+  // when the key is absent, so a list staff deliberately emptied stays empty.
+  checklist: z.array(listItemSchema).default([]),
   // Short tag pills shown under the "how payment works" card (e.g. "GST
   // included"), not a bulleted list — see payStep1/2 below for the actual steps.
   pay: z.array(z.string()),

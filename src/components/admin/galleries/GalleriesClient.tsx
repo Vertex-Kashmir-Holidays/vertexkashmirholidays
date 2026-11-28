@@ -3,11 +3,18 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, Tag, X, Copy, Check, Film, ImageOff, Eye } from "lucide-react";
+import { Upload, Trash2, Loader2, Pencil, X, Copy, Check, Film, ImageOff, Eye, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImageDimensionBadge } from "@/components/ui/atoms/ImageDimensionBadge";
 import { GalleryLightbox } from "@/components/ui/organisms/GalleryLightbox";
 import { uploadVideoDirect } from "@/lib/uploadVideoDirect";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/organisms/dialog";
 
 type MediaType = "IMAGE" | "VIDEO";
 type SourceTab = "ALL" | "LOCAL" | "STOCK";
@@ -61,6 +68,7 @@ export function GalleriesClient({
   const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set());
   const [dims, setDims] = useState<Record<string, { width: number; height: number }>>({});
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   const filtered = initialItems.filter(
     (i) =>
@@ -169,7 +177,11 @@ export function GalleriesClient({
         const res = await fetch(`/api/galleries/${item.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ alt: item.alt, caption: item.caption, category: item.category }),
+          body: JSON.stringify({
+            alt: item.alt || null,
+            caption: item.caption || null,
+            category: item.category || null,
+          }),
         });
         if (res.status === 403) {
           toast.error("You don't have permission to edit media. Contact your administrator.");
@@ -183,6 +195,26 @@ export function GalleriesClient({
         toast.error("Failed to save.");
       }
     });
+  }
+
+  /** Swap the image file but keep the entry; places already using it update too. */
+  async function handleReplace(item: GalleryItem, file: File) {
+    setReplacing(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/galleries/${item.id}/replace`, { method: "POST", body: fd });
+      const json = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
+      if (!res.ok || !json.url) throw new Error(json.error ?? "Replace failed.");
+      // Bust the browser cache so the new file shows straight away.
+      setEditItem((cur) => (cur && cur.id === item.id ? { ...cur, url: `${json.url}?v=${Date.now()}` } : cur));
+      toast.success("Image replaced.");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Replace failed.");
+    } finally {
+      setReplacing(false);
+    }
   }
 
   return (
@@ -362,8 +394,9 @@ export function GalleriesClient({
                         onClick={() => setEditItem({ ...item })}
                         className="w-7 h-7 rounded-lg bg-card/90 flex items-center justify-center text-foreground hover:bg-card transition-colors"
                         title="Edit"
+                        aria-label="Edit"
                       >
-                        <Tag className="w-3.5 h-3.5" />
+                        <Pencil className="w-3.5 h-3.5" />
                       </button>
                     )}
                     {canDelete &&
@@ -408,9 +441,22 @@ export function GalleriesClient({
                     />
                   )}
                   {item.category && (
-                    <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md">
+                    <span className="absolute bottom-1.5 left-1.5 max-w-[70%] truncate text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded-md">
                       {item.category}
                     </span>
+                  )}
+                  {canEdit && (
+                    // Always visible — phones have no hover to reveal the overlay.
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditItem({ ...item });
+                      }}
+                      aria-label="Edit"
+                      className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 text-white transition hover:bg-black/80 group-hover:opacity-0"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
                   )}
                 </div>
               ))}
@@ -486,79 +532,110 @@ export function GalleriesClient({
             </div>
           )}
 
-          {/* Edit item */}
+        </div>
+      </div>
+
+      <Dialog open={editItem !== null} onOpenChange={(o) => !o && !replacing && setEditItem(null)}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           {editItem && (
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-foreground text-sm">Edit Image</h3>
-                <button
-                  onClick={() => setEditItem(null)}
-                  aria-label="Close edit image panel"
-                  className="text-muted-foreground hover:text-muted-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+            <>
+              <DialogHeader>
+                <DialogTitle>Edit {editItem.type === "VIDEO" ? "video" : "image"}</DialogTitle>
+                <DialogDescription>
+                  Changes apply everywhere this {editItem.type === "VIDEO" ? "video" : "image"} is used.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
                 {editItem.type === "VIDEO" ? (
-                  <video
-                    src={editItem.url}
-                    controls
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
+                  <video src={editItem.url} controls playsInline className="h-full w-full object-cover" />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={editItem.url}
                     alt={editItem.alt || "Selected media preview"}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 )}
-              </div>
-              <button
-                onClick={() => handleCopyUrl(editItem)}
-                className="w-full flex items-center justify-center gap-2 border border-border hover:bg-muted text-foreground text-xs font-bold px-4 py-2 rounded-xl transition-colors"
-              >
-                {copiedId === editItem.id ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
+                {replacing && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                  </div>
                 )}
-                Copy URL
-              </button>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Alt Text
-                </label>
-                <input
-                  value={editItem.alt ?? ""}
-                  onChange={(e) => setEditItem({ ...editItem, alt: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
-                />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                  Category
-                </label>
-                <input
-                  value={editItem.category ?? ""}
-                  onChange={(e) => setEditItem({ ...editItem, category: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                {editItem.type !== "VIDEO" && (
+                  <label
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground transition-colors",
+                      replacing ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-muted",
+                    )}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Replace image
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={replacing}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = "";
+                        if (f) handleReplace(editItem, f);
+                      }}
+                    />
+                  </label>
+                )}
+                <button
+                  onClick={() => handleCopyUrl(editItem)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted",
+                    editItem.type === "VIDEO" && "col-span-2",
+                  )}
+                >
+                  {copiedId === editItem.id ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  Copy URL
+                </button>
               </div>
+              {editItem.type !== "VIDEO" && (
+                <p className="-mt-2 text-[11px] text-muted-foreground">
+                  JPG · PNG · WebP, max 500 KB. The new image is watermarked like any upload.
+                </p>
+              )}
+              {(
+                [
+                  ["category", "Category / hotel name", "e.g. AS Resorts, Gulmarg…"],
+                  ["alt", "Alt text", "Short description for search engines"],
+                  ["caption", "Caption", "Shown under the image where captions are used"],
+                ] as const
+              ).map(([key, label, placeholder]) => (
+                <div key={key}>
+                  <label htmlFor={`gallery-${key}`} className="mb-1 block text-xs font-semibold text-muted-foreground">
+                    {label}
+                  </label>
+                  <input
+                    id={`gallery-${key}`}
+                    value={editItem[key] ?? ""}
+                    placeholder={placeholder}
+                    onChange={(e) => setEditItem({ ...editItem, [key]: e.target.value })}
+                    className="w-full rounded-xl border border-border px-3 py-2 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+                  />
+                </div>
+              ))}
               <button
                 onClick={() => handleSaveEdit(editItem)}
-                disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+                disabled={isPending || replacing}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
-                {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Save Changes
+                {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Save changes
               </button>
-            </div>
+            </>
           )}
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <GalleryLightbox
         images={lightboxImages}

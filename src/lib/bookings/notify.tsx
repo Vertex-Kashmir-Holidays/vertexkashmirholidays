@@ -4,10 +4,10 @@
 // break the underlying business action (locking services, recording a payment).
 
 import { prisma } from "@/lib/prisma";
-import { env } from "@/lib/env";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { computeBookingFinance, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { linkBookingCustomer } from "@/lib/bookings/customer";
+import { driversSelect } from "@/lib/bookings/driver";
 import { notifyNewBooking } from "@/lib/notifications";
 import {
   sendMail,
@@ -22,6 +22,7 @@ import {
   driverDetailsHtml,
   driverDetailsText,
   type InvoiceService,
+  ADMIN_COPY,
 } from "@/lib/mail";
 import {
   renderBookingSummaryPdf,
@@ -29,6 +30,7 @@ import {
   bookingRef,
 } from "@/lib/bookings/invoice-pdf";
 import { enqueueForBooking } from "@/lib/offlineConversion/service";
+import { toDisplayService } from "@/lib/bookings/serviceDisplay";
 
 function parseInclusions(raw: string): string[] {
   try {
@@ -57,8 +59,8 @@ async function whatsappNumber(): Promise<string | null> {
 // Silent internal copy of invoice/confirmation-carrying customer emails (booking
 // summary, payment receipt, booking confirmation, driver details) — lets staff
 // confirm delivery without the customer ever seeing the internal address.
-// Deliberately not applied to credentials/OTP emails.
-const internalBcc = env.MAIL_TO_ADMIN;
+// Also applied to the customer account-credentials email; never to OTP/reset.
+const internalBcc = ADMIN_COPY;
 
 /**
  * Booking summary email + branded PDF attachment. Sent when services are locked.
@@ -97,16 +99,7 @@ export async function sendBookingSummaryEmail(bookingId: string): Promise<{ deli
       services: booking.services,
     });
 
-    const services = booking.services.map((s) => ({
-      kind: s.kind,
-      name: s.name,
-      location: s.location,
-      nights: s.nights,
-      roomType: s.roomType,
-      pickup: s.pickup,
-      dropoff: s.dropoff,
-      timing: s.timing,
-    }));
+    const services = booking.services.map(toDisplayService);
     const inclusions = parseInclusions(booking.inclusions);
     const ref = bookingRef(booking.id);
     const guestName = booking.guestName || booking.user?.name || "Guest";
@@ -169,6 +162,7 @@ export async function sendCustomerCredentialsEmail(
     const res = await sendMail({
       to: email,
       subject: "Your Vertex Kashmir Holidays account",
+      bcc: internalBcc,
       html: customerCredentialsHtml({ name, email, tempPassword }),
       text: customerCredentialsText({ name, email, tempPassword }),
     });
@@ -334,6 +328,8 @@ export async function sendPaymentInvoiceEmail(
       totalPaid: finance.paidAmount,
       remainingBalance: finance.balance,
       status: statusLabel,
+      gstPercent: payment.gstPercent,
+      gstAmount: payment.gstAmount,
       whatsappNumber: wa,
       bookingId: booking.id,
     };
@@ -361,7 +357,7 @@ export async function sendPaymentInvoiceEmail(
 
 /**
  * Driver & vehicle details email to the customer. Sent when staff assign or
- * update the driver for a booking and choose to notify the customer. Best-effort.
+ * update the drivers for a booking and choose to notify the customer. Best-effort.
  */
 export async function sendDriverDetailsEmail(
   bookingId: string,
@@ -373,17 +369,10 @@ export async function sendDriverDetailsEmail(
       include: {
         tour: { select: { title: true } },
         user: { select: { name: true, email: true } },
+        drivers: driversSelect,
       },
     });
-    if (!booking) return { delivered: false };
-    if (
-      !booking.driverName ||
-      !booking.driverPhone ||
-      !booking.vehicleName ||
-      !booking.vehicleNumber
-    ) {
-      return { delivered: false };
-    }
+    if (!booking || booking.drivers.length === 0) return { delivered: false };
 
     const to = booking.guestEmail ?? booking.user?.email ?? null;
     if (!to) return { delivered: false };
@@ -391,10 +380,7 @@ export async function sendDriverDetailsEmail(
     const wa = await whatsappNumber();
     const payload = {
       guestName: booking.guestName || booking.user?.name || "Guest",
-      driverName: booking.driverName,
-      driverPhone: booking.driverPhone,
-      vehicleName: booking.vehicleName,
-      vehicleNumber: booking.vehicleNumber,
+      drivers: booking.drivers,
       tourTitle: booking.tour?.title ?? null,
       travelDate: fmtDate(booking.travelDate),
       updated: opts.updated ?? false,

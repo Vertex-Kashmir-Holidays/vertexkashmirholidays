@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Lock } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { dayPlanAccess } from "@/lib/dayPlans/access";
 import { prisma } from "@/lib/prisma";
 import { ItineraryEditor } from "@/components/admin/itinerary/ItineraryEditor";
 import { itineraryDataSchema, genId, type ItineraryData } from "@/types/itinerary";
@@ -95,6 +96,7 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
   }
 
   const canSave = (await can(role, "itinerary", "edit")) && access.canEdit;
+  const dayPlans = await dayPlanAccess(role);
   // Only the copy's own author (who can edit and delete) is held to "update it
   // or it's deleted" — an admin just viewing someone's fresh copy never deletes it.
   const ownsCopy =
@@ -126,6 +128,18 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
     data = {
       ...data,
       activities: DEFAULT_ITINERARY_DATA.activities.map((a) => ({ ...a, id: genId("act") })),
+    };
+  }
+
+  // Check List — itineraries saved before it existed have no `checklist` key
+  // at all; seed the default list for those. Keyed on absence (not on an
+  // empty array) so a list staff deliberately cleared stays cleared. Not
+  // written back until the next explicit Save, same as the backfills above.
+  const rawData = record.data as Record<string, unknown> | null;
+  if (!rawData || !("checklist" in rawData)) {
+    data = {
+      ...data,
+      checklist: DEFAULT_ITINERARY_DATA.checklist.map((c) => ({ ...c, id: genId("chk") })),
     };
   }
 
@@ -186,7 +200,10 @@ export default async function EditItineraryPage({ params }: { params: Promise<{ 
         initialData={data}
         initialTitle={record.title}
         initialStatus={record.status}
+        initialPublishedAt={record.publishedAt?.toISOString() ?? null}
+        initialUpdatedAt={record.updatedAt.toISOString()}
         canSave={canSave}
+        dayPlans={{ canPick: canSave && dayPlans.canPick, canSave: dayPlans.canSave }}
         ownsCopy={ownsCopy}
         leadSync={leadSync}
         lockCost={!!record.bookingId && !!record.booking?.razorpayOrderId}

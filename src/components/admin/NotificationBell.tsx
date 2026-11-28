@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/organisms/dropdown-menu";
 import { useNotificationsFeed } from "@/components/admin/NotificationsProvider";
+import { PushNotificationsToggle } from "@/components/common/PushNotificationsToggle";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -112,6 +113,10 @@ export function NotificationBell() {
               );
             })
           )}
+        </div>
+        {/* Push alerts on this device — same notifications, even with the CRM closed. */}
+        <div className="border-t border-border px-4 py-3 empty:hidden">
+          <PushNotificationsToggle className="w-full justify-center" />
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

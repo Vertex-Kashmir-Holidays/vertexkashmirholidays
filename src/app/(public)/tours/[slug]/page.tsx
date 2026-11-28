@@ -52,6 +52,7 @@ import {
   parseImportantNotes,
   parseRelatedTours,
   publishedPackageOptions,
+  packagePartySize,
 } from "@/lib/tours/content";
 import { contextAttrs, trimTourTitle } from "@/lib/leads/qualification";
 import { FAQ_PREVIEW_SELECT, toFaqPreview } from "@/lib/faqs";
@@ -213,6 +214,8 @@ export default async function TourDetailsPage({ params }: PageProps) {
   const packageOptions = publishedPackageOptions(tour.packageOptions).map((o) =>
     priceHidden ? { ...o, priceForTwo: 0 } : o,
   );
+  // Persons each package price covers (2, or the tour's minimum if higher).
+  const partySize = packagePartySize(tour.minPersons);
   const lowestPriceForTwo =
     packageOptions.length && !priceHidden
       ? Math.min(...packageOptions.map((o) => o.priceForTwo))
@@ -347,7 +350,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
     slug: tour.slug,
     description: tour.excerpt ?? tour.description,
     coverImage: tour.coverImage,
-    // Package tours show "From ₹X / 2 persons" — the offer matches that
+    // Package tours show "From ₹X / N persons" — the offer matches that
     // visible price rather than the derived per-person priceFrom. Price on
     // request: null → no offers block at all.
     priceFrom: priceHidden ? null : (lowestPriceForTwo ?? tour.priceFrom),
@@ -375,13 +378,13 @@ export default async function TourDetailsPage({ params }: PageProps) {
   });
 
   // Lead-qualification context for this page's own WhatsApp CTAs: this tour,
-  // priced per person (a package-option tour: its lowest option ÷ 2). The site
+  // priced per person (a package-option tour: its lowest option ÷ party size). The site
   // header/footer/floating button sit outside this wrapper and stay generic.
   const waContext = priceHidden
     ? contextAttrs({ kind: "generic" })
     : contextAttrs({
         kind: "tour",
-        pricePerPerson: lowestPriceForTwo !== null ? lowestPriceForTwo / 2 : tour.priceFrom,
+        pricePerPerson: lowestPriceForTwo !== null ? lowestPriceForTwo / partySize : tour.priceFrom,
         name: trimTourTitle(tour.title),
       });
 
@@ -460,6 +463,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
                   tourName={tour.title}
                   options={packageOptions}
                   priceHidden={priceHidden}
+                  partySize={partySize}
                 />
               </section>
             )}
@@ -579,7 +583,7 @@ export default async function TourDetailsPage({ params }: PageProps) {
               priceHidden={priceHidden}
               price={priceHidden ? 0 : (lowestPriceForTwo ?? tour.priceFrom)}
               pricePrefix={lowestPriceForTwo !== null ? "From" : undefined}
-              priceSuffix={lowestPriceForTwo !== null ? "/ 2 persons" : undefined}
+              priceSuffix={lowestPriceForTwo !== null ? `/ ${partySize} persons` : undefined}
               oldPrice={
                 lowestPriceForTwo === null && !priceHidden ? (tour.priceWas ?? undefined) : undefined
               }

@@ -1,7 +1,8 @@
 // Prepares (creates) a DRAFT SalaryRecord for employee+month: snapshots the
 // employee's current monthlySalary, claims their unclaimed EARNED
-// BookingCommission rows for the month (so the same commission is never
-// counted in two different months' payroll — see BookingCommission.salaryRecordId),
+// BookingCommission rows up to the end of the month (earned = tour completed
+// and fully paid; claiming means the same commission is never counted in two
+// different months' payroll — see BookingCommission.salaryRecordId),
 // and pre-fills paid/unpaid leave days from APPROVED LeaveRequest rows. Nothing
 // here re-runs automatically later — it's a one-time snapshot, exactly the
 // "do not dynamically recalculate an already prepared payroll" rule.
@@ -10,9 +11,13 @@ import { prisma } from "@/lib/prisma";
 import { round2 } from "@/lib/bookings/finance";
 import { salaryMonthRange } from "@/lib/salary/month";
 import { computeNetSalary } from "@/lib/salary/compute";
+import { refreshOpenCommissions } from "@/lib/bookings/commissionSync";
 
 export async function prepareSalaryRecord(employeeId: string, salaryMonth: string) {
   const { start, end } = salaryMonthRange(salaryMonth);
+  // Tours that completed since their last edit become EARNED now (see
+  // commissionSync.ts). Runs before — not inside — the payroll transaction.
+  await refreshOpenCommissions(prisma, employeeId);
 
   return prisma.$transaction(async (tx) => {
     const employee = await tx.user.findUnique({
@@ -26,7 +31,9 @@ export async function prepareSalaryRecord(employeeId: string, salaryMonth: strin
         employeeId,
         status: "EARNED",
         salaryRecordId: null,
-        earnedAt: { gte: start, lt: end },
+        // Earned in this month (tour completed in it) — plus any earlier
+        // earned incentive no previous payroll claimed, so none is ever lost.
+        earnedAt: { lt: end },
       },
       select: { id: true, commissionAmount: true },
     });

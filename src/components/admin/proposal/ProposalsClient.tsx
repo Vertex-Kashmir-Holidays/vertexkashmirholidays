@@ -1,10 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { rowClick } from "@/components/admin/ui/rowClick";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, Pencil, Eye, Copy, FileText, Phone } from "lucide-react";
+import { Plus, Trash2, Pencil, Eye, Copy, FileText, Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  LIST_FILTER_TRIGGER,
+  LIST_SEARCH_CLASS,
+  ListFilterToggle,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/organisms/select";
 import { Badge, type BadgeProps } from "@/components/ui/atoms/badge";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
 import { useServerPagedList } from "@/components/admin/ui/useServerPagedList";
@@ -18,6 +35,7 @@ const COLUMNS = [
   "Travel Dates",
   "Est Cost",
   "Created By",
+  "Assigned To",
   "Updated At",
   "Actions",
 ];
@@ -32,6 +50,9 @@ interface Props {
   initialItems: ProposalSummary[];
   /** Total proposals visible to this user, across all pages. */
   initialTotal: number;
+  /** People on proposals this user can see — the Created By / Assigned To filters. */
+  creators: { id: string; name: string }[];
+  assignees: { id: string; name: string }[];
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
@@ -40,6 +61,8 @@ interface Props {
 export function ProposalsClient({
   initialItems,
   initialTotal,
+  creators,
+  assignees,
   canCreate,
   canEdit,
   canDelete,
@@ -48,6 +71,20 @@ export function ProposalsClient({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("ALL");
+  const [phone, setPhone] = useState("");
+  const [debouncedPhone, setDebouncedPhone] = useState("");
+  const [createdBy, setCreatedBy] = useState("ALL");
+  const [assignedTo, setAssignedTo] = useState("ALL");
+  // Phones only: the filters stay folded behind the filter icon.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters =
+    [statusFilter, createdBy, assignedTo].filter((f) => f !== "ALL").length + (phone.trim() ? 1 : 0);
+
+  // Same 300 ms debounce the hook applies to the name search.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedPhone(phone.replace(/\D/g, "")), 300);
+    return () => clearTimeout(t);
+  }, [phone]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const { items, total, page, setPage, pageSize, changePageSize, pageCount, loading, reload } =
@@ -57,7 +94,7 @@ export function ProposalsClient({
       initialItems,
       initialTotal,
       search,
-      filters: { status: statusFilter },
+      filters: { status: statusFilter, phone: debouncedPhone, createdBy, assignedTo },
     });
 
   function remove(item: ProposalSummary) {
@@ -115,34 +152,100 @@ export function ProposalsClient({
       </div>
 
       <div className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="flex flex-col gap-3 p-4 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title, customer name or phone…"
-              className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-            />
+        {/* Filter bar — same layout as Leads: search always shown; on phones
+            the other filters fold behind the filter icon (with a count). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by customer name…"
+            className={LIST_SEARCH_CLASS}
+          />
+
+          <ListFilterToggle
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((o) => !o)}
+            activeCount={activeFilters}
+          />
+
+          {/* display:contents keeps the filters in the bar's wrap on md+. */}
+          <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
+            <div className="relative min-w-[170px] max-md:w-full">
+              <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                inputMode="tel"
+                placeholder="Customer phone…"
+                aria-label="Filter by customer phone"
+                className="w-full rounded-xl border border-border bg-muted/50 py-2 pl-9 pr-4 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
+              />
+            </div>
+
+            <Select value={createdBy} onValueChange={setCreatedBy}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by created by">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Created by: anyone</SelectItem>
+                {creators.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={assignedTo} onValueChange={setAssignedTo}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by assigned to">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Assigned to: anyone</SelectItem>
+                <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                {assignees.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as (typeof STATUSES)[number])}
+            >
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((sVal) => (
+                  <SelectItem key={sVal} value={sVal}>
+                    {sVal === "ALL" ? "All Statuses" : sVal}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as (typeof STATUSES)[number])}
-            className="rounded-xl border border-border bg-muted/50 py-2 pl-4 pr-8 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
-          >
-            {STATUSES.map((sVal) => (
-              <option key={sVal} value={sVal}>
-                {sVal === "ALL" ? "All Statuses" : sVal}
-              </option>
-            ))}
-          </select>
+
+          <ListResultsCount>
+            {total} results{loading ? " · loading…" : ""}
+          </ListResultsCount>
+
+          <ListRefreshButton
+            onClick={() => {
+              router.refresh();
+              reload();
+            }}
+            refreshing={loading}
+          />
         </div>
 
         <div
           className={`overflow-x-auto transition-opacity ${loading ? "opacity-60" : ""}`}
           aria-busy={loading}
         >
-          <table className="w-full text-sm">
+          <table className="table-cards table-cards-dashed w-full text-sm">
             <thead>
               <tr className="border-y border-border bg-muted">
                 {COLUMNS.map((h) => (
@@ -173,13 +276,17 @@ export function ProposalsClient({
                 </tr>
               ) : (
                 items.map((item) => (
-                  <tr key={item.id} className="align-top transition-colors hover:bg-muted/50">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={item.id}
+                    onClick={rowClick(() => router.push(`/admin/proposals/${item.id}`))}
+                    className="cursor-pointer align-top transition-colors hover:bg-muted/50"
+                  >
+                    <td data-span="full" className="px-4 py-3">
                       <Link
                         href={`/admin/proposals/${item.id}`}
-                        className="group block min-w-[180px]"
+                        className="group block min-w-[180px] max-md:min-w-0"
                       >
-                        <p className="max-w-[260px] truncate font-semibold text-foreground group-hover:text-primary">
+                        <p className="max-w-[260px] truncate font-semibold max-md:max-w-none text-foreground group-hover:text-primary">
                           {item.title}
                         </p>
                         <Badge variant={STATUS_VARIANT[item.status]} className="mt-1">
@@ -187,7 +294,7 @@ export function ProposalsClient({
                         </Badge>
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td data-label="Phone" className="whitespace-nowrap px-4 py-3">
                       {item.customerPhone ? (
                         <a
                           href={`tel:${item.customerPhone.replace(/[^\d+]/g, "")}`}
@@ -201,10 +308,10 @@ export function ProposalsClient({
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                    <td data-label="Travel dates" className="whitespace-nowrap px-4 py-3 text-foreground/85">
                       {item.travelDates || <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td data-label="Package cost" className="whitespace-nowrap px-4 py-3">
                       {!item.packageCosts?.length ? (
                         <span className="text-muted-foreground">—</span>
                       ) : item.packageCosts.length === 1 ? (
@@ -220,10 +327,13 @@ export function ProposalsClient({
                         ))
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                    <td data-label="Owner" className="whitespace-nowrap px-4 py-3 text-foreground/85">
                       {item.ownerName || <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[13px] text-muted-foreground">
+                    <td data-label="Assigned To" className="whitespace-nowrap px-4 py-3 text-foreground/85">
+                      {item.assignedToName || <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td data-label="Last updated" className="whitespace-nowrap px-4 py-3 text-[13px] text-muted-foreground">
                       {new Date(item.updatedAt).toLocaleString("en-IN", {
                         day: "numeric",
                         month: "short",
@@ -232,7 +342,7 @@ export function ProposalsClient({
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="px-4 py-2">
+                    <td data-actions className="px-4 py-2">
                       <div className="flex items-center gap-1">
                         <Link
                           href={`/admin/proposals/${item.id}`}

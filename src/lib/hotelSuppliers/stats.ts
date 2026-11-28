@@ -52,6 +52,7 @@ export interface PublicHotel {
   description: string | null; // first line(s) of data.property.services
   coverImageUrl: string;
   roomImageUrl: string | null;
+  roomImage2Url: string | null;
   rating: string | null; // free-text, admin-entered — e.g. "4.7★ / 2,698 reviews"
   // Sourced from data.property.mapUrl — the Hotel Rates table's existing
   // "Google Maps URL" field (edited via the hotel-name cell). Confirmed
@@ -81,6 +82,7 @@ export const getPublicHotels = unstable_cache(
         destination: true,
         coverImageUrl: true,
         roomImageUrl: true,
+        roomImage2Url: true,
         publicLikeCount: true,
         data: true,
       },
@@ -102,6 +104,7 @@ export const getPublicHotels = unstable_cache(
         // coverImageUrl is guaranteed non-null by the where clause above.
         coverImageUrl: row.coverImageUrl as string,
         roomImageUrl: row.roomImageUrl,
+        roomImage2Url: row.roomImage2Url,
         rating,
         googleProfileUrl: parsed.success ? parsed.data.property.mapUrl : null,
         publicLikeCount: row.publicLikeCount,

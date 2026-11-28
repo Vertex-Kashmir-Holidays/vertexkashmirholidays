@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { sendB2bAgentActivationEmail } from "@/lib/b2b/notify";
+import { agencyNameField, agencyStateField, parseAgencyLogo } from "@/lib/b2b/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,20 @@ type Params = { params: Promise<{ id: string }> };
 //   SUSPENDED -> ACTIVE
 const patchSchema = z.object({
   agencyStatus: z.enum(["ACTIVE", "SUSPENDED"]),
+});
+
+// Detail edit — the same nine fields (and rules) as CRM creation in
+// ../route.ts. The logo is optional here: omitted/empty keeps the current one.
+const detailsSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  phone: z.string().trim().min(1, "Phone is required").max(40),
+  agencyName: agencyNameField,
+  agencyState: agencyStateField,
+  agencyLogoDataUrl: z.string().max(690_000).optional().or(z.literal("")),
+  agencyWebsite: z.string().trim().max(200).optional().or(z.literal("")),
+  agencyRegistrationNumber: z.string().trim().max(100).optional().or(z.literal("")),
+  agencyGstin: z.string().trim().max(30).optional().or(z.literal("")),
 });
 
 /**
@@ -46,6 +61,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  // A body without agencyStatus is a detail edit, not a status change.
+  if (!(body && typeof body === "object" && "agencyStatus" in body)) {
+    return updateDetails(id, body);
   }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
@@ -98,16 +117,71 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return agent;
   });
 
-  // Best-effort — never blocks/fails the status change itself.
+  // Best-effort — never blocks/fails the status change itself, but the result
+  // is returned so the UI can say when the credentials email didn't go out.
+  let emailDelivered: boolean | null = null;
   if (tempPassword) {
-    await sendB2bAgentActivationEmail(
+    ({ delivered: emailDelivered } = await sendB2bAgentActivationEmail(
       updated.email,
       updated.name ?? "",
       updated.agencyName ?? updated.name ?? "",
       tempPassword,
-    );
+    ));
   }
 
+  return NextResponse.json({ ...updated, emailDelivered });
+}
+
+/**
+ * Edit a B2B agent's details (any status). Email/phone stay unique across all
+ * accounts, same as creation. Changing the email changes their login email —
+ * the password is untouched.
+ */
+async function updateDetails(id: string, body: unknown) {
+  const parsed = detailsSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  }
+  const data = parsed.data;
+
+  let agencyLogoUrl: string | undefined;
+  if (data.agencyLogoDataUrl) {
+    agencyLogoUrl = parseAgencyLogo(data.agencyLogoDataUrl) ?? undefined;
+    if (!agencyLogoUrl) {
+      return NextResponse.json(
+        { error: { fieldErrors: { agencyLogoDataUrl: ["Logo must be a PNG or WebP image under 500KB."] } } },
+        { status: 422 },
+      );
+    }
+  }
+
+  const [emailTaken, phoneTaken] = await Promise.all([
+    prisma.user.findFirst({ where: { email: data.email, id: { not: id } }, select: { id: true } }),
+    prisma.user.findFirst({ where: { phone: data.phone, id: { not: id } }, select: { id: true } }),
+  ]);
+  if (emailTaken) {
+    return NextResponse.json({ error: "Another account already uses this email address." }, { status: 409 });
+  }
+  if (phoneTaken) {
+    return NextResponse.json({ error: "Another account already uses this phone number." }, { status: 409 });
+  }
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data: {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      agencyName: data.agencyName,
+      agencyState: data.agencyState,
+      // Optional fields: an emptied input clears the stored value.
+      agencyWebsite: data.agencyWebsite || null,
+      agencyRegistrationNumber: data.agencyRegistrationNumber || null,
+      agencyGstin: data.agencyGstin || null,
+      ...(agencyLogoUrl ? { agencyLogoUrl } : {}),
+    },
+    select: { id: true, name: true, email: true, agencyStatus: true, agencyName: true },
+  });
   return NextResponse.json(updated);
 }
 

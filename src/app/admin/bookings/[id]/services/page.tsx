@@ -1,22 +1,28 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, IdCard, Lock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/permissions";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { parseGstRates } from "@/lib/payments/gst";
 import { computeBookingFinance } from "@/lib/bookings/finance";
 import { bookingWhereForUser } from "@/lib/bookings/scope";
+import { driversSelect } from "@/lib/bookings/driver";
 import { wasServicesUnlocked } from "@/lib/bookings/audit";
+import { toDateInputValue } from "@/lib/bookings/serviceDisplay";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { requireModuleView } from "@/lib/admin/moduleGuard";
+import { hotelDataSchema } from "@/lib/hotelSuppliers/schema";
+import { guestsLabel } from "@/lib/bookings/hotelPayments";
+import { isWelcomeCardAvailable, welcomeCardAvailableFrom } from "@/lib/welcomeCard/pdf";
 import {
   BookingServicesClient,
   DriverSection,
 } from "@/components/admin/bookings/BookingServicesClient";
 import { BookingItineraryCard } from "@/components/admin/bookings/BookingItineraryCard";
 import { BookingAdminPanel } from "@/components/admin/bookings/BookingAdminPanel";
+import { WelcomeCardButton } from "@/components/admin/bookings/WelcomeCardButton";
 
 export const metadata: Metadata = { title: "Booking Services — Admin" };
 export const dynamic = "force-dynamic";
@@ -47,17 +53,42 @@ export default async function BookingServicesPage({ params, searchParams }: Page
     can(role, "bookings", "edit"),
     can(role, "itinerary", "create"),
   ]);
-  const canViewProfit = role === "SUPERADMIN" || role === "ADMIN";
+  // Sales see profit on their own bookings (the query below is already scoped to them).
+  const canViewProfit = role === "SUPERADMIN" || role === "ADMIN" || role === "SALES";
   // Unlocking (services or the converted lead's itinerary) is an admin-only correction.
   const canUnlock = canEdit && isAdminRole(role);
+
+  // Active hotels offered as picks in the Hotel Name field (links the stay
+  // to the hotel list for the Trips board's hotel view).
+  const [hotelRows, me] = await Promise.all([
+    prisma.hotelSupplier.findMany({
+      where: { isActive: true },
+      orderBy: { hotelName: "asc" },
+      select: { id: true, hotelName: true, destination: true, data: true },
+    }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+  ]);
+  const hotelOptions = hotelRows.map((h) => {
+    const d = hotelDataSchema.safeParse(h.data);
+    return {
+      id: h.id,
+      name: h.hotelName,
+      destination: h.destination,
+      email: d.success ? d.data.property.email : null,
+    };
+  });
 
   const booking = await prisma.booking.findFirst({
     where: { id, deletedAt: null, ...(await bookingWhereForUser(role, userId)) },
     include: {
       tour: { select: { title: true } },
       user: { select: { name: true, email: true, mustChangePassword: true } },
-      services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+      services: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: { hotelPayments: { select: { amount: true, type: true } } },
+      },
       payments: { orderBy: { createdAt: "asc" } },
+      drivers: driversSelect,
       leads: {
         take: 1,
         select: {
@@ -65,6 +96,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
           name: true,
           phone: true,
           email: true,
+          adults: true,
+          children: true,
           endDate: true,
           b2bAgentId: true,
           locked: true,
@@ -92,16 +125,10 @@ export default async function BookingServicesPage({ params, searchParams }: Page
     inclusions: parseInclusions(booking.inclusions),
     travelDate: booking.travelDate.toISOString(),
     travelEndDate: booking.travelEndDate ? booking.travelEndDate.toISOString() : null,
-    driver: booking.driverAddedAt
-      ? {
-          driverName: booking.driverName ?? "",
-          driverPhone: booking.driverPhone ?? "",
-          vehicleNumber: booking.vehicleNumber ?? "",
-          vehicleName: booking.vehicleName ?? "",
-        }
-      : null,
+    drivers: booking.drivers,
     travellers: booking.travellers,
     guestName: booking.guestName,
+    guestsLabel: guestsLabel(lead?.adults, lead?.children, booking.travellers),
     guestEmail: booking.guestEmail,
     guestPhone: booking.guestPhone,
     address: booking.address,
@@ -118,7 +145,15 @@ export default async function BookingServicesPage({ params, searchParams }: Page
       location: s.location,
       nights: s.nights,
       roomType: s.roomType,
+      rooms: s.rooms,
+      checkIn: toDateInputValue(s.checkIn),
+      checkOut: toDateInputValue(s.checkOut),
+      hotelSupplierId: s.hotelSupplierId,
+      hotelConfirmation: s.hotelConfirmation,
+      hotelTokenWaived: s.hotelTokenWaived,
+      hotelPayments: s.hotelPayments,
       pickup: s.pickup,
+      vehicles: s.vehicles,
       dropoff: s.dropoff,
       timing: s.timing,
       sortOrder: s.sortOrder,
@@ -172,11 +207,30 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             Ref {booking.id.slice(-8).toUpperCase()}
           </p>
         </div>
-        {booking.servicesLocked && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-            <Lock className="w-4 h-4" /> Services locked
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Driver's arrival name board — opens the day before travel. */}
+          {!["CANCELLED", "FAILED", "REFUNDED"].includes(booking.status) &&
+            (isWelcomeCardAvailable(booking.travelDate) ? (
+              <WelcomeCardButton bookingId={booking.id} guestName={booking.guestName} />
+            ) : (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+                title="The guest welcome card for the driver can be downloaded from the day before travel."
+              >
+                <IdCard className="w-4 h-4" /> Welcome card from{" "}
+                {new Date(`${welcomeCardAvailableFrom(booking.travelDate)}T00:00:00Z`).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  timeZone: "UTC",
+                })}
+              </span>
+            ))}
+          {booking.servicesLocked && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+              <Lock className="w-4 h-4" /> Services locked
+            </span>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
         {/* Left — 75%: service editor, details, payments, lock CTA */}
@@ -188,6 +242,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             canViewProfit={canViewProfit}
             canUnlock={canUnlock}
             isRelock={isRelock}
+            hotelOptions={hotelOptions}
+            currentUserName={me?.name ?? ""}
           />
         </div>
         {/* Right — 25%: payment status panel + itinerary card */}
@@ -198,7 +254,8 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             isLeadConverted={!!lead}
             isB2bLead={!!lead?.b2bAgentId}
             leadItineraryId={lead?.itinerary?.id ?? null}
-            leadLocked={lead?.locked ?? false}
+            // A B2B request's itinerary follows the services lock (resolveB2bItineraryAccess).
+            leadLocked={lead?.b2bAgentId ? booking.servicesLocked : (lead?.locked ?? false)}
             itinerary={booking.itinerary ?? null}
             canCreate={canCreateItinerary}
           />
@@ -227,7 +284,7 @@ export default async function BookingServicesPage({ params, searchParams }: Page
             <DriverSection
               bookingId={booking.id}
               travelDate={data.travelDate}
-              initialDriver={data.driver}
+              initialDrivers={data.drivers}
               canEdit={canEdit}
               autoOpen={addDriver === "1"}
             />

@@ -5,8 +5,10 @@ import { ArrowLeft, ExternalLink, Pencil } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { b2bLeadWhere } from "@/lib/b2b/leadScope";
-import { B2B_STATUS_LABELS, type B2bRequestStatus } from "@/lib/b2b/requestStatus";
+import { B2B_STATUS_LABELS, canAgentDeleteB2bRequest, type B2bRequestStatus } from "@/lib/b2b/requestStatus";
 import { B2bItineraryDownloadButton } from "@/components/account/B2bItineraryDownloadButton";
+import { ManualItineraryLink } from "@/components/account/ManualItineraryLink";
+import { DeleteB2bRequestButton } from "@/components/b2b/DeleteB2bRequestButton";
 
 export const metadata: Metadata = { title: "Request Details" };
 export const dynamic = "force-dynamic";
@@ -62,13 +64,21 @@ export default async function AccountRequestDetailPage({
       bookingId: true,
       locked: true,
       createdAt: true,
-      itinerary: { select: { status: true, updatedAt: true } },
+      itinerary: { select: { id: true, publishedAt: true } },
+      // Uploaded PDF only — the staff artifact link is never selected here.
+      manualItineraryUrl: true,
+      manualItineraryName: true,
     },
   });
   if (!request) notFound();
 
   const status = request.status as B2bRequestStatus;
-  const itineraryReady = !!request.itinerary && request.itinerary.status !== "DRAFT";
+  const itineraryReady = !!request.itinerary?.publishedAt;
+  const canDelete = canAgentDeleteB2bRequest({
+    status: request.status,
+    locked: request.locked,
+    hasItinerary: !!request.itinerary || !!request.manualItineraryUrl,
+  });
 
   return (
     <div className="space-y-5">
@@ -94,6 +104,12 @@ export default async function AccountRequestDetailPage({
               <Pencil className="h-3.5 w-3.5" />
               Edit
             </Link>
+          )}
+          {canDelete && (
+            <DeleteB2bRequestButton
+              endpoint={`/api/account/b2b/requests/${request.id}`}
+              redirectTo="/account/requests"
+            />
           )}
         </div>
       </div>
@@ -136,14 +152,19 @@ export default async function AccountRequestDetailPage({
         {itineraryReady ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              Updated {fmtDate(request.itinerary!.updatedAt)}
+              Updated {fmtDate(request.itinerary!.publishedAt!)}
             </p>
             <B2bItineraryDownloadButton requestId={request.id} />
           </div>
-        ) : (
+        ) : request.manualItineraryUrl ? null : (
           <p className="mt-3 text-sm text-muted-foreground">
             Not available yet — our team is preparing your itinerary.
           </p>
+        )}
+        {request.manualItineraryUrl && (
+          <div className="mt-3">
+            <ManualItineraryLink url={request.manualItineraryUrl} name={request.manualItineraryName} />
+          </div>
         )}
       </div>
 

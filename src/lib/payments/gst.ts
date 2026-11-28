@@ -27,6 +27,20 @@ export function parseGstRates(raw: string | null | undefined): number[] {
   return DEFAULT_GST_RATES;
 }
 
+/**
+ * GST line for a single payment's receipt, from what was recorded on it — or
+ * null when that payment carried no GST (cash / other accounts), in which case
+ * the receipt says nothing about GST. Always IGST: Vertex sells only to
+ * customers from outside J&K, so every supply is inter-state.
+ */
+export function receiptGstLine(
+  gstPercent: number | null | undefined,
+  gstAmount: number | null | undefined,
+): { label: string; amount: number } | null {
+  if (!(gstPercent != null && gstPercent > 0 && gstAmount != null && gstAmount > 0)) return null;
+  return { label: `IGST @ ${Number(gstPercent.toFixed(2))}%`, amount: gstAmount };
+}
+
 /** Cash is identified case-insensitively; cash payments never carry GST. */
 export function isCashMethod(method?: string | null): boolean {
   return (method ?? "").trim().toLowerCase() === "cash";

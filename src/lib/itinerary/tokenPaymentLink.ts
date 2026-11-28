@@ -1,9 +1,12 @@
 // Booking-token Razorpay Payment Link for the itinerary PDF's "Scan to pay" QR.
 //
 // Business rules (see the itinerary-token-qr feature spec):
-//   - Fixed token amount: ₹2,000, or the tour/package total if that's lower.
+//   - Token amount: 10% of the tour/package total, rounded UP to the next ₹500
+//     (₹2,300 → ₹2,500, ₹2,700 → ₹3,000), capped at the total itself.
 //     accept_partial=false — the customer can never pay a different amount.
-//   - One CURRENT active link per itinerary. Reused as-is for 48h from creation.
+//   - One CURRENT active link per itinerary. Reused as-is for 48h from creation,
+//     unless the token amount has changed since (e.g. the total was edited) —
+//     then the unpaid link is cancelled and re-minted at the new amount.
 //   - Past 48h (and not yet paid): the old link is cancelled and a new one is
 //     minted. Already-PAID links are never superseded, regardless of age.
 //   - This is a payment-COLLECTION mechanism only. It never touches Booking
@@ -16,12 +19,21 @@ import { getRazorpayClient, isRazorpayConfigured } from "@/lib/payments/razorpay
 import { round2 } from "@/lib/bookings/finance";
 import { logPaymentAudit } from "@/lib/bookings/audit";
 
-export const TOKEN_STANDARD_AMOUNT_RUPEES = 2000;
+export const TOKEN_PERCENT = 10;
+const TOKEN_ROUND_UP_TO_RUPEES = 500;
 const LINK_VALIDITY_MS = 48 * 60 * 60 * 1000;
+
+/** 10% of the package total, rounded up to the next ₹500, never above the total. */
+export function tokenAmountFor(totalRupees: number): number {
+  const rounded = Math.ceil((totalRupees * TOKEN_PERCENT) / 100 / TOKEN_ROUND_UP_TO_RUPEES) * TOKEN_ROUND_UP_TO_RUPEES;
+  return Math.min(rounded, round2(totalRupees));
+}
 
 export interface TokenPaymentLinkResult {
   shortUrl: string;
   amountRupees: number;
+  /** The package total the token was calculated from — drives the "10% of ₹X" PDF caption. */
+  totalRupees: number;
 }
 
 type ResolveOutcome = TokenPaymentLinkResult | { error: string };
@@ -73,10 +85,11 @@ export async function resolveTokenPaymentLink(itineraryId: string): Promise<Reso
       // src/lib/bookings/syncBookingAmount.ts). Never parsed from PDF content
       // here directly, and never trusted from any client input.
       const total = itinerary.booking?.amount ?? itinerary.lead?.negotiatedAmount ?? null;
-      const amountRupees =
-        total != null && total > 0 && total < TOKEN_STANDARD_AMOUNT_RUPEES
-          ? round2(total)
-          : TOKEN_STANDARD_AMOUNT_RUPEES;
+      if (total == null || total <= 0) {
+        return { error: "Add the package total cost to this itinerary to generate the payment QR." };
+      }
+      const totalRupees = round2(total);
+      const amountRupees = tokenAmountFor(totalRupees);
       const amountPaise = Math.round(amountRupees * 100);
 
       const razorpay = getRazorpayClient();
@@ -99,22 +112,26 @@ export async function resolveTokenPaymentLink(itineraryId: string): Promise<Reso
             return {
               shortUrl: itinerary.razorpayPaymentLinkUrl,
               amountRupees: (itinerary.razorpayPaymentLinkAmount ?? amountPaise) / 100,
+              totalRupees,
             };
           }
-          // CASE 1 — Razorpay confirms it's still open AND we're inside the
-          // local 48h window (belt-and-suspenders alongside expire_by).
+          // CASE 1 — Razorpay confirms it's still open, we're inside the local
+          // 48h window (belt-and-suspenders alongside expire_by), and it's for
+          // the current token amount.
           const ageMs = itinerary.razorpayPaymentLinkCreatedAt
             ? Date.now() - itinerary.razorpayPaymentLinkCreatedAt.getTime()
             : Infinity;
-          if (live.status === "created" && ageMs < LINK_VALIDITY_MS) {
-            return {
-              shortUrl: itinerary.razorpayPaymentLinkUrl,
-              amountRupees: (itinerary.razorpayPaymentLinkAmount ?? amountPaise) / 100,
-            };
+          if (
+            live.status === "created" &&
+            ageMs < LINK_VALIDITY_MS &&
+            itinerary.razorpayPaymentLinkAmount === amountPaise
+          ) {
+            return { shortUrl: itinerary.razorpayPaymentLinkUrl, amountRupees, totalRupees };
           }
-          // CASE 2 — expired/cancelled, or past our 48h business window while
-          // still technically open on Razorpay's side: best-effort cancel, then
-          // fall through to mint a new one below.
+          // CASE 2 — expired/cancelled, past our 48h business window while
+          // still technically open on Razorpay's side, or minted for an old
+          // token amount (e.g. the former flat ₹2,000, or the total changed):
+          // best-effort cancel, then fall through to mint a new one below.
           if (live.status === "created") {
             try {
               await razorpay.paymentLink.cancel(itinerary.razorpayPaymentLinkId);
@@ -130,11 +147,8 @@ export async function resolveTokenPaymentLink(itineraryId: string): Promise<Reso
           const ageMs = itinerary.razorpayPaymentLinkCreatedAt
             ? Date.now() - itinerary.razorpayPaymentLinkCreatedAt.getTime()
             : Infinity;
-          if (ageMs < LINK_VALIDITY_MS) {
-            return {
-              shortUrl: itinerary.razorpayPaymentLinkUrl,
-              amountRupees: (itinerary.razorpayPaymentLinkAmount ?? amountPaise) / 100,
-            };
+          if (ageMs < LINK_VALIDITY_MS && itinerary.razorpayPaymentLinkAmount === amountPaise) {
+            return { shortUrl: itinerary.razorpayPaymentLinkUrl, amountRupees, totalRupees };
           }
           return { error: "Could not verify the existing payment link's status. Please try again shortly." };
         }
@@ -191,7 +205,7 @@ export async function resolveTokenPaymentLink(itineraryId: string): Promise<Reso
         detail: `itinerary=${itinerary.id} ref=${refId}`,
       });
 
-      return { shortUrl: link.short_url, amountRupees };
+      return { shortUrl: link.short_url, amountRupees, totalRupees };
     },
     { timeout: 20000, maxWait: 5000 },
   );

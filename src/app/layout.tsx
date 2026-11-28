@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { AttributionCapture } from "@/components/providers/AttributionCapture";
+import { ServiceWorkerRegister } from "@/components/providers/ServiceWorkerRegister";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION } from "@/lib/env.public";
 import "./globals.css";
@@ -98,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <AttributionCapture />
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>

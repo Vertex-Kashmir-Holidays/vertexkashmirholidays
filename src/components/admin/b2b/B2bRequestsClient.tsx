@@ -8,6 +8,21 @@ import { ClipboardList, Plus, ExternalLink, CalendarDays, Users, BedDouble } fro
 import { cn } from "@/lib/utils";
 import { usePagination } from "@/components/admin/ui/usePagination";
 import { TablePagination } from "@/components/admin/ui/TablePagination";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/organisms/select";
+import {
+  LIST_FILTER_TRIGGER,
+  LIST_SEARCH_CLASS,
+  ListFilterToggle,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
 import {
   B2B_STATUS_LABELS as STATUS_LABELS,
@@ -91,17 +106,26 @@ export function B2bRequestsClient({ initialRequests, agents, initialAgentFilter 
   const [isPending, startTransition] = useTransition();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [agentFilter, setAgentFilter] = useState<string>(initialAgentFilter ?? "ALL");
+  const [search, setSearch] = useState("");
+  // Phones only: the dropdowns stay folded behind the filter icon.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [refreshing, startRefresh] = useTransition();
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const needle = search.trim().toLowerCase();
   const filtered = useMemo(() => {
     return initialRequests.filter((r) => {
       if (statusFilter !== "ALL" && r.status !== statusFilter) return false;
       if (agentFilter !== "ALL" && r.b2bAgent?.id !== agentFilter) return false;
-      return true;
+      if (!needle) return true;
+      return [r.name, r.phone, r.b2bAgent?.agencyName ?? "", r.b2bAgent?.name ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle);
     });
-  }, [initialRequests, statusFilter, agentFilter]);
+  }, [initialRequests, statusFilter, agentFilter, needle]);
 
   const { page, setPage, pageSize, changePageSize, pageCount, total, pageItems } =
     usePagination(filtered);
@@ -165,35 +189,60 @@ export function B2bRequestsClient({ initialRequests, agents, initialAgentFilter 
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-3 p-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-border rounded-xl bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
-          >
-            <option value="ALL">All statuses</option>
-            {/* CONVERTED never appears in this list (see admin/b2b-requests/page.tsx) — it's a booking now, not a request. */}
-            {(Object.keys(STATUS_LABELS) as B2bRequestStatus[])
-              .filter((s) => s !== "CONVERTED")
-              .map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
-                </option>
-              ))}
-          </select>
-          <select
-            value={agentFilter}
-            onChange={(e) => setAgentFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-border rounded-xl bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/25"
-          >
-            <option value="ALL">All agents</option>
-            {agents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.agencyName ?? a.name ?? a.email}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-muted-foreground self-center shrink-0">{filtered.length} results</p>
+        {/* Filter bar — shared with Leads/Proposals/Bookings (ListFilterBar). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search guest, phone or agency…"
+            className={LIST_SEARCH_CLASS}
+          />
+
+          <ListFilterToggle
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((o) => !o)}
+            activeCount={[statusFilter, agentFilter].filter((f) => f !== "ALL").length}
+          />
+
+          {/* display:contents keeps the dropdowns in the bar's wrap on md+. */}
+          <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All statuses</SelectItem>
+                {/* CONVERTED never appears in this list (see admin/b2b-requests/page.tsx) — it's a booking now, not a request. */}
+                {(Object.keys(STATUS_LABELS) as B2bRequestStatus[])
+                  .filter((s) => s !== "CONVERTED")
+                  .map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUS_LABELS[s]}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <Select value={agentFilter} onValueChange={setAgentFilter}>
+              <SelectTrigger className={LIST_FILTER_TRIGGER} aria-label="Filter by agent">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All agents</SelectItem>
+                {agents.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.agencyName ?? a.name ?? a.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ListResultsCount>{filtered.length} results</ListResultsCount>
+
+          <ListRefreshButton
+            onClick={() => startRefresh(() => router.refresh())}
+            refreshing={refreshing}
+          />
         </div>
 
         <div className="overflow-x-auto">

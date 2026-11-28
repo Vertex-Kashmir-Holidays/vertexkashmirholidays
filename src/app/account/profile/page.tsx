@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/account/ProfileForm";
 import { AgencyDetailsCard } from "@/components/account/AgencyDetailsCard";
 import { AgencyDocsCard } from "@/components/account/AgencyDocsCard";
-import { B2B_VISIBLE_DOC_CATEGORIES } from "@/lib/docs/categories";
+import { agentVisibleDocsWhere } from "@/lib/docs/upload";
 
 export const metadata: Metadata = { title: "Profile" };
 export const dynamic = "force-dynamic";
@@ -34,9 +34,18 @@ export default async function AccountProfilePage() {
 
   const docs = user?.agencyStatus
     ? await prisma.adminDocument.findMany({
-        where: { category: { in: B2B_VISIBLE_DOC_CATEGORIES as string[] } },
-        orderBy: [{ category: "asc" }, { createdAt: "desc" }],
-        select: { id: true, title: true, description: true, category: true, mimeType: true },
+        where: agentVisibleDocsWhere(session.user.id),
+        // Shared with them personally first, then the all-partner library.
+        orderBy: [{ agentId: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          mimeType: true,
+          agentId: true,
+          createdAt: true,
+        },
       })
     : [];
 

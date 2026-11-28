@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
-import { groupServiceTables } from "@/lib/bookings/serviceDisplay";
+import { receiptGstLine } from "@/lib/payments/gst";
+import {
+  groupServiceTables,
+  SHOW_SUMMARY_NOTE,
+  GST_INCLUDED_NOTE,
+  type DisplayService,
+} from "@/lib/bookings/serviceDisplay";
 import { env } from "@/lib/env";
 import { NEXT_PUBLIC_SITE_URL } from "@/lib/env.public";
 import { SITE_URL } from "@/lib/seo";
@@ -61,6 +67,19 @@ export interface SendMailResult {
   skipped?: boolean;
 }
 
+// Silent office copy for booking, account and B2B partner emails (booking/
+// payment emails, customer + B2B account credentials, every email to B2B
+// agents) so staff can confirm they went out.
+// Callers opt in via `bcc: ADMIN_COPY` — never OTP or password-reset mail.
+export const ADMIN_COPY = env.MAIL_TO_ADMIN ?? "admin@vertexkashmirholidays.com";
+
+function splitEmails(list: string | undefined): string[] {
+  return (list ?? "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
+
 // Normalises nodemailer's Address[] | string[] result into plain emails.
 function toEmails(list: unknown): string[] {
   if (!Array.isArray(list)) return [];
@@ -109,7 +128,11 @@ export async function sendMail(options: MailOptions): Promise<SendMailResult> {
 
   const accepted = toEmails(info.accepted);
   const rejected = toEmails(info.rejected);
-  const delivered = accepted.length > 0 && rejected.length === 0;
+  // Judge delivery on the real recipients only — a BCC copy (admin, sales)
+  // being accepted or rejected must not change whether the customer got it.
+  const toList = splitEmails(options.to).map((e) => e.toLowerCase());
+  const acceptedLower = accepted.map((e) => e.toLowerCase());
+  const delivered = toList.length > 0 && toList.every((e) => acceptedLower.includes(e));
 
   console.log("[mail] send result", {
     to: options.to,
@@ -486,7 +509,7 @@ export function bookingRequestReceivedText(data: BookingRequestReceivedData): st
     `Tour: ${data.tourTitle}`,
     `Travel Date: ${data.travelDate}`,
     `Travellers: ${data.travellers}`,
-    `Total Amount: ${inr(data.totalAmount)}`,
+    `Total Amount (incl. GST): ${inr(data.totalAmount)}`,
     `Payment Option: ${data.paymentOptionLabel}`,
     `Payable Now: ${inr(data.payableNow)}`,
     "",
@@ -521,7 +544,7 @@ export function bookingRequestReceivedHtml(data: BookingRequestReceivedData): st
 ${detailRow("Tour", data.tourTitle)}
 ${detailRow("Travel Date", data.travelDate)}
 ${detailRow("Travellers", String(data.travellers))}
-${detailRow("Total Amount", inr(data.totalAmount))}
+${detailRow("Total Amount (incl. GST)", inr(data.totalAmount))}
 ${detailRow("Payment Option", data.paymentOptionLabel)}
 ${detailRow("Payable Now", inr(data.payableNow))}
              </table>
@@ -685,16 +708,7 @@ ${detailRow("Payment Option", data.paymentOption)}
   });
 }
 
-export interface InvoiceService {
-  kind: "HOTEL" | "TRANSPORT" | "ACTIVITY" | "OTHER";
-  name: string;
-  location?: string | null;
-  nights?: number | null;
-  roomType?: string | null;
-  pickup?: string | null;
-  dropoff?: string | null;
-  timing?: string | null;
-}
+export type InvoiceService = DisplayService;
 
 interface BookingInvoiceData {
   guestName: string;
@@ -738,14 +752,16 @@ export function bookingInvoiceText(data: BookingInvoiceData): string {
   }
   lines.push(
     "",
-    `Total Booking Amount: ${inr(data.bookingAmount)}`,
+    `Total Booking Amount (incl. GST): ${inr(data.bookingAmount)}`,
     `Discount: ${inr(data.discountAmount)}`,
     `Payable: ${inr(data.totalAmount)}`,
     `Paid: ${inr(data.paidAmount)}`,
     `Remaining Balance: ${inr(data.remainingBalance)}`,
     `Status: ${data.status}`,
+    GST_INCLUDED_NOTE,
     "",
     "A detailed PDF summary is attached to this email.",
+    SHOW_SUMMARY_NOTE,
     `WhatsApp us: ${waText}`,
   );
   if (data.bookingId) lines.push(bookingPortalSectionText(data.bookingId));
@@ -811,9 +827,9 @@ ${data.travellers ? detailRow("Travellers", String(data.travellers)) : ""}
          </tr>
          <tr>
            <td class="vk-px" style="padding:12px 28px 4px">
-             <h2 style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;color:${BRAND};font-size:14px">Price Summary</h2>
+             <h2 style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;color:${BRAND};font-size:14px">Price Summary <span style="color:#7a7a72;font-size:11px;font-weight:400">· ${escapeHtml(GST_INCLUDED_NOTE)}</span></h2>
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
-${detailRow("Total Booking Amount", inr(data.bookingAmount))}
+${detailRow("Total Booking Amount (incl. GST)", inr(data.bookingAmount))}
 ${data.discountAmount > 0 ? detailRow("Discount", `– ${inr(data.discountAmount)}`) : ""}
 ${detailRow("Payable", inr(data.totalAmount))}
 ${detailRow("Paid", inr(data.paidAmount))}
@@ -825,6 +841,7 @@ ${detailRow("Status", data.status)}
          <tr>
            <td class="vk-px" style="padding:14px 28px 6px;font-family:Arial,Helvetica,sans-serif">
              <p style="margin:0;color:#666666;font-size:12px;line-height:1.6">📎 A professionally formatted PDF summary is attached for your records.</p>
+             <p style="margin:10px 0 0;padding:10px 12px;border-radius:8px;background:#E8F2EB;color:${BRAND};font-size:12px;font-weight:700;line-height:1.6">${escapeHtml(SHOW_SUMMARY_NOTE)}</p>
            </td>
          </tr>
          <tr>
@@ -855,6 +872,9 @@ interface PaymentInvoiceData {
   totalPaid: number;
   remainingBalance: number;
   status: string;
+  /** As recorded on this payment — null/absent when it carried no GST. */
+  gstPercent?: number | null;
+  gstAmount?: number | null;
   whatsappNumber?: string | null;
   bookingId?: string;
 }
@@ -872,6 +892,8 @@ export function paymentInvoiceText(data: PaymentInvoiceData): string {
     `Payment Type: ${data.type}`,
   ];
   if (data.method) lines.push(`Method: ${data.method}`);
+  const gst = receiptGstLine(data.gstPercent, data.gstAmount);
+  if (gst) lines.push(`${gst.label} (included): ${inr(gst.amount)}`);
   lines.push(
     `Payment Date: ${data.paymentDate}`,
     "",
@@ -888,6 +910,7 @@ export function paymentInvoiceText(data: PaymentInvoiceData): string {
 
 export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
   const { href: waHref, text: waText } = resolveWhatsApp(data.whatsappNumber);
+  const gst = receiptGstLine(data.gstPercent, data.gstAmount);
 
   const content = `          <tr>
            <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
@@ -902,6 +925,7 @@ export function paymentInvoiceHtml(data: PaymentInvoiceData): string {
                  <td align="center" style="padding:16px 30px;border-radius:12px;background:${BRAND}">
                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,0.75)">AMOUNT RECEIVED</div>
                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:700;color:#ffffff;margin-top:4px">${inr(data.amount)}</div>
+${gst ? `                   <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px">Inclusive of ${escapeHtml(gst.label)}</div>` : ""}
                  </td>
                </tr>
              </table>
@@ -917,6 +941,7 @@ ${detailRow("Payment Date", data.paymentDate)}
 ${detailRow("Total Paid To Date", inr(data.totalPaid))}
 ${detailRow("Remaining Balance", inr(data.remainingBalance))}
 ${detailRow("Status", data.status)}
+${gst ? detailRow(`${gst.label} (included)`, inr(gst.amount)) : ""}
              </table>
            </td>
          </tr>
@@ -945,14 +970,26 @@ ${detailRow("Status", data.status)}
 
 interface DriverDetailsEmailData {
   guestName: string;
-  driverName: string;
-  driverPhone: string;
-  vehicleName: string;
-  vehicleNumber: string;
+  // One per vehicle — a big group can travel in two.
+  drivers: { driverName: string; driverPhone: string; vehicleName: string; vehicleNumber: string }[];
   tourTitle?: string | null;
   travelDate?: string | null;
   updated?: boolean; // true when this is an update to previously-sent details
   whatsappNumber?: string | null;
+}
+
+/** Label/value rows per vehicle; "Vehicle 2 — Driver Name" style only when there are several. */
+function driverDetailRows(data: DriverDetailsEmailData): [string, string][] {
+  const multi = data.drivers.length > 1;
+  return data.drivers.flatMap((d, i) => {
+    const p = multi ? `Vehicle ${i + 1} — ` : "";
+    return [
+      [`${p}Driver Name`, d.driverName],
+      [`${p}Driver Phone`, d.driverPhone],
+      [`${p}Vehicle`, d.vehicleName],
+      [`${p}Vehicle Number`, d.vehicleNumber],
+    ] as [string, string][];
+  });
 }
 
 export function driverDetailsText(data: DriverDetailsEmailData): string {
@@ -966,10 +1003,7 @@ export function driverDetailsText(data: DriverDetailsEmailData): string {
   if (data.tourTitle) lines.push(`Tour: ${data.tourTitle}`);
   if (data.travelDate) lines.push(`Travel Date: ${data.travelDate}`);
   lines.push(
-    `Driver Name: ${data.driverName}`,
-    `Driver Phone: ${data.driverPhone}`,
-    `Vehicle: ${data.vehicleName}`,
-    `Vehicle Number: ${data.vehicleNumber}`,
+    ...driverDetailRows(data).map(([label, value]) => `${label}: ${value}`),
     "",
     "Your driver will contact you before pickup. Safe travels!",
     `WhatsApp us: ${waText}`,
@@ -991,10 +1025,9 @@ export function driverDetailsHtml(data: DriverDetailsEmailData): string {
              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
 ${data.tourTitle ? detailRow("Tour", data.tourTitle) : ""}
 ${data.travelDate ? detailRow("Travel Date", data.travelDate) : ""}
-${detailRow("Driver Name", data.driverName)}
-${detailRow("Driver Phone", data.driverPhone)}
-${detailRow("Vehicle", data.vehicleName)}
-${detailRow("Vehicle Number", data.vehicleNumber)}
+${driverDetailRows(data)
+  .map(([label, value]) => detailRow(label, value))
+  .join("\n")}
              </table>
            </td>
          </tr>
@@ -1007,7 +1040,9 @@ ${detailRow("Vehicle Number", data.vehicleNumber)}
 
   return emailShell({
     title: `Driver & Vehicle Details — Vertex Kashmir Holidays`,
-    preheader: `${escapeHtml(data.driverName)} · ${escapeHtml(data.vehicleNumber)}`,
+    preheader: data.drivers
+      .map((d) => `${escapeHtml(d.driverName)} · ${escapeHtml(d.vehicleNumber)}`)
+      .join(" | "),
     contentHtml: content,
   });
 }
@@ -1149,6 +1184,8 @@ function emailShell(opts: {
   preheader: string;
   contentHtml: string;
   maxWidth?: number;
+  /** Replaces the "automated message" line under the card (pre-escaped). */
+  footerNote?: string;
 }): string {
   const maxWidth = opts.maxWidth ?? 600;
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -1184,7 +1221,7 @@ ${brandHeader()}
 ${opts.contentHtml}
        </table>
        <p style="margin:16px 0 0;color:#9aa0a6;font-size:11px;font-family:Arial,Helvetica,sans-serif">
-         This is an automated message from Vertex Kashmir Holidays.
+         ${opts.footerNote ?? "This is an automated message from Vertex Kashmir Holidays."}
        </p>
      </td>
    </tr>
@@ -1720,22 +1757,33 @@ interface B2bDocumentUpdateData {
   docTitle: string;
   /** The one-line "what this document is for" from the upload form — may be blank. */
   docDescription: string;
+  /** Shared with this one agent only (e.g. their proposal), not all partners. */
+  personal?: boolean;
 }
 
-export function b2bDocumentUpdateSubject(docTitle: string): string {
-  return `New partner document: ${docTitle}`;
+export function b2bDocumentUpdateSubject(docTitle: string, personal = false): string {
+  return personal ? `Document shared with you: ${docTitle}` : `New partner document: ${docTitle}`;
 }
+
+const docIntro = (d: B2bDocumentUpdateData) =>
+  d.personal
+    ? `we have shared a document with you: ${d.docTitle}.`
+    : `we have added a new document for our B2B partners: ${d.docTitle}.`;
+const docOutro = (d: B2bDocumentUpdateData) =>
+  d.personal
+    ? "Please sign in to your partner account to view or download it. Reply to this email if you have any questions."
+    : "Please sign in to your partner account to view or download it, and use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.";
 
 export function b2bDocumentUpdateText(data: B2bDocumentUpdateData): string {
   return [
-    `New partner document: ${data.docTitle}`,
+    b2bDocumentUpdateSubject(data.docTitle, data.personal),
     "",
     `Dear ${data.contactName},`,
     "",
-    `We have added a new document for our B2B partners: ${data.docTitle}.`,
+    `${docIntro(data).charAt(0).toUpperCase()}${docIntro(data).slice(1)}`,
     ...(data.docDescription ? ["", data.docDescription] : []),
     "",
-    "Please sign in to your partner account to view or download it, and use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.",
+    docOutro(data),
     "",
     `Partner documents: ${b2bPortalUrl()}`,
     "",
@@ -1748,8 +1796,8 @@ export function b2bDocumentUpdateText(data: B2bDocumentUpdateData): string {
 export function b2bDocumentUpdateHtml(data: B2bDocumentUpdateData): string {
   const content = `          <tr>
            <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
-             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">New partner document</h1>
-             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.contactName)}, we have added a new document for our B2B partners.</p>
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">${data.personal ? "Document shared with you" : "New partner document"}</h1>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">Dear ${escapeHtml(data.contactName)}, ${data.personal ? "we have shared a document with you." : "we have added a new document for our B2B partners."}</p>
            </td>
          </tr>
          <tr>
@@ -1770,18 +1818,18 @@ export function b2bDocumentUpdateHtml(data: B2bDocumentUpdateData): string {
          </tr>
          <tr>
            <td class="vk-px" style="padding:18px 28px 8px;font-family:Arial,Helvetica,sans-serif">
-             <a href="${b2bPortalUrl()}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">View partner documents</a>
+             <a href="${b2bPortalUrl()}" style="display:inline-block;padding:11px 20px;border-radius:10px;background:${BRAND};color:#ffffff;font-size:13px;font-weight:700;text-decoration:none">${data.personal ? "View document" : "View partner documents"}</a>
            </td>
          </tr>
          <tr>
            <td class="vk-px" style="padding:8px 28px 28px;font-family:Arial,Helvetica,sans-serif">
-             <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">Please use it for your quotations from now on. If it replaces an earlier version, please stop using the old one.</p>
+             <p style="margin:0;color:#666666;font-size:13px;line-height:1.6">${data.personal ? "Reply to this email if you have any questions." : "Please use it for your quotations from now on. If it replaces an earlier version, please stop using the old one."}</p>
              <p style="margin:14px 0 0;color:#444444;font-size:13px;line-height:1.6">Regards,<br /><strong>B2B Partnerships Team</strong><br />Vertex Kashmir Holidays</p>
            </td>
          </tr>`;
 
   return emailShell({
-    title: b2bDocumentUpdateSubject(data.docTitle),
+    title: b2bDocumentUpdateSubject(data.docTitle, data.personal),
     preheader: `${escapeHtml(data.docTitle)} is now available in your partner account.`,
     contentHtml: content,
     maxWidth: 520,
@@ -1964,4 +2012,280 @@ export function hotelRateRequestHtml(data: HotelRateRequestData): string {
  </div>
 </body>
 </html>`;
+}
+
+// ── Offer cum Appointment Letter (to the new hire's personal email) ──────────
+// Sent from the Employees → Offer Letter page with the PDF attached. Written
+// as a personal HR email, not a system notice — replies go to HR.
+
+export interface OfferLetterEmailData {
+  /** "Mr Owais Hassan Wani" */
+  salutationName: string;
+  firstName: string;
+  designation: string;
+  team: string;
+  /** "1st June 2026" */
+  joiningDate: string;
+  reportingOfficer: string;
+  /** "₹15,000" — shown as "Monthly stipend/salary" */
+  pay: string;
+  /** "Stipend" | "Salary" */
+  payLabel: string;
+  /** "5% of net tour profit" — omitted when there is no booking incentive. */
+  incentive?: string | null;
+  refNo: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  signatoryPhone: string;
+  signatoryEmail: string;
+}
+
+/** What the new hire brings on the joining day — listed in the cover email. */
+const OFFER_LETTER_DOCUMENTS = [
+  "A printed (hard) copy of this offer letter, signed on the acceptance section, with a recent passport-size photograph pasted in the photo box",
+  "One valid identity proof (original and a photocopy): Aadhaar Card, PAN Card, Passport or Driving Licence",
+  "Your final degree certificate or college marks card (original and a photocopy)",
+];
+
+export function offerLetterEmailSubject(data: OfferLetterEmailData): string {
+  return `Offer cum Appointment Letter – ${data.designation} | Vertex Kashmir Holidays`;
+}
+
+export function offerLetterText(data: OfferLetterEmailData): string {
+  return [
+    `Dear ${data.salutationName},`,
+    "",
+    `Congratulations! We are delighted to offer you the position of ${data.designation} in our ${data.team} at Vertex Kashmir Holidays.`,
+    "",
+    "Your Offer cum Appointment Letter is attached to this email. A quick summary:",
+    `- Position: ${data.designation}`,
+    `- Joining date: ${data.joiningDate}`,
+    `- Reporting to: ${data.reportingOfficer}`,
+    `- Monthly ${data.payLabel.toLowerCase()}: ${data.pay}`,
+    ...(data.incentive ? [`- Booking incentive: ${data.incentive}`] : []),
+    `- Reference: ${data.refNo}`,
+    "",
+    "Please read the letter carefully, including the initial six-month term and the early-exit clause.",
+    "",
+    `Please bring the following with you on your joining day (${data.joiningDate}):`,
+    ...OFFER_LETTER_DOCUMENTS.map((d) => `- ${d}`),
+    "",
+    "If you have any questions about the offer, simply reply to this email or call us — we will be happy to help.",
+    "",
+    `We look forward to welcoming you to the team, ${data.firstName}.`,
+    "",
+    "Warm regards,",
+    data.signatoryName,
+    `${data.signatoryTitle}, Vertex Kashmir Holidays`,
+    `${data.signatoryPhone} · ${data.signatoryEmail}`,
+  ].join("\n");
+}
+
+export function offerLetterHtml(data: OfferLetterEmailData): string {
+  const p = (html: string) =>
+    `<p style="margin:0 0 14px;color:#333333;font-size:14px;line-height:1.65;font-family:Arial,Helvetica,sans-serif">${html}</p>`;
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 6px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 16px;color:${BRAND};font-size:20px;font-weight:700">Welcome to Vertex Kashmir Holidays</h1>
+             ${p(`Dear ${escapeHtml(data.salutationName)},`)}
+             ${p(`Congratulations! We are delighted to offer you the position of <strong>${escapeHtml(data.designation)}</strong> in our ${escapeHtml(data.team)} at Vertex Kashmir Holidays.`)}
+             ${p("Your <strong>Offer cum Appointment Letter</strong> is attached to this email. Here is a quick summary:")}
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:0 28px 8px">
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${detailRow("Position", data.designation)}
+${detailRow("Joining date", data.joiningDate)}
+${detailRow("Reporting to", data.reportingOfficer)}
+${detailRow(`Monthly ${data.payLabel.toLowerCase()}`, data.pay)}
+${data.incentive ? detailRow("Booking incentive", data.incentive) : ""}
+${detailRow("Reference", data.refNo)}
+             </table>
+           </td>
+         </tr>
+         <tr>
+           <td class="vk-px" style="padding:16px 28px 28px;font-family:Arial,Helvetica,sans-serif">
+             ${p("Please read the letter carefully, including the initial six-month term and the early-exit clause.")}
+             ${p(`<strong>Please bring the following with you on your joining day (${escapeHtml(data.joiningDate)}):</strong>`)}
+             <ul style="margin:0 0 16px;padding-left:20px;color:#333333;font-size:14px;line-height:1.65;font-family:Arial,Helvetica,sans-serif">
+${OFFER_LETTER_DOCUMENTS.map((d) => `               <li style="margin:0 0 6px">${escapeHtml(d)}</li>`).join("\n")}
+             </ul>
+             ${p("If you have any questions about the offer, simply reply to this email or call us — we will be happy to help.")}
+             ${p(`We look forward to welcoming you to the team, ${escapeHtml(data.firstName)}.`)}
+             <p style="margin:18px 0 0;color:#333333;font-size:14px;line-height:1.6;font-family:Arial,Helvetica,sans-serif">
+               Warm regards,<br />
+               <strong>${escapeHtml(data.signatoryName)}</strong><br />
+               <span style="color:#666666">${escapeHtml(data.signatoryTitle)}, Vertex Kashmir Holidays</span><br />
+               <span style="color:#666666">${escapeHtml(data.signatoryPhone)} · <a href="mailto:${escapeHtml(data.signatoryEmail)}" style="color:${BRAND}">${escapeHtml(data.signatoryEmail)}</a></span>
+             </p>
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: offerLetterEmailSubject(data),
+    preheader: `Your offer for ${escapeHtml(data.designation)} — letter attached`,
+    contentHtml: content,
+    footerNote: "Vertex Kashmir Holidays · Gulmarg, Jammu &amp; Kashmir · Private &amp; confidential",
+  });
+}
+
+// ── Hotel reservation confirmation + payment ────────────────────────────────
+// Sent to a hotel when staff confirm a stay and/or record a payment to it
+// (token, then balance before checkout). Opt-in from the confirm/payment dialog.
+
+// Short notice to the hotel (the enquiry with the rate already went out):
+// we have processed a token / partial / full payment for this booking.
+export interface HotelPaymentEmailData {
+  hotelName: string;
+  guestName: string;
+  guests: string; // "6 adults, 2 kids (5 yrs & 1 yr)"
+  checkIn: string | null; // "25 Dec 2026"
+  checkOut: string | null;
+  nights: number | null;
+  roomType: string | null;
+  rooms: number | null;
+  mealPlan: string | null;
+  bookingRef: string;
+  /** This payment, or null when confirming without one (token waived). */
+  payment: { stage: "Token" | "Partial" | "Full"; amount: number; method: string; paidBy: string; date: string } | null;
+  /** The stay's total owed to the hotel and what's paid so far (this payment
+   *  included). Null when the stay has no amount set. */
+  account: { total: number; paid: number; balance: number } | null;
+  /** Set when the stay is being cancelled with the hotel — the email becomes a
+   *  cancellation notice carrying this reason. */
+  cancelReason?: string | null;
+  senderName: string;
+  companyName: string;
+  companyPhone: string | null;
+}
+
+/** "Token Payment Processed" / "Partial …" / "Full …" / "Reservation Confirmation" / "Reservation Cancellation". */
+function hotelPaymentHeading(d: HotelPaymentEmailData): string {
+  if (d.cancelReason) return "Reservation Cancellation";
+  return d.payment ? `${d.payment.stage} Payment Processed` : "Reservation Confirmation";
+}
+
+export function hotelPaymentEmailSubject(d: HotelPaymentEmailData): string {
+  const stay = `${d.guestName}${d.checkIn ? `, Check-in ${d.checkIn}` : ""}`;
+  return `${hotelPaymentHeading(d)} — ${stay} | ${d.companyName}`;
+}
+
+function hotelReservationRows(d: HotelPaymentEmailData): [string, string][] {
+  const rows: [string, string | number | null][] = [
+    ["Check-in", d.checkIn],
+    ["Check-out", d.checkOut],
+    ["Number of Nights", d.nights],
+    ["Room Type", d.roomType],
+    ["Number of Rooms", d.rooms],
+    ["Meal Plan", d.mealPlan],
+  ];
+  return rows.filter(([, v]) => v != null && v !== "").map(([k, v]) => [k, String(v)]);
+}
+
+function hotelPaymentRows(d: HotelPaymentEmailData): [string, string][] {
+  // Cancelled: only what was already paid to the hotel (to settle/adjust).
+  if (d.cancelReason) {
+    return d.account && d.account.paid > 0
+      ? [["Booking Amount", inr(d.account.total)], ["Amount Paid to Hotel", inr(d.account.paid)]]
+      : [];
+  }
+  const rows: [string, string][] = d.payment
+    ? [
+        ["Payment", `${d.payment.stage} payment`],
+        ["Amount Paid", inr(d.payment.amount)],
+        ["Paid Via", d.payment.method],
+        ["Paid By", d.payment.paidBy],
+        ["Payment Date", d.payment.date],
+      ]
+    : [];
+  // Balance still due to the hotel — shown whenever anything is outstanding.
+  if (d.account && d.account.balance > 0) {
+    rows.push(["Total Booking Amount", inr(d.account.total)]);
+    if (d.account.paid > 0) rows.push(["Total Paid So Far", inr(d.account.paid)]);
+    rows.push(["Balance Due", inr(d.account.balance)]);
+  }
+  return rows;
+}
+
+const HOTEL_PAYMENT_GREETING = "Dear Manager,";
+
+function hotelPaymentIntro(d: HotelPaymentEmailData): string {
+  if (d.cancelReason) {
+    return "We regret to inform you that the below booking has been cancelled. Kindly release the rooms. Please find the reason and the booking details below.";
+  }
+  return d.payment
+    ? `We have processed the ${d.payment.stage.toLowerCase()} payment for the below booking. Please find the details below.`
+    : "This is to confirm the below booking. Please find the details below.";
+}
+
+export function hotelPaymentEmailText(d: HotelPaymentEmailData): string {
+  return [
+    HOTEL_PAYMENT_GREETING,
+    "",
+    hotelPaymentIntro(d),
+    "",
+    `Guest Name: ${d.guestName}`,
+    `Number of Guests: ${d.guests}`,
+    `Booking Ref: ${d.bookingRef}`,
+    "",
+    ...(d.cancelReason ? ["Cancellation", `Reason: ${d.cancelReason}`, ""] : []),
+    "Reservation Details",
+    ...hotelReservationRows(d).map(([k, v]) => `${k}: ${v}`),
+    "",
+    ...(hotelPaymentRows(d).length
+      ? ["Payment Details", ...hotelPaymentRows(d).map(([k, v]) => `${k}: ${v}`)]
+      : []),
+    "",
+    ...(d.cancelReason ? ["We regret the inconvenience and look forward to working with you again.", ""] : []),
+    "With Regards,",
+    d.senderName,
+    d.companyName,
+    d.companyPhone ? `Phone: ${d.companyPhone}` : "",
+  ]
+    .filter((l, i, a) => !(l === "" && a[i - 1] === ""))
+    .join("\n");
+}
+
+export function hotelPaymentEmailHtml(d: HotelPaymentEmailData): string {
+  const section = (title: string, rows: [string, string][]) => `          <tr>
+           <td class="vk-px" style="padding:14px 28px 4px;font-family:Arial,Helvetica,sans-serif">
+             <h2 style="margin:0 0 6px;color:${BRAND};font-size:15px;font-weight:700">${escapeHtml(title)}</h2>
+             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #eeeeee">
+${rows.map(([k, v]) => detailRow(k, v)).join("\n")}
+             </table>
+           </td>
+         </tr>`;
+
+  const content = `          <tr>
+           <td class="vk-px" style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif">
+             <h1 style="margin:0 0 10px;color:${BRAND};font-size:20px;font-weight:700">${escapeHtml(hotelPaymentHeading(d))}</h1>
+             <p style="margin:0 0 6px;color:#444444;font-size:14px;line-height:1.6">${HOTEL_PAYMENT_GREETING}</p>
+             <p style="margin:0;color:#444444;font-size:14px;line-height:1.6">${escapeHtml(hotelPaymentIntro(d))}</p>
+           </td>
+         </tr>
+${section("Guest Details", [
+  ["Guest Name", d.guestName],
+  ["Number of Guests", d.guests],
+  ["Booking Ref", d.bookingRef],
+])}
+${d.cancelReason ? section("Cancellation", [["Reason", d.cancelReason]]) : ""}
+${section("Reservation Details", hotelReservationRows(d))}
+${hotelPaymentRows(d).length ? section("Payment Details", hotelPaymentRows(d)) : ""}
+         <tr>
+           <td class="vk-px" style="padding:18px 28px 28px;font-family:Arial,Helvetica,sans-serif;color:#444444;font-size:13px;line-height:1.6">
+             ${d.cancelReason ? "We regret the inconvenience and look forward to working with you again.<br /><br />" : ""}With Regards,<br />
+             <strong>${escapeHtml(d.senderName)}</strong><br />
+             ${escapeHtml(d.companyName)}${d.companyPhone ? `<br />Phone: ${escapeHtml(d.companyPhone)}` : ""}
+           </td>
+         </tr>`;
+
+  return emailShell({
+    title: hotelPaymentEmailSubject(d),
+    preheader: escapeHtml(
+      `${d.guestName} · ${d.checkIn ?? ""}${d.cancelReason ? " · Cancelled" : ""}${d.payment ? ` · ${hotelPaymentHeading(d)} ${inr(d.payment.amount)}` : ""}`,
+    ),
+    contentHtml: content,
+    footerNote: `Sent by ${escapeHtml(d.companyName)} reservations.`,
+  });
 }

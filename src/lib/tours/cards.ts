@@ -1,6 +1,6 @@
 import { formatINR } from "@/lib/accents";
 import { KASHMIR_SITE_REGIONS } from "@/lib/tours/regions";
-import { publishedPackageOptions } from "@/lib/tours/content";
+import { packagePartySize, publishedPackageOptions } from "@/lib/tours/content";
 import type { TourPackageOption } from "@/types/tours";
 
 // Shared bits of the <TourCard /> `tour` prop that differ for package-option
@@ -19,7 +19,7 @@ export function tourCardPricing(t: {
   priceFrom: number;
   priceWas: number | null;
   minPersons?: number;
-  /** A single package option's exact 2-person price (package cards). */
+  /** A single package option's exact price for packagePartySize(minPersons) persons (package cards). */
   priceForTwo?: number | null;
   /** Required on purpose: a query that forgets to select it fails to compile
    *  instead of quietly showing a hidden price. */
@@ -29,7 +29,10 @@ export function tourCardPricing(t: {
     return { p: REQUEST_QUOTE_LABEL, priceHidden: true as const };
   }
   if (t.priceForTwo) {
-    return { p: formatINR(t.priceForTwo), priceSuffix: "/ 2 persons" };
+    return {
+      p: formatINR(t.priceForTwo),
+      priceSuffix: `/ ${packagePartySize(t.minPersons)} persons`,
+    };
   }
   return {
     p: formatINR(t.priceFrom),
@@ -100,7 +103,13 @@ const NO_MEALS = /^\s*no\b/i;
 
 /** Card fields that differ for one package option of a tour. */
 export function packageOptionCard(
-  tour: { title: string; slug: string; coverImage: string | null; region: string },
+  tour: {
+    title: string;
+    slug: string;
+    coverImage: string | null;
+    region: string;
+    minPersons?: number | null;
+  },
   option: TourPackageOption,
 ) {
   const base = tourCardInclusions(tour.region) ?? {
@@ -117,7 +126,7 @@ export function packageOptionCard(
     places: `${option.hotel} · ${option.meals}`,
     detailHref: `/tours/${tour.slug}?package=${encodeURIComponent(option.id)}`,
     // Per-person, the same basis as every other tour in price filters/sorts.
-    priceFrom: option.priceForTwo / 2,
+    priceFrom: option.priceForTwo / packagePartySize(tour.minPersons),
     priceForTwo: option.priceForTwo,
     inclusions: { ...base, meals: !NO_MEALS.test(option.meals) },
   };

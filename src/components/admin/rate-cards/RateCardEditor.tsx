@@ -13,6 +13,8 @@ import {
   type RateCardData,
   type RateCardMeta,
   type RateCardTier,
+  withCalculatedPrices,
+  formatInr,
 } from "@/lib/rateCards/schema";
 import { getActivationBlockers, getRateCardWarnings } from "@/lib/rateCards/checks";
 import {
@@ -67,6 +69,7 @@ function newTier(existing: RateCardTier[]): RateCardTier {
     hotels: [],
     packages: { b2b: { ...zero }, customer: { ...zero } },
     cost: { ...zero },
+    stay: [],
   };
 }
 
@@ -80,8 +83,12 @@ export function RateCardEditor(props: RateCardEditorProps) {
   const [confirm, setConfirm] = useState<"activate" | { deleteTier: number } | null>(null);
 
   const initialJson = useMemo(() => JSON.stringify({ meta: props.meta, data: cleanForSave(props.data) }), [props.meta, props.data]);
-  const dirty = JSON.stringify({ meta, data: cleanForSave(data) }) !== initialJson;
-  const warnings = useMemo(() => getRateCardWarnings(data), [data]);
+  // Prices are calculated from cost (cost + profit + GST); this is what is
+  // checked and saved. Dirty compares against the stored card, so a card whose
+  // stored prices differ from the calculation shows as needing a save.
+  const calculated = useMemo(() => withCalculatedPrices(data), [data]);
+  const dirty = JSON.stringify({ meta, data: cleanForSave(calculated) }) !== initialJson;
+  const warnings = useMemo(() => getRateCardWarnings(calculated), [calculated]);
   const blockers = useMemo(() => getActivationBlockers(cleanForSave(data)), [data]);
   const locations = useMemo(
     () => [...new Set([...DEFAULT_LOCATIONS, ...data.tiers.flatMap((t) => t.hotels.map((h) => h.location))])].filter(Boolean),
@@ -107,7 +114,7 @@ export function RateCardEditor(props: RateCardEditorProps) {
         body: JSON.stringify({
           version: props.version,
           meta: { ...meta, notes: meta.notes?.trim() ? meta.notes : null },
-          data: cleanForSave(data),
+          data: cleanForSave(calculated),
           changeNote: changeNote.trim() || null,
         }),
       });
@@ -332,29 +339,60 @@ export function RateCardEditor(props: RateCardEditorProps) {
         </div>
         <div className="rounded-xl border border-dashed border-border p-3">
           <p className="text-xs font-bold text-foreground">
-            Minimum profit &amp; GST{" "}
+            Profit &amp; GST{" "}
             <span className="ml-1 font-medium text-muted-foreground">internal — never shown to sales</span>
           </p>
           <div className="mt-2 grid max-w-xl gap-3 sm:grid-cols-3">
             <div>
-              <label className={labelCls}>B2B, per package</label>
+              <label className={labelCls}>B2B profit, added per package</label>
               <AmountInput
                 value={data.minProfit.b2b}
                 onChange={(v) => setData((d) => ({ ...d, minProfit: { ...d.minProfit, b2b: v ?? 0 } }))}
               />
             </div>
             <div>
-              <label className={labelCls}>Customer, per package</label>
+              <label className={labelCls}>Customer profit, added per package</label>
               <AmountInput
                 value={data.minProfit.customer}
                 onChange={(v) => setData((d) => ({ ...d, minProfit: { ...d.minProfit, customer: v ?? 0 } }))}
               />
             </div>
             <div>
-              <label className={labelCls}>GST % (in B2B &amp; customer prices)</label>
+              <label className={labelCls}>GST % (added on cost + profit)</label>
               <AmountInput
                 value={data.gstPercent}
                 onChange={(v) => setData((d) => ({ ...d, gstPercent: Math.min(v ?? 0, 28) }))}
+              />
+            </div>
+          </div>
+          <p className="mt-4 text-xs font-bold text-foreground">Cost build-up (used by tiers with a night split)</p>
+          <div className="mt-2 grid max-w-xl gap-3 sm:grid-cols-3">
+            <div>
+              <label className={labelCls}>Package cab ({data.basis.days} days)</label>
+              <select
+                value={data.costBuild.vehicle}
+                onChange={(e) => setData((d) => ({ ...d, costBuild: { ...d.costBuild, vehicle: e.target.value } }))}
+                className="h-9 w-full rounded-lg border border-border bg-background px-2 text-sm"
+              >
+                {data.vehicles.map((v) => (
+                  <option key={v.name} value={v.name}>
+                    {v.name} — {formatInr(v.price)}/day = {formatInr(v.price * data.basis.days)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Activities cost ({data.basis.pax} pax)</label>
+              <AmountInput
+                value={data.costBuild.activities}
+                onChange={(v) => setData((d) => ({ ...d, costBuild: { ...d.costBuild, activities: v ?? 0 } }))}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Union cab cost</label>
+              <AmountInput
+                value={data.costBuild.unionCab}
+                onChange={(v) => setData((d) => ({ ...d, costBuild: { ...d.costBuild, unionCab: v ?? 0 } }))}
               />
             </div>
           </div>
@@ -371,6 +409,7 @@ export function RateCardEditor(props: RateCardEditorProps) {
               count={data.tiers.length}
               minProfit={data.minProfit}
               gstPercent={data.gstPercent}
+              card={data}
               warningCount={warnings.filter((w) => w.tierKey === tier.key).length}
               open={openTier === tier.key}
               onToggle={() => setOpenTier((k) => (k === tier.key ? null : tier.key))}

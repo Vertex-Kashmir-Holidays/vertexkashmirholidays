@@ -49,6 +49,12 @@ const MODULE_PATH_ALIASES: Record<string, ModuleKey> = {
   // Occasion Offers are tour merchandising, managed under the Packages
   // permission like Tour Collections — see src/app/api/occasion-offers.
   "/admin/offers": "packages",
+  // Same module as each page's own guard and its sidebar permKey: Upcoming
+  // Trips (+ Hotel stays) is a view over bookings, the Destinations Library
+  // feeds itineraries, B2B Communication emails agents.
+  "/admin/trips": "bookings",
+  "/admin/day-plans": "itinerary",
+  "/admin/b2b-communications": "b2bAgents",
 };
 
 /**

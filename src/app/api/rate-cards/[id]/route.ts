@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { parseJsonBody } from "@/lib/api/route-helpers";
-import { rateCardDataSchema, rateCardMetaSchema } from "@/lib/rateCards/schema";
+import { rateCardDataSchema, rateCardMetaSchema, withCalculatedPrices } from "@/lib/rateCards/schema";
 import { getActivationBlockers } from "@/lib/rateCards/checks";
 import {
   RateCardConflictError,
@@ -38,7 +38,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!body.ok) return body.response;
   const parsed = patchSchema.safeParse(body.data);
   if (!parsed.success) return validationErrorResponse(parsed.error);
-  const { version, meta, data, changeNote } = parsed.data;
+  const { version, meta, changeNote } = parsed.data;
+  // Prices are always calculated from cost on the server — never trusted as sent.
+  const data = withCalculatedPrices(parsed.data.data);
 
   const card = await prisma.rateCard.findUnique({ where: { id }, select: { status: true } });
   if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });

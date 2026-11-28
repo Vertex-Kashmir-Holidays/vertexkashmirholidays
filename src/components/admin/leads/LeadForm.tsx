@@ -98,12 +98,7 @@ interface Props {
   defaultValues?: Partial<FormData>;
   /** Render all fields read-only (locked lead, or a non-assignee admin viewing). */
   readOnly?: boolean;
-  /**
-   * Reassign-only mode: every field is locked EXCEPT "Assign To". Used when an
-   * admin opens an assigned lead they don't own — they may only reassign it.
-   */
-  assignOnly?: boolean;
-  /** Business notice shown above a locked / reassign-only form (title + explanation). */
+  /** Business notice shown above a locked form (title + explanation). */
   readOnlyNotice?: { title: string; body: string };
 }
 
@@ -121,13 +116,12 @@ export function LeadForm({
   leadId,
   defaultValues,
   readOnly = false,
-  assignOnly = false,
   readOnlyNotice,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!leadId;
-  const lockOthers = readOnly || assignOnly;
+  const lockOthers = readOnly;
 
   const {
     register,
@@ -292,9 +286,22 @@ export function LeadForm({
         });
 
         if (!res.ok) {
-          const j = (await res.json()) as { error?: string | { formErrors?: string[] } };
+          const j = (await res.json()) as {
+            error?: string | { formErrors?: string[] };
+            existingLeadId?: string;
+          };
           const msg = typeof j.error === "string" ? j.error : "Save failed.";
-          toast.error(msg);
+          // Duplicate customer — offer the open lead instead.
+          const existingId = j.existingLeadId;
+          toast.error(
+            msg,
+            existingId
+              ? {
+                  duration: 10000,
+                  action: { label: "Open lead", onClick: () => router.push(`/admin/leads/${existingId}`) },
+                }
+              : undefined,
+          );
           return;
         }
 
@@ -310,26 +317,11 @@ export function LeadForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Full-width notice banner */}
-      {(readOnly || assignOnly) && (
-        <div
-          className={cn(
-            "flex items-start gap-2 rounded-2xl border px-4 py-3",
-            assignOnly ? "border-primary/30 bg-primary/10" : "border-amber-500/30 bg-amber-500/10",
-          )}
-        >
-          <Lock
-            className={cn(
-              "w-4 h-4 shrink-0 mt-0.5",
-              assignOnly ? "text-primary" : "text-amber-600 dark:text-amber-400",
-            )}
-          />
+      {readOnly && (
+        <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
           <div className="text-xs">
-            <p
-              className={cn(
-                "font-semibold",
-                assignOnly ? "text-primary" : "text-amber-700 dark:text-amber-300",
-              )}
-            >
+            <p className="font-semibold text-amber-700 dark:text-amber-300">
               {readOnlyNotice?.title ?? "This lead is read-only"}
             </p>
             <p className="text-muted-foreground mt-0.5">

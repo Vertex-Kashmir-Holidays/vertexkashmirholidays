@@ -17,13 +17,17 @@ import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { computeBookingFinance, isBookingCompleted, PAYMENT_STATUS_LABELS } from "@/lib/bookings/finance";
 import { customerBookingWhere } from "@/lib/account/bookingScope";
+import { driversSelect } from "@/lib/bookings/driver";
 import {
   groupServiceTables,
   parseInclusions,
+  SHOW_SUMMARY_NOTE,
+  GST_INCLUDED_NOTE,
   type ServiceKind,
 } from "@/lib/bookings/serviceDisplay";
 import { ItineraryDownloadButton } from "@/components/account/ItineraryDownloadButton";
 import { B2bItineraryDownloadButton } from "@/components/account/B2bItineraryDownloadButton";
+import { ManualItineraryLink } from "@/components/account/ManualItineraryLink";
 
 export const metadata: Metadata = { title: "Booking Details" };
 export const dynamic = "force-dynamic";
@@ -74,13 +78,17 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       tour: { select: { title: true } },
       services: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       payments: { orderBy: { createdAt: "asc" } },
-      itinerary: { select: { title: true, status: true, updatedAt: true } },
+      drivers: driversSelect,
+      itinerary: { select: { publishedTitle: true, publishedAt: true } },
       leads: {
         take: 1,
         select: {
           id: true,
           b2bAgentId: true,
-          itinerary: { select: { title: true, status: true, updatedAt: true } },
+          itinerary: { select: { publishedTitle: true, publishedAt: true } },
+          // Uploaded PDF only — the staff artifact link is never selected here.
+          manualItineraryUrl: true,
+          manualItineraryName: true,
         },
       },
     },
@@ -88,11 +96,11 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
   if (!booking) notFound();
 
   // Lead-converted bookings have no itinerary of their own — they use the
-  // originating lead's (see business-rules.md → Itinerary Rules). Only a
-  // SENT/CONFIRMED itinerary is shown; a DRAFT is still a staff work-in-progress.
+  // originating lead's (see business-rules.md → Itinerary Rules). Only the
+  // version staff last PUBLISHED is shown — see src/lib/itinerary/publish.ts.
   const originatingLead = booking.leads[0] ?? null;
   const itinerary = booking.itinerary ?? originatingLead?.itinerary ?? null;
-  const itineraryVisible = !!itinerary && itinerary.status !== "DRAFT";
+  const itineraryVisible = !!itinerary?.publishedAt;
   // A B2B-converted booking downloads the agent-branded quotation PDF (see
   // B2bItineraryPdf.tsx), never the normal photo-heavy customer document —
   // this page is shared by both, so the two download paths must diverge here.
@@ -171,26 +179,38 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Trip itinerary */}
-      {itineraryVisible && itinerary && (
+      {/* Trip itinerary — the published one and/or a staff-uploaded PDF */}
+      {((itineraryVisible && itinerary?.publishedAt) || originatingLead?.manualItineraryUrl) && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-display font-bold text-foreground">Your Itinerary</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {itinerary.title} · Updated{" "}
-                {itinerary.updatedAt.toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
+              {itineraryVisible && itinerary?.publishedAt && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {itinerary.publishedTitle} · Updated{" "}
+                  {itinerary.publishedAt.toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </div>
-            {b2bRequestId ? (
-              <B2bItineraryDownloadButton requestId={b2bRequestId} />
-            ) : (
-              <ItineraryDownloadButton bookingId={booking.id} />
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {itineraryVisible &&
+                itinerary?.publishedAt &&
+                (b2bRequestId ? (
+                  <B2bItineraryDownloadButton requestId={b2bRequestId} />
+                ) : (
+                  <ItineraryDownloadButton bookingId={booking.id} />
+                ))}
+              {originatingLead?.manualItineraryUrl && (
+                <ManualItineraryLink
+                  url={originatingLead.manualItineraryUrl}
+                  name={originatingLead.manualItineraryName}
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -267,29 +287,39 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Driver & vehicle — shown once staff assign one */}
-      {booking.driverName && (
+      {/* Driver & vehicle — shown once staff assign one (one block per vehicle) */}
+      {booking.drivers.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <h2 className="flex items-center gap-2 font-display font-bold text-foreground">
-            <Car className="h-4 w-4 text-primary" /> Your Driver &amp; Vehicle
+            <Car className="h-4 w-4 text-primary" /> Your{" "}
+            {booking.drivers.length > 1 ? "Drivers & Vehicles" : "Driver & Vehicle"}
           </h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {[
-              { label: "Driver", value: booking.driverName },
-              { label: "Driver Phone", value: booking.driverPhone },
-              { label: "Vehicle", value: booking.vehicleName },
-              { label: "Vehicle Number", value: booking.vehicleNumber },
-            ].map((f) => (
-              <div key={f.label} className="rounded-xl border border-border bg-muted/30 p-3">
-                <p className="text-[12px] uppercase tracking-wide text-muted-foreground">
-                  {f.label}
+          {booking.drivers.map((d, i) => (
+            <div key={i} className="mt-4">
+              {booking.drivers.length > 1 && (
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-primary">
+                  Vehicle {i + 1}
                 </p>
-                <p className="mt-0.5 text-sm font-semibold text-foreground break-words">
-                  {f.value || "—"}
-                </p>
+              )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { label: "Driver", value: d.driverName },
+                  { label: "Driver Phone", value: d.driverPhone },
+                  { label: "Vehicle", value: d.vehicleName },
+                  { label: "Vehicle Number", value: d.vehicleNumber },
+                ].map((f) => (
+                  <div key={f.label} className="rounded-xl border border-border bg-muted/30 p-3">
+                    <p className="text-[12px] uppercase tracking-wide text-muted-foreground">
+                      {f.label}
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold text-foreground break-words">
+                      {f.value || "—"}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
           <p className="mt-3 text-[12px] text-muted-foreground">
             Your driver will contact you before pickup.
           </p>
@@ -299,8 +329,9 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
       {/* Price summary */}
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display font-bold text-foreground">Price Summary</h2>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">{GST_INCLUDED_NOTE}</p>
         <dl className="mt-4 space-y-2 text-sm">
-          <Row label="Total Booking Amount" value={inr.format(finance.bookingAmount)} />
+          <Row label="Total Booking Amount (incl. GST)" value={inr.format(finance.bookingAmount)} />
           {finance.discountAmount > 0 && (
             <Row label="Discount" value={`– ${inr.format(finance.discountAmount)}`} />
           )}
@@ -325,6 +356,11 @@ export default async function AccountBookingDetailPage({ params }: PageProps) {
             </a>
           )}
         </div>
+        {invoiceAvailable && (
+          <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-[12px] font-semibold text-primary">
+            {SHOW_SUMMARY_NOTE}
+          </p>
+        )}
       </div>
 
       {/* Payment history for this booking */}

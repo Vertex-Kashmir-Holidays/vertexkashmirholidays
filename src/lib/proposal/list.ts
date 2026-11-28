@@ -11,9 +11,16 @@ import {
 const STATUSES: ProposalStatus[] = ["DRAFT", "SENT"];
 
 interface ListOptions {
-  /** Set for non-admins — they only ever see their own proposals. */
-  ownerId?: string;
+  /** Visibility scope — see proposalWhereForUser (admins: all; others: own + assigned). */
+  scope: Prisma.ProposalItineraryWhereInput;
+  /** Title or customer name. */
   search?: string;
+  /** Customer phone — digits only are compared, so spacing/dashes don't matter. */
+  phone?: string;
+  /** Owner user id. */
+  createdBy?: string;
+  /** Assignee user id, or "UNASSIGNED". */
+  assignedTo?: string;
   /** "ALL" (or anything unrecognised) means no status filter. */
   status?: string;
   page: number;
@@ -21,25 +28,39 @@ interface ListOptions {
 }
 
 export async function listProposalSummaries({
-  ownerId,
+  scope,
   search,
+  phone,
+  createdBy,
+  assignedTo,
   status,
   page,
   pageSize,
 }: ListOptions): Promise<{ items: ProposalSummary[]; total: number }> {
   await purgeStaleProposalCopies();
-  const where: Prisma.ProposalItineraryWhereInput = {};
-  if (ownerId) where.ownerId = ownerId;
-  if (status && (STATUSES as string[]).includes(status)) where.status = status as ProposalStatus;
-  // Title, or the customer's name/phone stored in the proposal content —
-  // staff following up often only have the number to hand.
+  const and: Prisma.ProposalItineraryWhereInput[] = [scope];
+  if (status && (STATUSES as string[]).includes(status)) and.push({ status: status as ProposalStatus });
+  if (createdBy) and.push({ ownerId: createdBy });
+  if (assignedTo) and.push({ assignedToId: assignedTo === "UNASSIGNED" ? null : assignedTo });
+  // Title (it carries the name) or the customer name in the proposal content.
   if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { data: { path: ["customerPhone"], string_contains: search } },
-      { data: { path: ["preparedFor"], string_contains: search } },
-    ];
+    and.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { data: { path: ["preparedFor"], string_contains: search } },
+      ],
+    });
   }
+  // Phones are typed every which way ("+91 -98855 12303"), so compare digits
+  // only — the stored phone, or the title (which ends with it).
+  const digits = phone?.replace(/\D/g, "") ?? "";
+  if (digits) {
+    const hits = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "ProposalItinerary"
+      WHERE regexp_replace(coalesce(data->>'customerPhone', '') || ' ' || title, '\\D', '', 'g') LIKE ${`%${digits}%`}`;
+    and.push({ id: { in: hits.map((h) => h.id) } });
+  }
+  const where: Prisma.ProposalItineraryWhereInput = { AND: and };
 
   const [rows, total] = await Promise.all([
     prisma.proposalItinerary.findMany({
@@ -55,6 +76,8 @@ export async function listProposalSummaries({
         createdAt: true,
         updatedAt: true,
         owner: { select: { name: true } },
+        assignedToId: true,
+        assignedTo: { select: { name: true } },
         // Only a few short strings are read from it, but Prisma can't select
         // JSON sub-paths — acceptable at this list's page size.
         data: true,
@@ -71,6 +94,8 @@ export async function listProposalSummaries({
       status: i.status,
       ownerId: i.ownerId,
       ownerName: i.owner?.name ?? null,
+      assignedToId: i.assignedToId,
+      assignedToName: i.assignedTo?.name ?? null,
       ...customerFrom(i.data),
       createdAt: i.createdAt,
       updatedAt: i.updatedAt,
@@ -99,6 +124,28 @@ function customerFrom(data: Prisma.JsonValue): {
     customerPhone: str(d.customerPhone),
     travelDates: str(d.travelDates),
     packageCosts,
+  };
+}
+
+/** People for the Created By / Assigned To filters — only those on proposals this user can see. */
+export async function listProposalPeople(scope: Prisma.ProposalItineraryWhereInput) {
+  const [owners, assignees] = await Promise.all([
+    prisma.proposalItinerary.findMany({
+      where: scope,
+      distinct: ["ownerId"],
+      select: { owner: { select: { id: true, name: true, email: true } } },
+    }),
+    prisma.proposalItinerary.findMany({
+      where: { AND: [scope, { assignedToId: { not: null } }] },
+      distinct: ["assignedToId"],
+      select: { assignedTo: { select: { id: true, name: true, email: true } } },
+    }),
+  ]);
+  const toOption = (u: { id: string; name: string | null; email: string }) => ({ id: u.id, name: u.name ?? u.email });
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+  return {
+    creators: owners.flatMap((o) => (o.owner ? [toOption(o.owner)] : [])).sort(byName),
+    assignees: assignees.flatMap((a) => (a.assignedTo ? [toOption(a.assignedTo)] : [])).sort(byName),
   };
 }
 

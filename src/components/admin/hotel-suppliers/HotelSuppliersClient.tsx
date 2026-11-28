@@ -1,21 +1,14 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Search,
   Plus,
-  Pencil,
-  Trash2,
   Mail,
-  Star,
-  ChevronDown,
-  ChevronUp,
-  Check,
   Download,
-  SlidersHorizontal,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/atoms/badge";
@@ -40,16 +33,22 @@ import {
   getMinMapRate,
   getDeluxeMapRate,
   parseRatingValue,
+  formatHotelRating,
   rateNeedsRefresh,
   type HotelCategoryValue,
   type HotelData,
 } from "@/lib/hotelSuppliers/schema";
 import { buildHotelExportWorkbook } from "@/lib/hotelSuppliers/export";
-import { InlineCell } from "./InlineCell";
-import { NameCell } from "./NameCell";
+import { AdminSearchInput } from "@/components/ui/molecules/admin-search-input";
+import {
+  LIST_FILTER_TRIGGER,
+  LIST_SEARCH_CLASS,
+  ListFilterToggle,
+  ListRefreshButton,
+  ListResultsCount,
+} from "@/components/admin/ui/ListFilterBar";
 import { RequestRatesDialog } from "./RequestRatesDialog";
-import { EditHotelModal } from "./EditHotelModal";
-import { HotelDetailsRow } from "./HotelDetailsRow";
+import { HotelPhotos } from "./HotelPhotos";
 
 export interface HotelSupplierRecord {
   id: string;
@@ -59,7 +58,11 @@ export interface HotelSupplierRecord {
   isActive: boolean;
   recommended: boolean;
   hasFamilyRoom: boolean;
-  bookingsCount: number;
+  /** Auto-derived from booking stays linked to this hotel and marked Confirmed. */
+  confirmedStays: number;
+  roomNights: number;
+  /** "YYYY-MM-DD" of the latest confirmed check-in, or null. */
+  lastStay: string | null;
   lastRateRequestSentAt: string | null;
   data: HotelData;
   createdAt: string;
@@ -69,6 +72,7 @@ export interface HotelSupplierRecord {
   // that's a genuine publish gate; the others are inert until it's true.
   coverImageUrl: string | null;
   roomImageUrl: string | null;
+  roomImage2Url: string | null;
   showOnWebsite: boolean;
   // System-derived (POST /api/hotel-suppliers/[id]/like) — read-only here.
   publicLikeCount: number;
@@ -78,10 +82,12 @@ interface Props {
   initialHotels: HotelSupplierRecord[];
   canCreate: boolean;
   canEdit: boolean;
-  canDelete: boolean;
 }
 
 type TriState = "ALL" | "YES" | "NO";
+
+/** Bookings given to the hotel = booking stays linked to it and marked Confirmed. */
+const totalBookings = (h: HotelSupplierRecord) => h.confirmedStays;
 type SortMode = "category" | "price-asc" | "rating-desc";
 type PageSize = 20 | 50 | 100 | 200 | "ALL";
 
@@ -97,15 +103,45 @@ const CATEGORY_OPTIONS = HOTEL_CATEGORIES.map((c) => ({
   value: c,
   label: HOTEL_CATEGORY_LABELS[c],
 }));
-// Columns before Actions: Select, Sr, Name, Phone, Email, Category,
-// Recommended, Family Room, Rating, MAP (Deluxe), Bookings, Valid Till, Sent — kept as one
+// Columns before Actions: Select, Name, Photo, Email, Category, Family Room,
+// Rating, MAP (Deluxe), Valid Till, Bookings — kept as one
 // constant so the expand-row colSpan can't silently drift from the header
 // count. Location and the full per-room rate table live in the expanded row only.
-const HOTEL_COL_COUNT = 14;
+const HOTEL_COL_COUNT = 11;
 
 // Snaps the price slider's handles to clean values, same convention as the
 // Tours listing filter (see ToursPageClient's PRICE_STEP).
 const HOTEL_PRICE_STEP = 500;
+
+// List view remembered across hotel-page visits (see the restore effect).
+const VIEW_STORAGE_KEY = "hotel-rates:view";
+const SCROLL_STORAGE_KEY = "hotel-rates:scroll";
+interface SavedView {
+  activeTab: string;
+  search: string;
+  categoryFilter: "ALL" | HotelCategoryValue;
+  recommendedFilter: TriState;
+  roomCategoryFilter: "ALL" | RoomCategoryValue;
+  sentFilter: TriState;
+  emailFilter: TriState;
+  bookedFilter: TriState;
+  sortMode: SortMode;
+  pageSize: PageSize;
+}
+function pickView(v: SavedView): SavedView {
+  return {
+    activeTab: v.activeTab,
+    search: v.search,
+    categoryFilter: v.categoryFilter,
+    recommendedFilter: v.recommendedFilter,
+    roomCategoryFilter: v.roomCategoryFilter,
+    sentFilter: v.sentFilter,
+    emailFilter: v.emailFilter,
+    bookedFilter: v.bookedFilter,
+    sortMode: v.sortMode,
+    pageSize: v.pageSize,
+  };
+}
 
 function fmtMoney(n: number | null): string {
   return n == null ? "—" : `₹${n.toLocaleString("en-IN")}`;
@@ -120,9 +156,11 @@ function fmtDate(iso: string | null): string {
   });
 }
 
-export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDelete }: Props) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
+export function HotelSuppliersClient({
+  initialHotels,
+  canCreate,
+  canEdit,
+}: Props) {
   const [activeTab, setActiveTab] = useState<string>(HOTEL_DESTINATIONS[0]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"ALL" | HotelCategoryValue>("ALL");
@@ -130,11 +168,14 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   const [roomCategoryFilter, setRoomCategoryFilter] = useState<"ALL" | RoomCategoryValue>("ALL");
   const [sentFilter, setSentFilter] = useState<TriState>("ALL");
   const [emailFilter, setEmailFilter] = useState<TriState>("ALL");
+  const [bookedFilter, setBookedFilter] = useState<TriState>("ALL");
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("category");
   // Phones only: the dropdowns + price slider stay folded behind the filter
   // icon. From md up they're always shown and this flag is ignored.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
   // Phones: locations are one swipeable row — keep the chosen one in view.
   const locationTabsRef = useRef<HTMLDivElement>(null);
   const tabsMounted = useRef(false);
@@ -149,9 +190,6 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
   }, [activeTab]);
   const [pageSize, setPageSize] = useState<PageSize>(20);
   const [page, setPage] = useState(1);
-  const [editingHotel, setEditingHotel] = useState<HotelSupplierRecord | null>(null);
-  const [expandedFor, setExpandedFor] = useState<string | null>(null);
-  const [confirmDeleteHotel, setConfirmDeleteHotel] = useState<string | null>(null);
   const [requestRatesFor, setRequestRatesFor] = useState<HotelSupplierRecord | null>(null);
   // Selection persists across tab/filter/page changes so a user can build up
   // a cross-tab export set, same convention as OfflineConversionsClient's bulk-retry selection.
@@ -203,55 +241,6 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
     toast.success(`Exported ${chosen.length} hotel${chosen.length === 1 ? "" : "s"} to Excel.`);
   }
 
-  function patchHotel(id: string, payload: Record<string, unknown>): Promise<boolean> {
-    return new Promise((resolve) => {
-      startTransition(async () => {
-        try {
-          const res = await fetch(`/api/hotel-suppliers/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          if (!res.ok) {
-            if (res.status === 403) {
-              toast.error("You don't have permission to edit hotel rates.");
-            } else {
-              const err = (await res.json().catch(() => null)) as { error?: string } | null;
-              toast.error(typeof err?.error === "string" ? err.error : "Save failed.");
-            }
-            resolve(false);
-            return;
-          }
-          toast.success("Saved.");
-          router.refresh();
-          resolve(true);
-        } catch {
-          toast.error("An error occurred.");
-          resolve(false);
-        }
-      });
-    });
-  }
-
-  function deleteHotel(id: string) {
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/hotel-suppliers/${id}`, { method: "DELETE" });
-        if (res.status === 403) {
-          toast.error("You don't have permission to delete hotel rates.");
-          return;
-        }
-        if (!res.ok) throw new Error();
-        toast.success("Hotel deleted.");
-        router.refresh();
-      } catch {
-        toast.error("Failed to delete hotel.");
-      } finally {
-        setConfirmDeleteHotel(null);
-      }
-    });
-  }
-
   // Price bounds for the slider come from the active destination tab only
   // (not the other filters) — same convention as Tours' priceBounds, so the
   // slider's range doesn't shrink out from under the user as they filter.
@@ -278,7 +267,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
 
   // Badge on the mobile filter icon — sort and page size aren't filters.
   const activeFilterCount =
-    [categoryFilter, recommendedFilter, roomCategoryFilter, sentFilter, emailFilter].filter(
+    [categoryFilter, recommendedFilter, roomCategoryFilter, sentFilter, emailFilter, bookedFilter].filter(
       (f) => f !== "ALL",
     ).length + (priceLo > priceBounds.min || priceHi < priceBounds.max ? 1 : 0);
 
@@ -297,6 +286,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         return false;
       if (emailFilter !== "ALL" && !!h.data.property.email !== (emailFilter === "YES"))
         return false;
+      if (bookedFilter !== "ALL" && totalBookings(h) > 0 !== (bookedFilter === "YES")) return false;
       if (search && !h.hotelName.toLowerCase().includes(search.toLowerCase())) return false;
       const minMap = getMinMapRate(h.data.rate);
       // Once the user has manually narrowed the range, a hotel with no rate
@@ -334,10 +324,12 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
       });
     }
 
-    // Recommended hotels always float to the top regardless of sort mode —
-    // Array.prototype.sort is a stable sort, so ties (same recommended
-    // value) keep the ordering already established above.
-    return sorted.sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
+    // Hotels we have given bookings to float to the top (most booked first),
+    // then recommended ones — Array.prototype.sort is stable, so ties keep the
+    // ordering already established above.
+    return sorted
+      .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0))
+      .sort((a, b) => totalBookings(b) - totalBookings(a));
   }, [
     initialHotels,
     activeTab,
@@ -346,6 +338,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
     roomCategoryFilter,
     sentFilter,
     emailFilter,
+    bookedFilter,
     sortMode,
     search,
     priceLo,
@@ -356,9 +349,74 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
 
   // Filters/sort/page-size changes reshuffle `rows`, so the current page can
   // land past the new last page (or just be stale) — snap back to page 1.
+  // Keyed on the filter values (not `rows`) so restoring a saved view below
+  // can keep its page.
+  const view: SavedView = {
+    activeTab,
+    search,
+    categoryFilter,
+    recommendedFilter,
+    roomCategoryFilter,
+    sentFilter,
+    emailFilter,
+    bookedFilter,
+    sortMode,
+    pageSize,
+  };
+  const viewKey = JSON.stringify(view);
+  const lastViewKey = useRef<string | null>(null);
   useEffect(() => {
-    setPage(1);
-  }, [rows, pageSize]);
+    if (lastViewKey.current !== null && lastViewKey.current !== viewKey) setPage(1);
+    lastViewKey.current = viewKey;
+  }, [viewKey]);
+
+  // Back from a hotel's page lands where the user was: same tab, filters,
+  // page and scroll position (this browser tab only, via sessionStorage).
+  const [restoreScrollTo, setRestoreScrollTo] = useState<number | null>(null);
+  const restored = useRef(false);
+  useEffect(() => {
+    const raw = sessionStorage.getItem(VIEW_STORAGE_KEY);
+    restored.current = true;
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw) as SavedView & { page: number };
+      if (!(HOTEL_DESTINATIONS as readonly string[]).includes(saved.activeTab)) return;
+      lastViewKey.current = JSON.stringify({ ...view, ...pickView(saved) });
+      setActiveTab(saved.activeTab);
+      setSearch(saved.search);
+      setCategoryFilter(saved.categoryFilter);
+      setRecommendedFilter(saved.recommendedFilter);
+      setRoomCategoryFilter(saved.roomCategoryFilter);
+      setSentFilter(saved.sentFilter);
+      setEmailFilter(saved.emailFilter);
+      setBookedFilter(saved.bookedFilter);
+      setSortMode(saved.sortMode);
+      setPageSize(saved.pageSize);
+      setPage(saved.page);
+      setRestoreScrollTo(Number(sessionStorage.getItem(SCROLL_STORAGE_KEY)) || 0);
+    } catch {
+      // Unreadable saved view — start fresh.
+    }
+    // Mount only: restores the saved view once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (restoreScrollTo === null) return;
+    const main = document.querySelector("main");
+    requestAnimationFrame(() => main?.scrollTo({ top: restoreScrollTo }));
+    setRestoreScrollTo(null);
+  }, [restoreScrollTo]);
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    const onScroll = () => sessionStorage.setItem(SCROLL_STORAGE_KEY, String(main.scrollTop));
+    main.addEventListener("scroll", onScroll, { passive: true });
+    return () => main.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (!restored.current) return;
+    sessionStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ ...view, page }));
+  });
 
   const pageStart = pageSize === "ALL" ? 0 : (page - 1) * pageSize;
   const pagedRows = pageSize === "ALL" ? rows : rows.slice(pageStart, pageStart + pageSize);
@@ -437,47 +495,28 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
       </Tabs>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 p-4">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search hotel..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition bg-muted/50"
-            />
-          </div>
+        {/* Filter bar — shared with Leads/Proposals/Bookings (ListFilterBar). */}
+        <div className="flex flex-wrap gap-3 p-4">
+          <AdminSearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search hotel..."
+            className={LIST_SEARCH_CLASS}
+          />
 
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((o) => !o)}
-            aria-expanded={filtersOpen}
-            aria-label={filtersOpen ? "Hide filters" : "Show filters"}
-            className={cn(
-              "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border transition md:hidden",
-              filtersOpen ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground",
-            )}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            {activeFilterCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground ring-2 ring-card">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+          <ListFilterToggle
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((o) => !o)}
+            activeCount={activeFilterCount}
+          />
 
-          <div
-            className={cn(
-              "grid w-full grid-cols-2 gap-2 md:contents",
-              !filtersOpen && "hidden",
-            )}
-          >
+          {/* display:contents keeps the dropdowns in the bar's wrap on md+. */}
+          <div className={cn("contents", !filtersOpen && "max-md:hidden")}>
           <Select
             value={categoryFilter}
             onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}
           >
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -494,7 +533,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             value={recommendedFilter}
             onValueChange={(v) => setRecommendedFilter(v as TriState)}
           >
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Recommended" />
             </SelectTrigger>
             <SelectContent>
@@ -508,7 +547,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             value={roomCategoryFilter}
             onValueChange={(v) => setRoomCategoryFilter(v as "ALL" | RoomCategoryValue)}
           >
-            <SelectTrigger className="w-full md:w-[190px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Room category" />
             </SelectTrigger>
             <SelectContent>
@@ -522,7 +561,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </Select>
 
           <Select value={sentFilter} onValueChange={(v) => setSentFilter(v as TriState)}>
-            <SelectTrigger className="w-full md:w-[160px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Rate request" />
             </SelectTrigger>
             <SelectContent>
@@ -533,7 +572,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </Select>
 
           <Select value={emailFilter} onValueChange={(v) => setEmailFilter(v as TriState)}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Email" />
             </SelectTrigger>
             <SelectContent>
@@ -543,8 +582,19 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             </SelectContent>
           </Select>
 
+          <Select value={bookedFilter} onValueChange={(v) => setBookedFilter(v as TriState)}>
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
+              <SelectValue placeholder="Bookings" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Booked or not</SelectItem>
+              <SelectItem value="YES">Has bookings</SelectItem>
+              <SelectItem value="NO">No bookings</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
-            <SelectTrigger className="w-full md:w-[170px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>
@@ -558,7 +608,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
             value={String(pageSize)}
             onValueChange={(v) => setPageSize(v === "ALL" ? "ALL" : (Number(v) as PageSize))}
           >
-            <SelectTrigger className="w-full md:w-[120px]">
+            <SelectTrigger className={LIST_FILTER_TRIGGER}>
               <SelectValue placeholder="Page size" />
             </SelectTrigger>
             <SelectContent>
@@ -571,9 +621,14 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
           </Select>
           </div>
 
-          <p className="text-xs text-muted-foreground shrink-0 ml-auto">
+          <ListResultsCount>
             {rows.length} hotel{rows.length === 1 ? "" : "s"} in {activeTab}
-          </p>
+          </ListResultsCount>
+
+          <ListRefreshButton
+            onClick={() => startRefresh(() => router.refresh())}
+            refreshing={refreshing}
+          />
         </div>
 
         {priceBounds.max > priceBounds.min && (
@@ -597,7 +652,7 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-cards table-cards-compact table-cards-dashed w-full text-sm">
             <thead>
               <tr className="bg-muted border-t border-b border-border">
                 <th className="px-3 py-3 w-8">
@@ -610,25 +665,22 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                   />
                 </th>
                 {[
-                  "Sr.",
                   "Name",
-                  "Phone",
+                  "Photo",
                   "Email",
                   "Category",
-                  "Rec.",
                   "Family Room",
                   "Rating",
                   "MAP (Deluxe)",
-                  "Bookings",
                   "Valid Till",
-                  "Sent",
+                  "Bookings",
                   "Actions",
                 ].map((h, i) => (
                   <th
                     key={h}
                     className={cn(
                       "text-left px-3 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wide whitespace-nowrap",
-                      i === 1 && "sticky left-0 bg-muted z-10",
+                      i === 0 && "sticky left-0 bg-muted z-10",
                     )}
                   >
                     {h}
@@ -647,34 +699,15 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
                   </td>
                 </tr>
               ) : (
-                pagedRows.map((hotel, idx) => (
-                  <Fragment key={hotel.id}>
-                    <HotelRow
-                      sr={pageStart + idx + 1}
-                      hotel={hotel}
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      selected={selected.has(hotel.id)}
-                      onToggleSelect={() => toggleSelected(hotel.id)}
-                      patchHotel={patchHotel}
-                      confirmDeleteHotel={confirmDeleteHotel}
-                      setConfirmDeleteHotel={setConfirmDeleteHotel}
-                      onDeleteHotel={deleteHotel}
-                      onEditClick={() => setEditingHotel(hotel)}
-                      onRequestRatesClick={() => setRequestRatesFor(hotel)}
-                      expanded={expandedFor === hotel.id}
-                      onToggleExpand={() =>
-                        setExpandedFor(expandedFor === hotel.id ? null : hotel.id)
-                      }
-                    />
-                    {expandedFor === hotel.id && (
-                      <HotelDetailsRow
-                        colSpan={HOTEL_COL_COUNT}
-                        data={hotel.data}
-                        recommended={hotel.recommended}
-                      />
-                    )}
-                  </Fragment>
+                pagedRows.map((hotel) => (
+                  <HotelRow
+                    key={hotel.id}
+                    hotel={hotel}
+                    canEdit={canEdit}
+                    selected={selected.has(hotel.id)}
+                    onToggleSelect={() => toggleSelected(hotel.id)}
+                    onRequestRatesClick={() => setRequestRatesFor(hotel)}
+                  />
                 ))
               )}
             </tbody>
@@ -723,71 +756,37 @@ export function HotelSuppliersClient({ initialHotels, canCreate, canEdit, canDel
         />
       )}
 
-      {editingHotel && (
-        <EditHotelModal
-          hotel={editingHotel}
-          open={!!editingHotel}
-          onOpenChange={(open) => {
-            if (!open) setEditingHotel(null);
-          }}
-          onSave={(payload) => patchHotel(editingHotel.id, payload)}
-        />
-      )}
     </div>
   );
 }
 
 interface HotelRowProps {
-  sr: number;
   hotel: HotelSupplierRecord;
   canEdit: boolean;
-  canDelete: boolean;
   selected: boolean;
   onToggleSelect: () => void;
-  patchHotel: (id: string, payload: Record<string, unknown>) => Promise<boolean>;
-  confirmDeleteHotel: string | null;
-  setConfirmDeleteHotel: (id: string | null) => void;
-  onDeleteHotel: (id: string) => void;
-  onEditClick: () => void;
   onRequestRatesClick: () => void;
-  expanded: boolean;
-  onToggleExpand: () => void;
 }
 
-function HotelRow({
-  sr,
-  hotel,
-  canEdit,
-  canDelete,
-  selected,
-  onToggleSelect,
-  patchHotel,
-  confirmDeleteHotel,
-  setConfirmDeleteHotel,
-  onDeleteHotel,
-  onEditClick,
-  onRequestRatesClick,
-  expanded,
-  onToggleExpand,
-}: HotelRowProps) {
+// Read-only summary row — everything is edited on the hotel's own page
+// (/admin/hotel-suppliers/[id]), which the row (and the View action) opens.
+function HotelRow({ hotel, canEdit, selected, onToggleSelect, onRequestRatesClick }: HotelRowProps) {
+  const router = useRouter();
+  const href = `/admin/hotel-suppliers/${hotel.id}`;
   const needsRateRequest = rateNeedsRefresh(hotel.data.rate);
   const hasEmail = !!hotel.data.property.email;
 
-  function saveProperty(field: keyof HotelData["property"], value: string) {
-    return patchHotel(hotel.id, {
-      data: { ...hotel.data, property: { ...hotel.data.property, [field]: value || null } },
-    });
-  }
-
   return (
     <tr
-      onClick={onToggleExpand}
+      // Recommended hotels are tinted green (the row colour replaces a column).
+      data-highlight={hotel.recommended || undefined}
+      onClick={() => router.push(href)}
       className={cn(
         "cursor-pointer hover:bg-muted/50 transition-colors",
         hotel.recommended && "bg-emerald-500/[0.06] hover:bg-emerald-500/10",
       )}
     >
-      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+      <td data-mobile-hidden className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           className="cbx"
@@ -796,178 +795,106 @@ function HotelRow({
           aria-label={`Select ${hotel.hotelName}`}
         />
       </td>
-      <td className="px-3 py-2.5 text-xs text-muted-foreground">{sr}</td>
       <td
+        data-span="full"
         className={cn(
-          "sticky left-0 bg-card",
+          "sticky left-0 bg-card px-3 py-2.5 font-semibold text-foreground max-md:static max-md:bg-transparent",
           hotel.recommended && "bg-emerald-50 dark:bg-emerald-950/40",
         )}
-        onClick={(e) => e.stopPropagation()}
       >
-        <NameCell
-          canEdit={canEdit}
+        <Link href={href} onClick={(e) => e.stopPropagation()} className="hover:text-primary">
+          {hotel.hotelName}
+        </Link>
+      </td>
+      <td data-media className="px-3 py-1.5">
+        <HotelPhotos
+          variant="thumb"
           hotelName={hotel.hotelName}
-          mapUrl={hotel.data.property.mapUrl}
-          onSave={({ hotelName, mapUrl }) =>
-            patchHotel(hotel.id, {
-              hotelName,
-              data: { ...hotel.data, property: { ...hotel.data.property, mapUrl: mapUrl || null } },
-            })
-          }
-          className="font-semibold text-foreground"
+          coverImageUrl={hotel.coverImageUrl}
+          roomImageUrl={hotel.roomImageUrl}
+          roomImage2Url={hotel.roomImage2Url}
         />
       </td>
-      <td onClick={(e) => e.stopPropagation()}>
-        <InlineCell
-          canEdit={canEdit}
-          value={hotel.data.property.phone ?? ""}
-          onSave={(v) => saveProperty("phone", v)}
-          className="min-w-[130px] whitespace-nowrap"
-        />
+      <td data-wide className="px-3 py-2.5 text-muted-foreground max-md:text-foreground">
+        {/* Phones: the select box sits beside the email (its own column is hidden). */}
+        <div className="flex items-center gap-2.5">
+          <input
+            type="checkbox"
+            className="cbx md:hidden"
+            checked={selected}
+            onChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select ${hotel.hotelName}`}
+          />
+          <span className="min-w-0 max-md:break-all">{hotel.data.property.email || "—"}</span>
+        </div>
       </td>
-      <td onClick={(e) => e.stopPropagation()}>
-        <InlineCell
-          canEdit={canEdit}
-          value={hotel.data.property.email ?? ""}
-          onSave={(v) => saveProperty("email", v)}
-          className="min-w-[160px]"
-        />
+      <td data-label="Category" className="px-3 py-2.5" title="Auto-set from the cheapest room's MAP rate">
+        <Badge className="max-md:bg-transparent max-md:p-0 max-md:text-foreground">{HOTEL_CATEGORY_LABELS[hotel.category]}</Badge>
       </td>
-      <td className="px-3 py-2.5" title="Auto-set from the cheapest room's MAP rate">
-        <Badge>{HOTEL_CATEGORY_LABELS[hotel.category]}</Badge>
-      </td>
-      <td className="px-3 py-2.5">
-        {hotel.recommended ? (
-          <Star className="w-4 h-4 text-amber-400" fill="currentColor" strokeWidth={0} />
-        ) : (
-          <span className="text-muted-foreground/40">—</span>
-        )}
-      </td>
-      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          disabled={!canEdit}
-          onClick={() => patchHotel(hotel.id, { hasFamilyRoom: !hotel.hasFamilyRoom })}
-          title={canEdit ? "Click to toggle" : undefined}
+      <td data-label="Family Room" className="px-3 py-2.5">
+        <span
           className={cn(
-            "rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap",
+            "rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap max-md:p-0 max-md:text-[12px]",
+            "max-md:bg-transparent",
             hotel.hasFamilyRoom
               ? "bg-sky-500/10 text-sky-700 dark:text-sky-300"
-              : "bg-muted text-muted-foreground",
-            canEdit ? "cursor-pointer hover:ring-1 hover:ring-border" : "cursor-default",
+              : "bg-muted text-muted-foreground max-md:text-foreground",
           )}
         >
           {hotel.hasFamilyRoom ? "Yes" : "No"}
-        </button>
+        </span>
       </td>
-      <td onClick={(e) => e.stopPropagation()}>
-        <InlineCell
-          canEdit={canEdit}
-          value={hotel.data.rating ?? ""}
-          onSave={(v) => patchHotel(hotel.id, { data: { ...hotel.data, rating: v || null } })}
-          className="min-w-[130px]"
-        />
-      </td>
+      <td data-label="Rating" className="px-3 py-2.5 whitespace-nowrap">{formatHotelRating(hotel.data.rating) || "—"}</td>
       <td
-        className="px-3 py-2.5 text-right whitespace-nowrap"
+        data-label="MAP (Deluxe)"
+        className="px-3 py-2.5 text-right whitespace-nowrap max-md:text-left"
         title="MAP rate for the Deluxe room type"
       >
         {fmtMoney(getDeluxeMapRate(hotel.data.rate))}
       </td>
-      <td onClick={(e) => e.stopPropagation()} title="Manual tally — double-click to edit">
-        <InlineCell
-          canEdit={canEdit}
-          type="number"
-          align="right"
-          value={String(hotel.bookingsCount)}
-          onSave={(v) => patchHotel(hotel.id, { bookingsCount: Number(v) || 0 })}
-          className="min-w-[70px]"
-        />
-      </td>
-      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+      <td data-label="Valid Till" className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-md:text-foreground">
         {fmtDate(hotel.data.rate?.validTo ?? null)}
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        {hotel.lastRateRequestSentAt ? (
-          <span className="flex items-center gap-1 text-[12px] text-emerald-600 dark:text-emerald-400">
-            <Check className="w-3.5 h-3.5" /> {fmtDate(hotel.lastRateRequestSentAt)}
+      <td data-label="Bookings" className="px-3 py-2.5 whitespace-nowrap">
+        {totalBookings(hotel) > 0 ? (
+          <span
+            className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400"
+            title={`${hotel.roomNights} room nights · last stay ${fmtDate(hotel.lastStay)}`}
+          >
+            {totalBookings(hotel)}
           </span>
         ) : (
-          <span className="text-[12px] text-muted-foreground/50">Not sent</span>
+          <span className="text-[12px] text-muted-foreground/50">—</span>
         )}
       </td>
-      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-        {!canEdit && !canDelete ? (
-          <span className="text-[11px] text-muted-foreground italic">View only</span>
-        ) : (
-          <div className="grid grid-cols-2 gap-1.5">
+      <td data-actions className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5">
+          {canEdit && (
             <button
               type="button"
-              onClick={onToggleExpand}
-              title={expanded ? "Hide details" : "View more"}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              onClick={onRequestRatesClick}
+              disabled={!needsRateRequest || !hasEmail}
+              title={
+                !hasEmail
+                  ? "No email on file for this hotel"
+                  : needsRateRequest
+                    ? "Send a B2B rate request email"
+                    : "MAP rate is current — no request needed"
+              }
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none disabled:text-muted-foreground"
             >
-              {expanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
+              <Mail className="w-3.5 h-3.5" />
             </button>
-            {canEdit && (
-              <button
-                type="button"
-                onClick={onEditClick}
-                title="Edit hotel"
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {canEdit && (
-              <button
-                type="button"
-                onClick={onRequestRatesClick}
-                disabled={!needsRateRequest || !hasEmail}
-                title={
-                  !hasEmail
-                    ? "No email on file for this hotel"
-                    : needsRateRequest
-                      ? "Send a B2B rate request email"
-                      : "MAP rate is current — no request needed"
-                }
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:pointer-events-none disabled:text-muted-foreground"
-              >
-                <Mail className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {canDelete &&
-              (confirmDeleteHotel === hotel.id ? (
-                <div className="col-span-2 flex items-center gap-1">
-                  <button
-                    onClick={() => onDeleteHotel(hotel.id)}
-                    className="text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-lg"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => setConfirmDeleteHotel(null)}
-                    className="text-[11px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteHotel(hotel.id)}
-                  title="Delete hotel"
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              ))}
-          </div>
-        )}
+          )}
+          <Link
+            href={href}
+            title="View, edit or delete this hotel"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </td>
     </tr>
   );

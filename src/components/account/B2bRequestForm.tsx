@@ -82,7 +82,11 @@ export function B2bRequestForm({ mode, requestId, initial, onSuccess }: Props) {
       setError("Please enter a valid guest phone number.");
       return;
     }
-    if (form.budget && Number(form.budget) < MIN_BUDGET) {
+    if (!form.budget) {
+      setError("Please enter the expected budget.");
+      return;
+    }
+    if (Number(form.budget) < MIN_BUDGET) {
       setError(`Minimum budget is ₹${MIN_BUDGET.toLocaleString("en-IN")}.`);
       return;
     }
@@ -226,11 +230,12 @@ export function B2bRequestForm({ mode, requestId, initial, onSuccess }: Props) {
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground" htmlFor="rf-budget">
-                Budget (₹, min 20,000)
+                Expected Budget (₹, min 20,000) <span className="text-rose-500">*</span>
               </label>
               <input
                 id="rf-budget"
                 type="number"
+                required
                 min={MIN_BUDGET}
                 step={1000}
                 className={inputClass}

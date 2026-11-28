@@ -20,7 +20,9 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { ItineraryData, ItineraryStatus } from "@/types/itinerary";
 import { PdfIcon } from "./ItineraryPdf";
-import { formatStayDate } from "@/lib/itinerary/stayDate";
+import { formatDayDate, formatStayDate } from "@/lib/itinerary/stayDate";
+import { withVehicleCount } from "@/lib/vehicleCount";
+import { parseHotelChoices } from "@/lib/proposal/hotelChoices";
 
 export interface B2bAgentInfo {
   agencyName: string | null;
@@ -193,10 +195,43 @@ const s = StyleSheet.create({
   tRow: { flexDirection: "row", borderTopWidth: 1, borderTopColor: BORDER_LIGHT },
   tRowAlt: { backgroundColor: BG_SUBTLE },
   tCell: { fontSize: 9, color: BODY, lineHeight: 1.45, paddingVertical: 9, paddingHorizontal: 9 },
+  // Stay Plan, as in the proposal: each stay's details row, then its hotel
+  // choices side by side (Hotel 1 | Hotel 2 | Hotel 3 | or similar). A
+  // stronger rule separates stays; a hairline keeps the hotels row with its stay.
+  stayBlock: { borderTopWidth: 1.5, borderTopColor: BORDER },
+  stayHotelsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderTopWidth: 0.5,
+    borderTopColor: BORDER_LIGHT,
+    paddingTop: 6,
+    paddingBottom: 9,
+    paddingHorizontal: 9,
+  },
+  stayHotelsLabel: { width: 72, flexShrink: 0, fontSize: 7, color: MUTED, letterSpacing: 0.8 },
+  stayHotelsList: { flex: 1, flexDirection: "row", alignItems: "stretch" },
+  stayHotelPill: {
+    flex: 1,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 6,
+    backgroundColor: WHITE,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    marginRight: 6,
+  },
+  stayHotelPillText: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: GREEN },
+  stayHotelSimilar: { fontSize: 8.5, color: MUTED, fontStyle: "italic" },
   tCellStrong: { fontSize: 9.3, color: INK, fontFamily: "Helvetica-Bold", lineHeight: 1.4 },
-  dayNum: { fontSize: 13, fontFamily: "Helvetica-Bold", color: GOLD },
-  dayDate: { fontSize: 7.5, color: BODY, marginTop: 2 },
-  dayBody: { fontSize: 8.7, color: BODY, lineHeight: 1.45, marginTop: 2 },
+  dayBlock: { borderTopWidth: 1, borderTopColor: BORDER },
+  dayStrip: { flexDirection: "row", backgroundColor: BG_SUBTLE, borderBottomWidth: 1, borderBottomColor: BORDER_LIGHT },
+  dayStripCell: { fontSize: 9, color: BODY, paddingVertical: 6, paddingHorizontal: 9 },
+  dayStripStrong: { fontFamily: "Helvetica-Bold", color: INK },
+  dayPlan: { paddingVertical: 8, paddingHorizontal: 9 },
+  dayNum: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: GOLD },
+  dayDate: { fontSize: 9, color: BODY },
+  dayBody: { fontSize: 8.7, color: BODY, lineHeight: 1.45, marginTop: 3 },
   tableNote: { fontSize: 8, color: MUTED, marginTop: 7, lineHeight: 1.5, fontStyle: "italic" },
 
   // ── Activities ───────────────────────────────────────────────────────────
@@ -487,7 +522,6 @@ export function B2bItineraryPdf({
   const confirmed = status === "CONFIRMED";
   const hasTransport = !!(data.transportType || data.transportDesc);
   const stayDates = data.hotels.some((h) => h.checkIn || h.checkOut);
-  const dayDates = data.days.some((d) => d.dateLabel);
   const contactLine = [agent?.phone, agent?.email].filter(Boolean).join("   ·   ");
 
   return (
@@ -573,32 +607,36 @@ export function B2bItineraryPdf({
               <SectionHead title="Your Journey, Day by Day" tag={data.duration} />
               <View style={s.table}>
                 <View style={s.tHeadRow} wrap={false}>
-                  <Text style={[s.tHeadCell, { width: dayDates ? 60 : 44 }]}>DAY</Text>
-                  <Text style={[s.tHeadCell, { flex: 1 }]}>PLAN</Text>
-                  <Text style={[s.tHeadCell, { width: 96 }]}>NIGHT STAY</Text>
-                  <Text style={[s.tHeadCell, { width: 96 }]}>MEALS</Text>
+                  <Text style={[s.tHeadCell, { flex: 1 }]}>DAY</Text>
+                  <Text style={[s.tHeadCell, { width: 150 }]}>NIGHT STAY</Text>
+                  <Text style={[s.tHeadCell, { width: 150 }]}>MEALS</Text>
                 </View>
                 {data.days.map((day, i) => {
                   const stay = day.meta.find((m) => m.label.trim().toLowerCase() === "stay");
                   const meals = day.meta.find((m) => m.label.trim().toLowerCase() === "meals");
                   return (
-                    <View key={day.id} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]} wrap={false}>
-                      <View style={[s.tCell, { width: dayDates ? 60 : 44 }]}>
-                        <Text style={s.dayNum}>{String(i + 1).padStart(2, "0")}</Text>
-                        {day.dateLabel ? (
-                          <Text style={s.dayDate}>
-                            {formatStayDate(day.dateLabel, { year: false })}
-                          </Text>
-                        ) : null}
+                    <View key={day.id} style={i > 0 ? s.dayBlock : {}} wrap={false}>
+                      {/* Row 1: day/date | night stay | meals */}
+                      <View style={s.dayStrip}>
+                        <View style={[s.dayStripCell, { flex: 1, flexDirection: "row", alignItems: "baseline" }]}>
+                          <Text style={s.dayNum}>Day {String(i + 1).padStart(2, "0")}</Text>
+                          {day.dateLabel ? (
+                            <Text style={s.dayDate}>
+                              {"  ·  "}
+                              {formatDayDate(day.dateLabel)}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text style={[s.dayStripCell, s.dayStripStrong, { width: 150 }]}>
+                          {stay?.value || "—"}
+                        </Text>
+                        <Text style={[s.dayStripCell, { width: 150 }]}>{meals?.value || "—"}</Text>
                       </View>
-                      <View style={[s.tCell, { flex: 1 }]}>
+                      {/* Row 2: plan, full width */}
+                      <View style={s.dayPlan}>
                         <Text style={s.tCellStrong}>{day.title}</Text>
                         {day.body ? <Text style={s.dayBody}>{day.body}</Text> : null}
                       </View>
-                      <Text style={[s.tCell, { width: 96, fontFamily: "Helvetica-Bold", color: INK }]}>
-                        {stay?.value || "—"}
-                      </Text>
-                      <Text style={[s.tCell, { width: 96 }]}>{meals?.value || "—"}</Text>
                     </View>
                   );
                 })}
@@ -607,42 +645,60 @@ export function B2bItineraryPdf({
           )}
 
           {data.hotels.length > 0 && (
-            <View>
+            // Up to 5 stays fit one page — keep the heading with its table.
+            <View wrap={data.hotels.length > 5}>
               <SectionHead title="Where You'll Stay" tag="Stay plan" />
               <View style={s.table}>
-                {/* Check-in / Check-out columns appear once any hotel has a
-                    date; Destination and Room Type narrow to make room. */}
-                <View style={s.tHeadRow}>
-                  <Text style={[s.tHeadCell, { width: stayDates ? 84 : 104 }]}>DESTINATION</Text>
-                  <Text style={[s.tHeadCell, { width: 52 }]}>NIGHTS</Text>
-                  {stayDates && <Text style={[s.tHeadCell, { width: 72 }]}>CHECK-IN</Text>}
-                  {stayDates && <Text style={[s.tHeadCell, { width: 72 }]}>CHECK-OUT</Text>}
-                  <Text style={[s.tHeadCell, { flex: 1 }]}>HOTEL</Text>
-                  <Text style={[s.tHeadCell, { width: stayDates ? 76 : 88 }]}>ROOM TYPE</Text>
-                  <Text style={[s.tHeadCell, { width: 50 }]}>ROOMS</Text>
-                </View>
-                {data.hotels.map((h, i) => (
-                  <View key={h.id} style={[s.tRow, i % 2 === 1 ? s.tRowAlt : {}]} wrap={false}>
-                    <Text
-                      style={[
-                        s.tCell,
-                        { width: stayDates ? 84 : 104, fontFamily: "Helvetica-Bold", color: INK },
-                      ]}
-                    >
-                      {h.destination}
-                    </Text>
-                    <Text style={[s.tCell, { width: 52 }]}>{h.nights}</Text>
-                    {stayDates && (
-                      <Text style={[s.tCell, { width: 72 }]}>{formatStayDate(h.checkIn) || "—"}</Text>
-                    )}
-                    {stayDates && (
-                      <Text style={[s.tCell, { width: 72 }]}>{formatStayDate(h.checkOut) || "—"}</Text>
-                    )}
-                    <Text style={[s.tCell, { flex: 1 }]}>{h.hotelDetails}</Text>
-                    <Text style={[s.tCell, { width: stayDates ? 76 : 88 }]}>{h.roomType}</Text>
-                    <Text style={[s.tCell, { width: 50 }]}>{h.rooms}</Text>
-                  </View>
-                ))}
+                {/* Check-in / Check-out columns appear once any hotel has a date. */}
+                {data.hotels.map((h, i) => {
+                  const { choices, similar } = parseHotelChoices(h.hotelDetails);
+                  return (
+                    // The header rides with the first stay so it never sits alone at a page end.
+                    <View key={h.id} style={i === 0 ? {} : s.stayBlock} wrap={false}>
+                      {i === 0 && (
+                        <View style={s.tHeadRow}>
+                          <Text style={[s.tHeadCell, { flex: 1.6 }]}>DESTINATION</Text>
+                          <Text style={[s.tHeadCell, { flex: 0.7 }]}>NIGHTS</Text>
+                          {stayDates && <Text style={[s.tHeadCell, { flex: 1 }]}>CHECK-IN</Text>}
+                          {stayDates && <Text style={[s.tHeadCell, { flex: 1 }]}>CHECK-OUT</Text>}
+                          <Text style={[s.tHeadCell, { flex: 1.4 }]}>ROOM TYPE</Text>
+                          <Text style={[s.tHeadCell, { flex: 0.7 }]}>ROOMS</Text>
+                        </View>
+                      )}
+                      <View style={{ flexDirection: "row" }}>
+                        <Text style={[s.tCell, { flex: 1.6, fontFamily: "Helvetica-Bold", color: INK }]}>
+                          {h.destination}
+                        </Text>
+                        <Text style={[s.tCell, { flex: 0.7 }]}>{h.nights}</Text>
+                        {stayDates && (
+                          <Text style={[s.tCell, { flex: 1 }]}>{formatStayDate(h.checkIn) || "—"}</Text>
+                        )}
+                        {stayDates && (
+                          <Text style={[s.tCell, { flex: 1 }]}>{formatStayDate(h.checkOut) || "—"}</Text>
+                        )}
+                        <Text style={[s.tCell, { flex: 1.4 }]}>{h.roomType}</Text>
+                        <Text style={[s.tCell, { flex: 0.7 }]}>{h.rooms}</Text>
+                      </View>
+                      {choices.length > 0 && (
+                        <View style={s.stayHotelsRow}>
+                          <Text style={s.stayHotelsLabel}>{choices.length > 1 ? "HOTEL OPTIONS" : "HOTEL"}</Text>
+                          <View style={s.stayHotelsList}>
+                            {[...choices, ...(similar ? [null] : [])].map((c, j, all) => (
+                              <View
+                                key={`${c ?? "similar"}-${j}`}
+                                style={[s.stayHotelPill, j === all.length - 1 ? { marginRight: 0 } : {}]}
+                              >
+                                <Text style={c === null ? s.stayHotelSimilar : s.stayHotelPillText}>
+                                  {c ?? "or similar"}
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
               </View>
               <Text style={s.tableNote}>
                 Hotels are confirmed at the time of booking. If a listed property is unavailable we
@@ -661,10 +717,20 @@ export function B2bItineraryPdf({
                 </View>
                 <View style={s.tRow}>
                   <Text style={[s.tCell, { width: 150, fontFamily: "Helvetica-Bold", color: INK }]}>
-                    {data.transportType || "—"}
+                    {withVehicleCount(data.transportType, data.transportCount) || "—"}
                   </Text>
                   <Text style={[s.tCell, { flex: 1 }]}>{data.transportDesc || "—"}</Text>
                 </View>
+                {data.extraVehicles
+                  .filter((v) => v.type.trim())
+                  .map((v) => (
+                    <View key={v.id} style={s.tRow}>
+                      <Text style={[s.tCell, { width: 150, fontFamily: "Helvetica-Bold", color: INK }]}>
+                        {withVehicleCount(v.type, v.count)}
+                      </Text>
+                      <Text style={[s.tCell, { flex: 1 }]}>{v.seats || data.transportDesc || "—"}</Text>
+                    </View>
+                  ))}
               </View>
             </View>
           )}

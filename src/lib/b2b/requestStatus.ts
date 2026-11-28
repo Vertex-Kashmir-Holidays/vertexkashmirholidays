@@ -9,7 +9,7 @@ export const B2B_STATUS_LABELS: Record<B2bRequestStatus, string> = {
   NEW: "Pending",
   IN_PROGRESS: "In Progress",
   CONVERTED: "Converted",
-  REJECTED: "Rejected",
+  REJECTED: "Closed",
 };
 
 export const B2B_STATUS_STYLES: Record<B2bRequestStatus, string> = {
@@ -24,4 +24,19 @@ export const B2B_STATUS_STYLES: Record<B2bRequestStatus, string> = {
  *  Convert button and the convert API so the two can't disagree. */
 export function isItinerarySent(status: string | null | undefined): boolean {
   return status === "SENT" || status === "CONFIRMED";
+}
+
+/** Closed (REJECTED) requests an agent may have before their partnership is
+ *  deactivated — counted since the agent was last activated. */
+export const B2B_CLOSE_LIMIT = 3;
+
+/** An agent may delete their own request (e.g. a duplicate) only while it is
+ *  still Pending and untouched — no itinerary yet, not locked. Shared by the
+ *  agent Delete button and DELETE /api/account/b2b/requests/[id]. */
+export function canAgentDeleteB2bRequest(r: {
+  status: string;
+  locked: boolean;
+  hasItinerary: boolean;
+}): boolean {
+  return r.status === "NEW" && !r.locked && !r.hasItinerary;
 }

@@ -7,13 +7,14 @@ import { Car } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/organisms/dialog";
 import type { DriverDueBooking } from "@/lib/bookings/driver";
 
-// Blocking reminder: while any booking the staff member can see starts
-// tomorrow or today without driver details (see driverDueTravelDateRange),
-// every admin page is covered by this modal — no close button, Esc or
-// outside click. The only way past it is the CTA to that booking's Services
-// page (where the Add Driver form opens automatically) — the gate steps
-// aside there so the form can be filled. Re-checked on every navigation, so
-// it clears once the driver is saved.
+// Reminder: while any LOCKED booking the staff member can see starts tomorrow
+// or today without driver details (see driverDueTravelDateRange), admin pages
+// open this modal. Its CTA goes to that booking's Services page (where the Add
+// Driver form opens automatically) — the gate steps aside there. It can be
+// closed; a closed booking stays hidden until the page is reloaded (the admin
+// layout keeps this component mounted across navigations). Re-checked on every
+// navigation, so it clears once the driver is saved and reopens for any newly
+// due booking.
 const ALWAYS_REACHABLE = ["/admin/mfa", "/admin/profile"];
 
 function travelDayLabel(iso: string): string {
@@ -31,6 +32,7 @@ function travelDayLabel(iso: string): string {
 export function DriverDueGate() {
   const pathname = usePathname();
   const [due, setDue] = useState<DriverDueBooking[]>([]);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -47,38 +49,35 @@ export function DriverDueGate() {
 
   const onDuePage = due.some((b) => pathname.startsWith(`/admin/bookings/${b.id}/services`));
   const exempt = ALWAYS_REACHABLE.some((p) => pathname.startsWith(p));
-  const open = due.length > 0 && !onDuePage && !exempt;
+  const shown = due.filter((b) => !dismissed.has(b.id));
+  const open = shown.length > 0 && !onDuePage && !exempt;
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        hideClose
-        className="max-w-md"
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setDismissed((prev) => new Set([...prev, ...shown.map((b) => b.id)]));
+      }}
+    >
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5 text-primary" /> Driver details needed
           </DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          {due.length === 1 ? "This trip starts" : "These trips start"} within a day and no driver
-          has been assigned. Add the driver &amp; vehicle before continuing.
+          {shown.length === 1 ? "This trip starts" : "These trips start"} within a day and no driver
+          has been assigned. Add the driver &amp; vehicle.
         </p>
         <ul className="mt-2 space-y-2">
-          {due.map((b) => (
+          {shown.map((b) => (
             <li
               key={b.id}
               className="flex items-center justify-between gap-3 rounded-xl border border-border p-3"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-foreground">{b.guestName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {travelDayLabel(b.travelDate)}
-                  {!b.servicesLocked && " · lock services first"}
-                </p>
+                <p className="text-xs text-muted-foreground">{travelDayLabel(b.travelDate)}</p>
               </div>
               <Link
                 href={`/admin/bookings/${b.id}/services?addDriver=1`}

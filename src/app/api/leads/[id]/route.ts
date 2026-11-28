@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { moveBookingCommission } from "@/lib/bookings/commissionSync";
+import {
+  STAFF_BLOCKING_STATUSES,
+  duplicateLeadResponse,
+  findOpenDuplicateLead,
+} from "@/lib/leads/duplicates";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { parsePackageOptions } from "@/lib/tours/content";
 import { requirePermission } from "@/lib/permissions";
 import { LeadStatus, LeadSource, LeadActivityType } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
-import { itineraryDataSchema } from "@/types/itinerary";
-import { applyLeadFactsToItinerary } from "@/lib/itinerary/lead-defaults";
-import { uniqueItineraryTitle } from "@/lib/itinerary/list";
+import { leadFactsItineraryOps } from "@/lib/itinerary/leadFactsSync";
 import { isAdminRole } from "@/lib/itinerary/access";
 import { notifyLeadAssigned, notifyLeadUnassigned } from "@/lib/notifications";
 import { phoneField } from "@/lib/leads/schema";
 import { convertedBookingAmountUpdate } from "@/lib/bookings/syncBookingAmount";
+import { tripSyncOps } from "@/lib/bookings/syncBookingDates";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -83,26 +88,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Access split: an admin's only lead power is (re)assignment; every other lead
-  // change (status, details, notes, follow-up, booking link, amounts) belongs to
-  // the staff member the lead is assigned to. Both rules are applied per-field
-  // after the body is parsed (see below).
+  // Access split: (re)assignment is admin-only; every other lead change (status,
+  // details, notes, follow-up, booking link, amounts) is for the assignee or an
+  // admin. Both rules are applied per-field after the body is parsed (below).
   const role = (guard.user as { role: string }).role;
   const userId = guard.user.id as string;
   const admin = isAdminRole(role);
   const isAssignee = existing.assignedToId === userId;
-  // An unassigned lead has no owner, so an admin may act on it freely (any
-  // operation). Once a lead is assigned, an admin's only power is reassignment;
-  // all other work belongs to the assignee.
-  const canManage = isAssignee || (admin && existing.assignedToId === null);
-
-  // Locked (converted) leads cannot be edited until an admin unlocks them.
-  if (existing.locked) {
-    return NextResponse.json(
-      { error: "This lead is locked. An admin must unlock it before editing." },
-      { status: 423 },
-    );
-  }
+  // The assignee works their lead; an admin may make any change on any lead
+  // without reassigning it first, so it stays with the salesperson. Credit
+  // (converted + commission) always follows the current assignee.
+  const canManage = isAssignee || admin;
 
   let body: unknown;
   try {
@@ -113,6 +109,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
+  }
+
+  // Locked (converted) leads cannot be edited until an admin unlocks them —
+  // except that an admin may reassign one (credit and commission follow the
+  // assignee, e.g. a lead converted on a trainee's behalf, handed back).
+  const onlyReassign = Object.entries(parsed.data).every(
+    ([k, v]) => k === "assignedToId" || v === undefined,
+  );
+  if (existing.locked && !(admin && onlyReassign)) {
+    return NextResponse.json(
+      { error: "This lead is locked. An admin must unlock it before editing." },
+      { status: 423 },
+    );
   }
 
   const {
@@ -164,7 +173,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     (rest.children !== undefined && (rest.children ?? null) !== (existing.children ?? null));
   if (workChanged && !canManage) {
     return NextResponse.json(
-      { error: "Only the staff member this lead is assigned to can update it." },
+      { error: "Only the staff member this lead is assigned to (or an admin) can update it." },
       { status: 403 },
     );
   }
@@ -180,6 +189,26 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       { error: "Travel end date can't be before the start date." },
       { status: 422 },
     );
+  }
+
+  // Duplicate guard: an edit (new phone/email, or reopening a closed lead)
+  // must not leave this customer with two open leads.
+  const effPhone = rest.phone ?? existing.phone;
+  const effEmail = rest.email !== undefined ? rest.email : existing.email;
+  const effStatus = status ?? existing.status;
+  const identityChanged =
+    (rest.phone !== undefined && rest.phone !== existing.phone) ||
+    (rest.email !== undefined && (rest.email ?? null) !== (existing.email ?? null));
+  const reopened =
+    !STAFF_BLOCKING_STATUSES.includes(existing.status) && STAFF_BLOCKING_STATUSES.includes(effStatus);
+  if ((identityChanged || reopened) && STAFF_BLOCKING_STATUSES.includes(effStatus)) {
+    const dup = await findOpenDuplicateLead(prisma, {
+      phone: effPhone,
+      email: effEmail || null,
+      statuses: STAFF_BLOCKING_STATUSES,
+      excludeId: id,
+    });
+    if (dup) return duplicateLeadResponse(dup);
   }
 
   if (bookingId) {
@@ -257,52 +286,44 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     startDate !== undefined ||
     endDate !== undefined;
 
-  const itinerarySyncOps: Prisma.PrismaPromise<unknown>[] = [];
-  if (itin && !itin.locked && tripFactsTouched) {
-    const parsedItin = itineraryDataSchema.safeParse(itin.data);
-    if (parsedItin.success) {
-      const facts = {
-        name: rest.name ?? existing.name,
-        phone: rest.phone ?? existing.phone,
-        tourTitle: tourId !== undefined ? (nextTourTitle ?? null) : (existing.tour?.title ?? null),
-        adults: rest.adults ?? existing.adults,
-        children: rest.children !== undefined ? rest.children : existing.children,
-        startDate:
-          startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
-        endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
-      };
-      const nextData = applyLeadFactsToItinerary(parsedItin.data, facts);
-      const changed =
-        nextData.preparedFor !== parsedItin.data.preparedFor ||
-        nextData.travelDates !== parsedItin.data.travelDates ||
-        nextData.duration !== parsedItin.data.duration ||
-        nextData.travelers !== parsedItin.data.travelers ||
-        nextData.packageType !== parsedItin.data.packageType ||
-        nextData.customerPhone !== parsedItin.data.customerPhone;
-      if (changed) {
-        const jsonData = nextData as unknown as Prisma.InputJsonValue;
-        // The standard name (name - duration - phone) follows the synced facts.
-        const title = await uniqueItineraryTitle(nextData, itin.id);
-        itinerarySyncOps.push(
-          prisma.itinerary.update({
-            where: { id: itin.id },
-            data: { title, data: jsonData, lastEditedById: performedById },
-          }),
-          prisma.itineraryHistory.create({
-            data: {
-              itineraryId: itin.id,
-              title,
-              data: jsonData,
-              editedById: performedById,
-              editedByName: performedByName,
-            },
-          }),
-        );
-      }
-    }
-  }
+  const itinerarySyncOps: Prisma.PrismaPromise<unknown>[] =
+    itin && tripFactsTouched
+      ? await leadFactsItineraryOps(
+          itin,
+          {
+            name: rest.name ?? existing.name,
+            phone: rest.phone ?? existing.phone,
+            tourTitle: tourId !== undefined ? (nextTourTitle ?? null) : (existing.tour?.title ?? null),
+            adults: rest.adults ?? existing.adults,
+            children: rest.children !== undefined ? rest.children : existing.children,
+            startDate:
+              startDate !== undefined ? (startDate ? new Date(startDate) : null) : existing.startDate,
+            endDate: endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate,
+          },
+          { id: performedById, name: performedByName },
+        )
+      : [];
 
-  // Converted lead unlocked for corrections: its booking follows the new price.
+  // Converted lead unlocked for corrections: its booking follows the new
+  // name, phone, dates and travellers (while its services are unlocked)…
+  const bookingDateOps =
+    existing.status === LeadStatus.CONVERTED && tripFactsTouched
+      ? await tripSyncOps(
+          id,
+          {
+            ...((startDate !== undefined || endDate !== undefined) && effStart
+              ? { start: effStart, end: effEnd }
+              : {}),
+            ...(rest.name !== undefined ? { name: rest.name } : {}),
+            ...(rest.phone !== undefined ? { phone: rest.phone } : {}),
+            ...(rest.adults !== undefined ? { adults: rest.adults } : {}),
+            ...(rest.children !== undefined ? { children: rest.children } : {}),
+          },
+          { includeLead: false },
+        )
+      : [];
+
+  // …and the new price.
   let bookingAmountOp: Prisma.PrismaPromise<unknown> | null = null;
   if (negotiatedAmount != null && existing.status === LeadStatus.CONVERTED) {
     const sync = await convertedBookingAmountUpdate(id, negotiatedAmount);
@@ -410,7 +431,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Sync lead trip facts into the linked itinerary's cover fields.
     ...itinerarySyncOps,
     ...(bookingAmountOp ? [bookingAmountOp] : []),
+    ...bookingDateOps,
   ]);
+
+  // A converted lead's commission moves with it to the new assignee.
+  if (assignmentChanged && existing.status === LeadStatus.CONVERTED && existing.bookingId) {
+    await moveBookingCommission(prisma, existing.bookingId, assignedToId ?? null);
+  }
 
   // Post-commit, best-effort: notify the affected staff (in-app + email). On a
   // reassignment both the removed and the added owner are informed.

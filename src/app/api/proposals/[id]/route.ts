@@ -5,14 +5,11 @@ import { requirePermission } from "@/lib/permissions";
 import { proposalDataSchema } from "@/types/proposal";
 import { proposalTitleExists } from "@/lib/proposal/list";
 import { buildDocumentTitle, duplicateTitleMessage } from "@/lib/itinerary/documentTitle";
+import { ASSIGNABLE_ROLES, canAccessProposal } from "@/lib/proposal/access";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
-
-function isAdmin(role?: string | null): boolean {
-  return role === "SUPERADMIN" || role === "ADMIN";
-}
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const guard = await requirePermission("proposals", "view");
@@ -21,10 +18,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
   const record = await prisma.proposalItinerary.findUnique({
     where: { id },
-    include: { owner: { select: { name: true } } },
+    include: { owner: { select: { name: true } }, assignedTo: { select: { name: true } } },
   });
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!isAdmin(guard.user.role) && record.ownerId !== guard.user.id) {
+  if (!canAccessProposal(guard.user.role, guard.user.id, record)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -34,6 +31,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     status: record.status,
     ownerId: record.ownerId,
     ownerName: record.owner?.name ?? null,
+    assignedToId: record.assignedToId,
+    assignedToName: record.assignedTo?.name ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
     data: record.data,
@@ -44,6 +43,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 const patchSchema = z.object({
   status: z.enum(["DRAFT", "SENT"]).optional(),
   data: proposalDataSchema.optional(),
+  // Hand the proposal to another sales person (null = unassign). Owner,
+  // current assignee or an admin may change it.
+  assignedToId: z.string().min(1).nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -53,10 +55,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const existing = await prisma.proposalItinerary.findUnique({
     where: { id },
-    select: { ownerId: true, title: true },
+    select: { ownerId: true, assignedToId: true, title: true },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!isAdmin(guard.user.role) && existing.ownerId !== guard.user.id) {
+  if (!canAccessProposal(guard.user.role, guard.user.id, existing)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -85,9 +87,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
   }
 
+  const { assignedToId } = parsed.data;
+  if (assignedToId) {
+    const assignee = await prisma.user.findFirst({
+      where: { id: assignedToId, deletedAt: null, role: { in: [...ASSIGNABLE_ROLES] } },
+      select: { id: true },
+    });
+    if (!assignee) {
+      return NextResponse.json({ error: "Pick an active sales or admin user." }, { status: 422 });
+    }
+  }
+
   const updated = await prisma.proposalItinerary.update({
     where: { id },
     data: {
+      ...(assignedToId !== undefined ? { assignedToId } : {}),
       ...(title !== undefined ? { title } : {}),
       ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
       ...(parsed.data.data !== undefined ? { data: parsed.data.data } : {}),
@@ -103,9 +117,12 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (guard instanceof NextResponse) return guard;
 
   const { id } = await params;
-  const existing = await prisma.proposalItinerary.findUnique({ where: { id }, select: { ownerId: true } });
+  const existing = await prisma.proposalItinerary.findUnique({
+    where: { id },
+    select: { ownerId: true, assignedToId: true },
+  });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (!isAdmin(guard.user.role) && existing.ownerId !== guard.user.id) {
+  if (!canAccessProposal(guard.user.role, guard.user.id, existing)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

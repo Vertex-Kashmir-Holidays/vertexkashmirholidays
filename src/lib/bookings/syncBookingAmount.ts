@@ -11,10 +11,12 @@ const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
  */
 export function parseProposedAmount(raw: unknown): number | null {
   if (typeof raw !== "string") return null;
-  const digits = raw.replace(/[^0-9.]/g, "");
-  if (!digits) return null;
-  const n = parseFloat(digits);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  // Read whole numbers, not a digit soup: stripping everything but digits/dots
+  // turned "Rs. 84,900/-" into ".84900" → ₹0. The price is the largest number
+  // present, so extras like "incl. 5% GST" or "2 pax" are ignored.
+  const numbers = (raw.replace(/,/g, "").match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
+  const n = Math.round(Math.max(0, ...numbers));
+  return n > 0 ? n : null;
 }
 
 /**

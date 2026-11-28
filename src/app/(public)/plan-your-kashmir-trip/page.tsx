@@ -22,7 +22,6 @@ import { PromoBanner } from "@/components/public/PromoBanner";
 import { getBannersForPage, toPromoBannerData } from "@/lib/banners";
 import { getFaqsForPlacement } from "@/lib/faqs";
 import { getDisplayReviews } from "@/lib/reviews";
-import { getPublicHotels } from "@/lib/hotelSuppliers/stats";
 import { getTripPlannerContent } from "@/lib/tripPlannerContent";
 import { getPublicHeroStats } from "@/lib/publicHeroStats";
 import { compareToursForCards } from "@/lib/tours/ordering";
@@ -75,7 +74,6 @@ export default async function PlanYourKashmirTripPage() {
     whyItems,
     reviews,
     faqs,
-    hotels,
   ] = await Promise.all([
     getTripPlannerContent(),
     // Same shared, genuinely live-computed stats as /tours (Rating + Curated
@@ -127,7 +125,6 @@ export default async function PlanYourKashmirTripPage() {
     // Reuses the homepage's FAQ placement — no new FaqPlacement enum value
     // added for this page (that would need its own schema migration).
     getFaqsForPlacement("HOME"),
-    getPublicHotels(),
   ]);
 
   // Real, live starting price for the "kashmir tour package price" pricing
@@ -273,7 +270,8 @@ export default async function PlanYourKashmirTripPage() {
 
       <TripPlannerHowItWorks />
 
-      <TripPlannerHotelCarousel hotels={hotels} />
+      {/* Loads its hotels client-side — keeps hotel names out of indexed HTML. */}
+      <TripPlannerHotelCarousel />
 
       <TestimonialsSection
         heading={{

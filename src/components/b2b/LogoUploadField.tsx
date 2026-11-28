@@ -4,6 +4,52 @@ import { useRef, useState, type ChangeEvent } from "react";
 import { ImagePlus, X } from "lucide-react";
 
 const MAX_LOGO_BYTES = 500 * 1024; // 500KB
+const ACCEPTED_TYPES = ["image/png", "image/webp"];
+// Longest sides a converted WebP logo is tried at, largest first. A detailed
+// logo's PNG can exceed the 500KB server limit at 800px even when the WebP is
+// tiny, so it steps down until it fits — still plenty for PDF/admin thumbnails.
+const CONVERTED_SIDES = [800, 640, 512, 400, 320];
+
+/**
+ * WebP → PNG data URL via canvas. Agency logos end up in the B2B itinerary
+ * PDF (@react-pdf/renderer), which only renders PNG/JPEG — so WebP is
+ * accepted at the picker but always stored as PNG. Only ever scales down;
+ * returns the largest size that fits MAX_LOGO_BYTES (or the smallest tried).
+ */
+function webpToPngDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("canvas unavailable"));
+      let dataUrl = "";
+      for (const side of CONVERTED_SIDES) {
+        const scale = Math.min(1, side / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        dataUrl = canvas.toDataURL("image/png");
+        if (dataUrlBytes(dataUrl) <= MAX_LOGO_BYTES) break;
+      }
+      resolve(dataUrl);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("decode failed"));
+    };
+    img.src = url;
+  });
+}
+
+/** Decoded byte size of a base64 data URL. */
+function dataUrlBytes(dataUrl: string): number {
+  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  return Math.floor((base64.length * 3) / 4);
+}
 
 interface Props {
   /** Fires with the validated data URL, or undefined once cleared/invalid. */
@@ -13,11 +59,12 @@ interface Props {
 }
 
 /**
- * PNG-only company logo picker, capped at 500KB (no pixel-dimension check) —
+ * PNG/WebP company logo picker, capped at 500KB (no pixel-dimension check) —
  * shared by the public B2B registration form and the CRM manual-creation
  * form so the two never validate a logo differently. The server
  * (parseAgencyLogo in src/lib/b2b/schema.ts) re-validates format/size
  * independently before ever storing it — this is client-side UX only.
+ * WebP is converted to PNG here, so the server and PDF only ever see PNG.
  */
 export function LogoUploadField({ onChange, externalError }: Props) {
   const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined);
@@ -44,14 +91,34 @@ export function LogoUploadField({ onChange, externalError }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "image/png") {
-      setLogoError("Logo must be a PNG image.");
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setLogoError("Logo must be a PNG or WebP image.");
       resetFile();
       return;
     }
     if (file.size > MAX_LOGO_BYTES) {
       setLogoError(`Logo must be under 500KB (this file is ${(file.size / 1024).toFixed(0)}KB).`);
       resetFile();
+      return;
+    }
+
+    if (file.type === "image/webp") {
+      webpToPngDataUrl(file)
+        .then((dataUrl) => {
+          if (dataUrlBytes(dataUrl) > MAX_LOGO_BYTES) {
+            setLogoError("This logo is too large once converted. Please upload a smaller image.");
+            resetFile();
+            return;
+          }
+          setLogoDataUrl(dataUrl);
+          setLogoFileName(file.name);
+          setLogoError(null);
+          onChange(dataUrl);
+        })
+        .catch(() => {
+          setLogoError("Couldn't read this file. Please try again.");
+          resetFile();
+        });
       return;
     }
 
@@ -74,7 +141,7 @@ export function LogoUploadField({ onChange, externalError }: Props) {
     <div>
       <label htmlFor="b2bLogo" className="text-[14px] font-semibold">
         Company Logo <span className="text-rose-500">*</span>{" "}
-        <span className="font-medium text-muted-foreground">(PNG only, under 500KB)</span>
+        <span className="font-medium text-muted-foreground">(PNG or WebP, under 500KB)</span>
       </label>
       <div className="mt-1.5 flex items-center gap-3">
         <label
@@ -82,13 +149,13 @@ export function LogoUploadField({ onChange, externalError }: Props) {
           className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3.5 py-2.5 text-[13px] font-semibold text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
         >
           <ImagePlus className="h-4 w-4" strokeWidth={1.9} />
-          {logoFileName ? "Change file" : "Choose PNG file"}
+          {logoFileName ? "Change file" : "Choose PNG or WebP file"}
         </label>
         <input
           ref={inputRef}
           id="b2bLogo"
           type="file"
-          accept="image/png"
+          accept="image/png,image/webp"
           onChange={handleChange}
           className="sr-only"
         />

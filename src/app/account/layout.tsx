@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { AccountShell } from "@/components/account/AccountShell";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
-import { B2B_VISIBLE_DOC_CATEGORIES } from "@/lib/docs/categories";
+import { agentVisibleDocsWhere } from "@/lib/docs/upload";
 
 // Belt-and-suspenders on top of robots.ts's `disallow: "/account/"` — see
 // src/app/admin/layout.tsx for the identical rationale.
@@ -27,7 +27,10 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const session = await auth();
 
   if (!session?.user) {
-    redirect("/login");
+    // Back to the page they asked for after signing in (e.g. a push notification's
+    // link). The login page only honours same-origin relative paths.
+    const path = (await headers()).get("x-pathname");
+    redirect(path ? `/login?callbackUrl=${encodeURIComponent(path)}` : "/login");
   }
 
   const requestHeaders = await headers();
@@ -36,9 +39,18 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const isB2bAgent = session.user.agencyStatus !== null;
   const agencyDocs = isB2bAgent
     ? await prisma.adminDocument.findMany({
-        where: { category: { in: B2B_VISIBLE_DOC_CATEGORIES as string[] } },
-        orderBy: [{ category: "asc" }, { createdAt: "desc" }],
-        select: { id: true, title: true, description: true, category: true, mimeType: true },
+        where: agentVisibleDocsWhere(session.user.id),
+        // Shared with them personally first, then the all-partner library.
+        orderBy: [{ agentId: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          mimeType: true,
+          agentId: true,
+          createdAt: true,
+        },
       })
     : [];
 

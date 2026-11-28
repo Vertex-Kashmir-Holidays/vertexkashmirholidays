@@ -53,7 +53,17 @@ export const parsePackageOptions = (raw: string | null | undefined): TourPackage
 export const publishedPackageOptions = (raw: string | null | undefined): TourPackageOption[] =>
   parsePackageOptions(raw).filter((o) => o.published);
 
-/** Lowest public 2-person price among published options, or null if none. */
+/**
+ * How many persons a package option's public price covers: the tour's
+ * minimum group size, never below 2 (a family package with minPersons 4 is
+ * priced "/ 4 persons"; every other package tour stays "/ 2 persons").
+ * `priceForTwo` keeps its name but holds the price for this many persons.
+ */
+export function packagePartySize(minPersons?: number | null): number {
+  return Math.max(2, minPersons ?? 2);
+}
+
+/** Lowest public package price among published options, or null if none. */
 export function lowestPriceForTwo(raw: string | null | undefined): number | null {
   const prices = publishedPackageOptions(raw).map((o) => o.priceForTwo);
   return prices.length ? Math.min(...prices) : null;
@@ -87,10 +97,13 @@ export const packageOptionsSchema = z
  * Server-side rules for a tour's package options, applied on every tour
  * save: validate the JSON, and when any option exists force INQUIRY_ONLY (no
  * online checkout for package tours — Sales quotes the final price) and derive
- * the per-person `priceFrom` from the lowest published 2-person price.
+ * the per-person `priceFrom` from the lowest published package price.
  * Returns the fields to merge into the Prisma write, or an error message.
  */
-export function applyPackageOptionRules(raw: string):
+export function applyPackageOptionRules(
+  raw: string,
+  minPersons?: number | null,
+):
   | { ok: true; data: { packageOptions: string; formMode?: "INQUIRY_ONLY"; priceFrom?: number } }
   | {
       ok: false;
@@ -109,7 +122,7 @@ export function applyPackageOptionRules(raw: string):
     data: {
       packageOptions,
       formMode: "INQUIRY_ONLY",
-      ...(lowest !== null ? { priceFrom: lowest / 2 } : {}),
+      ...(lowest !== null ? { priceFrom: lowest / packagePartySize(minPersons) } : {}),
     },
   };
 }
