@@ -3,9 +3,10 @@
 // sample template. Copied: cover facts, day plan, the accepted option's
 // hotels/vehicle/activities/price, "available on the day" activities,
 // inclusions, payment and cancellation.
-// Cover and day photos carry over when the proposal has them; everything else
-// it has no equivalent for (hotel/activity images, trust strip, transport
-// tags) falls back to the standard itinerary template.
+// Cover and day photos carry over when the proposal has them; hotel photos are
+// set by the convert route from each hotel's main photo; everything else it has
+// no equivalent for (activity images, trust strip, transport tags) falls back
+// to the standard itinerary template.
 
 import { DEFAULT_ITINERARY_DATA } from "@/components/admin/itinerary/default-data";
 import { STOCK_IMAGES, genId, type ItineraryData } from "@/types/itinerary";

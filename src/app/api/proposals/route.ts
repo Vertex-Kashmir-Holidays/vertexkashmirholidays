@@ -27,6 +27,9 @@ export async function GET(req: NextRequest) {
   const { items, total } = await listProposalSummaries({
     scope: proposalWhereForUser(role, userId),
     search: searchParams.get("search")?.trim() ?? "",
+    phone: searchParams.get("phone")?.trim() ?? "",
+    createdBy: searchParams.get("createdBy") ?? undefined,
+    assignedTo: searchParams.get("assignedTo") ?? undefined,
     status: searchParams.get("status") ?? undefined,
     ...parsePageParams(searchParams),
   });

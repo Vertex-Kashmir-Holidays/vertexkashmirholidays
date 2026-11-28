@@ -373,7 +373,17 @@ const s = StyleSheet.create({
   // No explicit height — same absolute-fill-to-content-height trick as
   // dayImgCol above.
   hotelImgCol: { width: 130, flexShrink: 0, position: "relative" },
-  hotelImgFallback: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.green },
+  hotelImgFallback: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: C.green,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hotelImgFallbackText: { fontSize: 9, color: "#FFFFFF", opacity: 0.7 },
   hotelImgFull: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, objectFit: "cover" },
   hotelBody: { flex: 1, padding: SP.md + 2 },
   hotelHeadRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
@@ -1036,7 +1046,9 @@ export function ItineraryPdf({
                 {img(h.image) ? (
                   <Image src={img(h.image)} style={s.hotelImgFull} />
                 ) : (
-                  <View style={s.hotelImgFallback} />
+                  <View style={s.hotelImgFallback}>
+                    <Text style={s.hotelImgFallbackText}>No image</Text>
+                  </View>
                 )}
               </View>
               <View style={s.hotelBody}>

@@ -351,6 +351,8 @@ model HotelSupplier {
   // sortOrder column — see src/lib/hotelSuppliers/stats.ts.
   coverImageUrl         String?
   roomImageUrl          String?
+  // Second room photo (main + 2 rooms per hotel).
+  roomImage2Url         String?
   showOnWebsite         Boolean          @default(false)
   // The public "View on Google" CTA reuses data.property.mapUrl (already
   // admin-configured, already inline-editable in the Hotel Rates table) —

@@ -44,6 +44,7 @@ export function toHotelSupplierRecord(
     updatedAt: row.updatedAt.toISOString(),
     coverImageUrl: row.coverImageUrl,
     roomImageUrl: row.roomImageUrl,
+    roomImage2Url: row.roomImage2Url,
     showOnWebsite: row.showOnWebsite,
     publicLikeCount: row.publicLikeCount,
   };

@@ -13,6 +13,7 @@ import { HotelStaysTable } from "@/components/admin/hotel-suppliers/HotelStaysTa
 import { hotelDataSchema } from "@/lib/hotelSuppliers/schema";
 import { HotelDetailsCard } from "@/components/admin/hotel-suppliers/HotelDetailsCard";
 import { HotelProfilePanel } from "@/components/admin/hotel-suppliers/HotelProfilePanel";
+import { HotelPhotos } from "@/components/admin/hotel-suppliers/HotelPhotos";
 
 export const metadata: Metadata = { title: "Hotel — Admin" };
 export const dynamic = "force-dynamic";
@@ -92,6 +93,14 @@ export default async function AdminHotelDetailPage({ params, searchParams }: Pag
         canEdit={canEdit}
         canDelete={canDelete}
         linkedStays={staysPage?.total ?? hotel.confirmedStays}
+      />
+
+      <HotelPhotos
+        variant="strip"
+        hotelName={hotel.hotelName}
+        coverImageUrl={hotel.coverImageUrl}
+        roomImageUrl={hotel.roomImageUrl}
+        roomImage2Url={hotel.roomImage2Url}
       />
 
       <HotelDetailsCard data={hotel.data} recommended={hotel.recommended} />
